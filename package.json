@@ -1,0 +1,30 @@
+{
+  "name": "pabandi",
+  "version": "1.0.0",
+  "description": "Pabandi – AI-powered booking and no-show prevention platform",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "migrate": "cd server && npm run migrate",
+    "seed": "cd server && npm run seed"
+  },
+  "keywords": [
+    "booking",
+    "reservation",
+    "ai",
+    "karachi",
+    "pakistan",
+    "no-show-prediction"
+  ],
+  "author": "Lead Developer",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

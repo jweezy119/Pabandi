@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Pabandi</string>
+    <string name="title_activity_main">Pabandi</string>
+    <string name="package_name">com.pabandi.app</string>
+    <string name="custom_url_scheme">com.pabandi.app</string>
+</resources>

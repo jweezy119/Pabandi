@@ -1,0 +1,81 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server/.env
+client/.env
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+.serverless/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log
+yarn-error.log
+lerna-debug.log
+*.log.*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js.map
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Prisma
+prisma/migrations/
+
+# Python (for AI services)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# AI Models
+*.h5
+*.pkl
+*.joblib
+models/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
