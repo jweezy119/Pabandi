@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #080e17;
+    --color-surface: #0d1724;
+    --color-surface-raised: #121f30;
+    --color-border: rgba(255,255,255,0.08);
+    --color-border-focus: rgba(99,179,237,0.6);
+    --color-text: #e8edf3;
+    --color-text-muted: #7a90a8;
+    --color-accent: #3b82f6;
+    --color-accent-glow: rgba(59,130,246,0.3);
+    --color-green: #10b981;
+    --color-green-glow: rgba(16,185,129,0.25);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Manrope', sans-serif;
+  }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-semibold text-sm px-6 py-3 rounded-xl text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.97];
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 6px 28px rgba(59,130,246,0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-medium text-sm px-6 py-3 rounded-xl transition-all duration-200 focus:outline-none active:scale-[0.97];
+    background: rgba(255,255,255,0.06);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  .btn-google {
+    @apply inline-flex items-center justify-center gap-3 w-full font-semibold text-sm px-6 py-3.5 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30 active:scale-[0.97] cursor-pointer;
+    background: #ffffff;
+    color: #1f2937;
+    border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .btn-google:hover {
+    background: #f1f5f9;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transform: translateY(-1px);
+  }
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl text-sm transition-all duration-200 outline-none;
+    background: rgba(255,255,255,0.05);
+    color: #e8edf3;
+    border: 1px solid rgba(255,255,255,0.10);
+    caret-color: #3b82f6;
+  }
+  .input-field::placeholder {
+    color: #4d6070;
+  }
+  .input-field:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(99,179,237,0.55);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(255,255,255,0.14);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  .glass-card {
+    background: rgba(13,23,36,0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.5rem;
+  }
+
+  /* ── Auth page panels ── */
+  .auth-panel {
+    background: linear-gradient(160deg, #0d1724 0%, #0a1420 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 2rem;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    @apply flex items-center gap-4 my-6;
+    color: #3d5068;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  /* ── Tab selector ── */
+  .tab-bar {
+    @apply flex rounded-xl p-1;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .tab-item {
+    @apply flex-1 text-center py-2.5 px-4 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200;
+    color: #5a7490;
+  }
+  .tab-item.active {
+    background: linear-gradient(135deg, #1d3a5c, #0f2540);
+    color: #e8edf3;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  /* ── Gradient text ── */
+  .gradient-text {
+    background: linear-gradient(135deg, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Hero glow blobs ── */
+  .glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
