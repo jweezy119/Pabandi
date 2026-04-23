@@ -14,6 +14,12 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const FacebookIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854V15.47h-3.047v-3.397h3.047V9.413c0-3.007 1.791-4.667 4.53-4.667 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.397h-2.796v8.457C19.612 23.027 24 18.062 24 12.073z"/>
+  </svg>
+);
+
 const BuildingIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
@@ -60,6 +66,13 @@ export default function AuthPage() {
       ? 'http://localhost:5000'
       : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || '');
     window.location.href = `${backendUrl}/api/v1/auth/google?role=${role}`;
+  };
+
+  const handleFacebookAuth = () => {
+    const backendUrl = window.location.hostname === 'localhost'
+      ? 'http://localhost:5000'
+      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || '');
+    window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,13 +211,18 @@ export default function AuthPage() {
             </p>
           </div>
 
-          {/* Google OAuth Button */}
-          <button id="btn-google-auth" onClick={handleGoogleAuth} className="btn-google">
-            <GoogleIcon />
-            {isSignup
-              ? (isBusiness ? 'Continue with Google Business' : 'Continue with Google')
-              : 'Sign in with Google'}
-          </button>
+          <div className="flex flex-col gap-3">
+            <button id="btn-google-auth" onClick={handleGoogleAuth} className="btn-google">
+              <GoogleIcon />
+              {isSignup
+                ? (isBusiness ? 'Continue with Google Business' : 'Continue with Google')
+                : 'Sign in with Google'}
+            </button>
+            <button id="btn-facebook-auth" onClick={handleFacebookAuth} className="btn-google" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              <FacebookIcon />
+              {isSignup ? 'Sign up with Facebook' : 'Sign in with Facebook'}
+            </button>
+          </div>
 
           <div className="divider">or continue with email</div>
 
@@ -300,8 +318,15 @@ export default function AuthPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                style={{ color: '#5a7490' }}>Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: '#5a7490' }}>Password</label>
+                {!isSignup && (
+                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold hover:underline" style={{ color: '#60a5fa' }}>
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
               <input id="password" name="password" type="password"
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
                 required

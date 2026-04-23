@@ -17,12 +17,12 @@ export interface Web3DepositResult {
  */
 export const executeBscDeposit = async (amountInBnb: string, businessWalletAddress: string): Promise<Web3DepositResult> => {
   try {
-    if (!window.ethereum) {
+    if (!(window as any).ethereum) {
       throw new Error('No crypto wallet found. Please install MetaMask or TrustWallet.');
     }
 
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
 
     console.log(`Executing BSC Deposit. Total: ${amountInBnb} BNB.`);

@@ -10,7 +10,6 @@ import {
   CurrencyDollarIcon,
   StarIcon,
   ShieldCheckIcon,
-  ChartBarIcon,
   PlusIcon,
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
@@ -39,9 +38,9 @@ function StatCard({ icon, label, value, color }: {
 }
 
 /* ── Revenue Card ── */
-function RevenueCard({ label, amount, sub, icon, gradient, iconBg }: {
+function RevenueCard({ label, amount, sub, icon, gradient }: {
   label: string; amount: string; sub: string;
-  icon: React.ReactNode; gradient: string; iconBg: string;
+  icon: React.ReactNode; gradient: string;
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl p-6 text-white"
@@ -136,7 +135,6 @@ export default function BusinessDashboard() {
             amount={`PKR ${(analytics?.data?.analytics?.protectedRevenue || 45000).toLocaleString()}`}
             sub="Fiat & Web3 Escrow Secured"
             gradient="linear-gradient(135deg, #1e3a5f 0%, #0f2540 100%)"
-            iconBg="rgba(99,179,237,0.2)"
             icon={<ShieldCheckIcon className="w-full h-full" style={{ color: '#60a5fa' }} />}
           />
           <RevenueCard
@@ -144,7 +142,6 @@ export default function BusinessDashboard() {
             amount={`PKR ${(analytics?.data?.analytics?.revenue || 125000).toLocaleString()}`}
             sub="Growth +12% this month"
             gradient="linear-gradient(135deg, #064e3b 0%, #022c22 100%)"
-            iconBg="rgba(52,211,153,0.2)"
             icon={<CurrencyDollarIcon className="w-full h-full" style={{ color: '#34d399' }} />}
           />
           <RevenueCard
@@ -152,7 +149,6 @@ export default function BusinessDashboard() {
             amount={`PKR ${(analytics?.data?.analytics?.reimbursedRevenue || 8500).toLocaleString()}`}
             sub="Web3 Escrow Deductions Captured"
             gradient="linear-gradient(135deg, #4c1d95 0%, #2d1163 100%)"
-            iconBg="rgba(167,139,250,0.2)"
             icon={<ExclamationTriangleIcon className="w-full h-full" style={{ color: '#a78bfa' }} />}
           />
         </div>

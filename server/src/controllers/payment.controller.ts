@@ -4,6 +4,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { UserRole } from '@prisma/client';
+import { safepayService } from '../services/safepay.service';
 
 export const createPayment = async (
   req: AuthRequest,
@@ -38,9 +39,17 @@ export const createPayment = async (
       },
     });
 
-    // TODO: Integrate with payment gateway (Stripe, JazzCash, EasyPaisa)
-    // For now, simulate payment processing
-    logger.info(`Payment created: ${payment.id}`);
+    // Integrate with Safepay
+    let paymentUrl = `/payment/process/${payment.id}`;
+    if (paymentMethod === 'safepay') {
+      try {
+        paymentUrl = await safepayService.createCheckoutUrl(amount, reservationId || payment.id);
+      } catch (err) {
+        logger.error(`Safepay initialization failed: ${err}`);
+      }
+    }
+
+    logger.info(`Payment created: ${payment.id} via ${paymentMethod}`);
 
     res.status(201).json({
       success: true,
@@ -48,8 +57,7 @@ export const createPayment = async (
       data: {
         payment: {
           ...payment,
-          // In production, return payment gateway redirect URL or payment link
-          paymentUrl: `/payment/process/${payment.id}`,
+          paymentUrl,
         },
       },
     });
@@ -108,14 +116,25 @@ export const processPaymentWebhook = async (
   next: NextFunction
 ) => {
   try {
-    // TODO: Verify webhook signature from payment gateway
-    const { paymentId, status, transactionId } = req.body;
+    const signature = req.headers['x-sfpy-signature'] as string;
+    const isValid = safepayService.verifyWebhook(signature, req.body);
+
+    if (!isValid && process.env.NODE_ENV === 'production') {
+      logger.error('Invalid Safepay webhook signature');
+      throw new CustomError('Invalid signature', 401);
+    }
+
+    const { tracker, reference, state } = req.body;
+    
+    // Safepay states: 'completed', 'failed', 'cancelled'
+    const status: any = state === 'completed' ? 'COMPLETED' : 
+                   state === 'failed' ? 'FAILED' : 'FAILED'; // Use FAILED for cancelled payments too if not in enum
 
     const payment = await prisma.payment.update({
-      where: { id: paymentId },
+      where: { id: reference }, // In Safepay we use reference for payment/reservation ID
       data: {
-        status: status.toUpperCase(),
-        transactionId,
+        status: status,
+        transactionId: tracker,
         gatewayResponse: req.body,
       },
     });
@@ -130,7 +149,7 @@ export const processPaymentWebhook = async (
       });
     }
 
-    logger.info(`Payment webhook processed: ${paymentId} - ${status}`);
+    logger.info(`Payment webhook processed: ${payment.id} - ${status}`);
 
     res.json({ success: true });
   } catch (error) {

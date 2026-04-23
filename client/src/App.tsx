@@ -10,9 +10,21 @@ import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import BookingPage from './pages/BookingPage';
 import WalletDashboard from './pages/WalletDashboard';
+import AdminPanel from './pages/AdminPanel';
+import BusinessJoinPage from './pages/BusinessJoinPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+
+  // Smart dashboard: route to correct page based on role
+  const DashboardPage = () => {
+    if (!isAuthenticated) return <Navigate to="/login" />;
+    if (user?.role === 'ADMIN') return <AdminPanel />;
+    if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
+    return <BusinessDashboard />; // fallback (CustomerDashboard coming soon)
+  };
 
   return (
     <Routes>
@@ -31,10 +43,15 @@ function App() {
 
         <Route path="business/:id/book" element={<BookingPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
+        {/* Business partner landing page — public */}
+        <Route path="join" element={<BusinessJoinPage />} />
+        <Route path="business/join" element={<BusinessJoinPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route
           path="dashboard"
-          element={isAuthenticated ? <BusinessDashboard /> : <Navigate to="/login" />}
+          element={<DashboardPage />}
         />
         <Route
           path="business/register"

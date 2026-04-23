@@ -71,6 +71,9 @@ model User {
   isEmailVerified Boolean @default(false)
   isPhoneVerified Boolean @default(false)
   googleId      String?  @unique  // Google OAuth ID
+  facebookId    String?  @unique  // Facebook OAuth ID
+  resetToken    String?
+  resetTokenExpires DateTime?
   reliabilityScore Float  @default(100) // Reputation score (0-100)
   fcmToken      String? // Firebase Cloud Messaging push token
   createdAt     DateTime @default(now())

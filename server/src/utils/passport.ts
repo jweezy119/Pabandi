@@ -1,11 +1,14 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { prisma } from './database';
 import { UserRole } from '@prisma/client';
 import { logger } from './logger';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID || '';
+const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET || '';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 export function configurePassport() {
@@ -63,6 +66,61 @@ export function configurePassport() {
       }
     )
   );
+
+  if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
+    passport.use(
+      new FacebookStrategy(
+        {
+          clientID: FACEBOOK_APP_ID,
+          clientSecret: FACEBOOK_APP_SECRET,
+          callbackURL: `${BACKEND_URL}/api/v1/auth/facebook/callback`,
+          profileFields: ['id', 'emails', 'name'],
+          passReqToCallback: true,
+        },
+        async (req: any, _accessToken, _refreshToken, profile, done) => {
+          try {
+            const email = profile.emails?.[0]?.value;
+            if (!email) return done(new Error('No email from Facebook profile'));
+
+            // Determine role from query param set during redirect
+            const role: UserRole = req.query?.state === 'business'
+              ? UserRole.BUSINESS_OWNER
+              : UserRole.CUSTOMER;
+
+            let user: any = await prisma.user.findUnique({ where: { email } });
+
+            if (!user) {
+              // Create new user from Facebook profile
+              user = await (prisma.user as any).create({
+                data: {
+                  email,
+                  passwordHash: '', // no password for OAuth users
+                  firstName: profile.name?.givenName || 'User',
+                  lastName: profile.name?.familyName || '',
+                  role,
+                  facebookId: profile.id,
+                  isEmailVerified: true,
+                },
+              });
+              logger.info(`New Facebook OAuth user created: ${email} (${role})`);
+            } else if (!user.facebookId) {
+              // Link Facebook account to existing email user
+              user = await (prisma.user as any).update({
+                where: { email },
+                data: { facebookId: profile.id, isEmailVerified: true },
+              });
+            }
+
+            return done(null, user);
+          } catch (err) {
+            return done(err);
+          }
+        }
+      )
+    );
+  } else {
+    logger.warn('Facebook OAuth credentials not set. Facebook login will be unavailable.');
+  }
 
   passport.serializeUser((user: any, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {

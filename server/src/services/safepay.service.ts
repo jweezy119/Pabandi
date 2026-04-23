@@ -77,7 +77,23 @@ export const safepayService = {
    * Verify Webhook Signature to safely update Reservation Status
    */
   verifyWebhook(signature: string, payload: any): boolean {
-    // In production, cryptographically verify the signature using crypto.createHmac
-    return true; 
+    try {
+      const crypto = require('crypto');
+      const secret = process.env.SAFEPAY_WEBHOOK_SECRET;
+      
+      if (!secret || !signature) {
+        logger.warn('Safepay webhook verification skipped: Missing secret or signature');
+        return process.env.NODE_ENV !== 'production'; // Allow in dev if missing
+      }
+
+      const hmac = crypto.createHmac('sha256', secret);
+      hmac.update(JSON.stringify(payload));
+      const expectedSignature = hmac.digest('hex');
+
+      return signature === expectedSignature;
+    } catch (error) {
+      logger.error('Error verifying Safepay webhook signature:', error);
+      return false;
+    }
   }
 };

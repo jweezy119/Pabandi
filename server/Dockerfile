@@ -1,32 +1,40 @@
-# Use the official Node.js 18 image.
-# https://hub.docker.com/_/node
-FROM node:18-bullseye-slim
+# Stage 1: Build
+FROM node:18-bullseye-slim AS builder
 
-# Create and change to the app directory.
 WORKDIR /usr/src/app
 
 # Install native dependencies required for bcrypt and tensorflow
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# Copy application dependency manifests to the container image.
-# A wildcard is used to ensure both package.json AND package-lock.json are copied.
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies.
+# Install ALL dependencies (including devDependencies for build)
 RUN npm install
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Copy local code to the container image.
+# Copy source and build
 COPY . .
-
-# Build the app explicitly
+RUN npx prisma generate
 RUN npm run build
+
+# Stage 2: Production
+FROM node:18-bullseye-slim
+
+WORKDIR /usr/src/app
+
+# Install only production dependencies
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm install --omit=dev
+
+# Copy built files from builder
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
 # Run the web service on container startup.
 ENV PORT 8080
+ENV NODE_ENV production
 EXPOSE 8080
 
 CMD [ "npm", "start" ]
+
