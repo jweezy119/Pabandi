@@ -34,7 +34,8 @@ jobs:
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
             --region us-central1 \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars="NODE_ENV=production,DATABASE_URL=${{ secrets.DATABASE_URL }},SAFEPAY_API_KEY=${{ secrets.SAFEPAY_API_KEY }},SAFEPAY_SECRET_KEY=${{ secrets.SAFEPAY_SECRET_KEY }},SAFEPAY_WEBHOOK_SECRET=${{ secrets.SAFEPAY_WEBHOOK_SECRET }},FRONTEND_URL=${{ secrets.FRONTEND_URL }}"
 
   deploy-frontend:
     name: Deploy Frontend to Firebase
