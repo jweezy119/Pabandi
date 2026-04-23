@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../services/api';
 import {
   CalendarIcon, ClockIcon, UserGroupIcon,
-  BuildingStorefrontIcon, ChatBubbleLeftEllipsisIcon,
+  BuildingStorefrontIcon,
   CheckCircleIcon, ArrowLeftIcon, ShieldCheckIcon,
   CreditCardIcon, CurrencyDollarIcon, StarIcon,
   MapPinIcon, MagnifyingGlassIcon
@@ -15,10 +15,7 @@ import {
   Map,
   AdvancedMarker,
   Pin,
-  useMap,
   useMapsLibrary,
-  ControlPosition,
-  MapControl
 } from '@vis.gl/react-google-maps';
 
 const TIME_SLOTS = [
@@ -71,6 +68,13 @@ const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.ma
 
     const options = {
       fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos'],
+      // Bias results heavily toward Pakistan
+      componentRestrictions: { country: 'pk' },
+      bounds: new google.maps.LatLngBounds(
+        new google.maps.LatLng(23.5, 60.8),  // SW corner of Pakistan
+        new google.maps.LatLng(37.1, 77.8)   // NE corner of Pakistan
+      ),
+      strictBounds: false,
     };
 
     setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
@@ -99,7 +103,6 @@ const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.ma
 
 export default function NewReservationPage() {
   const { user } = useAuthStore();
-  const navigate = useNavigate();
 
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(null);
   const [onPabandi, setOnPabandi] = useState(false);
@@ -248,7 +251,7 @@ export default function NewReservationPage() {
   }
 
   return (
-    <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}>
+    <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} region="PK" language="en">
       <div style={{ background: 'var(--color-bg)', minHeight: '100vh', color: 'var(--color-text)' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
 
@@ -391,11 +394,10 @@ export default function NewReservationPage() {
                 
                 <div className="h-64 bg-gray-900 relative">
                   <Map
-                    mapId={'bf51a910020fa25a'} // Dark mode map ID
+                    mapId={'bf51a910020fa25a'}
                     defaultCenter={{ lat: 24.8607, lng: 67.0011 }}
-                    defaultZoom={12}
-                    center={selectedPlace?.location}
-                    zoom={selectedPlace?.location ? 15 : 12}
+                    defaultZoom={selectedPlace?.location ? 15 : 12}
+                    center={selectedPlace?.location ?? { lat: 24.8607, lng: 67.0011 }}
                     gestureHandling={'greedy'}
                     disableDefaultUI={true}
                   >

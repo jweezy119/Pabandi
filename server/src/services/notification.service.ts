@@ -116,6 +116,43 @@ export class NotificationService {
   }
 
   /**
+   * Send password reset email
+   */
+  async sendPasswordResetEmail(
+    email: string,
+    resetUrl: string,
+    firstName: string
+  ): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@karachibooking.pk',
+        to: email,
+        subject: 'Reset Your Pabandi Password',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #2563eb;">Password Reset Request</h2>
+            <p>Hello ${firstName},</p>
+            <p>We received a request to reset the password for your Pabandi account. Click the button below to choose a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Reset Password</a>
+            </div>
+            <p>This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+            <p style="font-size: 12px; color: #777;">&copy; 2025 Pabandi · Karachi, Pakistan</p>
+          </div>
+        `,
+      };
+
+      await emailTransporter.sendMail(mailOptions);
+      logger.info(`Password reset email sent to ${email}`);
+      return true;
+    } catch (error) {
+      logger.error('Failed to send password reset email', error);
+      return false;
+    }
+  }
+
+  /**
    * Send confirmation notification when reservation is created
    */
   async sendConfirmation(reservationId: string): Promise<void> {

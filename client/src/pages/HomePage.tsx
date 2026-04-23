@@ -101,7 +101,7 @@ export default function HomePage() {
               className="btn-primary text-base px-8 py-4">
               Get Started — It's Free
             </Link>
-            <Link to="/register?role=business" id="hero-cta-business"
+            <Link to="/join" id="hero-cta-business"
               className="btn-secondary text-base px-8 py-4">
               List Your Business →
             </Link>
