@@ -23,7 +23,7 @@ gcloud auth login
 firebase login
 
 # Initialize Google Cloud
-gcloud config set project [YOUR_PROJECT_ID]
+gcloud config set project pabandi
 gcloud services enable run.googleapis.com containerregistry.googleapis.com
 
 # Initialize Firebase
@@ -39,11 +39,11 @@ The backend is containerized. We push it to Google Container Registry and then d
 ```bash
 cd server
 # Build and push to GCR
-gcloud builds submit --tag gcr.io/[YOUR_PROJECT_ID]/pabandi-server
+gcloud builds submit --tag gcr.io/pabandi/pabandi-server
 
 # Deploy to Cloud Run
 gcloud run deploy pabandi-server \
-  --image gcr.io/[YOUR_PROJECT_ID]/pabandi-server \
+  --image gcr.io/pabandi/pabandi-server \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
@@ -64,7 +64,7 @@ The project includes a GitHub Action in `.github/workflows/deploy.yml`.
 To use it:
 1.  Push your code to GitHub.
 2.  Add the following **Secrets** to your GitHub repository (`Settings > Secrets and variables > Actions`):
-    - `GCP_PROJECT_ID`: Your Google Cloud Project ID.
+    - `GCP_PROJECT_ID`: pabandi
     - `GCP_SA_KEY`: A JSON Key for a Service Account with "Cloud Run Admin" and "Storage Admin" roles.
     - `FIREBASE_TOKEN`: Obtain by running `firebase login:ci`.
 
