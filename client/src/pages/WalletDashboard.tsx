@@ -56,29 +56,29 @@ function WalletOption({
       disabled={disabled || loading}
       className="w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
       style={{
-        background: 'rgba(255,255,255,0.04)',
-        borderColor: 'rgba(255,255,255,0.09)',
+        background: 'var(--color-surface)',
+        borderColor: 'var(--color-border)',
       }}
       onMouseEnter={e => {
         if (!disabled && !loading) {
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,179,237,0.4)';
+          (e.currentTarget as HTMLElement).style.background = '#f9fafb';
+          (e.currentTarget as HTMLElement).style.borderColor = '#d1d5db';
         }
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
+        (e.currentTarget as HTMLElement).style.background = 'var(--color-surface)';
+        (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)';
       }}
     >
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-        style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gray-50"
+        >
         {loading ? (
           <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
         ) : icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm" style={{ color: '#e8edf3' }}>{name}</span>
+          <span className="font-semibold text-sm text-slate-900" >{name}</span>
           {badge && (
             <span className="text-xs px-2 py-0.5 rounded-full font-medium"
               style={{ background: 'rgba(59,130,246,0.15)', color: '#93c5fd' }}>
@@ -86,7 +86,7 @@ function WalletOption({
             </span>
           )}
         </div>
-        <p className="text-xs mt-0.5 truncate" style={{ color: '#7a90a8' }}>{desc}</p>
+        <p className="text-xs mt-0.5 truncate text-slate-600" >{desc}</p>
       </div>
       <ArrowUpRightIcon className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ color: '#60a5fa' }} />
@@ -183,7 +183,7 @@ const WalletDashboard: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-sm" style={{ color: '#7a90a8' }}>Loading wallet...</p>
+        <p className="text-sm text-slate-600" >Loading wallet...</p>
       </div>
     </div>
   );
@@ -195,8 +195,8 @@ const WalletDashboard: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black" style={{ color: '#e8edf3' }}>Pabandi Wallet</h1>
-            <p className="mt-1 text-sm" style={{ color: '#7a90a8' }}>
+            <h1 className="text-3xl font-black text-slate-900" >Pabandi Wallet</h1>
+            <p className="mt-1 text-sm text-slate-600" >
               Track your PAB rewards and connect your crypto wallet
             </p>
           </div>
@@ -261,16 +261,16 @@ const WalletDashboard: React.FC = () => {
           <div className="rounded-2xl p-6 flex flex-col justify-between"
             style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#5a7490' }}>
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-700" >
                 Estimated Value
               </h3>
               <CurrencyDollarIcon className="h-5 w-5" style={{ color: '#10b981' }} />
             </div>
             <div className="mt-3">
-              <p className="text-3xl font-black" style={{ color: '#e8edf3' }}>
+              <p className="text-3xl font-black text-slate-900" >
                 ${((wallet?.balance || 0) * 0.15).toFixed(2)}
               </p>
-              <p className="text-xs mt-1" style={{ color: '#5a7490' }}>Based on current PAB/USDT rate</p>
+              <p className="text-xs mt-1 text-slate-700" >Based on current PAB/USDT rate</p>
             </div>
             <div className="mt-5 pt-4 flex items-center justify-between"
               style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -291,7 +291,7 @@ const WalletDashboard: React.FC = () => {
           style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="px-6 py-4 flex justify-between items-center"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="font-bold" style={{ color: '#e8edf3' }}>Recent Rewards</h3>
+            <h3 className="font-bold text-slate-900" >Recent Rewards</h3>
             <button className="text-sm font-medium" style={{ color: '#60a5fa' }}>View All</button>
           </div>
           <div>
@@ -311,10 +311,10 @@ const WalletDashboard: React.FC = () => {
                       : <CheckCircleIcon className="h-4 w-4" />}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: '#e8edf3' }}>
+                    <p className="text-sm font-semibold text-slate-900" >
                       {reward.type === 'GOOGLE_REVIEW' ? 'Proof of Review Reward' : 'Proof of Reservation Reward'}
                     </p>
-                    <p className="text-xs" style={{ color: '#5a7490' }}>
+                    <p className="text-xs text-slate-700" >
                       {reward.business} · {reward.date}
                     </p>
                   </div>
@@ -332,18 +332,17 @@ const WalletDashboard: React.FC = () => {
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
           <div className="w-full max-w-sm rounded-3xl p-6"
-            style={{ background: '#0d1724', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
 
             {/* Modal header */}
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-black" style={{ color: '#e8edf3' }}>Connect Wallet</h2>
-                <p className="text-xs mt-0.5" style={{ color: '#5a7490' }}>Choose your preferred wallet</p>
+                <h2 className="text-xl font-black text-slate-900" >Connect Wallet</h2>
+                <p className="text-xs mt-0.5 text-slate-700" >Choose your preferred wallet</p>
               </div>
               <button onClick={() => setShowModal(false)}
-                className="p-2 rounded-xl transition-colors"
-                style={{ color: '#7a90a8', background: 'rgba(255,255,255,0.05)' }}>
-                <XMarkIcon className="h-5 w-5" />
+                className="p-2 rounded-xl transition-colors bg-gray-100 hover:bg-gray-200">
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
               </button>
             </div>
 
@@ -390,7 +389,7 @@ const WalletDashboard: React.FC = () => {
               />
             </div>
 
-            <p className="text-center text-xs mt-5" style={{ color: '#3d5068' }}>
+            <p className="text-center text-xs mt-5 text-slate-800" >
               By connecting, you agree to our{' '}
               <a href="#" className="underline" style={{ color: '#60a5fa' }}>Terms of Service</a>.
               Your wallet address is stored securely.

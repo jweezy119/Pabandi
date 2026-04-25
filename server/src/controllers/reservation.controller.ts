@@ -8,6 +8,7 @@ import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
 import { reliabilityService } from '../services/reliability.service';
 import { safepayService } from '../services/safepay.service';
+import { webhookService } from '../services/webhook.service';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -159,6 +160,16 @@ export const createReservation = async (
        checkoutUrl = await safepayService.createCheckoutUrl(depositAmount, reservation.id);
     }
 
+    // Trigger Webhook
+    webhookService.dispatch('reservation.created', businessId, {
+      reservation,
+      checkoutUrl,
+      prediction: {
+        riskScore: prediction.riskScore,
+        requiresDeposit: requireDeposit,
+      },
+    });
+
     // TODO: Send confirmation notification
 
     res.status(201).json({
@@ -259,6 +270,11 @@ export const updateReservation = async (
       data: updates,
     });
 
+    // Trigger Webhook
+    webhookService.dispatch('reservation.updated', updated.businessId, {
+      reservation: updated,
+    });
+
     res.json({
       success: true,
       message: 'Reservation updated successfully',
@@ -324,6 +340,11 @@ export const cancelReservation = async (
 
     const isLateCancel = reservationDateTime.diff(moment(), 'hours') < (cancellationHours + 12);
     await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'CANCELLED', isLateCancel);
+
+    // Trigger Webhook
+    webhookService.dispatch('reservation.cancelled', cancelled.businessId, {
+      reservation: cancelled,
+    });
 
     // TODO: Process refunds if deposit was paid
 

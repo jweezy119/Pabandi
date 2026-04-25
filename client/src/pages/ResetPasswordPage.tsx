@@ -50,13 +50,13 @@ export default function ResetPasswordPage() {
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight" style={{ color: '#e8edf3' }}>Pabandi</span>
+            <span className="text-xl font-black tracking-tight text-slate-900" >Pabandi</span>
           </Link>
         </div>
 
         <div className="auth-panel p-8">
-          <h1 className="text-2xl font-bold mb-2" style={{ color: '#e8edf3' }}>Reset Password</h1>
-          <p className="text-sm mb-6" style={{ color: '#7a90a8' }}>
+          <h1 className="text-2xl font-bold mb-2 text-slate-900" >Reset Password</h1>
+          <p className="text-sm mb-6 text-slate-600" >
             Choose a new password for your account.
           </p>
 
@@ -80,16 +80,14 @@ export default function ResetPasswordPage() {
               )}
               
               <div>
-                <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: '#5a7490' }}>New Password</label>
+                <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >New Password</label>
                 <input id="password" type="password" required
                   value={password} onChange={(e) => setPassword(e.target.value)}
                   className="input-field" placeholder="Min. 8 characters" />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: '#5a7490' }}>Confirm New Password</label>
+                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Confirm New Password</label>
                 <input id="confirmPassword" type="password" required
                   value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                   className="input-field" placeholder="••••••••" />

@@ -141,6 +141,7 @@ model Business {
   tables          Table[]
   settings        BusinessSettings?
   googleReviews   GoogleReview[]
+  webhookEndpoints WebhookEndpoint[]
 
   @@index([ownerId])
   @@index([city])
@@ -345,6 +346,21 @@ model GoogleReview {
   createdAt       DateTime @default(now())
 
   business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model WebhookEndpoint {
+  id               String   @id @default(cuid())
+  businessId       String
+  targetUrl        String
+  subscribedEvents String[]
+  isActive         Boolean  @default(true)
+  signingSecret    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }

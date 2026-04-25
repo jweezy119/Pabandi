@@ -43,7 +43,7 @@ export default function AuthCallbackPage() {
       style={{ background: 'var(--color-bg)' }}>
       <div className="text-center">
         <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm" style={{ color: '#7a90a8' }}>Completing sign-in…</p>
+        <p className="text-sm text-slate-600" >Completing sign-in…</p>
       </div>
     </div>
   );
