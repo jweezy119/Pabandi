@@ -30,8 +30,8 @@ export default function ReservationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black" style={{ color: '#e8edf3' }}>My Reservations</h1>
-            <p className="mt-1 text-sm" style={{ color: '#7a90a8' }}>View and manage your bookings</p>
+            <h1 className="text-3xl font-black text-slate-900" >My Reservations</h1>
+            <p className="mt-1 text-sm text-slate-600" >View and manage your bookings</p>
           </div>
           <Link to="/reservations/new" className="btn-primary flex items-center gap-2 text-sm self-start sm:self-auto">
             <PlusIcon className="h-4 w-4" /> New Reservation
@@ -42,7 +42,7 @@ export default function ReservationsPage() {
         {isLoading && (
           <div className="flex items-center justify-center py-20 gap-3">
             <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm" style={{ color: '#7a90a8' }}>Loading reservations…</span>
+            <span className="text-sm text-slate-600" >Loading reservations…</span>
           </div>
         )}
 
@@ -50,9 +50,9 @@ export default function ReservationsPage() {
         {!isLoading && reservations.length === 0 && (
           <div className="rounded-2xl py-16 text-center"
             style={{ background: 'var(--color-surface-raised)', border: '1px dashed rgba(255,255,255,0.09)' }}>
-            <CalendarIcon className="h-12 w-12 mx-auto mb-4" style={{ color: '#3d5068' }} />
-            <h3 className="text-lg font-bold mb-2" style={{ color: '#e8edf3' }}>No reservations yet</h3>
-            <p className="text-sm mb-6" style={{ color: '#7a90a8' }}>
+            <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-slate-800" />
+            <h3 className="text-lg font-bold mb-2 text-slate-900" >No reservations yet</h3>
+            <p className="text-sm mb-6 text-slate-600" >
               Make your first booking to see it here.
             </p>
             <Link to="/reservations/new" className="btn-primary inline-flex items-center gap-2 text-sm">
@@ -82,11 +82,11 @@ export default function ReservationsPage() {
                           <CalendarIcon className="h-5 w-5" style={{ color: '#60a5fa' }} />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold" style={{ color: '#e8edf3' }}>
+                          <h3 className="text-base font-bold text-slate-900" >
                             {r.business?.name || 'Business'}
                           </h3>
                           {r.business?.address && (
-                            <p className="text-xs mt-0.5" style={{ color: '#5a7490' }}>{r.business.address}</p>
+                            <p className="text-xs mt-0.5 text-slate-700" >{r.business.address}</p>
                           )}
                         </div>
                       </div>
@@ -99,8 +99,8 @@ export default function ReservationsPage() {
                         ].map(({ label, value }) => (
                           <div key={label} className="rounded-xl p-3"
                             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#3d5068' }}>{label}</p>
-                            <p className="text-sm font-bold" style={{ color: '#a0b4c8' }}>{value}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider mb-1 text-slate-800" >{label}</p>
+                            <p className="text-sm font-bold text-slate-500" >{value}</p>
                           </div>
                         ))}
                       </div>
@@ -114,7 +114,7 @@ export default function ReservationsPage() {
                       </span>
 
                       {r.riskScore && (
-                        <p className="text-xs" style={{ color: '#5a7490' }}>Risk: {r.riskScore}</p>
+                        <p className="text-xs text-slate-700" >Risk: {r.riskScore}</p>
                       )}
 
                       {r.transactionHash && (

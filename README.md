@@ -4,11 +4,12 @@ Pabandi is an AI-powered booking and reservation platform that predicts and miti
 
 ## 🎯 Features
 
-- **Business Management**: Complete business registration and profile management
-- **Smart Reservations**: AI-powered booking system with no-show prediction
-- **Payment Integration**: Secure payment processing compatible with JazzCash and EasyPaisa
+- **Business Management**: Complete business registration, webhook integrations, and CRM compatibility
+- **Customer Experience**: Dedicated portals for customers to track bookings, manage their Pabandi Web3 Wallet, and earn crypto rewards for reliable behavior
+- **Smart Reservations**: AI-powered booking system that calculates a dynamic "no-show risk score" based on user history and local factors
+- **Payment Integration**: Secure fiat processing via **Safepay** (compatible with local cards, JazzCash, EasyPaisa) and native **Web3 Crypto Payments** (Solana, BNB Smart Chain)
 - **Automated Reminders**: SMS and email notifications to reduce no-shows
-- **Analytics Dashboard**: Real-time insights into booking patterns and revenue
+- **Analytics Dashboard**: Real-time insights into booking patterns, revenue, and crypto rewards
 - **Regulatory Compliance**: Built with Pakistan's data protection and e-commerce regulations in mind
 
 ## 🏗️ Architecture
@@ -17,8 +18,9 @@ Pabandi is an AI-powered booking and reservation platform that predicts and miti
 - **Frontend**: React + TypeScript + TailwindCSS
 - **Database**: PostgreSQL with Prisma ORM
 - **AI/ML**: TensorFlow.js for no-show prediction models
-- **Authentication**: JWT-based authentication
-- **Notifications**: Twilio SMS + SendGrid Email
+- **Authentication**: JWT-based authentication & Google/Facebook OAuth
+- **Payments**: Safepay (Fiat) & Ethers.js/Solana Web3.js (Crypto)
+- **Notifications**: Twilio SMS + SendGrid Email + Outbound Webhooks
 
 ## 🚀 Quick Start
 
@@ -86,9 +88,15 @@ This application is designed with compliance in mind:
 
 The platform uses machine learning to:
 - Predict no-show probability for each reservation
-- Recommend optimal deposit amounts
-- Suggest reminder timing for customers
-- Identify patterns in booking behavior
+- Calculate a real-time risk score based on customer reliability, weather, time, and historical data
+- Automatically enforce dynamic deposit amounts (via Safepay) for high-risk bookings
+- Identify patterns in booking behavior to optimize table turnover
+
+## 💰 Payments & Crypto Ecosystem
+
+Pabandi features a dual-payment architecture:
+1. **Safepay Integration**: Handles standard fiat transactions, allowing businesses to capture deposits seamlessly using local Pakistani payment methods (Credit/Debit, JazzCash).
+2. **Web3 Crypto Wallet**: Customers can connect their MetaMask (BNB Smart Chain) or Phantom (Solana) wallets to the platform. They earn `$PAB` token rewards for successful check-ins and verified Google reviews, driving loyalty through decentralized incentives.
 
 ## 📱 API Documentation
 

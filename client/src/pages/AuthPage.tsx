@@ -144,7 +144,7 @@ export default function AuthPage() {
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 16px rgba(37,99,235,0.4)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight" style={{ color: '#e8edf3' }}>Pabandi</span>
+            <span className="text-xl font-black tracking-tight text-slate-900" >Pabandi</span>
           </Link>
         </div>
 
@@ -197,12 +197,12 @@ export default function AuthPage() {
 
           {/* Heading */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold" style={{ color: '#e8edf3' }}>
+            <h1 className="text-2xl font-bold text-slate-900" >
               {isSignup
                 ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
                 : 'Welcome Back'}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: '#7a90a8' }}>
+            <p className="mt-1 text-sm text-slate-600" >
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
@@ -242,8 +242,7 @@ export default function AuthPage() {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="firstName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                      style={{ color: '#5a7490' }}>First Name</label>
+                    <label htmlFor="firstName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >First Name</label>
                     <input id="firstName" name="firstName" type="text" required
                       value={formData.firstName} onChange={handleChange}
                       className={`input-field ${fieldErrors.firstName ? 'border-red-500/50' : ''}`}
@@ -251,8 +250,7 @@ export default function AuthPage() {
                     {fieldErrors.firstName && <FieldError msg={fieldErrors.firstName} />}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                      style={{ color: '#5a7490' }}>Last Name</label>
+                    <label htmlFor="lastName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Last Name</label>
                     <input id="lastName" name="lastName" type="text" required
                       value={formData.lastName} onChange={handleChange}
                       className={`input-field ${fieldErrors.lastName ? 'border-red-500/50' : ''}`}
@@ -264,22 +262,20 @@ export default function AuthPage() {
                 {isBusiness && (
                   <>
                     <div>
-                      <label htmlFor="businessName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                        style={{ color: '#5a7490' }}>Business Name</label>
+                      <label htmlFor="businessName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Business Name</label>
                       <input id="businessName" name="businessName" type="text" required
                         value={formData.businessName} onChange={handleChange}
                         className="input-field" placeholder="e.g. Saleem's Barbershop" />
                     </div>
                     <div>
-                      <label htmlFor="googlePlaceId" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                        style={{ color: '#5a7490' }}>
+                      <label htmlFor="googlePlaceId" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >
                         Google Place ID
-                        <span className="ml-1 normal-case font-normal" style={{ color: '#3d5068' }}>(optional)</span>
+                        <span className="ml-1 normal-case font-normal text-slate-800" >(optional)</span>
                       </label>
                       <input id="googlePlaceId" name="googlePlaceId" type="text"
                         value={formData.googlePlaceId} onChange={handleChange}
                         className="input-field" placeholder="ChIJ..." />
-                      <p className="mt-1.5 text-xs" style={{ color: '#3d5068' }}>
+                      <p className="mt-1.5 text-xs text-slate-800" >
                         Find your Place ID at{' '}
                         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id"
                           target="_blank" rel="noreferrer" className="underline" style={{ color: '#60a5fa' }}>
@@ -291,10 +287,9 @@ export default function AuthPage() {
                 )}
 
                 <div>
-                  <label htmlFor="phone" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                    style={{ color: '#5a7490' }}>
+                  <label htmlFor="phone" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >
                     Phone
-                    <span className="ml-1 normal-case font-normal" style={{ color: '#3d5068' }}>(optional)</span>
+                    <span className="ml-1 normal-case font-normal text-slate-800" >(optional)</span>
                   </label>
                   <input id="phone" name="phone" type="tel"
                     value={formData.phone} onChange={handleChange}
@@ -307,8 +302,7 @@ export default function AuthPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                style={{ color: '#5a7490' }}>Email</label>
+              <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Email</label>
               <input id="email" name="email" type="email" autoComplete="email" required
                 value={formData.email} onChange={handleChange}
                 className={`input-field ${fieldErrors.email ? 'border-red-500/50' : ''}`}
@@ -319,8 +313,7 @@ export default function AuthPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wide"
-                  style={{ color: '#5a7490' }}>Password</label>
+                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wide text-slate-700" >Password</label>
                 {!isSignup && (
                   <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold hover:underline" style={{ color: '#60a5fa' }}>
                     Forgot password?
@@ -334,7 +327,7 @@ export default function AuthPage() {
                 className={`input-field ${fieldErrors.password ? 'border-red-500/50' : ''}`}
                 placeholder="Min. 8 characters" />
               {isSignup && !fieldErrors.password && (
-                <p className="mt-1 text-xs" style={{ color: '#3d5068' }}>At least 8 characters</p>
+                <p className="mt-1 text-xs text-slate-800" >At least 8 characters</p>
               )}
               {fieldErrors.password && <FieldError msg={fieldErrors.password} />}
             </div>
@@ -342,8 +335,7 @@ export default function AuthPage() {
             {/* Confirm Password */}
             {isSignup && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide"
-                  style={{ color: '#5a7490' }}>Confirm Password</label>
+                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Confirm Password</label>
                 <input id="confirmPassword" name="confirmPassword" type="password"
                   autoComplete="new-password" required
                   value={formData.confirmPassword} onChange={handleChange}
@@ -372,7 +364,7 @@ export default function AuthPage() {
           </form>
 
           {/* Footer note */}
-          <p className="text-center text-xs mt-6" style={{ color: '#3d5068' }}>
+          <p className="text-center text-xs mt-6 text-slate-800" >
             {isSignup ? (
               <>Already have an account?{' '}
                 <button onClick={() => { setMode('login'); setError(''); }}
@@ -392,7 +384,7 @@ export default function AuthPage() {
         </div>
 
         {/* Trust badges */}
-        <div className="flex items-center justify-center gap-6 mt-6 text-xs" style={{ color: '#3d5068' }}>
+        <div className="flex items-center justify-center gap-6 mt-6 text-xs text-slate-800" >
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
               stroke="currentColor" strokeWidth={2.5}>

@@ -27,8 +27,7 @@ const TIME_SLOTS = [
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold uppercase tracking-widest mb-2"
-      style={{ color: '#5a7490' }}>
+    <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >
       {children}
     </label>
   );
@@ -36,8 +35,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 function InputIcon({ icon }: { icon: React.ReactNode }) {
   return (
-    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-      style={{ color: '#3d5068' }}>
+    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-800" >
       {icon}
     </div>
   );
@@ -227,18 +225,18 @@ export default function NewReservationPage() {
             style={{ background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(52,211,153,0.3)' }}>
             <CheckCircleIcon className="h-10 w-10" style={{ color: '#34d399' }} />
           </div>
-          <h2 className="text-2xl font-black mb-3" style={{ color: '#e8edf3' }}>Reservation Submitted!</h2>
-          <p className="text-sm mb-2" style={{ color: '#7a90a8' }}>
-            <span style={{ color: '#e8edf3', fontWeight: 600 }}>{selectedPlace?.name}</span>
+          <h2 className="text-2xl font-black mb-3 text-slate-900" >Reservation Submitted!</h2>
+          <p className="text-sm mb-2 text-slate-600" >
+            <span style={{ fontWeight: 600 }}>{selectedPlace?.name}</span>
           </p>
-          <p className="text-sm mb-2" style={{ color: '#7a90a8' }}>
+          <p className="text-sm mb-2 text-slate-600" >
             {new Date(form.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             {' at '}{form.time} · {form.guests} {Number(form.guests) === 1 ? 'guest' : 'guests'}
           </p>
           <div className="flex gap-3 justify-center mt-8">
             <button onClick={() => { setSuccess(false); setForm({ date: '', time: '', guests: '2', notes: '', paymentMethod: 'safepay' }); setSelectedPlace(null); }}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#a0b4c8', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
               Add Another
             </button>
             <Link to="/reservations" className="btn-primary text-sm px-5 py-2.5">
@@ -256,14 +254,13 @@ export default function NewReservationPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
 
           <Link to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors"
-            style={{ color: '#5a7490' }}>
+            className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-slate-700" >
             <ArrowLeftIcon className="h-4 w-4" /> Back to Dashboard
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-black" style={{ color: '#e8edf3' }}>New Reservation</h1>
-            <p className="mt-1.5 text-sm" style={{ color: '#7a90a8' }}>
+            <h1 className="text-3xl font-black text-slate-900" >New Reservation</h1>
+            <p className="mt-1.5 text-sm text-slate-600" >
               Discover places via Google Maps and book instantly.
             </p>
           </div>
@@ -328,8 +325,7 @@ export default function NewReservationPage() {
                     <div className="flex items-center gap-3">
                       <button type="button"
                         onClick={() => setForm(f => ({ ...f, guests: String(Math.max(1, parseInt(f.guests) - 1)) }))}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5"
-                        style={{ color: '#e8edf3' }}>
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5 text-slate-900" >
                         −
                       </button>
                       <div className="relative flex-1">
@@ -342,8 +338,7 @@ export default function NewReservationPage() {
                       </div>
                       <button type="button"
                         onClick={() => setForm(f => ({ ...f, guests: String(Math.min(50, parseInt(f.guests) + 1)) }))}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5"
-                        style={{ color: '#e8edf3' }}>
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5 text-slate-900" >
                         +
                       </button>
                     </div>
@@ -414,10 +409,10 @@ export default function NewReservationPage() {
                     {selectedPlace.photoUrl && (
                       <img src={selectedPlace.photoUrl} alt="Business" className="w-full h-32 object-cover rounded-xl mb-4" />
                     )}
-                    <h3 className="text-xl font-bold mb-1" style={{ color: '#e8edf3' }}>{selectedPlace.name}</h3>
+                    <h3 className="text-xl font-bold mb-1 text-slate-900" >{selectedPlace.name}</h3>
                     <div className="flex items-center gap-1.5 mb-3">
                       <StarIcon className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-bold" style={{ color: '#e8edf3' }}>{selectedPlace.rating || 'N/A'}</span>
+                      <span className="text-sm font-bold text-slate-900" >{selectedPlace.rating || 'N/A'}</span>
                       <span className="text-xs text-gray-500">({selectedPlace.userRatingsTotal || 0} reviews)</span>
                     </div>
                     <div className="flex items-start gap-2 mb-6">
@@ -456,7 +451,7 @@ export default function NewReservationPage() {
 
           </div>
 
-          <p className="text-center text-xs mt-10" style={{ color: '#3d5068' }}>
+          <p className="text-center text-xs mt-10 text-slate-800" >
             By booking via Pabandi, you earn crypto rewards and build your global reputation score.
           </p>
         </div>

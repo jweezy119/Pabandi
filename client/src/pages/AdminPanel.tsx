@@ -29,9 +29,9 @@ const STATUS_TEXT: Record<string, string> = {
 function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
   return (
     <div className="rounded-2xl p-6" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-      <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >{label}</p>
       <p className="text-4xl font-black mb-1" style={{ color }}>{value}</p>
-      {sub && <p className="text-xs" style={{ color: '#3d5068' }}>{sub}</p>}
+      {sub && <p className="text-xs text-slate-800" >{sub}</p>}
     </div>
   );
 }
@@ -100,13 +100,12 @@ export default function AdminPanel() {
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
               style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)' }}>P</div>
-            <span className="font-bold text-sm" style={{ color: '#e8edf3' }}>Pabandi Admin</span>
+            <span className="font-bold text-sm text-slate-900" >Pabandi Admin</span>
             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest"
               style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>ADMIN</span>
           </div>
           <button onClick={() => { logout(); navigate('/login'); }}
-            className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
-            style={{ color: '#5a7490' }}>
+            className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80 text-slate-700" >
             <ArrowRightOnRectangleIcon className="h-4 w-4" /> Sign Out
           </button>
         </div>
@@ -132,13 +131,13 @@ export default function AdminPanel() {
         {tab === 'overview' && (
           <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-black mb-1" style={{ color: '#e8edf3' }}>Platform Overview</h1>
-              <p className="text-sm" style={{ color: '#5a7490' }}>Real-time metrics across all of Pabandi.</p>
+              <h1 className="text-2xl font-black mb-1 text-slate-900" >Platform Overview</h1>
+              <p className="text-sm text-slate-700" >Real-time metrics across all of Pabandi.</p>
             </div>
 
             {/* Funnel */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#3d5068' }}>Conversion Funnel</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-slate-800" >Conversion Funnel</p>
               <div className="grid grid-cols-3 gap-4">
                 <StatCard label="Signed Up" value={stats?.signedUp ?? '—'} sub="Total registered users" color="#60a5fa" />
                 <StatCard label="Made Reservation" value={stats?.madeReservation ?? '—'} sub="Users with ≥1 booking" color="#a78bfa" />
@@ -148,30 +147,30 @@ export default function AdminPanel() {
 
             {/* Recent Users */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#3d5068' }}>Recent Sign-ups</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-slate-800" >Recent Sign-ups</p>
               <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       {['Name', 'Email', 'Role', 'Reservations', 'Joined'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest" style={{ color: '#3d5068' }}>{h}</th>
+                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-slate-800" >{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {users.slice(0, 8).map((u: any) => (
                       <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td className="px-4 py-3 font-medium" style={{ color: '#e8edf3' }}>{u.firstName} {u.lastName}</td>
-                        <td className="px-4 py-3" style={{ color: '#7a90a8' }}>{u.email}</td>
+                        <td className="px-4 py-3 font-medium text-slate-900" >{u.firstName} {u.lastName}</td>
+                        <td className="px-4 py-3 text-slate-600" >{u.email}</td>
                         <td className="px-4 py-3"><Badge status={u.role} /></td>
-                        <td className="px-4 py-3 text-center font-bold" style={{ color: '#e8edf3' }}>{u._count?.reservations ?? 0}</td>
-                        <td className="px-4 py-3" style={{ color: '#3d5068' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-center font-bold text-slate-900" >{u._count?.reservations ?? 0}</td>
+                        <td className="px-4 py-3 text-slate-800" >{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {users.length === 0 && (
-                  <p className="text-center py-12 text-sm" style={{ color: '#3d5068' }}>No users yet.</p>
+                  <p className="text-center py-12 text-sm text-slate-800" >No users yet.</p>
                 )}
               </div>
             </div>
@@ -182,7 +181,7 @@ export default function AdminPanel() {
         {tab === 'users' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black" style={{ color: '#e8edf3' }}>Users <span className="text-base font-normal" style={{ color: '#5a7490' }}>({usersData?.total ?? 0})</span></h2>
+              <h2 className="text-2xl font-black text-slate-900" >Users <span className="text-base font-normal text-slate-700" >({usersData?.total ?? 0})</span></h2>
               <div className="flex gap-2">
                 {['', 'CUSTOMER', 'BUSINESS_OWNER', 'ADMIN'].map(r => (
                   <button key={r} onClick={() => setUserFilter(r)}
@@ -203,26 +202,26 @@ export default function AdminPanel() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {['Name', 'Email', 'Phone', 'Role', 'Business', '# Bookings', 'Joined'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest" style={{ color: '#3d5068' }}>{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-slate-800" >{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u: any) => (
                     <tr key={u.id} className="hover:bg-white/[0.02] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td className="px-4 py-3 font-semibold" style={{ color: '#e8edf3' }}>{u.firstName} {u.lastName}</td>
-                      <td className="px-4 py-3" style={{ color: '#7a90a8' }}>{u.email}</td>
-                      <td className="px-4 py-3" style={{ color: '#5a7490' }}>{u.phone || '—'}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-900" >{u.firstName} {u.lastName}</td>
+                      <td className="px-4 py-3 text-slate-600" >{u.email}</td>
+                      <td className="px-4 py-3 text-slate-700" >{u.phone || '—'}</td>
                       <td className="px-4 py-3"><Badge status={u.role} /></td>
-                      <td className="px-4 py-3" style={{ color: '#5a7490' }}>{u.business?.name || '—'}</td>
-                      <td className="px-4 py-3 text-center font-bold" style={{ color: '#e8edf3' }}>{u._count?.reservations ?? 0}</td>
-                      <td className="px-4 py-3 text-xs" style={{ color: '#3d5068' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-slate-700" >{u.business?.name || '—'}</td>
+                      <td className="px-4 py-3 text-center font-bold text-slate-900" >{u._count?.reservations ?? 0}</td>
+                      <td className="px-4 py-3 text-xs text-slate-800" >{new Date(u.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {users.length === 0 && (
-                <p className="text-center py-12 text-sm" style={{ color: '#3d5068' }}>No users found.</p>
+                <p className="text-center py-12 text-sm text-slate-800" >No users found.</p>
               )}
             </div>
           </div>
@@ -232,7 +231,7 @@ export default function AdminPanel() {
         {tab === 'reservations' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="text-2xl font-black" style={{ color: '#e8edf3' }}>Reservations <span className="text-base font-normal" style={{ color: '#5a7490' }}>({reservationsData?.total ?? 0})</span></h2>
+              <h2 className="text-2xl font-black text-slate-900" >Reservations <span className="text-base font-normal text-slate-700" >({reservationsData?.total ?? 0})</span></h2>
               <div className="flex gap-2 flex-wrap">
                 {['', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].map(s => (
                   <button key={s} onClick={() => setStatusFilter(s)}
@@ -253,31 +252,31 @@ export default function AdminPanel() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {['Customer', 'Business', 'Date', 'Time', 'Guests', 'Status', 'Deposit', 'Created'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest" style={{ color: '#3d5068' }}>{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-slate-800" >{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {reservations.map((r: any) => (
                     <tr key={r.id} className="hover:bg-white/[0.02] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td className="px-4 py-3 font-medium" style={{ color: '#e8edf3' }}>{r.customer?.firstName} {r.customer?.lastName}</td>
-                      <td className="px-4 py-3" style={{ color: '#7a90a8' }}>{r.business?.name}</td>
-                      <td className="px-4 py-3" style={{ color: '#a0b4c8' }}>{new Date(r.reservationDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3" style={{ color: '#5a7490' }}>{r.reservationTime}</td>
-                      <td className="px-4 py-3 text-center" style={{ color: '#e8edf3' }}>{r.numberOfGuests}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900" >{r.customer?.firstName} {r.customer?.lastName}</td>
+                      <td className="px-4 py-3 text-slate-600" >{r.business?.name}</td>
+                      <td className="px-4 py-3 text-slate-500" >{new Date(r.reservationDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-slate-700" >{r.reservationTime}</td>
+                      <td className="px-4 py-3 text-center text-slate-900" >{r.numberOfGuests}</td>
                       <td className="px-4 py-3"><Badge status={r.status} /></td>
                       <td className="px-4 py-3">
                         <span className="text-[10px] font-bold" style={{ color: r.depositStatus === 'PAID' ? '#34d399' : '#fbbf24' }}>
                           {r.depositStatus || 'NONE'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: '#3d5068' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-xs text-slate-800" >{new Date(r.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {reservations.length === 0 && (
-                <p className="text-center py-12 text-sm" style={{ color: '#3d5068' }}>No reservations found.</p>
+                <p className="text-center py-12 text-sm text-slate-800" >No reservations found.</p>
               )}
             </div>
           </div>
@@ -286,7 +285,7 @@ export default function AdminPanel() {
         {/* ── BUSINESSES ───────────────────────────────── */}
         {tab === 'businesses' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-black" style={{ color: '#e8edf3' }}>Businesses <span className="text-base font-normal" style={{ color: '#5a7490' }}>({businesses.length})</span></h2>
+            <h2 className="text-2xl font-black text-slate-900" >Businesses <span className="text-base font-normal text-slate-700" >({businesses.length})</span></h2>
 
             <div className="grid gap-4">
               {businesses.map((b: any) => (
@@ -299,11 +298,11 @@ export default function AdminPanel() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold truncate" style={{ color: '#e8edf3' }}>{b.name}</p>
+                        <p className="font-bold truncate text-slate-900" >{b.name}</p>
                         {b.isVerified && <CheckBadgeIcon className="h-4 w-4 text-emerald-400 shrink-0" />}
                       </div>
-                      <p className="text-xs truncate" style={{ color: '#5a7490' }}>{b.category} · {b.address}</p>
-                      <p className="text-xs mt-0.5" style={{ color: '#3d5068' }}>
+                      <p className="text-xs truncate text-slate-700" >{b.category} · {b.address}</p>
+                      <p className="text-xs mt-0.5 text-slate-800" >
                         Owner: {b.owner?.firstName} {b.owner?.lastName} ({b.owner?.email}) · {b._count?.reservations} reservations
                       </p>
                     </div>
@@ -324,7 +323,7 @@ export default function AdminPanel() {
                 </div>
               ))}
               {businesses.length === 0 && (
-                <p className="text-center py-12 text-sm" style={{ color: '#3d5068' }}>No businesses registered yet.</p>
+                <p className="text-center py-12 text-sm text-slate-800" >No businesses registered yet.</p>
               )}
             </div>
           </div>

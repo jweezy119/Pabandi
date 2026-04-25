@@ -28,10 +28,10 @@ function StatCard({ icon, label, value, color }: {
         {icon}
       </div>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#5a7490' }}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-1 text-slate-700" >
           {label}
         </p>
-        <p className="text-2xl font-black" style={{ color: '#e8edf3' }}>{value}</p>
+        <p className="text-2xl font-black text-slate-900" >{value}</p>
       </div>
     </div>
   );
@@ -59,7 +59,7 @@ function RevenueCard({ label, amount, sub, icon, gradient }: {
 function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between mb-6">
-      <h2 className="text-lg font-bold" style={{ color: '#e8edf3' }}>{title}</h2>
+      <h2 className="text-lg font-bold text-slate-900" >{title}</h2>
       {action}
     </div>
   );
@@ -91,8 +91,8 @@ export default function BusinessDashboard() {
             style={{ background: 'rgba(59,130,246,0.12)' }}>
             <CurrencyDollarIcon className="h-8 w-8" style={{ color: '#60a5fa' }} />
           </div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: '#e8edf3' }}>No Business Registered</h2>
-          <p className="mb-6 text-sm" style={{ color: '#7a90a8' }}>
+          <h2 className="text-2xl font-bold mb-3 text-slate-900" >No Business Registered</h2>
+          <p className="mb-6 text-sm text-slate-600" >
             Register your business to start managing reservations.
           </p>
           <Link to="/business/register" className="btn-primary">Register Your Business</Link>
@@ -108,17 +108,17 @@ export default function BusinessDashboard() {
         {/* ── Header ── */}
         <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight" style={{ color: '#e8edf3' }}>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900" >
               Business Dashboard
             </h1>
-            <p className="mt-1.5 text-sm" style={{ color: '#7a90a8' }}>
+            <p className="mt-1.5 text-sm text-slate-600" >
               Welcome back, <span style={{ color: '#60a5fa', fontWeight: 600 }}>{user?.firstName}</span>! Here's your AI business pulse.
             </p>
           </div>
           <div className="flex gap-3">
             <Link to="/business/settings"
               className="flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-xl transition-all"
-              style={{ background: 'rgba(255,255,255,0.06)', color: '#a0b4c8', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <Cog6ToothIcon className="h-4 w-4" /> Settings
             </Link>
             <Link to="/reservations/new"
@@ -230,9 +230,9 @@ export default function BusinessDashboard() {
           />
           <div className="rounded-xl py-14 text-center"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.08)' }}>
-            <CalendarIcon className="h-10 w-10 mx-auto mb-3" style={{ color: '#3d5068' }} />
-            <p className="text-sm font-medium mb-1" style={{ color: '#7a90a8' }}>No recent reservations yet</p>
-            <p className="text-xs" style={{ color: '#3d5068' }}>Once you receive bookings, they'll appear here.</p>
+            <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-slate-800" />
+            <p className="text-sm font-medium mb-1 text-slate-600" >No recent reservations yet</p>
+            <p className="text-xs text-slate-800" >Once you receive bookings, they'll appear here.</p>
             <Link to="/reservations/new"
               className="inline-flex items-center gap-1.5 mt-5 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
               style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)' }}>

@@ -131,12 +131,12 @@ export default function BusinessJoinPage() {
       <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }} className="flex items-center justify-center p-6">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">🎉</div>
-          <h2 className="text-3xl font-black mb-3" style={{ color: '#e8edf3' }}>You're In!</h2>
-          <p className="text-base mb-2" style={{ color: '#7a90a8' }}>
-            Welcome to Pabandi, <span style={{ color: '#e8edf3', fontWeight: 700 }}>{form.businessName}</span>!
+          <h2 className="text-3xl font-black mb-3 text-slate-900" >You're In!</h2>
+          <p className="text-base mb-2 text-slate-600" >
+            Welcome to Pabandi, <span style={{ fontWeight: 700 }}>{form.businessName}</span>!
           </p>
-          <p className="text-sm mb-8" style={{ color: '#5a7490' }}>
-            Our team will WhatsApp you at <strong style={{ color: '#a0b4c8' }}>{form.phone}</strong> within 24 hours to complete your setup — completely free.
+          <p className="text-sm mb-8 text-slate-700" >
+            Our team will WhatsApp you at <strong className="text-slate-500">{form.phone}</strong> within 24 hours to complete your setup — completely free.
           </p>
           <div className="rounded-2xl p-5 mb-8 text-left space-y-3"
             style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
@@ -161,10 +161,10 @@ export default function BusinessJoinPage() {
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white"
               style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>P</div>
-            <span className="font-bold text-sm" style={{ color: '#e8edf3' }}>Pabandi</span>
+            <span className="font-bold text-sm text-slate-900" >Pabandi</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-xs font-medium" style={{ color: '#5a7490' }}>Sign in</Link>
+            <Link to="/login" className="text-xs font-medium text-slate-700" >Sign in</Link>
             <a href="#join-form" className="btn-primary text-xs py-2 px-4">Get Started Free</a>
           </div>
         </div>
@@ -185,16 +185,16 @@ export default function BusinessJoinPage() {
             Founding Partner Program — Limited Spots
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6" style={{ color: '#e8edf3' }}>
+          <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-slate-900" >
             Grow Your Business.<br />
             <span style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Eliminate No-Shows.
             </span>
           </h1>
 
-          <p className="text-lg max-w-2xl mx-auto mb-10" style={{ color: '#7a90a8', lineHeight: 1.7 }}>
+          <p className="text-lg max-w-2xl mx-auto mb-10" style={{ lineHeight: 1.7 }}>
             Pabandi is Karachi's AI-powered reservation platform. Join as a Founding Partner and get
-            <strong style={{ color: '#e8edf3' }}> 6 months completely free </strong>
+            <strong className="text-slate-900"> 6 months completely free </strong>
             — no credit card, no contracts.
           </p>
 
@@ -202,14 +202,14 @@ export default function BusinessJoinPage() {
             <a href="#join-form" className="btn-primary text-base px-8 py-4">
               Claim Your Free Spot →
             </a>
-            <div className="flex items-center gap-2 text-sm" style={{ color: '#5a7490' }}>
+            <div className="flex items-center gap-2 text-sm text-slate-700" >
               <div className="flex -space-x-2">
                 {['🍽️','💇','🏋️'].map((e) => (
                   <div key={e} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm"
                     style={{ borderColor: 'var(--color-bg)', background: 'var(--color-surface-raised)' }}>{e}</div>
                 ))}
               </div>
-              <span>Join <strong style={{ color: '#a0b4c8' }}>50+ businesses</strong> already on the waitlist</span>
+              <span>Join <strong className="text-slate-500">50+ businesses</strong> already on the waitlist</span>
             </div>
           </div>
 
@@ -223,8 +223,8 @@ export default function BusinessJoinPage() {
             ].map(s => (
               <div key={s.val} className="rounded-2xl p-4"
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-2xl font-black mb-1" style={{ color: '#e8edf3' }}>{s.val}</p>
-                <p className="text-xs" style={{ color: '#5a7490' }}>{s.label}</p>
+                <p className="text-2xl font-black mb-1 text-slate-900" >{s.val}</p>
+                <p className="text-xs text-slate-700" >{s.label}</p>
               </div>
             ))}
           </div>
@@ -236,8 +236,8 @@ export default function BusinessJoinPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#fbbf24' }}>Founding Partner Perks</p>
-            <h2 className="text-4xl font-black mb-4" style={{ color: '#e8edf3' }}>Everything You Get — Free</h2>
-            <p className="text-base max-w-xl mx-auto" style={{ color: '#7a90a8' }}>
+            <h2 className="text-4xl font-black mb-4 text-slate-900" >Everything You Get — Free</h2>
+            <p className="text-base max-w-xl mx-auto text-slate-600" >
               We're offering these perks to the first 100 businesses who join. After that, pricing starts at ₨4,999/month.
             </p>
           </div>
@@ -248,8 +248,8 @@ export default function BusinessJoinPage() {
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="text-3xl shrink-0">{inc.emoji}</div>
                 <div>
-                  <h3 className="font-bold text-base mb-1.5" style={{ color: '#e8edf3' }}>{inc.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#7a90a8' }}>{inc.desc}</p>
+                  <h3 className="font-bold text-base mb-1.5 text-slate-900" >{inc.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-600" >{inc.desc}</p>
                 </div>
               </div>
             ))}
@@ -273,8 +273,8 @@ export default function BusinessJoinPage() {
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#5a7490' }}>Platform Features</p>
-            <h2 className="text-4xl font-black" style={{ color: '#e8edf3' }}>Built for Karachi Businesses</h2>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-slate-700" >Platform Features</p>
+            <h2 className="text-4xl font-black text-slate-900" >Built for Karachi Businesses</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -285,8 +285,8 @@ export default function BusinessJoinPage() {
                   style={{ background: b.glow }}>
                   {b.icon}
                 </div>
-                <h3 className="font-bold text-base mb-2" style={{ color: '#e8edf3' }}>{b.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#7a90a8' }}>{b.desc}</p>
+                <h3 className="font-bold text-base mb-2 text-slate-900" >{b.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-600" >{b.desc}</p>
               </div>
             ))}
           </div>
@@ -297,8 +297,8 @@ export default function BusinessJoinPage() {
       <section className="py-20 px-4" style={{ background: 'var(--color-surface)' }}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#5a7490' }}>Getting Started</p>
-            <h2 className="text-4xl font-black" style={{ color: '#e8edf3' }}>Live in 24 Hours</h2>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-slate-700" >Getting Started</p>
+            <h2 className="text-4xl font-black text-slate-900" >Live in 24 Hours</h2>
           </div>
 
           <div className="space-y-4">
@@ -309,8 +309,8 @@ export default function BusinessJoinPage() {
                   {step.num}
                 </div>
                 <div>
-                  <h3 className="font-bold text-base mb-1" style={{ color: '#e8edf3' }}>{step.title}</h3>
-                  <p className="text-sm" style={{ color: '#7a90a8' }}>{step.desc}</p>
+                  <h3 className="font-bold text-base mb-1 text-slate-900" >{step.title}</h3>
+                  <p className="text-sm text-slate-600" >{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -326,8 +326,8 @@ export default function BusinessJoinPage() {
               style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
               🎁 6 Months Free · No Credit Card
             </div>
-            <h2 className="text-4xl font-black mb-3" style={{ color: '#e8edf3' }}>Claim Your Free Spot</h2>
-            <p className="text-sm" style={{ color: '#7a90a8' }}>
+            <h2 className="text-4xl font-black mb-3 text-slate-900" >Claim Your Free Spot</h2>
+            <p className="text-sm text-slate-600" >
               Fill in your details and our team will WhatsApp you within 24 hours to complete setup.
             </p>
           </div>
@@ -344,14 +344,14 @@ export default function BusinessJoinPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Business Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Business Name</label>
                 <input name="businessName" value={form.businessName} onChange={handleChange}
                   placeholder="e.g. Kolachi Restaurant"
                   className="input-field w-full" />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Owner / Manager Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Owner / Manager Name</label>
                 <input name="ownerName" value={form.ownerName} onChange={handleChange}
                   placeholder="Your full name"
                   className="input-field w-full" />
@@ -359,13 +359,13 @@ export default function BusinessJoinPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>WhatsApp Number</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >WhatsApp Number</label>
                   <input name="phone" value={form.phone} onChange={handleChange}
                     placeholder="+92 300 0000000"
                     className="input-field w-full" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Email</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Email</label>
                   <input name="email" type="email" value={form.email} onChange={handleChange}
                     placeholder="you@business.com"
                     className="input-field w-full" />
@@ -374,7 +374,7 @@ export default function BusinessJoinPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Category</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Category</label>
                   <select name="category" value={form.category} onChange={handleChange}
                     className="input-field w-full appearance-none">
                     <option value="" disabled>Select...</option>
@@ -382,7 +382,7 @@ export default function BusinessJoinPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>City</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >City</label>
                   <input name="city" value={form.city} onChange={handleChange}
                     placeholder="Karachi"
                     className="input-field w-full" />
@@ -392,7 +392,7 @@ export default function BusinessJoinPage() {
               {/* Password row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Password</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Password</label>
                   <div className="relative">
                     <input
                       name="password"
@@ -405,15 +405,13 @@ export default function BusinessJoinPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold transition-colors"
-                      style={{ color: '#3d5068' }}
-                    >
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold transition-colors text-slate-800" >
                       {showPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#5a7490' }}>Confirm Password</label>
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Confirm Password</label>
                   <input
                     name="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
@@ -435,7 +433,7 @@ export default function BusinessJoinPage() {
                 ) : '🎉 Claim My Free 6 Months'}
               </button>
 
-              <p className="text-center text-xs" style={{ color: '#3d5068' }}>
+              <p className="text-center text-xs text-slate-800" >
                 No credit card · No contracts · Cancel anytime
               </p>
             </form>
@@ -444,7 +442,7 @@ export default function BusinessJoinPage() {
           {/* Trust row */}
           <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
             {['🔒 Secure & Private', '🇵🇰 Built for Pakistan', '⚡ Live in 24hrs'].map(t => (
-              <span key={t} className="text-xs font-medium" style={{ color: '#3d5068' }}>{t}</span>
+              <span key={t} className="text-xs font-medium text-slate-800" >{t}</span>
             ))}
           </div>
         </div>
@@ -452,7 +450,7 @@ export default function BusinessJoinPage() {
 
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="border-t py-8 px-4 text-center"
-        style={{ borderColor: 'rgba(255,255,255,0.06)', color: '#3d5068' }}>
+        style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <p className="text-xs">© 2025 Pabandi · Karachi, Pakistan · <a href="mailto:hello@pabandi.com" className="hover:text-blue-400 transition-colors">hello@pabandi.com</a></p>
       </footer>
 

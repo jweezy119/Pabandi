@@ -22,6 +22,7 @@ import reservationRoutes from './routes/reservation.routes';
 import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import adminRoutes from './routes/admin.routes';
+import webhookRoutes from './routes/webhook.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -74,6 +75,7 @@ app.use(`/api/${API_VERSION}/reservations`, reservationRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
+app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {
