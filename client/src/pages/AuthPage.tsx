@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 type Mode = 'login' | 'signup';
@@ -44,7 +44,14 @@ export default function AuthPage() {
     firstName: '', lastName: '', phone: '',
     businessName: '', googlePlaceId: '',
   });
-  const [error, setError] = useState('');
+  const [searchParams] = useSearchParams();
+  const urlError = searchParams.get('error');
+  const [error, setError] = useState(() => {
+    if (urlError === 'facebook_not_configured') return 'Facebook login is not configured yet. Please add FACEBOOK_APP_ID in backend.';
+    if (urlError === 'facebook_failed') return 'Facebook authentication failed. Please try again.';
+    if (urlError === 'google_failed') return 'Google authentication failed. Please try again.';
+    return '';
+  });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
