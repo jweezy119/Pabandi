@@ -12,6 +12,7 @@ import BookingPage from './pages/BookingPage';
 import WalletDashboard from './pages/WalletDashboard';
 import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
+import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -56,6 +57,10 @@ function App() {
         <Route
           path="business/register"
           element={isAuthenticated ? <BusinessRegister /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="business/settings"
+          element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />}
         />
         <Route
           path="reservations"

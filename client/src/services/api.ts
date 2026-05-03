@@ -54,6 +54,8 @@ export const businessService = {
     apiClient.get(`/businesses/${id}/reservations`, { params }),
   getBusinessAnalytics: (id: string, params?: any) =>
     apiClient.get(`/businesses/${id}/analytics`, { params }),
+  /** Get the logged-in owner's business */
+  getMyBusiness: () => apiClient.get('/businesses/me'),
 };
 
 export const reservationService = {
@@ -75,6 +77,11 @@ export const reservationService = {
 export const paymentService = {
   createPayment: (data: any) => apiClient.post('/payments', data),
   getPayment: (id: string) => apiClient.get(`/payments/${id}`),
+};
+
+export const analyticsService = {
+  /** Fetches the full AI-powered dashboard analytics for the logged-in business owner */
+  getDashboardAnalytics: () => apiClient.get('/analytics'),
 };
 
 export default apiClient;

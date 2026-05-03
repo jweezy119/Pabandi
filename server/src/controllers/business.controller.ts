@@ -301,6 +301,8 @@ export const getBusinessAnalytics = async (
     if (startDate) dateFilter.gte = new Date(startDate as string);
     if (endDate) dateFilter.lte = new Date(endDate as string);
 
+    const now = new Date();
+
     const [
       totalReservations,
       confirmed,
@@ -308,6 +310,10 @@ export const getBusinessAnalytics = async (
       cancellations,
       completed,
       reservationsByStatus,
+      protectedRevenue,
+      unprotectedRevenue,
+      upcomingReservations,
+      allConcluded,
     ] = await Promise.all([
       prisma.reservation.count({
         where: {
@@ -351,6 +357,57 @@ export const getBusinessAnalytics = async (
         },
         _count: true,
       }),
+      // Protected revenue (deposit captured)
+      prisma.reservation.aggregate({
+        where: {
+          businessId: id,
+          depositRequired: true,
+          depositStatus: { in: ['PAID', 'APPLIED_TO_SERVICE', 'REIMBURSED_TO_BUSINESS'] },
+          reservationDate: dateFilter,
+        },
+        _sum: { depositAmount: true },
+      }),
+      // Unprotected (no deposit) bookings count
+      prisma.reservation.count({
+        where: {
+          businessId: id,
+          depositRequired: false,
+          reservationDate: dateFilter,
+        },
+      }),
+      // Upcoming with risk data
+      prisma.reservation.findMany({
+        where: {
+          businessId: id,
+          status: { in: ['PENDING', 'CONFIRMED'] },
+          reservationDate: { gte: now },
+        },
+        select: {
+          riskScore: true,
+          depositAmount: true,
+          depositRequired: true,
+          numberOfGuests: true,
+          reservationDate: true,
+          reservationTime: true,
+        },
+        orderBy: { reservationDate: 'asc' },
+        take: 50,
+      }),
+      // All concluded reservations for day-of-week breakdown
+      prisma.reservation.findMany({
+        where: {
+          businessId: id,
+          status: { in: ['COMPLETED', 'NO_SHOW'] },
+          reservationDate: dateFilter,
+        },
+        select: {
+          reservationDate: true,
+          reservationTime: true,
+          status: true,
+          riskScore: true,
+          numberOfGuests: true,
+        },
+      }),
     ]);
 
     const noShowRate =
@@ -359,6 +416,41 @@ export const getBusinessAnalytics = async (
       totalReservations > 0 ? (cancellations / totalReservations) * 100 : 0;
     const completionRate =
       totalReservations > 0 ? (completed / totalReservations) * 100 : 0;
+
+    // ── No-show by day of week ──
+    const dayBreakdown: Record<number, { total: number; noShows: number }> = {};
+    for (let d = 0; d <= 6; d++) dayBreakdown[d] = { total: 0, noShows: 0 };
+    for (const r of allConcluded) {
+      const day = new Date(r.reservationDate).getDay();
+      dayBreakdown[day].total++;
+      if (r.status === 'NO_SHOW') dayBreakdown[day].noShows++;
+    }
+    const noShowByDay = Object.entries(dayBreakdown).map(([day, s]) => ({
+      day: Number(day),
+      total: s.total,
+      noShows: s.noShows,
+      rate: s.total > 0 ? Math.round((s.noShows / s.total) * 100) : 0,
+    }));
+
+    // ── No-show by hour (heatmap) ──
+    const hourBreakdown: Record<number, { total: number; noShows: number }> = {};
+    for (let h = 0; h <= 23; h++) hourBreakdown[h] = { total: 0, noShows: 0 };
+    for (const r of allConcluded) {
+      const hour = parseInt(r.reservationTime?.split(':')[0] || '12', 10);
+      hourBreakdown[hour].total++;
+      if (r.status === 'NO_SHOW') hourBreakdown[hour].noShows++;
+    }
+    const noShowByHour = Object.entries(hourBreakdown).map(([h, s]) => ({
+      hour: Number(h),
+      total: s.total,
+      noShows: s.noShows,
+      rate: s.total > 0 ? Math.round((s.noShows / s.total) * 100) : 0,
+    }));
+
+    // ── Average risk of upcoming ──
+    const avgUpcomingRisk = upcomingReservations.length > 0
+      ? Math.round(upcomingReservations.reduce((s, r) => s + (r.riskScore || 0), 0) / upcomingReservations.length)
+      : 0;
 
     res.json({
       success: true,
@@ -373,6 +465,12 @@ export const getBusinessAnalytics = async (
           cancellationRate: parseFloat(cancellationRate.toFixed(2)),
           completionRate: parseFloat(completionRate.toFixed(2)),
           reservationsByStatus,
+          protectedRevenue: protectedRevenue._sum.depositAmount || 0,
+          unprotectedBookings: unprotectedRevenue,
+          avgUpcomingRisk,
+          noShowByDay,
+          noShowByHour,
+          businessCategory: business.category,
         },
       },
     });

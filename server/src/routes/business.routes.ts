@@ -30,6 +30,23 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET /businesses/me — fetch the logged-in owner's business
+router.get('/me', async (req: any, res, next) => {
+  try {
+    const { prisma } = await import('../utils/database');
+    const business = await prisma.business.findUnique({
+      where: { ownerId: req.user.id },
+      include: { settings: true, businessHours: true },
+    });
+    if (!business) {
+      return res.json({ success: true, data: { business: null } });
+    }
+    res.json({ success: true, data: { business } });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/', createBusiness);
 router.get('/:id', getBusiness);
 router.put('/:id', authorize('BUSINESS_OWNER', 'ADMIN'), updateBusiness);
