@@ -1,6 +1,6 @@
 # Pabandi - AI-Powered Reservation System
 
-Pabandi is an AI-powered booking and reservation platform that predicts and mitigates no-shows, helping businesses maximize revenue and operational efficiency.
+Pabandi is an AI-powered booking ecosystem built for the modern service economy. For businesses, we actively protect your bottom line by using AI to predict no-shows and secure revenue upfront with dynamic, risk-based deposits. For customers, we offer a seamless booking journey powered by a next-generation Web3 loyalty program. Arrive for your appointment, and you earn PAB tokens—digital assets that hold real value, redeemable for future services or transferable to your personal crypto wallet.
 
 ## 🎯 Features
 
