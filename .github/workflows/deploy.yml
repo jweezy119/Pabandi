@@ -30,12 +30,31 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
+          cat <<EOF > env.yaml
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: "${{ secrets.FIREBASE_PRIVATE_KEY }}"
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SAFEPAY_API_KEY: ${{ secrets.SAFEPAY_API_KEY }}
+          SAFEPAY_SECRET_KEY: ${{ secrets.SAFEPAY_SECRET_KEY }}
+          SAFEPAY_WEBHOOK_SECRET: ${{ secrets.SAFEPAY_WEBHOOK_SECRET }}
+          EOF
+
           gcloud run deploy pabandi-server \
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
-            --region us-central1 \
+            --region asia-south1 \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars="NODE_ENV=production,DATABASE_URL=${{ secrets.DATABASE_URL }},SAFEPAY_API_KEY=${{ secrets.SAFEPAY_API_KEY }},SAFEPAY_SECRET_KEY=${{ secrets.SAFEPAY_SECRET_KEY }},SAFEPAY_WEBHOOK_SECRET=${{ secrets.SAFEPAY_WEBHOOK_SECRET }},FRONTEND_URL=${{ secrets.FRONTEND_URL }}"
+            --env-vars-file env.yaml
 
   deploy-frontend:
     name: Deploy Frontend to Firebase
