@@ -51,8 +51,27 @@ npm run dev
 ```
 
 The application will be available at:
-- Frontend: http://localhost:3000
+- **Public site (Firebase)**: [https://pabandi-42c5b.web.app/](https://pabandi-42c5b.web.app/)
+- Frontend app (local dev): http://localhost:3000
 - Backend API: http://localhost:5000
+
+### Deploy the public marketing site
+
+The live site is hosted on Firebase project **pabandi-42c5b** from the `site/` folder:
+
+```bash
+npm run deploy
+```
+
+This builds the dashboard app into `site/app/` and deploys the marketing site + app to Firebase.
+
+**Required on Cloud Run** (API server): set `FRONTEND_URL=https://pabandi-42c5b.web.app/app` so Google/Facebook OAuth redirects back correctly.
+
+Preview locally before deploying:
+
+```bash
+npm run site
+```
 
 ## 📁 Project Structure
 

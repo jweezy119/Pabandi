@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
+import BusinessPabRewards from '../components/BusinessPabRewards';
 
 /* ── Day names ── */
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -160,18 +161,30 @@ export default function BusinessDashboard() {
   const upcomingRisky = a.upcomingRiskyBookings || [];
 
   const mockReviews = [
-    { id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Highly recommend for anyone in Karachi.', time: new Date().toISOString(), sentimentLabel: 'positive' },
+    { id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Highly recommend — smooth Pabandi booking.', time: new Date().toISOString(), sentimentLabel: 'positive' },
     { id: '2', authorName: 'Sara Ahmed', rating: 4, text: 'The booking process was smooth and the staff was polite.', time: new Date(Date.now() - 100000).toISOString(), sentimentLabel: 'positive' },
   ];
 
   // ── Mutations ──
   const completeMutation = useMutation(
     (id: string) => reservationService.completeReservation(id),
-    { onSuccess: () => { qc.invalidateQueries('biz-reservations'); qc.invalidateQueries('dashboard-analytics'); } }
+    {
+      onSuccess: () => {
+        qc.invalidateQueries('biz-reservations');
+        qc.invalidateQueries('dashboard-analytics');
+        qc.invalidateQueries('business-pab-rewards');
+      },
+    }
   );
   const noShowMutation = useMutation(
     (id: string) => reservationService.markNoShow(id),
-    { onSuccess: () => { qc.invalidateQueries('biz-reservations'); qc.invalidateQueries('dashboard-analytics'); } }
+    {
+      onSuccess: () => {
+        qc.invalidateQueries('biz-reservations');
+        qc.invalidateQueries('dashboard-analytics');
+        qc.invalidateQueries('business-pab-rewards');
+      },
+    }
   );
 
   // Risk gauge value
@@ -248,6 +261,8 @@ export default function BusinessDashboard() {
             icon={<ExclamationTriangleIcon className="w-full h-full" style={{ color: '#a78bfa' }} />}
           />
         </div>
+
+        <BusinessPabRewards />
 
         {/* ── Stats Grid ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

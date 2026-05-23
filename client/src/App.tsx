@@ -24,7 +24,7 @@ function App() {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <AdminPanel />;
     if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
-    return <BusinessDashboard />; // fallback (CustomerDashboard coming soon)
+    return <Navigate to="/wallet" replace />;
   };
 
   return (

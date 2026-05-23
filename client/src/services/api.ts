@@ -84,4 +84,14 @@ export const analyticsService = {
   getDashboardAnalytics: () => apiClient.get('/analytics'),
 };
 
+export const cryptoService = {
+  getRewardRules: () => apiClient.get('/crypto/reward-rules'),
+  getWallet: () => apiClient.get('/crypto/wallet'),
+  getBusinessRewards: () => apiClient.get('/crypto/rewards/business'),
+  connectSolana: (address: string) =>
+    apiClient.put('/crypto/wallet/solana', { address }),
+  requestSolanaTransfer: (amount?: number) =>
+    apiClient.post('/crypto/wallet/solana/transfer', { amount }),
+};
+
 export default apiClient;

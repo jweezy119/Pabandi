@@ -20,6 +20,7 @@ interface AuthState {
   logout: () => void;
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  setAuth: (user: User, token: string) => void;
 }
 
 interface RegisterData {
@@ -63,6 +64,8 @@ export const useAuthStore = create<AuthState>()(
       },
       setUser: (user: User) => set({ user }),
       setToken: (token: string) => set({ token, isAuthenticated: true }),
+      setAuth: (user: User, token: string) =>
+        set({ user, token, isAuthenticated: true }),
     }),
     {
       name: 'auth-storage',

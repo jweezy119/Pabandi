@@ -23,6 +23,7 @@ import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import adminRoutes from './routes/admin.routes';
 import webhookRoutes from './routes/webhook.routes';
+import cryptoRoutes from './routes/crypto.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,8 +41,11 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 // Security and Performance middleware
 app.use(helmet());
 app.use(compression());
+const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/app\/?$/, '');
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [frontendOrigin, 'http://localhost:3000', 'http://localhost:5500', 'https://pabandi-42c5b.web.app'].filter(
+    (v, i, a) => v && a.indexOf(v) === i
+  ),
   credentials: true,
 }));
 
@@ -76,6 +80,7 @@ app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
+app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {

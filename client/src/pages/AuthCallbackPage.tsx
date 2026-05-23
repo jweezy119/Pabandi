@@ -9,7 +9,7 @@ import { useAuthStore } from '../store/authStore';
  */
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
-  const { setToken, setUser } = useAuthStore();
+  const { setAuth } = useAuthStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -24,15 +24,17 @@ export default function AuthCallbackPage() {
     // Decode JWT payload (base64) to get user info — no secret needed client-side
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      setToken(token);
-      setUser({
-        id: payload.id,
-        email: payload.email,
-        firstName: payload.firstName || payload.email.split('@')[0],
-        lastName: payload.lastName || '',
-        role: payload.role,
-      });
-      navigate('/dashboard');
+      setAuth(
+        {
+          id: payload.id,
+          email: payload.email,
+          firstName: payload.firstName || payload.email.split('@')[0],
+          lastName: payload.lastName || '',
+          role: payload.role,
+        },
+        token
+      );
+      navigate('/dashboard', { replace: true });
     } catch {
       navigate('/login?error=token_parse_failed');
     }

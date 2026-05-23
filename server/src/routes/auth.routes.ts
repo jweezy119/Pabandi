@@ -5,6 +5,7 @@ import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
 import passport from 'passport';
+import { cryptoService } from '../services/cryptoService';
 import jwt from 'jsonwebtoken';
 import type { Secret, JwtPayload } from 'jsonwebtoken';
 
@@ -74,11 +75,19 @@ router.put('/wallet', authenticate, async (req: any, res, next) => {
     if (!address) {
       return res.status(400).json({ success: false, message: 'Wallet address is required' });
     }
+    if (chain === 'Solana' || chain === 'solana') {
+      const wallet = await cryptoService.connectSolanaWallet(req.user.id, address);
+      return res.json({
+        success: true,
+        message: 'Solana wallet connected for $PAB payouts',
+        data: { address: wallet.address, chain: 'solana' },
+      });
+    }
     const { prisma } = await import('../utils/database');
     await prisma.wallet.upsert({
       where: { userId: req.user.id },
       update: { address },
-      create: { userId: req.user.id, address, currency: chain === 'Solana' ? 'SOL' : 'BNB' },
+      create: { userId: req.user.id, address, balance: 0, currency: 'BNB' },
     });
     res.json({ success: true, message: 'Wallet connected successfully', data: { address, chain } });
   } catch (err) {

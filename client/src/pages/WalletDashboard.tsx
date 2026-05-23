@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery, useMutation } from 'react-query';
 import {
   WalletIcon, CurrencyDollarIcon, ArrowUpRightIcon,
   StarIcon, LinkIcon, XMarkIcon, CheckCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import apiClient from '../services/api';
+import apiClient, { cryptoService } from '../services/api';
 
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | null;
@@ -158,7 +158,7 @@ const WalletDashboard: React.FC = () => {
 
       saveWallet({ address, type: 'phantom', chainName: 'Solana' });
 
-      await apiClient.put('/auth/wallet', { address, chain: 'Solana' }).catch(() => { /* non-fatal */ });
+      await cryptoService.connectSolana(address).catch(() => { /* non-fatal */ });
 
       setShowModal(false);
     } catch (err: any) {
@@ -168,16 +168,19 @@ const WalletDashboard: React.FC = () => {
     }
   };
 
-  // Mock wallet data (real API fetch can replace this)
-  const { data: wallet, isLoading } = useQuery('wallet', async () => ({
-    balance: 145.50,
-    currency: 'PAB',
-    recentRewards: [
-      { id: 1, type: 'RESERVATION_COMPLETION', amount: 10, date: '2026-01-02', business: 'Kolachi' },
-      { id: 2, type: 'GOOGLE_REVIEW', amount: 5, date: '2026-01-01', business: 'Cafe Flo' },
-      { id: 3, type: 'RESERVATION_COMPLETION', amount: 10, date: '2025-12-30', business: 'The BBQ Tonight' },
-    ],
-  }));
+  const transferMutation = useMutation(
+    () => cryptoService.requestSolanaTransfer(),
+    { onSuccess: () => alert('Transfer queued to your Solana wallet.') }
+  );
+
+  const { data: wallet, isLoading } = useQuery(
+    'pab-wallet',
+    async () => {
+      const res = await cryptoService.getWallet();
+      return res.data?.data;
+    },
+    { retry: false, refetchOnWindowFocus: false }
+  );
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
@@ -195,9 +198,9 @@ const WalletDashboard: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-black text-slate-900" >Pabandi Wallet</h1>
+            <h1 className="text-3xl font-black text-slate-900" >$PAB · Solana Wallet</h1>
             <p className="mt-1 text-sm text-slate-600" >
-              Track your PAB rewards and connect your crypto wallet
+              Earn $PAB for check-ins and reviews — withdraw on Solana via Phantom
             </p>
           </div>
           {connected ? (
@@ -222,7 +225,7 @@ const WalletDashboard: React.FC = () => {
               className="btn-primary flex items-center gap-2 text-sm"
             >
               <LinkIcon className="h-4 w-4" />
-              Connect Web3 Wallet
+              Connect Phantom (Solana)
             </button>
           )}
         </div>
@@ -231,7 +234,7 @@ const WalletDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
           {/* Balance Card */}
           <div className="relative overflow-hidden rounded-2xl p-6 text-white"
-            style={{ background: 'linear-gradient(135deg, #1e40af 0%, #5b21b6 100%)', boxShadow: '0 20px 40px rgba(30,64,175,0.35)' }}>
+            style={{ background: 'linear-gradient(135deg, #9945ff 0%, #14f195 55%, #1e40af 100%)', boxShadow: '0 20px 40px rgba(153,69,255,0.35)' }}>
             <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full"
               style={{ background: 'rgba(255,255,255,0.08)' }} />
             <div className="relative z-10">
@@ -243,15 +246,28 @@ const WalletDashboard: React.FC = () => {
                   style={{ background: 'rgba(255,255,255,0.15)' }}>Active Balance</span>
               </div>
               <div className="mb-4">
-                <span className="text-4xl font-black">{wallet?.balance?.toFixed(2)}</span>
+                <span className="text-4xl font-black">{Number(wallet?.balance || 0).toLocaleString()}</span>
                 <span className="ml-2 text-lg opacity-80">{wallet?.currency}</span>
               </div>
               {connected ? (
-                <p className="text-xs opacity-70 font-mono">{shortAddr(connected.address)} · {connected.chainName}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs opacity-70 font-mono">◎ {shortAddr(connected.address)} · Solana</p>
+                  {connected.type === 'phantom' && (wallet?.balance || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => transferMutation.mutate()}
+                      disabled={transferMutation.isLoading}
+                      className="text-xs px-2 py-1 rounded-lg font-semibold"
+                      style={{ background: 'rgba(255,255,255,0.2)' }}
+                    >
+                      {transferMutation.isLoading ? 'Sending…' : 'Withdraw to Solana'}
+                    </button>
+                  )}
+                </div>
               ) : (
                 <button onClick={() => { setShowModal(true); setError(''); }}
                   className="text-xs opacity-80 hover:opacity-100 flex items-center gap-1 underline underline-offset-2">
-                  <LinkIcon className="h-3 w-3" /> Connect a wallet to claim PAB
+                  <LinkIcon className="h-3 w-3" /> Connect Phantom to withdraw $PAB
                 </button>
               )}
             </div>
@@ -295,7 +311,7 @@ const WalletDashboard: React.FC = () => {
             <button className="text-sm font-medium" style={{ color: '#60a5fa' }}>View All</button>
           </div>
           <div>
-            {wallet?.recentRewards.map((reward: any) => (
+            {(wallet?.recentRewards || []).map((reward: any) => (
               <div key={reward.id} className="px-6 py-4 flex items-center justify-between transition-colors"
                 style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
@@ -315,7 +331,7 @@ const WalletDashboard: React.FC = () => {
                       {reward.type === 'GOOGLE_REVIEW' ? 'Proof of Review Reward' : 'Proof of Reservation Reward'}
                     </p>
                     <p className="text-xs text-slate-700" >
-                      {reward.business} · {reward.date}
+                      {reward.businessName || 'Pabandi'} · {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : ''}
                     </p>
                   </div>
                 </div>
@@ -337,8 +353,8 @@ const WalletDashboard: React.FC = () => {
             {/* Modal header */}
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-black text-slate-900" >Connect Wallet</h2>
-                <p className="text-xs mt-0.5 text-slate-700" >Choose your preferred wallet</p>
+                <h2 className="text-xl font-black text-slate-900" >Connect Phantom</h2>
+                <p className="text-xs mt-0.5 text-slate-700" >Solana is required for $PAB withdrawals</p>
               </div>
               <button onClick={() => setShowModal(false)}
                 className="p-2 rounded-xl transition-colors bg-gray-100 hover:bg-gray-200">
@@ -358,34 +374,24 @@ const WalletDashboard: React.FC = () => {
             {/* Wallet options */}
             <div className="space-y-3">
               <WalletOption
+                id="btn-connect-phantom"
+                icon="◎"
+                name="Phantom"
+                desc="Recommended · Solana network for $PAB"
+                badge="Solana"
+                onClick={connectPhantom}
+                loading={loadingWallet === 'phantom'}
+                disabled={loadingWallet !== null && loadingWallet !== 'phantom'}
+              />
+              <WalletOption
                 id="btn-connect-metamask"
                 icon="🦊"
-                name="MetaMask"
-                desc="Connect via MetaMask · BNB Smart Chain"
+                name="MetaMask (optional)"
+                desc="BNB Smart Chain — legacy support"
                 badge="BSC"
                 onClick={connectMetaMask}
                 loading={loadingWallet === 'metamask'}
                 disabled={loadingWallet !== null && loadingWallet !== 'metamask'}
-              />
-              <WalletOption
-                id="btn-connect-trustwallet"
-                icon="🛡️"
-                name="TrustWallet"
-                desc="Connect via TrustWallet · BNB Smart Chain"
-                badge="BSC"
-                onClick={connectMetaMask}
-                loading={false}
-                disabled={loadingWallet !== null}
-              />
-              <WalletOption
-                id="btn-connect-phantom"
-                icon="👻"
-                name="Phantom"
-                desc="Connect via Phantom · Solana network"
-                badge="SOL"
-                onClick={connectPhantom}
-                loading={loadingWallet === 'phantom'}
-                disabled={loadingWallet !== null && loadingWallet !== 'phantom'}
               />
             </div>
 

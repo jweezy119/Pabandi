@@ -9,6 +9,7 @@ import { cryptoService } from '../services/cryptoService';
 import { reliabilityService } from '../services/reliability.service';
 import { safepayService } from '../services/safepay.service';
 import { webhookService } from '../services/webhook.service';
+import { notificationService } from '../services/notification.service';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -170,7 +171,8 @@ export const createReservation = async (
       },
     });
 
-    // TODO: Send confirmation notification
+    // Send confirmation notification
+    await notificationService.sendConfirmation(reservation.id);
 
     res.status(201).json({
       success: true,
@@ -346,7 +348,40 @@ export const cancelReservation = async (
       reservation: cancelled,
     });
 
-    // TODO: Process refunds if deposit was paid
+    // Process refunds if deposit was paid
+    if (reservation.depositRequired && reservation.depositStatus === 'PAID') {
+      try {
+        if (reservation.cryptoDepositTxHash) {
+          logger.info(`Crypto refund requested manually for reservation ${reservation.id} with txHash ${reservation.cryptoDepositTxHash}`);
+        } else {
+          // Fiat refund via Safepay
+          await safepayService.refundDeposit(reservation.id, reservation.depositAmount || 0);
+        }
+
+        // Update reservation to record that deposit is no longer active
+        await prisma.reservation.update({
+          where: { id: reservation.id },
+          data: {
+            depositPaid: false,
+          },
+        });
+
+        // Update payment records associated with this reservation
+        await prisma.payment.updateMany({
+          where: { reservationId: reservation.id },
+          data: {
+            status: 'REFUNDED',
+            refunded: true,
+            refundedAt: new Date(),
+            refundAmount: reservation.depositAmount || 0,
+          },
+        });
+
+        logger.info(`Successfully processed refund of PKR ${reservation.depositAmount} for cancelled reservation: ${reservation.id}`);
+      } catch (refundError) {
+        logger.error(`Error processing refund for reservation ${reservation.id}:`, refundError);
+      }
+    }
 
     res.json({
       success: true,
@@ -496,13 +531,16 @@ export const markNoShow = async (
       },
     });
 
+    // PAB reward for business when deposit protection applies
+    await cryptoService.rewardBusinessNoShowProtected(reservation.businessId, reservation.id);
+
     // Update Scores (Business and User)
     await reviewService.calculateReliabilityScore(reservation.businessId);
     await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'NO_SHOW');
 
     res.json({
       success: true,
-      message: 'Reservation marked as No-Show. Deposit captured for business protection.',
+      message: 'Reservation marked as No-Show. Deposit captured and $PAB business reward issued.',
       data: { reservation: updated },
     });
   } catch (error) {

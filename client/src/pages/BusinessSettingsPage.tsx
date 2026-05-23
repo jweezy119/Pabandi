@@ -267,15 +267,17 @@ export default function BusinessSettingsPage() {
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50">
+            <div className="p-5 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-emerald-50">
               <div className="flex justify-between items-start mb-4">
-                <h4 className="font-bold text-slate-900">Web3 Wallet (Crypto)</h4>
-                <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">Not Connected</span>
+                <h4 className="font-bold text-slate-900">◎ Solana · $PAB Payouts</h4>
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">Phantom</span>
               </div>
-              <p className="text-sm text-slate-600 mb-4">Connect a Phantom or MetaMask wallet to accept USDC/SOL escrow deposits and distribute $PAB rewards.</p>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
-                Connect Wallet
-              </button>
+              <p className="text-sm text-slate-600 mb-4">
+                Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.
+              </p>
+              <a href="/wallet" className="inline-flex px-4 py-2 bg-gradient-to-r from-purple-600 to-emerald-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm">
+                Connect Phantom Wallet →
+              </a>
             </div>
 
             {/* Deposit credit notice */}
