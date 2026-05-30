@@ -163,7 +163,7 @@ export default function BookingPage() {
                 </div>
                 <h2 className="font-headline text-3xl md:text-[2.75rem] font-bold tracking-tight mb-2 leading-tight">{business.name}</h2>
                 <p className="font-body text-sm md:text-[0.875rem] text-primary-fixed-dim flex items-center">
-                  <MapPinIcon className="h-4 w-4 mr-1" /> {business.address || 'Karachi, Pakistan'}
+                  <MapPinIcon className="h-4 w-4 mr-1" /> {business.address || 'Global Partner'}
                 </p>
               </div>
               <div className="hidden md:flex gap-3">

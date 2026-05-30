@@ -66,12 +66,6 @@ const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.ma
 
     const options = {
       fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos'],
-      // Bias results heavily toward Pakistan
-      componentRestrictions: { country: 'pk' },
-      bounds: new google.maps.LatLngBounds(
-        new google.maps.LatLng(23.5, 60.8),  // SW corner of Pakistan
-        new google.maps.LatLng(37.1, 77.8)   // NE corner of Pakistan
-      ),
       strictBounds: false,
     };
 
@@ -104,6 +98,27 @@ export default function NewReservationPage() {
 
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(null);
   const [onPabandi, setOnPabandi] = useState(false);
+  const [mapCenter, setMapCenter] = useState({ lat: 37.0902, lng: -95.7129 }); // Default US center
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCenter({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        () => {
+          // Fallback: Check resolve timezone for Pakistan
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (tz.includes('Karachi') || tz.includes('Asia/Karachi') || tz.includes('Asia/Kabul')) {
+            setMapCenter({ lat: 24.8607, lng: 67.0011 });
+          }
+        }
+      );
+    }
+  }, []);
 
   const [form, setForm] = useState({
     date: '',
@@ -390,9 +405,9 @@ export default function NewReservationPage() {
                 <div className="h-64 bg-gray-900 relative">
                   <Map
                     mapId={'bf51a910020fa25a'}
-                    defaultCenter={{ lat: 24.8607, lng: 67.0011 }}
+                    defaultCenter={mapCenter}
                     defaultZoom={selectedPlace?.location ? 15 : 12}
-                    center={selectedPlace?.location ?? { lat: 24.8607, lng: 67.0011 }}
+                    center={selectedPlace?.location ?? mapCenter}
                     gestureHandling={'greedy'}
                     disableDefaultUI={true}
                   >

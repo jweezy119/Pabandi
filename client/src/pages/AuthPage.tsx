@@ -234,7 +234,7 @@ export default function AuthPage() {
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
-                    : 'Book top businesses in Karachi — for free, always')
+                    : 'Book top businesses globally — for free, always')
                 : 'Sign in to access your bookings and dashboard'}
             </p>
           </div>
@@ -437,7 +437,7 @@ export default function AuthPage() {
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
-            Karachi-first
+            Global Scale
           </span>
         </div>
       </div>
