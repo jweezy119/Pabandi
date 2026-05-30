@@ -34,22 +34,22 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           cat <<EOF > env.yaml
-          NODE_ENV: production
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: "${{ secrets.FIREBASE_PRIVATE_KEY }}"
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          SAFEPAY_API_KEY: ${{ secrets.SAFEPAY_API_KEY }}
-          SAFEPAY_SECRET_KEY: ${{ secrets.SAFEPAY_SECRET_KEY }}
-          SAFEPAY_WEBHOOK_SECRET: ${{ secrets.SAFEPAY_WEBHOOK_SECRET }}
+          NODE_ENV: "production"
+          DATABASE_URL: "${{ secrets.DATABASE_URL || 'placeholder_database_url' }}"
+          FRONTEND_URL: "${{ secrets.FRONTEND_URL || 'placeholder_frontend_url' }}"
+          JWT_SECRET: "${{ secrets.JWT_SECRET || 'placeholder_jwt_secret' }}"
+          JWT_REFRESH_SECRET: "${{ secrets.JWT_REFRESH_SECRET || 'placeholder_jwt_refresh_secret' }}"
+          FIREBASE_PROJECT_ID: "${{ secrets.FIREBASE_PROJECT_ID || 'placeholder_firebase_project_id' }}"
+          FIREBASE_CLIENT_EMAIL: "${{ secrets.FIREBASE_CLIENT_EMAIL || 'placeholder_firebase_client_email' }}"
+          FIREBASE_PRIVATE_KEY: "${{ secrets.FIREBASE_PRIVATE_KEY || 'placeholder_firebase_private_key' }}"
+          GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID || 'placeholder_google_client_id' }}"
+          GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET || 'placeholder_google_client_secret' }}"
+          GOOGLE_MAPS_API_KEY: "${{ secrets.GOOGLE_MAPS_API_KEY || 'placeholder_google_maps_api_key' }}"
+          SMTP_USER: "${{ secrets.SMTP_USER || 'placeholder_smtp_user' }}"
+          SMTP_PASS: "${{ secrets.SMTP_PASS || 'placeholder_smtp_pass' }}"
+          SAFEPAY_API_KEY: "${{ secrets.SAFEPAY_API_KEY || 'placeholder_safepay_api_key' }}"
+          SAFEPAY_SECRET_KEY: "${{ secrets.SAFEPAY_SECRET_KEY || 'placeholder_safepay_secret_key' }}"
+          SAFEPAY_WEBHOOK_SECRET: "${{ secrets.SAFEPAY_WEBHOOK_SECRET || 'placeholder_safepay_webhook_secret' }}"
           PAYPAL_CLIENT_ID: "${{ secrets.PAYPAL_CLIENT_ID || 'placeholder_paypal_client_id' }}"
           PAYPAL_CLIENT_SECRET: "${{ secrets.PAYPAL_CLIENT_SECRET || 'placeholder_paypal_client_secret' }}"
           PAYPAL_WEBHOOK_ID: "${{ secrets.PAYPAL_WEBHOOK_ID || 'placeholder_paypal_webhook_id' }}"
