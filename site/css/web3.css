@@ -17,7 +17,11 @@ body.web3-active::before {
     radial-gradient(ellipse 40% 30% at 10% 80%, rgba(240, 180, 41, 0.05) 0%, transparent 50%);
 }
 
-.page, .hero-page, nav, footer, .modal-overlay {
+/* Give pages/hero-page a stacking context above the ::before glow — but do NOT
+   include .modal-overlay, nav, or footer here because they already have their
+   own position (fixed / sticky) and z-index set in styles.css. Overriding those
+   here was causing the modal to lose its fixed position and appear invisible. */
+.page, .hero-page {
   position: relative;
   z-index: 1;
 }

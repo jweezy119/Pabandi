@@ -7,7 +7,7 @@ Pabandi is an AI-powered booking ecosystem built for the modern service economy.
 - **Business Management**: Complete business registration, webhook integrations, and CRM compatibility
 - **Customer Experience**: Dedicated portals for customers to track bookings, manage their Pabandi Web3 Wallet, and earn crypto rewards for reliable behavior
 - **Smart Reservations**: AI-powered booking system that calculates a dynamic "no-show risk score" based on user history and local factors
-- **Payment Integration**: Secure fiat processing via **Safepay** (compatible with local cards, JazzCash, EasyPaisa) and native **Web3 Crypto Payments** (Solana, BNB Smart Chain)
+- **Payment Integration**: Secure fiat processing via **Stripe** (US cards, Apple Pay, Google Pay) with **Safepay** retained as a secondary gateway for Pakistan market compatibility, plus native **Web3 Crypto Payments** (Solana, BNB Smart Chain)
 - **Automated Reminders**: SMS and email notifications to reduce no-shows
 - **Analytics Dashboard**: Real-time insights into booking patterns, revenue, and crypto rewards
 - **Regulatory Compliance**: Built with Pakistan's data protection and e-commerce regulations in mind
@@ -99,8 +99,8 @@ karachi-booking-platform/
 ## 🔐 Security & Compliance
 
 This application is designed with compliance in mind:
-- **Data Protection**: Aligned with Pakistan's Draft Personal Data Protection Bill 2023
-- **Payment Security**: PCI-DSS compliant payment processing
+- **Data Protection**: Aligned with CCPA (California Consumer Privacy Act) and GDPR-like rights
+- **Payment Security**: PCI-DSS compliant payment processing via Stripe
 - **GDPR-like Features**: User data rights and privacy controls
 
 ## 🤖 AI Features
@@ -114,8 +114,9 @@ The platform uses machine learning to:
 ## 💰 Payments & Crypto Ecosystem
 
 Pabandi features a dual-payment architecture:
-1. **Safepay Integration**: Handles standard fiat transactions, allowing businesses to capture deposits seamlessly using local Pakistani payment methods (Credit/Debit, JazzCash).
-2. **Web3 Crypto Wallet**: Customers can connect their MetaMask (BNB Smart Chain) or Phantom (Solana) wallets to the platform. They earn `$PAB` token rewards for successful check-ins and verified Google reviews, driving loyalty through decentralized incentives.
+1. **Stripe Integration**: Handles standard fiat transactions for the US market — credit/debit cards, Apple Pay, and Google Pay. Deposits are captured via Stripe Checkout Sessions.
+2. **Safepay Integration** *(Pakistan market)*: Retained as a secondary gateway supporting local Pakistani payment methods (Credit/Debit, JazzCash).
+3. **Web3 Crypto Wallet**: Customers can connect their MetaMask (BNB Smart Chain) or Phantom (Solana) wallets to the platform. They earn `$PAB` token rewards for successful check-ins and verified Google reviews, driving loyalty through decentralized incentives.
 
 ## 📱 API Documentation
 
@@ -134,4 +135,4 @@ MIT License - See LICENSE file for details
 For support and inquiries, please contact the development team.
 
 ---
-**Built with ❤️ for businesses in Karachi, Pakistan**
+**Built with ❤️ for businesses across the United States 🇺🇸**

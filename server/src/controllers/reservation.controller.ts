@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
 import { reliabilityService } from '../services/reliability.service';
-import { safepayService } from '../services/safepay.service';
+import { paymentRouter } from '../services/payment.router';
 import { webhookService } from '../services/webhook.service';
 import { notificationService } from '../services/notification.service';
 import moment from 'moment-timezone';
@@ -41,7 +41,7 @@ export const createReservation = async (
     }
 
     // Parse reservation date and time
-    const tz = business.timezone || 'Asia/Karachi';
+    const tz = business.timezone || 'America/New_York';
     const dateTime = moment.tz(
       `${reservationDate} ${reservationTime}`,
       'YYYY-MM-DD HH:mm',
@@ -157,8 +157,13 @@ export const createReservation = async (
     );
 
     let checkoutUrl = null;
-    if (depositAmount && req.body.paymentMethod === 'safepay') {
-       checkoutUrl = await safepayService.createCheckoutUrl(depositAmount, reservation.id);
+    if (depositAmount && (req.body.paymentMethod === 'safepay' || req.body.paymentMethod === 'paypal')) {
+      const result = await paymentRouter.createCheckoutUrl(
+        depositAmount,
+        business.currency || 'USD',
+        reservation.id
+      );
+      checkoutUrl = result.url;
     }
 
     // Trigger Webhook
@@ -320,7 +325,7 @@ export const cancelReservation = async (
     const reservationDateTime = moment.tz(
       `${reservation.reservationDate.toISOString().split('T')[0]} ${reservation.reservationTime}`,
       'YYYY-MM-DD HH:mm',
-      business?.timezone || 'Asia/Karachi'
+      business?.timezone || 'America/New_York'
     );
 
     if (
@@ -354,8 +359,9 @@ export const cancelReservation = async (
         if (reservation.cryptoDepositTxHash) {
           logger.info(`Crypto refund requested manually for reservation ${reservation.id} with txHash ${reservation.cryptoDepositTxHash}`);
         } else {
-          // Fiat refund via Safepay
-          await safepayService.refundDeposit(reservation.id, reservation.depositAmount || 0);
+          // Fiat refund via payment router (Safepay for PKR, PayPal for USD)
+          const currency = business?.currency || 'USD';
+          await paymentRouter.refundDeposit(currency, reservation.id, reservation.depositAmount || 0);
         }
 
         // Update reservation to record that deposit is no longer active
@@ -377,7 +383,7 @@ export const cancelReservation = async (
           },
         });
 
-        logger.info(`Successfully processed refund of PKR ${reservation.depositAmount} for cancelled reservation: ${reservation.id}`);
+        logger.info(`Successfully processed refund of ${business?.currency || 'USD'} ${reservation.depositAmount} for cancelled reservation: ${reservation.id}`);
       } catch (refundError) {
         logger.error(`Error processing refund for reservation ${reservation.id}:`, refundError);
       }

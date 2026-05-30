@@ -43,7 +43,7 @@ const features = [
     color: '#8b5cf6',
     glow: 'rgba(139,92,246,0.15)',
     title: 'Bold Analytics',
-    desc: 'Real-time insights into every booking, trend, and protected rupee.',
+    desc: 'Real-time insights into every booking, trend, and protected dollar.',
   },
 ];
 
@@ -51,7 +51,7 @@ const stats = [
   { value: '10,000+', label: 'Active Bookings' },
   { value: '98%', label: 'Show-up Rate' },
   { value: '500+', label: 'Businesses Listed' },
-  { value: '₨ 2M+', label: 'Revenue Protected' },
+  { value: '$2M+', label: 'Revenue Protected' },
 ];
 
 export default function HomePage() {
@@ -76,7 +76,7 @@ export default function HomePage() {
               color: '#93c5fd',
             }}>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            AI-Powered · Karachi's Smartest Booking Platform
+            AI-Powered · Smarter Bookings. Anywhere.
           </div>
 
           {/* Headline */}
@@ -90,7 +90,9 @@ export default function HomePage() {
           <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed text-slate-600" >
             No more missed appointments or lost revenue. Pabandi protects businesses from no-shows and rewards customers with{' '}
             <span style={{ color: '#60a5fa', fontWeight: 600 }}>Pabandi Reliability Tokens (PAB)</span>{' '}
-            just for showing up — guaranteed.
+            just for showing up — now live in{' '}
+            <span style={{ fontWeight: 700 }}>🇺🇸 USA</span> &amp;{' '}
+            <span style={{ fontWeight: 700 }}>🇵🇰 Pakistan</span>.
           </p>
 
           {/* CTA buttons */}
@@ -116,7 +118,7 @@ export default function HomePage() {
               ))}
             </div>
             <span className="text-sm text-slate-600" >
-              Trusted by <strong className="text-slate-500">500+ businesses</strong> across Karachi
+              Trusted by <strong className="text-slate-500">500+ businesses</strong> across 🇺🇸 USA &amp; 🇵🇰 Pakistan
             </span>
           </div>
         </div>
@@ -177,9 +179,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-black mb-2 text-slate-900" >For Customers</h3>
-              <p className="text-sm mb-6 text-slate-600" >
-                Book top salons, restaurants, and clinics in Karachi. Earn PAB tokens every time you show up.
+              <h3 className="text-2xl font-black mb-2 text-white" >For Customers</h3>
+              <p className="text-sm mb-6 text-slate-200" >
+              Book top salons, restaurants, and clinics near you. Earn PAB tokens every time you show up.
               </p>
               <Link to="/register" id="cta-customer-section"
                 className="btn-primary text-sm inline-flex">
@@ -203,8 +205,8 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-black mb-2 text-slate-900" >For Businesses</h3>
-              <p className="text-sm mb-6 text-slate-600" >
+              <h3 className="text-2xl font-black mb-2 text-white" >For Businesses</h3>
+              <p className="text-sm mb-6 text-slate-200" >
                 Connect your Google Business profile. Accept bookings, eliminate no-shows, and grow your revenue.
               </p>
               <Link to="/register?role=business" id="cta-business-section"

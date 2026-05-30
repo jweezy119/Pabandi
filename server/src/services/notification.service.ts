@@ -86,7 +86,7 @@ export class NotificationService {
   ): Promise<boolean> {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@karachibooking.pk',
+        from: process.env.EMAIL_FROM || 'noreply@pabandi.com',
         to: email,
         subject: `Reminder: Reservation at ${reservation.businessName}`,
         html: `
@@ -138,7 +138,7 @@ export class NotificationService {
             </div>
             <p>This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-            <p style="font-size: 12px; color: #777;">&copy; 2025 Pabandi · Karachi, Pakistan</p>
+            <p style="font-size: 12px; color: #777;">&copy; 2026 Pabandi &middot; United States</p>
           </div>
         `,
       };

@@ -44,7 +44,7 @@ const BENEFITS = [
     color: '#ec4899',
     glow: 'rgba(236,72,153,0.15)',
     title: 'Flexible Payments',
-    desc: 'Accept deposits via Safepay, crypto (BNB/SOL), or cash. You choose, we handle the tech.',
+    desc: 'Accept deposits via Stripe, crypto (BNB/SOL), or cash. You choose, we handle the tech.',
   },
   {
     icon: '⭐',
@@ -73,7 +73,8 @@ const CATEGORIES = ['Restaurant', 'Cafe', 'Salon', 'Spa', 'Clinic', 'Fitness Cen
 // ── Component ──────────────────────────────────────────────────────────
 export default function BusinessJoinPage() {
   const [form, setForm] = useState({
-    businessName: '', ownerName: '', phone: '', email: '', category: '', city: 'Karachi',
+    businessName: '', ownerName: '', phone: '', email: '', category: '', city: '',
+    country: 'United States',
     password: '', confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -119,7 +120,7 @@ export default function BusinessJoinPage() {
       if (msg.includes('already exists')) {
         setError('An account with this email already exists. Please sign in instead.');
       } else {
-        setError(msg || 'Something went wrong. Please try again or WhatsApp us at +92 300 000 0000.');
+        setError(msg || 'Something went wrong. Please try again or call us at +1 (800) 000-0000.');
       }
     } finally {
       setLoading(false);
@@ -182,7 +183,7 @@ export default function BusinessJoinPage() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold tracking-widest uppercase"
             style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', color: '#fbbf24' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            Founding Partner Program — Limited Spots
+          Founding Partner Program — 🇺🇸 USA &amp; 🇵🇰 Pakistan
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-slate-900" >
@@ -193,7 +194,8 @@ export default function BusinessJoinPage() {
           </h1>
 
           <p className="text-lg max-w-2xl mx-auto mb-10" style={{ lineHeight: 1.7 }}>
-            Pabandi is Karachi's AI-powered reservation platform. Join as a Founding Partner and get
+            Pabandi is the AI-powered reservation platform now launching across
+            <strong className="text-slate-900"> the USA &amp; Pakistan</strong>. Join as a Founding Partner and get
             <strong className="text-slate-900"> 6 months completely free </strong>
             — no credit card, no contracts.
           </p>
@@ -238,7 +240,7 @@ export default function BusinessJoinPage() {
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#fbbf24' }}>Founding Partner Perks</p>
             <h2 className="text-4xl font-black mb-4 text-slate-900" >Everything You Get — Free</h2>
             <p className="text-base max-w-xl mx-auto text-slate-600" >
-              We're offering these perks to the first 100 businesses who join. After that, pricing starts at ₨4,999/month.
+              We're offering these perks to the first 100 businesses who join. After that, pricing starts at $99/month.
             </p>
           </div>
 
@@ -274,7 +276,7 @@ export default function BusinessJoinPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-bold uppercase tracking-widest mb-3 text-slate-700" >Platform Features</p>
-            <h2 className="text-4xl font-black text-slate-900" >Built for Karachi Businesses</h2>
+            <h2 className="text-4xl font-black text-slate-900" >Built for US Businesses</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -361,7 +363,7 @@ export default function BusinessJoinPage() {
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >WhatsApp Number</label>
                   <input name="phone" value={form.phone} onChange={handleChange}
-                    placeholder="+92 300 0000000"
+                    placeholder="+1 (555) 000-0000"
                     className="input-field w-full" />
                 </div>
                 <div>
@@ -382,10 +384,12 @@ export default function BusinessJoinPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >City</label>
-                  <input name="city" value={form.city} onChange={handleChange}
-                    placeholder="Karachi"
-                    className="input-field w-full" />
+                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >Country</label>
+                  <select name="country" value={form.country} onChange={handleChange}
+                    className="input-field w-full appearance-none">
+                    <option value="United States">🇺🇸 United States</option>
+                    <option value="Pakistan">🇵🇰 Pakistan</option>
+                  </select>
                 </div>
               </div>
 
@@ -441,7 +445,7 @@ export default function BusinessJoinPage() {
 
           {/* Trust row */}
           <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
-            {['🔒 Secure & Private', '🇵🇰 Built for Pakistan', '⚡ Live in 24hrs'].map(t => (
+            {['🔒 Secure & Private', '🇺🇸 Built for the USA', '⚡ Live in 24hrs'].map(t => (
               <span key={t} className="text-xs font-medium text-slate-800" >{t}</span>
             ))}
           </div>
@@ -451,7 +455,7 @@ export default function BusinessJoinPage() {
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="border-t py-8 px-4 text-center"
         style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <p className="text-xs">© 2025 Pabandi · Karachi, Pakistan · <a href="mailto:hello@pabandi.com" className="hover:text-blue-400 transition-colors">hello@pabandi.com</a></p>
+        <p className="text-xs">© 2026 Pabandi · United States · <a href="mailto:hello@pabandi.com" className="hover:text-blue-400 transition-colors">hello@pabandi.com</a></p>
       </footer>
 
     </div>

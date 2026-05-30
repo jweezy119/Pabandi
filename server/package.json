@@ -12,7 +12,7 @@
     "seed": "ts-node prisma/seed.ts",
     "generate": "prisma generate",
     "studio": "prisma studio",
-    "deploy:run": "gcloud run deploy pabandi-backend --source . --region asia-south1 --allow-unauthenticated --project pabandi-project"
+    "deploy:run": "gcloud run deploy pabandi-backend --source . --region asia-south1 --allow-unauthenticated --project pabandi-42c5b"
   },
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.2",

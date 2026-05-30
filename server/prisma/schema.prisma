@@ -44,6 +44,7 @@ enum PaymentStatus {
 
 enum PaymentMethod {
   CREDIT_CARD
+  STRIPE
   JAZZCASH
   EASYPAISA
   CASH
@@ -97,9 +98,9 @@ model Business {
   description     String?
   category        BusinessCategory
   address         String
-  city            String          @default("Karachi")
-  province        String          @default("Sindh")
-  country         String          @default("Pakistan")
+  city            String          @default("")
+  state           String          @default("")
+  country         String          @default("United States")
   postalCode      String?
   phone           String
   email           String
@@ -110,8 +111,8 @@ model Business {
   longitude       Float?
   
   // Business Settings
-  timezone        String          @default("Asia/Karachi")
-  currency        String          @default("PKR")
+  timezone        String          @default("America/New_York")
+  currency        String          @default("USD")
   bookingAdvanceDays Int          @default(30)
   cancellationHours Int           @default(24)
   
@@ -243,7 +244,7 @@ model Payment {
   reservationId   String?
   userId          String
   amount          Float
-  currency        String        @default("PKR")
+  currency        String        @default("USD")
   status          PaymentStatus @default(PENDING)
   paymentMethod   String        // "credit_card", "jazzcash", "easypaisa", "cash"
   transactionId   String?       @unique

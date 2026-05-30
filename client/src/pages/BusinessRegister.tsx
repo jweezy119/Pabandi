@@ -8,7 +8,7 @@ export default function BusinessRegister() {
     description: '',
     category: 'RESTAURANT',
     address: '',
-    city: 'Karachi',
+    city: '',
     phone: '',
     email: '',
     website: '',
@@ -149,7 +149,7 @@ export default function BusinessRegister() {
                 value={formData.phone}
                 onChange={handleChange}
                 className="input-field"
-                placeholder="+92 300 1234567"
+                placeholder="+1 (555) 000-0000"
               />
             </div>
           </div>

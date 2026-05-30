@@ -37,7 +37,7 @@ export default function Layout() {
               <div className="flex items-center gap-8">
                 <Link to="/" className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                    style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 2px 10px rgba(37,99,235,0.4)' }}>
+                  style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', boxShadow: '0 2px 10px rgba(79,70,229,0.4)' }}>
                     P
                   </div>
                   <span className="text-lg font-black tracking-tight" style={{ color: '#e8edf3' }}>
@@ -142,7 +142,7 @@ export default function Layout() {
                 <span className="font-bold" style={{ color: '#e8edf3' }}>Pabandi</span>
               </div>
               <p className="text-sm" style={{ color: '#3d5068' }}>
-                © 2025 Pabandi. AI-powered bookings with smart no-show prevention.
+                © 2026 Pabandi. AI-powered bookings with smart no-show prevention.
               </p>
               <div className="flex gap-5 text-sm" style={{ color: '#3d5068' }}>
                 <a href="#" className="hover:text-[#a0b4c8] transition-colors">Privacy</a>

@@ -22,7 +22,7 @@ export default function BookingPage() {
     customerName: '',
     customerPhone: '',
     specialRequests: '',
-    paymentMethod: 'safepay',
+    paymentMethod: 'paypal',
   });
 
   const { data: businessData, isLoading: businessLoading } = useQuery(
@@ -203,7 +203,7 @@ export default function BookingPage() {
                   </div>
                   <div>
                     <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Contact</h4>
-                    <p className="font-body text-[0.875rem] text-on-surface-variant">{business.phone || '+92 300 0000000'}</p>
+                    <p className="font-body text-[0.875rem] text-on-surface-variant">{business.address || `${business.city || ''}, ${business.state || business.country || 'United States'}`}</p>
                   </div>
                 </div>
               </div>
@@ -264,17 +264,21 @@ export default function BookingPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-on-surface mb-1">Phone Number *</label>
-                      <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="input-field" placeholder="+92 300 1234567" />
+                       <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="input-field" placeholder="+1 (555) 000-0000" />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-on-surface mb-2">Deposit Payment Method</label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* Safepay */}
-                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'safepay' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-transparent hover:bg-surface'}`}>
-                          <input type="radio" name="paymentMethod" value="safepay" checked={formData.paymentMethod === 'safepay'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-on-surface text-sm">Safepay Checkout</span>
-                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">Cards / Wallets</span>
+                        {/* Fiat payment — PayPal (USD) or Safepay (PKR) */}
+                         <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'paypal' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-transparent hover:bg-surface'}`}>
+                           <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleChange} className="sr-only" />
+                           <span className="font-semibold text-on-surface text-sm">
+                             {business.currency === 'PKR' ? 'Safepay' : 'PayPal'}
+                           </span>
+                           <span className="text-[10px] text-on-surface-variant font-medium mt-1">
+                             {business.currency === 'PKR' ? 'Cards / JazzCash / EasyPaisa' : 'Cards / PayPal Wallet'}
+                           </span>
                         </label>
 
                         {/* BSC BNB */}

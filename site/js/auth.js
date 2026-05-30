@@ -18,9 +18,10 @@ function apiUrl(path) {
 
 function appUrl(path) {
   const cfg = getConfig();
-  const base = (cfg.SITE_URL || window.location.origin).replace(/\/$/, '');
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const base = isLocal ? 'http://localhost:3000' : (cfg.SITE_URL || window.location.origin).replace(/\/$/, '') + (cfg.APP_PATH || '/app');
   const sub = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${cfg.APP_PATH}${sub}`;
+  return `${base}${sub}`;
 }
 
 function getSelectedRole() {

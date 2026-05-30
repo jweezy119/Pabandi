@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 type Mode = 'login' | 'signup';
@@ -37,14 +37,20 @@ const FieldError = ({ msg }: { msg: string }) => (
 );
 
 export default function AuthPage() {
-  const [mode, setMode] = useState<Mode>('login');
-  const [role, setRole] = useState<Role>('customer');
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<Mode>(() => {
+    return location.pathname === '/register' ? 'signup' : 'login';
+  });
+  const [role, setRole] = useState<Role>(() => {
+    const r = searchParams.get('role');
+    return r === 'business' ? 'business' : 'customer';
+  });
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '',
     firstName: '', lastName: '', phone: '',
     businessName: '', googlePlaceId: '',
   });
-  const [searchParams] = useSearchParams();
   const urlError = searchParams.get('error');
   const [error, setError] = useState(() => {
     if (urlError === 'facebook_not_configured') return 'Facebook login is not configured yet. Please add FACEBOOK_APP_ID in backend.';
@@ -59,6 +65,21 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   const clearErrors = () => { setError(''); setFieldErrors({}); };
+
+  // Keep form mode and role in sync with route path and query parameters
+  useEffect(() => {
+    setMode(location.pathname === '/register' ? 'signup' : 'login');
+    clearErrors();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const r = searchParams.get('role');
+    if (r === 'business') {
+      setRole('business');
+    } else if (r === 'customer') {
+      setRole('customer');
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

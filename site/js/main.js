@@ -1,4 +1,4 @@
-﻿let currentPage = 'home';
+let currentPage = 'home';
 let currentModalMode = 'signup';
 let currentTab = 'signup';
 
@@ -83,6 +83,20 @@ function openModal(mode) {
     } else {
       const auth = document.getElementById('modal-auth');
       if (auth) auth.style.display = 'block';
+
+      // Pre-select role based on current page
+      const businessRadio = document.querySelector('input[name="modal-role"][value="business"]');
+      const customerRadio = document.querySelector('input[name="modal-role"][value="customer"]');
+      if (businessRadio && customerRadio) {
+        if (typeof currentPage !== 'undefined' && currentPage === 'business') {
+          businessRadio.checked = true;
+          customerRadio.checked = false;
+        } else {
+          customerRadio.checked = true;
+          businessRadio.checked = false;
+        }
+      }
+
       switchTab(mode === 'login' ? 'login' : 'signup');
       if (typeof setModalError === 'function') setModalError('');
     }
@@ -96,12 +110,14 @@ function openModal(mode) {
     if (typeof showToast === 'function') {
       showToast('Could not open form. Go to the app to sign in.');
     }
-    const cfg = window.PABANDI_CONFIG || {};
-    window.location.assign(
-      (cfg.SITE_URL || window.location.origin) +
-        (cfg.APP_PATH || '/app') +
-        (mode === 'login' ? '/login' : '/register')
-    );
+    if (typeof appUrl === 'function') {
+      window.location.assign(appUrl(mode === 'login' ? '/login' : '/register'));
+    } else {
+      const cfg = window.PABANDI_CONFIG || {};
+      const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const base = isLocal ? 'http://localhost:3000' : (cfg.SITE_URL || window.location.origin).replace(/\/$/, '') + (cfg.APP_PATH || '/app');
+      window.location.assign(`${base}${mode === 'login' ? '/login' : '/register'}`);
+    }
   }
 }
 
@@ -193,10 +209,14 @@ function handleFooterLink(label) {
 }
 
 function handleWalletAction(action) {
-  const cfg = window.PABANDI_CONFIG || {};
-  const base = cfg.SITE_URL || window.location.origin;
-  const appPath = cfg.APP_PATH || '/app';
-  window.location.assign(`${base}${appPath}/wallet`);
+  if (typeof appUrl === 'function') {
+    window.location.assign(appUrl('/wallet'));
+  } else {
+    const cfg = window.PABANDI_CONFIG || {};
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const base = isLocal ? 'http://localhost:3000' : (cfg.SITE_URL || window.location.origin).replace(/\/$/, '') + (cfg.APP_PATH || '/app');
+    window.location.assign(`${base}/wallet`);
+  }
 }
 
 function showToast(message) {
