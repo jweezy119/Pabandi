@@ -9,17 +9,13 @@
     ],
     "rewrites": [
       {
-        "source": "/app/**",
-        "destination": "/app/index.html"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
     ],
     "headers": [
       {
-        "source": "/app/**/*.@(js|css|woff2|woff|ttf|svg|png|jpg|jpeg|gif|ico|webp)",
+        "source": "assets/**",
         "headers": [
           {
             "key": "Cache-Control",
@@ -37,7 +33,7 @@
         ]
       },
       {
-        "source": "**/index.html",
+        "source": "index.html",
         "headers": [
           {
             "key": "Cache-Control",
