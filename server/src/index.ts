@@ -1,4 +1,4 @@
-// Pabandi Server
+// Pabandi Server - IPv4 Pooler active
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
