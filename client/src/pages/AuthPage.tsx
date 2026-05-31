@@ -144,7 +144,9 @@ export default function AuthPage() {
       navigate('/dashboard');
     } catch (err: any) {
       const data = err.response?.data;
-      if (data?.errors) {
+      if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to the server. If you are on the live site, the backend might be down or redeploying.');
+      } else if (data?.errors) {
         setFieldErrors(data.errors);
         setError(data.message || 'Please fix the errors below.');
       } else {
