@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'react-query';
 import {
   WalletIcon, ArrowUpRightIcon,
   StarIcon, LinkIcon, XMarkIcon, CheckCircleIcon,
-  ExclamationTriangleIcon, BoltIcon, ShieldCheckIcon,
+  ExclamationTriangleIcon, BoltIcon,
   TrophyIcon, FireIcon, CurrencyDollarIcon,
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
@@ -53,7 +53,6 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
 
   const bookingsNeeded = Math.max(0, tier.minBookings - totalBookings);
   const rateNeeded = Math.max(0, tier.minRate - showRate);
-  const progress = earned ? 100 : Math.round(Math.min(totalBookings / tier.minBookings, 1) * 50 + Math.min(showRate / tier.minRate, 1) * 50);
 
   return (
     <div style={{

@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuthStore } from '../store/authStore';
 import { reservationService, cryptoService } from '../services/api';
 import {
-  UserCircleIcon,
   CalendarIcon,
   StarIcon,
   ShieldCheckIcon,
@@ -14,7 +13,6 @@ import {
   TrophyIcon,
   FireIcon,
   HeartIcon,
-  ClockIcon,
 } from '@heroicons/react/24/outline';
 
 /* ── Animated Arc Gauge ── */

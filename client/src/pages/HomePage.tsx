@@ -80,7 +80,6 @@ function FeatureCard({ icon, color, glow, title, desc, delay }: {
       <div
         ref={ref}
         onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
         style={{
           background: 'var(--color-surface)',
           border: `1px solid ${glow.replace('0.15', '0.2')}`,
@@ -96,6 +95,7 @@ function FeatureCard({ icon, color, glow, title, desc, delay }: {
           (e.currentTarget as HTMLDivElement).style.borderColor = color + '55';
         }}
         onMouseLeave={e => {
+          handleMouseLeave();
           const target = e.currentTarget as HTMLDivElement;
           target.style.boxShadow = '';
           target.style.borderColor = glow.replace('0.15', '0.2');
