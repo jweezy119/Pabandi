@@ -162,22 +162,22 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12"
-      style={{ background: 'transparent' }}>
+      style={{ background: 'var(--color-bg)' }}>
 
       {/* Background glow orbs */}
       <div className="animate-orb" style={{
         position: 'absolute', width: 500, height: 500, top: '-15%', left: '-10%',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.2), transparent)',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.14), transparent)',
         filter: 'blur(60px)', pointerEvents: 'none',
       }} />
       <div className="animate-float-2" style={{
         position: 'absolute', width: 400, height: 400, bottom: '-10%', right: '-5%',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.12), transparent)',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.10), transparent)',
         filter: 'blur(60px)', pointerEvents: 'none', animationDelay: '3s',
       }} />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(108,99,255,0.08) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(rgba(14,165,233,0.06) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
         maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
         WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
@@ -189,10 +189,10 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 16px rgba(37,99,235,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#0ea5e9,#14b8a6)', boxShadow: '0 4px 16px rgba(14,165,233,0.4)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900" >Pabandi</span>
+            <span className="text-xl font-black tracking-tight" style={{ color: '#e2eaf6' }}>Pabandi</span>
           </Link>
         </div>
 
@@ -245,12 +245,12 @@ export default function AuthPage() {
 
           {/* Heading */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900" >
+            <h1 className="text-2xl font-bold" style={{ color: '#e2eaf6' }}>
               {isSignup
                 ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
                 : 'Welcome Back'}
             </h1>
-            <p className="mt-1 text-sm text-slate-600" >
+            <p className="mt-1 text-sm" style={{ color: '#5e7a96' }}>
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
@@ -265,7 +265,7 @@ export default function AuthPage() {
               disabled={!!oauthLoading}
               style={{ opacity: oauthLoading && oauthLoading !== 'google' ? 0.5 : 1 }}>
               {oauthLoading === 'google' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(108,99,255,0.3)', borderTopColor: '#6C63FF', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(14,165,233,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
                 Connecting to Google…</>
               ) : (
                 <><GoogleIcon />

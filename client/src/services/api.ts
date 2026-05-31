@@ -2,9 +2,13 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 // @ts-ignore
+// Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
+// This makes it safe whether the GitHub secret includes /api/v1 or not.
+const _rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api/v1'
-  : (import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app/api/v1'); // 10.0.2.2 is the special IP for Android emulator host loopback
+  : `${_baseHost}/api/v1`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
