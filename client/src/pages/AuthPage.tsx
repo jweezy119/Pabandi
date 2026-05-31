@@ -95,7 +95,7 @@ export default function AuthPage() {
     setOauthLoading('google');
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
+      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-97129395003.asia-south1.run.app');
     window.location.href = `${backendUrl}/api/v1/auth/google?role=${role}`;
   };
 
@@ -103,7 +103,7 @@ export default function AuthPage() {
     setOauthLoading('facebook');
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
+      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-97129395003.asia-south1.run.app');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
 
