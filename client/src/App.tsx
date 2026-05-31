@@ -15,6 +15,7 @@ import BusinessJoinPage from './pages/BusinessJoinPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -73,6 +74,10 @@ function App() {
         <Route
           path="wallet"
           element={isAuthenticated ? <WalletDashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="profile"
+          element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
         />
       </Route>
     </Routes>

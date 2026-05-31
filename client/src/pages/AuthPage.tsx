@@ -89,7 +89,10 @@ export default function AuthPage() {
     }
   };
 
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null);
+
   const handleGoogleAuth = () => {
+    setOauthLoading('google');
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
       : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
@@ -97,11 +100,13 @@ export default function AuthPage() {
   };
 
   const handleFacebookAuth = () => {
+    setOauthLoading('facebook');
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
       : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,13 +160,26 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12"
-      style={{ background: 'var(--color-bg)' }}>
+      style={{ background: 'transparent' }}>
 
-      {/* Background glow blobs */}
-      <div className="glow-blob w-[600px] h-[600px] top-[-200px] left-[-200px]"
-        style={{ background: 'rgba(37,99,235,0.07)' }} />
-      <div className="glow-blob w-[500px] h-[500px] bottom-[-100px] right-[-100px]"
-        style={{ background: 'rgba(16,185,129,0.06)' }} />
+      {/* Background glow orbs */}
+      <div className="animate-orb" style={{
+        position: 'absolute', width: 500, height: 500, top: '-15%', left: '-10%',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.2), transparent)',
+        filter: 'blur(60px)', pointerEvents: 'none',
+      }} />
+      <div className="animate-float-2" style={{
+        position: 'absolute', width: 400, height: 400, bottom: '-10%', right: '-5%',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.12), transparent)',
+        filter: 'blur(60px)', pointerEvents: 'none', animationDelay: '3s',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'radial-gradient(rgba(108,99,255,0.08) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+        maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
+      }} />
 
       <div className="w-full max-w-md relative z-10">
 
@@ -240,15 +258,29 @@ export default function AuthPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <button id="btn-google-auth" onClick={handleGoogleAuth} className="btn-google">
-              <GoogleIcon />
-              {isSignup
-                ? (isBusiness ? 'Continue with Google Business' : 'Continue with Google')
-                : 'Sign in with Google'}
+            <button id="btn-google-auth" onClick={handleGoogleAuth}
+              className="btn-google"
+              disabled={!!oauthLoading}
+              style={{ opacity: oauthLoading && oauthLoading !== 'google' ? 0.5 : 1 }}>
+              {oauthLoading === 'google' ? (
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(108,99,255,0.3)', borderTopColor: '#6C63FF', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                Connecting to Google…</>
+              ) : (
+                <><GoogleIcon />
+                {isSignup ? (isBusiness ? 'Continue with Google Business' : 'Continue with Google') : 'Sign in with Google'}</>
+              )}
             </button>
-            <button id="btn-facebook-auth" onClick={handleFacebookAuth} className="btn-google" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <FacebookIcon />
-              {isSignup ? 'Sign up with Facebook' : 'Sign in with Facebook'}
+            <button id="btn-facebook-auth" onClick={handleFacebookAuth}
+              className="btn-google"
+              disabled={!!oauthLoading}
+              style={{ opacity: oauthLoading && oauthLoading !== 'facebook' ? 0.5 : 1 }}>
+              {oauthLoading === 'facebook' ? (
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(108,99,255,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                Connecting to Facebook…</>
+              ) : (
+                <><FacebookIcon />
+                {isSignup ? 'Sign up with Facebook' : 'Sign in with Facebook'}</>
+              )}
             </button>
           </div>
 
