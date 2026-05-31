@@ -92,14 +92,14 @@ export default function AuthPage() {
   const handleGoogleAuth = () => {
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || '');
+      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
     window.location.href = `${backendUrl}/api/v1/auth/google?role=${role}`;
   };
 
   const handleFacebookAuth = () => {
     const backendUrl = window.location.hostname === 'localhost'
       ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || '');
+      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-el.a.run.app');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
 

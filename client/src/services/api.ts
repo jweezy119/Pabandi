@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 // @ts-ignore
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:5000/api/v1'
-  : (import.meta.env.VITE_API_URL || 'http://10.0.2.2:5000/api/v1'); // 10.0.2.2 is the special IP for Android emulator host loopback
+  : (import.meta.env.VITE_API_URL || 'https://pabandi-server-el.a.run.app/api/v1'); // 10.0.2.2 is the special IP for Android emulator host loopback
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

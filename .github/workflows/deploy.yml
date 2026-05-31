@@ -51,6 +51,8 @@ jobs:
           PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
           PAYPAL_WEBHOOK_ID: ${{ secrets.PAYPAL_WEBHOOK_ID }}
+          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
         run: |
           cat <<EOF > env.yaml
           NODE_ENV: "production"
@@ -72,6 +74,8 @@ jobs:
           PAYPAL_CLIENT_ID: "${PAYPAL_CLIENT_ID:-placeholder_paypal_client_id}"
           PAYPAL_CLIENT_SECRET: "${PAYPAL_CLIENT_SECRET:-placeholder_paypal_client_secret}"
           PAYPAL_WEBHOOK_ID: "${PAYPAL_WEBHOOK_ID:-placeholder_paypal_webhook_id}"
+          FACEBOOK_APP_ID: "${FACEBOOK_APP_ID:-placeholder_facebook_app_id}"
+          FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET:-placeholder_facebook_app_secret}"
           EOF
 
           gcloud run deploy pabandi-server \
