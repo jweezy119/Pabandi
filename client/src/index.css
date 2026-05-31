@@ -425,3 +425,29 @@
     transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
+
+/* ── Global Theme Overrides to prevent light-mode hardcoding ── */
+.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600 {
+  color: #e8eef8 !important;
+}
+.text-slate-500, .text-slate-400 {
+  color: var(--color-text-muted) !important;
+}
+.text-slate-300 {
+  color: var(--color-text-dim) !important;
+}
+.bg-white {
+  background-color: var(--color-surface-raised) !important;
+}
+.bg-slate-50, .bg-slate-100 {
+  background-color: var(--color-bg-secondary) !important;
+}
+.border-slate-200, .border-slate-100 {
+  border-color: var(--color-border) !important;
+}
+.hover\:bg-slate-100:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+.hover\:text-slate-900:hover {
+  color: #ffffff !important;
+}
