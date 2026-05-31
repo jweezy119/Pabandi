@@ -58,6 +58,7 @@ jobs:
           NODE_ENV: "production"
           DATABASE_URL: "${DATABASE_URL:-placeholder_database_url}"
           FRONTEND_URL: "${FRONTEND_URL:-placeholder_frontend_url}"
+          BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
           JWT_SECRET: "${JWT_SECRET:-placeholder_jwt_secret}"
           JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:-placeholder_jwt_refresh_secret}"
           FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-placeholder_firebase_project_id}"
