@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { analyticsService, reservationService, businessService } from '../services/api';
@@ -8,7 +8,6 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  StarIcon,
   ShieldCheckIcon,
   PlusIcon,
   Cog6ToothIcon,
@@ -16,7 +15,6 @@ import {
   ClockIcon,
   BoltIcon,
   ArrowTrendingUpIcon,
-  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
@@ -39,25 +37,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; 
   COMPLETED:  { label: 'Completed', bg: 'rgba(0,229,255,0.1)',   color: '#00E5FF', glow: 'rgba(0,229,255,0.2)',   icon: <CheckCircleIcon className="h-3.5 w-3.5" /> },
 };
 
-/* ── Animated Counter ── */
-function AnimatedNumber({ value }: { value: number }) {
-  const [display, setDisplay] = useState(0);
-  const prev = useRef(0);
-  useEffect(() => {
-    const target = value;
-    const diff = target - prev.current;
-    if (diff === 0) return;
-    const steps = 30;
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      setDisplay(Math.round(prev.current + (diff * step) / steps));
-      if (step >= steps) { clearInterval(interval); prev.current = target; }
-    }, 30);
-    return () => clearInterval(interval);
-  }, [value]);
-  return <>{display.toLocaleString()}</>;
-}
+
 
 /* ── Neon Stat Card ── */
 function StatCard({ icon, label, value, color, glow }: {
