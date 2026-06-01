@@ -277,7 +277,7 @@ export default function AuthPage() {
               disabled={!!oauthLoading}
               style={{ opacity: oauthLoading && oauthLoading !== 'facebook' ? 0.5 : 1 }}>
               {oauthLoading === 'facebook' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(108,99,255,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(14,165,233,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
                 Connecting to Facebook…</>
               ) : (
                 <><FacebookIcon />
