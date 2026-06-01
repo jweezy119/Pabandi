@@ -131,7 +131,7 @@ function FeatureCard({ icon, color, glow, title, desc, delay }: {
 const features = [
   {
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-    color: '#6C63FF', glow: 'rgba(108,99,255,0.15)',
+    color: '#0ea5e9', glow: 'rgba(14,165,233,0.15)',
     title: 'Smart Booking', desc: 'Ultra-fast reservations optimised for high conversion. Book in seconds, from anywhere.',
   },
   {
@@ -152,7 +152,7 @@ const features = [
 ];
 
 const stats = [
-  { value: 10000, suffix: '+', label: 'Active Bookings', color: '#6C63FF' },
+  { value: 10000, suffix: '+', label: 'Active Bookings', color: '#0ea5e9' },
   { value: 98, suffix: '%', label: 'Show-up Rate', color: '#00FFB0' },
   { value: 500, suffix: '+', label: 'Businesses Listed', color: '#00E5FF' },
   { value: 2, suffix: 'M+', label: 'Revenue Protected', color: '#FFB830' },
@@ -170,7 +170,7 @@ export default function HomePage() {
           position: 'absolute', width: 600, height: 600,
           top: '-20%', left: '50%', transform: 'translateX(-50%)',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(14,165,233,0.18) 0%, transparent 70%)',
           filter: 'blur(40px)', pointerEvents: 'none',
         }} />
         <div className="animate-float" style={{
@@ -191,7 +191,7 @@ export default function HomePage() {
         {/* Grid dots */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(rgba(108,99,255,0.12) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(14,165,233,0.12) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
           maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
@@ -203,13 +203,13 @@ export default function HomePage() {
           <div className="animate-fade-up" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '6px 18px', borderRadius: 9999, marginBottom: 32,
-            background: 'rgba(108,99,255,0.1)',
-            border: '1px solid rgba(108,99,255,0.3)',
+            background: 'rgba(14,165,233,0.1)',
+            border: '1px solid rgba(14,165,233,0.3)',
             color: '#a5b4fc', fontSize: 11, fontWeight: 700,
             letterSpacing: '0.12em', textTransform: 'uppercase',
-            boxShadow: '0 0 30px rgba(108,99,255,0.15)',
+            boxShadow: '0 0 30px rgba(14,165,233,0.15)',
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#6C63FF', animation: 'pulseGlow 1.5s ease-in-out infinite', display: 'inline-block' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0ea5e9', animation: 'pulseGlow 1.5s ease-in-out infinite', display: 'inline-block' }} />
             AI-Powered · Smarter Bookings. Anywhere.
           </div>
 
@@ -255,7 +255,7 @@ export default function HomePage() {
           {/* Social proof */}
           <div className="animate-fade-up-delay-4 flex items-center justify-center gap-3 mt-10">
             <div className="flex -space-x-2">
-              {['#6C63FF', '#00E5FF', '#00FFB0', '#FFB830'].map((c, i) => (
+              {['#0ea5e9', '#00E5FF', '#00FFB0', '#FFB830'].map((c, i) => (
                 <div key={i} style={{
                   width: 32, height: 32, borderRadius: '50%',
                   background: c, border: '2px solid #050915',
@@ -276,7 +276,7 @@ export default function HomePage() {
           <div className="hidden lg:flex gap-4 justify-center mt-14 flex-wrap">
             {[
               { label: 'No-Shows Prevented', value: '12,400+', icon: '🛡️', color: '#00FFB0' },
-              { label: 'AI Risk Assessments', value: '99,800+', icon: '🧠', color: '#6C63FF' },
+              { label: 'AI Risk Assessments', value: '99,800+', icon: '🧠', color: '#0ea5e9' },
               { label: 'Tokens Distributed', value: '3.2M PAB', icon: '⚡', color: '#FFB830' },
             ].map((s, i) => (
               <div key={i} className="animate-fade-up" style={{
@@ -357,7 +357,7 @@ export default function HomePage() {
         </ScrollReveal>
         <div className="grid md:grid-cols-3 gap-8">
           {[
-            { step: '01', title: 'Book Your Spot', desc: 'Find any business — salon, restaurant, clinic — and reserve in under 30 seconds.', color: '#6C63FF' },
+            { step: '01', title: 'Book Your Spot', desc: 'Find any business — salon, restaurant, clinic — and reserve in under 30 seconds.', color: '#0ea5e9' },
             { step: '02', title: 'AI Monitors Risk', desc: 'Our ML engine analyses your history to assign a reliability score and predict no-shows.', color: '#00E5FF' },
             { step: '03', title: 'Earn PAB Tokens', desc: 'Show up every time and earn Pabandi tokens redeemable for discounts and perks.', color: '#00FFB0' },
           ].map((s, i) => (
@@ -395,19 +395,19 @@ export default function HomePage() {
           <ScrollReveal>
             <div style={{
               position: 'relative', overflow: 'hidden', borderRadius: '1.75rem', padding: '2.5rem',
-              background: 'linear-gradient(135deg, rgba(108,99,255,0.15) 0%, rgba(8,14,30,0.9) 100%)',
-              border: '1px solid rgba(108,99,255,0.25)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(108,99,255,0.05)',
+              background: 'linear-gradient(135deg, rgba(14,165,233,0.15) 0%, rgba(8,14,30,0.9) 100%)',
+              border: '1px solid rgba(14,165,233,0.25)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(14,165,233,0.05)',
             }}>
               <div style={{
                 position: 'absolute', width: 200, height: 200, top: -60, right: -60,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.3), transparent)',
+                borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.3), transparent)',
                 filter: 'blur(40px)', pointerEvents: 'none',
               }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12, marginBottom: '1.5rem',
-                  background: 'rgba(108,99,255,0.15)', border: '1px solid rgba(108,99,255,0.3)',
+                  background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc',
                 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>

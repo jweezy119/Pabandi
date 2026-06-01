@@ -77,7 +77,7 @@ function AchievementBadge({ icon, label, description, earned, color }: {
 /* ── Booking Timeline Item ── */
 function BookingItem({ reservation, index }: { reservation: any; index: number }) {
   const statusColors: Record<string, { color: string; label: string }> = {
-    CONFIRMED: { color: '#6C63FF', label: 'Confirmed' },
+    CONFIRMED: { color: '#0ea5e9', label: 'Confirmed' },
     COMPLETED: { color: '#00FFB0', label: 'Completed' },
     CANCELLED: { color: '#6b7fa3', label: 'Cancelled' },
     NO_SHOW:   { color: '#FF4C6A', label: 'No-Show' },
@@ -157,7 +157,7 @@ export default function ProfilePage() {
     { icon: <FireIcon className="h-5 w-5" />, label: '5-Booking Streak', description: 'Completed 5 bookings', earned: completed >= 5, color: '#FF6B9D' },
     { icon: <StarIcon className="h-5 w-5" />, label: 'Star Patron', description: 'Completed 10 bookings', earned: completed >= 10, color: '#00E5FF' },
     { icon: <ShieldCheckIcon className="h-5 w-5" />, label: 'Perfect Record', description: '100% show-up rate', earned: noShows === 0 && reservations.length >= 3, color: '#00FFB0' },
-    { icon: <BoltIcon className="h-5 w-5" />, label: 'PAB Collector', description: 'Earned 100 PAB tokens', earned: pabBalance >= 100, color: '#6C63FF' },
+    { icon: <BoltIcon className="h-5 w-5" />, label: 'PAB Collector', description: 'Earned 100 PAB tokens', earned: pabBalance >= 100, color: '#0ea5e9' },
     { icon: <HeartIcon className="h-5 w-5" />, label: 'Loyal Customer', description: 'Visited same business 3x', earned: false, color: '#FF4C6A' },
   ];
 
@@ -180,13 +180,13 @@ export default function ProfilePage() {
         {/* Cover gradient */}
         <div style={{
           height: 220,
-          background: 'linear-gradient(135deg, rgba(108,99,255,0.4) 0%, rgba(0,229,255,0.2) 50%, rgba(0,255,176,0.15) 100%)',
+          background: 'linear-gradient(135deg, rgba(14,165,233,0.4) 0%, rgba(0,229,255,0.2) 50%, rgba(0,255,176,0.15) 100%)',
           position: 'relative',
         }}>
           {/* Animated orbs */}
           <div className="animate-orb" style={{
             position: 'absolute', width: 300, height: 300, top: -100, left: '30%',
-            borderRadius: '50%', background: 'radial-gradient(circle, rgba(108,99,255,0.3), transparent)',
+            borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.3), transparent)',
             filter: 'blur(40px)', pointerEvents: 'none',
           }} />
           <div className="animate-float" style={{
@@ -211,11 +211,11 @@ export default function ProfilePage() {
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{
                 width: 96, height: 96, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #6C63FF, #00E5FF)',
+                background: 'linear-gradient(135deg, #0ea5e9, #00E5FF)',
                 border: '4px solid var(--color-bg)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 32, fontWeight: 900, color: '#fff', fontFamily: 'Space Grotesk, sans-serif',
-                boxShadow: '0 0 40px rgba(108,99,255,0.5), 0 8px 32px rgba(0,0,0,0.6)',
+                boxShadow: '0 0 40px rgba(14,165,233,0.5), 0 8px 32px rgba(0,0,0,0.6)',
               }}>
                 {initials}
               </div>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                   background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)',
                   marginBottom: 6,
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,99,255,0.4)'; (e.currentTarget as HTMLElement).style.color = '#e8eef8'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.4)'; (e.currentTarget as HTMLElement).style.color = '#e8eef8'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)'; }}
               >
                 <PencilIcon className="h-3.5 w-3.5" /> Edit Profile
@@ -281,7 +281,7 @@ export default function ProfilePage() {
         {/* ── Stats Row ── */}
         <div className="animate-fade-up grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Bookings', value: reservations.length, color: '#6C63FF' },
+            { label: 'Total Bookings', value: reservations.length, color: '#0ea5e9' },
             { label: 'Completed', value: completed, color: '#00FFB0' },
             { label: 'PAB Tokens', value: pabBalance, color: '#FFB830' },
             { label: 'No-Shows', value: noShows, color: '#FF4C6A' },
@@ -305,7 +305,7 @@ export default function ProfilePage() {
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
           {/* Trust Score */}
-          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(108,99,255,0.05)' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(14,165,233,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(14,165,233,0.05)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trust Score</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <ArcGauge value={reliabilityScore} color={reliabilityScore >= 90 ? '#00FFB0' : reliabilityScore >= 70 ? '#FFB830' : '#FF4C6A'} label="Trust %" />
@@ -362,10 +362,10 @@ export default function ProfilePage() {
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{
                   padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                  background: activeTab === tab ? 'rgba(108,99,255,0.2)' : 'transparent',
+                  background: activeTab === tab ? 'rgba(14,165,233,0.2)' : 'transparent',
                   color: activeTab === tab ? '#a5b4fc' : 'var(--color-text-muted)',
-                  border: activeTab === tab ? '1px solid rgba(108,99,255,0.3)' : '1px solid transparent',
-                  boxShadow: activeTab === tab ? '0 0 20px rgba(108,99,255,0.2)' : 'none',
+                  border: activeTab === tab ? '1px solid rgba(14,165,233,0.3)' : '1px solid transparent',
+                  boxShadow: activeTab === tab ? '0 0 20px rgba(14,165,233,0.2)' : 'none',
                   textTransform: 'capitalize',
                 }}>
                 {tab === 'history' ? '📅 Booking History' : '🏅 Achievements'}
@@ -378,7 +378,7 @@ export default function ProfilePage() {
             <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>Recent Bookings</h2>
-                <Link to="/reservations" style={{ fontSize: 12, fontWeight: 700, color: '#6C63FF' }}>View All →</Link>
+                <Link to="/reservations" style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>View All →</Link>
               </div>
               {reservations.length > 0 ? (
                 <div>

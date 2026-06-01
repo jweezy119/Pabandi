@@ -224,11 +224,11 @@ export default function BusinessDashboard() {
         <div style={{ textAlign: 'center', maxWidth: 400 }}>
           <div style={{
             width: 72, height: 72, borderRadius: '1.25rem', margin: '0 auto 1.5rem',
-            background: 'rgba(108,99,255,0.12)', border: '1px solid rgba(108,99,255,0.3)',
+            background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 40px rgba(108,99,255,0.2)',
+            boxShadow: '0 0 40px rgba(14,165,233,0.2)',
           }}>
-            <CurrencyDollarIcon className="h-9 w-9" style={{ color: '#6C63FF' }} />
+            <CurrencyDollarIcon className="h-9 w-9" style={{ color: '#0ea5e9' }} />
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 12, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>No Business Registered</h2>
           <p style={{ marginBottom: 24, fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
@@ -265,7 +265,7 @@ export default function BusinessDashboard() {
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,99,255,0.35)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.35)';
                 (e.currentTarget as HTMLElement).style.color = '#e8eef8';
               }}
               onMouseLeave={e => {
@@ -287,9 +287,9 @@ export default function BusinessDashboard() {
             label="Protected Revenue"
             amount={`PKR ${(a.protectedRevenue || 0).toLocaleString()}`}
             sub="Deposit-secured bookings"
-            gradient="linear-gradient(135deg, rgba(108,99,255,0.25) 0%, rgba(12,20,38,0.95) 100%)"
-            glowColor="#6C63FF"
-            icon={<ShieldCheckIcon className="w-full h-full" style={{ color: '#6C63FF' }} />}
+            gradient="linear-gradient(135deg, rgba(14,165,233,0.25) 0%, rgba(12,20,38,0.95) 100%)"
+            glowColor="#0ea5e9"
+            icon={<ShieldCheckIcon className="w-full h-full" style={{ color: '#0ea5e9' }} />}
           />
           <RevenueCard
             label="Total Revenue"
@@ -313,7 +313,7 @@ export default function BusinessDashboard() {
 
         {/* ── Stats Grid ── */}
         <div className="animate-fade-up-delay-2 grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={<CalendarIcon className="h-5 w-5" />} label="Total Bookings" value={a.totalReservations || 0} color="#6C63FF" glow="rgba(108,99,255,0.2)" />
+          <StatCard icon={<CalendarIcon className="h-5 w-5" />} label="Total Bookings" value={a.totalReservations || 0} color="#0ea5e9" glow="rgba(14,165,233,0.2)" />
           <StatCard icon={<CheckCircleIcon className="h-5 w-5" />} label="Completion" value={`${a.completionRate || 0}%`} color="#00FFB0" glow="rgba(0,255,176,0.2)" />
           <StatCard icon={<ExclamationTriangleIcon className="h-5 w-5" />} label="No-Show Rate" value={`${a.noShowRate || 0}%`} color="#FF4C6A" glow="rgba(255,76,106,0.2)" />
           <StatCard icon={<ArrowTrendingUpIcon className="h-5 w-5" />} label="Upcoming Risk" value={`${a.averageUpcomingRisk || 0}%`} color="#FFB830" glow="rgba(255,184,48,0.2)" />
@@ -325,7 +325,7 @@ export default function BusinessDashboard() {
           {/* AI Risk Radar */}
           <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
             {/* Scan line effect */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(to right, transparent, rgba(108,99,255,0.5), transparent)', animation: 'scanLine 4s linear infinite', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(to right, transparent, rgba(14,165,233,0.5), transparent)', animation: 'scanLine 4s linear infinite', pointerEvents: 'none' }} />
             <SectionHeader title="AI Risk Radar" action={
               <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 10px', borderRadius: 9999, background: riskC.bg, color: riskC.text, border: `1px solid ${riskC.text}30`, boxShadow: `0 0 12px ${riskC.glow}`, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 {riskLevel}
@@ -386,9 +386,9 @@ export default function BusinessDashboard() {
 
         {/* ── AI Deposit Recommendations ── */}
         {upcomingRisky.length > 0 && (
-          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '1.25rem', padding: '1.5rem', marginBottom: 24, boxShadow: '0 0 40px rgba(108,99,255,0.05)' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(14,165,233,0.2)', borderRadius: '1.25rem', padding: '1.5rem', marginBottom: 24, boxShadow: '0 0 40px rgba(14,165,233,0.05)' }}>
             <SectionHeader title="AI Deposit Recommendations" action={
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 800, padding: '3px 10px', borderRadius: 9999, background: 'rgba(108,99,255,0.12)', color: '#a5b4fc', border: '1px solid rgba(108,99,255,0.25)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 800, padding: '3px 10px', borderRadius: 9999, background: 'rgba(14,165,233,0.12)', color: '#a5b4fc', border: '1px solid rgba(14,165,233,0.25)' }}>
                 <BoltIcon className="h-3.5 w-3.5" /> {upcomingRisky.length} flagged
               </span>
             } />
@@ -399,7 +399,7 @@ export default function BusinessDashboard() {
                   borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
                   transition: 'all 0.2s',
                 }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(108,99,255,0.2)'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.2)'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -421,12 +421,12 @@ export default function BusinessDashboard() {
 
         {/* ── Overbooking Advisor ── */}
         {a.overbookingAdvice && (
-          <div style={{ borderRadius: '1.25rem', padding: '1.5rem', marginBottom: 24, background: 'linear-gradient(135deg, rgba(108,99,255,0.08), rgba(0,229,255,0.05))', border: '1px solid rgba(108,99,255,0.2)' }}>
-            <SectionHeader title="Overbooking Advisor" action={<span style={{ fontSize: 9, fontWeight: 800, color: '#6C63FF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Event Venue</span>} />
+          <div style={{ borderRadius: '1.25rem', padding: '1.5rem', marginBottom: 24, background: 'linear-gradient(135deg, rgba(14,165,233,0.08), rgba(0,229,255,0.05))', border: '1px solid rgba(14,165,233,0.2)' }}>
+            <SectionHeader title="Overbooking Advisor" action={<span style={{ fontSize: 9, fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Event Venue</span>} />
             <div className="grid grid-cols-3 gap-4">
               {[
                 { label: 'Predicted No-Show', value: `${a.overbookingAdvice.predictedNoShowPercent}%`, color: '#FF4C6A' },
-                { label: 'Safe Overbook Margin', value: `${a.overbookingAdvice.safeOverbookMargin}%`, color: '#6C63FF' },
+                { label: 'Safe Overbook Margin', value: `${a.overbookingAdvice.safeOverbookMargin}%`, color: '#0ea5e9' },
                 { label: 'Sell per 100 Capacity', value: Math.round(100 * (1 + a.overbookingAdvice.safeOverbookMargin / 100)), color: '#00FFB0' },
               ].map(s => (
                 <div key={s.label} style={{ textAlign: 'center', padding: '12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}>
@@ -461,7 +461,7 @@ export default function BusinessDashboard() {
           <SectionHeader
             title="Recent Reservations"
             action={
-              <Link to="/reservations" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6C63FF', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Link to="/reservations" style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0ea5e9', display: 'flex', alignItems: 'center', gap: 4 }}>
                 View All →
               </Link>
             }
@@ -536,7 +536,7 @@ export default function BusinessDashboard() {
               <Link to="/reservations/new" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
                 fontSize: '0.8rem', fontWeight: 700, padding: '8px 16px', borderRadius: 10, transition: 'all 0.2s',
-                background: 'rgba(108,99,255,0.1)', color: '#6C63FF', border: '1px solid rgba(108,99,255,0.25)',
+                background: 'rgba(14,165,233,0.1)', color: '#0ea5e9', border: '1px solid rgba(14,165,233,0.25)',
               }}>
                 <PlusIcon className="h-4 w-4" /> Add First Booking
               </Link>
