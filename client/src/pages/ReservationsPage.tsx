@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
+import BusinessMap from '../components/BusinessMap';
 import { reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
@@ -172,6 +173,16 @@ export default function ReservationsPage() {
                             <p className="text-sm font-bold text-slate-500" >{value}</p>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Map Section */}
+                      <div className="mt-4 h-32 rounded-xl overflow-hidden border border-white/5 relative hidden sm:block">
+                        <BusinessMap 
+                          latitude={r.business?.latitude || 0} 
+                          longitude={r.business?.longitude || 0} 
+                          name={r.business?.name} 
+                          zoom={14} 
+                        />
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import BusinessMap from '../components/BusinessMap';
 
 /* ── Animated Counter ── */
 function AnimatedCounter({ target, suffix = '', duration = 2000 }: { target: number; suffix?: string; duration?: number }) {
@@ -386,6 +387,96 @@ export default function HomePage() {
             </ScrollReveal>
           ))}
         </div>
+      </section>
+
+      {/* ── Web3, AI & Location Engine ── */}
+      <section className="max-w-6xl mx-auto px-4 pb-28">
+        <ScrollReveal>
+          <div className="text-center mb-14">
+            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+              Built on the Future of Tech
+            </h2>
+            <p style={{ fontSize: '1rem', maxWidth: 640, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
+              Experience next-gen reliability powered by blockchain, artificial intelligence, and real-time mapping.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
+          {/* Solana & Web3 */}
+          <ScrollReveal delay={0}>
+            <div style={{
+              background: 'var(--color-surface)', padding: '2rem', borderRadius: '1.25rem',
+              border: '1px solid rgba(0, 255, 176, 0.2)', height: '100%',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12, marginBottom: '1.25rem',
+                background: 'rgba(0, 255, 176, 0.1)', border: '1px solid rgba(0, 255, 176, 0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00FFB0',
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+                Solana Web3 Integration
+              </h3>
+              <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
+                Every successful booking and on-time appearance is permanently verified on the <strong>Solana blockchain</strong>. Users earn <strong>Pabandi Reliability Tokens (PAB)</strong> directly to their Phantom or Solflare wallets. Leverage lightning-fast consensus for instantaneous token rewards.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* AI Reliability Score */}
+          <ScrollReveal delay={100}>
+            <div style={{
+              background: 'var(--color-surface)', padding: '2rem', borderRadius: '1.25rem',
+              border: '1px solid rgba(0, 229, 255, 0.2)', height: '100%',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12, marginBottom: '1.25rem',
+                background: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24 }}>psychology</span>
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+                AI Reliability Score
+              </h3>
+              <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
+                Our proprietary Machine Learning models analyze historical booking data, geolocation patterns, and time-of-day variables to generate an <strong>AI Reliability Score</strong>. Businesses can auto-reject or require deposits from high-risk users, virtually eliminating no-shows.
+              </p>
+            </div>
+          </ScrollReveal>
+        </div>
+
+        {/* Map Integration */}
+        <ScrollReveal delay={200}>
+          <div style={{
+            background: 'var(--color-surface)', padding: '1.5rem', borderRadius: '1.25rem',
+            border: '1px solid rgba(255, 184, 48, 0.2)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+               <div style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  background: 'rgba(255, 184, 48, 0.1)', border: '1px solid rgba(255, 184, 48, 0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFB830',
+                }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 24 }}>explore</span>
+               </div>
+               <div>
+                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+                    Seamless Maps Integration
+                 </h3>
+                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Discover reliable businesses around you in real-time.</p>
+               </div>
+            </div>
+            <div style={{ height: '400px', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}>
+              <BusinessMap latitude={40.7128} longitude={-74.0060} name="Pabandi Premium Locations" zoom={13} />
+            </div>
+          </div>
+        </ScrollReveal>
       </section>
 
       {/* ── Dual CTA ── */}

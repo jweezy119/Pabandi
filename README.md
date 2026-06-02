@@ -4,13 +4,15 @@ Pabandi is an AI-powered booking ecosystem built for the modern service economy.
 
 ## 🎯 Features
 
+- **Translucent Neony Design**: A highly premium, frosted-glass interface featuring a dark slate base, high-blur glass surfaces, and glowing neon accents (cyan, mint, pink) for maximum modern appeal.
+- **Solana Web3 Integration**: Native Solana blockchain integration. Users automatically earn **Pabandi Reliability Tokens (PAB)** dropped directly to their Phantom/Solflare wallets for every successful booking and check-in.
+- **AI Reliability Score**: Proprietary ML models analyze user booking histories, location context, and time variables to generate a dynamic "no-show risk score." High-risk users are dynamically prompted for upfront deposits.
+- **Seamless Maps Integration**: Integrated Google Maps embedded directly into the marketing site and reservation dashboards to discover and visualize real-time local business data.
 - **Business Management**: Complete business registration, webhook integrations, and CRM compatibility
 - **Customer Experience**: Dedicated portals for customers to track bookings, manage their Pabandi Web3 Wallet, and earn crypto rewards for reliable behavior
-- **Smart Reservations**: AI-powered booking system that calculates a dynamic "no-show risk score" based on user history and local factors
-- **Payment Integration**: Secure fiat processing via **Stripe** (US cards, Apple Pay, Google Pay) with **Safepay** retained as a secondary gateway for Pakistan market compatibility, plus native **Web3 Crypto Payments** (Solana, BNB Smart Chain)
+- **Payment Integration**: Secure fiat processing via **Stripe** (US cards, Apple Pay, Google Pay) with **Safepay** retained as a secondary gateway, plus native **Web3 Crypto Payments**
 - **Automated Reminders**: SMS and email notifications to reduce no-shows
 - **Analytics Dashboard**: Real-time insights into booking patterns, revenue, and crypto rewards
-- **Regulatory Compliance**: Built with Pakistan's data protection and e-commerce regulations in mind
 
 ## 🏗️ Architecture
 
