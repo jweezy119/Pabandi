@@ -6,9 +6,8 @@ import { useAuthStore } from '../store/authStore';
 // This makes it safe whether the GitHub secret includes /api/v1 or not.
 const _rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
 const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
-const API_BASE_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:5000/api/v1'
-  : `${_baseHost}/api/v1`;
+// Connect to the live backend even on localhost so we can test the real database
+const API_BASE_URL = `${_baseHost}/api/v1`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

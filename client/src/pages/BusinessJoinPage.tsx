@@ -161,7 +161,7 @@ export default function BusinessJoinPage() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>P</div>
+              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>P</div>
             <span className="font-bold text-sm text-slate-900" >Pabandi</span>
           </Link>
           <div className="flex items-center gap-4">
@@ -188,7 +188,7 @@ export default function BusinessJoinPage() {
 
           <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-slate-900" >
             Grow Your Business.<br />
-            <span style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Eliminate No-Shows.
             </span>
           </h1>
@@ -218,15 +218,15 @@ export default function BusinessJoinPage() {
           {/* Stats row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              { val: '6 Months', label: 'Completely Free' },
+              { val: 'Forever', label: 'Base CRM Free' },
               { val: '98%', label: 'Show-up Rate' },
               { val: '2 min', label: 'Setup Time' },
               { val: '24/7', label: 'Support' },
             ].map(s => (
               <div key={s.val} className="rounded-2xl p-4"
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-2xl font-black mb-1 text-slate-900" >{s.val}</p>
-                <p className="text-xs text-slate-700" >{s.label}</p>
+                <p className="text-2xl font-black mb-1" style={{ color: '#e8e8e8' }}>{s.val}</p>
+                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{s.label}</p>
               </div>
             ))}
           </div>
@@ -237,10 +237,10 @@ export default function BusinessJoinPage() {
       <section className="py-20 px-4" style={{ background: 'var(--color-surface)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#fbbf24' }}>Founding Partner Perks</p>
-            <h2 className="text-4xl font-black mb-4 text-slate-900" >Everything You Get — Free</h2>
-            <p className="text-base max-w-xl mx-auto text-slate-600" >
-              We're offering these perks to the first 100 businesses who join. After that, pricing starts at $99/month.
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#00FFB0' }}>Founding Partner Perks</p>
+            <h2 className="text-4xl font-black mb-4" style={{ color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Start For Free. Pay When You Win.</h2>
+            <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
+              Join the first 100 businesses to unlock our Base CRM forever free. Upgrade to our Outcome-Based AI protection when you're ready to eliminate no-shows for good.
             </p>
           </div>
 
@@ -250,8 +250,8 @@ export default function BusinessJoinPage() {
                 style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="text-3xl shrink-0">{inc.emoji}</div>
                 <div>
-                  <h3 className="font-bold text-base mb-1.5 text-slate-900" >{inc.title}</h3>
-                  <p className="text-sm leading-relaxed text-slate-600" >{inc.desc}</p>
+                  <h3 className="font-bold text-base mb-1.5" style={{ color: '#e8e8e8' }}>{inc.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{inc.desc}</p>
                 </div>
               </div>
             ))}
@@ -262,7 +262,7 @@ export default function BusinessJoinPage() {
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
             <div>
               <p className="font-bold text-sm" style={{ color: '#fbbf24' }}>⚡ Only 63 founding spots remaining</p>
-              <p className="text-xs mt-0.5" style={{ color: '#92711a' }}>Spots are going fast. Sign up today to lock in your free 6-month access.</p>
+              <p className="text-xs mt-0.5" style={{ color: '#d97706' }}>Spots are going fast. Sign up today to lock in your free Base CRM forever.</p>
             </div>
             <a href="#join-form" className="btn-primary text-sm px-6 py-2.5 shrink-0">
               Reserve My Spot

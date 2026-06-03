@@ -167,7 +167,7 @@ export default function AuthPage() {
       {/* Background glow orbs */}
       <div className="animate-orb" style={{
         position: 'absolute', width: 500, height: 500, top: '-15%', left: '-10%',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.14), transparent)',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.14), transparent)',
         filter: 'blur(60px)', pointerEvents: 'none',
       }} />
       <div className="animate-float-2" style={{
@@ -177,7 +177,7 @@ export default function AuthPage() {
       }} />
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(14,165,233,0.06) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(rgba(0,229,255,0.06) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
         maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
         WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
@@ -189,10 +189,10 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 group">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black"
-              style={{ background: 'linear-gradient(135deg,#0ea5e9,#14b8a6)', boxShadow: '0 4px 16px rgba(14,165,233,0.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#0ea5e9,#14b8a6)', boxShadow: '0 4px 16px rgba(0,229,255,0.4)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight" style={{ color: '#e2eaf6' }}>Pabandi</span>
+            <span className="text-xl font-black tracking-tight" style={{ color: '#e8e8e8' }}>Pabandi</span>
           </Link>
         </div>
 
@@ -220,7 +220,7 @@ export default function AuthPage() {
                 className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 ${
                   role === 'customer'
                     ? 'border-blue-500/60 text-blue-300 bg-blue-500/10'
-                    : 'border-white/08 text-[#7a90a8] hover:border-white/15 hover:text-[#a0b4c8]'
+                    : 'border-white/08 text-[#9e9e9e] hover:border-white/15 hover:text-[#9e9e9e]'
                 }`}
                 style={{ borderColor: role === 'customer' ? 'rgba(99,179,237,0.5)' : 'rgba(255,255,255,0.08)' }}>
                 <UserIcon />
@@ -232,7 +232,7 @@ export default function AuthPage() {
                 className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 ${
                   role === 'business'
                     ? 'text-emerald-300 bg-emerald-500/10'
-                    : 'text-[#7a90a8] hover:text-[#a0b4c8]'
+                    : 'text-[#9e9e9e] hover:text-[#9e9e9e]'
                 }`}
                 style={{
                   borderColor: role === 'business' ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)',
@@ -245,12 +245,12 @@ export default function AuthPage() {
 
           {/* Heading */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold" style={{ color: '#e2eaf6' }}>
+            <h1 className="text-2xl font-bold" style={{ color: '#e8e8e8' }}>
               {isSignup
                 ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
                 : 'Welcome Back'}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: '#5e7a96' }}>
+            <p className="mt-1 text-sm" style={{ color: '#757575' }}>
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
@@ -265,7 +265,7 @@ export default function AuthPage() {
               disabled={!!oauthLoading}
               style={{ opacity: oauthLoading && oauthLoading !== 'google' ? 0.5 : 1 }}>
               {oauthLoading === 'google' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(14,165,233,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
                 Connecting to Google…</>
               ) : (
                 <><GoogleIcon />
@@ -277,7 +277,7 @@ export default function AuthPage() {
               disabled={!!oauthLoading}
               style={{ opacity: oauthLoading && oauthLoading !== 'facebook' ? 0.5 : 1 }}>
               {oauthLoading === 'facebook' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(14,165,233,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
+                <><span style={{ width: 18, height: 18, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
                 Connecting to Facebook…</>
               ) : (
                 <><FacebookIcon />

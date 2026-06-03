@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}>
+              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>
               P
             </div>
             <span className="text-xl font-black tracking-tight text-slate-900" >Pabandi</span>

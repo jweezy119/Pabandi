@@ -120,7 +120,7 @@ function FeatureCard({ icon, color, glow, title, desc, delay }: {
         }}>
           {icon}
         </div>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
           {title}
         </h3>
         <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--color-text-muted)' }}>{desc}</p>
@@ -132,7 +132,7 @@ function FeatureCard({ icon, color, glow, title, desc, delay }: {
 const features = [
   {
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-    color: '#0ea5e9', glow: 'rgba(14,165,233,0.15)',
+    color: '#0ea5e9', glow: 'rgba(0,229,255,0.15)',
     title: 'Smart Booking', desc: 'Ultra-fast reservations optimised for high conversion. Book in seconds, from anywhere.',
   },
   {
@@ -171,7 +171,7 @@ export default function HomePage() {
           position: 'absolute', width: 600, height: 600,
           top: '-20%', left: '50%', transform: 'translateX(-50%)',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(14,165,233,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(0,229,255,0.18) 0%, transparent 70%)',
           filter: 'blur(40px)', pointerEvents: 'none',
         }} />
         <div className="animate-float" style={{
@@ -192,7 +192,7 @@ export default function HomePage() {
         {/* Grid dots */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(rgba(14,165,233,0.12) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(0,229,255,0.12) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
           maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
@@ -204,11 +204,11 @@ export default function HomePage() {
           <div className="animate-fade-up" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '6px 18px', borderRadius: 9999, marginBottom: 32,
-            background: 'rgba(14,165,233,0.1)',
-            border: '1px solid rgba(14,165,233,0.3)',
+            background: 'rgba(0,229,255,0.1)',
+            border: '1px solid rgba(0,229,255,0.3)',
             color: '#a5b4fc', fontSize: 11, fontWeight: 700,
             letterSpacing: '0.12em', textTransform: 'uppercase',
-            boxShadow: '0 0 30px rgba(14,165,233,0.15)',
+            boxShadow: '0 0 30px rgba(0,229,255,0.15)',
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0ea5e9', animation: 'pulseGlow 1.5s ease-in-out infinite', display: 'inline-block' }} />
             AI-Powered · Smarter Bookings. Anywhere.
@@ -221,7 +221,7 @@ export default function HomePage() {
             letterSpacing: '-0.03em',
             lineHeight: 1.05,
             marginBottom: '1.5rem',
-            color: '#e8eef8',
+            color: '#e8e8e8',
             fontFamily: 'Space Grotesk, sans-serif',
           }}>
             Book Smarter.{' '}
@@ -239,8 +239,8 @@ export default function HomePage() {
             No more missed appointments or lost revenue. Pabandi protects businesses from no-shows and rewards customers with{' '}
             <span style={{ color: '#a5b4fc', fontWeight: 600 }}>Pabandi Reliability Tokens (PAB)</span>{' '}
             — now live in{' '}
-            <span style={{ fontWeight: 700, color: '#e8eef8' }}>🇺🇸 USA</span> &{' '}
-            <span style={{ fontWeight: 700, color: '#e8eef8' }}>🇵🇰 Pakistan</span>.
+            <span style={{ fontWeight: 700, color: '#e8e8e8' }}>🇺🇸 USA</span> &{' '}
+            <span style={{ fontWeight: 700, color: '#e8e8e8' }}>🇵🇰 Pakistan</span>.
           </p>
 
           {/* CTAs */}
@@ -259,7 +259,7 @@ export default function HomePage() {
               {['#0ea5e9', '#00E5FF', '#00FFB0', '#FFB830'].map((c, i) => (
                 <div key={i} style={{
                   width: 32, height: 32, borderRadius: '50%',
-                  background: c, border: '2px solid #050915',
+                  background: c, border: '2px solid #0a0a0a',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 800, color: '#fff',
                   boxShadow: `0 0 10px ${c}88`,
@@ -269,7 +269,7 @@ export default function HomePage() {
               ))}
             </div>
             <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-              Trusted by <strong style={{ color: '#e8eef8' }}>500+ businesses</strong> across 🇺🇸 USA & 🇵🇰 Pakistan
+              Trusted by <strong style={{ color: '#e8e8e8' }}>500+ businesses</strong> across 🇺🇸 USA & 🇵🇰 Pakistan
             </span>
           </div>
 
@@ -282,7 +282,7 @@ export default function HomePage() {
             ].map((s, i) => (
               <div key={i} className="animate-fade-up" style={{
                 animationDelay: `${0.5 + i * 0.1}s`,
-                background: 'rgba(12,20,38,0.85)',
+                background: 'rgba(28,28,28,0.85)',
                 backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 16, padding: '12px 20px',
@@ -301,7 +301,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Stats ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(8,14,30,0.6)', backdropFilter: 'blur(8px)' }}>
+      <section style={{ borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(8px)' }}>
         <div className="max-w-5xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map(s => (
             <div key={s.label} className="text-center">
@@ -331,7 +331,7 @@ export default function HomePage() {
             }}>
               PLATFORM FEATURES
             </div>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 16, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 16, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
               Everything You Need to Scale
             </h2>
             <p style={{ fontSize: '1rem', maxWidth: 520, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
@@ -351,7 +351,7 @@ export default function HomePage() {
       <section className="max-w-5xl mx-auto px-4 pb-28">
         <ScrollReveal>
           <div className="text-center mb-14">
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
               How It Works
             </h2>
           </div>
@@ -381,7 +381,7 @@ export default function HomePage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontWeight: 900, color: s.color,
                 }}>{s.step}</div>
-                <h3 style={{ fontWeight: 700, marginBottom: 10, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>{s.title}</h3>
+                <h3 style={{ fontWeight: 700, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>{s.title}</h3>
                 <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>{s.desc}</p>
               </div>
             </ScrollReveal>
@@ -393,7 +393,7 @@ export default function HomePage() {
       <section className="max-w-6xl mx-auto px-4 pb-28">
         <ScrollReveal>
           <div className="text-center mb-14">
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
               Built on the Future of Tech
             </h2>
             <p style={{ fontSize: '1rem', maxWidth: 640, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
@@ -417,7 +417,7 @@ export default function HomePage() {
               }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
               </div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
                 Solana Web3 Integration
               </h3>
               <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
@@ -440,7 +440,7 @@ export default function HomePage() {
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24 }}>psychology</span>
               </div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
                 AI Reliability Score
               </h3>
               <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
@@ -466,7 +466,7 @@ export default function HomePage() {
                   <span className="material-symbols-outlined" style={{ fontSize: 24 }}>explore</span>
                </div>
                <div>
-                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>
+                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
                     Seamless Maps Integration
                  </h3>
                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Discover reliable businesses around you in real-time.</p>
@@ -479,6 +479,120 @@ export default function HomePage() {
         </ScrollReveal>
       </section>
 
+      {/* ── Revolutionary Pricing Model ── */}
+      <section className="max-w-6xl mx-auto px-4 pb-28" id="pricing">
+        <ScrollReveal>
+          <div className="text-center mb-14">
+            <div className="animate-pulse-teal" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 18px', borderRadius: 9999, marginBottom: 24,
+              background: 'rgba(0,255,176,0.1)', border: '1px solid rgba(0,255,176,0.3)',
+              color: '#00FFB0', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase'
+            }}>
+              Customer Obsessed Pricing
+            </div>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
+              We Only Win When You Win.
+            </h2>
+            <p style={{ fontSize: '1rem', maxWidth: 640, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
+              Say goodbye to expensive flat-rate SaaS subscriptions. Our transparent, performance-based pricing is designed to protect your revenue without draining it.
+            </p>
+          </div>
+        </ScrollReveal>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Base Tier */}
+          <ScrollReveal delay={0}>
+            <div className="pricing-card-glass">
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', marginBottom: '0.5rem', fontFamily: 'Space Grotesk, sans-serif' }}>Base CRM</h3>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '1.5rem' }}>
+                <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff' }}>Free</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Forever</span>
+              </div>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+                Everything you need to manage your business online with zero upfront costs.
+              </p>
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
+                {[
+                  'Unlimited Manual Bookings',
+                  'Basic Calendar UI',
+                  'Customer Database',
+                  'Standard Email Support'
+                ].map((feature, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#00FFB0" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register?role=business" className="btn-secondary w-full text-center">Start Free</Link>
+            </div>
+          </ScrollReveal>
+
+          {/* Performance Premium */}
+          <ScrollReveal delay={100}>
+            <div className="pricing-card-glass" style={{ border: '1px solid rgba(0,229,255,0.4)', background: 'linear-gradient(180deg, rgba(0,229,255,0.1) 0%, rgba(20,25,35,0.6) 100%)' }}>
+              <div style={{ position: 'absolute', top: -1, left: -1, right: -1, height: 4, background: 'linear-gradient(90deg, #0ea5e9, #14b8a6)' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0ea5e9', fontFamily: 'Space Grotesk, sans-serif' }}>Pay-per-Protection</h3>
+                <span className="pricing-badge-neon">Most Popular</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff' }}>2%</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>per secured deposit</span>
+              </div>
+              <p style={{ color: '#0ea5e9', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                + Hybrid Consumption micro-fee for AI calls
+              </p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+                Outcome-Based Billing: We only charge a premium when our AI flags a high-risk booking and successfully secures an upfront deposit.
+              </p>
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
+                {[
+                  'AI Risk Assessments on every booking',
+                  'Dynamic Deposit Enforcement',
+                  'Automated SMS/Email Reminders',
+                  'Priority Support'
+                ].map((feature, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#0ea5e9" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register?role=business" className="btn-primary w-full text-center">Enable AI Protection</Link>
+            </div>
+          </ScrollReveal>
+
+          {/* Elite Web3 Tier */}
+          <ScrollReveal delay={200}>
+            <div className="pricing-card-glass">
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', marginBottom: '0.5rem', fontFamily: 'Space Grotesk, sans-serif' }}>Elite Web3</h3>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '1.5rem' }}>
+                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFB830' }}>Token-Gated</span>
+              </div>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
+                Hold <strong style={{ color: '#FFB830' }}>10,000 PAB</strong> tokens in your linked Solana wallet to unlock the ultimate premium analytics tier with zero platform fees.
+              </p>
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
+                {[
+                  'Zero platform micro-fees',
+                  'Advanced Predictive Analytics',
+                  'Custom Webhook Integrations',
+                  'Dedicated Success Manager'
+                ].map((feature, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#FFB830" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register?role=business" className="btn-secondary w-full text-center" style={{ borderColor: 'rgba(255, 184, 48, 0.3)', color: '#FFB830', background: 'rgba(255,184,48,0.05)' }}>Connect Wallet</Link>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
       {/* ── Dual CTA ── */}
       <section className="max-w-6xl mx-auto px-4 pb-28">
         <div className="grid md:grid-cols-2 gap-6">
@@ -486,25 +600,25 @@ export default function HomePage() {
           <ScrollReveal>
             <div style={{
               position: 'relative', overflow: 'hidden', borderRadius: '1.75rem', padding: '2.5rem',
-              background: 'linear-gradient(135deg, rgba(14,165,233,0.15) 0%, rgba(8,14,30,0.9) 100%)',
-              border: '1px solid rgba(14,165,233,0.25)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(14,165,233,0.05)',
+              background: 'linear-gradient(135deg, rgba(0,229,255,0.15) 0%, rgba(20,20,20,0.9) 100%)',
+              border: '1px solid rgba(0,229,255,0.25)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(0,229,255,0.05)',
             }}>
               <div style={{
                 position: 'absolute', width: 200, height: 200, top: -60, right: -60,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.3), transparent)',
+                borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.3), transparent)',
                 filter: 'blur(40px)', pointerEvents: 'none',
               }} />
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12, marginBottom: '1.5rem',
-                  background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)',
+                  background: 'rgba(0,229,255,0.15)', border: '1px solid rgba(0,229,255,0.3)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc',
                 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
                 </div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>For Customers</h3>
-                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#8899bb', lineHeight: 1.7 }}>
+                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>For Customers</h3>
+                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#9e9e9e', lineHeight: 1.7 }}>
                   Book top salons, restaurants, and clinics near you. Earn PAB tokens every time you show up.
                 </p>
                 <Link to="/register" id="cta-customer-section" className="btn-primary text-sm inline-flex">
@@ -518,7 +632,7 @@ export default function HomePage() {
           <ScrollReveal delay={100}>
             <div style={{
               position: 'relative', overflow: 'hidden', borderRadius: '1.75rem', padding: '2.5rem',
-              background: 'linear-gradient(135deg, rgba(0,255,176,0.1) 0%, rgba(8,14,30,0.9) 100%)',
+              background: 'linear-gradient(135deg, rgba(0,255,176,0.1) 0%, rgba(20,20,20,0.9) 100%)',
               border: '1px solid rgba(0,255,176,0.2)',
               boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(0,255,176,0.04)',
             }}>
@@ -535,8 +649,8 @@ export default function HomePage() {
                 }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
                 </div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>For Businesses</h3>
-                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#8899bb', lineHeight: 1.7 }}>
+                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>For Businesses</h3>
+                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#9e9e9e', lineHeight: 1.7 }}>
                   Connect your Google Business profile. Accept bookings, eliminate no-shows, and grow your revenue with AI.
                 </p>
                 <Link to="/register?role=business" id="cta-business-section"

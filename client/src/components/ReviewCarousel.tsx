@@ -34,7 +34,7 @@ export default function ReviewCarousel({ reviews }: { reviews: Review[] }) {
   const sentimentColor =
     review.sentimentLabel === 'positive' ? { bg: 'rgba(16,185,129,0.12)', text: '#34d399' } :
     review.sentimentLabel === 'negative' ? { bg: 'rgba(239,68,68,0.12)', text: '#f87171' } :
-    { bg: 'rgba(255,255,255,0.06)', text: '#7a90a8' };
+    { bg: 'rgba(255,255,255,0.06)', text: '#9e9e9e' };
 
   return (
     <div className="relative w-full rounded-2xl p-5 overflow-hidden"
@@ -61,7 +61,7 @@ export default function ReviewCarousel({ reviews }: { reviews: Review[] }) {
       </div>
 
       {/* Review text */}
-      <p className="text-sm leading-relaxed line-clamp-4 italic" style={{ color: '#a0b4c8' }}>
+      <p className="text-sm leading-relaxed line-clamp-4 italic" style={{ color: '#9e9e9e' }}>
         "{review.text}"
       </p>
 

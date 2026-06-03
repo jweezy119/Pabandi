@@ -39,7 +39,7 @@ function StatCard({ label, value, sub, color }: { label: string; value: number |
 function Badge({ status }: { status: string }) {
   return (
     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
-      style={{ background: STATUS_COLORS[status] || 'rgba(255,255,255,0.05)', color: STATUS_TEXT[status] || '#a0b4c8' }}>
+      style={{ background: STATUS_COLORS[status] || 'rgba(255,255,255,0.05)', color: STATUS_TEXT[status] || '#9e9e9e' }}>
       {status}
     </span>
   );
@@ -99,7 +99,7 @@ export default function AdminPanel() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
-              style={{ background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)' }}>P</div>
+              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>P</div>
             <span className="font-bold text-sm text-slate-900" >Pabandi Admin</span>
             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest"
               style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>ADMIN</span>

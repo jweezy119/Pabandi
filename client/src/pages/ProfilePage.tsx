@@ -101,11 +101,11 @@ function BookingItem({ reservation, index }: { reservation: any; index: number }
         borderRadius: 10, padding: '6px 4px',
       }}>
         <div style={{ fontSize: 9, fontWeight: 700, color: sc.color, letterSpacing: '0.06em' }}>{month}</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1 }}>{day}</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1 }}>{day}</div>
       </div>
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8eef8', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8e8e8', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {reservation.business?.name || 'Booking'}
         </p>
         <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
@@ -180,13 +180,13 @@ export default function ProfilePage() {
         {/* Cover gradient */}
         <div style={{
           height: 220,
-          background: 'linear-gradient(135deg, rgba(14,165,233,0.4) 0%, rgba(0,229,255,0.2) 50%, rgba(0,255,176,0.15) 100%)',
+          background: 'linear-gradient(135deg, rgba(0,229,255,0.4) 0%, rgba(0,229,255,0.2) 50%, rgba(0,255,176,0.15) 100%)',
           position: 'relative',
         }}>
           {/* Animated orbs */}
           <div className="animate-orb" style={{
             position: 'absolute', width: 300, height: 300, top: -100, left: '30%',
-            borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.3), transparent)',
+            borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.3), transparent)',
             filter: 'blur(40px)', pointerEvents: 'none',
           }} />
           <div className="animate-float" style={{
@@ -215,7 +215,7 @@ export default function ProfilePage() {
                 border: '4px solid var(--color-bg)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 32, fontWeight: 900, color: '#fff', fontFamily: 'Space Grotesk, sans-serif',
-                boxShadow: '0 0 40px rgba(14,165,233,0.5), 0 8px 32px rgba(0,0,0,0.6)',
+                boxShadow: '0 0 40px rgba(0,229,255,0.5), 0 8px 32px rgba(0,0,0,0.6)',
               }}>
                 {initials}
               </div>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
               {!editing ? (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)', fontWeight: 900, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+                    <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
                       {user.firstName} {user.lastName}
                     </h1>
                     {reliabilityScore === 100 && (
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                   background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)',
                   marginBottom: 6,
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.4)'; (e.currentTarget as HTMLElement).style.color = '#e8eef8'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.4)'; (e.currentTarget as HTMLElement).style.color = '#e8e8e8'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)'; }}
               >
                 <PencilIcon className="h-3.5 w-3.5" /> Edit Profile
@@ -305,7 +305,7 @@ export default function ProfilePage() {
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
           {/* Trust Score */}
-          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(14,165,233,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(14,165,233,0.05)' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(0,229,255,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(0,229,255,0.05)' }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trust Score</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <ArcGauge value={reliabilityScore} color={reliabilityScore >= 90 ? '#00FFB0' : reliabilityScore >= 70 ? '#FFB830' : '#FF4C6A'} label="Trust %" />
@@ -317,7 +317,7 @@ export default function ProfilePage() {
 
           {/* PAB Token display */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(255,184,48,0.12) 0%, rgba(12,20,38,0.95) 100%)',
+            background: 'linear-gradient(135deg, rgba(255,184,48,0.12) 0%, rgba(28,28,28,0.95) 100%)',
             border: '1px solid rgba(255,184,48,0.25)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center',
             position: 'relative', overflow: 'hidden',
             boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 40px rgba(255,184,48,0.05)',
@@ -362,10 +362,10 @@ export default function ProfilePage() {
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{
                   padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                  background: activeTab === tab ? 'rgba(14,165,233,0.2)' : 'transparent',
+                  background: activeTab === tab ? 'rgba(0,229,255,0.2)' : 'transparent',
                   color: activeTab === tab ? '#a5b4fc' : 'var(--color-text-muted)',
-                  border: activeTab === tab ? '1px solid rgba(14,165,233,0.3)' : '1px solid transparent',
-                  boxShadow: activeTab === tab ? '0 0 20px rgba(14,165,233,0.2)' : 'none',
+                  border: activeTab === tab ? '1px solid rgba(0,229,255,0.3)' : '1px solid transparent',
+                  boxShadow: activeTab === tab ? '0 0 20px rgba(0,229,255,0.2)' : 'none',
                   textTransform: 'capitalize',
                 }}>
                 {tab === 'history' ? '📅 Booking History' : '🏅 Achievements'}
@@ -377,7 +377,7 @@ export default function ProfilePage() {
           {activeTab === 'history' ? (
             <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>Recent Bookings</h2>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Recent Bookings</h2>
                 <Link to="/reservations" style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>View All →</Link>
               </div>
               {reservations.length > 0 ? (
@@ -398,7 +398,7 @@ export default function ProfilePage() {
           ) : (
             <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem' }}>
               <div style={{ marginBottom: 16 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>Achievements</h2>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Achievements</h2>
                 <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
                   {achievements.filter(a => a.earned).length} / {achievements.length} unlocked
                 </p>

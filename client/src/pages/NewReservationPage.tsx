@@ -378,7 +378,7 @@ export default function NewReservationPage() {
                               : 'border-white/10 bg-white/5 hover:bg-white/10'
                           }`}>
                           <div className={`mb-1 ${form.paymentMethod === m.id ? 'text-blue-400' : 'text-gray-400'}`}>{m.icon}</div>
-                          <span className="text-[10px] font-bold" style={{ color: form.paymentMethod === m.id ? '#e8edf3' : '#a0b4c8' }}>{m.label}</span>
+                          <span className="text-[10px] font-bold" style={{ color: form.paymentMethod === m.id ? '#e8edf3' : '#9e9e9e' }}>{m.label}</span>
                         </button>
                       ))}
                     </div>

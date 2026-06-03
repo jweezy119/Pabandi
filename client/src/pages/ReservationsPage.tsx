@@ -14,7 +14,7 @@ import {
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
   CONFIRMED:  { label: 'Confirmed',  bg: 'rgba(16,185,129,0.12)', color: '#34d399', icon: <CheckCircleIcon className="h-4 w-4" /> },
   PENDING:    { label: 'Pending',    bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: <ClockIcon className="h-4 w-4" /> },
-  CANCELLED:  { label: 'Cancelled', bg: 'rgba(148,163,184,0.1)', color: '#94a3b8', icon: <XCircleIcon className="h-4 w-4" /> },
+  CANCELLED:  { label: 'Cancelled', bg: 'rgba(148,163,184,0.1)', color: '#9e9e9e', icon: <XCircleIcon className="h-4 w-4" /> },
   NO_SHOW:    { label: 'No-Show',   bg: 'rgba(239,68,68,0.12)',  color: '#f87171', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
   COMPLETED:  { label: 'Completed', bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: <CheckCircleIcon className="h-4 w-4" /> },
 };
@@ -31,7 +31,7 @@ const FILTER_TABS = [
 const DEPOSIT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PAID: { label: 'Deposit Paid', color: '#34d399' },
   PENDING: { label: 'Deposit Pending', color: '#fbbf24' },
-  NOT_REQUIRED: { label: 'No Deposit', color: '#94a3b8' },
+  NOT_REQUIRED: { label: 'No Deposit', color: '#9e9e9e' },
   APPLIED_TO_SERVICE: { label: 'Applied to Bill', color: '#60a5fa' },
   REIMBURSED_TO_BUSINESS: { label: 'Reimbursed', color: '#a78bfa' },
 };

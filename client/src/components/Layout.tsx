@@ -4,7 +4,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 
 export default function Layout() {
-  const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated, user, logout, wallet, fetchWalletData } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,6 +15,13 @@ export default function Layout() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Fetch wallet data on mount when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWalletData();
+    }
+  }, [isAuthenticated, fetchWalletData]);
 
   const handleLogout = () => { logout(); navigate('/'); };
 
@@ -27,11 +34,11 @@ export default function Layout() {
 
       {!isAuthPage && (
         <nav style={{
-          background: scrolled ? 'rgba(6,10,18,0.94)' : 'rgba(6,10,18,0.65)',
+          background: scrolled ? 'rgba(18,18,18,0.94)' : 'rgba(18,18,18,0.65)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${scrolled ? 'rgba(14,165,233,0.18)' : 'rgba(255,255,255,0.05)'}`,
-          boxShadow: scrolled ? '0 4px 30px rgba(0,0,0,0.5), 0 0 60px rgba(14,165,233,0.04)' : 'none',
+          borderBottom: `1px solid ${scrolled ? 'rgba(0,229,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
+          boxShadow: scrolled ? '0 4px 30px rgba(0,0,0,0.5), 0 0 60px rgba(0,229,255,0.04)' : 'none',
           position: 'sticky',
           top: 0,
           zIndex: 50,
@@ -47,22 +54,22 @@ export default function Layout() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black relative"
                     style={{
                       background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
-                      boxShadow: '0 0 16px rgba(14,165,233,0.45)',
+                      boxShadow: '0 0 16px rgba(0,229,255,0.45)',
                       transition: 'box-shadow 0.3s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 30px rgba(14,165,233,0.7)')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 16px rgba(14,165,233,0.45)')}
+                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 30px rgba(0,229,255,0.7)')}
+                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 16px rgba(0,229,255,0.45)')}
                   >
                     P
                     {/* Pulse ring */}
                     <span style={{
                       position: 'absolute', inset: '-3px', borderRadius: '10px',
-                      border: '1px solid rgba(14,165,233,0.35)',
+                      border: '1px solid rgba(0,229,255,0.35)',
                       animation: 'pulseGlow 2.5s ease-in-out infinite',
                       pointerEvents: 'none',
                     }} />
                   </div>
-                  <span className="text-lg font-black tracking-tight" style={{ color: '#e2eaf6' }}>
+                  <span className="text-lg font-black tracking-tight" style={{ color: '#e8e8e8' }}>
                     Pabandi
                   </span>
                 </Link>
@@ -81,24 +88,49 @@ export default function Layout() {
 
               {/* Right side */}
               <div className="hidden sm:flex items-center gap-3">
+                {/* PAB Balance Badge */}
+                {isAuthenticated && (
+                  <Link to="/wallet"
+                    className="flex items-center gap-1 rounded-full text-xs px-3 py-1 transition-all duration-200"
+                    style={{
+                      background: 'rgba(255,184,48,0.10)',
+                      border: '1px solid rgba(255,184,48,0.25)',
+                      color: '#ffb830',
+                      textDecoration: 'none',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,184,48,0.18)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,184,48,0.40)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,184,48,0.10)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,184,48,0.25)';
+                    }}
+                  >
+                    {wallet?.address ? <span>👻</span> : null}
+                    <span>🪙</span>
+                    <span style={{ fontWeight: 600 }}>{wallet?.pabBalance ?? 0} PAB</span>
+                  </Link>
+                )}
+
                 {isAuthenticated ? (
                   <>
                     <Link to="/profile"
                       className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-xl transition-all duration-200"
                       style={{
-                        color: '#94a3b8',
+                        color: '#9e9e9e',
                         border: '1px solid rgba(255,255,255,0.06)',
                         background: 'rgba(255,255,255,0.03)',
                       }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.35)';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(14,165,233,0.07)';
-                        (e.currentTarget as HTMLElement).style.color = '#e2eaf6';
+                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.35)';
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.07)';
+                        (e.currentTarget as HTMLElement).style.color = '#e8e8e8';
                       }}
                       onMouseLeave={e => {
                         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
                         (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-                        (e.currentTarget as HTMLElement).style.color = '#94a3b8';
+                        (e.currentTarget as HTMLElement).style.color = '#9e9e9e';
                       }}
                     >
                       {/* Avatar */}
@@ -107,7 +139,7 @@ export default function Layout() {
                         background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 10, fontWeight: 800, color: '#fff',
-                        boxShadow: '0 0 10px rgba(14,165,233,0.45)',
+                        boxShadow: '0 0 10px rgba(0,229,255,0.45)',
                       }}>
                         {initials}
                       </div>
@@ -116,14 +148,14 @@ export default function Layout() {
                     <button
                       onClick={handleLogout}
                       className="text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200"
-                      style={{ color: '#5e7a96', border: '1px solid rgba(255,255,255,0.06)' }}
+                      style={{ color: '#757575', border: '1px solid rgba(255,255,255,0.06)' }}
                       onMouseEnter={e => {
                         (e.currentTarget as HTMLElement).style.color = '#ef4444';
                         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.30)';
                         (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.07)';
                       }}
                       onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.color = '#5e7a96';
+                        (e.currentTarget as HTMLElement).style.color = '#757575';
                         (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
                         (e.currentTarget as HTMLElement).style.background = 'transparent';
                       }}
@@ -134,9 +166,9 @@ export default function Layout() {
                 ) : (
                   <>
                     <Link to="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                      style={{ color: '#5e7a96' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#e2eaf6')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#5e7a96')}>
+                      style={{ color: '#757575' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#e8e8e8')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#757575')}>
                       Sign In
                     </Link>
                     <Link to="/register" className="btn-primary text-sm px-5 py-2.5">
@@ -149,7 +181,7 @@ export default function Layout() {
               {/* Mobile hamburger */}
               <button
                 className="sm:hidden p-2 rounded-xl"
-                style={{ color: '#5e7a96', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ color: '#757575', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
                 {mobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
@@ -162,14 +194,14 @@ export default function Layout() {
             <div style={{
               borderTop: '1px solid rgba(255,255,255,0.06)',
               padding: '0.75rem 1rem 1rem',
-              background: 'rgba(6,10,18,0.96)',
+              background: 'rgba(18,18,18,0.96)',
               animation: 'fadeInUp 0.2s ease',
             }}>
               {isAuthenticated ? (
                 <div className="flex flex-col gap-1">
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl"
-                    style={{ color: '#94a3b8', background: 'rgba(14,165,233,0.07)', border: '1px solid rgba(14,165,233,0.12)' }}>
+                    style={{ color: '#9e9e9e', background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.12)' }}>
                     <div style={{
                       width: 22, height: 22, borderRadius: '50%',
                       background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
@@ -178,6 +210,20 @@ export default function Layout() {
                     }}>{initials}</div>
                     {user?.firstName} {user?.lastName}
                   </Link>
+
+                  {/* Mobile PAB Balance Badge */}
+                  <Link to="/wallet" onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-1 px-4 py-2.5 text-sm rounded-xl"
+                    style={{
+                      background: 'rgba(255,184,48,0.10)',
+                      border: '1px solid rgba(255,184,48,0.25)',
+                      color: '#ffb830',
+                    }}>
+                    {wallet?.address ? <span>👻</span> : null}
+                    <span>🪙</span>
+                    <span style={{ fontWeight: 600 }}>{wallet?.pabBalance ?? 0} PAB</span>
+                  </Link>
+
                   <MobileNavLink to="/reservations" onClick={() => setMobileMenuOpen(false)}>Reservations</MobileNavLink>
                   <MobileNavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard</MobileNavLink>
                   <MobileNavLink to="/wallet" onClick={() => setMobileMenuOpen(false)}>Wallet</MobileNavLink>
@@ -190,7 +236,7 @@ export default function Layout() {
               ) : (
                 <div className="flex flex-col gap-2 pt-1">
                   <Link to="/login" className="block px-4 py-2.5 text-sm rounded-xl"
-                    style={{ color: '#94a3b8', background: 'rgba(255,255,255,0.03)' }} onClick={() => setMobileMenuOpen(false)}>
+                    style={{ color: '#9e9e9e', background: 'rgba(255,255,255,0.03)' }} onClick={() => setMobileMenuOpen(false)}>
                     Sign In
                   </Link>
                   <Link to="/register" className="btn-primary text-sm text-center"
@@ -209,18 +255,18 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && (
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.04)', marginTop: '4rem' }}>
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '4rem' }}>
           <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                  style={{ background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)', boxShadow: '0 0 12px rgba(14,165,233,0.35)' }}>P</div>
-                <span className="font-black" style={{ color: '#e2eaf6' }}>Pabandi</span>
+                  style={{ background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)', boxShadow: '0 0 12px rgba(0,229,255,0.35)' }}>P</div>
+                <span className="font-black" style={{ color: '#e8e8e8' }}>Pabandi</span>
               </div>
-              <p className="text-sm" style={{ color: '#2d3f58' }}>
+              <p className="text-sm" style={{ color: '#616161' }}>
                 © 2026 Pabandi. AI-powered bookings with smart no-show prevention.
               </p>
-              <div className="flex gap-5 text-sm" style={{ color: '#2d3f58' }}>
+              <div className="flex gap-5 text-sm" style={{ color: '#616161' }}>
                 <a href="#" className="hover:text-[#0ea5e9] transition-colors">Privacy</a>
                 <a href="#" className="hover:text-[#0ea5e9] transition-colors">Terms</a>
                 <a href="#" className="hover:text-[#0ea5e9] transition-colors">Support</a>
@@ -237,18 +283,18 @@ function NavLink({ to, children, active }: { to: string; children: React.ReactNo
   return (
     <Link to={to} className="text-sm font-medium px-3 py-2 rounded-lg transition-all duration-200 relative"
       style={{
-        color: active ? '#7dd3fc' : '#5e7a96',
-        background: active ? 'rgba(14,165,233,0.08)' : 'transparent',
+        color: active ? '#7dd3fc' : '#757575',
+        background: active ? 'rgba(0,229,255,0.08)' : 'transparent',
       }}
       onMouseEnter={e => {
         if (!active) {
-          (e.currentTarget as HTMLElement).style.color = '#e2eaf6';
+          (e.currentTarget as HTMLElement).style.color = '#e8e8e8';
           (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
         }
       }}
       onMouseLeave={e => {
         if (!active) {
-          (e.currentTarget as HTMLElement).style.color = '#5e7a96';
+          (e.currentTarget as HTMLElement).style.color = '#757575';
           (e.currentTarget as HTMLElement).style.background = 'transparent';
         }
       }}>
@@ -261,7 +307,7 @@ function MobileNavLink({ to, children, onClick }: { to: string; children: React.
   return (
     <Link to={to} onClick={onClick}
       className="block px-4 py-2.5 text-sm rounded-xl transition-all"
-      style={{ color: '#94a3b8', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)' }}>
+      style={{ color: '#9e9e9e', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
       {children}
     </Link>
   );

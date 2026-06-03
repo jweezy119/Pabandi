@@ -57,7 +57,7 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
   return (
     <div style={{
       borderRadius: '1.25rem', padding: '1.5rem',
-      background: earned ? `linear-gradient(135deg, ${tier.color}12, rgba(12,20,38,0.95))` : 'var(--color-surface)',
+      background: earned ? `linear-gradient(135deg, ${tier.color}12, rgba(28,28,28,0.95))` : 'var(--color-surface)',
       border: `1px solid ${earned ? tier.color + '40' : 'rgba(255,255,255,0.06)'}`,
       boxShadow: earned ? `0 0 40px ${tier.glow}, 0 12px 40px rgba(0,0,0,0.4)` : '0 4px 20px rgba(0,0,0,0.3)',
       opacity: earned ? 1 : 0.7,
@@ -140,7 +140,7 @@ function RewardRow({ reward, index }: { reward: any; index: number }) {
   const isReview = reward.type === 'GOOGLE_REVIEW';
   const isBusiness = reward.type?.startsWith('BUSINESS_');
   const color = isReview ? '#FFB830' : isBusiness ? '#0ea5e9' : '#00FFB0';
-  const glow = isReview ? 'rgba(255,184,48,0.2)' : isBusiness ? 'rgba(14,165,233,0.2)' : 'rgba(0,255,176,0.2)';
+  const glow = isReview ? 'rgba(255,184,48,0.2)' : isBusiness ? 'rgba(0,229,255,0.2)' : 'rgba(0,255,176,0.2)';
   const label = isReview ? 'Proof of Review' : isBusiness ? reward.type?.replace('BUSINESS_', '').replace(/_/g, ' ') : 'Proof of Reservation';
   const icon = isReview ? <StarIcon className="h-4 w-4" /> : isBusiness ? <BoltIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />;
 
@@ -162,7 +162,7 @@ function RewardRow({ reward, index }: { reward: any; index: number }) {
           boxShadow: `0 0 10px ${glow}`,
         }}>{icon}</div>
         <div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8eef8' }}>{label}</p>
+          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8e8e8' }}>{label}</p>
           <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
             {reward.businessName || 'Pabandi'} · {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : ''}
           </p>
@@ -186,8 +186,8 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
       onMouseEnter={e => {
         if (!disabled && !loading) {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(14,165,233,0.4)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(14,165,233,0.06)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.4)';
+          (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.06)';
         }
       }}
       onMouseLeave={e => {
@@ -197,12 +197,12 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
     >
       <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {loading ? <span style={{ width: 20, height: 20, border: '2px solid rgba(14,165,233,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} /> : icon}
+        {loading ? <span style={{ width: 20, height: 20, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} /> : icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#e8eef8' }}>{name}</span>
-          {badge && <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 9999, fontWeight: 700, background: 'rgba(14,165,233,0.15)', color: '#a5b4fc', border: '1px solid rgba(14,165,233,0.2)' }}>{badge}</span>}
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#e8e8e8' }}>{name}</span>
+          {badge && <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 9999, fontWeight: 700, background: 'rgba(0,229,255,0.15)', color: '#a5b4fc', border: '1px solid rgba(0,229,255,0.2)' }}>{badge}</span>}
         </div>
         <p style={{ fontSize: 11, marginTop: 2, color: 'var(--color-text-muted)' }}>{desc}</p>
       </div>
@@ -277,7 +277,7 @@ const WalletDashboard: React.FC = () => {
   if (isLoading) return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 40, height: 40, border: '3px solid rgba(14,165,233,0.2)', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'rotateSlow 0.8s linear infinite', margin: '0 auto 12px' }} />
+        <div style={{ width: 40, height: 40, border: '3px solid rgba(0,229,255,0.2)', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'rotateSlow 0.8s linear infinite', margin: '0 auto 12px' }} />
         <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Loading wallet…</p>
       </div>
     </div>
@@ -290,7 +290,7 @@ const WalletDashboard: React.FC = () => {
         {/* ── Header ── */}
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
-            <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 900, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
               ⚡ PAB Wallet
             </h1>
             <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>
@@ -333,7 +333,7 @@ const WalletDashboard: React.FC = () => {
         {showSBT && (
           <div className="animate-fade-up mb-8">
             <div style={{ marginBottom: 16 }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>Soulbound Reputation NFTs</h2>
+              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Soulbound Reputation NFTs</h2>
               <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
                 Non-transferable NFTs that live on Solana forever — your reliability, on-chain. Businesses can verify these.
               </p>
@@ -346,7 +346,7 @@ const WalletDashboard: React.FC = () => {
                 />
               ))}
             </div>
-            <div style={{ marginTop: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.15)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ marginTop: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.15)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
               <InformationCircleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: '#0ea5e9' }} />
               <p style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
                 <strong style={{ color: '#a5b4fc' }}>Soulbound tokens</strong> cannot be transferred or sold — they are permanently tied to your wallet address. This makes them a verifiable, tamper-proof proof of your Pabandi reliability history on-chain.
@@ -361,13 +361,13 @@ const WalletDashboard: React.FC = () => {
           {/* Main Balance */}
           <div className="md:col-span-2 relative overflow-hidden" style={{
             borderRadius: '1.25rem', padding: '1.75rem',
-            background: 'linear-gradient(135deg, rgba(14,165,233,0.35) 0%, rgba(0,229,255,0.15) 60%, rgba(12,20,38,0.95) 100%)',
-            border: '1px solid rgba(14,165,233,0.3)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(14,165,233,0.08)',
+            background: 'linear-gradient(135deg, rgba(0,229,255,0.35) 0%, rgba(0,229,255,0.15) 60%, rgba(28,28,28,0.95) 100%)',
+            border: '1px solid rgba(0,229,255,0.3)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(0,229,255,0.08)',
           }}>
             {/* Shimmer */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 3s infinite', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 200, height: 200, top: -60, right: -40, borderRadius: '50%', background: 'radial-gradient(circle, rgba(14,165,233,0.25), transparent)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 200, height: 200, top: -60, right: -40, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.25), transparent)', filter: 'blur(30px)', pointerEvents: 'none' }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -455,7 +455,7 @@ const WalletDashboard: React.FC = () => {
         <div className="animate-fade-up-delay-2" style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', overflow: 'hidden' }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h3 style={{ fontWeight: 800, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif', fontSize: '1rem' }}>Reward History</h3>
+              <h3 style={{ fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', fontSize: '1rem' }}>Reward History</h3>
               <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>Every PAB earned, logged on-chain</p>
             </div>
             <button onClick={() => refetch()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', transition: 'color 0.2s' }}
@@ -484,12 +484,12 @@ const WalletDashboard: React.FC = () => {
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
           <div className="animate-fade-scale w-full max-w-sm" style={{
             background: 'rgba(11,18,32,0.95)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(14,165,233,0.25)', borderRadius: '1.5rem', padding: '1.5rem',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 60px rgba(14,165,233,0.08)',
+            border: '1px solid rgba(0,229,255,0.25)', borderRadius: '1.5rem', padding: '1.5rem',
+            boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 60px rgba(0,229,255,0.08)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#e8eef8', fontFamily: 'Space Grotesk, sans-serif' }}>Connect Your Wallet</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Connect Your Wallet</h2>
                 <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>Solana recommended · Required for $PAB withdrawals</p>
               </div>
               <button onClick={() => setShowModal(false)} style={{ padding: 6, borderRadius: 8, cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)' }}>
