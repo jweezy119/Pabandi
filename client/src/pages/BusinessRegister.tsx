@@ -47,7 +47,7 @@ export default function BusinessRegister() {
         <h2 className="text-2xl font-bold mb-6">Register Your Business</h2>
         
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-[#ef444415] border border-[#ef444433] text-[#ef4444] px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
