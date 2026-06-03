@@ -34,6 +34,7 @@ jobs:
       - name: Deploy to Cloud Run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
@@ -57,6 +58,7 @@ jobs:
           cat <<EOF > env.yaml
           NODE_ENV: "production"
           DATABASE_URL: "${DATABASE_URL:-placeholder_database_url}"
+          DIRECT_URL: "${DIRECT_URL:-placeholder_direct_url}"
           FRONTEND_URL: "${FRONTEND_URL:-placeholder_frontend_url}"
           BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
           JWT_SECRET: "${JWT_SECRET:-placeholder_jwt_secret}"
