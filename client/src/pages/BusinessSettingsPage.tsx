@@ -170,33 +170,33 @@ export default function BusinessSettingsPage() {
       case 'profile':
         return (
           <form onSubmit={handleSaveProfile} className="space-y-6">
-            <h3 className="text-lg font-bold text-slate-900">Business Profile</h3>
+            <h3 className="text-lg font-bold text-[#e8e8e8]">Business Profile</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Business Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Business Name</label>
                 <input type="text" className="input-field" value={businessData.name} onChange={e => setBusinessData({ ...businessData, name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Phone Number</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Phone Number</label>
                 <input type="text" className="input-field" value={businessData.phone} onChange={e => setBusinessData({ ...businessData, phone: e.target.value })} />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Address</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Address</label>
                 <input type="text" className="input-field" value={businessData.address} onChange={e => setBusinessData({ ...businessData, address: e.target.value })} />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Business Category</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Business Category</label>
                 <select className="input-field" value={businessData.category} onChange={e => setBusinessData({ ...businessData, category: e.target.value })}>
                   {CATEGORIES.map(c => (
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
-                <p className="mt-1.5 text-xs text-slate-600">Category affects how the AI calculates risk and deposit amounts.</p>
+                <p className="mt-1.5 text-xs text-[#757575]">Category affects how the AI calculates risk and deposit amounts.</p>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Google Place ID</label>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Google Place ID</label>
                 <input type="text" className="input-field" value={businessData.googlePlaceId} onChange={e => setBusinessData({ ...businessData, googlePlaceId: e.target.value })} />
-                <p className="mt-1.5 text-xs text-slate-600">Used to fetch your Google Reviews for the dashboard.</p>
+                <p className="mt-1.5 text-xs text-[#757575]">Used to fetch your Google Reviews for the dashboard.</p>
               </div>
             </div>
             <SaveButton onClick={() => {}} label="Save Profile" />
@@ -208,36 +208,36 @@ export default function BusinessSettingsPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">CRM Webhook Integration</h3>
-                <p className="text-sm text-slate-600">Send Pabandi reservation events to your external tools (like HubSpot or Zapier).</p>
+                <h3 className="text-lg font-bold text-[#e8e8e8]">CRM Webhook Integration</h3>
+                <p className="text-sm text-[#757575]">Send Pabandi reservation events to your external tools (like HubSpot or Zapier).</p>
               </div>
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1">
+              <span className="px-3 py-1 style={{ background: 'rgba(0,255,176,0.12)' }} text-[#00FFB0] text-xs font-bold rounded-full flex items-center gap-1">
                 <CheckCircleIcon className="h-4 w-4" /> Active
               </span>
             </div>
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Target Webhook URL</label>
-              <input type="url" className="input-field mb-4 bg-white" value={webhook.targetUrl} onChange={e => setWebhook({ ...webhook, targetUrl: e.target.value })} placeholder="https://hooks.zapier.com/hooks/catch/..." />
+            <div className="p-5 rounded-2xl style={{ background: 'var(--color-surface)' }} border border-[#ffffff14]">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Target Webhook URL</label>
+              <input type="url" className="input-field mb-4 style={{ background: 'var(--color-surface-raised)' }}" value={webhook.targetUrl} onChange={e => setWebhook({ ...webhook, targetUrl: e.target.value })} placeholder="https://hooks.zapier.com/hooks/catch/..." />
 
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-1.5">Signing Secret</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Signing Secret</label>
               <div className="flex gap-2 mb-4">
-                <input type={webhook.showSecret ? 'text' : 'password'} readOnly className="input-field bg-slate-100 opacity-70" value={webhook.secret} />
+                <input type={webhook.showSecret ? 'text' : 'password'} readOnly className="input-field style={{ background: 'var(--color-surface)' }} opacity-70" value={webhook.secret} />
                 <button onClick={() => setWebhook({ ...webhook, showSecret: !webhook.showSecret })}
-                  className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-50 text-slate-700">
+                  className="px-4 py-2 style={{ background: 'var(--color-surface-raised)' }} border border-[#ffffff1a] rounded-xl text-sm font-semibold hover:style={{ background: 'var(--color-surface)' }} text-[#9e9e9e]">
                   {webhook.showSecret ? 'Hide' : 'Reveal'}
                 </button>
-                <button className="px-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-50 text-slate-700">Rotate</button>
+                <button className="px-4 py-2 style={{ background: 'var(--color-surface-raised)' }} border border-[#ffffff1a] rounded-xl text-sm font-semibold hover:style={{ background: 'var(--color-surface)' }} text-[#9e9e9e]">Rotate</button>
               </div>
-              <p className="text-xs text-slate-600 mb-6">Use this secret to verify the HMAC-SHA256 signature in the `x-pabandi-signature` header of incoming requests.</p>
+              <p className="text-xs text-[#757575] mb-6">Use this secret to verify the HMAC-SHA256 signature in the `x-pabandi-signature` header of incoming requests.</p>
 
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700 mb-3">Subscribed Events</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-3">Subscribed Events</label>
               <div className="space-y-3">
                 {Object.keys(webhook.events).map(event => (
                   <label key={event} className="flex items-center gap-3">
                     <input type="checkbox" checked={(webhook.events as any)[event]}
                       onChange={e => setWebhook({ ...webhook, events: { ...webhook.events, [event]: e.target.checked } })}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="text-sm text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded">{event}</span>
+                      className="w-4 h-4 rounded border-[#ffffff1a] text-[#0ea5e9] focus:ring-blue-500" />
+                    <span className="text-sm text-[#e8e8e8] font-mono style={{ background: 'var(--color-surface)' }} px-2 py-0.5 rounded">{event}</span>
                   </label>
                 ))}
               </div>
@@ -250,29 +250,29 @@ export default function BusinessSettingsPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Payments & Escrow</h3>
-              <p className="text-sm text-slate-600">Configure how you receive deposits and payments. All deposits are credited toward the customer's total bill.</p>
+              <h3 className="text-lg font-bold text-[#e8e8e8]">Payments & Escrow</h3>
+              <p className="text-sm text-[#757575]">Configure how you receive deposits and payments. All deposits are credited toward the customer's total bill.</p>
             </div>
 
-            <div className="p-5 rounded-2xl border border-slate-200 bg-white">
+            <div className="p-5 rounded-2xl border border-[#ffffff14] style={{ background: 'var(--color-surface-raised)' }}">
               <div className="flex justify-between items-start mb-4">
-                <h4 className="font-bold text-slate-900">Safepay Integration (Fiat)</h4>
-                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">Connected</span>
+                <h4 className="font-bold text-[#e8e8e8]">Safepay Integration (Fiat)</h4>
+                <span className="px-3 py-1 style={{ background: 'rgba(0,255,176,0.12)' }} text-[#00FFB0] text-xs font-bold rounded-full">Connected</span>
               </div>
-              <p className="text-sm text-slate-600 mb-4">Safepay is configured globally via the backend. Customers can pay via Debit/Credit Card, JazzCash, and EasyPaisa.</p>
+              <p className="text-sm text-[#757575] mb-4">Safepay is configured globally via the backend. Customers can pay via Debit/Credit Card, JazzCash, and EasyPaisa.</p>
               <div className="flex gap-3">
-                <span className="px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-200">💳 Cards</span>
-                <span className="px-3 py-1.5 bg-red-50 text-red-700 text-xs font-bold rounded-lg border border-red-200">📱 JazzCash</span>
-                <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-200">📱 EasyPaisa</span>
+                <span className="px-3 py-1.5 style={{ background: 'rgba(0,255,176,0.08)' }} text-[#00FFB0] text-xs font-bold rounded-lg border border-[#00FFB033]">💳 Cards</span>
+                <span className="px-3 py-1.5 style={{ background: 'rgba(255,76,106,0.08)' }} text-[#FF4C6A] text-xs font-bold rounded-lg border border-[#FF4C6A33]">📱 JazzCash</span>
+                <span className="px-3 py-1.5 style={{ background: 'rgba(0,229,255,0.08)' }} text-[#0ea5e9] text-xs font-bold rounded-lg border border-[#0ea5e933]">📱 EasyPaisa</span>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 to-emerald-50">
+            <div className="p-5 rounded-2xl border border-[#a5b4fc33] bg-gradient-to-br from-purple-50 to-emerald-50">
               <div className="flex justify-between items-start mb-4">
-                <h4 className="font-bold text-slate-900">◎ Solana · $PAB Payouts</h4>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">Phantom</span>
+                <h4 className="font-bold text-[#e8e8e8]">◎ Solana · $PAB Payouts</h4>
+                <span className="px-3 py-1 style={{ background: 'rgba(165,180,252,0.12)' }} text-[#a5b4fc] text-xs font-bold rounded-full">Phantom</span>
               </div>
-              <p className="text-sm text-slate-600 mb-4">
+              <p className="text-sm text-[#757575] mb-4">
                 Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.
               </p>
               <a href="/wallet" className="inline-flex px-4 py-2 bg-gradient-to-r from-purple-600 to-emerald-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm">
@@ -281,7 +281,7 @@ export default function BusinessSettingsPage() {
             </div>
 
             {/* Deposit credit notice */}
-            <div className="flex gap-3 p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200">
+            <div className="flex gap-3 p-4 style={{ background: 'rgba(0,255,176,0.08)' }} text-emerald-800 rounded-xl border border-[#00FFB033]">
               <ShieldCheckIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <p className="text-sm">
                 <strong>Deposits go toward the total purchase.</strong> When a customer pays a deposit, it's automatically deducted from their final bill. No extra charge — just protection.
@@ -295,8 +295,8 @@ export default function BusinessSettingsPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">AI No-Show Protection</h3>
-                <p className="text-sm text-slate-600">Configure how the AI protects your business from missed appointments.</p>
+                <h3 className="text-lg font-bold text-[#e8e8e8]">AI No-Show Protection</h3>
+                <p className="text-sm text-[#757575]">Configure how the AI protects your business from missed appointments.</p>
               </div>
               <CpuChipIcon className="w-8 h-8 text-blue-500" />
             </div>
@@ -304,8 +304,8 @@ export default function BusinessSettingsPage() {
             {/* Category-aware notice */}
             <div className="flex gap-3 p-4 rounded-xl border"
               style={{ background: 'rgba(99,102,241,0.06)', borderColor: 'rgba(99,102,241,0.15)' }}>
-              <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5 text-indigo-500" />
-              <p className="text-sm text-slate-700">
+              <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#a5b4fc]" />
+              <p className="text-sm text-[#9e9e9e]">
                 Your business is categorized as <strong>{CATEGORIES.find(c => c.value === businessData.category)?.label || businessData.category}</strong>.
                 The AI uses industry-specific risk models — restaurants weigh group size and Friday nights,
                 salons focus on service duration and value, event venues track capacity and VIP bookings.
@@ -313,10 +313,10 @@ export default function BusinessSettingsPage() {
             </div>
 
             {/* Risk Threshold */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-5 rounded-2xl style={{ background: 'var(--color-surface)' }} border border-[#ffffff14]">
               <div className="flex justify-between mb-2">
-                <label className="text-sm font-bold text-slate-800">Risk Threshold Strictness</label>
-                <span className="text-sm font-bold text-blue-600">{aiSettings.aiStrictness}%</span>
+                <label className="text-sm font-bold text-[#e8e8e8]">Risk Threshold Strictness</label>
+                <span className="text-sm font-bold text-[#0ea5e9]">{aiSettings.aiStrictness}%</span>
               </div>
               <input
                 type="range" min="0" max="100"
@@ -324,11 +324,11 @@ export default function BusinessSettingsPage() {
                 onChange={e => setAiSettings({ ...aiSettings, aiStrictness: parseInt(e.target.value) })}
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <div className="flex justify-between text-xs text-slate-500 mt-2">
+              <div className="flex justify-between text-xs text-[#616161] mt-2">
                 <span>Lenient (More Bookings)</span>
                 <span>Strict (More Deposits)</span>
               </div>
-              <div className="mt-4 flex gap-3 p-4 bg-blue-50 text-blue-800 rounded-xl">
+              <div className="mt-4 flex gap-3 p-4 style={{ background: 'rgba(0,229,255,0.08)' }} text-[#0ea5e9] rounded-xl">
                 <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <p className="text-sm">
                   At <strong>{aiSettings.aiStrictness}%</strong> strictness, the AI will require a deposit for any booking whose risk score exceeds <strong>{100 - aiSettings.aiStrictness}%</strong>.
@@ -337,8 +337,8 @@ export default function BusinessSettingsPage() {
             </div>
 
             {/* Deposit Strategy */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-              <label className="text-sm font-bold text-slate-800 mb-3 block">Deposit Strategy</label>
+            <div className="p-5 rounded-2xl style={{ background: 'var(--color-surface)' }} border border-[#ffffff14]">
+              <label className="text-sm font-bold text-[#e8e8e8] mb-3 block">Deposit Strategy</label>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {([
                   { id: 'AI_DYNAMIC', label: 'AI Dynamic', desc: 'AI decides per booking' },
@@ -349,18 +349,18 @@ export default function BusinessSettingsPage() {
                     onClick={() => setAiSettings({ ...aiSettings, depositStrategy: s.id })}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       aiSettings.depositStrategy === s.id
-                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                        ? 'border-[#0ea5e955] style={{ background: 'rgba(0,229,255,0.08)' }} ring-1 ring-blue-500'
+                        : 'border-[#ffffff14] style={{ background: 'var(--color-surface-raised)' }} hover:style={{ background: 'var(--color-surface)' }}'
                     }`}>
-                    <p className="text-sm font-bold text-slate-900">{s.label}</p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">{s.desc}</p>
+                    <p className="text-sm font-bold text-[#e8e8e8]">{s.label}</p>
+                    <p className="text-[10px] text-[#757575] mt-0.5">{s.desc}</p>
                   </button>
                 ))}
               </div>
 
               {aiSettings.depositStrategy === 'FLAT' && (
                 <div className="mt-3">
-                  <label className="text-xs font-semibold text-slate-700 mb-1 block">Flat Deposit Amount (PKR)</label>
+                  <label className="text-xs font-semibold text-[#9e9e9e] mb-1 block">Flat Deposit Amount (PKR)</label>
                   <input type="number" className="input-field w-48" min="500" step="50"
                     value={aiSettings.flatDepositPKR}
                     onChange={e => setAiSettings({ ...aiSettings, flatDepositPKR: parseInt(e.target.value) || 500 })} />
@@ -369,23 +369,23 @@ export default function BusinessSettingsPage() {
 
               {aiSettings.depositStrategy === 'PERCENTAGE' && (
                 <div className="mt-3">
-                  <label className="text-xs font-semibold text-slate-700 mb-1 block">Deposit Percentage (%)</label>
+                  <label className="text-xs font-semibold text-[#9e9e9e] mb-1 block">Deposit Percentage (%)</label>
                   <input type="number" className="input-field w-48" min="10" max="50" step="5"
                     value={aiSettings.depositPercentage}
                     onChange={e => setAiSettings({ ...aiSettings, depositPercentage: parseInt(e.target.value) || 20 })} />
                 </div>
               )}
 
-              <p className="text-xs text-slate-600 mt-3">
+              <p className="text-xs text-[#757575] mt-3">
                 Preview: <strong>{depositPreview()}</strong>. Deposits are applied toward the customer's total bill.
               </p>
             </div>
 
             {/* Trusted Customer Threshold */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-5 rounded-2xl style={{ background: 'var(--color-surface)' }} border border-[#ffffff14]">
               <div className="flex justify-between mb-2">
-                <label className="text-sm font-bold text-slate-800">Trusted Customer Threshold</label>
-                <span className="text-sm font-bold text-emerald-600">{aiSettings.trustedCustomerThreshold}+</span>
+                <label className="text-sm font-bold text-[#e8e8e8]">Trusted Customer Threshold</label>
+                <span className="text-sm font-bold text-[#00FFB0]">{aiSettings.trustedCustomerThreshold}+</span>
               </div>
               <input
                 type="range" min="50" max="100"
@@ -393,23 +393,23 @@ export default function BusinessSettingsPage() {
                 onChange={e => setAiSettings({ ...aiSettings, trustedCustomerThreshold: parseInt(e.target.value) })}
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-slate-500 mt-2">
+              <div className="flex justify-between text-xs text-[#616161] mt-2">
                 <span>50 (Lenient)</span>
                 <span>100 (Very Strict)</span>
               </div>
-              <p className="text-xs text-slate-600 mt-3">
+              <p className="text-xs text-[#757575] mt-3">
                 Customers with a Pabandi reliability score above <strong>{aiSettings.trustedCustomerThreshold}</strong> will have their deposit waived automatically — rewarding loyal, reliable customers.
               </p>
             </div>
 
             {/* Auto-require toggle */}
-            <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white cursor-pointer">
+            <label className="flex items-center gap-3 p-4 rounded-xl border border-[#ffffff14] style={{ background: 'var(--color-surface-raised)' }} cursor-pointer">
               <input type="checkbox" checked={aiSettings.autoRequireDeposit}
                 onChange={e => setAiSettings({ ...aiSettings, autoRequireDeposit: e.target.checked })}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                className="w-4 h-4 rounded border-[#ffffff1a] text-[#0ea5e9] focus:ring-blue-500" />
               <div>
-                <p className="text-sm font-bold text-slate-900">Auto-Require Deposits</p>
-                <p className="text-xs text-slate-600">Let the AI automatically enforce deposits on risky bookings via JazzCash, EasyPaisa, or Card.</p>
+                <p className="text-sm font-bold text-[#e8e8e8]">Auto-Require Deposits</p>
+                <p className="text-xs text-[#757575]">Let the AI automatically enforce deposits on risky bookings via JazzCash, EasyPaisa, or Card.</p>
               </div>
             </label>
 
@@ -424,8 +424,8 @@ export default function BusinessSettingsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-slate-900">Settings</h1>
-          <p className="mt-1 text-sm text-slate-600">Manage your business profile, integrations, and preferences.</p>
+          <h1 className="text-3xl font-black text-[#e8e8e8]">Settings</h1>
+          <p className="mt-1 text-sm text-[#757575]">Manage your business profile, integrations, and preferences.</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
@@ -433,26 +433,26 @@ export default function BusinessSettingsPage() {
           {/* Sidebar Tabs */}
           <div className="w-full md:w-64 flex-shrink-0 space-y-1">
             <button onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'profile' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'profile' ? 'style={{ background: 'var(--color-surface-raised)' }} shadow-sm text-[#0ea5e9] border border-[#ffffff14]' : 'text-[#757575] hover:style={{ background: 'var(--color-surface)' }} hover:text-[#e8e8e8]'}`}>
               <UserCircleIcon className="w-5 h-5" /> Business Profile
             </button>
             <button onClick={() => setActiveTab('webhooks')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'webhooks' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'webhooks' ? 'style={{ background: 'var(--color-surface-raised)' }} shadow-sm text-[#0ea5e9] border border-[#ffffff14]' : 'text-[#757575] hover:style={{ background: 'var(--color-surface)' }} hover:text-[#e8e8e8]'}`}>
               <GlobeAltIcon className="w-5 h-5" /> Integrations & Webhooks
             </button>
             <button onClick={() => setActiveTab('payments')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'payments' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'payments' ? 'style={{ background: 'var(--color-surface-raised)' }} shadow-sm text-[#0ea5e9] border border-[#ffffff14]' : 'text-[#757575] hover:style={{ background: 'var(--color-surface)' }} hover:text-[#e8e8e8]'}`}>
               <CurrencyDollarIcon className="w-5 h-5" /> Payments & Escrow
             </button>
             <button onClick={() => setActiveTab('ai')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'ai' ? 'bg-white shadow-sm text-blue-600 border border-slate-200' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'ai' ? 'style={{ background: 'var(--color-surface-raised)' }} shadow-sm text-[#0ea5e9] border border-[#ffffff14]' : 'text-[#757575] hover:style={{ background: 'var(--color-surface)' }} hover:text-[#e8e8e8]'}`}>
               <CpuChipIcon className="w-5 h-5" /> AI Configuration
             </button>
           </div>
 
           {/* Content Area */}
           <div className="flex-1">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div className="style={{ background: 'var(--color-surface-raised)' }} rounded-2xl p-6 shadow-sm border border-[#ffffff14]">
               {renderTabContent()}
             </div>
           </div>

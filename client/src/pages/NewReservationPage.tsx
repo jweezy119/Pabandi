@@ -27,7 +27,7 @@ const TIME_SLOTS = [
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-slate-700" >
+    <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >
       {children}
     </label>
   );
@@ -35,7 +35,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 function InputIcon({ icon }: { icon: React.ReactNode }) {
   return (
-    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-800" >
+    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#e8e8e8]" >
       {icon}
     </div>
   );
@@ -240,11 +240,11 @@ export default function NewReservationPage() {
             style={{ background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(52,211,153,0.3)' }}>
             <CheckCircleIcon className="h-10 w-10" style={{ color: '#34d399' }} />
           </div>
-          <h2 className="text-2xl font-black mb-3 text-slate-900" >Reservation Submitted!</h2>
-          <p className="text-sm mb-2 text-slate-600" >
+          <h2 className="text-2xl font-black mb-3 text-[#e8e8e8]" >Reservation Submitted!</h2>
+          <p className="text-sm mb-2 text-[#757575]" >
             <span style={{ fontWeight: 600 }}>{selectedPlace?.name}</span>
           </p>
-          <p className="text-sm mb-2 text-slate-600" >
+          <p className="text-sm mb-2 text-[#757575]" >
             {new Date(form.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             {' at '}{form.time} · {form.guests} {Number(form.guests) === 1 ? 'guest' : 'guests'}
           </p>
@@ -269,13 +269,13 @@ export default function NewReservationPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
 
           <Link to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-slate-700" >
+            className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-[#9e9e9e]" >
             <ArrowLeftIcon className="h-4 w-4" /> Back to Dashboard
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-black text-slate-900" >New Reservation</h1>
-            <p className="mt-1.5 text-sm text-slate-600" >
+            <h1 className="text-3xl font-black text-[#e8e8e8]" >New Reservation</h1>
+            <p className="mt-1.5 text-sm text-[#757575]" >
               Discover places via Google Maps and book instantly.
             </p>
           </div>
@@ -340,7 +340,7 @@ export default function NewReservationPage() {
                     <div className="flex items-center gap-3">
                       <button type="button"
                         onClick={() => setForm(f => ({ ...f, guests: String(Math.max(1, parseInt(f.guests) - 1)) }))}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5 text-slate-900" >
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-[#181818]/5 text-[#e8e8e8]" >
                         −
                       </button>
                       <div className="relative flex-1">
@@ -353,7 +353,7 @@ export default function NewReservationPage() {
                       </div>
                       <button type="button"
                         onClick={() => setForm(f => ({ ...f, guests: String(Math.min(50, parseInt(f.guests) + 1)) }))}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-white/5 text-slate-900" >
+                        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold border border-white/10 hover:bg-[#181818]/5 text-[#e8e8e8]" >
                         +
                       </button>
                     </div>
@@ -375,7 +375,7 @@ export default function NewReservationPage() {
                           className={`flex flex-col items-center justify-center py-3 rounded-xl border transition-all ${
                             form.paymentMethod === m.id
                               ? 'border-blue-500 bg-blue-500/10'
-                              : 'border-white/10 bg-white/5 hover:bg-white/10'
+                              : 'border-white/10 bg-[#181818]/5 hover:bg-[#181818]/10'
                           }`}>
                           <div className={`mb-1 ${form.paymentMethod === m.id ? 'text-blue-400' : 'text-gray-400'}`}>{m.icon}</div>
                           <span className="text-[10px] font-bold" style={{ color: form.paymentMethod === m.id ? '#e8edf3' : '#9e9e9e' }}>{m.label}</span>
@@ -424,14 +424,14 @@ export default function NewReservationPage() {
                     {selectedPlace.photoUrl && (
                       <img src={selectedPlace.photoUrl} alt="Business" className="w-full h-32 object-cover rounded-xl mb-4" />
                     )}
-                    <h3 className="text-xl font-bold mb-1 text-slate-900" >{selectedPlace.name}</h3>
+                    <h3 className="text-xl font-bold mb-1 text-[#e8e8e8]" >{selectedPlace.name}</h3>
                     <div className="flex items-center gap-1.5 mb-3">
                       <StarIcon className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-bold text-slate-900" >{selectedPlace.rating || 'N/A'}</span>
-                      <span className="text-xs text-gray-500">({selectedPlace.userRatingsTotal || 0} reviews)</span>
+                      <span className="text-sm font-bold text-[#e8e8e8]" >{selectedPlace.rating || 'N/A'}</span>
+                      <span className="text-xs text-[#616161]">({selectedPlace.userRatingsTotal || 0} reviews)</span>
                     </div>
                     <div className="flex items-start gap-2 mb-6">
-                      <MapPinIcon className="h-4 w-4 text-gray-500 shrink-0 mt-0.5" />
+                      <MapPinIcon className="h-4 w-4 text-[#616161] shrink-0 mt-0.5" />
                       <p className="text-xs leading-relaxed text-gray-400">{selectedPlace.address}</p>
                     </div>
 
@@ -453,10 +453,10 @@ export default function NewReservationPage() {
                   </div>
                 ) : (
                   <div className="p-10 text-center flex-1 flex flex-col justify-center">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                      <MagnifyingGlassIcon className="h-8 w-8 text-gray-600" />
+                    <div className="w-16 h-16 rounded-full bg-[#181818]/5 flex items-center justify-center mx-auto mb-4">
+                      <MagnifyingGlassIcon className="h-8 w-8 text-[#757575]" />
                     </div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-[#616161]">
                       Search and select a business to see details and check availability.
                     </p>
                   </div>
@@ -466,7 +466,7 @@ export default function NewReservationPage() {
 
           </div>
 
-          <p className="text-center text-xs mt-10 text-slate-800" >
+          <p className="text-center text-xs mt-10 text-[#e8e8e8]" >
             By booking via Pabandi, you earn crypto rewards and build your global reputation score.
           </p>
         </div>
