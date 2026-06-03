@@ -38,15 +38,15 @@ export default function BusinessPabRewards() {
           >
             Solana · $PAB Rewards
           </span>
-          <h2 className="text-xl font-black text-slate-900 mt-2">Earn $PAB for running a tight operation</h2>
-          <p className="text-sm text-slate-600 mt-1 max-w-xl">
+          <h2 className="text-xl font-black text-[#e8e8e8] mt-2">Earn $PAB for running a tight operation</h2>
+          <p className="text-sm text-[#757575] mt-1 max-w-xl">
             Businesses earn Pabandi tokens automatically — withdraw to your Phantom wallet on Solana.
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Your $PAB balance</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575]">Your $PAB balance</p>
           <p className="text-3xl font-black" style={{ color: '#f0b429' }}>
-            {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-slate-500">PAB</span>
+            {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-[#616161]">PAB</span>
           </p>
           {data?.solanaConnected ? (
             <p className="text-xs text-emerald-600 mt-1">◎ Phantom connected</p>
@@ -71,7 +71,7 @@ export default function BusinessPabRewards() {
 
       {data?.recentRewards?.length > 0 && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-2">Recent $PAB earnings</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575] mb-2">Recent $PAB earnings</p>
           <div className="space-y-2">
             {data.recentRewards.slice(0, 5).map((r: { id: string; type: string; amount: number; createdAt: string }) => (
               <div
@@ -79,7 +79,7 @@ export default function BusinessPabRewards() {
                 className="flex items-center justify-between text-sm py-2 px-3 rounded-lg"
                 style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid var(--color-border)' }}
               >
-                <span className="text-slate-700">{REWARD_LABELS[r.type] || r.type}</span>
+                <span className="text-[#9e9e9e]">{REWARD_LABELS[r.type] || r.type}</span>
                 <span className="font-bold" style={{ color: '#22c55e' }}>+{r.amount} PAB</span>
               </div>
             ))}
@@ -110,7 +110,7 @@ function RewardRule({
       <p className="text-2xl font-black" style={{ color: '#f0b429' }}>
         +{amount}
       </p>
-      <p className="text-xs text-slate-600 mt-1">{label}</p>
+      <p className="text-xs text-[#757575] mt-1">{label}</p>
     </div>
   );
 }

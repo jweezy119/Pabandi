@@ -20,7 +20,7 @@ export default function AuthHydrationGate({ children }: { children: React.ReactN
       >
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-600">Loading…</p>
+          <p className="text-sm text-[#757575]">Loading…</p>
         </div>
       </div>
     );

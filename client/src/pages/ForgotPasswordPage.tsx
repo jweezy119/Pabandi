@@ -38,13 +38,13 @@ export default function ForgotPasswordPage() {
               style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight text-slate-900" >Pabandi</span>
+            <span className="text-xl font-black tracking-tight text-[#e8e8e8]" >Pabandi</span>
           </Link>
         </div>
 
         <div className="auth-panel p-8">
-          <h1 className="text-2xl font-bold mb-2 text-slate-900" >Forgot Password</h1>
-          <p className="text-sm mb-6 text-slate-600" >
+          <h1 className="text-2xl font-bold mb-2 text-[#e8e8e8]" >Forgot Password</h1>
+          <p className="text-sm mb-6 text-[#757575]" >
             Enter your email address and we'll send you a link to reset your password.
           </p>
 
@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
               )}
               
               <div>
-                <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-slate-700" >Email Address</label>
+                <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >Email Address</label>
                 <input id="email" type="email" required
                   value={email} onChange={(e) => setEmail(e.target.value)}
                   className="input-field" placeholder="you@example.com" />
@@ -78,7 +78,7 @@ export default function ForgotPasswordPage() {
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
 
-              <p className="text-center text-xs mt-4 text-slate-800" >
+              <p className="text-center text-xs mt-4 text-[#e8e8e8]" >
                 Remembered your password?{' '}
                 <Link to="/login" className="font-semibold hover:underline" style={{ color: '#60a5fa' }}>
                   Sign in
