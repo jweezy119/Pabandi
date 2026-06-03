@@ -10,7 +10,7 @@ export default function BusinessMap({ latitude, longitude, name, zoom = 15 }: Bu
 
   if (!apiKey) {
     return (
-      <div className="w-full h-full bg-surface-container-low flex items-center justify-center text-on-surface-variant rounded-xl border border-outline-variant/30">
+      <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center text-[#a0a0a0] rounded-xl border border-outline-variant/30">
         <div className="flex flex-col items-center gap-2 p-4 text-center">
           <span className="material-symbols-outlined text-[32px] opacity-40">map</span>
           <p className="text-sm font-medium opacity-60">Map loading…</p>

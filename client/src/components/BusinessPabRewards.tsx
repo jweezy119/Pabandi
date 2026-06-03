@@ -49,7 +49,7 @@ export default function BusinessPabRewards() {
             {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-[#616161]">PAB</span>
           </p>
           {data?.solanaConnected ? (
-            <p className="text-xs text-emerald-600 mt-1">◎ Phantom connected</p>
+            <p className="text-xs text-[#10b981] mt-1">◎ Phantom connected</p>
           ) : (
             <Link to="/business/settings" className="text-xs font-semibold text-purple-600 hover:underline mt-1 inline-block">
               Connect Phantom for payouts →

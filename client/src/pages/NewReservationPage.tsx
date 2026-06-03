@@ -374,7 +374,7 @@ export default function NewReservationPage() {
                           onClick={() => handlePaymentMethodChange(m.id as PaymentMethod)}
                           className={`flex flex-col items-center justify-center py-3 rounded-xl border transition-all ${
                             form.paymentMethod === m.id
-                              ? 'border-blue-500 bg-blue-500/10'
+                              ? 'border-[#0ea5e955] bg-blue-500/10'
                               : 'border-white/10 bg-[#181818]/5 hover:bg-[#181818]/10'
                           }`}>
                           <div className={`mb-1 ${form.paymentMethod === m.id ? 'text-blue-400' : 'text-gray-400'}`}>{m.icon}</div>
