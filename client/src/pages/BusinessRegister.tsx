@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { businessService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function BusinessRegister() {
   const [formData, setFormData] = useState({
@@ -32,7 +33,14 @@ export default function BusinessRegister() {
     setLoading(true);
 
     try {
-      await businessService.createBusiness(formData);
+      const response = await businessService.createBusiness(formData);
+      const updatedUser = response.data?.data?.user;
+      if (updatedUser) {
+        useAuthStore.getState().setUser({
+          ...useAuthStore.getState().user!,
+          ...updatedUser,
+        });
+      }
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register business. Please try again.');

@@ -118,7 +118,7 @@ router.get(
 
     // Issue a JWT and redirect to the frontend with it
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -156,7 +156,7 @@ router.get(
 
     // Issue a JWT and redirect to the frontend with it
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );

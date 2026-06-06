@@ -93,17 +93,15 @@ export default function AuthPage() {
 
   const handleGoogleAuth = () => {
     setOauthLoading('google');
-    const backendUrl = window.location.hostname === 'localhost'
-      ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-97129395003.asia-south1.run.app');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/google?role=${role}`;
   };
 
   const handleFacebookAuth = () => {
     setOauthLoading('facebook');
-    const backendUrl = window.location.hostname === 'localhost'
-      ? 'http://localhost:5000'
-      : (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'https://pabandi-server-97129395003.asia-south1.run.app');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
 
