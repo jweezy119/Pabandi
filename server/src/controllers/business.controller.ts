@@ -569,7 +569,6 @@ export const getBusinessReviews = async (
     next(error);
   }
 };
-};
 
 export const claimBusiness = async (req: Request | any, res: Response, next: NextFunction) => {
   try {

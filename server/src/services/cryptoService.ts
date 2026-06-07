@@ -86,7 +86,7 @@ export class CryptoService {
     try {
       const business = await prisma.business.findUnique({
         where: { id: businessId },
-        select: { ownerId: true },
+        select: { id: true, ownerId: true },
       });
       if (!business) return;
 
@@ -94,12 +94,19 @@ export class CryptoService {
       logger.info(`PAB +${amount} business owner ${business.ownerId} reservation ${reservationId}`);
 
       await prisma.$transaction(async (tx) => {
-        const existing = await tx.cryptoReward.findFirst({
-          where: { userId: business.ownerId, reservationId, type: 'BUSINESS_RESERVATION_HONORED' },
-        });
-        if (existing) return;
+        if (business.ownerId) {
+          try {
+            const existingBusinessReward = await tx.cryptoReward.findFirst({
+              where: { userId: business.ownerId, reservationId, type: 'BUSINESS_RESERVATION_HONORED' },
+            });
 
-        await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId);
+            if (!existingBusinessReward) {
+              await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId);
+            }
+          } catch (err) {
+            console.error(`Failed to reward business ${business.id}:`, err);
+          }
+        }
       });
     } catch (error) {
       logger.error('Error rewarding business completion:', error);
@@ -128,12 +135,14 @@ export class CryptoService {
       logger.info(`PAB +${amount} business no-show protection ${businessId}`);
 
       await prisma.$transaction(async (tx) => {
-        const existing = await tx.cryptoReward.findFirst({
-          where: { userId: business.ownerId, reservationId, type: 'BUSINESS_NO_SHOW_PROTECTED' },
-        });
-        if (existing) return;
+        if (business.ownerId) {
+          const existing = await tx.cryptoReward.findFirst({
+            where: { userId: business.ownerId, reservationId, type: 'BUSINESS_NO_SHOW_PROTECTED' },
+          });
+          if (existing) return;
 
-        await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_NO_SHOW_PROTECTED', reservationId);
+          await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_NO_SHOW_PROTECTED', reservationId);
+        }
       });
     } catch (error) {
       logger.error('Error rewarding business no-show protection:', error);
