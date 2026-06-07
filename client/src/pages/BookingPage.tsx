@@ -108,22 +108,22 @@ export default function BookingPage() {
 
   if (businessLoading || !business) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#121212]">
-        <div className="animate-pulse text-[#a0a0a0]">Loading Business...</div>
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#121212] min-h-screen pb-24 md:pb-12 text-[#e0e0e0] font-body selection:bg-primary-container selection:text-on-primary-container">
+    <div className="bg-surface min-h-screen pb-24 md:pb-12 text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
       {/* Top App Bar - Web */}
-      <header className="hidden md:flex justify-between items-center w-full px-6 py-4 bg-surface-bright/80 backdrop-blur-md sticky top-0 z-40 transition-all duration-300">
-        <h1 className="font-headline text-2xl font-bold tracking-tighter text-[#0ea5e9] cursor-pointer" onClick={() => navigate('/')}>Pabandi</h1>
+      <header className="hidden md:flex justify-between items-center w-full px-6 py-4 bg-surface/80 backdrop-blur-md sticky top-0 z-40 transition-all duration-300">
+        <h1 className="font-headline text-2xl font-bold tracking-tighter text-primary cursor-pointer" onClick={() => navigate('/')}>Pabandi</h1>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <button onClick={() => navigate('/reservations')} className="btn-secondary py-2">My Bookings</button>
+            <button onClick={() => navigate('/reservations')} className="text-on-surface-variant hover:text-primary font-body text-sm font-medium transition-colors">My Bookings</button>
           ) : (
-            <button onClick={() => navigate('/login')} className="btn-secondary py-2">Sign In</button>
+            <button onClick={() => navigate('/login')} className="text-on-surface-variant hover:text-primary font-body text-sm font-medium transition-colors">Sign In</button>
           )}
         </div>
       </header>
@@ -140,14 +140,14 @@ export default function BookingPage() {
         )}
 
         {/* Hero Section */}
-        <div className="relative w-full h-[353px] md:h-[442px] rounded-xl overflow-hidden mb-8 md:mb-16 shadow-[0_20px_40px_rgba(1,29,53,0.06)]">
+        <div className="relative w-full h-[353px] md:h-[442px] rounded-xl overflow-hidden mb-8 md:mb-16 shadow-sm">
           <img 
             alt={business.name} 
             className="w-full h-full object-cover" 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs0Ker3tH73HShnpzCYS57ru-3m9EJycGJWEoAjRes7gsogMja6_xbRcECJxl_z65r8L8K1RlEZ2Yi88YJIyaf83nLezBsjFXmlb_CGtThPJ6ogXH5z611EYKzBEDTMXJzLDG7fyLLKF34ij9frHsDsecGNoy_hs7IvUhUmEZAuY_nv4p5KYyTXW-LOg21c0WpklLm6jEm6yaeo4IOy7Cbsvl4x9UTkBa5rXOf0SxMRAdn2ZWlqSWwjXH_p0OZcyCMXCl4COE9RDOk" 
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 text-on-primary">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#011d35]/90 via-[#011d35]/40 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 text-white">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -157,20 +157,20 @@ export default function BookingPage() {
                   <span className="inline-flex items-center px-2 py-1 rounded bg-secondary-container text-on-secondary-container font-label text-[11px] font-medium tracking-wide">
                     <ShieldCheckIcon className="h-3 w-3 mr-1" /> Pabandi Score: {reliabilityScore}
                   </span>
-                  <span className="hidden md:inline-flex items-center px-2 py-1 rounded bg-surface-container-lowest/20 backdrop-blur-sm text-on-primary font-label text-[11px] font-medium tracking-wide">
+                  <span className="hidden md:inline-flex items-center px-2 py-1 rounded bg-white/20 backdrop-blur-sm text-white font-label text-[11px] font-medium tracking-wide">
                      Premium Partner
                   </span>
                 </div>
                 <h2 className="font-headline text-3xl md:text-[2.75rem] font-bold tracking-tight mb-2 leading-tight">{business.name}</h2>
-                <p className="font-body text-sm md:text-[0.875rem] text-[#a0a0a0] flex items-center">
+                <p className="font-body text-sm md:text-[0.875rem] text-slate-200 flex items-center">
                   <MapPinIcon className="h-4 w-4 mr-1" /> {business.address || 'Global Partner'}
                 </p>
               </div>
               <div className="hidden md:flex gap-3">
-                <button className="bg-surface-container-lowest/10 backdrop-blur-md text-on-primary font-body text-sm font-medium px-6 py-3 rounded border border-outline-variant/30 hover:bg-surface-container-lowest/20 transition-colors">
+                <button className="bg-white/10 backdrop-blur-md text-white font-body text-sm font-medium px-6 py-3 rounded border border-white/30 hover:bg-white/20 transition-colors">
                     Save
                 </button>
-                <button onClick={() => setShowBookingForm(true)} className="gradient-primary text-on-primary font-body text-sm font-medium px-8 py-3 rounded hover:opacity-90 transition-opacity shadow-[0_10px_20px_rgba(1,29,53,0.15)]">
+                <button onClick={() => setShowBookingForm(true)} className="bg-white text-primary font-body text-sm font-semibold px-8 py-3 rounded hover:bg-slate-50 transition-colors shadow-sm">
                     Make Reservation
                 </button>
               </div>
@@ -185,34 +185,34 @@ export default function BookingPage() {
           <div className={`${showBookingForm ? 'lg:col-span-1' : 'lg:col-span-4'} space-y-8`}>
             
             {/* Info Card */}
-            <div className="bg-[#0a0a0a] rounded-xl p-6 shadow-[0_20px_40px_rgba(1,29,53,0.06)] border border-transparent">
-              <h3 className="font-headline text-xl font-semibold text-[#0ea5e9] mb-6">Details</h3>
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
+              <h3 className="font-headline text-xl font-semibold text-primary mb-6">Details</h3>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] flex items-center justify-center text-[#0ea5e9] shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0">
                     <ClockIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-body text-[0.875rem] font-medium text-[#e0e0e0] mb-1">Opening Hours</h4>
-                    <p className="font-body text-[0.875rem] text-[#a0a0a0]">Mon - Sat: 10:00 AM - 9:00 PM</p>
+                    <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Opening Hours</h4>
+                    <p className="font-body text-[0.875rem] text-on-surface-variant">Mon - Sat: 10:00 AM - 9:00 PM</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-[#1a1a1a] flex items-center justify-center text-[#0ea5e9] shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0">
                     <PhoneIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-body text-[0.875rem] font-medium text-[#e0e0e0] mb-1">Contact</h4>
-                    <p className="font-body text-[0.875rem] text-[#a0a0a0]">{business.address || `${business.city || ''}, ${business.state || business.country || 'United States'}`}</p>
+                    <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Contact</h4>
+                    <p className="font-body text-[0.875rem] text-on-surface-variant">{business.address || `${business.city || ''}, ${business.state || business.country || 'United States'}`}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Map Card */}
-            <div className="bg-[#0a0a0a] rounded-xl p-6 shadow-[0_20px_40px_rgba(1,29,53,0.06)] border border-transparent">
-               <h3 className="font-headline text-xl font-semibold text-[#0ea5e9] mb-4">Location</h3>
-               <div className="w-full h-48 rounded-lg overflow-hidden bg-[#1a1a1a]">
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
+               <h3 className="font-headline text-xl font-semibold text-primary mb-4">Location</h3>
+               <div className="w-full h-48 rounded-lg overflow-hidden bg-surface-container-low">
                   <BusinessMap 
                     latitude={business.latitude || 24.8607} 
                     longitude={business.longitude || 67.0011} 
@@ -227,10 +227,10 @@ export default function BookingPage() {
           {/* Booking Form Or Services */}
           <div className={`${showBookingForm ? 'lg:col-span-1' : 'lg:col-span-8'}`}>
             {showBookingForm ? (
-               <div className="bg-[#0a0a0a] rounded-xl p-6 md:p-8 shadow-[0_20px_40px_rgba(1,29,53,0.06)] border border-transparent animate-in slide-in-from-right-4 duration-300">
+               <div className="bg-surface-container-lowest rounded-xl p-6 md:p-8 shadow-sm border border-outline-variant/20 animate-in slide-in-from-right-4 duration-300">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-[#0ea5e9]">Table Reservation</h3>
-                    <button onClick={() => setShowBookingForm(false)} className="text-[#a0a0a0] hover:text-primary transition-colors">
+                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Table Reservation</h3>
+                    <button onClick={() => setShowBookingForm(false)} className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
                       Cancel
                     </button>
                   </div>
@@ -238,79 +238,79 @@ export default function BookingPage() {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-[#e0e0e0] mb-1">Date *</label>
-                        <input type="date" name="reservationDate" required min={format(new Date(), 'yyyy-MM-dd')} value={formData.reservationDate} onChange={handleChange} className="input-field" />
+                        <label className="block text-sm font-medium text-on-surface mb-1">Date *</label>
+                        <input type="date" name="reservationDate" required min={format(new Date(), 'yyyy-MM-dd')} value={formData.reservationDate} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[#e0e0e0] mb-1">Time *</label>
-                        <input type="time" name="reservationTime" required value={formData.reservationTime} onChange={handleChange} className="input-field" />
+                        <label className="block text-sm font-medium text-on-surface mb-1">Time *</label>
+                        <input type="time" name="reservationTime" required value={formData.reservationTime} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                        <div>
-                         <label className="block text-sm font-medium text-[#e0e0e0] mb-1">Guests *</label>
-                         <select name="numberOfGuests" required value={formData.numberOfGuests} onChange={handleChange} className="input-field">
+                         <label className="block text-sm font-medium text-on-surface mb-1">Guests *</label>
+                         <select name="numberOfGuests" required value={formData.numberOfGuests} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm">
                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                              <option key={num} value={num}>{num} {num === 1 ? 'Person' : 'People'}</option>
                            ))}
                          </select>
                        </div>
                        <div>
-                         <label className="block text-sm font-medium text-[#e0e0e0] mb-1">Your Name *</label>
-                         <input type="text" name="customerName" required value={formData.customerName} onChange={handleChange} className="input-field" />
+                         <label className="block text-sm font-medium text-on-surface mb-1">Your Name *</label>
+                         <input type="text" name="customerName" required value={formData.customerName} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
                        </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#e0e0e0] mb-1">Phone Number *</label>
-                       <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="input-field" placeholder="+1 (555) 000-0000" />
+                      <label className="block text-sm font-medium text-on-surface mb-1">Phone Number *</label>
+                       <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="+1 (555) 000-0000" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-[#e0e0e0] mb-2">Deposit Payment Method</label>
+                      <label className="block text-sm font-medium text-on-surface mb-2">Deposit Payment Method</label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {/* Fiat payment — PayPal (USD) or Safepay (PKR) */}
-                         <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'paypal' ? 'bg-[#0a0a0a] border border-primary ring-1 ring-primary' : 'bg-[#0a0a0a] border border-transparent hover:bg-surface'}`}>
+                         <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'paypal' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                            <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleChange} className="sr-only" />
-                           <span className="font-semibold text-[#e0e0e0] text-sm">
+                           <span className="font-semibold text-on-surface text-sm">
                              {business.currency === 'PKR' ? 'Safepay' : 'PayPal'}
                            </span>
-                           <span className="text-[10px] text-[#a0a0a0] font-medium mt-1">
-                             {business.currency === 'PKR' ? 'Cards / JazzCash / EasyPaisa' : 'Cards / PayPal Wallet'}
+                           <span className="text-[10px] text-on-surface-variant font-medium mt-1">
+                             {business.currency === 'PKR' ? 'Cards / JazzCash' : 'Cards / PayPal'}
                            </span>
                         </label>
 
                         {/* BSC BNB */}
-                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'bsc' ? 'bg-[#0a0a0a] border border-primary ring-1 ring-primary' : 'bg-[#0a0a0a] border border-transparent hover:bg-surface'}`}>
+                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'bsc' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                           <input type="radio" name="paymentMethod" value="bsc" checked={formData.paymentMethod === 'bsc'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-[#e0e0e0] text-sm">Web3 BSC</span>
-                          <span className="text-[10px] text-[#a0a0a0] font-medium mt-1">BNB / USDT</span>
+                          <span className="font-semibold text-on-surface text-sm">Web3 BSC</span>
+                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">BNB / USDT</span>
                         </label>
 
                         {/* Solana */}
-                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'solana' ? 'bg-[#0a0a0a] border border-primary ring-1 ring-primary' : 'bg-[#0a0a0a] border border-transparent hover:bg-surface'}`}>
+                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'solana' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                           <input type="radio" name="paymentMethod" value="solana" checked={formData.paymentMethod === 'solana'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-[#e0e0e0] text-sm">Web3 Solana</span>
-                          <span className="text-[10px] text-[#a0a0a0] font-medium mt-1">SOL / USDC</span>
+                          <span className="font-semibold text-on-surface text-sm">Web3 Solana</span>
+                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">SOL / USDC</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="bg-[#1a1a1a] rounded-xl p-4 flex items-start gap-4">
-                       <div className="p-2 bg-[#0a0a0a] rounded shadow-sm text-[#0ea5e9]">
-                         <ShieldCheckIcon className="h-6 w-6" />
+                    <div className="bg-tertiary-fixed/20 border-l-4 border-tertiary p-4 rounded-r-lg flex items-start gap-4 mt-6">
+                       <div className="text-tertiary mt-0.5">
+                         <ShieldCheckIcon className="h-5 w-5" />
                        </div>
                        <div>
-                         <h4 className="font-body text-sm font-semibold text-[#e0e0e0]">Pabandi Protected Booking</h4>
-                         <p className="text-xs text-[#a0a0a0] mt-1 leading-relaxed">
+                         <h4 className="font-body text-sm font-semibold text-on-tertiary-fixed-variant">Pabandi Protected Booking</h4>
+                         <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
                            Your booking is verified. Checking in securely earns you Pabandi Reliability Tokens. No-shows may affect your platform reliability score.
                          </p>
                        </div>
                     </div>
 
                     <div className="pt-2">
-                       <button type="submit" disabled={bookingMutation.isLoading} className="btn-primary w-full shadow-[0_20px_40px_rgba(1,29,53,0.1)]">
+                       <button type="submit" disabled={bookingMutation.isLoading} className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline text-lg font-semibold py-4 rounded-lg shadow-sm hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
                          {bookingMutation.isLoading ? 'Processing...' : 'Confirm & Pay Deposit'}
                        </button>
                     </div>
@@ -319,26 +319,26 @@ export default function BookingPage() {
             ) : (
                <div className="space-y-8 animate-in fade-in duration-500">
                   <div className="flex justify-between items-end mb-6">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-[#0ea5e9]">Services Overview</h3>
+                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Services Overview</h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Placeholder Services */}
                     {[1,2,3,4].map((i) => (
-                      <div key={i} className="bg-[#0a0a0a] p-5 rounded-xl flex justify-between items-center group shadow-[0_20px_40px_rgba(1,29,53,0.06)] border border-transparent hover:border-outline-variant/20 transition-all">
+                      <div key={i} className="bg-surface-container-lowest p-5 rounded-xl flex justify-between items-center group shadow-sm border border-outline-variant/20 hover:border-primary/50 transition-all cursor-pointer" onClick={() => setShowBookingForm(true)}>
                         <div>
-                          <h4 className="font-body text-[0.875rem] font-medium text-[#e0e0e0] mb-1">Standard Reservation</h4>
-                          <p className="font-body text-[0.6875rem] text-[#a0a0a0]">Secure your spot instantly</p>
+                          <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Standard Reservation</h4>
+                          <p className="font-body text-[0.6875rem] text-on-surface-variant">Secure your spot instantly</p>
                         </div>
-                        <button onClick={() => setShowBookingForm(true)} className="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center text-[#0ea5e9] group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">+</span>
+                        <button className="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                          <span className="material-symbols-outlined text-[16px]">add</span>
                         </button>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-8">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-[#0ea5e9] mb-6">Latest Reviews</h3>
+                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary mb-6">Latest Reviews</h3>
                     <ReviewCarousel reviews={analytics?.reviews || [
                       { id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Checked in smoothly using Pabandi.', time: new Date().toISOString(), sentimentLabel: 'positive' },
                     ]} />
@@ -352,9 +352,9 @@ export default function BookingPage() {
       {/* Mobile Fixed CTA */}
       {!showBookingForm && (
         <div className="md:hidden fixed bottom-6 left-4 right-4 z-40 flex justify-center">
-          <button onClick={() => setShowBookingForm(true)} className="w-full max-w-sm gradient-primary text-on-primary font-body text-sm font-medium px-8 py-4 rounded-full shadow-[0_10px_20px_rgba(1,29,53,0.15)] flex justify-center items-center gap-2">
+          <button onClick={() => setShowBookingForm(true)} className="w-full max-w-sm bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium px-8 py-4 rounded-full shadow-lg flex justify-center items-center gap-2 hover:opacity-90">
             <span>Book Appointment</span>
-            <span className="material-symbols-outlined text-[18px]">&rarr;</span>
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </button>
         </div>
       )}

@@ -33,7 +33,7 @@ const UserIcon = () => (
 );
 
 const FieldError = ({ msg }: { msg: string }) => (
-  <p className="mt-1.5 text-xs font-medium" style={{ color: '#f87171' }}>{msg}</p>
+  <p className="mt-1.5 text-xs font-medium text-error">{msg}</p>
 );
 
 export default function AuthPage() {
@@ -66,7 +66,6 @@ export default function AuthPage() {
 
   const clearErrors = () => { setError(''); setFieldErrors({}); };
 
-  // Keep form mode and role in sync with route path and query parameters
   useEffect(() => {
     setMode(location.pathname === '/register' ? 'signup' : 'login');
     clearErrors();
@@ -83,7 +82,6 @@ export default function AuthPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error for this field as user types
     if (fieldErrors[e.target.name]) {
       setFieldErrors(prev => { const n = { ...prev }; delete n[e.target.name]; return n; });
     }
@@ -110,7 +108,6 @@ export default function AuthPage() {
     e.preventDefault();
     clearErrors();
 
-    // Client-side validation first
     if (mode === 'signup') {
       const errs: Record<string, string> = {};
       if (!formData.firstName.trim()) errs.firstName = 'First name is required.';
@@ -159,52 +156,33 @@ export default function AuthPage() {
   const isBusiness = role === 'business';
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12"
-      style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12 bg-surface">
 
-      {/* Background glow orbs */}
-      <div className="animate-orb" style={{
-        position: 'absolute', width: 500, height: 500, top: '-15%', left: '-10%',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.14), transparent)',
-        filter: 'blur(60px)', pointerEvents: 'none',
-      }} />
-      <div className="animate-float-2" style={{
-        position: 'absolute', width: 400, height: 400, bottom: '-10%', right: '-5%',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.10), transparent)',
-        filter: 'blur(60px)', pointerEvents: 'none', animationDelay: '3s',
-      }} />
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(rgba(0,229,255,0.06) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
-        maskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%)',
-      }} />
+      {/* Background shapes */}
+      <div className="absolute w-[500px] h-[500px] -top-[15%] -left-[10%] rounded-full bg-primary/5 blur-3xl pointer-events-none mix-blend-multiply" />
+      <div className="absolute w-[400px] h-[400px] -bottom-[10%] -right-[5%] rounded-full bg-tertiary-fixed-dim/10 blur-3xl pointer-events-none mix-blend-multiply" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(rgba(0,0,0,0.03)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_70%_80%_at_50%_50%,black_20%,transparent_100%)]" />
 
       <div className="w-full max-w-md relative z-10">
 
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black"
-              style={{ background: 'linear-gradient(135deg,#0ea5e9,#14b8a6)', boxShadow: '0 4px 16px rgba(0,229,255,0.4)' }}>
-              P
-            </div>
-            <span className="text-xl font-black tracking-tight" style={{ color: '#e8e8e8' }}>Pabandi</span>
+            <span className="text-2xl font-black tracking-tight font-headline text-primary">Pabandi</span>
           </Link>
         </div>
 
         {/* Auth Panel */}
-        <div className="auth-panel p-8">
+        <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20">
 
           {/* Mode tabs */}
-          <div className="tab-bar mb-6">
-            <button id="tab-login" onClick={() => { setMode('login'); clearErrors(); }}
-              className={`tab-item ${mode === 'login' ? 'active' : ''}`}>
+          <div className="flex gap-2 mb-6 bg-surface-container-low p-1 rounded-xl">
+            <button onClick={() => { setMode('login'); clearErrors(); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Sign In
             </button>
-            <button id="tab-signup" onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`tab-item ${mode === 'signup' ? 'active' : ''}`}>
+            <button onClick={() => { setMode('signup'); clearErrors(); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Create Account
             </button>
           </div>
@@ -213,28 +191,22 @@ export default function AuthPage() {
           {isSignup && (
             <div className="flex gap-3 mb-6">
               <button
-                id="role-customer"
                 onClick={() => setRole('customer')}
-                className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
                   role === 'customer'
-                    ? 'border-blue-500/60 text-blue-300 bg-blue-500/10'
-                    : 'border-white/08 text-[#9e9e9e] hover:border-white/15 hover:text-[#9e9e9e]'
-                }`}
-                style={{ borderColor: role === 'customer' ? 'rgba(99,179,237,0.5)' : 'rgba(255,255,255,0.08)' }}>
+                    ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary/20'
+                    : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
+                }`}>
                 <UserIcon />
                 Customer
               </button>
               <button
-                id="role-business"
                 onClick={() => setRole('business')}
-                className={`flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border text-sm font-medium transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
                   role === 'business'
-                    ? 'text-emerald-300 bg-emerald-500/10'
-                    : 'text-[#9e9e9e] hover:text-[#9e9e9e]'
-                }`}
-                style={{
-                  borderColor: role === 'business' ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.08)',
-                }}>
+                    ? 'border-tertiary bg-tertiary-fixed/20 text-tertiary ring-1 ring-tertiary/20'
+                    : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
+                }`}>
                 <BuildingIcon />
                 Business
               </button>
@@ -242,13 +214,13 @@ export default function AuthPage() {
           )}
 
           {/* Heading */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold" style={{ color: '#e8e8e8' }}>
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold font-headline text-on-surface">
               {isSignup
                 ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
                 : 'Welcome Back'}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: '#757575' }}>
+            <p className="mt-1.5 text-sm text-on-surface-variant font-body">
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
@@ -258,25 +230,21 @@ export default function AuthPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <button id="btn-google-auth" onClick={handleGoogleAuth}
-              className="btn-google"
-              disabled={!!oauthLoading}
-              style={{ opacity: oauthLoading && oauthLoading !== 'google' ? 0.5 : 1 }}>
+            <button onClick={handleGoogleAuth}
+              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              disabled={!!oauthLoading}>
               {oauthLoading === 'google' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
-                Connecting to Google…</>
+                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               ) : (
                 <><GoogleIcon />
                 {isSignup ? (isBusiness ? 'Continue with Google Business' : 'Continue with Google') : 'Sign in with Google'}</>
               )}
             </button>
-            <button id="btn-facebook-auth" onClick={handleFacebookAuth}
-              className="btn-google"
-              disabled={!!oauthLoading}
-              style={{ opacity: oauthLoading && oauthLoading !== 'facebook' ? 0.5 : 1 }}>
+            <button onClick={handleFacebookAuth}
+              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              disabled={!!oauthLoading}>
               {oauthLoading === 'facebook' ? (
-                <><span style={{ width: 18, height: 18, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#1877F2', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} />
-                Connecting to Facebook…</>
+                <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               ) : (
                 <><FacebookIcon />
                 {isSignup ? 'Sign up with Facebook' : 'Sign in with Facebook'}</>
@@ -284,12 +252,15 @@ export default function AuthPage() {
             </button>
           </div>
 
-          <div className="divider">or continue with email</div>
+          <div className="flex items-center gap-3 my-6">
+            <hr className="flex-1 border-outline-variant/20" />
+            <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">or continue with email</span>
+            <hr className="flex-1 border-outline-variant/20" />
+          </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-5 px-4 py-3 rounded-xl text-sm font-medium"
-              style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5' }}>
+            <div className="mb-5 px-4 py-3 rounded-lg text-sm font-medium bg-error-container text-on-error-container border border-error/20">
               {error}
             </div>
           )}
@@ -302,18 +273,18 @@ export default function AuthPage() {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="firstName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >First Name</label>
+                    <label htmlFor="firstName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">First Name</label>
                     <input id="firstName" name="firstName" type="text" required
                       value={formData.firstName} onChange={handleChange}
-                      className={`input-field ${fieldErrors.firstName ? 'border-red-500/50' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.firstName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Ali" />
                     {fieldErrors.firstName && <FieldError msg={fieldErrors.firstName} />}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >Last Name</label>
+                    <label htmlFor="lastName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Last Name</label>
                     <input id="lastName" name="lastName" type="text" required
                       value={formData.lastName} onChange={handleChange}
-                      className={`input-field ${fieldErrors.lastName ? 'border-red-500/50' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.lastName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Khan" />
                     {fieldErrors.lastName && <FieldError msg={fieldErrors.lastName} />}
                   </div>
@@ -322,23 +293,23 @@ export default function AuthPage() {
                 {isBusiness && (
                   <>
                     <div>
-                      <label htmlFor="businessName" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >Business Name</label>
+                      <label htmlFor="businessName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Business Name</label>
                       <input id="businessName" name="businessName" type="text" required
                         value={formData.businessName} onChange={handleChange}
-                        className="input-field" placeholder="e.g. Saleem's Barbershop" />
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="e.g. Saleem's Barbershop" />
                     </div>
                     <div>
-                      <label htmlFor="googlePlaceId" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >
+                      <label htmlFor="googlePlaceId" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">
                         Google Place ID
-                        <span className="ml-1 normal-case font-normal text-[#e8e8e8]" >(optional)</span>
+                        <span className="ml-1 normal-case font-medium text-on-surface-variant/70">(optional)</span>
                       </label>
                       <input id="googlePlaceId" name="googlePlaceId" type="text"
                         value={formData.googlePlaceId} onChange={handleChange}
-                        className="input-field" placeholder="ChIJ..." />
-                      <p className="mt-1.5 text-xs text-[#e8e8e8]" >
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="ChIJ..." />
+                      <p className="mt-1.5 text-xs text-on-surface-variant">
                         Find your Place ID at{' '}
                         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id"
-                          target="_blank" rel="noreferrer" className="underline" style={{ color: '#60a5fa' }}>
+                          target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">
                           Google's Place ID Finder
                         </a>
                       </p>
@@ -347,13 +318,13 @@ export default function AuthPage() {
                 )}
 
                 <div>
-                  <label htmlFor="phone" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >
+                  <label htmlFor="phone" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">
                     Phone
-                    <span className="ml-1 normal-case font-normal text-[#e8e8e8]" >(optional)</span>
+                    <span className="ml-1 normal-case font-medium text-on-surface-variant/70">(optional)</span>
                   </label>
                   <input id="phone" name="phone" type="tel"
                     value={formData.phone} onChange={handleChange}
-                    className={`input-field ${fieldErrors.phone ? 'border-red-500/50' : ''}`}
+                    className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
                     placeholder="+1 312 489 6967 or +92 300 1234567" />
                   {fieldErrors.phone && <FieldError msg={fieldErrors.phone} />}
                 </div>
@@ -362,10 +333,10 @@ export default function AuthPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >Email</label>
+              <label htmlFor="email" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Email</label>
               <input id="email" name="email" type="email" autoComplete="email" required
                 value={formData.email} onChange={handleChange}
-                className={`input-field ${fieldErrors.email ? 'border-red-500/50' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.email ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="you@gmail.com" />
               {fieldErrors.email && <FieldError msg={fieldErrors.email} />}
             </div>
@@ -373,9 +344,9 @@ export default function AuthPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e]" >Password</label>
+                <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">Password</label>
                 {!isSignup && (
-                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold hover:underline" style={{ color: '#60a5fa' }}>
+                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold text-primary hover:underline">
                     Forgot password?
                   </Link>
                 )}
@@ -384,10 +355,10 @@ export default function AuthPage() {
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
                 required
                 value={formData.password} onChange={handleChange}
-                className={`input-field ${fieldErrors.password ? 'border-red-500/50' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.password ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="Min. 8 characters" />
               {isSignup && !fieldErrors.password && (
-                <p className="mt-1 text-xs text-[#e8e8e8]" >At least 8 characters</p>
+                <p className="mt-1.5 text-[11px] text-on-surface-variant">At least 8 characters</p>
               )}
               {fieldErrors.password && <FieldError msg={fieldErrors.password} />}
             </div>
@@ -395,26 +366,18 @@ export default function AuthPage() {
             {/* Confirm Password */}
             {isSignup && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[#9e9e9e]" >Confirm Password</label>
+                <label htmlFor="confirmPassword" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Confirm Password</label>
                 <input id="confirmPassword" name="confirmPassword" type="password"
                   autoComplete="new-password" required
                   value={formData.confirmPassword} onChange={handleChange}
-                  className={`input-field ${fieldErrors.confirmPassword ? 'border-red-500/50' : ''}`}
+                  className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.confirmPassword ? 'border-error ring-1 ring-error' : ''}`}
                   placeholder="••••••••" />
                 {fieldErrors.confirmPassword && <FieldError msg={fieldErrors.confirmPassword} />}
               </div>
             )}
 
-            <button id="btn-submit-auth" type="submit" disabled={loading}
-              className="btn-primary w-full mt-2"
-              style={{
-                background: isBusiness && isSignup
-                  ? 'linear-gradient(135deg,#059669,#047857)'
-                  : undefined,
-                boxShadow: isBusiness && isSignup
-                  ? '0 4px 20px rgba(5,150,105,0.35)'
-                  : undefined,
-              }}>
+            <button type="submit" disabled={loading}
+              className={`w-full py-3 rounded-lg text-sm font-bold shadow-sm transition-opacity ${isBusiness && isSignup ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'} hover:opacity-90 disabled:opacity-70 mt-2`}>
               {loading
                 ? (isSignup ? 'Creating account…' : 'Signing in…')
                 : (isSignup
@@ -424,18 +387,18 @@ export default function AuthPage() {
           </form>
 
           {/* Footer note */}
-          <p className="text-center text-xs mt-6 text-[#e8e8e8]" >
+          <p className="text-center text-xs mt-6 text-on-surface-variant">
             {isSignup ? (
               <>Already have an account?{' '}
                 <button onClick={() => { setMode('login'); setError(''); }}
-                  className="font-semibold hover:underline" style={{ color: '#60a5fa' }}>
+                  className="font-bold text-primary hover:underline">
                   Sign in
                 </button>
               </>
             ) : (
               <>Don't have an account?{' '}
                 <button onClick={() => { setMode('signup'); setError(''); }}
-                  className="font-semibold hover:underline" style={{ color: '#60a5fa' }}>
+                  className="font-bold text-primary hover:underline">
                   Sign up free
                 </button>
               </>
@@ -444,26 +407,26 @@ export default function AuthPage() {
         </div>
 
         {/* Trust badges */}
-        <div className="flex items-center justify-center gap-6 mt-6 text-xs text-[#e8e8e8]" >
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-8 text-[11px] font-bold tracking-wide text-on-surface-variant uppercase">
           <span className="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth={2.5}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
-            Secure &amp; encrypted
+            Secure &amp; Encrypted
           </span>
           <span className="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth={2.5}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
             </svg>
-            Always free
+            Always Free
           </span>
           <span className="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" strokeWidth={2.5}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round"
                 d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round"

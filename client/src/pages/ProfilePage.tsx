@@ -21,52 +21,38 @@ function ArcGauge({ value, max = 100, color, label }: { value: number; max?: num
   const circumference = 2 * Math.PI * 42;
   const dash = pct * circumference;
   return (
-    <div style={{ position: 'relative', width: 120, height: 120 }}>
-      <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="9" />
+    <div className="relative w-[120px] h-[120px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" className="text-surface-variant opacity-30" strokeWidth="9" />
         <circle cx="50" cy="50" r="42" fill="none" stroke={color} strokeWidth="9"
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
-          style={{ filter: `drop-shadow(0 0 6px ${color})`, transition: 'stroke-dasharray 1s cubic-bezier(0.4,0,0.2,1)' }}
+          style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4,0,0.2,1)' }}
         />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: '1.3rem', fontWeight: 900, color, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1 }}>{value}</span>
-        <span style={{ fontSize: 9, color: 'var(--color-text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[1.3rem] font-black leading-none" style={{ color }}>{value}</span>
+        <span className="text-[9px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">{label}</span>
       </div>
     </div>
   );
 }
 
 /* ── Achievement Badge ── */
-function AchievementBadge({ icon, label, description, earned, color }: {
-  icon: React.ReactNode; label: string; description: string; earned: boolean; color: string;
+function AchievementBadge({ icon, label, description, earned, colorClass, bgClass }: {
+  icon: React.ReactNode; label: string; description: string; earned: boolean; colorClass: string; bgClass: string;
 }) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-      padding: '16px 12px', borderRadius: 14, textAlign: 'center',
-      background: earned ? `${color}10` : 'rgba(255,255,255,0.02)',
-      border: `1px solid ${earned ? color + '30' : 'rgba(255,255,255,0.05)'}`,
-      opacity: earned ? 1 : 0.45,
-      transition: 'all 0.3s',
-      cursor: earned ? 'default' : 'not-allowed',
-    }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: 12,
-        background: earned ? `${color}20` : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${earned ? color + '40' : 'rgba(255,255,255,0.08)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: earned ? color : 'var(--color-text-dim)',
-        boxShadow: earned ? `0 0 16px ${color}40` : 'none',
-      }}>
+    <div className={`flex flex-col items-center gap-2 p-4 rounded-xl text-center transition-all ${earned ? `${bgClass} border border-outline-variant/30` : 'bg-surface-container-lowest border border-outline-variant/10 opacity-50 cursor-not-allowed'}`}>
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${earned ? `${colorClass} ${bgClass} border border-outline-variant/10 shadow-sm` : 'bg-surface-container-low text-outline'}`}>
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 11, fontWeight: 800, color: earned ? color : 'var(--color-text-muted)', letterSpacing: '0.04em' }}>{label}</p>
-        <p style={{ fontSize: 9, color: 'var(--color-text-dim)', marginTop: 2, lineHeight: 1.4 }}>{description}</p>
+        <p className={`text-[11px] font-bold tracking-wide ${earned ? colorClass : 'text-on-surface-variant'}`}>{label}</p>
+        <p className="text-[9px] text-on-surface-variant mt-0.5 leading-relaxed">{description}</p>
       </div>
       {earned && (
-        <span style={{ fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 9999, background: `${color}20`, color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest mt-1 ${bgClass} ${colorClass}`}>
           Earned
         </span>
       )}
@@ -76,12 +62,12 @@ function AchievementBadge({ icon, label, description, earned, color }: {
 
 /* ── Booking Timeline Item ── */
 function BookingItem({ reservation, index }: { reservation: any; index: number }) {
-  const statusColors: Record<string, { color: string; label: string }> = {
-    CONFIRMED: { color: '#0ea5e9', label: 'Confirmed' },
-    COMPLETED: { color: '#00FFB0', label: 'Completed' },
-    CANCELLED: { color: '#6b7fa3', label: 'Cancelled' },
-    NO_SHOW:   { color: '#FF4C6A', label: 'No-Show' },
-    PENDING:   { color: '#FFB830', label: 'Pending' },
+  const statusColors: Record<string, { colorClass: string; bgClass: string; label: string }> = {
+    CONFIRMED: { colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', label: 'Confirmed' },
+    COMPLETED: { colorClass: 'text-primary', bgClass: 'bg-primary-container', label: 'Completed' },
+    CANCELLED: { colorClass: 'text-on-surface-variant', bgClass: 'bg-surface-variant', label: 'Cancelled' },
+    NO_SHOW:   { colorClass: 'text-error', bgClass: 'bg-error-container', label: 'No-Show' },
+    PENDING:   { colorClass: 'text-secondary', bgClass: 'bg-secondary-container', label: 'Pending' },
   };
   const sc = statusColors[reservation.status] || statusColors.PENDING;
   const date = new Date(reservation.reservationDate);
@@ -89,36 +75,23 @@ function BookingItem({ reservation, index }: { reservation: any; index: number }
   const day = date.getDate();
 
   return (
-    <div className="animate-fade-up" style={{
-      animationDelay: `${index * 60}ms`,
-      display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.04)',
-    }}>
+    <div className="flex items-start gap-4 py-4 border-b border-outline-variant/20 animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${index * 60}ms` }}>
       {/* Date badge */}
-      <div style={{
-        width: 44, flexShrink: 0, textAlign: 'center',
-        background: 'var(--color-surface)', border: `1px solid ${sc.color}25`,
-        borderRadius: 10, padding: '6px 4px',
-      }}>
-        <div style={{ fontSize: 9, fontWeight: 700, color: sc.color, letterSpacing: '0.06em' }}>{month}</div>
-        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1 }}>{day}</div>
+      <div className="w-11 shrink-0 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-lg py-1.5 shadow-sm">
+        <div className={`text-[9px] font-bold tracking-wider ${sc.colorClass}`}>{month}</div>
+        <div className="text-[1.1rem] font-black text-on-surface leading-none mt-0.5 font-headline">{day}</div>
       </div>
       {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8e8e8', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-on-surface mb-0.5 truncate font-headline">
           {reservation.business?.name || 'Booking'}
         </p>
-        <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+        <p className="text-[11px] text-on-surface-variant font-body">
           {reservation.reservationTime} · {reservation.numberOfGuests} guest{reservation.numberOfGuests !== 1 ? 's' : ''}
         </p>
       </div>
       {/* Status */}
-      <span style={{
-        fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 9999,
-        background: `${sc.color}15`, color: sc.color, border: `1px solid ${sc.color}25`,
-        whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em',
-        boxShadow: `0 0 8px ${sc.color}30`,
-      }}>
+      <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${sc.bgClass} ${sc.colorClass} border border-outline-variant/10 shadow-sm whitespace-nowrap`}>
         {sc.label}
       </span>
     </div>
@@ -153,120 +126,83 @@ export default function ProfilePage() {
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
 
   const achievements = [
-    { icon: <TrophyIcon className="h-5 w-5" />, label: 'First Booking', description: 'Made your first reservation', earned: reservations.length >= 1, color: '#FFB830' },
-    { icon: <FireIcon className="h-5 w-5" />, label: '5-Booking Streak', description: 'Completed 5 bookings', earned: completed >= 5, color: '#FF6B9D' },
-    { icon: <StarIcon className="h-5 w-5" />, label: 'Star Patron', description: 'Completed 10 bookings', earned: completed >= 10, color: '#00E5FF' },
-    { icon: <ShieldCheckIcon className="h-5 w-5" />, label: 'Perfect Record', description: '100% show-up rate', earned: noShows === 0 && reservations.length >= 3, color: '#00FFB0' },
-    { icon: <BoltIcon className="h-5 w-5" />, label: 'PAB Collector', description: 'Earned 100 PAB tokens', earned: pabBalance >= 100, color: '#0ea5e9' },
-    { icon: <HeartIcon className="h-5 w-5" />, label: 'Loyal Customer', description: 'Visited same business 3x', earned: false, color: '#FF4C6A' },
+    { icon: <TrophyIcon className="h-5 w-5" />, label: 'First Booking', description: 'Made your first reservation', earned: reservations.length >= 1, colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed' },
+    { icon: <FireIcon className="h-5 w-5" />, label: '5-Booking Streak', description: 'Completed 5 bookings', earned: completed >= 5, colorClass: 'text-error', bgClass: 'bg-error-container' },
+    { icon: <StarIcon className="h-5 w-5" />, label: 'Star Patron', description: 'Completed 10 bookings', earned: completed >= 10, colorClass: 'text-primary', bgClass: 'bg-primary-container' },
+    { icon: <ShieldCheckIcon className="h-5 w-5" />, label: 'Perfect Record', description: '100% show-up rate', earned: noShows === 0 && reservations.length >= 3, colorClass: 'text-tertiary-fixed-variant', bgClass: 'bg-tertiary-fixed' },
+    { icon: <BoltIcon className="h-5 w-5" />, label: 'PAB Collector', description: 'Earned 100 PAB tokens', earned: pabBalance >= 100, colorClass: 'text-secondary', bgClass: 'bg-secondary-container' },
+    { icon: <HeartIcon className="h-5 w-5" />, label: 'Loyal Customer', description: 'Visited same business 3x', earned: false, colorClass: 'text-error', bgClass: 'bg-error-container' },
   ];
 
   if (!user) {
     return (
-      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-text-muted)', marginBottom: 16 }}>Please sign in to view your profile.</p>
-          <Link to="/login" className="btn-primary">Sign In</Link>
+      <div className="min-h-[80vh] flex items-center justify-center bg-surface">
+        <div className="text-center">
+          <p className="text-on-surface-variant mb-4 font-body">Please sign in to view your profile.</p>
+          <Link to="/login" className="bg-primary text-on-primary px-6 py-2.5 rounded-md font-body text-sm font-medium hover:opacity-90 transition-opacity">Sign In</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', color: 'var(--color-text)' }}>
+    <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8">
 
       {/* ── Profile Banner ── */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="relative overflow-hidden">
         {/* Cover gradient */}
-        <div style={{
-          height: 220,
-          background: 'linear-gradient(135deg, rgba(0,229,255,0.4) 0%, rgba(0,229,255,0.2) 50%, rgba(0,255,176,0.15) 100%)',
-          position: 'relative',
-        }}>
+        <div className="h-[200px] bg-gradient-to-r from-primary-container to-secondary-container relative">
           {/* Animated orbs */}
-          <div className="animate-orb" style={{
-            position: 'absolute', width: 300, height: 300, top: -100, left: '30%',
-            borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.3), transparent)',
-            filter: 'blur(40px)', pointerEvents: 'none',
-          }} />
-          <div className="animate-float" style={{
-            position: 'absolute', width: 200, height: 200, top: -50, right: '20%',
-            borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.2), transparent)',
-            filter: 'blur(30px)', pointerEvents: 'none', animationDelay: '2s',
-          }} />
+          <div className="absolute w-[300px] h-[300px] -top-24 left-[30%] rounded-full bg-primary/20 blur-3xl pointer-events-none mix-blend-multiply" />
+          <div className="absolute w-[200px] h-[200px] -top-12 right-[20%] rounded-full bg-secondary/20 blur-2xl pointer-events-none mix-blend-multiply delay-700" />
           {/* Grid dots */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-            maskImage: 'linear-gradient(to bottom, black, transparent)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-          }} />
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(rgba(0,0,0,0.05)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
         </div>
 
         {/* Avatar + name row */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6" style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, marginTop: -52, paddingBottom: 24 }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 relative">
+          <div className="flex items-end gap-5 -mt-12 pb-6">
             {/* Avatar */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0ea5e9, #00E5FF)',
-                border: '4px solid var(--color-bg)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 32, fontWeight: 900, color: '#fff', fontFamily: 'Space Grotesk, sans-serif',
-                boxShadow: '0 0 40px rgba(0,229,255,0.5), 0 8px 32px rgba(0,0,0,0.6)',
-              }}>
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center text-3xl font-black text-on-primary font-headline shadow-lg">
                 {initials}
               </div>
               {/* Online indicator */}
-              <div style={{
-                position: 'absolute', bottom: 4, right: 4,
-                width: 16, height: 16, borderRadius: '50%',
-                background: '#00FFB0', border: '2px solid var(--color-bg)',
-                boxShadow: '0 0 10px rgba(0,255,176,0.6)',
-              }} />
+              <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-tertiary-fixed border-2 border-surface shadow-sm" />
             </div>
             {/* Name + handle */}
-            <div style={{ flex: 1, paddingBottom: 4 }}>
+            <div className="flex-1 pb-1">
               {!editing ? (
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.75rem)', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-2xl md:text-3xl font-black text-on-surface font-headline tracking-tight">
                       {user.firstName} {user.lastName}
                     </h1>
                     {reliabilityScore === 100 && (
-                      <div style={{ color: '#00E5FF', display: 'flex', alignItems: 'center' }} title="Verified Reliable Customer">
-                        <CheckBadgeIcon className="h-5 w-5" style={{ filter: 'drop-shadow(0 0 6px #00E5FF)' }} />
+                      <div className="text-tertiary flex items-center" title="Verified Reliable Customer">
+                        <CheckBadgeIcon className="h-6 w-6 drop-shadow-sm" />
                       </div>
                     )}
                   </div>
-                  <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  <p className="text-sm text-on-surface-variant mt-0.5">
                     @{user.email.split('@')[0]} · {user.role === 'BUSINESS_OWNER' ? 'Business Owner' : 'Customer'}
                   </p>
                 </>
               ) : (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div className="flex gap-2 items-center">
                   <input value={editName.firstName} onChange={e => setEditName(n => ({ ...n, firstName: e.target.value }))}
-                    className="input-field" style={{ maxWidth: 130, padding: '8px 12px' }} placeholder="First name" />
+                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="First name" />
                   <input value={editName.lastName} onChange={e => setEditName(n => ({ ...n, lastName: e.target.value }))}
-                    className="input-field" style={{ maxWidth: 130, padding: '8px 12px' }} placeholder="Last name" />
-                  <button onClick={() => setEditing(false)} className="btn-primary" style={{ padding: '8px 16px', fontSize: 12 }}>Save</button>
-                  <button onClick={() => setEditing(false)} style={{ fontSize: 12, color: 'var(--color-text-muted)', cursor: 'pointer' }}>Cancel</button>
+                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="Last name" />
+                  <button onClick={() => setEditing(false)} className="bg-primary text-on-primary px-4 py-1.5 rounded-md font-body text-xs font-medium hover:opacity-90">Save</button>
+                  <button onClick={() => setEditing(false)} className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-medium">Cancel</button>
                 </div>
               )}
             </div>
             {/* Edit button */}
             {!editing && (
               <button onClick={() => setEditing(true)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600,
-                  padding: '8px 14px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)',
-                  marginBottom: 6,
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.4)'; (e.currentTarget as HTMLElement).style.color = '#e8e8e8'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)'; }}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm"
               >
                 <PencilIcon className="h-3.5 w-3.5" /> Edit Profile
               </button>
@@ -276,98 +212,74 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Main content ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16 mt-4">
 
         {/* ── Stats Row ── */}
-        <div className="animate-fade-up grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Bookings', value: reservations.length, color: '#0ea5e9' },
-            { label: 'Completed', value: completed, color: '#00FFB0' },
-            { label: 'PAB Tokens', value: pabBalance, color: '#FFB830' },
-            { label: 'No-Shows', value: noShows, color: '#FF4C6A' },
+            { label: 'Total Bookings', value: reservations.length, colorClass: 'text-primary' },
+            { label: 'Completed', value: completed, colorClass: 'text-tertiary' },
+            { label: 'PAB Tokens', value: pabBalance, colorClass: 'text-secondary' },
+            { label: 'No-Shows', value: noShows, colorClass: 'text-error' },
           ].map(s => (
-            <div key={s.label} style={{
-              background: 'var(--color-surface)', border: `1px solid ${s.color}20`,
-              borderRadius: '1rem', padding: '1.25rem', textAlign: 'center',
-              boxShadow: `0 4px 20px rgba(0,0,0,0.3)`,
-              transition: 'all 0.3s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = s.color + '40'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = s.color + '20'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}
-            >
-              <p style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 900, color: s.color, fontFamily: 'Space Grotesk, sans-serif', textShadow: `0 0 20px ${s.color}60` }}>{s.value}</p>
-              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{s.label}</p>
+            <div key={s.label} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-5 text-center shadow-sm hover:shadow-md transition-shadow">
+              <p className={`text-2xl md:text-3xl font-black font-headline ${s.colorClass}`}>{s.value}</p>
+              <p className="text-[10px] text-on-surface-variant mt-1 uppercase tracking-widest font-semibold">{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* ── Gauges Row ── */}
-        <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
           {/* Trust Score */}
-          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(0,229,255,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(0,229,255,0.05)' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Trust Score</p>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <ArcGauge value={reliabilityScore} color={reliabilityScore >= 90 ? '#00FFB0' : reliabilityScore >= 70 ? '#FFB830' : '#FF4C6A'} label="Trust %" />
+          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
+            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Trust Score</p>
+            <div className="flex justify-center">
+              <ArcGauge value={reliabilityScore} color={reliabilityScore >= 90 ? '#5fa98c' : reliabilityScore >= 70 ? '#4c637d' : '#ba1a1a'} label="Trust %" />
             </div>
-            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 10 }}>
+            <p className="text-[11px] font-medium text-on-surface-variant mt-3">
               {reliabilityScore >= 90 ? '🌟 Elite Reliability' : reliabilityScore >= 70 ? '⚡ Good Standing' : '⚠️ Needs Improvement'}
             </p>
           </div>
 
           {/* PAB Token display */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(255,184,48,0.12) 0%, rgba(28,28,28,0.95) 100%)',
-            border: '1px solid rgba(255,184,48,0.25)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center',
-            position: 'relative', overflow: 'hidden',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.3), 0 0 40px rgba(255,184,48,0.05)',
-          }}>
-            <div style={{
-              position: 'absolute', width: 120, height: 120, top: -30, right: -30,
-              borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,184,48,0.25), transparent)',
-              filter: 'blur(20px)', pointerEvents: 'none',
-            }} />
-            <div style={{ fontSize: 32, marginBottom: 4 }}>⚡</div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#FFB830', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>PAB Balance</p>
-            <p style={{ fontSize: '2.25rem', fontWeight: 900, color: '#FFB830', fontFamily: 'Space Grotesk, sans-serif', textShadow: '0 0 20px rgba(255,184,48,0.6)' }}>
+          <div className="bg-gradient-to-br from-primary to-primary-container border border-outline-variant/20 rounded-2xl p-6 text-center shadow-md relative overflow-hidden">
+            <div className="absolute w-[120px] h-[120px] -top-8 -right-8 rounded-full bg-secondary-container/20 blur-xl pointer-events-none" />
+            <div className="text-3xl mb-1 text-secondary-fixed">⚡</div>
+            <p className="text-[11px] font-bold text-secondary-fixed mb-2 uppercase tracking-widest">PAB Balance</p>
+            <p className="text-4xl font-black font-headline text-white drop-shadow-sm">
               {pabBalance.toLocaleString()}
             </p>
-            <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 6 }}>Pabandi Reliability Tokens</p>
-            <Link to="/wallet" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 14,
-              fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8,
-              background: 'rgba(255,184,48,0.12)', color: '#FFB830', border: '1px solid rgba(255,184,48,0.25)',
-            }}>
+            <p className="text-[10px] text-secondary-fixed-dim mt-1.5 font-medium">Pabandi Reliability Tokens</p>
+            <Link to="/wallet" className="inline-flex items-center gap-1 mt-3.5 text-[11px] font-bold px-3.5 py-1.5 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-colors">
               View Wallet →
             </Link>
           </div>
 
           {/* Booking completion */}
-          <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(0,229,255,0.2)', borderRadius: '1.25rem', padding: '1.5rem', textAlign: 'center', boxShadow: '0 0 40px rgba(0,229,255,0.04)' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Completion Rate</p>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <ArcGauge value={reservations.length > 0 ? Math.round((completed / reservations.length) * 100) : 0} color="#00E5FF" label="Completed %" />
+          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
+            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Completion Rate</p>
+            <div className="flex justify-center">
+              <ArcGauge value={reservations.length > 0 ? Math.round((completed / reservations.length) * 100) : 0} color="#031f38" label="Completed %" />
             </div>
-            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 10 }}>
+            <p className="text-[11px] font-medium text-on-surface-variant mt-3">
               {completed} of {reservations.length} bookings completed
             </p>
           </div>
         </div>
 
         {/* ── Tabs: History / Badges ── */}
-        <div className="animate-fade-up-delay-2">
+        <div>
           {/* Tab bar */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 4, width: 'fit-content' }}>
+          <div className="flex gap-1 mb-6 bg-surface-container-low border border-outline-variant/10 rounded-xl p-1 w-max">
             {(['history', 'badges'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                  background: activeTab === tab ? 'rgba(0,229,255,0.2)' : 'transparent',
-                  color: activeTab === tab ? '#a5b4fc' : 'var(--color-text-muted)',
-                  border: activeTab === tab ? '1px solid rgba(0,229,255,0.3)' : '1px solid transparent',
-                  boxShadow: activeTab === tab ? '0 0 20px rgba(0,229,255,0.2)' : 'none',
-                  textTransform: 'capitalize',
-                }}>
+                className={`px-5 py-2 rounded-lg text-sm font-bold transition-all capitalize ${
+                  activeTab === tab 
+                  ? 'bg-surface-container-lowest text-primary shadow-sm border border-outline-variant/20' 
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                }`}>
                 {tab === 'history' ? '📅 Booking History' : '🏅 Achievements'}
               </button>
             ))}
@@ -375,31 +287,31 @@ export default function ProfilePage() {
 
           {/* Tab content */}
           {activeTab === 'history' ? (
-            <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Recent Bookings</h2>
-                <Link to="/reservations" style={{ fontSize: 12, fontWeight: 700, color: '#0ea5e9' }}>View All →</Link>
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-black text-on-surface font-headline">Recent Bookings</h2>
+                <Link to="/reservations" className="text-xs font-bold text-primary hover:underline">View All →</Link>
               </div>
               {reservations.length > 0 ? (
-                <div>
+                <div className="divide-y divide-outline-variant/10">
                   {reservations.slice(0, 10).map((r, i) => (
                     <BookingItem key={r.id} reservation={r} index={i} />
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
-                  <CalendarIcon className="h-10 w-10 mx-auto mb-3" style={{ color: 'var(--color-text-dim)' }} />
-                  <p style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 4 }}>No bookings yet</p>
-                  <p style={{ fontSize: 12, marginBottom: 20 }}>Your booking history will appear here</p>
-                  <Link to="/" className="btn-primary" style={{ fontSize: 13, padding: '8px 20px' }}>Find a Business</Link>
+                <div className="text-center py-12">
+                  <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-outline" />
+                  <p className="text-sm font-semibold mb-1 text-on-surface">No bookings yet</p>
+                  <p className="text-xs text-on-surface-variant mb-5">Your booking history will appear here</p>
+                  <Link to="/" className="bg-primary text-on-primary px-5 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">Find a Business</Link>
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', padding: '1.5rem' }}>
-              <div style={{ marginBottom: 16 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Achievements</h2>
-                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="mb-4">
+                <h2 className="text-lg font-black text-on-surface font-headline">Achievements</h2>
+                <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">
                   {achievements.filter(a => a.earned).length} / {achievements.length} unlocked
                 </p>
               </div>

@@ -11,35 +11,37 @@ import { useAuthStore } from '../store/authStore';
 
 type Tab = 'overview' | 'users' | 'reservations' | 'businesses';
 
+// Updated for light theme design system
 const STATUS_COLORS: Record<string, string> = {
-  PENDING:   'rgba(251,191,36,0.15)',
-  CONFIRMED: 'rgba(59,130,246,0.15)',
-  COMPLETED: 'rgba(52,211,153,0.15)',
-  CANCELLED: 'rgba(239,68,68,0.15)',
-  NO_SHOW:   'rgba(139,92,246,0.15)',
+  PENDING:   'bg-secondary-container',
+  CONFIRMED: 'bg-primary-container',
+  COMPLETED: 'bg-tertiary-fixed',
+  CANCELLED: 'bg-error-container',
+  NO_SHOW:   'bg-error-container',
 };
 const STATUS_TEXT: Record<string, string> = {
-  PENDING:   '#fbbf24',
-  CONFIRMED: '#60a5fa',
-  COMPLETED: '#34d399',
-  CANCELLED: '#f87171',
-  NO_SHOW:   '#a78bfa',
+  PENDING:   'text-secondary',
+  CONFIRMED: 'text-primary',
+  COMPLETED: 'text-tertiary',
+  CANCELLED: 'text-error',
+  NO_SHOW:   'text-error',
 };
 
-function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
+function StatCard({ label, value, sub, colorClass }: { label: string; value: number | string; sub?: string; colorClass: string }) {
   return (
-    <div className="rounded-2xl p-6" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-      <p className="text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{label}</p>
-      <p className="text-4xl font-black mb-1" style={{ color }}>{value}</p>
-      {sub && <p className="text-xs text-[#e8e8e8]" >{sub}</p>}
+    <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-on-surface-variant font-body">{label}</p>
+      <p className={`text-3xl md:text-4xl font-black mb-1 font-headline ${colorClass}`}>{value}</p>
+      {sub && <p className="text-xs text-on-surface-variant font-body font-medium">{sub}</p>}
     </div>
   );
 }
 
 function Badge({ status }: { status: string }) {
+  const bgClass = STATUS_COLORS[status] || 'bg-surface-container-high';
+  const textClass = STATUS_TEXT[status] || 'text-on-surface-variant';
   return (
-    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
-      style={{ background: STATUS_COLORS[status] || 'rgba(255,255,255,0.05)', color: STATUS_TEXT[status] || '#9e9e9e' }}>
+    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${bgClass} ${textClass} border border-outline-variant/10 shadow-sm`}>
       {status}
     </span>
   );
@@ -93,19 +95,17 @@ export default function AdminPanel() {
   ] as const;
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100vh', color: 'var(--color-text)' }}>
+    <div className="min-h-screen bg-surface text-on-surface font-body pb-20">
       {/* Top Bar */}
-      <div className="border-b sticky top-0 z-10" style={{ background: 'var(--color-bg)', borderColor: 'rgba(255,255,255,0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div className="border-b border-outline-variant/20 sticky top-0 z-10 bg-surface/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
-              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>P</div>
-            <span className="font-bold text-sm text-[#e8e8e8]" >Pabandi Admin</span>
-            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest"
-              style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>ADMIN</span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-black bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-sm font-headline">P</div>
+            <span className="font-bold text-sm text-on-surface font-headline tracking-tight">Pabandi Admin</span>
+            <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-tertiary-fixed text-tertiary shadow-sm border border-tertiary/10">ADMIN</span>
           </div>
           <button onClick={() => { logout(); navigate('/login'); }}
-            className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80 text-[#9e9e9e]" >
+            className="flex items-center gap-1.5 text-xs font-bold transition-colors text-error hover:bg-error-container px-3 py-2 rounded-lg">
             <ArrowRightOnRectangleIcon className="h-4 w-4" /> Sign Out
           </button>
         </div>
@@ -113,15 +113,15 @@ export default function AdminPanel() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Tab Nav */}
-        <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit" style={{ background: 'var(--color-surface-raised)' }}>
+        <div className="flex gap-1 mb-8 p-1 rounded-xl w-max bg-surface-container-low border border-outline-variant/20 shadow-sm overflow-x-auto max-w-full">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id as Tab)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-              style={{
-                background: tab === t.id ? 'rgba(59,130,246,0.15)' : 'transparent',
-                color: tab === t.id ? '#60a5fa' : '#5a7490',
-              }}>
-              <t.icon className="h-4 w-4" />
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+                tab === t.id 
+                ? 'bg-surface-container-lowest text-primary shadow-sm border border-outline-variant/20' 
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+              }`}>
+              <t.icon className="h-4 w-4 shrink-0" />
               {t.label}
             </button>
           ))}
@@ -129,48 +129,53 @@ export default function AdminPanel() {
 
         {/* ── OVERVIEW ─────────────────────────────────── */}
         {tab === 'overview' && (
-          <div className="space-y-8">
+          <div className="space-y-10 animate-fade-up">
             <div>
-              <h1 className="text-2xl font-black mb-1 text-[#e8e8e8]" >Platform Overview</h1>
-              <p className="text-sm text-[#9e9e9e]" >Real-time metrics across all of Pabandi.</p>
+              <h1 className="text-3xl font-black mb-1.5 text-on-surface font-headline tracking-tight">Platform Overview</h1>
+              <p className="text-sm text-on-surface-variant font-medium">Real-time metrics across all of Pabandi.</p>
             </div>
 
             {/* Funnel */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-[#e8e8e8]" >Conversion Funnel</p>
-              <div className="grid grid-cols-3 gap-4">
-                <StatCard label="Signed Up" value={stats?.signedUp ?? '—'} sub="Total registered users" color="#60a5fa" />
-                <StatCard label="Made Reservation" value={stats?.madeReservation ?? '—'} sub="Users with ≥1 booking" color="#a78bfa" />
-                <StatCard label="Completed Booking" value={stats?.completedBooking ?? '—'} sub="Fully completed reservations" color="#34d399" />
+              <p className="text-[11px] font-black uppercase tracking-widest mb-4 text-on-surface-variant">Conversion Funnel</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <StatCard label="Signed Up" value={stats?.signedUp ?? '—'} sub="Total registered users" colorClass="text-primary" />
+                <StatCard label="Made Reservation" value={stats?.madeReservation ?? '—'} sub="Users with ≥1 booking" colorClass="text-secondary" />
+                <StatCard label="Completed Booking" value={stats?.completedBooking ?? '—'} sub="Fully completed reservations" colorClass="text-tertiary" />
               </div>
             </div>
 
             {/* Recent Users */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-[#e8e8e8]" >Recent Sign-ups</p>
-              <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      {['Name', 'Email', 'Role', 'Reservations', 'Joined'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#e8e8e8]" >{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.slice(0, 8).map((u: any) => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td className="px-4 py-3 font-medium text-[#e8e8e8]" >{u.firstName} {u.lastName}</td>
-                        <td className="px-4 py-3 text-[#757575]" >{u.email}</td>
-                        <td className="px-4 py-3"><Badge status={u.role} /></td>
-                        <td className="px-4 py-3 text-center font-bold text-[#e8e8e8]" >{u._count?.reservations ?? 0}</td>
-                        <td className="px-4 py-3 text-[#e8e8e8]" >{new Date(u.createdAt).toLocaleDateString()}</td>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Recent Sign-ups</p>
+                <button onClick={() => setTab('users')} className="text-xs font-bold text-primary hover:underline">View All →</button>
+              </div>
+              <div className="rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-outline-variant/20 bg-surface-container-low/50">
+                        {['Name', 'Email', 'Role', 'Reservations', 'Joined'].map(h => (
+                          <th key={h} className="text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {users.slice(0, 8).map((u: any) => (
+                        <tr key={u.id} className="hover:bg-surface-container-low/50 transition-colors">
+                          <td className="px-5 py-3 font-bold text-on-surface font-headline">{u.firstName} {u.lastName}</td>
+                          <td className="px-5 py-3 text-on-surface-variant font-medium text-xs">{u.email}</td>
+                          <td className="px-5 py-3"><Badge status={u.role} /></td>
+                          <td className="px-5 py-3 text-center font-black text-on-surface font-headline">{u._count?.reservations ?? 0}</td>
+                          <td className="px-5 py-3 text-on-surface-variant font-medium text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
                 {users.length === 0 && (
-                  <p className="text-center py-12 text-sm text-[#e8e8e8]" >No users yet.</p>
+                  <p className="text-center py-12 text-sm text-on-surface-variant font-medium">No users yet.</p>
                 )}
               </div>
             </div>
@@ -179,49 +184,50 @@ export default function AdminPanel() {
 
         {/* ── USERS ────────────────────────────────────── */}
         {tab === 'users' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black text-[#e8e8e8]" >Users <span className="text-base font-normal text-[#9e9e9e]" >({usersData?.total ?? 0})</span></h2>
-              <div className="flex gap-2">
+          <div className="space-y-6 animate-fade-up">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-black text-on-surface font-headline">Users <span className="text-lg font-bold text-on-surface-variant">({usersData?.total ?? 0})</span></h2>
+              <div className="flex gap-2 flex-wrap">
                 {['', 'CUSTOMER', 'BUSINESS_OWNER', 'ADMIN'].map(r => (
                   <button key={r} onClick={() => setUserFilter(r)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: userFilter === r ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
-                      color: userFilter === r ? '#60a5fa' : '#5a7490',
-                      border: '1px solid ' + (userFilter === r ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.06)'),
-                    }}>
-                    {r || 'All'}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      userFilter === r 
+                      ? 'bg-primary-container text-primary border border-primary/20 shadow-sm' 
+                      : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/30 hover:bg-surface-container-low'
+                    }`}>
+                    {r.replace('_', ' ') || 'All'}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    {['Name', 'Email', 'Phone', 'Role', 'Business', '# Bookings', 'Joined'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#e8e8e8]" >{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u: any) => (
-                    <tr key={u.id} className="hover:bg-[#181818]/[0.02] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td className="px-4 py-3 font-semibold text-[#e8e8e8]" >{u.firstName} {u.lastName}</td>
-                      <td className="px-4 py-3 text-[#757575]" >{u.email}</td>
-                      <td className="px-4 py-3 text-[#9e9e9e]" >{u.phone || '—'}</td>
-                      <td className="px-4 py-3"><Badge status={u.role} /></td>
-                      <td className="px-4 py-3 text-[#9e9e9e]" >{u.business?.name || '—'}</td>
-                      <td className="px-4 py-3 text-center font-bold text-[#e8e8e8]" >{u._count?.reservations ?? 0}</td>
-                      <td className="px-4 py-3 text-xs text-[#e8e8e8]" >{new Date(u.createdAt).toLocaleDateString()}</td>
+            <div className="rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-outline-variant/20 bg-surface-container-low/50">
+                      {['Name', 'Email', 'Phone', 'Role', 'Business', '# Bookings', 'Joined'].map(h => (
+                        <th key={h} className="text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {users.map((u: any) => (
+                      <tr key={u.id} className="hover:bg-surface-container-low/50 transition-colors">
+                        <td className="px-5 py-3 font-bold text-on-surface font-headline whitespace-nowrap">{u.firstName} {u.lastName}</td>
+                        <td className="px-5 py-3 text-on-surface-variant font-medium text-xs">{u.email}</td>
+                        <td className="px-5 py-3 text-on-surface-variant font-medium text-xs whitespace-nowrap">{u.phone || '—'}</td>
+                        <td className="px-5 py-3 whitespace-nowrap"><Badge status={u.role} /></td>
+                        <td className="px-5 py-3 text-on-surface-variant font-medium text-xs truncate max-w-[150px]">{u.business?.name || '—'}</td>
+                        <td className="px-5 py-3 text-center font-black text-on-surface font-headline">{u._count?.reservations ?? 0}</td>
+                        <td className="px-5 py-3 text-xs text-on-surface-variant font-medium whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {users.length === 0 && (
-                <p className="text-center py-12 text-sm text-[#e8e8e8]" >No users found.</p>
+                <p className="text-center py-12 text-sm text-on-surface-variant font-medium">No users found.</p>
               )}
             </div>
           </div>
@@ -229,54 +235,55 @@ export default function AdminPanel() {
 
         {/* ── RESERVATIONS ─────────────────────────────── */}
         {tab === 'reservations' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="text-2xl font-black text-[#e8e8e8]" >Reservations <span className="text-base font-normal text-[#9e9e9e]" >({reservationsData?.total ?? 0})</span></h2>
+          <div className="space-y-6 animate-fade-up">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h2 className="text-2xl font-black text-on-surface font-headline">Reservations <span className="text-lg font-bold text-on-surface-variant">({reservationsData?.total ?? 0})</span></h2>
               <div className="flex gap-2 flex-wrap">
                 {['', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].map(s => (
                   <button key={s} onClick={() => setStatusFilter(s)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{
-                      background: statusFilter === s ? (STATUS_COLORS[s] || 'rgba(59,130,246,0.15)') : 'rgba(255,255,255,0.04)',
-                      color: statusFilter === s ? (STATUS_TEXT[s] || '#60a5fa') : '#5a7490',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                    }}>
-                    {s || 'All'}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      statusFilter === s 
+                      ? `${STATUS_COLORS[s] || 'bg-primary-container'} ${STATUS_TEXT[s] || 'text-primary'} border border-outline-variant/10 shadow-sm` 
+                      : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/30 hover:bg-surface-container-low'
+                    }`}>
+                    {s.replace('_', ' ') || 'All'}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    {['Customer', 'Business', 'Date', 'Time', 'Guests', 'Status', 'Deposit', 'Created'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#e8e8e8]" >{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {reservations.map((r: any) => (
-                    <tr key={r.id} className="hover:bg-[#181818]/[0.02] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td className="px-4 py-3 font-medium text-[#e8e8e8]" >{r.customer?.firstName} {r.customer?.lastName}</td>
-                      <td className="px-4 py-3 text-[#757575]" >{r.business?.name}</td>
-                      <td className="px-4 py-3 text-[#616161]" >{new Date(r.reservationDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-[#9e9e9e]" >{r.reservationTime}</td>
-                      <td className="px-4 py-3 text-center text-[#e8e8e8]" >{r.numberOfGuests}</td>
-                      <td className="px-4 py-3"><Badge status={r.status} /></td>
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-bold" style={{ color: r.depositStatus === 'PAID' ? '#34d399' : '#fbbf24' }}>
-                          {r.depositStatus || 'NONE'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-[#e8e8e8]" >{new Date(r.createdAt).toLocaleDateString()}</td>
+            <div className="rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-outline-variant/20 bg-surface-container-low/50">
+                      {['Customer', 'Business', 'Date', 'Time', 'Guests', 'Status', 'Deposit', 'Created'].map(h => (
+                        <th key={h} className="text-left px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {reservations.map((r: any) => (
+                      <tr key={r.id} className="hover:bg-surface-container-low/50 transition-colors">
+                        <td className="px-5 py-3 font-bold text-on-surface font-headline whitespace-nowrap">{r.customer?.firstName} {r.customer?.lastName}</td>
+                        <td className="px-5 py-3 text-on-surface-variant font-medium text-xs max-w-[150px] truncate">{r.business?.name}</td>
+                        <td className="px-5 py-3 text-on-surface font-semibold text-xs whitespace-nowrap">{new Date(r.reservationDate).toLocaleDateString()}</td>
+                        <td className="px-5 py-3 text-on-surface-variant font-medium text-xs whitespace-nowrap">{r.reservationTime}</td>
+                        <td className="px-5 py-3 text-center font-black text-on-surface font-headline">{r.numberOfGuests}</td>
+                        <td className="px-5 py-3 whitespace-nowrap"><Badge status={r.status} /></td>
+                        <td className="px-5 py-3">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${r.depositStatus === 'PAID' ? 'bg-tertiary-fixed text-tertiary border border-tertiary/10' : 'bg-secondary-container text-secondary border border-secondary/10'}`}>
+                            {r.depositStatus || 'NONE'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-on-surface-variant font-medium whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {reservations.length === 0 && (
-                <p className="text-center py-12 text-sm text-[#e8e8e8]" >No reservations found.</p>
+                <p className="text-center py-12 text-sm text-on-surface-variant font-medium">No reservations found.</p>
               )}
             </div>
           </div>
@@ -284,46 +291,55 @@ export default function AdminPanel() {
 
         {/* ── BUSINESSES ───────────────────────────────── */}
         {tab === 'businesses' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-black text-[#e8e8e8]" >Businesses <span className="text-base font-normal text-[#9e9e9e]" >({businesses.length})</span></h2>
+          <div className="space-y-6 animate-fade-up">
+            <h2 className="text-2xl font-black text-on-surface font-headline">Businesses <span className="text-lg font-bold text-on-surface-variant">({businesses.length})</span></h2>
 
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
               {businesses.map((b: any) => (
-                <div key={b.id} className="rounded-2xl p-5 flex items-center justify-between gap-4"
-                  style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div key={b.id} className="rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5 bg-surface-container-lowest border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold text-lg"
-                      style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa' }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 font-black text-xl font-headline bg-primary-container text-primary shadow-sm border border-primary/10">
                       {b.name[0]}
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold truncate text-[#e8e8e8]" >{b.name}</p>
-                        {b.isVerified && <CheckBadgeIcon className="h-4 w-4 text-emerald-400 shrink-0" />}
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-black text-lg truncate text-on-surface font-headline tracking-tight">{b.name}</p>
+                        {b.isVerified && <CheckBadgeIcon className="h-5 w-5 text-tertiary shrink-0 drop-shadow-sm" />}
                       </div>
-                      <p className="text-xs truncate text-[#9e9e9e]" >{b.category} · {b.address}</p>
-                      <p className="text-xs mt-0.5 text-[#e8e8e8]" >
-                        Owner: {b.owner?.firstName} {b.owner?.lastName} ({b.owner?.email}) · {b._count?.reservations} reservations
-                      </p>
+                      <p className="text-xs font-medium text-on-surface-variant truncate mb-1.5">{b.category} · {b.address}</p>
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        <span className="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-medium border border-outline-variant/20">
+                          Owner: {b.owner?.firstName} {b.owner?.lastName}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant font-medium border border-outline-variant/20">
+                          {b._count?.reservations} bookings
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0 self-end sm:self-center mt-2 sm:mt-0">
                     {!b.isVerified && (
                       <button onClick={() => verifyMutation.mutate(b.id)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-                        style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-                        ✓ Verify
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90 bg-tertiary text-on-tertiary shadow-sm flex items-center gap-1">
+                        <CheckBadgeIcon className="h-4 w-4" /> Verify
                       </button>
                     )}
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${b.isActive ? 'text-emerald-400' : 'text-red-400'}`}
-                      style={{ background: b.isActive ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)' }}>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border shadow-sm uppercase tracking-widest ${
+                      b.isActive 
+                      ? 'bg-tertiary-fixed text-tertiary border-tertiary/10' 
+                      : 'bg-error-container text-error border-error/10'
+                    }`}>
                       {b.isActive ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </div>
                 </div>
               ))}
               {businesses.length === 0 && (
-                <p className="text-center py-12 text-sm text-[#e8e8e8]" >No businesses registered yet.</p>
+                <div className="text-center py-12 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl">
+                  <BuildingStorefrontIcon className="h-10 w-10 mx-auto text-outline opacity-50 mb-3" />
+                  <p className="text-sm text-on-surface font-bold mb-1">No businesses yet</p>
+                  <p className="text-xs text-on-surface-variant font-medium">Businesses registered on Pabandi will appear here.</p>
+                </div>
               )}
             </div>
           </div>

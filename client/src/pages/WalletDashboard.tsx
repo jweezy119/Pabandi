@@ -31,9 +31,9 @@ async function switchToBSC() {
 /* ── SBT Tier Config ── */
 const SBT_TIERS = [
   { id: 'bronze', label: 'Bronze Patron', minBookings: 1, minRate: 70, color: '#CD7F32', glow: 'rgba(205,127,50,0.3)', icon: '🥉', desc: 'First steps on your Pabandi journey' },
-  { id: 'silver', label: 'Silver Reliable', minBookings: 5, minRate: 80, color: '#C0C0C0', glow: 'rgba(192,192,192,0.3)', icon: '🥈', desc: 'Consistent performer — businesses trust you' },
-  { id: 'gold', label: 'Gold Trustee', minBookings: 10, minRate: 90, color: '#FFB830', glow: 'rgba(255,184,48,0.4)', icon: '🥇', desc: 'Top-tier reliability, rare and respected' },
-  { id: 'platinum', label: 'Platinum Oracle', minBookings: 25, minRate: 97, color: '#00E5FF', glow: 'rgba(0,229,255,0.4)', icon: '💎', desc: 'Elite. Less than 3% of users ever reach this' },
+  { id: 'silver', label: 'Silver Reliable', minBookings: 5, minRate: 80, color: '#63748b', glow: 'rgba(99,116,139,0.3)', icon: '🥈', desc: 'Consistent performer — businesses trust you' },
+  { id: 'gold', label: 'Gold Trustee', minBookings: 10, minRate: 90, color: '#d97706', glow: 'rgba(217,119,6,0.3)', icon: '🥇', desc: 'Top-tier reliability, rare and respected' },
+  { id: 'platinum', label: 'Platinum Oracle', minBookings: 25, minRate: 97, color: '#0284c7', glow: 'rgba(2,132,199,0.3)', icon: '💎', desc: 'Elite. Less than 3% of users ever reach this' },
 ];
 
 /* ── Soulbound NFT Card ── */
@@ -57,17 +57,17 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
   return (
     <div style={{
       borderRadius: '1.25rem', padding: '1.5rem',
-      background: earned ? `linear-gradient(135deg, ${tier.color}12, rgba(28,28,28,0.95))` : 'var(--color-surface)',
-      border: `1px solid ${earned ? tier.color + '40' : 'rgba(255,255,255,0.06)'}`,
-      boxShadow: earned ? `0 0 40px ${tier.glow}, 0 12px 40px rgba(0,0,0,0.4)` : '0 4px 20px rgba(0,0,0,0.3)',
+      background: earned ? `linear-gradient(135deg, ${tier.color}10, #ffffff)` : 'var(--color-surface-container-lowest)',
+      border: `1px solid ${earned ? tier.color + '40' : 'var(--color-outline-variant)'}`,
+      boxShadow: earned ? `0 0 40px ${tier.glow}, 0 4px 20px rgba(0,0,0,0.05)` : '0 4px 12px rgba(0,0,0,0.02)',
       opacity: earned ? 1 : 0.7,
       transition: 'all 0.3s ease',
       position: 'relative', overflow: 'hidden',
-    }}>
+    }} className="bg-surface-container-lowest text-on-surface">
       {earned && (
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: `radial-gradient(${tier.color}08 1px, transparent 1px)`,
+          backgroundImage: `radial-gradient(${tier.color}15 1px, transparent 1px)`,
           backgroundSize: '20px 20px',
         }} />
       )}
@@ -77,29 +77,29 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
         {tier.icon}
       </div>
 
-      <h3 style={{ fontSize: '1rem', fontWeight: 800, color: earned ? tier.color : 'var(--color-text-muted)', marginBottom: 4, fontFamily: 'Space Grotesk, sans-serif' }}>
+      <h3 className="font-headline" style={{ fontSize: '1rem', fontWeight: 800, color: earned ? tier.color : 'var(--color-on-surface-variant)', marginBottom: 4 }}>
         {tier.label}
       </h3>
-      <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 14, lineHeight: 1.5 }}>{tier.desc}</p>
+      <p className="font-body" style={{ fontSize: 11, color: 'var(--color-on-surface-variant)', marginBottom: 14, lineHeight: 1.5 }}>{tier.desc}</p>
 
       {/* Requirements */}
       <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-text-muted)' }}>
+        <div className="font-body" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-on-surface-variant)' }}>
           <span>Bookings: {totalBookings} / {tier.minBookings}</span>
-          <span style={{ color: totalBookings >= tier.minBookings ? tier.color : 'var(--color-text-muted)' }}>
+          <span style={{ color: totalBookings >= tier.minBookings ? tier.color : 'var(--color-on-surface-variant)' }}>
             {totalBookings >= tier.minBookings ? '✓' : `${bookingsNeeded} more`}
           </span>
         </div>
-        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }}>
+        <div style={{ height: 4, borderRadius: 2, background: 'var(--color-surface-container-high)' }}>
           <div style={{ height: '100%', borderRadius: 2, background: tier.color, width: `${Math.min(totalBookings / tier.minBookings * 100, 100)}%`, transition: 'width 1s ease', boxShadow: `0 0 6px ${tier.color}` }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-text-muted)' }}>
+        <div className="font-body" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--color-on-surface-variant)' }}>
           <span>Show rate: {showRate}% / {tier.minRate}%</span>
-          <span style={{ color: showRate >= tier.minRate ? tier.color : 'var(--color-text-muted)' }}>
+          <span style={{ color: showRate >= tier.minRate ? tier.color : 'var(--color-on-surface-variant)' }}>
             {showRate >= tier.minRate ? '✓' : `${rateNeeded}% gap`}
           </span>
         </div>
-        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }}>
+        <div style={{ height: 4, borderRadius: 2, background: 'var(--color-surface-container-high)' }}>
           <div style={{ height: '100%', borderRadius: 2, background: tier.color, width: `${Math.min(showRate / tier.minRate * 100, 100)}%`, transition: 'width 1s ease', boxShadow: `0 0 6px ${tier.color}` }} />
         </div>
       </div>
@@ -107,14 +107,14 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
       {/* Mint / Status button */}
       {earned ? (
         minted ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: tier.color }}>
+          <div className="font-body" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: tier.color }}>
             <CheckCircleIcon className="h-4 w-4" /> Soulbound NFT Minted ✓
           </div>
         ) : (
-          <button onClick={handleMint} disabled={minting} style={{
+          <button onClick={handleMint} disabled={minting} className="font-body" style={{
             width: '100%', padding: '10px', borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: 'pointer',
-            background: `linear-gradient(135deg, ${tier.color}30, ${tier.color}15)`,
-            color: tier.color, border: `1px solid ${tier.color}50`,
+            background: `linear-gradient(135deg, ${tier.color}20, ${tier.color}10)`,
+            color: tier.color, border: `1px solid ${tier.color}40`,
             boxShadow: `0 0 16px ${tier.glow}`,
             transition: 'all 0.2s',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -127,7 +127,7 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
           </button>
         )
       ) : (
-        <div style={{ padding: '8px 0', fontSize: 10, color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <div className="font-body" style={{ padding: '8px 0', fontSize: 10, color: 'var(--color-on-surface-variant)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           🔒 LOCKED — Keep booking to unlock
         </div>
       )}
@@ -139,21 +139,17 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
 function RewardRow({ reward, index }: { reward: any; index: number }) {
   const isReview = reward.type === 'GOOGLE_REVIEW';
   const isBusiness = reward.type?.startsWith('BUSINESS_');
-  const color = isReview ? '#FFB830' : isBusiness ? '#0ea5e9' : '#00FFB0';
-  const glow = isReview ? 'rgba(255,184,48,0.2)' : isBusiness ? 'rgba(0,229,255,0.2)' : 'rgba(0,255,176,0.2)';
+  const color = isReview ? '#d97706' : isBusiness ? '#0284c7' : '#059669';
+  const glow = isReview ? 'rgba(217,119,6,0.1)' : isBusiness ? 'rgba(2,132,199,0.1)' : 'rgba(5,150,105,0.1)';
   const label = isReview ? 'Proof of Review' : isBusiness ? reward.type?.replace('BUSINESS_', '').replace(/_/g, ' ') : 'Proof of Reservation';
   const icon = isReview ? <StarIcon className="h-4 w-4" /> : isBusiness ? <BoltIcon className="h-4 w-4" /> : <CheckCircleIcon className="h-4 w-4" />;
 
   return (
-    <div className="animate-fade-up" style={{
+    <div className="animate-fade-up border-b border-outline-variant/20 hover:bg-surface-container-low transition-colors" style={{
       animationDelay: `${index * 40}ms`,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.04)',
-      transition: 'background 0.2s',
-    }}
-      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)'}
-      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-    >
+      padding: '12px 16px',
+    }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
@@ -162,14 +158,14 @@ function RewardRow({ reward, index }: { reward: any; index: number }) {
           boxShadow: `0 0 10px ${glow}`,
         }}>{icon}</div>
         <div>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e8e8e8' }}>{label}</p>
-          <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+          <p className="font-headline" style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-on-surface)' }}>{label}</p>
+          <p className="font-body" style={{ fontSize: 11, color: 'var(--color-on-surface-variant)' }}>
             {reward.businessName || 'Pabandi'} · {reward.createdAt ? new Date(reward.createdAt).toLocaleDateString() : ''}
           </p>
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
-        <span style={{ fontSize: '0.875rem', fontWeight: 800, color, textShadow: `0 0 10px ${glow}` }}>+{reward.amount} PAB</span>
+        <span className="font-headline" style={{ fontSize: '0.875rem', fontWeight: 800, color }}>+{reward.amount} PAB</span>
       </div>
     </div>
   );
@@ -182,31 +178,19 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
 }) {
   return (
     <button id={id} onClick={onClick} disabled={disabled || loading}
-      className="w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-      onMouseEnter={e => {
-        if (!disabled && !loading) {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.4)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.06)';
-        }
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-      }}
+      className="w-full flex items-center gap-4 p-4 rounded-2xl text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-surface-container-lowest border border-outline-variant hover:bg-surface-container hover:border-primary/40"
     >
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {loading ? <span style={{ width: 20, height: 20, border: '2px solid rgba(0,229,255,0.3)', borderTopColor: '#0ea5e9', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} /> : icon}
+      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-surface-container border border-outline-variant/50">
+        {loading ? <span style={{ width: 20, height: 20, border: '2px solid rgba(0,106,106,0.3)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', display: 'inline-block', animation: 'rotateSlow 0.8s linear infinite' }} /> : icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#e8e8e8' }}>{name}</span>
-          {badge && <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 9999, fontWeight: 700, background: 'rgba(0,229,255,0.15)', color: '#a5b4fc', border: '1px solid rgba(0,229,255,0.2)' }}>{badge}</span>}
+          <span className="font-headline text-on-surface font-bold text-sm">{name}</span>
+          {badge && <span className="font-body text-[9px] px-[7px] py-[2px] rounded-full font-bold bg-secondary-container text-on-secondary-container border border-secondary/20">{badge}</span>}
         </div>
-        <p style={{ fontSize: 11, marginTop: 2, color: 'var(--color-text-muted)' }}>{desc}</p>
+        <p className="font-body text-[11px] mt-0.5 text-on-surface-variant">{desc}</p>
       </div>
-      <ArrowUpRightIcon className="h-4 w-4 flex-shrink-0" style={{ color: '#0ea5e9', opacity: 0.6 }} />
+      <ArrowUpRightIcon className="h-4 w-4 flex-shrink-0 text-primary opacity-60" />
     </button>
   );
 }
@@ -277,52 +261,48 @@ const WalletDashboard: React.FC = () => {
   if (isLoading) return (
     <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 40, height: 40, border: '3px solid rgba(0,229,255,0.2)', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'rotateSlow 0.8s linear infinite', margin: '0 auto 12px' }} />
-        <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>Loading wallet…</p>
+        <div style={{ width: 40, height: 40, border: '3px solid var(--color-primary-container)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'rotateSlow 0.8s linear infinite', margin: '0 auto 12px' }} />
+        <p className="font-body text-sm text-on-surface-variant">Loading wallet…</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', color: 'var(--color-text)' }}>
+    <div className="min-h-screen bg-surface text-on-surface pb-20 md:pb-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* ── Header ── */}
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
-            <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
+            <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
               ⚡ PAB Wallet
             </h1>
-            <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>
+            <p className="font-body text-sm text-on-surface-variant mt-1.5">
               Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => { setShowSBT(!showSBT); }}
+              className="font-body font-bold text-xs flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all"
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
-                padding: '10px 16px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s',
-                background: showSBT ? 'rgba(255,184,48,0.15)' : 'rgba(255,255,255,0.04)',
-                color: showSBT ? '#FFB830' : 'var(--color-text-muted)',
-                border: `1px solid ${showSBT ? 'rgba(255,184,48,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                background: showSBT ? 'var(--color-tertiary-container)' : 'var(--color-surface-container-low)',
+                color: showSBT ? 'var(--color-on-tertiary-container)' : 'var(--color-on-surface-variant)',
+                border: `1px solid ${showSBT ? 'var(--color-tertiary)' : 'var(--color-outline-variant)'}`,
               }}>
               🪙 NFT Badges
             </button>
             {connected ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 12, fontSize: 12, fontWeight: 700,
-                  background: 'rgba(0,255,176,0.08)', border: '1px solid rgba(0,255,176,0.2)', color: '#00FFB0',
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00FFB0', boxShadow: '0 0 8px #00FFB0', display: 'inline-block' }} />
+                <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-primary-container text-on-primary-container border border-primary/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] inline-block" />
                   {connected.type === 'phantom' ? '👻' : '🦊'} {shortAddr(connected.address)} · {connected.chainName}
                 </div>
-                <button onClick={disconnect} style={{ padding: '8px', borderRadius: 8, cursor: 'pointer', background: 'rgba(255,76,106,0.08)', color: '#FF4C6A', border: '1px solid rgba(255,76,106,0.2)' }}>
+                <button onClick={disconnect} className="p-2.5 rounded-xl cursor-pointer bg-error-container text-on-error-container border border-error/20 hover:opacity-80 transition-opacity">
                   <XMarkIcon className="h-4 w-4" />
                 </button>
               </div>
             ) : (
-              <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="btn-primary text-sm" style={{ padding: '10px 18px' }}>
+              <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="bg-primary text-on-primary px-4 py-2.5 rounded-xl font-body text-sm font-semibold hover:opacity-90 transition-opacity flex items-center shadow-sm">
                 <LinkIcon className="h-4 w-4 inline mr-2" />Connect Wallet
               </button>
             )}
@@ -333,8 +313,8 @@ const WalletDashboard: React.FC = () => {
         {showSBT && (
           <div className="animate-fade-up mb-8">
             <div style={{ marginBottom: 16 }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Soulbound Reputation NFTs</h2>
-              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
+              <h2 className="font-headline text-xl font-black text-on-surface">Soulbound Reputation NFTs</h2>
+              <p className="font-body text-sm text-on-surface-variant mt-1">
                 Non-transferable NFTs that live on Solana forever — your reliability, on-chain. Businesses can verify these.
               </p>
             </div>
@@ -346,10 +326,10 @@ const WalletDashboard: React.FC = () => {
                 />
               ))}
             </div>
-            <div style={{ marginTop: 12, padding: '10px 16px', borderRadius: 10, background: 'rgba(0,229,255,0.06)', border: '1px solid rgba(0,229,255,0.15)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <InformationCircleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: '#0ea5e9' }} />
-              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-                <strong style={{ color: '#a5b4fc' }}>Soulbound tokens</strong> cannot be transferred or sold — they are permanently tied to your wallet address. This makes them a verifiable, tamper-proof proof of your Pabandi reliability history on-chain.
+            <div className="mt-4 p-4 rounded-xl bg-secondary-container border border-secondary/20 flex items-start gap-2.5 font-body">
+              <InformationCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5 text-secondary" />
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                <strong className="text-secondary font-bold">Soulbound tokens</strong> cannot be transferred or sold — they are permanently tied to your wallet address. This makes them a verifiable, tamper-proof proof of your Pabandi reliability history on-chain.
               </p>
             </div>
           </div>
@@ -359,73 +339,58 @@ const WalletDashboard: React.FC = () => {
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
           {/* Main Balance */}
-          <div className="md:col-span-2 relative overflow-hidden" style={{
-            borderRadius: '1.25rem', padding: '1.75rem',
-            background: 'linear-gradient(135deg, rgba(0,229,255,0.35) 0%, rgba(0,229,255,0.15) 60%, rgba(28,28,28,0.95) 100%)',
-            border: '1px solid rgba(0,229,255,0.3)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(0,229,255,0.08)',
+          <div className="md:col-span-2 relative overflow-hidden rounded-3xl p-7 text-white shadow-md border border-primary/20" style={{
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)',
           }}>
             {/* Shimmer */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 3s infinite', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 200, height: 200, top: -60, right: -40, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.25), transparent)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 3s infinite', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 200, height: 200, top: -60, right: -40, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.2), transparent)', filter: 'blur(30px)', pointerEvents: 'none' }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                <div style={{ padding: '8px', borderRadius: 10, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                  <WalletIcon className="h-5 w-5" style={{ color: '#fff' }} />
+                <div className="p-2.5 rounded-xl bg-white/20 border border-white/30 backdrop-blur-sm">
+                  <WalletIcon className="h-6 w-6 text-white" />
                 </div>
-                <span style={{ fontSize: 9, fontWeight: 800, padding: '4px 10px', borderRadius: 9999, background: 'rgba(255,255,255,0.12)', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Balance</span>
+                <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">Active Balance</span>
               </div>
               <div style={{ marginBottom: 6 }}>
-                <span style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 900, color: '#fff', fontFamily: 'Space Grotesk, sans-serif' }}>{balance.toLocaleString()}</span>
-                <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', marginLeft: 8 }}>PAB</span>
+                <span className="font-headline text-5xl sm:text-6xl font-black text-white">{balance.toLocaleString()}</span>
+                <span className="font-headline text-xl text-white/80 ml-2">PAB</span>
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 16 }}>≈ ${usdValue} USD · Based on PAB/USDT rate</p>
+              <p className="font-body text-xs text-white/70 mb-5">≈ ${usdValue} USD · Based on PAB/USDT rate</p>
 
               {connected ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontFamily: 'monospace' }}>◎ {shortAddr(connected.address)} · Solana</span>
+                  <span className="font-body text-xs text-white/80 font-medium">◎ {shortAddr(connected.address)} · Solana</span>
                   {connected.type === 'phantom' && balance > 0 && (
                     <button type="button" onClick={() => transferMutation.mutate()} disabled={transferMutation.isLoading}
-                      style={{
-                        fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
-                        background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)',
-                        display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.2s',
-                      }}>
-                      {transferMutation.isLoading ? <><ArrowPathIcon className="h-3 w-3 animate-spin" /> Sending…</> : <>↗ Withdraw to Solana</>}
+                      className="font-body text-xs font-bold px-4 py-2 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5">
+                      {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Solana</>}
                     </button>
                   )}
                 </div>
               ) : (
                 <button onClick={() => { setShowModal(true); setError(''); }}
-                  style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', textDecoration: 'underline' }}>
-                  <LinkIcon className="h-3 w-3" /> Connect Phantom to withdraw
+                  className="font-body text-xs text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2">
+                  <LinkIcon className="h-4 w-4" /> Connect Phantom to withdraw
                 </button>
               )}
             </div>
           </div>
 
           {/* Stats */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { label: 'Total Earned', value: `${totalEarned} PAB`, color: '#00FFB0', sub: 'All time', icon: <TrophyIcon className="h-4 w-4" /> },
-              { label: 'USD Value', value: `$${usdValue}`, color: '#FFB830', sub: '@ $0.15/PAB', icon: <CurrencyDollarIcon className="h-4 w-4" /> },
-              { label: 'Recent Rewards', value: `${rewards.length}`, color: '#0ea5e9', sub: 'Last 20 events', icon: <FireIcon className="h-4 w-4" /> },
+              { label: 'Total Earned', value: `${totalEarned} PAB`, colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', borderClass: 'border-tertiary/20', sub: 'All time', icon: <TrophyIcon className="h-5 w-5" /> },
+              { label: 'USD Value', value: `$${usdValue}`, colorClass: 'text-secondary', bgClass: 'bg-secondary-container', borderClass: 'border-secondary/20', sub: '@ $0.15/PAB', icon: <CurrencyDollarIcon className="h-5 w-5" /> },
+              { label: 'Recent Rewards', value: `${rewards.length}`, colorClass: 'text-primary', bgClass: 'bg-primary-container', borderClass: 'border-primary/20', sub: 'Last 20 events', icon: <FireIcon className="h-5 w-5" /> },
             ].map(s => (
-              <div key={s.label} style={{
-                flex: 1, background: 'var(--color-surface)', border: `1px solid ${s.color}20`,
-                borderRadius: '1rem', padding: '14px 16px',
-                display: 'flex', alignItems: 'center', gap: 12,
-                transition: 'all 0.2s',
-              }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = s.color + '40'; (e.currentTarget as HTMLElement).style.transform = 'translateX(2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = s.color + '20'; (e.currentTarget as HTMLElement).style.transform = 'translateX(0)'; }}
-              >
-                <div style={{ color: s.color, background: `${s.color}12`, padding: 8, borderRadius: 8, border: `1px solid ${s.color}20`, flexShrink: 0 }}>{s.icon}</div>
+              <div key={s.label} className={`flex-1 bg-surface-container-lowest border ${s.borderClass} rounded-2xl p-4 flex items-center gap-3.5 shadow-sm hover:shadow-md transition-all`}>
+                <div className={`${s.colorClass} ${s.bgClass} p-2.5 rounded-xl border ${s.borderClass} flex-shrink-0`}>{s.icon}</div>
                 <div>
-                  <p style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>{s.label}</p>
-                  <p style={{ fontSize: '1.1rem', fontWeight: 900, color: s.color, fontFamily: 'Space Grotesk, sans-serif' }}>{s.value}</p>
-                  <p style={{ fontSize: 9, color: 'var(--color-text-dim)' }}>{s.sub}</p>
+                  <p className="font-body text-[10px] text-on-surface-variant uppercase tracking-widest font-bold mb-0.5">{s.label}</p>
+                  <p className={`font-headline text-lg font-black ${s.colorClass}`}>{s.value}</p>
+                  <p className="font-body text-[9px] text-on-surface-variant font-medium">{s.sub}</p>
                 </div>
               </div>
             ))}
@@ -433,44 +398,41 @@ const WalletDashboard: React.FC = () => {
         </div>
 
         {/* ── Web3 Tech Explainer ── */}
-        <div className="animate-fade-up-delay-2 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="animate-fade-up-delay-2 grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {[
-            { icon: '🛡️', title: 'Soulbound Identity', desc: 'Your reliability score minted as a non-transferable NFT — permanently yours on Solana.', color: '#0ea5e9' },
-            { icon: '⚡', title: 'Smart Contract Escrow', desc: 'Deposits held trustlessly on-chain. Auto-release on completion. Zero chargebacks.', color: '#00E5FF' },
-            { icon: '🗳️', title: 'DAO Governance', desc: 'Hold PAB = vote on platform rules. Deposit thresholds, risk parameters — community-owned.', color: '#00FFB0', badge: 'Coming Soon' },
+            { icon: '🛡️', title: 'Soulbound Identity', desc: 'Your reliability score minted as a non-transferable NFT — permanently yours on Solana.', colorClass: 'text-primary', bgClass: 'bg-primary-container' },
+            { icon: '⚡', title: 'Smart Contract Escrow', desc: 'Deposits held trustlessly on-chain. Auto-release on completion. Zero chargebacks.', colorClass: 'text-secondary', bgClass: 'bg-secondary-container' },
+            { icon: '🗳️', title: 'DAO Governance', desc: 'Hold PAB = vote on platform rules. Deposit thresholds, risk parameters — community-owned.', colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', badge: 'Coming Soon' },
           ].map(s => (
-            <div key={s.title} style={{
-              background: 'var(--color-surface)', border: `1px solid ${s.color}18`,
-              borderRadius: '1rem', padding: '1.25rem', position: 'relative', overflow: 'hidden',
-            }}>
-              {s.badge && <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 8, fontWeight: 800, padding: '2px 6px', borderRadius: 9999, background: `${s.color}15`, color: s.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.badge}</span>}
-              <div style={{ fontSize: 24, marginBottom: 10 }}>{s.icon}</div>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: s.color, marginBottom: 6, fontFamily: 'Space Grotesk, sans-serif' }}>{s.title}</h3>
-              <p style={{ fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{s.desc}</p>
+            <div key={s.title} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 relative overflow-hidden shadow-sm">
+              {s.badge && <span className={`absolute top-4 right-4 font-body text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${s.colorClass} ${s.bgClass}`}>{s.badge}</span>}
+              <div className="text-3xl mb-3 drop-shadow-sm">{s.icon}</div>
+              <h3 className={`font-headline text-sm font-black mb-1.5 ${s.colorClass}`}>{s.title}</h3>
+              <p className="font-body text-xs text-on-surface-variant leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
 
         {/* ── Rewards History ── */}
-        <div className="animate-fade-up-delay-2" style={{ background: 'var(--color-surface)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '1.25rem', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="animate-fade-up-delay-2 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
             <div>
-              <h3 style={{ fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif', fontSize: '1rem' }}>Reward History</h3>
-              <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>Every PAB earned, logged on-chain</p>
+              <h3 className="font-headline font-black text-on-surface text-lg">Reward History</h3>
+              <p className="font-body text-[11px] text-on-surface-variant font-medium mt-0.5">Every PAB earned, logged on-chain</p>
             </div>
-            <button onClick={() => refetch()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#0ea5e9'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--color-text-muted)'}>
-              <ArrowPathIcon className="h-4 w-4" />
+            <button onClick={() => refetch()} className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors">
+              <ArrowPathIcon className="h-5 w-5" />
             </button>
           </div>
           {rewards.length > 0 ? (
-            rewards.map((r: any, i: number) => <RewardRow key={r.id} reward={r} index={i} />)
+            <div className="divide-y divide-outline-variant/20">
+              {rewards.map((r: any, i: number) => <RewardRow key={r.id} reward={r} index={i} />)}
+            </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
-              <BoltIcon className="h-10 w-10 mx-auto mb-3" style={{ color: 'var(--color-text-dim)' }} />
-              <p style={{ fontWeight: 600, marginBottom: 4 }}>No rewards yet</p>
-              <p style={{ fontSize: 12 }}>Complete bookings to earn your first PAB tokens</p>
+            <div className="text-center py-12 text-on-surface-variant bg-surface-container-lowest">
+              <BoltIcon className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p className="font-headline font-bold mb-1">No rewards yet</p>
+              <p className="font-body text-xs">Complete bookings to earn your first PAB tokens</p>
             </div>
           )}
         </div>
@@ -479,37 +441,32 @@ const WalletDashboard: React.FC = () => {
 
       {/* ── Connect Wallet Modal ── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-scrim/40 backdrop-blur-sm"
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div className="animate-fade-scale w-full max-w-sm" style={{
-            background: 'rgba(11,18,32,0.95)', backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(0,229,255,0.25)', borderRadius: '1.5rem', padding: '1.5rem',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 60px rgba(0,229,255,0.08)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div className="animate-fade-scale w-full max-w-sm bg-surface-container-lowest border border-outline-variant/50 rounded-3xl p-6 shadow-xl">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>Connect Your Wallet</h2>
-                <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 3 }}>Solana recommended · Required for $PAB withdrawals</p>
+                <h2 className="font-headline text-xl font-black text-on-surface">Connect Wallet</h2>
+                <p className="font-body text-[11px] text-on-surface-variant font-medium mt-1">Solana recommended · Required for $PAB</p>
               </div>
-              <button onClick={() => setShowModal(false)} style={{ padding: 6, borderRadius: 8, cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text-muted)' }}>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors">
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
 
             {error && (
-              <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 10, display: 'flex', alignItems: 'flex-start', gap: 8, background: 'rgba(255,76,106,0.1)', border: '1px solid rgba(255,76,106,0.2)', color: '#fca5a5', fontSize: 12 }}>
-                <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: '#FF4C6A' }} /> {error}
+              <div className="mb-4 p-3 rounded-xl flex items-start gap-2 bg-error-container text-on-error-container border border-error/20 font-body text-xs font-medium">
+                <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-error" /> {error}
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="flex flex-col gap-3">
               <WalletOption id="btn-connect-phantom" icon="👻" name="Phantom" desc="Recommended · Solana network for $PAB" badge="Solana" onClick={connectPhantom} loading={loadingWallet === 'phantom'} disabled={loadingWallet !== null && loadingWallet !== 'phantom'} />
               <WalletOption id="btn-connect-metamask" icon="🦊" name="MetaMask" desc="BNB Smart Chain · Legacy support" badge="BSC" onClick={connectMetaMask} loading={loadingWallet === 'metamask'} disabled={loadingWallet !== null && loadingWallet !== 'metamask'} />
             </div>
 
-            <p style={{ textAlign: 'center', fontSize: 10, marginTop: 16, color: 'var(--color-text-dim)', lineHeight: 1.5 }}>
-              By connecting, you agree to our <a href="#" style={{ color: '#0ea5e9', textDecoration: 'underline' }}>Terms</a>.
+            <p className="text-center font-body text-[10px] mt-6 text-on-surface-variant leading-relaxed px-4">
+              By connecting, you agree to our <a href="#" className="text-primary font-bold hover:underline">Terms</a>.
               <br />Your wallet address is stored securely and never shared.
             </p>
           </div>

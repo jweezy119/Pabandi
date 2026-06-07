@@ -1,22 +1,12 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 export default function Layout() {
-  const { isAuthenticated, user, logout, wallet, fetchWalletData } = useAuthStore();
+  const { isAuthenticated, user, logout, fetchWalletData } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Fetch wallet data on mount when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       fetchWalletData();
@@ -25,252 +15,93 @@ export default function Layout() {
 
   const handleLogout = () => { logout(); navigate('/'); };
 
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
+  // Some detail screens should hide bottom nav
+  const isDetailScreen = location.pathname.includes('/book') || location.pathname.includes('/new');
 
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
-
+    <div className="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col pt-20">
+      
       {!isAuthPage && (
-        <nav style={{
-          background: scrolled ? 'rgba(18,18,18,0.94)' : 'rgba(18,18,18,0.65)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${scrolled ? 'rgba(0,229,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
-          boxShadow: scrolled ? '0 4px 30px rgba(0,0,0,0.5), 0 0 60px rgba(0,229,255,0.04)' : 'none',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          transition: 'all 0.3s ease',
-        }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-
-              {/* Logo */}
-              <div className="flex items-center gap-8">
-                <Link to="/" className="flex items-center gap-2.5 group">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black relative"
-                    style={{
-                      background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
-                      boxShadow: '0 0 16px rgba(0,229,255,0.45)',
-                      transition: 'box-shadow 0.3s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 30px rgba(0,229,255,0.7)')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 16px rgba(0,229,255,0.45)')}
-                  >
-                    P
-                    {/* Pulse ring */}
-                    <span style={{
-                      position: 'absolute', inset: '-3px', borderRadius: '10px',
-                      border: '1px solid rgba(0,229,255,0.35)',
-                      animation: 'pulseGlow 2.5s ease-in-out infinite',
-                      pointerEvents: 'none',
-                    }} />
-                  </div>
-                  <span className="text-lg font-black tracking-tight" style={{ color: '#e8e8e8' }}>
-                    Pabandi
-                  </span>
-                </Link>
-
-                <div className="hidden sm:flex items-center gap-1">
-                  <NavLink to="/" active={location.pathname === '/'}>Home</NavLink>
-                  {isAuthenticated && (
-                    <>
-                      <NavLink to="/reservations" active={location.pathname.startsWith('/reservations')}>Reservations</NavLink>
-                      <NavLink to="/dashboard" active={location.pathname === '/dashboard'}>Dashboard</NavLink>
-                      <NavLink to="/wallet" active={location.pathname === '/wallet'}>Wallet</NavLink>
-                    </>
-                  )}
-                </div>
+        <header className="bg-surface-bright flex justify-between items-center w-full px-6 py-4 fixed top-0 z-40 shadow-sm">
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <Link to="/profile" className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center text-primary font-bold text-sm">
+                {initials}
+              </Link>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+                <span className="material-symbols-outlined">person</span>
               </div>
-
-              {/* Right side */}
-              <div className="hidden sm:flex items-center gap-3">
-                {/* PAB Balance Badge */}
-                {isAuthenticated && (
-                  <Link to="/wallet"
-                    className="flex items-center gap-1 rounded-full text-xs px-3 py-1 transition-all duration-200"
-                    style={{
-                      background: 'rgba(255,184,48,0.10)',
-                      border: '1px solid rgba(255,184,48,0.25)',
-                      color: '#ffb830',
-                      textDecoration: 'none',
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,184,48,0.18)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,184,48,0.40)';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,184,48,0.10)';
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,184,48,0.25)';
-                    }}
-                  >
-                    {wallet?.address ? <span>👻</span> : null}
-                    <span>🪙</span>
-                    <span style={{ fontWeight: 600 }}>{wallet?.pabBalance ?? 0} PAB</span>
-                  </Link>
-                )}
-
-                {isAuthenticated ? (
-                  <>
-                    <Link to="/profile"
-                      className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-xl transition-all duration-200"
-                      style={{
-                        color: '#9e9e9e',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        background: 'rgba(255,255,255,0.03)',
-                      }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.35)';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.07)';
-                        (e.currentTarget as HTMLElement).style.color = '#e8e8e8';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-                        (e.currentTarget as HTMLElement).style.color = '#9e9e9e';
-                      }}
-                    >
-                      {/* Avatar */}
-                      <div style={{
-                        width: 26, height: 26, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 800, color: '#fff',
-                        boxShadow: '0 0 10px rgba(0,229,255,0.45)',
-                      }}>
-                        {initials}
-                      </div>
-                      {user?.firstName}
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200"
-                      style={{ color: '#757575', border: '1px solid rgba(255,255,255,0.06)' }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.color = '#ef4444';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(239,68,68,0.30)';
-                        (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.07)';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.color = '#757575';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-                        (e.currentTarget as HTMLElement).style.background = 'transparent';
-                      }}
-                    >
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                      style={{ color: '#757575' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#e8e8e8')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#757575')}>
-                      Sign In
-                    </Link>
-                    <Link to="/register" className="btn-primary text-sm px-5 py-2.5">
-                      Sign Up Free
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              {/* Mobile hamburger */}
-              <button
-                className="sm:hidden p-2 rounded-xl"
-                style={{ color: '#757575', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)' }}
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
+            )}
+            <Link to="/">
+              <h1 className="font-headline font-semibold text-2xl tracking-tighter text-primary">Pabandi</h1>
+            </Link>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button className="text-primary hover:opacity-80 transition-opacity w-10 h-10 flex items-center justify-center bg-surface-container-low rounded-full">
+              <span className="material-symbols-outlined">notifications</span>
+            </button>
+            {isAuthenticated && (
+              <button onClick={handleLogout} className="hidden md:flex text-sm text-error bg-error-container/20 px-4 py-2 rounded-md hover:bg-error-container/40">
+                Logout
               </button>
-            </div>
+            )}
+            {!isAuthenticated && (
+              <div className="hidden md:flex gap-2">
+                <Link to="/login" className="text-sm font-medium px-4 py-2 text-on-surface-variant hover:text-primary transition-colors">Sign In</Link>
+                <Link to="/register" className="btn-primary py-2 px-4 text-sm">Sign Up</Link>
+              </div>
+            )}
           </div>
 
-          {/* Mobile menu */}
-          {mobileMenuOpen && (
-            <div style={{
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              padding: '0.75rem 1rem 1rem',
-              background: 'rgba(18,18,18,0.96)',
-              animation: 'fadeInUp 0.2s ease',
-            }}>
-              {isAuthenticated ? (
-                <div className="flex flex-col gap-1">
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl"
-                    style={{ color: '#9e9e9e', background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.12)' }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 9, fontWeight: 800, color: '#fff',
-                    }}>{initials}</div>
-                    {user?.firstName} {user?.lastName}
-                  </Link>
-
-                  {/* Mobile PAB Balance Badge */}
-                  <Link to="/wallet" onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-1 px-4 py-2.5 text-sm rounded-xl"
-                    style={{
-                      background: 'rgba(255,184,48,0.10)',
-                      border: '1px solid rgba(255,184,48,0.25)',
-                      color: '#ffb830',
-                    }}>
-                    {wallet?.address ? <span>👻</span> : null}
-                    <span>🪙</span>
-                    <span style={{ fontWeight: 600 }}>{wallet?.pabBalance ?? 0} PAB</span>
-                  </Link>
-
-                  <MobileNavLink to="/reservations" onClick={() => setMobileMenuOpen(false)}>Reservations</MobileNavLink>
-                  <MobileNavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard</MobileNavLink>
-                  <MobileNavLink to="/wallet" onClick={() => setMobileMenuOpen(false)}>Wallet</MobileNavLink>
-                  <button onClick={handleLogout}
-                    className="text-left px-4 py-2.5 text-sm rounded-xl mt-1 transition-all"
-                    style={{ color: '#ef4444', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.12)' }}>
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 pt-1">
-                  <Link to="/login" className="block px-4 py-2.5 text-sm rounded-xl"
-                    style={{ color: '#9e9e9e', background: 'rgba(255,255,255,0.03)' }} onClick={() => setMobileMenuOpen(false)}>
-                    Sign In
-                  </Link>
-                  <Link to="/register" className="btn-primary text-sm text-center"
-                    onClick={() => setMobileMenuOpen(false)}>
-                    Sign Up Free
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </nav>
+          {/* Desktop Navigation Cluster (Visible only on md+) */}
+          <div className="hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 h-[72px] items-center gap-8">
+            <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
+            {isAuthenticated && (
+              <>
+                <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
+                  {user?.role === 'BUSINESS_OWNER' ? 'Dashboard' : 'Bookings'}
+                </DesktopNavLink>
+                <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>Wallet</DesktopNavLink>
+                <DesktopNavLink to="/profile" current={location.pathname === '/profile'}>Profile</DesktopNavLink>
+              </>
+            )}
+          </div>
+        </header>
       )}
 
-      <main>
+      <main className="flex-grow w-full">
         <Outlet />
       </main>
 
+      {!isAuthPage && !isDetailScreen && (
+        <>
+          {/* BottomNavBar Shared Component */}
+          <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
+            <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
+            <MobileTab 
+              to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} 
+              icon={user?.role === 'BUSINESS_OWNER' ? 'dashboard' : 'calendar_month'} 
+              label={user?.role === 'BUSINESS_OWNER' ? 'Dashboard' : 'Bookings'} 
+              current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')} 
+            />
+            <MobileTab to="/wallet" icon="payments" label="Wallet" current={location.pathname === '/wallet'} />
+            <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
+          </nav>
+        </>
+      )}
+      
       {!isAuthPage && (
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: '4rem' }}>
-          <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                  style={{ background: 'linear-gradient(135deg, #0ea5e9, #14b8a6)', boxShadow: '0 0 12px rgba(0,229,255,0.35)' }}>P</div>
-                <span className="font-black" style={{ color: '#e8e8e8' }}>Pabandi</span>
-              </div>
-              <p className="text-sm" style={{ color: '#616161' }}>
-                © 2026 Pabandi. AI-powered bookings with smart no-show prevention.
-              </p>
-              <div className="flex gap-5 text-sm" style={{ color: '#616161' }}>
-                <a href="#" className="hover:text-[#0ea5e9] transition-colors">Privacy</a>
-                <a href="#" className="hover:text-[#0ea5e9] transition-colors">Terms</a>
-                <a href="#" className="hover:text-[#0ea5e9] transition-colors">Support</a>
-              </div>
+        <footer className="hidden md:block mt-16 py-8 border-t border-outline-variant/20 bg-surface-container-lowest">
+          <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
+            <span>© 2026 Pabandi. AI-powered bookings.</span>
+            <div className="flex gap-4">
+              <a href="#" className="hover:text-primary">Privacy</a>
+              <a href="#" className="hover:text-primary">Terms</a>
             </div>
           </div>
         </footer>
@@ -279,36 +110,27 @@ export default function Layout() {
   );
 }
 
-function NavLink({ to, children, active }: { to: string; children: React.ReactNode; active?: boolean }) {
+function DesktopNavLink({ to, children, current }: { to: string; children: React.ReactNode; current: boolean }) {
   return (
-    <Link to={to} className="text-sm font-medium px-3 py-2 rounded-lg transition-all duration-200 relative"
-      style={{
-        color: active ? '#7dd3fc' : '#757575',
-        background: active ? 'rgba(0,229,255,0.08)' : 'transparent',
-      }}
-      onMouseEnter={e => {
-        if (!active) {
-          (e.currentTarget as HTMLElement).style.color = '#e8e8e8';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-        }
-      }}
-      onMouseLeave={e => {
-        if (!active) {
-          (e.currentTarget as HTMLElement).style.color = '#757575';
-          (e.currentTarget as HTMLElement).style.background = 'transparent';
-        }
-      }}>
+    <Link to={to} className={`font-body text-sm transition-colors ${current ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}>
       {children}
     </Link>
   );
 }
 
-function MobileNavLink({ to, children, onClick }: { to: string; children: React.ReactNode; onClick?: () => void }) {
+function MobileTab({ to, icon, label, current }: { to: string; icon: string; label: string; current: boolean }) {
+  if (current) {
+    return (
+      <Link to={to} className="flex flex-col items-center justify-center text-primary bg-surface-container-low rounded-xl px-4 py-2">
+        <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>{icon}</span>
+        <span className="font-body text-[11px] font-medium tracking-wide">{label}</span>
+      </Link>
+    );
+  }
   return (
-    <Link to={to} onClick={onClick}
-      className="block px-4 py-2.5 text-sm rounded-xl transition-all"
-      style={{ color: '#9e9e9e', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      {children}
+    <Link to={to} className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-4 py-2 transition-colors">
+      <span className="material-symbols-outlined mb-1">{icon}</span>
+      <span className="font-body text-[11px] font-medium tracking-wide">{label}</span>
     </Link>
   );
 }

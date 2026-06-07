@@ -1,39 +1,36 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
-import BusinessMap from '../components/BusinessMap';
+
 import { reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import {
-  CalendarIcon, LinkIcon, PlusIcon,
-  CheckCircleIcon, XCircleIcon, ClockIcon, ExclamationTriangleIcon,
-  FunnelIcon, ShieldCheckIcon,
+  ClockIcon,
+  CalendarIcon, PlusIcon,
+  CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon,
+  ShieldCheckIcon, EllipsisVerticalIcon
 } from '@heroicons/react/24/outline';
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
-  CONFIRMED:  { label: 'Confirmed',  bg: 'rgba(16,185,129,0.12)', color: '#34d399', icon: <CheckCircleIcon className="h-4 w-4" /> },
-  PENDING:    { label: 'Pending',    bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: <ClockIcon className="h-4 w-4" /> },
-  CANCELLED:  { label: 'Cancelled', bg: 'rgba(148,163,184,0.1)', color: '#9e9e9e', icon: <XCircleIcon className="h-4 w-4" /> },
-  NO_SHOW:    { label: 'No-Show',   bg: 'rgba(239,68,68,0.12)',  color: '#f87171', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
-  COMPLETED:  { label: 'Completed', bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: <CheckCircleIcon className="h-4 w-4" /> },
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; accent: string; icon: React.ReactNode }> = {
+  CONFIRMED:  { label: 'Confirmed',  bg: 'bg-tertiary-fixed', color: 'text-on-tertiary-fixed-variant', accent: 'bg-tertiary-fixed-dim', icon: <CheckCircleIcon className="h-4 w-4" /> },
+  PENDING:    { label: 'Pending',    bg: 'bg-secondary-container', color: 'text-on-secondary-fixed-variant', accent: 'bg-secondary-container', icon: <ClockIcon className="h-4 w-4" /> },
+  CANCELLED:  { label: 'Cancelled', bg: 'bg-surface-container-highest', color: 'text-on-surface-variant', accent: 'bg-surface-container-high', icon: <XCircleIcon className="h-4 w-4" /> },
+  NO_SHOW:    { label: 'No-Show',   bg: 'bg-error-container',  color: 'text-on-error-container', accent: 'bg-error', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
+  COMPLETED:  { label: 'Completed', bg: 'bg-primary-container', color: 'text-on-primary-container', accent: 'bg-primary', icon: <CheckCircleIcon className="h-4 w-4" /> },
 };
 
 const FILTER_TABS = [
-  { value: '', label: 'All' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'CONFIRMED', label: 'Confirmed' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'NO_SHOW', label: 'No-Show' },
+  { value: '', label: 'Upcoming' },
+  { value: 'PAST', label: 'Past' },
 ];
 
-const DEPOSIT_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  PAID: { label: 'Deposit Paid', color: '#34d399' },
-  PENDING: { label: 'Deposit Pending', color: '#fbbf24' },
-  NOT_REQUIRED: { label: 'No Deposit', color: '#9e9e9e' },
-  APPLIED_TO_SERVICE: { label: 'Applied to Bill', color: '#60a5fa' },
-  REIMBURSED_TO_BUSINESS: { label: 'Reimbursed', color: '#a78bfa' },
+const DEPOSIT_STATUS_LABELS: Record<string, { label: string; colorClass: string }> = {
+  PAID: { label: 'Deposit Paid', colorClass: 'text-tertiary' },
+  PENDING: { label: 'Deposit Pending', colorClass: 'text-secondary' },
+  NOT_REQUIRED: { label: 'No Deposit', colorClass: 'text-outline' },
+  APPLIED_TO_SERVICE: { label: 'Applied to Bill', colorClass: 'text-primary' },
+  REIMBURSED_TO_BUSINESS: { label: 'Reimbursed', colorClass: 'text-primary' },
 };
 
 export default function ReservationsPage() {
@@ -47,7 +44,18 @@ export default function ReservationsPage() {
     { refetchInterval: 30000 }
   );
 
-  const reservations = data?.data?.data?.reservations || data?.data?.reservations || [];
+  const allReservations = data?.data?.data?.reservations || data?.data?.reservations || [];
+  
+  // Quick hack to filter upcoming vs past based on tab, since backend might not do it properly via status
+  const reservations = allReservations.filter((r: any) => {
+    if (!statusFilter) {
+      // Upcoming: Pending, Confirmed
+      return ['PENDING', 'CONFIRMED'].includes(r.status);
+    } else {
+      // Past: Completed, Cancelled, No-Show
+      return ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(r.status);
+    }
+  });
 
   // Mutations
   const cancelMutation = useMutation(
@@ -71,209 +79,174 @@ export default function ReservationsPage() {
   const isBusinessOwner = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100vh', color: 'var(--color-text)' }}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-black text-[#e8e8e8]" >My Reservations</h1>
-            <p className="mt-1 text-sm text-[#757575]" >View and manage your bookings</p>
-          </div>
-          <Link to="/reservations/new" className="btn-primary flex items-center gap-2 text-sm self-start sm:self-auto">
-            <PlusIcon className="h-4 w-4" /> New Reservation
-          </Link>
+    <div className="bg-surface min-h-screen text-on-surface flex flex-col">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-24 md:mb-8 flex flex-col gap-10">
+        
+        {/* Page Header */}
+        <div className="flex flex-col gap-2">
+          <h2 className="font-headline text-[2rem] font-bold text-primary tracking-tight leading-tight">My Bookings</h2>
+          <p className="font-body text-on-surface-variant text-sm">Manage your upcoming reservations and review past appointments.</p>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          <FunnelIcon className="h-4 w-4 text-[#616161]" />
-          {FILTER_TABS.map(f => (
-            <button key={f.value} onClick={() => setStatusFilter(f.value)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-              style={{
-                background: statusFilter === f.value
-                  ? (STATUS_CONFIG[f.value]?.bg || 'rgba(59,130,246,0.15)')
-                  : 'rgba(255,255,255,0.04)',
-                color: statusFilter === f.value
-                  ? (STATUS_CONFIG[f.value]?.color || '#60a5fa')
-                  : '#5a7490',
-                border: `1px solid ${statusFilter === f.value ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.06)'}`,
-              }}>
-              {f.label}
-            </button>
-          ))}
+        {/* Filter/Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-surface-container-low p-1.5 rounded-lg flex inline-flex w-full md:w-auto self-start">
+            {FILTER_TABS.map(f => (
+              <button key={f.value} onClick={() => setStatusFilter(f.value)}
+                className={`flex-1 md:flex-none px-6 py-2.5 rounded-md font-body text-sm font-medium transition-all ${
+                  statusFilter === f.value 
+                  ? 'bg-surface-container-lowest text-primary shadow-sm shadow-primary/5' 
+                  : 'text-on-surface-variant hover:text-primary'
+                }`}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <Link to="/reservations/new" className="bg-primary text-on-primary font-body text-sm font-medium px-5 py-2.5 rounded-md flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm self-start sm:self-auto w-full sm:w-auto justify-center">
+            <PlusIcon className="h-4 w-4" /> New Booking
+          </Link>
         </div>
 
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-20 gap-3">
-            <div className="w-5 h-5 border-2 border-[#0ea5e955] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-[#757575]" >Loading reservations…</span>
+            <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <span className="font-body text-sm text-on-surface-variant" >Loading reservations…</span>
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && reservations.length === 0 && (
-          <div className="rounded-2xl py-16 text-center"
-            style={{ background: 'var(--color-surface-raised)', border: '1px dashed rgba(255,255,255,0.09)' }}>
-            <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-[#e8e8e8]" />
-            <h3 className="text-lg font-bold mb-2 text-[#e8e8e8]" >
-              {statusFilter ? `No ${STATUS_CONFIG[statusFilter]?.label || statusFilter} reservations` : 'No reservations yet'}
+          <div className="rounded-2xl py-16 text-center bg-surface-container-lowest border border-dashed border-outline-variant/50">
+            <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-outline" />
+            <h3 className="font-headline text-lg font-bold mb-2 text-on-surface" >
+              {statusFilter ? 'No past reservations' : 'No upcoming reservations'}
             </h3>
-            <p className="text-sm mb-6 text-[#757575]" >
-              {statusFilter ? 'Try a different filter or make a new booking.' : 'Make your first booking to see it here.'}
+            <p className="font-body text-sm mb-6 text-on-surface-variant" >
+              {statusFilter ? 'You have no completed or cancelled bookings.' : 'Make your first booking to see it here.'}
             </p>
-            <Link to="/reservations/new" className="btn-primary inline-flex items-center gap-2 text-sm">
+            <Link to="/reservations/new" className="bg-primary text-on-primary px-5 py-2.5 rounded-md inline-flex items-center gap-2 font-body text-sm font-medium hover:opacity-90 transition-opacity">
               <PlusIcon className="h-4 w-4" /> Add Reservation
             </Link>
           </div>
         )}
 
-        {/* List */}
+        {/* Grid List */}
         {!isLoading && reservations.length > 0 && (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {reservations.map((r: any) => {
               const status = STATUS_CONFIG[r.status] || STATUS_CONFIG.PENDING;
               const deposit = DEPOSIT_STATUS_LABELS[r.depositStatus] || DEPOSIT_STATUS_LABELS.NOT_REQUIRED;
               return (
-                <div key={r.id}
-                  className="rounded-2xl p-5 sm:p-6 transition-all"
-                  style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.13)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'}>
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div key={r.id} className="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-5 relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
+                  
+                  {/* Status Bar Accent */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.accent} rounded-l-xl`}></div>
+                  
+                  {/* Top: Info */}
+                  <div className="flex justify-between items-start pl-2">
+                    <div className="flex flex-col gap-1 flex-1 pr-3">
+                      <span className={`${status.bg} ${status.color} font-label text-[11px] font-semibold px-2 py-0.5 rounded-DEFAULT w-max tracking-wide uppercase`}>
+                        {status.label}
+                      </span>
+                      <h3 className="font-headline text-lg font-bold text-primary mt-1 line-clamp-1" title={r.business?.name || 'Business'}>
+                        {r.business?.name || 'Business'}
+                      </h3>
+                      <p className="font-body text-sm text-on-surface-variant line-clamp-1">{r.business?.address || 'Location Details'}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-surface-container-low shrink-0 flex items-center justify-center text-primary/40">
+                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
+                    </div>
+                  </div>
 
-                    {/* Left — business info */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                          style={{ background: 'rgba(59,130,246,0.12)' }}>
-                          <CalendarIcon className="h-5 w-5" style={{ color: '#60a5fa' }} />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-bold text-[#e8e8e8]" >
-                            {r.business?.name || 'Business'}
-                          </h3>
-                          {r.business?.address && (
-                            <p className="text-xs mt-0.5 text-[#9e9e9e]" >{r.business.address}</p>
-                          )}
-                        </div>
+                  {/* Middle: Date/Time */}
+                  <div className="flex flex-col gap-3 bg-surface-container-low p-4 rounded-lg pl-6">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-on-surface-variant text-[20px]">calendar_today</span>
+                      <span className="font-body text-sm font-medium text-primary">
+                        {format(new Date(r.reservationDate), 'EEEE, d MMM yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-on-surface-variant text-[20px]">schedule</span>
+                        <span className="font-body text-sm font-medium text-primary">{r.reservationTime}</span>
                       </div>
-
-                      <div className="mt-4 grid grid-cols-3 gap-3">
-                        {[
-                          { label: 'Date', value: format(new Date(r.reservationDate), 'MMM d, yyyy') },
-                          { label: 'Time', value: r.reservationTime },
-                          { label: 'Guests', value: r.numberOfGuests },
-                        ].map(({ label, value }) => (
-                          <div key={label} className="rounded-xl p-3"
-                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <p className="text-xs font-semibold uppercase tracking-wider mb-1 text-[#e8e8e8]" >{label}</p>
-                            <p className="text-sm font-bold text-[#616161]" >{value}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Map Section */}
-                      <div className="mt-4 h-32 rounded-xl overflow-hidden border border-white/5 relative hidden sm:block">
-                        <BusinessMap 
-                          latitude={r.business?.latitude || 0} 
-                          longitude={r.business?.longitude || 0} 
-                          name={r.business?.name} 
-                          zoom={14} 
-                        />
+                      <div className="flex items-center gap-1 font-body text-xs font-semibold bg-surface-container-lowest px-2 py-1 rounded text-on-surface-variant shadow-sm border border-outline-variant/10">
+                        <span className="material-symbols-outlined text-[14px]">group</span> {r.numberOfGuests}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Right — status + actions */}
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
-                        style={{ background: status.bg, color: status.color }}>
-                        {status.icon} {status.label}
+                  {/* Additional Context */}
+                  <div className="flex flex-wrap gap-2 pl-2">
+                     <span className={`font-label text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 bg-surface-container ${deposit.colorClass}`}>
+                      <ShieldCheckIcon className="h-3.5 w-3.5" />
+                      {deposit.label} {r.depositAmount ? `(PKR ${r.depositAmount.toLocaleString()})` : ''}
+                    </span>
+                    {r.riskScore != null && (
+                      <span className={`font-label text-[10px] font-bold px-2 py-1 rounded-full bg-surface-container ${r.riskScore >= 50 ? 'text-error' : 'text-secondary'}`}>
+                        Risk: {r.riskScore}%
                       </span>
+                    )}
+                  </div>
 
-                      {/* Risk Score */}
-                      {r.riskScore != null && (
-                        <span className="text-[10px] font-bold px-2 py-1 rounded-full"
-                          style={{
-                            background: r.riskScore >= 50 ? 'rgba(239,68,68,0.12)' : 'rgba(251,191,36,0.12)',
-                            color: r.riskScore >= 50 ? '#f87171' : '#fbbf24',
-                          }}>
-                          Risk: {r.riskScore}%
-                        </span>
-                      )}
+                  {/* Bottom: Actions */}
+                  <div className="flex items-center gap-3 mt-auto pt-2 pl-2">
+                     {/* For regular users, mostly view details or cancel */}
+                     {(r.status === 'CONFIRMED' || r.status === 'PENDING') ? (
+                       <button 
+                         disabled={cancelMutation.isLoading}
+                         onClick={() => {
+                           if (confirm(`Cancel your reservation at ${r.business?.name || 'this business'}?\n\nNote: Late cancellations may affect your reliability score.`)) {
+                             cancelMutation.mutate(r.id);
+                           }
+                         }}
+                         className="flex-1 bg-transparent border border-outline-variant/40 text-error font-body text-sm font-medium py-2.5 rounded-md hover:bg-error-container transition-colors disabled:opacity-50 text-center">
+                         {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Booking'}
+                       </button>
+                     ) : (
+                       <Link to={`/business/${r.businessId}`} className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-2.5 rounded-md hover:opacity-90 transition-opacity text-center block">
+                         Book Again
+                       </Link>
+                     )}
 
-                      {/* Deposit Status */}
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"
-                        style={{ background: 'rgba(255,255,255,0.04)', color: deposit.color }}>
-                        <ShieldCheckIcon className="h-3 w-3" />
-                        {deposit.label}
-                        {r.depositAmount ? ` · PKR ${r.depositAmount.toLocaleString()}` : ''}
-                      </span>
-
-                      {/* Crypto tx hash */}
-                      {r.cryptoDepositTxHash && (
-                        <div className="flex items-center gap-1 text-xs px-2 py-1 rounded-full"
-                          style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
-                          <LinkIcon className="h-3 w-3" />
-                          Tx: {r.cryptoDepositTxHash.slice(0, 6)}…{r.cryptoDepositTxHash.slice(-4)}
+                     {/* Business Owner Actions */}
+                     {isBusinessOwner && (r.status === 'CONFIRMED' || r.status === 'PENDING') && (
+                        <div className="flex gap-2">
+                           <button 
+                             disabled={completeMutation.isLoading}
+                             onClick={() => {
+                               if (confirm('Mark this reservation as completed?')) completeMutation.mutate(r.id);
+                             }}
+                             className="w-10 h-10 border border-outline-variant/30 text-tertiary rounded-md flex items-center justify-center hover:bg-tertiary-container transition-colors" title="Complete Booking">
+                             <CheckCircleIcon className="h-5 w-5" />
+                           </button>
+                           <button 
+                             disabled={noShowMutation.isLoading}
+                             onClick={() => {
+                               if (confirm('Mark as no-show? The deposit will be captured.')) noShowMutation.mutate(r.id);
+                             }}
+                             className="w-10 h-10 border border-outline-variant/30 text-error rounded-md flex items-center justify-center hover:bg-error-container transition-colors" title="Mark No-Show">
+                             <XCircleIcon className="h-5 w-5" />
+                           </button>
                         </div>
-                      )}
-
-                      {/* Action buttons */}
-                      <div className="flex gap-2 mt-1">
-                        {/* Cancel — customer can cancel CONFIRMED or PENDING */}
-                        {(r.status === 'CONFIRMED' || r.status === 'PENDING') && (
-                          <button
-                            disabled={cancelMutation.isLoading}
-                            onClick={() => {
-                              if (confirm(`Cancel your reservation at ${r.business?.name || 'this business'}?\n\nNote: Late cancellations may affect your reliability score.`)) {
-                                cancelMutation.mutate(r.id);
-                              }
-                            }}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                            style={{ color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                            {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Booking'}
-                          </button>
-                        )}
-
-                        {/* Business owner actions */}
-                        {isBusinessOwner && (r.status === 'CONFIRMED' || r.status === 'PENDING') && (
-                          <>
-                            <button
-                              disabled={completeMutation.isLoading}
-                              onClick={() => {
-                                if (confirm('Mark this reservation as completed?')) {
-                                  completeMutation.mutate(r.id);
-                                }
-                              }}
-                              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                              style={{ color: '#34d399', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}>
-                              ✓ Complete
-                            </button>
-                            <button
-                              disabled={noShowMutation.isLoading}
-                              onClick={() => {
-                                if (confirm('Mark as no-show? The deposit will be captured for business protection.')) {
-                                  noShowMutation.mutate(r.id);
-                                }
-                              }}
-                              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                              style={{ color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                              ✕ No-Show
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                     )}
+                     
+                     {/* More options button (placeholder) */}
+                     {!isBusinessOwner && (
+                       <button className="w-10 h-10 border border-outline-variant/30 text-primary rounded-md flex items-center justify-center hover:bg-surface-variant transition-colors">
+                         <EllipsisVerticalIcon className="h-5 w-5" />
+                       </button>
+                     )}
                   </div>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

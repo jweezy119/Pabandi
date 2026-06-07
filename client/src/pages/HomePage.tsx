@@ -1,670 +1,131 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
-import BusinessMap from '../components/BusinessMap';
-
-/* ── Animated Counter ── */
-function AnimatedCounter({ target, suffix = '', duration = 2000 }: { target: number; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true;
-        const start = performance.now();
-        const step = (now: number) => {
-          const progress = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          setCount(Math.floor(eased * target));
-          if (progress < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }
-    }, { threshold: 0.5 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [target, duration]);
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
-}
-
-/* ── Scroll Reveal ── */
-function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) { setVisible(true); observer.disconnect(); }
-    }, { threshold: 0.1 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={ref} style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'translateY(0)' : 'translateY(28px)',
-      transition: `opacity 0.6s ${delay}ms ease, transform 0.6s ${delay}ms ease`,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-/* ── 3D Tilt Feature Card ── */
-function FeatureCard({ icon, color, glow, title, desc, delay }: {
-  icon: React.ReactNode; color: string; glow: string; title: string; desc: string; delay: number;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.transform = `perspective(800px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg) scale(1.03)`;
-  };
-
-  const handleMouseLeave = () => {
-    if (ref.current) ref.current.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
-  };
-
-  return (
-    <ScrollReveal delay={delay}>
-      <div
-        ref={ref}
-        onMouseMove={handleMouseMove}
-        style={{
-          background: 'var(--color-surface)',
-          border: `1px solid ${glow.replace('0.15', '0.2')}`,
-          borderRadius: '1.25rem',
-          padding: '1.75rem',
-          transition: 'transform 0.15s ease, box-shadow 0.3s ease',
-          cursor: 'default',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${glow}`;
-          (e.currentTarget as HTMLDivElement).style.borderColor = color + '55';
-        }}
-        onMouseLeave={e => {
-          handleMouseLeave();
-          const target = e.currentTarget as HTMLDivElement;
-          target.style.boxShadow = '';
-          target.style.borderColor = glow.replace('0.15', '0.2');
-          target.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
-        }}
-      >
-        {/* Subtle shine sweep */}
-        <div style={{
-          position: 'absolute', top: 0, left: '-100%', width: '60%', height: '100%',
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          width: 52, height: 52, borderRadius: '14px',
-          background: glow.replace('0.15', '0.15'),
-          color,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '1.25rem',
-          boxShadow: `0 0 20px ${glow}`,
-          border: `1px solid ${color}30`,
-        }}>
-          {icon}
-        </div>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-          {title}
-        </h3>
-        <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--color-text-muted)' }}>{desc}</p>
-      </div>
-    </ScrollReveal>
-  );
-}
-
-const features = [
-  {
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-    color: '#0ea5e9', glow: 'rgba(0,229,255,0.15)',
-    title: 'Smart Booking', desc: 'Ultra-fast reservations optimised for high conversion. Book in seconds, from anywhere.',
-  },
-  {
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>,
-    color: '#00FFB0', glow: 'rgba(0,255,176,0.15)',
-    title: 'Revenue Protection', desc: 'ML-powered no-show prediction. Guaranteed reimbursement for missed bookings.',
-  },
-  {
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>,
-    color: '#FFB830', glow: 'rgba(255,184,48,0.15)',
-    title: 'Pulse Alerts', desc: 'Automated SMS & Email reminders keep both parties engaged. Zero drop-offs.',
-  },
-  {
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>,
-    color: '#00E5FF', glow: 'rgba(0,229,255,0.15)',
-    title: 'Bold Analytics', desc: 'Real-time insights into every booking, trend, and protected dollar.',
-  },
-];
-
-const stats = [
-  { value: 10000, suffix: '+', label: 'Active Bookings', color: '#0ea5e9' },
-  { value: 98, suffix: '%', label: 'Show-up Rate', color: '#00FFB0' },
-  { value: 500, suffix: '+', label: 'Businesses Listed', color: '#00E5FF' },
-  { value: 2, suffix: 'M+', label: 'Revenue Protected', color: '#FFB830' },
-];
 
 export default function HomePage() {
   return (
-    <div style={{ background: 'transparent', color: 'var(--color-text)' }}>
-
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden pt-28 pb-36 px-4" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
-
-        {/* Animated background orbs */}
-        <div className="animate-orb" style={{
-          position: 'absolute', width: 600, height: 600,
-          top: '-20%', left: '50%', transform: 'translateX(-50%)',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,229,255,0.18) 0%, transparent 70%)',
-          filter: 'blur(40px)', pointerEvents: 'none',
-        }} />
-        <div className="animate-float" style={{
-          position: 'absolute', width: 400, height: 400,
-          bottom: '10%', right: '-5%',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,229,255,0.1) 0%, transparent 70%)',
-          filter: 'blur(60px)', pointerEvents: 'none', animationDelay: '2s',
-        }} />
-        <div className="animate-float-2" style={{
-          position: 'absolute', width: 350, height: 350,
-          top: '30%', left: '-5%',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,255,176,0.08) 0%, transparent 70%)',
-          filter: 'blur(60px)', pointerEvents: 'none',
-        }} />
-
-        {/* Grid dots */}
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(rgba(0,229,255,0.12) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-          maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 100%)',
-        }} />
-
-        <div className="max-w-5xl mx-auto text-center relative z-10 w-full">
-
-          {/* AI Badge */}
-          <div className="animate-fade-up" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 18px', borderRadius: 9999, marginBottom: 32,
-            background: 'rgba(0,229,255,0.1)',
-            border: '1px solid rgba(0,229,255,0.3)',
-            color: '#a5b4fc', fontSize: 11, fontWeight: 700,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            boxShadow: '0 0 30px rgba(0,229,255,0.15)',
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0ea5e9', animation: 'pulseGlow 1.5s ease-in-out infinite', display: 'inline-block' }} />
-            AI-Powered · Smarter Bookings. Anywhere.
-          </div>
-
-          {/* Headline */}
-          <h1 className="animate-fade-up-delay-1" style={{
-            fontSize: 'clamp(2.8rem, 8vw, 5.5rem)',
-            fontWeight: 900,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05,
-            marginBottom: '1.5rem',
-            color: '#e8e8e8',
-            fontFamily: 'Space Grotesk, sans-serif',
-          }}>
-            Book Smarter.{' '}
-            <span className="gradient-text animate-gradient">
-              Show Up Every Time.
-            </span>
-          </h1>
-
-          <p className="animate-fade-up-delay-2" style={{
-            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
-            maxWidth: 640, margin: '0 auto 2.5rem',
-            lineHeight: 1.75,
-            color: 'var(--color-text-muted)',
-          }}>
-            No more missed appointments or lost revenue. Pabandi protects businesses from no-shows and rewards customers with{' '}
-            <span style={{ color: '#a5b4fc', fontWeight: 600 }}>Pabandi Reliability Tokens (PAB)</span>{' '}
-            — now live in{' '}
-            <span style={{ fontWeight: 700, color: '#e8e8e8' }}>🇺🇸 USA</span> &{' '}
-            <span style={{ fontWeight: 700, color: '#e8e8e8' }}>🇵🇰 Pakistan</span>.
+    <div className="max-w-5xl mx-auto px-6 md:px-8 space-y-12 mt-4 pb-28 md:pb-10">
+      
+      {/* Hero & Search Section */}
+      <section className="space-y-6">
+        <div className="max-w-xl">
+          <h2 className="font-headline text-[2.75rem] leading-[1.1] font-bold text-on-surface tracking-[-0.02em] mb-2">
+            Precision discovery.
+          </h2>
+          <p className="font-body text-on-surface-variant text-base">
+            Explore Karachi's finest corporate spaces, high-end salons, and wellness retreats.
           </p>
+        </div>
+        
+        {/* Search Bar */}
+        <div className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 group focus-within:bg-surface-container-lowest focus-within:outline focus-within:outline-1 focus-within:outline-outline-variant/20 transition-all duration-300">
+          <span className="material-symbols-outlined text-outline mr-3">search</span>
+          <input 
+            className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none" 
+            placeholder="Find places, categories, or services..." 
+            type="text"
+          />
+          <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-4 py-1.5 rounded text-sm font-body font-medium ml-2 shadow-[0_4px_12px_rgba(1,29,53,0.15)]">
+            Search
+          </button>
+        </div>
+        
+        {/* Category Filters */}
+        <div className="flex overflow-x-auto gap-3 no-scrollbar pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <button className="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap shadow-[0_8px_16px_rgba(1,29,53,0.08)]">All Categories</button>
+          <button className="bg-surface-container-low text-on-surface px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container-highest transition-colors">Fine Dining</button>
+          <button className="bg-surface-container-low text-on-surface px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container-highest transition-colors">Wellness</button>
+          <button className="bg-surface-container-low text-on-surface px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container-highest transition-colors">Corporate</button>
+          <button className="bg-surface-container-low text-on-surface px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap hover:bg-surface-container-highest transition-colors">Salons</button>
+        </div>
+      </section>
 
-          {/* CTAs */}
-          <div className="animate-fade-up-delay-3 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/register" id="hero-cta-customer" className="btn-primary text-base px-10 py-4" style={{ fontSize: '1rem' }}>
-              Get Started — It's Free
+      {/* Curated for You (Bento Grid) */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-end">
+          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">Curated for You</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          
+          {/* Large Feature Card */}
+          <Link to="/business/1" className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block">
+            <img alt="Interior of Kolachi" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBNDdUXhDwbCOZti_gVtWsFUYaFVdUTO2rRgBTNIRjOka9f8wgabig1yQzO-yO4Z7ORMUMhRu5Zk_AKI-V_qd_8syjD4LNxxt3G0WEDrCuFEohLBPnZzi8CvMKzMUcMnUt0jmD_KIBU-zyvJGALiDOkOf3RhA8EnY1Q1URUUJNojFdN0d-nGL0zflUQPHvVsLseM3p1N8Obfxz22LwWQXpUkQ4z16T4DELfbjBuQW_6-IKDA_bfrOymwag5-FKDkE_4mYaBJiFTd7b" />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-6 w-full">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Fine Dining</span>
+                <span className="flex items-center text-on-primary text-sm font-body"><span className="material-symbols-outlined text-[16px] mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>4.9</span>
+              </div>
+              <h4 className="font-headline text-2xl font-bold text-on-primary mb-1">Kolachi Signature</h4>
+              <p className="font-body text-primary-fixed-dim text-sm max-w-md">Experience culinary excellence by the Arabian Sea. Exclusive corporate booking slots available.</p>
+            </div>
+          </Link>
+          
+          {/* Secondary Cards Stack */}
+          <div className="md:col-span-4 flex flex-col gap-6">
+            {/* Small Card 1 */}
+            <Link to="/business/2" className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px]">
+              <img alt="Corporate Boardroom" className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOD0t1Cdj8w4hsh8xa0SsNNVWzBPs8S7OzZFqa1yx1CEbetRl37A3xdwP1NlEN4Mdk5y_5VmKZZMlY18goW8xX4KaosxLcWEQx9uX6zN-i63R6OUIbIBtEcD3YUskznYbJQrrb__OXf-wbVH2YMfU324n5zrHNjIeoeNQGDKw2U37MO2HW0E2yuFaPJoL4J2-HeHGEy7_blOQxEeIi-erIqnb0dbQVbCpDTlL3ZPEwxt6U1bi7O2KDdMZek9MgOhqxu4a3Dd2Vh4Ex" />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 p-5">
+                <span className="bg-secondary-container text-on-secondary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">Corporate</span>
+                <h4 className="font-headline text-lg font-bold text-on-primary">The Hive Connect</h4>
+              </div>
             </Link>
-            <Link to="/join" id="hero-cta-business" className="btn-secondary text-base px-10 py-4" style={{ fontSize: '1rem' }}>
-              List Your Business →
-            </Link>
-          </div>
-
-          {/* Social proof */}
-          <div className="animate-fade-up-delay-4 flex items-center justify-center gap-3 mt-10">
-            <div className="flex -space-x-2">
-              {['#0ea5e9', '#00E5FF', '#00FFB0', '#FFB830'].map((c, i) => (
-                <div key={i} style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: c, border: '2px solid #0a0a0a',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 800, color: '#fff',
-                  boxShadow: `0 0 10px ${c}88`,
-                }}>
-                  {['A', 'S', 'M', 'K'][i]}
-                </div>
-              ))}
+            {/* Small Card 2 */}
+            <div className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors">
+              <h4 className="font-headline text-lg font-bold text-on-surface mb-2">Upcoming in DHA</h4>
+              <p className="font-body text-on-surface-variant text-sm mb-4">Discover newly registered wellness centers with early-bird access.</p>
+              <button className="flex items-center text-primary font-body text-sm font-semibold group-hover:gap-2 transition-all">Explore <span className="material-symbols-outlined text-[18px] ml-1">arrow_forward</span></button>
             </div>
-            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-              Trusted by <strong style={{ color: '#e8e8e8' }}>500+ businesses</strong> across 🇺🇸 USA & 🇵🇰 Pakistan
-            </span>
           </div>
 
-          {/* Floating stat cards */}
-          <div className="hidden lg:flex gap-4 justify-center mt-14 flex-wrap">
-            {[
-              { label: 'No-Shows Prevented', value: '12,400+', icon: '🛡️', color: '#00FFB0' },
-              { label: 'AI Risk Assessments', value: '99,800+', icon: '🧠', color: '#0ea5e9' },
-              { label: 'Tokens Distributed', value: '3.2M PAB', icon: '⚡', color: '#FFB830' },
-            ].map((s, i) => (
-              <div key={i} className="animate-fade-up" style={{
-                animationDelay: `${0.5 + i * 0.1}s`,
-                background: 'rgba(28,28,28,0.85)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 16, padding: '12px 20px',
-                display: 'flex', alignItems: 'center', gap: 10,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              }}>
-                <span style={{ fontSize: 20 }}>{s.icon}</span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ── Stats ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(20,20,20,0.6)', backdropFilter: 'blur(8px)' }}>
-        <div className="max-w-5xl mx-auto px-4 py-14 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map(s => (
-            <div key={s.label} className="text-center">
-              <div style={{
-                fontSize: 'clamp(2rem, 5vw, 2.75rem)', fontWeight: 900,
-                fontFamily: 'Space Grotesk, sans-serif', color: s.color,
-                textShadow: `0 0 30px ${s.color}88`,
-                marginBottom: 6,
-              }}>
-                <AnimatedCounter target={s.value} suffix={s.suffix} />
+      {/* Top Rated (Asymmetric List) */}
+      <section className="space-y-6">
+        <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">Top Rated Institutions</h3>
+        <div className="space-y-4">
+          
+          {/* List Item 1 */}
+          <Link to="/business/3" className="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-6 shadow-[0_10px_20px_rgba(1,29,53,0.03)] group block hover:bg-surface-container-lowest/80 transition-colors">
+            <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-surface-container-highest">
+              <img alt="Spa Interior" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaUhimKKm58BFGLM9vGKNloRQmOtJ_oZ1vQTzq4tEMpR0tkUlwSfDVxiJ3ni_HquN9mHOhbdDFM3jSbHolrGh6MNKsvV2TWr5X0woy89YSFTxHUoCmvHumNJZHCDFM4Ctunysj4gNMj8L88Z5GGCK93pJ56TNfpXSgfGhsy_d2Mi8B5MTaW5SKowLJni-ziTcqkiZPkeZJrNikVrWv93E4T_h72457sjI8dx1DqwwHt5OvDPc5nok12vc4OblEksJC5uN4M4D9WE1n" />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start mb-1">
+                <h4 className="font-headline text-lg font-bold text-on-surface">Nirvana Wellness Spa</h4>
+                <span className="flex items-center text-on-surface font-body font-semibold text-sm bg-surface-container px-2 py-1 rounded">
+                  <span className="material-symbols-outlined text-[16px] text-[#f59e0b] mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>4.8
+                </span>
               </div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Features ── */}
-      <section className="max-w-6xl mx-auto px-4 py-28">
-        <ScrollReveal>
-          <div className="text-center mb-16">
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '4px 14px', borderRadius: 9999, marginBottom: 16,
-              background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.2)',
-              color: '#00E5FF', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em',
-            }}>
-              PLATFORM FEATURES
-            </div>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 16, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-              Everything You Need to Scale
-            </h2>
-            <p style={{ fontSize: '1rem', maxWidth: 520, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-              Our AI-first approach protects your business while delivering a premium booking experience for your customers.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {features.map((f, i) => (
-            <FeatureCard key={f.title} {...f} delay={i * 100} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── How It Works ── */}
-      <section className="max-w-5xl mx-auto px-4 pb-28">
-        <ScrollReveal>
-          <div className="text-center mb-14">
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-              How It Works
-            </h2>
-          </div>
-        </ScrollReveal>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { step: '01', title: 'Book Your Spot', desc: 'Find any business — salon, restaurant, clinic — and reserve in under 30 seconds.', color: '#0ea5e9' },
-            { step: '02', title: 'AI Monitors Risk', desc: 'Our ML engine analyses your history to assign a reliability score and predict no-shows.', color: '#00E5FF' },
-            { step: '03', title: 'Earn PAB Tokens', desc: 'Show up every time and earn Pabandi tokens redeemable for discounts and perks.', color: '#00FFB0' },
-          ].map((s, i) => (
-            <ScrollReveal key={s.step} delay={i * 120}>
-              <div style={{
-                textAlign: 'center', padding: '2rem',
-                background: 'var(--color-surface)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '1.25rem',
-                position: 'relative', overflow: 'hidden',
-              }}>
-                <div style={{
-                  position: 'absolute', top: -20, right: -20, fontSize: 80,
-                  fontWeight: 900, color: s.color, opacity: 0.04,
-                  fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1,
-                }}>{s.step}</div>
-                <div style={{
-                  width: 48, height: 48, borderRadius: '50%', margin: '0 auto 1.25rem',
-                  background: s.color + '15', border: `1px solid ${s.color}35`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 900, color: s.color,
-                }}>{s.step}</div>
-                <h3 style={{ fontWeight: 700, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>{s.title}</h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>{s.desc}</p>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Web3, AI & Location Engine ── */}
-      <section className="max-w-6xl mx-auto px-4 pb-28">
-        <ScrollReveal>
-          <div className="text-center mb-14">
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-              Built on the Future of Tech
-            </h2>
-            <p style={{ fontSize: '1rem', maxWidth: 640, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-              Experience next-gen reliability powered by blockchain, artificial intelligence, and real-time mapping.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
-          {/* Solana & Web3 */}
-          <ScrollReveal delay={0}>
-            <div style={{
-              background: 'var(--color-surface)', padding: '2rem', borderRadius: '1.25rem',
-              border: '1px solid rgba(0, 255, 176, 0.2)', height: '100%',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 12, marginBottom: '1.25rem',
-                background: 'rgba(0, 255, 176, 0.1)', border: '1px solid rgba(0, 255, 176, 0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00FFB0',
-              }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
-              </div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-                Solana Web3 Integration
-              </h3>
-              <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                Every successful booking and on-time appearance is permanently verified on the <strong>Solana blockchain</strong>. Users earn <strong>Pabandi Reliability Tokens (PAB)</strong> directly to their Phantom or Solflare wallets. Leverage lightning-fast consensus for instantaneous token rewards.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* AI Reliability Score */}
-          <ScrollReveal delay={100}>
-            <div style={{
-              background: 'var(--color-surface)', padding: '2rem', borderRadius: '1.25rem',
-              border: '1px solid rgba(0, 229, 255, 0.2)', height: '100%',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 12, marginBottom: '1.25rem',
-                background: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF',
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24 }}>psychology</span>
-              </div>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1rem', color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-                AI Reliability Score
-              </h3>
-              <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                Our proprietary Machine Learning models analyze historical booking data, geolocation patterns, and time-of-day variables to generate an <strong>AI Reliability Score</strong>. Businesses can auto-reject or require deposits from high-risk users, virtually eliminating no-shows.
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-
-        {/* Map Integration */}
-        <ScrollReveal delay={200}>
-          <div style={{
-            background: 'var(--color-surface)', padding: '1.5rem', borderRadius: '1.25rem',
-            border: '1px solid rgba(255, 184, 48, 0.2)',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-               <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: 'rgba(255, 184, 48, 0.1)', border: '1px solid rgba(255, 184, 48, 0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFB830',
-                }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 24 }}>explore</span>
-               </div>
-               <div>
-                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-                    Seamless Maps Integration
-                 </h3>
-                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Discover reliable businesses around you in real-time.</p>
-               </div>
-            </div>
-            <div style={{ height: '400px', width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}>
-              <BusinessMap latitude={40.7128} longitude={-74.0060} name="Pabandi Premium Locations" zoom={13} />
-            </div>
-          </div>
-        </ScrollReveal>
-      </section>
-
-      {/* ── Revolutionary Pricing Model ── */}
-      <section className="max-w-6xl mx-auto px-4 pb-28" id="pricing">
-        <ScrollReveal>
-          <div className="text-center mb-14">
-            <div className="animate-pulse-teal" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 18px', borderRadius: 9999, marginBottom: 24,
-              background: 'rgba(0,255,176,0.1)', border: '1px solid rgba(0,255,176,0.3)',
-              color: '#00FFB0', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase'
-            }}>
-              Customer Obsessed Pricing
-            </div>
-            <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 14, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>
-              We Only Win When You Win.
-            </h2>
-            <p style={{ fontSize: '1rem', maxWidth: 640, margin: '0 auto', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-              Say goodbye to expensive flat-rate SaaS subscriptions. Our transparent, performance-based pricing is designed to protect your revenue without draining it.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Base Tier */}
-          <ScrollReveal delay={0}>
-            <div className="pricing-card-glass">
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', marginBottom: '0.5rem', fontFamily: 'Space Grotesk, sans-serif' }}>Base CRM</h3>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '1.5rem' }}>
-                <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff' }}>Free</span>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Forever</span>
-              </div>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-                Everything you need to manage your business online with zero upfront costs.
-              </p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
-                {[
-                  'Unlimited Manual Bookings',
-                  'Basic Calendar UI',
-                  'Customer Database',
-                  'Standard Email Support'
-                ].map((feature, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#00FFB0" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register?role=business" className="btn-secondary w-full text-center">Start Free</Link>
-            </div>
-          </ScrollReveal>
-
-          {/* Performance Premium */}
-          <ScrollReveal delay={100}>
-            <div className="pricing-card-glass" style={{ border: '1px solid rgba(0,229,255,0.4)', background: 'linear-gradient(180deg, rgba(0,229,255,0.1) 0%, rgba(20,25,35,0.6) 100%)' }}>
-              <div style={{ position: 'absolute', top: -1, left: -1, right: -1, height: 4, background: 'linear-gradient(90deg, #0ea5e9, #14b8a6)' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0ea5e9', fontFamily: 'Space Grotesk, sans-serif' }}>Pay-per-Protection</h3>
-                <span className="pricing-badge-neon">Most Popular</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff' }}>2%</span>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>per secured deposit</span>
-              </div>
-              <p style={{ color: '#0ea5e9', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                + Hybrid Consumption micro-fee for AI calls
-              </p>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-                Outcome-Based Billing: We only charge a premium when our AI flags a high-risk booking and successfully secures an upfront deposit.
-              </p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
-                {[
-                  'AI Risk Assessments on every booking',
-                  'Dynamic Deposit Enforcement',
-                  'Automated SMS/Email Reminders',
-                  'Priority Support'
-                ].map((feature, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#0ea5e9" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register?role=business" className="btn-primary w-full text-center">Enable AI Protection</Link>
-            </div>
-          </ScrollReveal>
-
-          {/* Elite Web3 Tier */}
-          <ScrollReveal delay={200}>
-            <div className="pricing-card-glass">
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e8e8e8', marginBottom: '0.5rem', fontFamily: 'Space Grotesk, sans-serif' }}>Elite Web3</h3>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: '1.5rem' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFB830' }}>Token-Gated</span>
-              </div>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-                Hold <strong style={{ color: '#FFB830' }}>10,000 PAB</strong> tokens in your linked Solana wallet to unlock the ultimate premium analytics tier with zero platform fees.
-              </p>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', flex: 1 }}>
-                {[
-                  'Zero platform micro-fees',
-                  'Advanced Predictive Analytics',
-                  'Custom Webhook Integrations',
-                  'Dedicated Success Manager'
-                ].map((feature, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#e8e8e8', fontSize: '0.9rem' }}>
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#FFB830" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"></path></svg>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/register?role=business" className="btn-secondary w-full text-center" style={{ borderColor: 'rgba(255, 184, 48, 0.3)', color: '#FFB830', background: 'rgba(255,184,48,0.05)' }}>Connect Wallet</Link>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ── Dual CTA ── */}
-      <section className="max-w-6xl mx-auto px-4 pb-28">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Customer CTA */}
-          <ScrollReveal>
-            <div style={{
-              position: 'relative', overflow: 'hidden', borderRadius: '1.75rem', padding: '2.5rem',
-              background: 'linear-gradient(135deg, rgba(0,229,255,0.15) 0%, rgba(20,20,20,0.9) 100%)',
-              border: '1px solid rgba(0,229,255,0.25)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(0,229,255,0.05)',
-            }}>
-              <div style={{
-                position: 'absolute', width: 200, height: 200, top: -60, right: -60,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,255,0.3), transparent)',
-                filter: 'blur(40px)', pointerEvents: 'none',
-              }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, marginBottom: '1.5rem',
-                  background: 'rgba(0,229,255,0.15)', border: '1px solid rgba(0,229,255,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc',
-                }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                </div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>For Customers</h3>
-                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#9e9e9e', lineHeight: 1.7 }}>
-                  Book top salons, restaurants, and clinics near you. Earn PAB tokens every time you show up.
-                </p>
-                <Link to="/register" id="cta-customer-section" className="btn-primary text-sm inline-flex">
-                  Sign Up Free →
-                </Link>
+              <p className="font-body text-on-surface-variant text-sm mb-3">Clifton Block 4 • Holistic therapies & corporate decompression packages.</p>
+              <div className="flex gap-2">
+                <span className="font-label text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">Wellness</span>
+                <span className="font-label text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">$$$</span>
               </div>
             </div>
-          </ScrollReveal>
+          </Link>
 
-          {/* Business CTA */}
-          <ScrollReveal delay={100}>
-            <div style={{
-              position: 'relative', overflow: 'hidden', borderRadius: '1.75rem', padding: '2.5rem',
-              background: 'linear-gradient(135deg, rgba(0,255,176,0.1) 0%, rgba(20,20,20,0.9) 100%)',
-              border: '1px solid rgba(0,255,176,0.2)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(0,255,176,0.04)',
-            }}>
-              <div style={{
-                position: 'absolute', width: 200, height: 200, top: -60, right: -60,
-                borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,255,176,0.25), transparent)',
-                filter: 'blur(40px)', pointerEvents: 'none',
-              }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, marginBottom: '1.5rem',
-                  background: 'rgba(0,255,176,0.1)', border: '1px solid rgba(0,255,176,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00FFB0',
-                }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>
-                </div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 10, color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>For Businesses</h3>
-                <p style={{ fontSize: '0.9rem', marginBottom: '1.75rem', color: '#9e9e9e', lineHeight: 1.7 }}>
-                  Connect your Google Business profile. Accept bookings, eliminate no-shows, and grow your revenue with AI.
-                </p>
-                <Link to="/register?role=business" id="cta-business-section"
-                  className="text-sm font-semibold px-5 py-3 rounded-xl inline-flex items-center gap-2 transition-all"
-                  style={{
-                    background: 'rgba(0,255,176,0.1)',
-                    color: '#00FFB0',
-                    border: '1px solid rgba(0,255,176,0.3)',
-                  }}>
-                  List Your Business →
-                </Link>
+          {/* List Item 2 */}
+          <Link to="/business/4" className="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-6 shadow-[0_10px_20px_rgba(1,29,53,0.03)] group block hover:bg-surface-container-lowest/80 transition-colors">
+            <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-surface-container-highest">
+              <img alt="Salon Interior" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgA8k04K_B3yFvj6vGj40DIFlW-XhTq0K87_u6YQJ7Y1l6iT5mIu6z-1s1W5gA8T5K1J4F_4i1vD6bF3VqD9j60Ym15O2hW4X2zF5tXy6k8l3I_E1L8q0n5D1cM8y6xJ3T_9P-Kz8wV1D2l1i8O6s3mI8L1jQ7o3rG9l4N5B6X8T2mH3l9e1gM0D9x2oF9H4s6Z0W3X6tJ_E8c7Q5mR8X4vT9c6u3Z1M8q0vT7dF9J0bY3tW6e9V2c1H7w" />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start mb-1">
+                <h4 className="font-headline text-lg font-bold text-on-surface">Toni & Guy Signature</h4>
+                <span className="flex items-center text-on-surface font-body font-semibold text-sm bg-surface-container px-2 py-1 rounded">
+                  <span className="material-symbols-outlined text-[16px] text-[#f59e0b] mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>4.7
+                </span>
+              </div>
+              <p className="font-body text-on-surface-variant text-sm mb-3">DHA Phase 6 • Premium styling, color correction, and bridal services.</p>
+              <div className="flex gap-2">
+                <span className="font-label text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">Salons</span>
+                <span className="font-label text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded">$$</span>
               </div>
             </div>
-          </ScrollReveal>
+          </Link>
+          
         </div>
       </section>
 
