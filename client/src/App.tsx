@@ -12,6 +12,7 @@ import BookingPage from './pages/BookingPage';
 import WalletDashboard from './pages/WalletDashboard';
 import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
+import TechnologyPage from './pages/TechnologyPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -48,6 +49,7 @@ function App() {
         {/* Business partner landing page — public */}
         <Route path="join" element={<BusinessJoinPage />} />
         <Route path="business/join" element={<BusinessJoinPage />} />
+        <Route path="technology" element={<TechnologyPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />
 
