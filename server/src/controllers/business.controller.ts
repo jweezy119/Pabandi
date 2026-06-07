@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import axios from 'axios';
 import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
@@ -473,6 +474,138 @@ export const getBusinessAnalytics = async (
           businessCategory: business.category,
         },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBusinessReviews = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const business = await prisma.business.findUnique({
+      where: { id },
+      include: { googleReviews: true }
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+
+    // If business has a Google Place ID, fetch latest reviews from Google
+    if (business.googlePlaceId && apiKey) {
+      try {
+        const googleRes = await axios.get(
+          `https://maps.googleapis.com/maps/api/place/details/json`, {
+            params: {
+              place_id: business.googlePlaceId,
+              fields: 'reviews,rating,user_ratings_total',
+              key: apiKey,
+            }
+          }
+        );
+
+        if (googleRes.data?.result) {
+          const { reviews, rating, user_ratings_total } = googleRes.data.result;
+          
+          // Update business rating
+          if (rating || user_ratings_total) {
+            await prisma.business.update({
+              where: { id },
+              data: {
+                rating: rating || business.rating,
+                reviewCount: user_ratings_total || business.reviewCount,
+              }
+            });
+          }
+
+          // Sync reviews to database
+          if (reviews && Array.isArray(reviews)) {
+            for (const r of reviews) {
+              const reviewTime = new Date(r.time * 1000); // Google returns Unix timestamp
+              
+              await prisma.googleReview.upsert({
+                where: { googleReviewId: r.author_url || `${business.id}-${r.time}` },
+                update: {
+                  rating: r.rating,
+                  text: r.text,
+                },
+                create: {
+                  businessId: id,
+                  googleReviewId: r.author_url || `${business.id}-${r.time}`,
+                  authorName: r.author_name,
+                  rating: r.rating,
+                  text: r.text,
+                  time: reviewTime,
+                }
+              });
+            }
+          }
+        }
+      } catch (apiErr) {
+        console.error('Failed to sync Google Reviews:', apiErr);
+        // We do not fail the request, just fall back to DB reviews
+      }
+    }
+
+    // Fetch the updated reviews from DB
+    const updatedReviews = await prisma.googleReview.findMany({
+      where: { businessId: id },
+      orderBy: { time: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: { reviews: updatedReviews },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+};
+
+export const claimBusiness = async (req: Request | any, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../utils/database');
+    const { id } = req.params;
+
+    // Must be authenticated to claim
+    if (!req.user || !req.user.id) {
+      throw new CustomError('Unauthorized to claim business', 401);
+    }
+
+    const business = await prisma.business.findUnique({
+      where: { id },
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    if (business.isClaimed || business.ownerId) {
+      throw new CustomError('This business has already been claimed', 400);
+    }
+
+    // Instant Claim Logic
+    const updatedBusiness = await prisma.business.update({
+      where: { id },
+      data: {
+        ownerId: req.user.id,
+        isClaimed: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { business: updatedBusiness },
+      message: 'Business claimed successfully',
     });
   } catch (error) {
     next(error);

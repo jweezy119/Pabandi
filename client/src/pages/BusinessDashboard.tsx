@@ -150,10 +150,13 @@ export default function BusinessDashboard() {
   const noShowByDay = a.noShowByDay || [];
   const upcomingRisky = a.upcomingRiskyBookings || [];
 
-  const mockReviews = [
-    { id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Smooth Pabandi booking.', time: new Date().toISOString(), sentimentLabel: 'positive' },
-    { id: '2', authorName: 'Sara Ahmed', rating: 4, text: 'Smooth booking, polite staff. Highly recommend!', time: new Date(Date.now() - 100000).toISOString(), sentimentLabel: 'positive' },
-  ];
+  const { data: reviewsData } = useQuery(
+    ['business-reviews', businessId],
+    () => businessId && businessService.getBusinessReviews(businessId),
+    { enabled: !!businessId }
+  );
+
+  const realReviews = reviewsData?.data?.data?.reviews || [];
 
   const completeMutation = useMutation((id: string) => reservationService.completeReservation(id), {
     onSuccess: () => { qc.invalidateQueries('biz-reservations'); qc.invalidateQueries('dashboard-analytics'); qc.invalidateQueries('business-pab-rewards'); },
@@ -362,7 +365,7 @@ export default function BusinessDashboard() {
                 ★ {business?.rating?.toFixed(1) || '4.5'}
               </span>
             } />
-            <ReviewCarousel reviews={a.reviews || mockReviews} />
+            <ReviewCarousel reviews={realReviews} />
           </div>
         </div>
 

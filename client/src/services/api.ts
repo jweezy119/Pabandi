@@ -57,8 +57,13 @@ export const businessService = {
     apiClient.get(`/businesses/${id}/reservations`, { params }),
   getBusinessAnalytics: (id: string, params?: any) =>
     apiClient.get(`/businesses/${id}/analytics`, { params }),
+  getBusinessReviews: (id: string) => apiClient.get(`/businesses/${id}/reviews`),
   /** Get the logged-in owner's business */
   getMyBusiness: () => apiClient.get('/businesses/me'),
+  /** Get public businesses for the homepage */
+  getPublicBusinesses: (params?: any) => apiClient.get('/businesses', { params }),
+  /** Claim an unclaimed business */
+  claimBusiness: (id: string) => apiClient.post(`/businesses/${id}/claim`),
 };
 
 export const reservationService = {

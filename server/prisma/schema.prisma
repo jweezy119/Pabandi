@@ -94,7 +94,7 @@ model User {
 
 model Business {
   id              String          @id @default(cuid())
-  ownerId         String          @unique
+  ownerId         String?         @unique
   name            String
   description     String?
   category        BusinessCategory
@@ -126,6 +126,7 @@ model Business {
   isVerified      Boolean         @default(false)
   isActive        Boolean         @default(true)
   isPremium       Boolean         @default(false)
+  isClaimed       Boolean         @default(true)
   
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -137,7 +138,7 @@ model Business {
   reliabilityScore Float?          // Combined rating + booking completion rate
 
   // Relations
-  owner           User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner           User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   reservations    Reservation[]
   businessHours   BusinessHours[]
   tables          Table[]

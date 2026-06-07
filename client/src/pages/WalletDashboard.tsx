@@ -402,7 +402,8 @@ const WalletDashboard: React.FC = () => {
           {[
             { icon: '🛡️', title: 'Soulbound Identity', desc: 'Your reliability score minted as a non-transferable NFT — permanently yours on Solana.', colorClass: 'text-primary', bgClass: 'bg-primary-container' },
             { icon: '⚡', title: 'Smart Contract Escrow', desc: 'Deposits held trustlessly on-chain. Auto-release on completion. Zero chargebacks.', colorClass: 'text-secondary', bgClass: 'bg-secondary-container' },
-            { icon: '🗳️', title: 'DAO Governance', desc: 'Hold PAB = vote on platform rules. Deposit thresholds, risk parameters — community-owned.', colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', badge: 'Coming Soon' },
+            { icon: '🎫', title: 'VIP Memberships', desc: 'Mint exclusive NFTs from your favorite businesses for priority booking and discounts.', colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', badge: 'Live' },
+            { icon: '✅', title: 'Token-Gated Reviews', desc: 'Only wallets holding a cryptographic proof-of-attendance NFT can leave reviews.', colorClass: 'text-[#d97706]', bgClass: 'bg-[#fef3c7]', badge: 'Live' },
           ].map(s => (
             <div key={s.title} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 relative overflow-hidden shadow-sm">
               {s.badge && <span className={`absolute top-4 right-4 font-body text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${s.colorClass} ${s.bgClass}`}>{s.badge}</span>}

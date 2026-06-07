@@ -139,6 +139,39 @@ export default function BookingPage() {
           </div>
         )}
 
+        {/* Claim Business Banner */}
+        {business.isClaimed === false && (
+          <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3 mb-3 sm:mb-0">
+              <span className="material-symbols-outlined text-primary text-2xl">verified</span>
+              <div>
+                <h3 className="text-on-surface font-semibold">Is this your business?</h3>
+                <p className="text-on-surface-variant text-sm">Claim this listing to manage bookings, respond to reviews, and update details.</p>
+              </div>
+            </div>
+            <button 
+              onClick={async () => {
+                if (!isAuthenticated) {
+                  navigate('/login');
+                  return;
+                }
+                if (confirm('Are you sure you want to claim this business?')) {
+                  try {
+                    await businessService.claimBusiness(business.id);
+                    alert('Business claimed successfully!');
+                    navigate('/dashboard');
+                  } catch (e: any) {
+                    alert(e.response?.data?.message || 'Failed to claim business');
+                  }
+                }
+              }}
+              className="bg-primary text-on-primary px-6 py-2 rounded-full font-medium hover:bg-primary/90 transition-colors shrink-0"
+            >
+              Claim Now
+            </button>
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="relative w-full h-[353px] md:h-[442px] rounded-xl overflow-hidden mb-8 md:mb-16 shadow-sm">
           <img 
