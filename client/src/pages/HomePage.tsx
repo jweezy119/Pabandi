@@ -40,11 +40,11 @@ export default function HomePage() {
       {/* Hero & Search Section */}
       <section className="space-y-6">
         <div className="max-w-xl">
-          <h2 className="font-headline text-[2.75rem] leading-[1.1] font-bold text-on-surface tracking-[-0.02em] mb-2">
-            Precision discovery.
+          <h2 className="font-headline text-[2.75rem] md:text-[3.5rem] leading-[1.05] font-bold text-on-surface tracking-[-0.02em] mb-3">
+            Web3-Powered Precision Booking.
           </h2>
-          <p className="font-body text-on-surface-variant text-base">
-            Explore Karachi's finest corporate spaces, high-end salons, and wellness retreats.
+          <p className="font-body text-on-surface-variant text-lg">
+            Explore Karachi's finest corporate spaces, high-end salons, and wellness retreats with AI-backed reservations.
           </p>
         </div>
         
@@ -167,6 +167,35 @@ export default function HomePage() {
 
           </div>
         )}
+      </section>
+
+      {/* Technology Promo Banner */}
+      <section className="bg-primary/5 rounded-3xl p-8 md:p-12 border border-primary/10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-sm">
+        <div className="max-w-xl space-y-4">
+          <div className="flex items-center gap-2 text-primary font-label text-sm font-bold uppercase tracking-wider">
+            <span className="material-symbols-outlined text-[18px]">memory</span>
+            Breakthrough Technology
+          </div>
+          <h3 className="font-headline text-3xl font-bold text-on-surface">Experience No-Show Proof Bookings</h3>
+          <p className="font-body text-on-surface-variant text-lg">
+            Our proprietary AI risk engine evaluates reliability in real-time, building your personalized Pabandi Score. Book at top-tier venues with zero deposit when you maintain a high score, all powered by the Solana blockchain.
+          </p>
+          <div className="pt-2">
+            <Link to="/technology" className="text-primary font-semibold hover:underline flex items-center gap-1">
+              Learn how it works <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </Link>
+          </div>
+        </div>
+        <div className="w-full md:w-auto flex-shrink-0 relative">
+          <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full"></div>
+          <div className="relative bg-surface-container-highest p-6 rounded-2xl shadow-lg border border-outline-variant/20 flex flex-col items-center">
+            <div className="text-sm font-label uppercase tracking-widest text-on-surface-variant mb-2">Your Pabandi Score</div>
+            <div className="text-5xl font-headline font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]">
+              850
+            </div>
+            <div className="mt-2 text-xs font-bold bg-[#14F195]/20 text-[#10b981] px-2 py-1 rounded-md uppercase">Elite Status</div>
+          </div>
+        </div>
       </section>
 
       {/* Top Rated Institutions */}

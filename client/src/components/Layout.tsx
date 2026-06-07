@@ -61,6 +61,8 @@ export default function Layout() {
           {/* Desktop Navigation Cluster (Visible only on md+) */}
           <div className="hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 h-[72px] items-center gap-8">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
+            <DesktopNavLink to="/technology" current={location.pathname === '/technology'}>Technology</DesktopNavLink>
+            <DesktopNavLink to="/join" current={location.pathname === '/join'}>For Businesses</DesktopNavLink>
             {isAuthenticated && (
               <>
                 <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
@@ -100,6 +102,8 @@ export default function Layout() {
           <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
             <span>© 2026 Pabandi. AI-powered bookings.</span>
             <div className="flex gap-4">
+              <Link to="/technology" className="hover:text-primary">Technology</Link>
+              <Link to="/join" className="hover:text-primary">For Businesses</Link>
               <a href="#" className="hover:text-primary">Privacy</a>
               <a href="#" className="hover:text-primary">Terms</a>
             </div>

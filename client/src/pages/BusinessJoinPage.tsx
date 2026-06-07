@@ -12,46 +12,46 @@ const CheckIcon = () => (
 // ── Data ───────────────────────────────────────────────────────────────
 const BENEFITS = [
   {
-    icon: '🛡️',
+    icon: '🧠',
     color: '#3b82f6',
     glow: 'rgba(59,130,246,0.15)',
-    title: 'No-Show Protection',
-    desc: 'AI predicts risky bookings before they happen. Get reimbursed if a customer ghosts — automatically.',
+    title: 'AI No-Show Prediction',
+    desc: 'Our proprietary machine learning engine analyzes behavioral signals to predict the probability of a no-show before it happens.',
+  },
+  {
+    icon: '⛓️',
+    color: '#14F195',
+    glow: 'rgba(20,241,149,0.15)',
+    title: 'Trustless Solana Escrow',
+    desc: 'Deposits are held securely in Solana smart contracts and instantly released to you if a customer no-shows — zero chargebacks.',
+  },
+  {
+    icon: '🪙',
+    color: '#9945FF',
+    glow: 'rgba(153,69,255,0.15)',
+    title: 'Earn $PAB Crypto Rewards',
+    desc: 'You earn $PAB tokens for every booking you honor. Accumulate tokens to unlock priority placement and governance rights.',
+  },
+  {
+    icon: '🛡️',
+    color: '#10b981',
+    glow: 'rgba(16,185,129,0.15)',
+    title: 'Pabandi Score Protection',
+    desc: 'Customers are scored by our AI based on their reliability. Bad actors are automatically blocked from making high-risk bookings.',
   },
   {
     icon: '📊',
-    color: '#10b981',
-    glow: 'rgba(16,185,129,0.15)',
-    title: 'Real-Time Analytics',
-    desc: 'See your peak hours, popular tables, and monthly revenue trends in a clean dashboard.',
-  },
-  {
-    icon: '📲',
-    color: '#f59e0b',
-    glow: 'rgba(245,158,11,0.15)',
-    title: 'Automated Reminders',
-    desc: 'Pabandi sends SMS & WhatsApp reminders to customers 24 hours before — so they actually show up.',
-  },
-  {
-    icon: '🗺️',
-    color: '#8b5cf6',
-    glow: 'rgba(139,92,246,0.15)',
-    title: 'Google Maps Integration',
-    desc: 'Customers find you on Google Maps and book directly through Pabandi — zero friction.',
-  },
-  {
-    icon: '💳',
     color: '#ec4899',
     glow: 'rgba(236,72,153,0.15)',
-    title: 'Flexible Payments',
-    desc: 'Accept deposits via Stripe, crypto (BNB/SOL), or cash. You choose, we handle the tech.',
+    title: 'Real-Time Analytics',
+    desc: 'Track your protected revenue, no-show reduction rates, and crypto earnings through your dedicated business dashboard.',
   },
   {
     icon: '⭐',
     color: '#f97316',
     glow: 'rgba(249,115,22,0.15)',
-    title: 'Verified Reviews',
-    desc: 'Only customers who actually visited can leave a review. Your rating stays honest and trustworthy.',
+    title: 'Verified Google Reviews',
+    desc: 'Only customers who actually checked in via Pabandi can leave a review, protecting your reputation from fake bots.',
   },
 ];
 
@@ -187,17 +187,15 @@ export default function BusinessJoinPage() {
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-[#e8e8e8]" >
-            Grow Your Business.<br />
-            <span style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Eliminate No-Shows.
+            Protect Your Revenue.<br />
+            <span style={{ background: 'linear-gradient(135deg,#0ea5e9, #14F195)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Eliminate No-Shows with AI.
             </span>
           </h1>
 
           <p className="text-lg max-w-2xl mx-auto mb-10" style={{ lineHeight: 1.7 }}>
-            Pabandi is the AI-powered reservation platform now launching across
-            <strong className="text-[#e8e8e8]"> the USA &amp; Pakistan</strong>. Join as a Founding Partner and get
-            <strong className="text-[#e8e8e8]"> 6 months completely free </strong>
-            — no credit card, no contracts.
+            Pabandi is the Web3-powered reservation platform that uses predictive AI and Solana smart contracts to guarantee your bookings.
+            <strong className="text-[#14F195]"> Zero Chargebacks. 100% Protection. </strong>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
@@ -276,7 +274,7 @@ export default function BusinessJoinPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-bold uppercase tracking-widest mb-3 text-[#9e9e9e]" >Platform Features</p>
-            <h2 className="text-4xl font-black text-[#e8e8e8]" >Built for US Businesses</h2>
+            <h2 className="text-4xl font-black text-[#e8e8e8]" >Next-Gen Web3 Infrastructure</h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
