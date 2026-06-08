@@ -79,3 +79,7 @@ models/
 tmp/
 temp/
 *.tmp
+
+# Firebase cache/config
+.firebase/
+

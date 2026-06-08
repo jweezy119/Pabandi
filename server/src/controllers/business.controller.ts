@@ -113,6 +113,9 @@ export const getBusiness = async (
           where: { isActive: true },
         },
         settings: true,
+        googleReviews: {
+          orderBy: { time: 'desc' }
+        },
       },
     });
 
@@ -121,10 +124,8 @@ export const getBusiness = async (
     }
 
     // Check if user has access
-    if (
-      req.user!.role !== 'ADMIN' &&
-      business.ownerId !== req.user!.id
-    ) {
+    const hasFullAccess = req.user && (req.user.role === 'ADMIN' || business.ownerId === req.user.id);
+    if (!hasFullAccess) {
       // Public view (limited data)
       const publicBusiness = {
         id: business.id,
@@ -139,6 +140,13 @@ export const getBusiness = async (
         logoUrl: business.logoUrl,
         coverImageUrl: business.coverImageUrl,
         businessHours: business.businessHours,
+        rating: business.rating,
+        reviewCount: business.reviewCount,
+        reliabilityScore: business.reliabilityScore,
+        isClaimed: business.isClaimed,
+        ownerId: business.ownerId,
+        googlePlaceId: business.googlePlaceId,
+        googleReviews: business.googleReviews,
       };
 
       return res.json({

@@ -51,18 +51,18 @@ export default function BusinessRegister() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="card">
-        <h2 className="text-2xl font-bold mb-6">Register Your Business</h2>
+      <div className="card-surface">
+        <h2 className="text-2xl font-bold mb-6 text-on-surface font-headline">Register Your Business</h2>
         
         {error && (
-          <div className="bg-[#ef444415] border border-[#ef444433] text-[#ef4444] px-4 py-3 rounded-lg mb-6">
+          <div className="bg-error-container text-on-error-container border border-error/20 px-4 py-3 rounded-lg mb-6 text-sm font-medium">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-on-surface-variant mb-1">
               Business Name *
             </label>
             <input
@@ -78,7 +78,7 @@ export default function BusinessRegister() {
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="category" className="block text-sm font-medium text-on-surface-variant mb-1">
               Category *
             </label>
             <select
@@ -100,7 +100,7 @@ export default function BusinessRegister() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="description" className="block text-sm font-medium text-on-surface-variant mb-1">
               Description
             </label>
             <textarea
@@ -115,7 +115,7 @@ export default function BusinessRegister() {
           </div>
 
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="address" className="block text-sm font-medium text-on-surface-variant mb-1">
               Address *
             </label>
             <input
@@ -132,7 +132,7 @@ export default function BusinessRegister() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="city" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+              <label htmlFor="city" className="block text-sm font-medium text-on-surface-variant mb-1">
                 City *
               </label>
               <input
@@ -146,7 +146,7 @@ export default function BusinessRegister() {
               />
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-on-surface-variant mb-1">
                 Phone *
               </label>
               <input
@@ -163,7 +163,7 @@ export default function BusinessRegister() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-1">
               Email *
             </label>
             <input
@@ -179,7 +179,7 @@ export default function BusinessRegister() {
           </div>
 
           <div>
-            <label htmlFor="website" className="block text-sm font-medium text-[#9e9e9e] mb-1">
+            <label htmlFor="website" className="block text-sm font-medium text-on-surface-variant mb-1">
               Website (optional)
             </label>
             <input

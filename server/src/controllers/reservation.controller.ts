@@ -10,6 +10,7 @@ import { reliabilityService } from '../services/reliability.service';
 import { paymentRouter } from '../services/payment.router';
 import { webhookService } from '../services/webhook.service';
 import { notificationService } from '../services/notification.service';
+import { conciergeService } from '../services/conciergeService';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -63,7 +64,7 @@ export const createReservation = async (
       },
     });
 
-    if (!businessHour || businessHour.isClosed) {
+    if (business.isClaimed && (!businessHour || businessHour.isClosed)) {
       throw new CustomError('Business is closed on this day', 400);
     }
 
@@ -117,6 +118,10 @@ export const createReservation = async (
       }
     }
 
+    // Determine concierge status and initial reservation status
+    const isConcierge = !business.isClaimed;
+    const status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
+
     // Create reservation
     const reservation = await prisma.reservation.create({
       data: {
@@ -126,7 +131,8 @@ export const createReservation = async (
         reservationDate: dateTime.toDate(),
         reservationTime,
         numberOfGuests,
-        status: settings?.autoConfirm ? 'CONFIRMED' : 'PENDING',
+        status,
+        isConcierge,
         customerName,
         customerPhone,
         customerEmail: customerEmail || req.user!.email,
@@ -176,8 +182,12 @@ export const createReservation = async (
       },
     });
 
-    // Send confirmation notification
-    await notificationService.sendConfirmation(reservation.id);
+    // Send confirmation notification if not concierge (concierge sends its own once confirmed)
+    if (!isConcierge) {
+      await notificationService.sendConfirmation(reservation.id);
+    } else {
+      conciergeService.processReservation(reservation.id);
+    }
 
     res.status(201).json({
       success: true,

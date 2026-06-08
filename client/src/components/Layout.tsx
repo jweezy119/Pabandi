@@ -102,10 +102,11 @@ export default function Layout() {
           <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
             <span>© 2026 Pabandi. AI-powered bookings.</span>
             <div className="flex gap-4">
-              <Link to="/technology" className="hover:text-primary">Technology</Link>
-              <Link to="/join" className="hover:text-primary">For Businesses</Link>
-              <a href="#" className="hover:text-primary">Privacy</a>
-              <a href="#" className="hover:text-primary">Terms</a>
+              <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
+              <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
+              <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact Us</Link>
+              <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+              <a href="#" className="hover:text-primary transition-colors">Terms</a>
             </div>
           </div>
         </footer>
