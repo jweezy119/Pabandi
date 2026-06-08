@@ -86,35 +86,35 @@ export default function TechnologyPage() {
       </section>
 
       {/* The Web3 Crypto Ecosystem */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center flex-row-reverse">
-        <div className="order-2 md:order-1 bg-[#14F195]/5 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-[#14F195]/20">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+        <div className="order-2 md:order-1 bg-[#031f38] rounded-3xl p-8 relative overflow-hidden shadow-lg border border-primary-container">
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#9945FF]/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
           <div className="relative space-y-6">
-            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+            <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm">
               <div className="w-12 h-12 rounded-full bg-[#14F195]/20 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[#14F195]">account_balance_wallet</span>
               </div>
               <div>
-                <div className="text-white font-bold">Solana Trustless Escrow</div>
-                <div className="text-slate-400 text-sm">Smart contracts handle deposits</div>
+                <div className="text-white font-bold font-headline">Solana Trustless Escrow</div>
+                <div className="text-slate-300 text-sm font-body">Smart contracts handle deposits</div>
               </div>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm ml-8">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary">token</span>
+            <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm ml-8">
+              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-white">token</span>
               </div>
               <div>
-                <div className="text-white font-bold">$PAB Token Rewards</div>
-                <div className="text-slate-400 text-sm">Earned for reliable behavior</div>
+                <div className="text-white font-bold font-headline">$PAB Token Rewards</div>
+                <div className="text-slate-300 text-sm font-body">Earned for reliable behavior</div>
               </div>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm ml-16">
+            <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm ml-16">
               <div className="w-12 h-12 rounded-full bg-[#9945FF]/20 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[#9945FF]">storefront</span>
               </div>
               <div>
-                <div className="text-white font-bold">Instant Payouts</div>
-                <div className="text-slate-400 text-sm">Settled in milliseconds</div>
+                <div className="text-white font-bold font-headline">Instant Payouts</div>
+                <div className="text-slate-300 text-sm font-body">Settled in milliseconds</div>
               </div>
             </div>
           </div>

@@ -129,7 +129,19 @@ export default function BusinessJoinPage() {
 
   if (submitted) {
     return (
-      <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }} className="flex items-center justify-center p-6">
+      <div 
+        style={{ 
+          background: '#080e17', 
+          color: '#edf1f5',
+          ['--color-bg' as any]: '#080e17',
+          ['--color-text' as any]: '#edf1f5',
+          ['--color-text-muted' as any]: '#9e9e9e',
+          ['--color-surface' as any]: '#0f172a',
+          ['--color-surface-raised' as any]: '#1e293b',
+          minHeight: '100vh' 
+        }} 
+        className="flex items-center justify-center p-6"
+      >
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">🎉</div>
           <h2 className="text-3xl font-black mb-3 text-[#e8e8e8]" >You're In!</h2>
@@ -154,7 +166,15 @@ export default function BusinessJoinPage() {
   }
 
   return (
-    <div style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+    <div style={{ 
+      background: '#080e17', 
+      color: '#edf1f5',
+      ['--color-bg' as any]: '#080e17',
+      ['--color-text' as any]: '#edf1f5',
+      ['--color-text-muted' as any]: '#9e9e9e',
+      ['--color-surface' as any]: '#0f172a',
+      ['--color-surface-raised' as any]: '#1e293b'
+    }}>
 
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b" style={{ background: 'rgba(8,14,23,0.9)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -266,6 +286,57 @@ export default function BusinessJoinPage() {
               Reserve My Spot
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* ── Deep Dive: Why Partner With Us ──────────────────────── */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto space-y-20">
+          
+          {/* Financial Impact */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#ec4899' }}>The Financial Impact</p>
+              <h2 className="text-3xl font-black mb-4 text-[#e8e8e8] leading-tight">Stop Losing 20% of Your Revenue to No-Shows</h2>
+              <p className="text-base text-[#757575] leading-relaxed mb-6">
+                The average service business loses thousands of dollars a month to last-minute cancellations and ghosting. Our AI engine instantly evaluates the risk of every booking. If a customer is high-risk, we automatically lock a deposit in a Solana smart contract. If they don't show, you get paid instantly. Zero chargebacks, guaranteed.
+              </p>
+            </div>
+            <div className="rounded-2xl p-8 border border-[rgba(236,72,153,0.2)] bg-[rgba(236,72,153,0.05)] relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-500/20 blur-3xl rounded-full"></div>
+              <h3 className="font-bold text-lg text-white mb-4 relative z-10">Average Monthly Recovery</h3>
+              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 relative z-10 mb-2">
+                +$4,200
+              </div>
+              <p className="text-sm text-pink-200/80 relative z-10">Based on 15 saved bookings per month.</p>
+            </div>
+          </div>
+
+          {/* Marketing Impact */}
+          <div className="grid md:grid-cols-2 gap-12 items-center flex-row-reverse">
+            <div className="order-2 md:order-1 rounded-2xl p-8 border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.05)] relative overflow-hidden">
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full"></div>
+              <h3 className="font-bold text-lg text-white mb-4 relative z-10">High-Intent Traffic</h3>
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-sm text-emerald-100/70">Average Pabandi Score</span>
+                  <span className="text-emerald-400 font-bold">810 (Elite)</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-sm text-emerald-100/70">Show-up Rate</span>
+                  <span className="text-emerald-400 font-bold">99.2%</span>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#10b981' }}>The Marketing Funnel</p>
+              <h2 className="text-3xl font-black mb-4 text-[#e8e8e8] leading-tight">Attract the Best Customers in Your City</h2>
+              <p className="text-base text-[#757575] leading-relaxed mb-6">
+                Pabandi isn't just a booking tool; it's a vetted network. By partnering with us, your business is placed in front of users who have proven their reliability through their high Pabandi Scores. Better customers mean higher spend per ticket and zero wasted time.
+              </p>
+            </div>
+          </div>
+
         </div>
       </section>
 

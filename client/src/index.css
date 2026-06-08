@@ -33,4 +33,46 @@
   .card-surface {
     @apply bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(1,29,53,0.02)] p-6;
   }
+
+  .auth-panel {
+    @apply bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20;
+  }
+
+  .input-field {
+    @apply w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm transition-all focus:bg-surface-container-lowest;
+  }
+
+  .tile-hover {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tile-hover:hover {
+    transform: translateY(-4px) scale(1.005);
+    @apply shadow-[0_20px_40px_rgba(1,29,53,0.08)] border-primary/20;
+  }
+
+  /* Interactive glowing gradient border for Web3 elements */
+  .glowing-border {
+    position: relative;
+  }
+
+  .glowing-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(135deg, rgba(20,241,149,0.3) 0%, rgba(56,189,248,0.3) 50%, rgba(153,69,255,0.3) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0.3;
+    transition: opacity 0.3s ease, padding 0.3s ease;
+  }
+
+  .glowing-border:hover::after {
+    opacity: 1;
+    padding: 2px;
+  }
 }

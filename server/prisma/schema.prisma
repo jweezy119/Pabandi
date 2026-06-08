@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,6 +6,274 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String         @id @default(cuid())
+  email             String         @unique
+  phone             String?        @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  role              UserRole       @default(CUSTOMER)
+  isEmailVerified   Boolean        @default(false)
+  isPhoneVerified   Boolean        @default(false)
+  reliabilityScore  Float          @default(100)
+  fcmToken          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  googleId          String?        @unique
+  facebookId        String?        @unique
+  resetToken        String?
+  resetTokenExpires DateTime?
+  business          Business?
+  cryptoRewards     CryptoReward[]
+  payments          Payment[]
+  reservations      Reservation[]
+  wallet            Wallet?
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Business {
+  id                 String            @id @default(cuid())
+  ownerId            String?           @unique
+  name               String
+  description        String?
+  category           BusinessCategory
+  address            String
+  city               String            @default("")
+  country            String            @default("United States")
+  postalCode         String?
+  phone              String
+  email              String
+  website            String?
+  externalBookingUrl String?
+  logoUrl            String?
+  coverImageUrl      String?
+  latitude           Float?
+  longitude          Float?
+  timezone           String            @default("America/New_York")
+  currency           String            @default("USD")
+  bookingAdvanceDays Int               @default(30)
+  cancellationHours  Int               @default(24)
+  requireDeposit     Boolean           @default(false)
+  depositAmount      Float?
+  depositPercentage  Float?
+  isVerified         Boolean           @default(false)
+  isActive           Boolean           @default(true)
+  isPremium          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  googlePlaceId      String?
+  rating             Float?
+  reviewCount        Int               @default(0)
+  reliabilityScore   Float?
+  state              String            @default("")
+  isClaimed          Boolean           @default(true)
+  owner              User?             @relation(fields: [ownerId], references: [id])
+  businessHours      BusinessHours[]
+  settings           BusinessSettings?
+  googleReviews      GoogleReview[]
+  reservations       Reservation[]
+  tables             Table[]
+  webhookEndpoints   WebhookEndpoint[]
+
+  @@index([ownerId])
+  @@index([city])
+  @@index([category])
+}
+
+model BusinessHours {
+  id         String   @id @default(cuid())
+  businessId String
+  dayOfWeek  Int
+  openTime   String
+  closeTime  String
+  isClosed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, dayOfWeek])
+  @@index([businessId])
+}
+
+model Table {
+  id           String        @id @default(cuid())
+  businessId   String
+  name         String
+  capacity     Int
+  isActive     Boolean       @default(true)
+  metadata     Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model Reservation {
+  id                  String            @id @default(cuid())
+  businessId          String
+  customerId          String
+  tableId             String?
+  reservationDate     DateTime
+  reservationTime     String
+  numberOfGuests      Int
+  status              ReservationStatus @default(PENDING)
+  customerName        String
+  customerPhone       String
+  customerEmail       String?
+  specialRequests     String?
+  noShowProbability   Float?
+  riskScore           Int?
+  aiFactors           Json?
+  reminderSentAt      DateTime?
+  confirmationSentAt  DateTime?
+  depositRequired     Boolean           @default(false)
+  depositAmount       Float?
+  depositPaid         Boolean           @default(false)
+  source              String?
+  notes               String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  cancelledAt         DateTime?
+  cryptoDepositTxHash String?
+  rewardEarned        Float?            @default(0)
+  googleReviewId      String?
+  depositStatus       DepositStatus     @default(NOT_REQUIRED)
+  isConcierge         Boolean           @default(false)
+  conciergeDetails    Json?
+  cryptoRewards       CryptoReward[]
+  payments            Payment[]
+  business            Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer            User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  table               Table?            @relation(fields: [tableId], references: [id])
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([reservationDate])
+  @@index([status])
+  @@index([businessId, reservationDate])
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  reservationId   String?
+  userId          String
+  amount          Float
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  paymentMethod   String
+  transactionId   String?       @unique
+  gatewayResponse Json?
+  refunded        Boolean       @default(false)
+  refundedAt      DateTime?
+  refundAmount    Float?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  reservation     Reservation?  @relation(fields: [reservationId], references: [id])
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([userId])
+  @@index([transactionId])
+  @@index([status])
+}
+
+model BusinessSettings {
+  id                    String   @id @default(cuid())
+  businessId            String   @unique
+  autoConfirm           Boolean  @default(true)
+  requirePhone          Boolean  @default(true)
+  requireEmail          Boolean  @default(false)
+  allowSameDayBooking   Boolean  @default(true)
+  maxAdvanceBookingDays Int      @default(30)
+  minBookingNoticeHours Int      @default(2)
+  aiEnabled             Boolean  @default(true)
+  aiRiskThreshold       Int      @default(70)
+  autoRequireDeposit    Boolean  @default(false)
+  sendEmailReminders    Boolean  @default(true)
+  reminderHoursBefore   Int      @default(24)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  sendPushReminders     Boolean  @default(true)
+  business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model NotificationLog {
+  id            String    @id @default(cuid())
+  reservationId String
+  type          String
+  recipient     String
+  subject       String?
+  message       String
+  status        String
+  errorMessage  String?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([reservationId])
+  @@index([status])
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  address   String?
+  balance   Float    @default(0)
+  currency  String   @default("PAB")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CryptoReward {
+  id            String       @id @default(cuid())
+  userId        String
+  reservationId String?
+  amount        Float
+  type          String
+  status        String       @default("CLAIMABLE")
+  txHash        String?
+  createdAt     DateTime     @default(now())
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GoogleReview {
+  id             String   @id @default(cuid())
+  businessId     String
+  googleReviewId String   @unique
+  authorName     String
+  rating         Int
+  text           String?
+  time           DateTime
+  sentimentLabel String?
+  processed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model WebhookEndpoint {
+  id               String   @id @default(cuid())
+  businessId       String
+  targetUrl        String
+  subscribedEvents String[]
+  isActive         Boolean  @default(true)
+  signingSecret    String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
 }
 
 enum UserRole {
@@ -25,6 +290,8 @@ enum ReservationStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+  PENDING_CONCIERGE
+  FAILED_CONCIERGE
 }
 
 enum DepositStatus {
@@ -45,11 +312,11 @@ enum PaymentStatus {
 
 enum PaymentMethod {
   CREDIT_CARD
-  STRIPE
   JAZZCASH
   EASYPAISA
   CASH
   CRYPTO
+  STRIPE
 }
 
 enum BusinessCategory {
@@ -60,310 +327,4 @@ enum BusinessCategory {
   FITNESS_CENTER
   EVENT_VENUE
   OTHER
-}
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  phone         String?  @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  role          UserRole @default(CUSTOMER)
-  isEmailVerified Boolean @default(false)
-  isPhoneVerified Boolean @default(false)
-  googleId      String?  @unique  // Google OAuth ID
-  facebookId    String?  @unique  // Facebook OAuth ID
-  resetToken    String?
-  resetTokenExpires DateTime?
-  reliabilityScore Float  @default(100) // Reputation score (0-100)
-  fcmToken      String? // Firebase Cloud Messaging push token
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  business      Business?
-  wallet        Wallet?
-  reservations  Reservation[]
-  payments      Payment[]
-  cryptoRewards CryptoReward[]
-
-  @@index([email])
-  @@index([phone])
-}
-
-model Business {
-  id              String          @id @default(cuid())
-  ownerId         String?         @unique
-  name            String
-  description     String?
-  category        BusinessCategory
-  address         String
-  city            String          @default("")
-  state           String          @default("")
-  country         String          @default("United States")
-  postalCode      String?
-  phone           String
-  email           String
-  website         String?
-  logoUrl         String?
-  coverImageUrl   String?
-  latitude        Float?
-  longitude       Float?
-  
-  // Business Settings
-  timezone        String          @default("America/New_York")
-  currency        String          @default("USD")
-  bookingAdvanceDays Int          @default(30)
-  cancellationHours Int           @default(24)
-  
-  // No-show Protection
-  requireDeposit  Boolean         @default(false)
-  depositAmount   Float?
-  depositPercentage Float?
-  
-  // Status
-  isVerified      Boolean         @default(false)
-  isActive        Boolean         @default(true)
-  isPremium       Boolean         @default(false)
-  isClaimed       Boolean         @default(true)
-  
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  // Google Review Integration
-  googlePlaceId   String?
-  rating          Float?
-  reviewCount     Int             @default(0)
-  reliabilityScore Float?          // Combined rating + booking completion rate
-
-  // Relations
-  owner           User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  reservations    Reservation[]
-  businessHours   BusinessHours[]
-  tables          Table[]
-  settings        BusinessSettings?
-  googleReviews   GoogleReview[]
-  webhookEndpoints WebhookEndpoint[]
-
-  @@index([ownerId])
-  @@index([city])
-  @@index([category])
-}
-
-model BusinessHours {
-  id          String   @id @default(cuid())
-  businessId  String
-  dayOfWeek   Int      // 0 = Sunday, 6 = Saturday
-  openTime    String   // HH:mm format
-  closeTime   String   // HH:mm format
-  isClosed    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@unique([businessId, dayOfWeek])
-  @@index([businessId])
-}
-
-model Table {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String   // "Table 1", "VIP Section", etc.
-  capacity    Int
-  isActive    Boolean  @default(true)
-  metadata    Json?    // Additional table info (location, features, etc.)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  reservations Reservation[]
-
-  @@index([businessId])
-}
-
-model Reservation {
-  id                  String            @id @default(cuid())
-  businessId          String
-  customerId          String
-  tableId             String?
-  reservationDate     DateTime
-  reservationTime     String            // HH:mm format
-  numberOfGuests      Int
-  status              ReservationStatus @default(PENDING)
-  
-  // Customer Information
-  customerName        String
-  customerPhone       String
-  customerEmail       String?
-  specialRequests     String?
-  
-  // AI Predictions
-  noShowProbability   Float?            // 0.0 to 1.0
-  riskScore           Int?              // 0 to 100
-  aiFactors           Json?             // Factors contributing to prediction
-  
-  // Reminders
-  reminderSentAt      DateTime?
-  confirmationSentAt  DateTime?
-  
-  // Payment
-  depositRequired     Boolean            @default(false)
-  depositAmount      Float?
-  depositPaid        Boolean           @default(false)
-  
-  // Metadata
-  source             String?           // "web", "phone", "walk-in"
-  notes              String?
-  
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  cancelledAt        DateTime?
-  
-  // Crypto & Review
-  cryptoDepositTxHash String?
-  rewardEarned       Float?            @default(0)
-  googleReviewId     String?
-  depositStatus      DepositStatus     @default(NOT_REQUIRED)
-  
-  // Relations
-  business           Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customer           User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  table              Table?            @relation(fields: [tableId], references: [id], onDelete: SetNull)
-  payments           Payment[]
-  cryptoRewards      CryptoReward[]
-
-  @@index([businessId])
-  @@index([customerId])
-  @@index([reservationDate])
-  @@index([status])
-  @@index([businessId, reservationDate])
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  reservationId   String?
-  userId          String
-  amount          Float
-  currency        String        @default("USD")
-  status          PaymentStatus @default(PENDING)
-  paymentMethod   String        // "credit_card", "jazzcash", "easypaisa", "cash"
-  transactionId   String?       @unique
-  gatewayResponse Json?         // Response from payment gateway
-  refunded        Boolean       @default(false)
-  refundedAt      DateTime?
-  refundAmount    Float?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  reservation     Reservation?  @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([reservationId])
-  @@index([userId])
-  @@index([transactionId])
-  @@index([status])
-}
-
-model BusinessSettings {
-  id                    String   @id @default(cuid())
-  businessId            String   @unique
-  autoConfirm           Boolean  @default(true)
-  requirePhone          Boolean  @default(true)
-  requireEmail          Boolean  @default(false)
-  allowSameDayBooking   Boolean  @default(true)
-  maxAdvanceBookingDays Int      @default(30)
-  minBookingNoticeHours Int      @default(2)
-  
-  // AI Settings
-  aiEnabled             Boolean  @default(true)
-  aiRiskThreshold       Int      @default(70) // Require deposit if risk > 70
-  autoRequireDeposit    Boolean  @default(false)
-  
-  // Notification Settings
-  sendPushReminders     Boolean  @default(true)
-  sendEmailReminders    Boolean  @default(true)
-  reminderHoursBefore   Int      @default(24)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
-}
-
-model NotificationLog {
-  id              String   @id @default(cuid())
-  reservationId   String
-  type            String   // "sms", "email", "push"
-  recipient       String
-  subject         String?
-  message         String
-  status          String   // "sent", "failed", "pending"
-  errorMessage    String?
-  sentAt          DateTime?
-  createdAt       DateTime @default(now())
-
-  @@index([reservationId])
-  @@index([status])
-}
-
-model Wallet {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  address         String?
-  balance         Float    @default(0)
-  currency        String   @default("PAB") // Pabandi Token
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model CryptoReward {
-  id              String   @id @default(cuid())
-  userId          String
-  reservationId   String?
-  amount          Float
-  type            String   // "RESERVATION_COMPLETION", "GOOGLE_REVIEW"
-  status          String   @default("CLAIMABLE") // "CLAIMABLE", "CLAIMED"
-  txHash          String?
-  createdAt       DateTime @default(now())
-
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reservation     Reservation? @relation(fields: [reservationId], references: [id])
-}
-
-model GoogleReview {
-  id              String   @id @default(cuid())
-  businessId      String
-  googleReviewId  String   @unique
-  authorName      String
-  rating          Int
-  text            String?  @db.Text
-  time            DateTime
-  sentimentLabel  String?  // "positive", "neutral", "negative"
-  processed       Boolean  @default(false)
-  createdAt       DateTime @default(now())
-
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
-}
-
-model WebhookEndpoint {
-  id               String   @id @default(cuid())
-  businessId       String
-  targetUrl        String
-  subscribedEvents String[]
-  isActive         Boolean  @default(true)
-  signingSecret    String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
 }

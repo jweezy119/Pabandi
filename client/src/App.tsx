@@ -9,10 +9,12 @@ import BusinessRegister from './pages/BusinessRegister';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import BookingPage from './pages/BookingPage';
+import BusinessProfilePage from './pages/BusinessProfilePage';
 import WalletDashboard from './pages/WalletDashboard';
 import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
 import TechnologyPage from './pages/TechnologyPage';
+import ContactPage from './pages/ContactPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -44,12 +46,14 @@ function App() {
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
         />
 
+        <Route path="business/:id" element={<BusinessProfilePage />} />
         <Route path="business/:id/book" element={<BookingPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         {/* Business partner landing page — public */}
         <Route path="join" element={<BusinessJoinPage />} />
         <Route path="business/join" element={<BusinessJoinPage />} />
         <Route path="technology" element={<TechnologyPage />} />
+        <Route path="contact" element={<ContactPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />
 

@@ -18,6 +18,8 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; 
   CANCELLED:  { label: 'Cancelled', bg: 'bg-surface-container-highest', color: 'text-on-surface-variant', accent: 'bg-surface-container-high', icon: <XCircleIcon className="h-4 w-4" /> },
   NO_SHOW:    { label: 'No-Show',   bg: 'bg-error-container',  color: 'text-on-error-container', accent: 'bg-error', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
   COMPLETED:  { label: 'Completed', bg: 'bg-primary-container', color: 'text-on-primary-container', accent: 'bg-primary', icon: <CheckCircleIcon className="h-4 w-4" /> },
+  PENDING_CONCIERGE: { label: 'Concierge Booking', bg: 'bg-amber-500/20', color: 'text-amber-600', accent: 'bg-amber-500', icon: <ClockIcon className="h-4 w-4 animate-pulse" /> },
+  FAILED_CONCIERGE: { label: 'Concierge Failed', bg: 'bg-error-container', color: 'text-on-error-container', accent: 'bg-error', icon: <XCircleIcon className="h-4 w-4" /> },
 };
 
 const FILTER_TABS = [
@@ -49,11 +51,11 @@ export default function ReservationsPage() {
   // Quick hack to filter upcoming vs past based on tab, since backend might not do it properly via status
   const reservations = allReservations.filter((r: any) => {
     if (!statusFilter) {
-      // Upcoming: Pending, Confirmed
-      return ['PENDING', 'CONFIRMED'].includes(r.status);
+      // Upcoming: Pending, Confirmed, Concierge Processing
+      return ['PENDING', 'CONFIRMED', 'PENDING_CONCIERGE'].includes(r.status);
     } else {
-      // Past: Completed, Cancelled, No-Show
-      return ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(r.status);
+      // Past: Completed, Cancelled, No-Show, Concierge Failed
+      return ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'FAILED_CONCIERGE'].includes(r.status);
     }
   });
 
@@ -192,10 +194,63 @@ export default function ReservationsPage() {
                     )}
                   </div>
 
+                  {/* Concierge Agent Dynamic Activity Logs */}
+                  {r.isConcierge && r.status === 'PENDING_CONCIERGE' && (
+                    <div className="bg-amber-500/5 border border-dashed border-amber-500/20 p-4 rounded-lg flex flex-col gap-2 mt-1">
+                      <div className="flex items-center gap-2 text-xs font-bold text-amber-600">
+                        <div className="w-3.5 h-3.5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin shrink-0" />
+                        Pabandi Agent Concierge is booking...
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant font-body leading-relaxed text-left">
+                        Securing your table on external platforms. Your confirmation details will appear shortly.
+                      </p>
+                    </div>
+                  )}
+
+                  {r.isConcierge && r.status === 'CONFIRMED' && r.conciergeDetails && (
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-lg flex flex-col gap-2 mt-1 text-left">
+                      <div className="flex items-center justify-between text-xs font-bold text-emerald-600">
+                        <span className="flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[16px] text-emerald-600">smart_toy</span>
+                          Secured by Pabandi Agent
+                        </span>
+                        <span className="bg-emerald-500/25 px-2 py-0.5 rounded text-[9px] uppercase tracking-wide">
+                          {r.conciergeDetails.externalConfirmationCode}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-on-surface-variant font-body leading-relaxed space-y-1 bg-surface-container-low p-2 rounded border border-outline-variant/10">
+                        {r.conciergeDetails.timeline?.map((step: string, idx: number) => (
+                          <div key={idx} className="flex gap-1">
+                            <span className="text-emerald-500 shrink-0 font-bold">✓</span>
+                            <span>{step.replace(/^\[.*?\]\s*/, '')}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-on-surface-variant font-body pt-1.5 border-t border-emerald-500/10">
+                        <span>External Code: <strong>{r.conciergeDetails.externalConfirmationCode}</strong></span>
+                        <a href={r.conciergeDetails.receiptPdfUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline font-bold flex items-center gap-0.5">
+                          Receipt PDF <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {r.isConcierge && r.status === 'FAILED_CONCIERGE' && (
+                    <div className="bg-error-container/10 border border-error/20 p-4 rounded-lg flex flex-col gap-2 mt-1 text-left">
+                      <div className="flex items-center gap-2 text-xs font-bold text-error">
+                        <span className="material-symbols-outlined text-[18px]">error</span>
+                        Concierge Booking Failed
+                      </div>
+                      <p className="text-[10px] text-on-error-container font-body leading-relaxed">
+                        {r.conciergeDetails?.error || 'External slots became fully booked or request was rejected.'}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Bottom: Actions */}
                   <div className="flex items-center gap-3 mt-auto pt-2 pl-2">
                      {/* For regular users, mostly view details or cancel */}
-                     {(r.status === 'CONFIRMED' || r.status === 'PENDING') ? (
+                     {(r.status === 'CONFIRMED' || r.status === 'PENDING' || r.status === 'PENDING_CONCIERGE') ? (
                        <button 
                          disabled={cancelMutation.isLoading}
                          onClick={() => {
