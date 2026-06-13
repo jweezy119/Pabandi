@@ -47,7 +47,7 @@ export default function BusinessProfilePage() {
   }, [isAuthenticated, user]);
 
   // Fetch Business Data
-  const { data: businessData, isLoading: businessLoading, refetch } = useQuery(
+  const { data: businessData, isLoading: businessLoading, isError, error, refetch } = useQuery(
     ['business', id],
     () => businessService.getBusiness(id!),
     { enabled: !!id }
@@ -57,9 +57,9 @@ export default function BusinessProfilePage() {
 
   // Fetch Synced Reviews
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery(
-    ['business-reviews', id],
-    () => businessService.getBusinessReviews(id!),
-    { enabled: !!id }
+    ['business-reviews', business?.id],
+    () => businessService.getBusinessReviews(business?.id as string),
+    { enabled: !!business?.id }
   );
 
   const reviews = reviewsData?.data?.reviews || [];
@@ -116,7 +116,7 @@ export default function BusinessProfilePage() {
       return;
     }
 
-    bookingMutation.mutate({ businessId: id, ...formData, transactionHash });
+    bookingMutation.mutate({ businessId: business.id, ...formData, transactionHash });
   };
 
   const handleClaim = async () => {
@@ -126,7 +126,7 @@ export default function BusinessProfilePage() {
     }
     if (confirm('Are you sure you want to claim this business listing on Pabandi?')) {
       try {
-        await businessService.claimBusiness(id!);
+        await businessService.claimBusiness(business.id);
         alert('Listing claimed successfully! Welcome to Pabandi.');
         refetch();
         navigate('/dashboard');
@@ -141,6 +141,28 @@ export default function BusinessProfilePage() {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
+
+  if (isError) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-surface text-on-surface p-6">
+        <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/20 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-error-container/20 text-error flex items-center justify-center mx-auto mb-4">
+            ⚠️
+          </div>
+          <h3 className="font-headline font-bold text-lg mb-2">Failed to Load Profile</h3>
+          <p className="font-body text-xs text-on-surface-variant mb-6 leading-relaxed">
+            {(error as any)?.response?.data?.message || (error as any)?.message || 'We had trouble connecting to the server. Please try again.'}
+          </p>
+          <button 
+            onClick={() => refetch()} 
+            className="w-full bg-primary text-on-primary font-headline text-sm font-bold py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (businessLoading || !business) {
     return (

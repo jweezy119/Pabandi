@@ -63,6 +63,18 @@ export default function Layout() {
             <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
             <DesktopNavLink to="/technology" current={location.pathname === '/technology'}>Technology</DesktopNavLink>
             <DesktopNavLink to="/join" current={location.pathname === '/join'}>For Businesses</DesktopNavLink>
+            <DesktopNavLink to="/developer" current={location.pathname === '/developer'}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                API
+                <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>NEW</span>
+              </span>
+            </DesktopNavLink>
+            <DesktopNavLink to="/trust" current={location.pathname === '/trust'}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                Trust
+                <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #0A66C2, #1DBF73)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>NEW</span>
+              </span>
+            </DesktopNavLink>
             {isAuthenticated && (
               <>
                 <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
@@ -104,6 +116,8 @@ export default function Layout() {
             <div className="flex gap-4">
               <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
               <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
+              <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
+              <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
               <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact Us</Link>
               <a href="#" className="hover:text-primary transition-colors">Privacy</a>
               <a href="#" className="hover:text-primary transition-colors">Terms</a>

@@ -12,9 +12,6 @@ import {
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 import {
   APIProvider,
-  Map,
-  AdvancedMarker,
-  Pin,
   useMapsLibrary,
 } from '@vis.gl/react-google-maps';
 
@@ -97,7 +94,7 @@ export default function NewReservationPage() {
 
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(null);
   const [onPabandi, setOnPabandi] = useState(false);
-  const [mapCenter, setMapCenter] = useState({ lat: 37.0902, lng: -95.7129 });
+  const [, setMapCenter] = useState({ lat: 37.0902, lng: -95.7129 });
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -150,7 +147,7 @@ export default function NewReservationPage() {
       setError('');
 
       try {
-        const res = await apiClient.get(`/businesses?googlePlaceId=${place.place_id}`);
+        const res = await apiClient.get(`/businesses?googlePlaceId=${place.place_id}&search=${encodeURIComponent(place.name)}`);
         const matchingBiz = res.data?.data?.businesses?.[0];
         if (matchingBiz) {
           setSelectedPlace(prev => prev ? ({ ...prev, id: matchingBiz.id, walletAddress: matchingBiz.walletAddress }) : null);
@@ -394,20 +391,12 @@ export default function NewReservationPage() {
               <div className="rounded-xl overflow-hidden shadow-sm border border-outline-variant/20 flex flex-col h-full bg-surface-container-lowest">
                 
                 <div className="h-64 bg-surface-container-low relative">
-                  <Map
-                    mapId={'bf51a910020fa25a'}
-                    defaultCenter={mapCenter}
-                    defaultZoom={selectedPlace?.location ? 15 : 12}
-                    center={selectedPlace?.location ?? mapCenter}
-                    gestureHandling={'greedy'}
-                    disableDefaultUI={true}
-                  >
-                    {selectedPlace?.location && (
-                      <AdvancedMarker position={selectedPlace.location}>
-                        <Pin background={'var(--color-primary)'} borderColor={'var(--color-primary-container)'} glyphColor={'#fff'} />
-                      </AdvancedMarker>
-                    )}
-                  </Map>
+                  <iframe
+                    src="https://storage.googleapis.com/maps-solutions-0ken1ouk5c/neighborhood-discovery/sms4/neighborhood-discovery.html"
+                    width="100%" height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy">
+                  </iframe>
                 </div>
 
                 {selectedPlace ? (
