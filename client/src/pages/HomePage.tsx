@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { businessService } from '../services/api';
@@ -23,6 +23,15 @@ export default function HomePage() {
   const [category, setCategory] = useState('ALL');
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [locLoading, setLocLoading] = useState(false);
+
+  // Debounce search input to query as user types without overloading server
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 500);
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchInput]);
 
   const { data, isLoading } = useQuery(
     ['businesses', category, searchQuery, userLoc],
