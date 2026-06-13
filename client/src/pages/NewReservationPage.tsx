@@ -50,6 +50,8 @@ interface GooglePlaceDetails {
   photoUrl?: string;
   location?: { lat: number; lng: number };
   walletAddress?: string;
+  phone?: string;
+  isClaimed?: boolean;
 }
 
 const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
@@ -128,6 +130,14 @@ export default function NewReservationPage() {
 
   const today = new Date().toISOString().split('T')[0];
 
+  const getWhatsAppInviteUrl = () => {
+    if (!selectedPlace) return '';
+    const phone = selectedPlace.phone || '';
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const message = `Hi ${selectedPlace.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi-42c5b.web.app/business/${selectedPlace.id}`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  };
+
   const handlePlaceSelect = useCallback(async (place: google.maps.places.PlaceResult) => {
     if (place.place_id && place.name) {
       const details: GooglePlaceDetails = {
@@ -150,7 +160,13 @@ export default function NewReservationPage() {
         const res = await apiClient.get(`/businesses?googlePlaceId=${place.place_id}&search=${encodeURIComponent(place.name)}`);
         const matchingBiz = res.data?.data?.businesses?.[0];
         if (matchingBiz) {
-          setSelectedPlace(prev => prev ? ({ ...prev, id: matchingBiz.id, walletAddress: matchingBiz.walletAddress }) : null);
+          setSelectedPlace(prev => prev ? ({ 
+            ...prev, 
+            id: matchingBiz.id, 
+            walletAddress: matchingBiz.walletAddress,
+            phone: matchingBiz.phone,
+            isClaimed: matchingBiz.isClaimed
+          }) : null);
           setOnPabandi(true);
         } else {
           setOnPabandi(false);
@@ -241,6 +257,23 @@ export default function NewReservationPage() {
             {new Date(form.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             {' at '}{form.time} · {form.guests} {Number(form.guests) === 1 ? 'guest' : 'guests'}
           </p>
+
+          {!selectedPlace?.isClaimed && (
+            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3">
+              <p className="text-xs text-on-surface-variant leading-relaxed font-body">
+                This business is currently unclaimed on Pabandi. To ensure your booking is processed immediately, please invite the owner to join:
+              </p>
+              <a 
+                href={getWhatsAppInviteUrl()} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-full bg-[#25D366] text-white font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-sm"
+              >
+                💬 Send WhatsApp Invitation
+              </a>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-center">
             <button onClick={() => { setSuccess(false); setForm({ date: '', time: '', guests: '2', notes: '', paymentMethod: 'safepay' }); setSelectedPlace(null); }}
               className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface">

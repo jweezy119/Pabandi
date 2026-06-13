@@ -236,6 +236,71 @@ router.get('/', async (req, res, next) => {
       }
     }
     
+    // 1.5 If googlePlaceId is provided and does not exist in local DB, attempt dynamic Details import
+    if (googlePlaceId && apiKey) {
+      const existing = await prisma.business.findFirst({
+        where: { googlePlaceId: String(googlePlaceId) }
+      });
+      
+      if (!existing) {
+        try {
+          const googleRes = await axios.get(
+            `https://maps.googleapis.com/maps/api/place/details/json`, {
+              params: {
+                place_id: String(googlePlaceId),
+                fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,types,geometry,photos',
+                key: apiKey,
+              }
+            }
+          );
+          
+          if (googleRes.data?.result) {
+            const p = googleRes.data.result;
+            
+            let category: any = 'RESTAURANT';
+            if (p.types) {
+              if (p.types.includes('restaurant') || p.types.includes('cafe') || p.types.includes('bakery')) category = 'RESTAURANT';
+              else if (p.types.includes('spa') || p.types.includes('beauty_salon') || p.types.includes('hair_care')) category = 'SPA';
+              else if (p.types.includes('gym') || p.types.includes('health')) category = 'FITNESS_CENTER';
+            }
+            
+            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+            if (p.photos && p.photos.length > 0) {
+              coverImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${p.photos[0].photo_reference}&key=${apiKey}`;
+            }
+
+            const createdBiz = await prisma.business.create({
+              data: {
+                googlePlaceId: String(googlePlaceId),
+                name: p.name || 'Unknown Business',
+                address: p.formatted_address || 'Unknown Address',
+                phone: p.international_phone_number || p.formatted_phone_number || '+92 300 0000000',
+                email: 'contact@pabandi.com',
+                website: p.website || null,
+                latitude: p.geometry?.location?.lat || 24.8607,
+                longitude: p.geometry?.location?.lng || 67.0011,
+                category: category,
+                isClaimed: false,
+                rating: p.rating || 4.5,
+                reviewCount: p.user_ratings_total || 1,
+                city: p.formatted_address?.split(',')[1]?.trim() || 'Karachi',
+                description: `Imported Google listing for ${p.name}. Claim this profile to set up Web3 bookings.`,
+                coverImageUrl,
+              }
+            });
+
+            await prisma.businessSettings.create({
+              data: {
+                businessId: createdBiz.id,
+              },
+            });
+          }
+        } catch (detailsErr) {
+          console.error('Failed to import dynamic place on details fetch:', detailsErr);
+        }
+      }
+    }
+
     // 2. Fetch local business listings (which now include newly imported ones)
     const where: any = { isActive: true };
     if (googlePlaceId) {

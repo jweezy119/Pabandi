@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
 import { format } from 'date-fns';
 import { 
@@ -64,6 +64,8 @@ export default function BusinessProfilePage() {
 
   const reviews = reviewsData?.data?.reviews || [];
 
+  const [isSuccess, setIsSuccess] = useState(false);
+
   // Create Reservation Mutation
   const bookingMutation = useMutation(
     (data: any) => reservationService.createReservation(data),
@@ -73,7 +75,7 @@ export default function BusinessProfilePage() {
         if (checkoutUrl) {
           window.location.href = checkoutUrl;
         } else {
-          navigate('/reservations');
+          setIsSuccess(true);
         }
       },
     }
@@ -159,6 +161,56 @@ export default function BusinessProfilePage() {
           >
             Retry
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSuccess) {
+    const phone = business.phone || '';
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const messageText = `Hi ${business.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi-42c5b.web.app/business/${business.id}`;
+    const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
+
+    return (
+      <div className="bg-surface min-h-screen text-on-surface flex items-center justify-center p-6 font-body">
+        <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
+            <ShieldCheckIcon className="h-10 w-10 text-primary" />
+          </div>
+          <h2 className="text-2xl font-headline font-bold mb-3 text-primary">Booking Submitted!</h2>
+          <p className="text-sm mb-2 text-on-surface-variant">
+            <span className="font-semibold text-on-surface">{business.name}</span>
+          </p>
+          <p className="text-sm mb-6 text-on-surface-variant">
+            {formData.reservationDate} at {formData.reservationTime} · {formData.numberOfGuests} guests
+          </p>
+
+          {!business.isClaimed && (
+            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                This business is currently unclaimed on Pabandi. To ensure your booking is processed immediately, please invite the owner to join:
+              </p>
+              <a 
+                href={waLink} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-full bg-[#25D366] text-white font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-sm"
+              >
+                💬 Send WhatsApp Invitation
+              </a>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
+              className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface font-headline">
+              Go Back
+            </button>
+            <Link to="/reservations" className="bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-medium px-5 py-2.5 rounded-md shadow-sm hover:opacity-90 font-headline">
+              View Bookings
+            </Link>
+          </div>
         </div>
       </div>
     );

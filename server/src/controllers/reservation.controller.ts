@@ -186,6 +186,9 @@ export const createReservation = async (
     if (!isConcierge) {
       await notificationService.sendConfirmation(reservation.id);
     } else {
+      if (business.phone) {
+        logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
+      }
       conciergeService.processReservation(reservation.id);
     }
 
