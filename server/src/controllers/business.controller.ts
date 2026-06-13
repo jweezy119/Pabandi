@@ -97,8 +97,13 @@ export const getBusiness = async (
   try {
     const { id } = req.params;
 
-    const business = await prisma.business.findUnique({
-      where: { id },
+    let business = await prisma.business.findFirst({
+      where: {
+        OR: [
+          { id },
+          { googlePlaceId: id }
+        ]
+      },
       include: {
         owner: {
           select: {
@@ -118,6 +123,100 @@ export const getBusiness = async (
         },
       },
     });
+
+    // If not found in DB, try fetching from Google Places API
+    if (!business) {
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+      if (apiKey) {
+        try {
+          const googleRes = await axios.get(
+            `https://maps.googleapis.com/maps/api/place/details/json`, {
+              params: {
+                place_id: id,
+                fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,types,geometry,photos',
+                key: apiKey,
+              }
+            }
+          );
+          
+          if (googleRes.data?.result) {
+            const p = googleRes.data.result;
+            
+            let category: BusinessCategory = BusinessCategory.OTHER;
+            if (p.types) {
+              if (p.types.includes('restaurant') || p.types.includes('cafe') || p.types.includes('bakery')) category = BusinessCategory.RESTAURANT;
+              else if (p.types.includes('spa') || p.types.includes('beauty_salon') || p.types.includes('hair_care')) category = BusinessCategory.SPA;
+              else if (p.types.includes('gym') || p.types.includes('health')) category = BusinessCategory.FITNESS_CENTER;
+            }
+            
+            // Extract a cover image from Google Photos if available
+            let coverImageUrl = undefined;
+            if (p.photos && p.photos.length > 0) {
+              try {
+                const photoRes = await axios.get(`https://maps.googleapis.com/maps/api/place/photo`, {
+                  params: {
+                    maxwidth: 1200,
+                    photoreference: p.photos[0].photo_reference,
+                    key: apiKey
+                  },
+                  maxRedirects: 0,
+                  validateStatus: (status) => status >= 200 && status < 400
+                });
+                // Google redirects to the actual image URL
+                if (photoRes.status === 302 && photoRes.headers.location) {
+                  coverImageUrl = photoRes.headers.location;
+                }
+              } catch (err) {
+                console.error("Failed to fetch photo redirect URL");
+              }
+            }
+
+            business = await prisma.business.create({
+              data: {
+                googlePlaceId: id,
+                name: p.name || 'Unknown Business',
+                address: p.formatted_address || 'Unknown Address',
+                phone: p.international_phone_number || p.formatted_phone_number || 'No phone',
+                email: 'contact@example.com',
+                website: p.website || null,
+                latitude: p.geometry?.location?.lat || null,
+                longitude: p.geometry?.location?.lng || null,
+                category: category,
+                isClaimed: false,
+                rating: p.rating || null,
+                reviewCount: p.user_ratings_total || 0,
+                city: p.formatted_address?.split(',')[1]?.trim() || 'Karachi',
+                description: 'Auto-generated profile from Google Maps data. Claim this profile to customize it.',
+                coverImageUrl,
+                settings: {
+                  create: {}
+                }
+              },
+              include: {
+                owner: {
+                  select: {
+                    id: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+                businessHours: true,
+                tables: {
+                  where: { isActive: true },
+                },
+                settings: true,
+                googleReviews: {
+                  orderBy: { time: 'desc' }
+                },
+              }
+            });
+          }
+        } catch (apiErr) {
+          console.error('Failed to fetch business from Google Places:', apiErr);
+        }
+      }
+    }
 
     if (!business) {
       throw new CustomError('Business not found', 404);
@@ -147,6 +246,8 @@ export const getBusiness = async (
         ownerId: business.ownerId,
         googlePlaceId: business.googlePlaceId,
         googleReviews: business.googleReviews,
+        latitude: business.latitude,
+        longitude: business.longitude,
       };
 
       return res.json({

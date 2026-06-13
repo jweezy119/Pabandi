@@ -24,6 +24,9 @@ import analyticsRoutes from './routes/analytics.routes';
 import adminRoutes from './routes/admin.routes';
 import webhookRoutes from './routes/webhook.routes';
 import cryptoRoutes from './routes/crypto.routes';
+import externalRoutes from './routes/external.routes';
+import apiClientsRoutes from './routes/apiClients.routes';
+import socialRoutes from './routes/social.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -81,6 +84,27 @@ app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
+app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
+app.use(`/api/${API_VERSION}/social`, socialRoutes);
+
+// ── Pabandi Intelligence API (B2B) ──────────────────────────────────────────
+// Separate from /api/v1/ so it can be independently rate-limited and versioned
+app.use('/external/v1', externalRoutes);
+
+// ── Public Badge Verification (no auth needed) ───────────────────────────────
+app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
+  try {
+    const { badgeService } = await import('./services/badge.service');
+    const userId = await badgeService.resolveUserFromPseudonymousId(req.params.pseudonymousId);
+    if (!userId) {
+      return res.status(404).json({ success: false, error: 'Badge not found' });
+    }
+    const badge = await badgeService.computeBadgeStatus(userId);
+    return res.json({ success: true, data: badge });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {

@@ -31,6 +31,7 @@ model User {
   payments          Payment[]
   reservations      Reservation[]
   wallet            Wallet?
+  socialIdentities  SocialIdentity[]
 
   @@index([email])
   @@index([phone])
@@ -327,4 +328,68 @@ enum BusinessCategory {
   FITNESS_CENTER
   EVENT_VENUE
   OTHER
+}
+
+enum ApiTier {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+model ApiClient {
+  id          String        @id @default(cuid())
+  name        String
+  email       String        @unique
+  apiKey      String        @unique
+  tier        ApiTier       @default(STARTER)
+  callsUsed   Int           @default(0)
+  callsLimit  Int           @default(500)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  usageLogs   ApiUsageLog[]
+
+  @@index([apiKey])
+  @@index([email])
+}
+
+model ApiUsageLog {
+  id          String    @id @default(cuid())
+  clientId    String
+  endpoint    String
+  statusCode  Int
+  latencyMs   Int
+  createdAt   DateTime  @default(now())
+  client      ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+enum SocialPlatform {
+  LINKEDIN
+  FIVERR
+  UPWORK
+  X_TWITTER
+  TRUTH_SOCIAL
+}
+
+model SocialIdentity {
+  id              String         @id @default(cuid())
+  userId          String
+  platform        SocialPlatform
+  platformHandle  String?
+  accountAgeDays  Int?
+  isVerified      Boolean        @default(false)
+  completeness    Float?         // 0.0 – 1.0
+  rating          Float?         // Fiverr/Upwork star rating
+  completionRate  Float?         // Fiverr/Upwork order completion %
+  accountLevel    String?        // "Top Rated", "Level 2", etc.
+  trustBoost      Float          @default(0.0)
+  connectedAt     DateTime       @default(now())
+  lastRefreshed   DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
 }

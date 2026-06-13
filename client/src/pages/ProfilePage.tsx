@@ -102,7 +102,19 @@ export default function ProfilePage() {
   const { user } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '' });
-  const [activeTab, setActiveTab] = useState<'history' | 'badges'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'badges' | 'connections'>('history');
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
+
+  const SOCIAL_PLATFORMS = [
+    { id: 'LINKEDIN', name: 'LinkedIn', emoji: '💼', color: '#0A66C2', boost: 5 },
+    { id: 'FIVERR', name: 'Fiverr', emoji: '🟢', color: '#1DBF73', boost: 8 },
+    { id: 'UPWORK', name: 'Upwork', emoji: '🔵', color: '#14A800', boost: 8 },
+    { id: 'X_TWITTER', name: 'X (Twitter)', emoji: '🐦', color: '#E7E9EA', boost: 3 },
+    { id: 'TRUTH_SOCIAL', name: 'Truth Social', emoji: '🇺🇸', color: '#FF6A00', boost: 3 },
+  ];
+
+  const totalSocialBoost = SOCIAL_PLATFORMS.filter(p => connected[p.id]).reduce((s, p) => s + p.boost, 0);
+  const connectedCount = Object.values(connected).filter(Boolean).length;
 
   const { data: reservationsData } = useQuery(
     'my-reservations-profile',
@@ -273,14 +285,14 @@ export default function ProfilePage() {
         <div>
           {/* Tab bar */}
           <div className="flex gap-1 mb-6 bg-surface-container-low border border-outline-variant/10 rounded-xl p-1 w-max">
-            {(['history', 'badges'] as const).map(tab => (
+            {(['history', 'badges', 'connections'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-5 py-2 rounded-lg text-sm font-bold transition-all capitalize ${
-                  activeTab === tab 
-                  ? 'bg-surface-container-lowest text-primary shadow-sm border border-outline-variant/20' 
+                  activeTab === tab
+                  ? 'bg-surface-container-lowest text-primary shadow-sm border border-outline-variant/20'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                 }`}>
-                {tab === 'history' ? '📅 Booking History' : '🏅 Achievements'}
+                {tab === 'history' ? '📅 Booking History' : tab === 'badges' ? '🏅 Achievements' : '🔗 Connected Accounts'}
               </button>
             ))}
           </div>
@@ -307,7 +319,7 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeTab === 'badges' ? (
             <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
               <div className="mb-4">
                 <h2 className="text-lg font-black text-on-surface font-headline">Achievements</h2>
@@ -319,6 +331,81 @@ export default function ProfilePage() {
                 {achievements.map(a => (
                   <AchievementBadge key={a.label} {...a} />
                 ))}
+              </div>
+            </div>
+          ) : (
+            /* ── Connected Accounts Tab ── */
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
+                <div>
+                  <h2 className="text-lg font-black text-on-surface font-headline">Connected Accounts</h2>
+                  <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">
+                    Each connection enriches your reliability score with cross-platform trust signals.
+                  </p>
+                </div>
+                {connectedCount > 0 && (
+                  <div className="flex items-center gap-2 bg-tertiary-fixed/20 text-on-tertiary-fixed-variant px-3 py-1.5 rounded-lg border border-tertiary-fixed/30">
+                    <span className="text-sm font-black text-tertiary">+{totalSocialBoost} pts</span>
+                    <span className="text-[10px] font-semibold text-on-surface-variant">from {connectedCount} platform{connectedCount > 1 ? 's' : ''}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {SOCIAL_PLATFORMS.map(platform => (
+                  <div
+                    key={platform.id}
+                    className="rounded-xl p-4 border transition-all"
+                    style={{
+                      background: connected[platform.id] ? `${platform.color}08` : undefined,
+                      borderColor: connected[platform.id] ? `${platform.color}30` : undefined,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{platform.emoji}</span>
+                        <div>
+                          <p className="font-bold text-sm text-on-surface">{platform.name}</p>
+                          <p className="text-[10px] text-on-surface-variant">
+                            {connected[platform.id] ? `+${platform.boost} pts active` : `Up to +${platform.boost} pts`}
+                          </p>
+                        </div>
+                      </div>
+                      {connected[platform.id] && (
+                        <span className="text-[9px] font-black px-2 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant uppercase tracking-wider">
+                          Connected
+                        </span>
+                      )}
+                    </div>
+                    {connected[platform.id] ? (
+                      <button
+                        onClick={() => setConnected(prev => ({ ...prev, [platform.id]: false }))}
+                        className="w-full py-2 rounded-lg text-[11px] font-bold text-error bg-error-container/20 hover:bg-error-container/40 border border-error/10 transition-colors"
+                      >
+                        Disconnect
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setConnected(prev => ({ ...prev, [platform.id]: true }))}
+                        className="w-full py-2 rounded-lg text-[11px] font-bold transition-colors"
+                        style={{ background: `${platform.color}15`, color: platform.color, border: `1px solid ${platform.color}30` }}
+                      >
+                        Connect {platform.name} →
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-start gap-3">
+                <span className="text-lg mt-0.5">🔒</span>
+                <div>
+                  <p className="text-sm font-bold text-on-surface mb-0.5">Privacy First</p>
+                  <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                    We only access public metadata. No posts, messages, or private data. Disconnect any time — no penalty.
+                  </p>
+                  <Link to="/trust" className="text-[11px] text-primary font-bold hover:underline mt-1 inline-block">Learn more about how this works →</Link>
+                </div>
               </div>
             </div>
           )}

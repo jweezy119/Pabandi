@@ -18,10 +18,96 @@ import axios from 'axios';
 router.get('/', async (req, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
-    const { googlePlaceId, category, search } = req.query;
+    const { googlePlaceId, category, search, latitude, longitude } = req.query;
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    
-    // 1. If searching, attempt dynamic Google Places import
+
+    // 1. If coordinates are provided, attempt dynamic Google Places Nearby Search import
+    if (latitude && longitude && apiKey) {
+      try {
+        const lat = parseFloat(String(latitude));
+        const lng = parseFloat(String(longitude));
+        const googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`;
+        
+        let googleType = 'restaurant';
+        if (category === 'SALON') googleType = 'beauty_salon';
+        else if (category === 'SPA') googleType = 'spa';
+        else if (category === 'CLINIC') googleType = 'doctor';
+        else if (category === 'FITNESS_CENTER') googleType = 'gym';
+
+        const googleRes = await axios.get(googleUrl, {
+          params: {
+            location: `${lat},${lng}`,
+            radius: 5000, // 5km
+            key: apiKey,
+            type: googleType
+          }
+        });
+        
+        const places = googleRes.data?.results || [];
+        
+        for (const place of places) {
+          const gId = place.place_id;
+          if (!gId) continue;
+          
+          const existing = await prisma.business.findFirst({
+            where: { googlePlaceId: gId }
+          });
+          
+          if (!existing) {
+            const types = place.types || [];
+            let mappedCat: any = 'RESTAURANT';
+            if (types.includes('beauty_salon') || types.includes('hair_care')) mappedCat = 'SALON';
+            else if (types.includes('spa')) mappedCat = 'SPA';
+            else if (types.includes('doctor') || types.includes('hospital') || types.includes('clinic')) mappedCat = 'CLINIC';
+            else if (types.includes('gym') || types.includes('fitness_center')) mappedCat = 'FITNESS_CENTER';
+            else if (types.includes('event_venue') || types.includes('hall')) mappedCat = 'EVENT_VENUE';
+            
+            const address = place.vicinity || place.formatted_address || '';
+            const addressLower = address.toLowerCase();
+            let city = 'Karachi';
+            if (addressLower.includes('lahore')) city = 'Lahore';
+            else if (addressLower.includes('islamabad')) city = 'Islamabad';
+            
+            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+            if (place.photos && place.photos.length > 0) {
+              coverImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${place.photos[0].photo_reference}&key=${apiKey}`;
+            }
+            
+            const createdBiz = await prisma.business.create({
+              data: {
+                name: place.name,
+                description: `Imported Google listing for ${place.name}. Claim this profile to set up Web3 bookings.`,
+                category: mappedCat,
+                address: address,
+                city: city,
+                phone: place.formatted_phone_number || '+92 300 0000000',
+                email: 'contact@pabandi.com',
+                coverImageUrl: coverImageUrl,
+                googlePlaceId: gId,
+                rating: place.rating || 4.5,
+                reviewCount: place.user_ratings_total || 1,
+                isVerified: false,
+                isClaimed: false,
+                isActive: true,
+                ownerId: null,
+                latitude: place.geometry?.location?.lat || lat,
+                longitude: place.geometry?.location?.lng || lng,
+              }
+            });
+            
+            await prisma.businessSettings.create({
+              data: {
+                businessId: createdBiz.id
+              }
+            });
+          }
+        }
+      } catch (nearbyErr) {
+        console.error('Failed to import from Google Places Nearby Search:', nearbyErr);
+      }
+    }
+
+    // 2. If searching, attempt dynamic Google Places import
     if (search && String(search).trim().length > 2 && apiKey) {
       try {
         const queryStr = `${String(search)} Pakistan`;

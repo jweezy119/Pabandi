@@ -19,6 +19,8 @@ import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
+import DeveloperPortalPage from './pages/DeveloperPortalPage';
+import TrustPage from './pages/TrustPage';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -56,6 +58,10 @@ function App() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />
+        {/* B2B Intelligence API developer portal — public */}
+        <Route path="developer" element={<DeveloperPortalPage />} />
+        {/* Social & Professional Trust Layer — public */}
+        <Route path="trust" element={<TrustPage />} />
 
         <Route
           path="dashboard"

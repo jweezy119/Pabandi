@@ -2,28 +2,72 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { businessService } from '../services/api';
+import { MapPinIcon } from '@heroicons/react/24/outline';
+
+// Haversine distance calculation (in km)
+const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c;
+};
 
 export default function HomePage() {
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('ALL');
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
 
   const { data, isLoading } = useQuery(
-    ['businesses', category, search],
+    ['businesses', category, searchQuery, userLoc],
     async () => {
-      const res = await businessService.getPublicBusinesses({
+      const params: any = {
         category: category !== 'ALL' ? category : undefined,
-        search: search || undefined
-      });
+        search: searchQuery || undefined
+      };
+      if (userLoc) {
+        params.latitude = userLoc.lat;
+        params.longitude = userLoc.lng;
+      }
+      const res = await businessService.getPublicBusinesses(params);
       return res.data?.data?.businesses || [];
     },
     { keepPreviousData: true }
   );
 
-  const businesses = data || [];
+  let businesses = data || [];
+
+  if (userLoc) {
+    businesses = [...businesses].sort((a, b) => {
+      const distA = getDistance(userLoc.lat, userLoc.lng, a.latitude || 24.86, a.longitude || 67.00);
+      const distB = getDistance(userLoc.lat, userLoc.lng, b.latitude || 24.86, b.longitude || 67.00);
+      return distA - distB;
+    });
+  }
+
+  const handleGetLocation = () => {
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocLoading(false);
+      },
+      (err) => {
+        console.error("Location access denied or failed", err);
+        setLocLoading(false);
+      }
+    );
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // The query automatically triggers due to react-query dependencies
+    setSearchQuery(searchInput);
   };
 
   const categories = ['ALL', 'RESTAURANT', 'SPA', 'CLINIC', 'FITNESS_CENTER', 'SALON'];
@@ -59,8 +103,8 @@ export default function HomePage() {
             className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none" 
             placeholder="Find places, categories, or services..." 
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
           <button type="submit" className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-4 py-1.5 rounded text-sm font-body font-medium ml-2 shadow-[0_4px_12px_rgba(1,29,53,0.15)]">
             Search
@@ -87,7 +131,19 @@ export default function HomePage() {
 
       {/* Featured Businesses */}
       <section className="space-y-6">
-        <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">Curated for You</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+            {userLoc ? 'Near You' : 'Curated for You'}
+          </h3>
+          <button 
+            onClick={handleGetLocation} 
+            disabled={locLoading}
+            className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+          >
+            <MapPinIcon className="h-4 w-4" />
+            {locLoading ? 'Locating...' : 'Near Me'}
+          </button>
+        </div>
         
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -96,7 +152,7 @@ export default function HomePage() {
         ) : businesses.length === 0 ? (
           <div className="text-center py-12 bg-surface-container-low rounded-xl">
             <p className="font-body text-on-surface-variant">No businesses found matching your criteria.</p>
-            <button onClick={() => { setSearch(''); setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
+            <button onClick={() => { setSearchInput(''); setSearchQuery(''); setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
               Clear filters
             </button>
           </div>
@@ -105,7 +161,7 @@ export default function HomePage() {
             
             {/* Main Feature - First Business */}
             {businesses[0] && (
-              <Link to={`/business/${businesses[0].id}`} className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block tile-hover border border-outline-variant/10 glowing-border">
+              <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[0].id}`} className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block tile-hover border border-outline-variant/10 glowing-border">
                 <img 
                   alt={businesses[0].name} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
@@ -143,7 +199,7 @@ export default function HomePage() {
             {/* Secondary Stack - Next Two Businesses */}
             <div className="md:col-span-4 flex flex-col gap-6">
               {businesses[1] && (
-                <Link to={`/business/${businesses[1].id}`} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border">
+                <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[1].id}`} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border">
                   <img 
                     alt={businesses[1].name} 
                     className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" 
@@ -172,7 +228,7 @@ export default function HomePage() {
               
               {businesses.length > 2 ? (
                 businesses[2] && (
-                  <Link to={`/business/${businesses[2].id}`} className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors shadow-sm tile-hover border border-outline-variant/10 glowing-border">
+                  <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[2].id}`} className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors shadow-sm tile-hover border border-outline-variant/10 glowing-border">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-headline text-lg font-bold text-on-surface">{businesses[2].name}</h4>
                       {businesses[2].isClaimed ? (
@@ -230,13 +286,63 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Social Trust Layer Promo */}
+      <section className="rounded-3xl overflow-hidden border border-outline-variant/10 relative" style={{ background: 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.12) 0%, transparent 60%)' }} />
+        <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: '#818cf8' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#818cf8', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              NEW — SECTION 6.4
+            </div>
+            <h3 className="font-headline text-2xl md:text-3xl font-bold" style={{ color: '#f1f5f9', letterSpacing: '-0.02em' }}>
+              Your Reputation Travels With You
+            </h3>
+            <p className="text-base leading-relaxed" style={{ color: '#94a3b8', maxWidth: '480px' }}>
+              Link your LinkedIn, Fiverr, or Upwork account. Earn a cross-platform trust boost, unlock zero-deposit bookings, and share your Pabandi Reliability Badge everywhere your reputation matters.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link
+                to="/trust"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', boxShadow: '0 0 20px rgba(99,102,241,0.35)' }}
+              >
+                Explore Trust Layer →
+              </Link>
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#e2e8f0' }}
+              >
+                Connect Accounts
+              </Link>
+            </div>
+          </div>
+          {/* Platform pill badges */}
+          <div className="flex flex-col gap-3 shrink-0">
+            {[
+              { emoji: '💼', name: 'LinkedIn', boost: '+5 pts', color: '#0A66C2' },
+              { emoji: '🟢', name: 'Fiverr', boost: '+8 pts', color: '#1DBF73' },
+              { emoji: '🔵', name: 'Upwork', boost: '+8 pts', color: '#14A800' },
+              { emoji: '🐦', name: 'X / Truth Social', boost: '+3 pts', color: '#818cf8' },
+            ].map(p => (
+              <div key={p.name} className="flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span className="text-lg">{p.emoji}</span>
+                <span className="text-sm font-medium" style={{ color: '#cbd5e1' }}>{p.name}</span>
+                <span className="text-xs font-bold ml-auto px-2 py-0.5 rounded-full" style={{ background: p.color + '20', color: p.color }}>{p.boost}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Top Rated Institutions */}
       {businesses.length > 3 && (
         <section className="space-y-6">
           <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">More Top Rated Places</h3>
           <div className="space-y-4">
             {businesses.slice(3).map((biz: any) => (
-              <Link key={biz.id} to={`/business/${biz.id}`} className="bg-surface-container-lowest rounded-xl p-4 flex items-center justify-between shadow-[0_10px_20px_rgba(1,29,53,0.03)] group hover:bg-surface-container-lowest/80 border border-outline-variant/10 tile-hover glowing-border transition-all duration-300">
+              <Link target="_blank" rel="noopener noreferrer" key={biz.id} to={`/business/${biz.id}`} className="bg-surface-container-lowest rounded-xl p-4 flex items-center justify-between shadow-[0_10px_20px_rgba(1,29,53,0.03)] group hover:bg-surface-container-lowest/80 border border-outline-variant/10 tile-hover glowing-border transition-all duration-300">
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-surface-container-highest relative">
                     {biz.logoUrl || biz.coverImageUrl ? (
