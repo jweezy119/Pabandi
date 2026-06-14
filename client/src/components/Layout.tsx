@@ -81,7 +81,12 @@ export default function Layout() {
                   {user?.role === 'BUSINESS_OWNER' ? 'Dashboard' : 'Bookings'}
                 </DesktopNavLink>
                 <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>Wallet</DesktopNavLink>
-                <DesktopNavLink to="/profile" current={location.pathname === '/profile'}>Profile</DesktopNavLink>
+                <DesktopNavLink to="/profile" current={location.pathname === '/profile' || location.pathname === '/loyalty'}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                    Profile
+                    <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #CD7F32, #D97706)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>🏆</span>
+                  </span>
+                </DesktopNavLink>
               </>
             )}
           </div>
@@ -104,6 +109,7 @@ export default function Layout() {
               current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')} 
             />
             <MobileTab to="/wallet" icon="payments" label="Wallet" current={location.pathname === '/wallet'} />
+            <MobileTabLoyalty to="/profile" current={location.pathname === '/profile'} />
             <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
           </nav>
         </>
@@ -113,11 +119,12 @@ export default function Layout() {
         <footer className="hidden md:block mt-16 py-8 border-t border-outline-variant/20 bg-surface-container-lowest">
           <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
             <span>© 2026 Pabandi. AI-powered bookings.</span>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap justify-center">
               <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
               <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
               <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
               <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
+              <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 Loyalty</Link>
               <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact Us</Link>
               <a href="#" className="hover:text-primary transition-colors">Privacy</a>
               <a href="#" className="hover:text-primary transition-colors">Terms</a>
@@ -150,6 +157,21 @@ function MobileTab({ to, icon, label, current }: { to: string; icon: string; lab
     <Link to={to} className="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary px-4 py-2 transition-colors">
       <span className="material-symbols-outlined mb-1">{icon}</span>
       <span className="font-body text-[11px] font-medium tracking-wide">{label}</span>
+    </Link>
+  );
+}
+
+/** Special Loyalty tab indicator with golden badge dot */
+function MobileTabLoyalty({ to, current }: { to: string; current: boolean }) {
+  return (
+    <Link to={to} onClick={() => { setTimeout(() => { const el = document.querySelector('[data-tab="loyalty"]') as HTMLButtonElement; el?.click(); }, 100); }}
+      className={`flex flex-col items-center justify-center px-3 py-2 transition-colors relative ${
+        current ? 'text-[#D97706]' : 'text-on-surface-variant hover:text-[#D97706]'
+      }`}
+    >
+      <span className="text-lg leading-none mb-1">🏆</span>
+      <span className="font-body text-[10px] font-bold tracking-wide">Loyalty</span>
+      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#D97706] shadow-sm" style={{ boxShadow: '0 0 6px rgba(217,119,6,0.6)' }} />
     </Link>
   );
 }

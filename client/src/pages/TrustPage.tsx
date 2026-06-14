@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { socialService } from '../services/api';
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -296,16 +297,45 @@ function PlatformCard({ platform, connected, onConnect, onDisconnect }: {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TrustPage() {
   const { isAuthenticated } = useAuthStore();
+  const heroRef = useRef<HTMLElement>(null);
   const [connected, setConnected] = useState<Record<string, boolean>>({});
   const [activeSharePlatform, setActiveSharePlatform] = useState('X_TWITTER');
   const [copiedShare, setCopiedShare] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
 
   const connectedCount = Object.values(connected).filter(Boolean).length;
-  const totalBoost = PLATFORMS.filter(p => connected[p.id])
-    .reduce((sum, p) => sum + parseInt(p.maxBoost), 0);
-  const displayScore = Math.min(100, 78 + totalBoost);
-  const tier = displayScore >= 80 ? 'EXCELLENT' : displayScore >= 50 ? 'AVERAGE' : 'RISKY';
+  const totalBoost = Object.entries(connected)
+    .filter(([, v]) => v)
+    .reduce((sum, [k]) => {
+      const p = PLATFORMS.find(p => p.id === k);
+      return sum + (p ? parseInt(p.maxBoost) : 0);
+    }, 0);
+  const displayScore = Math.min(100, 72 + totalBoost);
+  const tier = displayScore >= 90 ? 'EXCELLENT' : displayScore >= 70 ? 'AVERAGE' : 'RISKY';
+
+  // Load connected platforms on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      socialService.getIdentities()
+        .then(res => {
+          const ids = res.data?.data?.identities || [];
+          const initConnected: Record<string, boolean> = {};
+          ids.forEach((id: string) => {
+            initConnected[id] = true;
+          });
+          setConnected(initConnected);
+        })
+        .catch(err => console.error('Failed to fetch connected platforms', err));
+    }
+  }, [isAuthenticated]);
+
+  const handleDisconnect = async (platformId: string) => {
+    try {
+      await socialService.disconnect(platformId);
+    } catch (err) {
+      console.error('Failed to disconnect platform', platformId, err);
+    }
+    setConnected(prev => ({ ...prev, [platformId]: false }));
+  };
 
   const shareTexts: Record<string, string> = {
     X_TWITTER: `Reliability score: ${displayScore}/100. Building trust across platforms. #PabandiReliable #BookingTrust`,
@@ -315,11 +345,13 @@ export default function TrustPage() {
     TRUTH_SOCIAL: `Building a verified reliability record that travels everywhere. Pabandi Score: ${displayScore}/100.`,
   };
 
-  const handleConnect = (platformId: string) => {
-    setConnected(prev => ({ ...prev, [platformId]: true }));
-  };
-  const handleDisconnect = (platformId: string) => {
-    setConnected(prev => ({ ...prev, [platformId]: false }));
+  const handleConnect = async (platformId: string) => {
+    try {
+      await socialService.connect(platformId);
+      setConnected(prev => ({ ...prev, [platformId]: true }));
+    } catch (err) {
+      console.error('Failed to connect platform', platformId, err);
+    }
   };
   const handleCopyShare = () => {
     navigator.clipboard.writeText(shareTexts[activeSharePlatform]);

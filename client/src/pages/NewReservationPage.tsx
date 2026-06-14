@@ -7,7 +7,7 @@ import {
   BuildingStorefrontIcon,
   CheckCircleIcon, ArrowLeftIcon, ShieldCheckIcon,
   CreditCardIcon, CurrencyDollarIcon, StarIcon,
-  MapPinIcon, MagnifyingGlassIcon
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 import {
@@ -52,6 +52,8 @@ interface GooglePlaceDetails {
   walletAddress?: string;
   phone?: string;
   isClaimed?: boolean;
+  reviews?: any[];
+  website?: string;
 }
 
 const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
@@ -63,7 +65,7 @@ const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.ma
     if (!places || !inputRef.current) return;
 
     const options = {
-      fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos'],
+      fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos', 'reviews', 'formatted_phone_number', 'website'],
       strictBounds: false,
     };
 
@@ -95,7 +97,6 @@ export default function NewReservationPage() {
   const { user } = useAuthStore();
 
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(null);
-  const [onPabandi, setOnPabandi] = useState(false);
   const [, setMapCenter] = useState({ lat: 37.0902, lng: -95.7129 });
 
   useEffect(() => {
@@ -151,6 +152,9 @@ export default function NewReservationPage() {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         } : undefined,
+        phone: place.formatted_phone_number || undefined,
+        reviews: place.reviews || [],
+        website: place.website || undefined,
       };
 
       setSelectedPlace(details);
@@ -164,15 +168,12 @@ export default function NewReservationPage() {
             ...prev, 
             id: matchingBiz.id, 
             walletAddress: matchingBiz.walletAddress,
-            phone: matchingBiz.phone,
+            phone: matchingBiz.phone || prev.phone,
             isClaimed: matchingBiz.isClaimed
           }) : null);
-          setOnPabandi(true);
-        } else {
-          setOnPabandi(false);
         }
       } catch (err) {
-        setOnPabandi(false);
+        // Ignore error
       }
     }
   }, []);
@@ -191,14 +192,15 @@ export default function NewReservationPage() {
     setError('');
 
     if (!selectedPlace) { setError('Please select a business from the map suggestions.'); return; }
-    if (!onPabandi) { setError('This business is not yet on Pabandi. We are working on adding it soon!'); return; }
     if (!form.date) { setError('Please select a date.'); return; }
     if (!form.time) { setError('Please select a time slot.'); return; }
 
     setLoading(true);
     let transactionHash: string | undefined = undefined;
+    let isSimulatedDeposit = false;
 
     try {
+      // Handle crypto deposits (BSC / Solana)
       if (form.paymentMethod === 'bsc') {
         const result = await executeBscDeposit("0.05", selectedPlace.walletAddress || "0x1234567890123456789012345678901234567890");
         if (!result.success) {
@@ -207,6 +209,7 @@ export default function NewReservationPage() {
           return;
         }
         transactionHash = result.transactionHash;
+        isSimulatedDeposit = !!result.simulated;
       } else if (form.paymentMethod === 'solana') {
         const result = await executeSolanaDeposit(0.1, selectedPlace.walletAddress || "PABANDi111111111111111111111111111111111111");
         if (!result.success) {
@@ -215,10 +218,12 @@ export default function NewReservationPage() {
           return;
         }
         transactionHash = result.transactionHash;
+        isSimulatedDeposit = !!result.simulated;
       }
 
+      // Create reservation on backend
       const response = await apiClient.post('/reservations', {
-        businessId: selectedPlace.id,
+        businessId: selectedPlace.id || selectedPlace.googlePlaceId,
         customerName: `${user?.firstName} ${user?.lastName}`,
         customerPhone: user?.phone || '',
         reservationDate: form.date,
@@ -229,12 +234,19 @@ export default function NewReservationPage() {
         transactionHash,
       });
 
+      // Handle SafePay redirect
       const checkoutUrl = response?.data?.data?.checkoutUrl;
       if (form.paymentMethod === 'safepay' && checkoutUrl) {
-        window.location.href = checkoutUrl;
-      } else {
-        setSuccess(true);
+        // Only redirect if it's a real checkout URL (not a mock/fallback)
+        if (checkoutUrl.includes('getsafepay.com')) {
+          window.location.href = checkoutUrl;
+          return;
+        }
       }
+
+      // Reservation created successfully
+      setSuccess(true);
+
     } catch (err: any) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -258,9 +270,20 @@ export default function NewReservationPage() {
             {' at '}{form.time} · {form.guests} {Number(form.guests) === 1 ? 'guest' : 'guests'}
           </p>
 
+          {selectedPlace?.phone && (
+            <div className="mb-4">
+              <a 
+                href={`tel:${selectedPlace.phone}`}
+                className="w-full bg-primary text-on-primary font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center shadow-sm"
+              >
+                📞 Call to Verify: {selectedPlace.phone}
+              </a>
+            </div>
+          )}
+
           {!selectedPlace?.isClaimed && (
-            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3">
-              <p className="text-xs text-on-surface-variant leading-relaxed font-body">
+            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
+              <p className="text-xs text-on-surface-variant leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your booking is processed immediately, please invite the owner to join:
               </p>
               <a 
@@ -305,177 +328,234 @@ export default function NewReservationPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* Left Column - Form */}
-            <div className="space-y-6">
-              <div className="rounded-xl p-6 sm:p-8 bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+          {/* Unified Autocomplete Search Bar */}
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 mb-8">
+            <FieldLabel>Search Business to Book</FieldLabel>
+            <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
+          </div>
 
-                {error && (
-                  <div className="mb-5 px-4 py-3 rounded-lg text-sm font-medium flex items-start gap-3 bg-error-container text-on-error-container">
-                    <ShieldCheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
-                    {error}
-                  </div>
-                )}
+          {selectedPlace ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
+              
+              {/* Left Column - Form & Verification Call */}
+              <div className="space-y-6">
+                <div className="rounded-xl p-6 sm:p-8 bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+                  <h3 className="font-headline text-lg font-bold text-primary mb-4">Reservation Details</h3>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  
-                  <div>
-                    <FieldLabel>Search Business</FieldLabel>
-                    <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
-                  </div>
+                  {error && (
+                    <div className="mb-5 px-4 py-3 rounded-lg text-sm font-medium flex items-start gap-3 bg-error-container text-on-error-container">
+                      <ShieldCheckIcon className="h-5 w-5 shrink-0 mt-0.5" />
+                      {error}
+                    </div>
+                  )}
 
-                  {/* Date + Time */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Date + Time */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <FieldLabel>Date</FieldLabel>
+                        <div className="relative">
+                          <InputIcon icon={<CalendarIcon className="h-4 w-4" />} />
+                          <input
+                            name="date" type="date" required
+                            min={today}
+                            value={form.date} onChange={handleChange}
+                            className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <FieldLabel>Time</FieldLabel>
+                        <div className="relative">
+                          <InputIcon icon={<ClockIcon className="h-4 w-4" />} />
+                          <select
+                            name="time" required
+                            value={form.time} onChange={handleChange}
+                            className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm appearance-none font-medium">
+                            <option value="" disabled>Time</option>
+                            {TIME_SLOTS.map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guests */}
                     <div>
-                      <FieldLabel>Date</FieldLabel>
-                      <div className="relative">
-                        <InputIcon icon={<CalendarIcon className="h-4 w-4" />} />
-                        <input
-                          name="date" type="date" required
-                          min={today}
-                          value={form.date} onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <FieldLabel>Time</FieldLabel>
-                      <div className="relative">
-                        <InputIcon icon={<ClockIcon className="h-4 w-4" />} />
-                        <select
-                          name="time" required
-                          value={form.time} onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm appearance-none">
-                          <option value="" disabled>Time</option>
-                          {TIME_SLOTS.map(t => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Guests */}
-                  <div>
-                    <FieldLabel>Number of Guests</FieldLabel>
-                    <div className="flex items-center gap-3">
-                      <button type="button"
-                        onClick={() => setForm(f => ({ ...f, guests: String(Math.max(1, parseInt(f.guests) - 1)) }))}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold border border-outline-variant/30 hover:bg-surface-container text-primary">
-                        −
-                      </button>
-                      <div className="relative flex-1">
-                        <InputIcon icon={<UserGroupIcon className="h-4 w-4" />} />
-                        <input
-                          name="guests" type="number" min="1" max="50"
-                          value={form.guests} onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm text-center"
-                        />
-                      </div>
-                      <button type="button"
-                        onClick={() => setForm(f => ({ ...f, guests: String(Math.min(50, parseInt(f.guests) + 1)) }))}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold border border-outline-variant/30 hover:bg-surface-container text-primary">
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Payment Method */}
-                  <div>
-                    <FieldLabel>Payment Method</FieldLabel>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: 'safepay', label: 'Safepay', icon: <CreditCardIcon className="h-5 w-5" /> },
-                        { id: 'bsc', label: 'BSC', icon: <CurrencyDollarIcon className="h-5 w-5" /> },
-                        { id: 'solana', label: 'Solana', icon: <span className="text-sm">◎</span> }
-                      ].map(m => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => handlePaymentMethodChange(m.id as PaymentMethod)}
-                          className={`flex flex-col items-center justify-center py-3 rounded-lg border transition-all ${
-                            form.paymentMethod === m.id
-                              ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                              : 'border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low'
-                          }`}>
-                          <div className={`mb-1 ${form.paymentMethod === m.id ? 'text-primary' : 'text-on-surface-variant'}`}>{m.icon}</div>
-                          <span className="text-[11px] font-semibold" style={{ color: form.paymentMethod === m.id ? 'var(--color-primary)' : 'var(--color-on-surface-variant)' }}>{m.label}</span>
+                      <FieldLabel>Number of Guests</FieldLabel>
+                      <div className="flex items-center gap-3">
+                        <button type="button"
+                          onClick={() => setForm(f => ({ ...f, guests: String(Math.max(1, parseInt(f.guests) - 1)) }))}
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold border border-outline-variant/30 hover:bg-surface-container text-primary">
+                          −
                         </button>
-                      ))}
+                        <div className="relative flex-1">
+                          <InputIcon icon={<UserGroupIcon className="h-4 w-4" />} />
+                          <input
+                            name="guests" type="number" min="1" max="50"
+                            value={form.guests} onChange={handleChange}
+                            className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm text-center"
+                          />
+                        </div>
+                        <button type="button"
+                          onClick={() => setForm(f => ({ ...f, guests: String(Math.min(50, parseInt(f.guests) + 1)) }))}
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold border border-outline-variant/30 hover:bg-surface-container text-primary">
+                          +
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <button type="submit" disabled={loading || !onPabandi}
-                    className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-3 rounded-md shadow-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity mt-4">
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Processing...
-                      </>
-                    ) : (onPabandi ? 'Confirm Reservation' : (selectedPlace ? 'Business not on Pabandi' : 'Select a Business'))}
-                  </button>
-                </form>
-              </div>
-            </div>
+                    {/* Payment Method */}
+                    <div>
+                      <FieldLabel>Payment Method</FieldLabel>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'safepay', label: 'Safepay', icon: <CreditCardIcon className="h-5 w-5" /> },
+                          { id: 'bsc', label: 'BSC', icon: <CurrencyDollarIcon className="h-5 w-5" /> },
+                          { id: 'solana', label: 'Solana', icon: <span className="text-sm font-bold">◎</span> }
+                        ].map(m => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => handlePaymentMethodChange(m.id as PaymentMethod)}
+                            className={`flex flex-col items-center justify-center py-3 rounded-lg border transition-all ${
+                              form.paymentMethod === m.id
+                                ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                                : 'border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low'
+                            }`}>
+                            <div className={`mb-1 ${form.paymentMethod === m.id ? 'text-primary' : 'text-on-surface-variant'}`}>{m.icon}</div>
+                            <span className="text-[11px] font-semibold" style={{ color: form.paymentMethod === m.id ? 'var(--color-primary)' : 'var(--color-on-surface-variant)' }}>{m.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-            {/* Right Column - Map & Details */}
-            <div className="space-y-6">
-              <div className="rounded-xl overflow-hidden shadow-sm border border-outline-variant/20 flex flex-col h-full bg-surface-container-lowest">
-                
-                <div className="h-64 bg-surface-container-low relative">
-                  <iframe
-                    src="https://storage.googleapis.com/maps-solutions-0ken1ouk5c/neighborhood-discovery/sms4/neighborhood-discovery.html"
-                    width="100%" height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy">
-                  </iframe>
+                    <button type="submit" disabled={loading}
+                      className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-3 rounded-md shadow-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity mt-4">
+                      {loading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Processing...
+                        </>
+                      ) : 'Confirm Reservation'}
+                    </button>
+                  </form>
                 </div>
 
-                {selectedPlace ? (
-                  <div className="p-6 flex-1 flex flex-col">
-                    {selectedPlace.photoUrl && (
-                      <img src={selectedPlace.photoUrl} alt="Business" className="w-full h-32 object-cover rounded-lg mb-4" />
-                    )}
-                    <h3 className="text-xl font-headline font-bold mb-1 text-primary">{selectedPlace.name}</h3>
-                    <div className="flex items-center gap-1.5 mb-3">
-                      <StarIcon className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-bold text-on-surface">{selectedPlace.rating || 'N/A'}</span>
-                      <span className="text-xs text-on-surface-variant">({selectedPlace.userRatingsTotal || 0} reviews)</span>
+                {/* Call & Verify Box */}
+                {selectedPlace.phone && (
+                  <div className="rounded-xl p-6 bg-surface-container-lowest shadow-sm border border-outline-variant/20 space-y-3">
+                    <h3 className="font-headline text-sm font-bold text-on-surface uppercase tracking-wider">Verify Reservation Directly</h3>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">
+                      Call or chat with the business directly to verify availability and confirm booking details.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <a 
+                        href={`tel:${selectedPlace.phone}`}
+                        className="bg-primary text-on-primary text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-center shadow-sm font-headline"
+                      >
+                        📞 Call: {selectedPlace.phone}
+                      </a>
+                      <a 
+                        href={`https://wa.me/${selectedPlace.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi! I'd like to check my Pabandi booking details for ${form.date || '(Select date)'} at ${form.time || '(Select time)'}.`)}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 hover:bg-[#20ba5a] transition-all text-center shadow-sm font-headline"
+                      >
+                        💬 WhatsApp Chat
+                      </a>
                     </div>
-                    <div className="flex items-start gap-2 mb-6">
-                      <MapPinIcon className="h-4 w-4 text-on-surface-variant shrink-0 mt-0.5" />
-                      <p className="text-xs leading-relaxed text-on-surface-variant">{selectedPlace.address}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column - Map & Details */}
+              <div className="space-y-6">
+                <div className="rounded-xl overflow-hidden shadow-sm border border-outline-variant/20 flex flex-col bg-surface-container-lowest">
+                  
+                  <div className="h-64 bg-surface-container-low relative">
+                    <iframe
+                      title="Location Map"
+                      width="100%" height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&q=place_id:${selectedPlace.googlePlaceId}`}>
+                    </iframe>
+                  </div>
+
+                  <div className="p-6 flex-1 flex flex-col space-y-6">
+                    <div>
+                      {selectedPlace.photoUrl && (
+                        <img src={selectedPlace.photoUrl} alt="Business" className="w-full h-36 object-cover rounded-lg mb-4" />
+                      )}
+                      <h3 className="text-xl font-headline font-bold text-primary mb-1">{selectedPlace.name}</h3>
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <StarIcon className="h-4 w-4 text-yellow-500 fill-current" />
+                        <span className="text-sm font-bold text-on-surface">{selectedPlace.rating || 'N/A'}</span>
+                        <span className="text-xs text-on-surface-variant">({selectedPlace.userRatingsTotal || 0} reviews)</span>
+                      </div>
+                      <div className="flex items-start gap-2 mb-3">
+                        <MapPinIcon className="h-4 w-4 text-on-surface-variant shrink-0 mt-0.5" />
+                        <p className="text-xs leading-relaxed text-on-surface-variant">{selectedPlace.address}</p>
+                      </div>
+
+                      {selectedPlace.website && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="material-symbols-outlined text-[16px] text-on-surface-variant">language</span>
+                          <a href={selectedPlace.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate">
+                            {selectedPlace.website}
+                          </a>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="mt-auto">
-                      {onPabandi ? (
-                        <div className="rounded-lg p-3 flex items-center gap-3 bg-tertiary-fixed/20 border border-tertiary-fixed-dim/30">
-                          <ShieldCheckIcon className="h-5 w-5 text-tertiary" />
-                          <span className="text-xs font-bold text-tertiary">Pabandi Certified Partner</span>
-                        </div>
+                    {/* Google Reviews */}
+                    <div className="space-y-4 pt-4 border-t border-outline-variant/20">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Google Reviews</h4>
+                      
+                      {!selectedPlace.reviews || selectedPlace.reviews.length === 0 ? (
+                        <p className="text-xs text-on-surface-variant italic">No reviews loaded for this venue.</p>
                       ) : (
-                        <div className="rounded-lg p-3 flex items-center gap-3 bg-error-container/50 border border-error/20">
-                          <div className="text-sm">⚠️</div>
-                          <span className="text-xs font-medium text-error">This business is not on our platform yet.</span>
+                        <div className="space-y-3 max-h-60 overflow-y-auto pr-1 no-scrollbar">
+                          {selectedPlace.reviews.slice(0, 3).map((r: any, idx: number) => (
+                            <div key={idx} className="bg-surface-container-low p-3.5 rounded-xl border border-outline-variant/10 text-left space-y-1.5">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-on-surface">{r.author_name}</span>
+                                <span className="text-[10px] text-on-surface-variant">{r.relative_time_description}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="flex text-yellow-500">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <span key={i} className={`material-symbols-outlined text-[14px] ${i < r.rating ? 'fill-current' : ''}`}>star</span>
+                                  ))}
+                                </span>
+                              </div>
+                              <p className="text-xs text-on-surface-variant font-body leading-relaxed italic">
+                                "{r.text}"
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div className="p-10 text-center flex-1 flex flex-col justify-center">
-                    <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-4 text-primary/40">
-                      <MagnifyingGlassIcon className="h-8 w-8" />
-                    </div>
-                    <p className="text-sm font-medium text-on-surface-variant">
-                      Search and select a business to see details and check availability.
-                    </p>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
-
-          </div>
+          ) : (
+            /* Empty Placeholder State */
+            <div className="bg-surface-container-lowest rounded-xl p-12 text-center border border-outline-variant/20 shadow-sm max-w-xl mx-auto mt-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 text-primary">
+                <BuildingStorefrontIcon className="h-8 w-8" />
+              </div>
+              <h3 className="font-headline font-bold text-lg text-on-surface mb-2">Search for a Venue to Start</h3>
+              <p className="text-sm text-on-surface-variant font-body leading-relaxed">
+                Use the search bar above to look up any restaurant, gym, salon, or cafe. Once selected, you'll be able to view its reviews, call to verify availability, and instantly secure a no-show proof reservation.
+              </p>
+            </div>
+          )}
 
           <p className="text-center text-xs mt-10 text-on-surface-variant">
             By booking via Pabandi, you earn crypto rewards and build your global reputation score.
