@@ -3,7 +3,6 @@ import { useAuthStore } from '../store/authStore';
 
 // @ts-ignore
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
-// This makes it safe whether the GitHub secret includes /api/v1 or not.
 const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-server-97129395003.asia-south1.run.app');
 const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
 const API_BASE_URL = `${_baseHost}/api/v1`;
@@ -99,6 +98,20 @@ export const cryptoService = {
     apiClient.put('/crypto/wallet/solana', { address }),
   requestSolanaTransfer: (amount?: number) =>
     apiClient.post('/crypto/wallet/solana/transfer', { amount }),
+  /** Get deployed contract addresses (public) */
+  getContractAddresses: () => apiClient.get('/crypto/contracts'),
+  /** Mint soulbound NFT badge for the user's connected wallet */
+  mintBadge: () => apiClient.post('/crypto/mint-badge'),
+};
+
+export const socialService = {
+  getIdentities: () => apiClient.get('/social/identities'),
+  /** Get the full computed badge with social boost applied */
+  getMyBadge: () => apiClient.get('/social/my-badge'),
+  connect: (platform: string) => apiClient.post(`/social/connect/${platform}`),
+  disconnect: (platform: string) => apiClient.delete(`/social/disconnect/${platform}`),
+  connectMeta: () => apiClient.post('/social/connect/META'),
+  disconnectMeta: () => apiClient.delete('/social/disconnect/META'),
 };
 
 export default apiClient;

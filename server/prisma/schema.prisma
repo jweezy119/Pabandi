@@ -368,10 +368,11 @@ model ApiUsageLog {
 
 enum SocialPlatform {
   LINKEDIN
-  FIVERR
-  UPWORK
   X_TWITTER
-  TRUTH_SOCIAL
+  WHATSAPP
+  TIKTOK
+  INSTAGRAM
+  FACEBOOK
 }
 
 model SocialIdentity {

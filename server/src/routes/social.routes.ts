@@ -19,39 +19,44 @@ const STUB_PROFILES: Record<string, Partial<any>> = {
     platformHandle: 'linkedin-professional',
     trustBoost: 0,
   },
-  FIVERR: {
-    isVerified: false,
-    rating: 4.9,
-    completionRate: 0.98,
-    accountLevel: 'Top Rated',
-    accountAgeDays: 365 * 3,
-    platformHandle: 'fiverr-creator',
-    trustBoost: 0,
-  },
-  UPWORK: {
-    isVerified: false,
-    rating: 4.8,
-    completionRate: 0.97,
-    accountLevel: 'Top Rated Plus',
-    accountAgeDays: 365 * 4,
-    platformHandle: 'upwork-pro',
-    trustBoost: 0,
-  },
   X_TWITTER: {
     isVerified: true,
     accountAgeDays: 365 * 5,
     platformHandle: '@user_handle',
     trustBoost: 0,
   },
-  TRUTH_SOCIAL: {
+  WHATSAPP: {
+    isVerified: true,
+    accountAgeDays: 365 * 4,
+    platformHandle: '+1-xxx-xxx-xxxx',
+    trustBoost: 0,
+  },
+  TIKTOK: {
     isVerified: false,
     accountAgeDays: 365 * 2,
-    platformHandle: '@user_handle',
+    platformHandle: '@user_tiktok',
+    trustBoost: 0,
+  },
+  INSTAGRAM: {
+    isVerified: true,
+    accountAgeDays: 365 * 5,
+    platformHandle: '@user_insta',
+    completeness: 0.85,
+    trustBoost: 0,
+  },
+  FACEBOOK: {
+    isVerified: true,
+    accountAgeDays: 365 * 8,
+    platformHandle: 'facebook-user',
+    completeness: 0.90,
     trustBoost: 0,
   },
 };
 
-const VALID_PLATFORMS = ['LINKEDIN', 'FIVERR', 'UPWORK', 'X_TWITTER', 'TRUTH_SOCIAL'];
+const VALID_PLATFORMS = ['LINKEDIN', 'X_TWITTER', 'WHATSAPP', 'TIKTOK', 'INSTAGRAM', 'FACEBOOK'];
+
+// The three Meta-owned platforms that connect together
+const META_PLATFORMS = ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'];
 
 /**
  * GET /api/v1/social/identities
@@ -71,6 +76,43 @@ router.get('/identities', async (req: AuthRequest, res: Response, next: NextFunc
         socialTrustBoost: totalBoost,
         breakdown,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/social/connect/META
+ * Convenience endpoint — connects WhatsApp + Instagram + Facebook in one call.
+ */
+router.post('/connect/META', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+    const connected: any[] = [];
+
+    for (const platform of META_PLATFORMS) {
+      const stub = STUB_PROFILES[platform];
+      const { totalBoost } = badgeService.computeSocialTrustBoost([{ platform, ...stub }]);
+
+      const identity = await prisma.socialIdentity.upsert({
+        where: { userId_platform: { userId, platform: platform as any } },
+        update: { ...stub, trustBoost: totalBoost, lastRefreshed: new Date() },
+        create: { userId, platform: platform as any, ...stub, trustBoost: totalBoost },
+      });
+      connected.push(identity);
+    }
+
+    // Compute total boost across all user identities
+    const allIdentities = await prisma.socialIdentity.findMany({ where: { userId } });
+    const { totalBoost } = badgeService.computeSocialTrustBoost(allIdentities);
+
+    logger.info(`[Social] User ${userId} connected META (WhatsApp + Instagram + Facebook), total boost: +${totalBoost}`);
+
+    return res.status(201).json({
+      success: true,
+      data: { connected, totalBoost },
+      message: `Meta platforms connected! WhatsApp, Instagram, and Facebook linked. Total trust boost: +${totalBoost}.`,
     });
   } catch (error) {
     next(error);
@@ -108,6 +150,29 @@ router.post('/connect/:platform', async (req: AuthRequest, res: Response, next: 
       success: true,
       data: { identity, trustBoost: totalBoost },
       message: `${platform} connected successfully. Your trust score received a +${totalBoost} boost.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/v1/social/disconnect/META
+ * Disconnects all Meta platforms at once.
+ */
+router.delete('/disconnect/META', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user!.id;
+
+    await prisma.socialIdentity.deleteMany({
+      where: { userId, platform: { in: META_PLATFORMS as any } },
+    });
+
+    logger.info(`[Social] User ${userId} disconnected all META platforms`);
+
+    return res.json({
+      success: true,
+      message: `Meta platforms disconnected. WhatsApp, Instagram, and Facebook removed. Your score will recalculate.`,
     });
   } catch (error) {
     next(error);

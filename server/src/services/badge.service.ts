@@ -4,11 +4,12 @@ import { logger } from '../utils/logger';
 
 // ─── Platform boost weights ───────────────────────────────────────────────────
 const PLATFORM_BOOST: Record<string, { base: number; maxBoost: number }> = {
-  LINKEDIN:     { base: 2, maxBoost: 5 },
-  FIVERR:       { base: 2, maxBoost: 8 },
-  UPWORK:       { base: 2, maxBoost: 8 },
-  X_TWITTER:    { base: 1, maxBoost: 3 },
-  TRUTH_SOCIAL: { base: 1, maxBoost: 3 },
+  LINKEDIN:   { base: 2, maxBoost: 5 },
+  X_TWITTER:  { base: 1, maxBoost: 3 },
+  WHATSAPP:   { base: 2, maxBoost: 4 },
+  TIKTOK:     { base: 1, maxBoost: 3 },
+  INSTAGRAM:  { base: 2, maxBoost: 4 },
+  FACEBOOK:   { base: 2, maxBoost: 4 },
 };
 
 export interface BadgePayload {
@@ -81,15 +82,20 @@ export class BadgeService {
         if (identity.accountAgeDays && identity.accountAgeDays > 365 * 3) boost += 1;
       }
 
-      // Fiverr/Upwork bonuses
-      if (identity.platform === 'FIVERR' || identity.platform === 'UPWORK') {
-        if (identity.rating && identity.rating >= 4.8) boost += 2;
-        if (identity.completionRate && identity.completionRate >= 0.95) boost += 2;
-        if (identity.accountLevel === 'Top Rated' || identity.accountLevel === 'Top Rated Plus') boost += 2;
+      // Meta ecosystem bonuses (WhatsApp, Instagram, Facebook)
+      if (['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'].includes(identity.platform)) {
+        if (identity.isVerified) boost += 1;
+        if (identity.accountAgeDays && identity.accountAgeDays > 365 * 2) boost += 1;
       }
 
-      // X/Truth Social bonuses
-      if (identity.platform === 'X_TWITTER' || identity.platform === 'TRUTH_SOCIAL') {
+      // X (Twitter) bonuses
+      if (identity.platform === 'X_TWITTER') {
+        if (identity.isVerified) boost += 1;
+        if (identity.accountAgeDays && identity.accountAgeDays > 365) boost += 1;
+      }
+
+      // TikTok bonuses
+      if (identity.platform === 'TIKTOK') {
         if (identity.isVerified) boost += 1;
         if (identity.accountAgeDays && identity.accountAgeDays > 365) boost += 1;
       }
@@ -142,12 +148,12 @@ export class BadgeService {
     if (completed >= 10) badges.push('Star Patron');
     if (noShows === 0 && totalBookings >= 3) badges.push('Perfect Record');
     if (identities.find(i => i.platform === 'LINKEDIN') && completed >= 10) badges.push('LinkedIn Luminary');
-    const fivOrUp = identities.find(i => i.platform === 'FIVERR' || i.platform === 'UPWORK');
-    if (fivOrUp && attendanceRate >= 90 && (fivOrUp.completionRate ?? 0) >= 0.95) {
-      badges.push('Freelancer Reliability Star');
+    const metaPlatforms = identities.filter(i => ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'].includes(i.platform));
+    if (metaPlatforms.length >= 3) {
+      badges.push('Meta Verified');
     }
-    if (fivOrUp && identities.find(i => i.platform === 'LINKEDIN') && attendanceRate >= 90) {
-      badges.push('Dual-Trusted');
+    if (metaPlatforms.length >= 2 && identities.find(i => i.platform === 'LINKEDIN') && attendanceRate >= 90) {
+      badges.push('Cross-Platform Trusted');
     }
 
     const pseudonymousId = this.generatePseudonymousId(userId);
@@ -184,10 +190,11 @@ export class BadgeService {
 
     const cards: Record<string, string> = {
       X_TWITTER: `Another on-time arrival. Reliability score: ${badge.reliabilityScore}/100. ${streakText}. #PabandiReliable #BookingTrust`,
-      TRUTH_SOCIAL: `Maintaining professional punctuality — ${streakText}. Pabandi Verified Reliable. Score: ${badge.reliabilityScore}/100`,
       LINKEDIN: `Maintaining professional punctuality — ${streakText}. My Pabandi Reliability Score: ${badge.reliabilityScore}/100 (${badge.tier}). Verified by Pabandi AI.\n\n#Reliability #ProfessionalDevelopment #Pabandi`,
-      FIVERR: `I've maintained a ${badge.attendanceRate}% on-time physical appointment rate, verified by Pabandi AI. Combined with my Fiverr performance, this gives clients 360° trust.`,
-      UPWORK: `Physical-world reliability: ${badge.attendanceRate}% on-time rate across ${badge.totalBookings} bookings — verified by Pabandi AI. A new trust dimension for serious professionals.`,
+      INSTAGRAM: `✨ Reliability score: ${badge.reliabilityScore}/100. ${streakText}. Verified by @Pabandi 🏆 #PabandiReliable`,
+      FACEBOOK: `Proud to share my Pabandi Reliability Score: ${badge.reliabilityScore}/100. ${streakText}. Building trust one booking at a time!`,
+      TIKTOK: `POV: You actually show up 💯 Reliability score: ${badge.reliabilityScore}/100. ${streakText}. #PabandiReliable #BookingTrust #ShowUp`,
+      WHATSAPP: `Hey! Check my Pabandi Reliability Score: ${badge.reliabilityScore}/100 — ${streakText}. Verified Reliable ✅`,
     };
 
     return {
