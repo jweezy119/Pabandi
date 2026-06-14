@@ -428,6 +428,17 @@ export default function NewReservationPage() {
                       </div>
                     </div>
 
+                    {/* Loyalty Bonus Banner */}
+                    <div className="bg-gradient-to-r from-secondary-container to-secondary-container/50 border border-secondary/20 p-4 rounded-xl flex items-start gap-3 mt-6 animate-fade-up">
+                      <div className="text-2xl mt-0.5">⚡</div>
+                      <div>
+                        <h4 className="font-headline font-black text-sm text-on-surface">Loyalty Bonus</h4>
+                        <p className="font-body text-xs text-on-surface-variant leading-relaxed mt-0.5">
+                          Earn <strong className="text-secondary">50 PAB tokens</strong> when you successfully honor this booking. Withdraw to your Solana wallet at any time!
+                        </p>
+                      </div>
+                    </div>
+
                     <button type="submit" disabled={loading}
                       className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-3 rounded-md shadow-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity mt-4">
                       {loading ? (

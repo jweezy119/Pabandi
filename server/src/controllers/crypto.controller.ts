@@ -75,7 +75,7 @@ export const requestSolanaTransfer = async (req: AuthRequest, res: Response, nex
       throw new CustomError('Invalid transfer amount', 400);
     }
 
-    await prisma.cryptoReward.create({
+    const rewardRecord = await prisma.cryptoReward.create({
       data: {
         userId: req.user!.id,
         amount: -transferAmount,
@@ -85,14 +85,40 @@ export const requestSolanaTransfer = async (req: AuthRequest, res: Response, nex
       },
     });
 
+    const transferResult = await blockchainService.executeSolanaTransfer(wallet.address, transferAmount);
+
+    if (transferResult.error) {
+      await prisma.cryptoReward.update({
+        where: { id: rewardRecord.id },
+        data: { status: 'FAILED' }
+      });
+      throw new CustomError('Failed to transfer $PAB to Solana: ' + transferResult.error, 500);
+    }
+
+    // Update the reward to completed and deduct the balance from internal DB
+    await prisma.$transaction([
+      prisma.cryptoReward.update({
+        where: { id: rewardRecord.id },
+        data: {
+          status: 'COMPLETED',
+          txHash: transferResult.txHash
+        }
+      }),
+      prisma.wallet.update({
+        where: { userId: req.user!.id },
+        data: { balance: { decrement: transferAmount } }
+      })
+    ]);
+
     res.json({
       success: true,
-      message: 'Transfer queued. $PAB will be sent to your Solana wallet shortly.',
+      message: 'Transfer successful! $PAB has been minted to your Solana wallet.',
       data: {
         to: wallet.address,
         amount: transferAmount,
         chain: 'solana',
-        status: 'pending',
+        status: 'completed',
+        txHash: transferResult.txHash
       },
     });
   } catch (error) {

@@ -98,10 +98,10 @@ export default function HomePage() {
             Your Time is Valuable
           </div>
           <h2 className="font-headline text-[2.75rem] md:text-[4rem] leading-[1.05] font-bold text-on-surface tracking-[-0.02em] mb-4">
-            Your All‑In‑One Premium Booking Platform – Earn Trust, Unlock Zero‑Deposit Reservations.
+            Premium Bookings. Zero Deposits. Your Trust Rewarded.
           </h2>
           <p className="font-body text-on-surface-variant text-lg leading-relaxed">
-            Skip the waitlists. Build your Pabandi Score and unlock zero-deposit, instant reservations at Karachi's most exclusive venues. We made booking truly effortless—because you deserve it.
+            Skip the waitlist at Karachi's most exclusive venues. Build your Pabandi Score and unlock instant reservations with zero deposits. Booking made effortless.
           </p>
         </div>
         
