@@ -197,7 +197,6 @@ export default function NewReservationPage() {
 
     setLoading(true);
     let transactionHash: string | undefined = undefined;
-    let isSimulatedDeposit = false;
 
     try {
       // Handle crypto deposits (BSC / Solana)
@@ -209,7 +208,6 @@ export default function NewReservationPage() {
           return;
         }
         transactionHash = result.transactionHash;
-        isSimulatedDeposit = !!result.simulated;
       } else if (form.paymentMethod === 'solana') {
         const result = await executeSolanaDeposit(0.1, selectedPlace.walletAddress || "PABANDi111111111111111111111111111111111111");
         if (!result.success) {
@@ -218,7 +216,6 @@ export default function NewReservationPage() {
           return;
         }
         transactionHash = result.transactionHash;
-        isSimulatedDeposit = !!result.simulated;
       }
 
       // Create reservation on backend
