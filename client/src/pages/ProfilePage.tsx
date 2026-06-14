@@ -771,7 +771,7 @@ export default function ProfilePage() {
               </span>
             </div>
             <Link to="/wallet" className="inline-flex items-center gap-1 mt-3 text-[11px] font-bold px-3.5 py-1.5 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-colors">
-              View Wallet →
+              {pabBalance > 0 ? '↗ Withdraw to Solana' : 'View Wallet →'}
             </Link>
           </div>
 

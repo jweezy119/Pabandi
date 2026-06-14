@@ -240,8 +240,19 @@ const WalletDashboard: React.FC = () => {
     finally { setLoadingWallet(null); }
   };
 
+  const [transferSuccess, setTransferSuccess] = useState<{ amount: number; txHash?: string } | null>(null);
+
   const transferMutation = useMutation(() => cryptoService.requestSolanaTransfer(), {
-    onSuccess: () => alert('✅ Transfer queued to your Solana wallet! It may take a few minutes.')
+    onSuccess: (res) => {
+      setTransferSuccess({
+        amount: res.data?.data?.amount || balance,
+        txHash: res.data?.data?.txHash
+      });
+      refetch(); // refresh balance
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Failed to withdraw to Solana');
+    }
   });
 
   const { data: wallet, isLoading, refetch } = useQuery('pab-wallet', async () => {
@@ -362,11 +373,24 @@ const WalletDashboard: React.FC = () => {
               {connected ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
                   <span className="font-body text-xs text-white/80 font-medium">◎ {shortAddr(connected.address)} · Solana</span>
-                  {connected.type === 'phantom' && balance > 0 && (
+                  {connected.type === 'phantom' && balance > 0 && !transferSuccess && (
                     <button type="button" onClick={() => transferMutation.mutate()} disabled={transferMutation.isLoading}
                       className="font-body text-xs font-bold px-4 py-2 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5">
                       {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Solana</>}
                     </button>
+                  )}
+                  {transferSuccess && (
+                    <div className="w-full mt-2 p-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm animate-fade-in">
+                      <p className="text-[11px] font-bold text-white flex items-center gap-1.5 mb-1">
+                        <CheckCircleIcon className="h-4 w-4 text-[#5fa98c]" />
+                        Successfully withdrawn {transferSuccess.amount.toLocaleString()} PAB!
+                      </p>
+                      {transferSuccess.txHash && (
+                        <a href={`https://solscan.io/tx/${transferSuccess.txHash}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/70 hover:text-white underline underline-offset-2 flex items-center gap-1">
+                          View on Solscan <ArrowUpRightIcon className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (

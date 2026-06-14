@@ -268,6 +268,56 @@ export class BlockchainService {
       walletAddress, eligibleTier, pseudonymousId, reliabilityScore, totalBookings
     );
   }
+
+  // ── Solana Token Transfers ──────────────────────────────────────────────────
+
+  async executeSolanaTransfer(walletAddress: string, amount: number): Promise<{ txHash?: string; error?: string }> {
+    const web3 = await this.getSolanaWeb3();
+    if (!web3) return { error: '@solana/web3.js not found' };
+    
+    try {
+      const splToken = await import('@solana/spl-token');
+      const bs58 = (await import('bs58')).default;
+      
+      const connection = new web3.Connection(SOLANA_RPC, 'confirmed');
+      const mintAddress = new web3.PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS || '');
+      const toWallet = new web3.PublicKey(walletAddress);
+      
+      const privateKeyStr = process.env.SOLANA_PRIVATE_KEY;
+      if (!privateKeyStr) {
+        throw new Error('SOLANA_PRIVATE_KEY is not configured');
+      }
+
+      const secretKey = bs58.decode(privateKeyStr);
+      const payer = web3.Keypair.fromSecretKey(secretKey);
+
+      // Get or create ATA
+      const ata = await splToken.getOrCreateAssociatedTokenAccount(
+        connection,
+        payer,
+        mintAddress,
+        toWallet
+      );
+
+      // Assuming 9 decimals for PAB
+      const mintAmount = amount * (10 ** 9);
+
+      const txSignature = await splToken.mintTo(
+        connection,
+        payer,
+        mintAddress,
+        ata.address,
+        payer.publicKey,
+        mintAmount
+      );
+
+      logger.info(`[Blockchain] Solana PAB Minted: ${amount} to ${walletAddress} (tx: ${txSignature})`);
+      return { txHash: txSignature };
+    } catch (err: any) {
+      logger.error(`[Blockchain] Solana PAB Mint failed: ${err.message}`);
+      return { error: err.message };
+    }
+  }
 }
 
 export const blockchainService = new BlockchainService();
