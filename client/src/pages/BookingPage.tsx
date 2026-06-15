@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
-import { businessService, reservationService } from '../services/api';
+import { businessService, reservationService, stakingService, walletService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import { ShieldCheckIcon, StarIcon, MapPinIcon, ClockIcon, PhoneIcon } from '@heroicons/react/24/outline';
@@ -33,7 +33,6 @@ export default function BookingPage() {
 
   const business = businessData?.data?.business;
 
-  // Mock analytics/reviews for storefront showcase
   const { data: analyticsData } = useQuery(
     ['business-analytics', id],
     () => businessService.getBusinessAnalytics(id!),
@@ -44,13 +43,31 @@ export default function BookingPage() {
   const reliabilityScore = analytics?.reliabilityScore || 4.8;
   const googleRating = analytics?.googleRating || 4.9;
 
+  // Get Wallet Balance for Staking
+  const { data: walletData } = useQuery('pab-wallet-balances', async () => {
+    const res = await walletService.getBalances();
+    return res.data?.data;
+  }, { enabled: isAuthenticated });
+  
+  const offChainBalance = Number(walletData?.offChainBalance || 0);
+  const REQUIRED_STAKE = 50; // Mock required stake amount for premium venues
+
   const bookingMutation = useMutation(
     (data: any) => reservationService.createReservation(data),
     {
-      onSuccess: (res) => {
-        // Here we simulate the Safepay / Crypto checkout URL logic
+      onSuccess: async (res) => {
         const checkoutUrl = res?.data?.data?.checkoutUrl;
-        if (checkoutUrl) {
+        const reservation = res?.data?.data?.reservation;
+        
+        if (formData.paymentMethod === 'stake' && reservation?.id) {
+          try {
+            await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
+            navigate('/reservations');
+          } catch (err: any) {
+            alert('Failed to stake PAB: ' + (err.response?.data?.error || err.message));
+            // Keep them on the page if staking fails
+          }
+        } else if (checkoutUrl) {
           window.location.href = checkoutUrl;
         } else {
           navigate('/reservations');
@@ -97,9 +114,12 @@ export default function BookingPage() {
           return;
         }
         transactionHash = result.transactionHash;
+      } else if (formData.paymentMethod === 'stake') {
+        // Will be handled in the onSuccess callback of bookingMutation
+        transactionHash = 'STAKE_PENDING';
       }
     } catch (err: any) {
-      alert(err.message || 'Web3 transaction failed');
+      alert(err.message || 'Transaction failed');
       return;
     }
 
@@ -302,9 +322,9 @@ export default function BookingPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-on-surface mb-2">Deposit Payment Method</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {/* Fiat payment — PayPal (USD) or Safepay (PKR) */}
-                         <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'paypal' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
+                         <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'paypal' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                            <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleChange} className="sr-only" />
                            <span className="font-semibold text-on-surface text-sm">
                              {business.currency === 'PKR' ? 'Safepay' : 'PayPal'}
@@ -315,17 +335,28 @@ export default function BookingPage() {
                         </label>
 
                         {/* BSC BNB */}
-                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'bsc' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
+                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'bsc' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                           <input type="radio" name="paymentMethod" value="bsc" checked={formData.paymentMethod === 'bsc'} onChange={handleChange} className="sr-only" />
                           <span className="font-semibold text-on-surface text-sm">Web3 BSC</span>
                           <span className="text-[10px] text-on-surface-variant font-medium mt-1">BNB / USDT</span>
                         </label>
 
                         {/* Solana */}
-                        <label className={`flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'solana' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
+                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'solana' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                           <input type="radio" name="paymentMethod" value="solana" checked={formData.paymentMethod === 'solana'} onChange={handleChange} className="sr-only" />
                           <span className="font-semibold text-on-surface text-sm">Web3 Solana</span>
                           <span className="text-[10px] text-on-surface-variant font-medium mt-1">SOL / USDC</span>
+                        </label>
+
+                        {/* Stake PAB */}
+                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm relative overflow-hidden ${formData.paymentMethod === 'stake' ? 'bg-primary-container/20 border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'} ${offChainBalance < REQUIRED_STAKE ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <input type="radio" name="paymentMethod" value="stake" disabled={offChainBalance < REQUIRED_STAKE} checked={formData.paymentMethod === 'stake'} onChange={handleChange} className="sr-only" />
+                          {formData.paymentMethod === 'stake' && <div className="absolute inset-0 bg-[radial-gradient(var(--color-primary)_1px,transparent_1px)] [background-size:8px_8px] opacity-10 pointer-events-none" />}
+                          <span className="font-headline font-black text-primary text-sm flex items-center gap-1 z-10"><ShieldCheckIcon className="h-4 w-4" /> Stake PAB</span>
+                          <span className="text-[10px] text-on-surface-variant font-medium mt-1 z-10">{REQUIRED_STAKE} PAB required</span>
+                          {offChainBalance < REQUIRED_STAKE && (
+                            <span className="text-[8px] text-error font-bold mt-1 z-10">You have {offChainBalance}</span>
+                          )}
                         </label>
                       </div>
                     </div>

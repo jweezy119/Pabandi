@@ -1,22 +1,63 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
+export interface ScoreChangeReceipt {
+  previousScore: number;
+  newScore: number;
+  basePoints: number;
+  contextWeight: number;
+  expectedProbability: number;
+  actualOutcome: number;
+  streakBonus: number;
+  totalChange: number;
+  reasoning: string;
+}
+
 export class ReliabilityService {
   private readonly SCORE_MAX = 100;
   private readonly SCORE_MIN = 0;
   
-  private readonly REWARD_COMPLETION = 5;
-  private readonly PENALTY_NO_SHOW = -15;
-  private readonly PENALTY_LATE_CANCEL = -5;
+  // Elo K-factor: Maximum point swing base per interaction
+  private readonly K_FACTOR = 25;
 
   /**
-   * Update a user's reliability score when a reservation concludes
+   * Determine the Context Weight (C) based on the business category
+   */
+  private getContextWeight(category?: string): number {
+    switch (category) {
+      case 'CLINIC':
+        return 2.0; // High stakes medical
+      case 'EVENT_VENUE':
+        return 1.2; // Slightly higher stakes
+      case 'RESTAURANT':
+      case 'SALON':
+      case 'SPA':
+      case 'FITNESS_CENTER':
+      default:
+        return 1.0; // Standard context
+    }
+  }
+
+  /**
+   * Determine the Actual Outcome (A) based on the event status
+   */
+  private getActualOutcome(status: string, isLateCancel: boolean): number {
+    if (status === 'COMPLETED') return 1.0;
+    if (status === 'CANCELLED') {
+      return isLateCancel ? 0.4 : 0.8; // Early cancel is fine, late cancel is heavily penalized but better than ghosting
+    }
+    return 0.0; // NO_SHOW
+  }
+
+  /**
+   * The Global Trust Protocol: Update a user's reliability score using the Elo algorithm
    */
   async updateScoreForReservationActivity(
     userId: string, 
     status: 'COMPLETED' | 'NO_SHOW' | 'CANCELLED',
-    isLateCancel: boolean = false
-  ): Promise<number | null> {
+    isLateCancel: boolean = false,
+    reservationId?: string
+  ): Promise<{ newScore: number, receipt: ScoreChangeReceipt } | null> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -28,32 +69,84 @@ export class ReliabilityService {
         return null;
       }
 
-      let adjustment = 0;
-      switch (status) {
-        case 'COMPLETED':
-          adjustment = this.REWARD_COMPLETION;
-          break;
-        case 'NO_SHOW':
-          adjustment = this.PENALTY_NO_SHOW;
-          break;
-        case 'CANCELLED':
-          adjustment = isLateCancel ? this.PENALTY_LATE_CANCEL : 0;
-          break;
+      // Fetch Context
+      let contextWeight = 1.0;
+      let streakBonus = 0;
+      
+      if (reservationId) {
+        const reservation = await prisma.reservation.findUnique({
+          where: { id: reservationId },
+          include: { business: true }
+        });
+        if (reservation?.business?.category) {
+          contextWeight = this.getContextWeight(reservation.business.category);
+        }
+
+        // Calculate Streak (consecutive completed)
+        if (status === 'COMPLETED') {
+          const pastRes = await prisma.reservation.findMany({
+            where: { customerId: userId, status: { in: ['COMPLETED', 'NO_SHOW'] } },
+            orderBy: { reservationDate: 'desc' },
+            take: 5
+          });
+          
+          let streak = 0;
+          for (const res of pastRes) {
+            if (res.status === 'COMPLETED') streak++;
+            else break;
+          }
+          if (streak >= 3) streakBonus = 2; // Flat +2 for being on a streak
+        }
       }
 
-      if (adjustment === 0) return user.reliabilityScore;
+      // Elo Math
+      const S = user.reliabilityScore;
+      const E = S / 100.0;
+      const A = this.getActualOutcome(status, isLateCancel);
+      
+      // New Score = S + (K * C) * (A - E)
+      const mathSwing = (this.K_FACTOR * contextWeight) * (A - E);
+      let totalChange = mathSwing + streakBonus;
 
-      let newScore = user.reliabilityScore + adjustment;
+      // Determine reasoning for receipt
+      let reasoning = '';
+      if (status === 'COMPLETED') {
+        reasoning = E > 0.8 ? 'Attendance expected due to Elite status.' : 'Great job improving your score!';
+        if (streakBonus > 0) reasoning += ` Included +${streakBonus} streak bonus.`;
+      } else if (status === 'NO_SHOW') {
+        reasoning = `Ghosting a ${contextWeight > 1.0 ? 'high-stakes ' : ''}reservation severely drops your score.`;
+      } else if (status === 'CANCELLED') {
+        reasoning = isLateCancel 
+          ? 'Late cancellation penalized, but better than ghosting.' 
+          : 'Early cancellation acknowledged. Minor impact.';
+      }
+
+      // Cap boundaries
+      let newScore = S + totalChange;
       newScore = Math.max(this.SCORE_MIN, Math.min(this.SCORE_MAX, newScore));
+      // Re-calculate actual applied change (due to caps)
+      const actualAppliedChange = newScore - S;
+
+      const receipt: ScoreChangeReceipt = {
+        previousScore: S,
+        newScore: Number(newScore.toFixed(1)),
+        basePoints: this.K_FACTOR,
+        contextWeight,
+        expectedProbability: E,
+        actualOutcome: A,
+        streakBonus,
+        totalChange: Number(actualAppliedChange.toFixed(1)),
+        reasoning
+      };
 
       await prisma.user.update({
         where: { id: userId },
-        data: { reliabilityScore: newScore }
+        data: { reliabilityScore: receipt.newScore }
       });
 
-      logger.info(`Updated reliability score for user ${userId}: ${user.reliabilityScore} -> ${newScore}`);
+      logger.info(`Global Trust Update | User ${userId} | ${S} -> ${receipt.newScore} | Outcome: ${A}`);
       
-      return newScore;
+      return { newScore: receipt.newScore, receipt };
     } catch (error) {
       logger.error('Error updating user reliability score:', error);
       throw error;

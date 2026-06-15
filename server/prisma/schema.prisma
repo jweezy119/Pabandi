@@ -337,17 +337,22 @@ enum ApiTier {
 }
 
 model ApiClient {
-  id          String        @id @default(cuid())
-  name        String
-  email       String        @unique
-  apiKey      String        @unique
-  tier        ApiTier       @default(STARTER)
-  callsUsed   Int           @default(0)
-  callsLimit  Int           @default(500)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  usageLogs   ApiUsageLog[]
+  id                String        @id @default(cuid())
+  name              String
+  email             String        @unique
+  apiKey            String        @unique
+  tier              ApiTier       @default(STARTER)
+  callsUsed         Int           @default(0)
+  callsLimit        Int           @default(500)
+  isActive          Boolean       @default(true)
+  paymentMethod     String?       // 'safepay', 'solana', 'bsc', 'free'
+  transactionHash   String?       @unique // safepay tracker or crypto tx hash
+  walletAddress     String?
+  billingMode       BillingMode   @default(PAY_AS_YOU_GO)
+  preferredCurrency CurrencyType  @default(PAB)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  usageLogs         ApiUsageLog[]
 
   @@index([apiKey])
   @@index([email])
@@ -359,11 +364,23 @@ model ApiUsageLog {
   endpoint    String
   statusCode  Int
   latencyMs   Int
+  costFiat    Float     @default(0)
+  costCrypto  Float     @default(0)
   createdAt   DateTime  @default(now())
   client      ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([createdAt])
+}
+
+enum BillingMode {
+  PAY_AS_YOU_GO
+  MONTHLY_SUBSCRIPTION
+}
+
+enum CurrencyType {
+  FIAT
+  PAB
 }
 
 enum SocialPlatform {
@@ -373,7 +390,10 @@ enum SocialPlatform {
   TIKTOK
   INSTAGRAM
   FACEBOOK
+  FIVERR
+  UPWORK
 }
+
 
 model SocialIdentity {
   id              String         @id @default(cuid())
@@ -394,3 +414,5 @@ model SocialIdentity {
   @@unique([userId, platform])
   @@index([userId])
 }
+
+

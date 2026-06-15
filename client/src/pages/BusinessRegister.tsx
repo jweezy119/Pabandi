@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { businessService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { useQueryClient } from 'react-query';
 
 export default function BusinessRegister() {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,6 +43,7 @@ export default function BusinessRegister() {
           ...updatedUser,
         });
       }
+      queryClient.invalidateQueries('my-business');
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register business. Please try again.');

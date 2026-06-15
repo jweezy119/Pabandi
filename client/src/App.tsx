@@ -10,6 +10,7 @@ import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import BookingPage from './pages/BookingPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
+import BusinessCrmPage from './pages/BusinessCrmPage';
 import WalletDashboard from './pages/WalletDashboard';
 import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
@@ -70,6 +71,10 @@ function App() {
         <Route
           path="business/register"
           element={isAuthenticated ? <BusinessRegister /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="business/crm"
+          element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />}
         />
         <Route
           path="business/settings"

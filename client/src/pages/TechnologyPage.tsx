@@ -85,6 +85,117 @@ export default function TechnologyPage() {
         </div>
       </section>
 
+      {/* The Trust Matrix Engine */}
+      <section className="bg-surface-container-lowest rounded-3xl p-8 md:p-12 border border-outline-variant/30 shadow-sm">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label text-sm mb-4">
+            <span className="material-symbols-outlined text-[16px]">grid_view</span>
+            The 4 Data Layers
+          </div>
+          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface mb-4">
+            The Trust Matrix Engine
+          </h2>
+          <p className="font-body text-lg text-on-surface-variant">
+            Pabandi doesn't just look at a single metric. Our engine fuses four verifiable data layers into a singular, cryptographic Trust Standard.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Pillar 1 */}
+          <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 relative overflow-hidden group hover:border-primary/50 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors"></div>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 border border-primary/20 relative z-10">
+              <span className="material-symbols-outlined text-2xl">history</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2 relative z-10">Behavioral History</h3>
+            <p className="font-body text-sm text-on-surface-variant leading-relaxed relative z-10">
+              We analyze the user's booking ledger across the entire Pabandi network. The engine calculates the frequency of no-shows and the exact timing of cancellations to identify chronically flaky behavior.
+            </p>
+          </div>
+
+          {/* Pillar 2 */}
+          <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 relative overflow-hidden group hover:border-secondary/50 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-secondary/10 transition-colors"></div>
+            <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center mb-4 border border-secondary/20 relative z-10">
+              <span className="material-symbols-outlined text-2xl">fingerprint</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2 relative z-10">Verified Identity (KYC)</h3>
+            <p className="font-body text-sm text-on-surface-variant leading-relaxed relative z-10">
+              Pseudonymous users carry higher risk. By securely integrating government-grade ID verification, we filter out bots and malicious actors, ensuring the person booking is exactly who they claim to be.
+            </p>
+          </div>
+
+          {/* Pillar 3 */}
+          <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 relative overflow-hidden group hover:border-tertiary/50 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-tertiary/10 transition-colors"></div>
+            <div className="w-12 h-12 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center mb-4 border border-tertiary/20 relative z-10">
+              <span className="material-symbols-outlined text-2xl">share</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2 relative z-10">Social Graph Analytics</h3>
+            <p className="font-body text-sm text-on-surface-variant leading-relaxed relative z-10">
+              A user with a highly-rated Fiverr or Upwork profile, or a verified LinkedIn, is statistically less likely to no-show. The matrix ingests these vetted professional signals to boost their trust score.
+            </p>
+          </div>
+
+          {/* Pillar 4 */}
+          <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 relative overflow-hidden group hover:border-[#d97706]/50 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#d97706]/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-[#d97706]/10 transition-colors"></div>
+            <div className="w-12 h-12 rounded-xl bg-[#d97706]/10 text-[#d97706] flex items-center justify-center mb-4 border border-[#d97706]/20 relative z-10">
+              <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+            </div>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2 relative z-10">On-Chain Footprint</h3>
+            <p className="font-body text-sm text-on-surface-variant leading-relaxed relative z-10">
+              By connecting a self-custodial Web3 wallet, users anchor their reputation to an immutable cryptographic ledger. The matrix views on-chain escrow behavior as the ultimate proof of commitment.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Enterprise API & Reliability */}
+      <section className="py-8">
+        <div className="bg-[#0f172a] rounded-3xl p-8 md:p-12 border border-outline-variant/20 shadow-xl relative overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="relative z-10 space-y-8">
+            <div className="text-center max-w-3xl mx-auto mb-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label text-sm mb-4">
+                <span className="material-symbols-outlined text-[16px]">api</span>
+                Developer First
+              </div>
+              <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">
+                Enterprise-Grade API & SDKs
+              </h2>
+              <p className="font-body text-lg text-slate-300">
+                Integrate Pabandi's Trust Matrix and Solana Escrow directly into your existing infrastructure with our robust developer tools.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined">bolt</span>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">99.99% Uptime SLA</h3>
+                <p className="text-slate-400 text-sm">Our globally distributed infrastructure ensures your booking flow never goes down, no matter the traffic.</p>
+              </div>
+              <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined">code</span>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">TypeScript SDK</h3>
+                <p className="text-slate-400 text-sm">Drop-in our @pabandi/sdk into your Node.js or browser apps to instantly access risk scoring and Web3 payments.</p>
+              </div>
+              <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined">payments</span>
+                </div>
+                <h3 className="text-white font-bold text-lg mb-2">Pay-As-You-Go Pricing</h3>
+                <p className="text-slate-400 text-sm">Only pay for the exact API calls you make. Integrated natively with Fiat and $PAB crypto payments.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* The Web3 Crypto Ecosystem */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         <div className="order-2 md:order-1 bg-[#031f38] rounded-3xl p-8 relative overflow-hidden shadow-lg border border-primary-container">

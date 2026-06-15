@@ -10,6 +10,8 @@ const PLATFORM_BOOST: Record<string, { base: number; maxBoost: number }> = {
   TIKTOK:     { base: 1, maxBoost: 3 },
   INSTAGRAM:  { base: 2, maxBoost: 4 },
   FACEBOOK:   { base: 2, maxBoost: 4 },
+  FIVERR:     { base: 4, maxBoost: 8 },
+  UPWORK:     { base: 4, maxBoost: 8 },
 };
 
 export interface BadgePayload {
@@ -98,6 +100,13 @@ export class BadgeService {
       if (identity.platform === 'TIKTOK') {
         if (identity.isVerified) boost += 1;
         if (identity.accountAgeDays && identity.accountAgeDays > 365) boost += 1;
+      }
+
+      // Fiverr / Upwork bonuses
+      if (['FIVERR', 'UPWORK'].includes(identity.platform)) {
+        if (identity.rating && identity.rating >= 4.8) boost += 2;
+        if (identity.completionRate && identity.completionRate >= 0.95) boost += 2;
+        if (identity.accountAgeDays && identity.accountAgeDays > 365 * 2) boost += 1;
       }
 
       // Cap at platform max

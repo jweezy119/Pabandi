@@ -8,7 +8,8 @@ Pabandi is an AI-powered booking ecosystem built for the modern service economy.
 - **Solana Web3 Integration**: Native Solana blockchain integration. Users automatically earn **Pabandi Reliability Tokens (PAB)** dropped directly to their Phantom/Solflare wallets for every successful booking and check-in.
 - **AI Reliability Score**: Proprietary ML models analyze user booking histories, location context, and time variables to generate a dynamic "no-show risk score." High-risk users are dynamically prompted for upfront deposits.
 - **Seamless Maps Integration**: Integrated Google Maps embedded directly into the marketing site and reservation dashboards to discover and visualize real-time local business data.
-- **Business Management**: Complete business registration, webhook integrations, and CRM compatibility
+- **Business Management**: Complete business registration, webhook integrations, and native CRM synchronization (Odoo JSON-RPC and Cal.com).
+- **Enterprise API & SDK**: Full Pay-As-You-Go developer API with a native `@pabandi/sdk` for Node.js/TypeScript, allowing drop-in access to the Trust Matrix and Solana Escrow.
 - **Customer Experience**: Dedicated portals for customers to track bookings, manage their Pabandi Web3 Wallet, and earn crypto rewards for reliable behavior
 - **Payment Integration**: Secure fiat processing via **Stripe** (US cards, Apple Pay, Google Pay) with **Safepay** retained as a secondary gateway, plus native **Web3 Crypto Payments**
 - **Automated Reminders**: SMS and email notifications to reduce no-shows

@@ -17,7 +17,7 @@
     "site:verify": "node site/verify.mjs",
     "build:app": "cd client && npm run build",
     "build:hosting": "npm run build:app && node scripts/copy-app-to-site.mjs",
-    "deploy:hosting": "firebase deploy --only hosting --project pabandi-42c5b",
+    "deploy:hosting": "npx -y firebase-tools@latest deploy --only hosting --project pabandi-42c5b",
     "deploy": "npm run site:verify && npm run build:hosting && npm run deploy:hosting"
   },
   "keywords": [

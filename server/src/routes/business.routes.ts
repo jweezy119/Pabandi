@@ -7,6 +7,7 @@ import {
   getBusinessAnalytics,
   getBusinessReviews,
   claimBusiness,
+  getBusinessCustomers,
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 
@@ -55,15 +56,20 @@ router.get('/', async (req, res, next) => {
     // 2. If searching, attempt Google Places Text Search
     if (search && String(search).trim().length > 2 && apiKey) {
       try {
-        const queryStr = `${String(search)} Pakistan`;
         const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
+        const params: any = {
+          query: String(search),
+          key: apiKey,
+        };
         
-        const googleRes = await axios.get(googleUrl, {
-          params: {
-            query: queryStr,
-            key: apiKey,
-          }
-        });
+        if (latitude && longitude) {
+          params.location = `${latitude},${longitude}`;
+          params.radius = 50000; // 50km radius
+        } else {
+          params.query = `${String(search)} Pakistan`;
+        }
+
+        const googleRes = await axios.get(googleUrl, { params });
         
         const places = googleRes.data?.results || [];
         googleResults = googleResults.concat(places);
@@ -177,6 +183,10 @@ router.get('/', async (req, res, next) => {
       else if (types.includes('gym') || types.includes('fitness_center')) mappedCat = 'FITNESS_CENTER';
       else if (types.includes('event_venue') || types.includes('hall')) mappedCat = 'EVENT_VENUE';
 
+      if (category && category !== 'ALL' && mappedCat !== String(category)) {
+        continue;
+      }
+
       const address = place.vicinity || place.formatted_address || '';
       const addressLower = address.toLowerCase();
       let city = 'Karachi';
@@ -227,15 +237,8 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Publicly accessible business routes (with optional auth)
-router.get('/:id', optionalAuthenticate, getBusiness);
-router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
-
-// All subsequent business routes require authentication
-router.use(authenticate);
-
 // GET /businesses/me — fetch the logged-in owner's business
-router.get('/me', async (req: any, res, next) => {
+router.get('/me', authenticate, async (req: any, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
     const business = await prisma.business.findUnique({
@@ -251,10 +254,20 @@ router.get('/me', async (req: any, res, next) => {
   }
 });
 
+// Publicly accessible business routes (with optional auth)
+router.get('/:id', optionalAuthenticate, getBusiness);
+router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
+
+// All subsequent business routes require authentication
+router.use(authenticate);
+
+
+
 router.post('/', createBusiness);
 router.post('/:id/claim', claimBusiness);
 router.put('/:id', authorize('BUSINESS_OWNER', 'ADMIN'), updateBusiness);
 router.get('/:id/reservations', getBusinessReservations);
 router.get('/:id/analytics', getBusinessAnalytics);
+router.get('/:id/customers', getBusinessCustomers);
 
 export default router;
