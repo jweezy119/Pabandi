@@ -18,6 +18,7 @@ import {
   GiftIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
+import { ScoreReceipts } from '../components/ScoreReceipts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loyalty tier definitions (Pabandi-global)
@@ -476,6 +477,8 @@ export default function ProfilePage() {
 
   const SOCIAL_PLATFORMS = [
     { id: 'LINKEDIN', name: 'LinkedIn', emoji: '💼', color: '#0A66C2', boost: 5 },
+    { id: 'FIVERR', name: 'Fiverr', emoji: '🟢', color: '#1DBF73', boost: 8 },
+    { id: 'UPWORK', name: 'Upwork', emoji: '🟩', color: '#14A800', boost: 8 },
     { id: 'X_TWITTER', name: 'X (Twitter)', emoji: '𝕏', color: '#000000', boost: 3 },
     { id: 'TIKTOK', name: 'TikTok', emoji: '🎵', color: '#000000', boost: 3 },
   ];
@@ -810,27 +813,34 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* ── History Tab ── */}
+          {/* ── History & Receipts Tab ── */}
           {activeTab === 'history' && (
-            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-black text-on-surface font-headline">Recent Bookings</h2>
-                <Link to="/reservations" className="text-xs font-bold text-primary hover:underline">View All →</Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-black text-on-surface font-headline">Recent Bookings</h2>
+                  <Link to="/reservations" className="text-xs font-bold text-primary hover:underline">View All →</Link>
+                </div>
+                {reservations.length > 0 ? (
+                  <div className="divide-y divide-outline-variant/10">
+                    {reservations.slice(0, 10).map((r, i) => (
+                      <BookingItem key={r.id} reservation={r} index={i} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-outline" />
+                    <p className="text-sm font-semibold mb-1 text-on-surface">No bookings yet</p>
+                    <p className="text-xs text-on-surface-variant mb-5">Your booking history will appear here</p>
+                    <Link to="/" className="bg-primary text-on-primary px-5 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">Find a Business</Link>
+                  </div>
+                )}
               </div>
-              {reservations.length > 0 ? (
-                <div className="divide-y divide-outline-variant/10">
-                  {reservations.slice(0, 10).map((r, i) => (
-                    <BookingItem key={r.id} reservation={r} index={i} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-outline" />
-                  <p className="text-sm font-semibold mb-1 text-on-surface">No bookings yet</p>
-                  <p className="text-xs text-on-surface-variant mb-5">Your booking history will appear here</p>
-                  <Link to="/" className="bg-primary text-on-primary px-5 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">Find a Business</Link>
-                </div>
-              )}
+              
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+                <h2 className="text-lg font-black text-on-surface font-headline mb-4">Score Receipts</h2>
+                <ScoreReceipts />
+              </div>
             </div>
           )}
 

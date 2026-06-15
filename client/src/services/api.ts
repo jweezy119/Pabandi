@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
 const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-server-97129395003.asia-south1.run.app');
 const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
+export const API_HOST = _baseHost;
 const API_BASE_URL = `${_baseHost}/api/v1`;
 
 const apiClient = axios.create({
@@ -56,6 +57,8 @@ export const businessService = {
   getBusinessAnalytics: (id: string, params?: any) =>
     apiClient.get(`/businesses/${id}/analytics`, { params }),
   getBusinessReviews: (id: string) => apiClient.get(`/businesses/${id}/reviews`),
+  /** Get all distinct patrons who have booked at this business */
+  getBusinessCustomers: (id: string) => apiClient.get(`/businesses/${id}/customers`),
   /** Get the logged-in owner's business */
   getMyBusiness: () => apiClient.get('/businesses/me'),
   /** Get public businesses for the homepage */
@@ -112,6 +115,20 @@ export const socialService = {
   disconnect: (platform: string) => apiClient.delete(`/social/disconnect/${platform}`),
   connectMeta: () => apiClient.post('/social/connect/META'),
   disconnectMeta: () => apiClient.delete('/social/disconnect/META'),
+};
+
+export const walletService = {
+  getBalances: () => apiClient.get('/wallet/balances'),
+};
+
+export const reliabilityService = {
+  getGuidelines: () => apiClient.get('/reliability/guidelines'),
+  getHistory: () => apiClient.get('/reliability/history'),
+};
+
+export const stakingService = {
+  stake: (data: { reservationId: string; amount: number }) => apiClient.post('/staking/stake', data),
+  slash: (data: { reservationId: string }) => apiClient.post('/staking/slash', data),
 };
 
 export default apiClient;

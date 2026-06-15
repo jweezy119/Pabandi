@@ -27,6 +27,7 @@ import cryptoRoutes from './routes/crypto.routes';
 import externalRoutes from './routes/external.routes';
 import apiClientsRoutes from './routes/apiClients.routes';
 import socialRoutes from './routes/social.routes';
+import walletRoutes from './routes/wallet.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -85,7 +86,18 @@ app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
+
+import apiSubscriptionRoutes from './routes/api-subscription.routes';
+app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);
+
+import reliabilityRoutes from './routes/reliability.routes';
+
+import stakingRoutes from './routes/staking.routes';
+
 app.use(`/api/${API_VERSION}/social`, socialRoutes);
+app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
+app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
+app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
 
 // ── Pabandi Intelligence API (B2B) ──────────────────────────────────────────
 // Separate from /api/v1/ so it can be independently rate-limited and versioned
@@ -143,10 +155,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📚 API available at http://localhost:${PORT}/api/${API_VERSION}`);
-  logger.info(`🏥 Health check: http://localhost:${PORT}/health`);
+const parsedPort = parseInt(process.env.PORT || '5000', 10);
+httpServer.listen(parsedPort, '0.0.0.0', () => {
+  logger.info(`🚀 Server running on port ${parsedPort}`);
+  logger.info(`📚 API available at http://localhost:${parsedPort}/api/${API_VERSION}`);
+  logger.info(`🏥 Health check: http://localhost:${parsedPort}/health`);
   logger.info(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? '✅ configured' : '❌ not configured'}`);
 });
 

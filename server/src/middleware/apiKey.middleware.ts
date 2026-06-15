@@ -103,10 +103,27 @@ export const logApiUsage = (
     const endpoint = req.path;
     const statusCode = res.statusCode;
 
+    // Basic pricing tier configuration
+    const ENDPOINT_PRICING: Record<string, { fiat: number, crypto: number }> = {
+      '/score': { fiat: 0.05, crypto: 2.5 },
+      '/business': { fiat: 0.01, crypto: 0.5 },
+      'default': { fiat: 0.01, crypto: 0.5 }
+    };
+
+    const pathBase = endpoint.split('/')[1] ? `/${endpoint.split('/')[1]}` : 'default';
+    const pricing = ENDPOINT_PRICING[pathBase] || ENDPOINT_PRICING['default'];
+
     // Fire-and-forget — do not block the response
     Promise.all([
       prisma.apiUsageLog.create({
-        data: { clientId, endpoint, statusCode, latencyMs },
+        data: { 
+          clientId, 
+          endpoint, 
+          statusCode, 
+          latencyMs,
+          costFiat: pricing.fiat,
+          costCrypto: pricing.crypto
+        },
       }),
       prisma.apiClient.update({
         where: { id: clientId },

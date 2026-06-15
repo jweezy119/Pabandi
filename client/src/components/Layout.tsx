@@ -80,6 +80,11 @@ export default function Layout() {
                 <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
                   {user?.role === 'BUSINESS_OWNER' ? 'Dashboard' : 'Bookings'}
                 </DesktopNavLink>
+                {user?.role === 'BUSINESS_OWNER' && (
+                  <DesktopNavLink to="/business/crm" current={location.pathname === '/business/crm'}>
+                    CRM
+                  </DesktopNavLink>
+                )}
                 <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>Wallet</DesktopNavLink>
                 <DesktopNavLink to="/profile" current={location.pathname === '/profile' || location.pathname === '/loyalty'}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
@@ -102,6 +107,9 @@ export default function Layout() {
           {/* BottomNavBar Shared Component */}
           <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
             <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
+            {user?.role === 'BUSINESS_OWNER' && (
+              <MobileTab to="/business/crm" icon="groups" label="CRM" current={location.pathname === '/business/crm'} />
+            )}
             <MobileTab 
               to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} 
               icon={user?.role === 'BUSINESS_OWNER' ? 'dashboard' : 'calendar_month'} 

@@ -51,9 +51,27 @@ const STUB_PROFILES: Record<string, Partial<any>> = {
     completeness: 0.90,
     trustBoost: 0,
   },
+  FIVERR: {
+    isVerified: true,
+    accountAgeDays: 365 * 4,
+    platformHandle: 'fiverr_pro',
+    rating: 4.9,
+    completionRate: 0.98,
+    accountLevel: 'Top Rated Seller',
+    trustBoost: 0,
+  },
+  UPWORK: {
+    isVerified: true,
+    accountAgeDays: 365 * 3,
+    platformHandle: 'upwork_talent',
+    rating: 5.0,
+    completionRate: 1.0,
+    accountLevel: 'Top Rated Plus',
+    trustBoost: 0,
+  },
 };
 
-const VALID_PLATFORMS = ['LINKEDIN', 'X_TWITTER', 'WHATSAPP', 'TIKTOK', 'INSTAGRAM', 'FACEBOOK'];
+const VALID_PLATFORMS = ['LINKEDIN', 'X_TWITTER', 'WHATSAPP', 'TIKTOK', 'INSTAGRAM', 'FACEBOOK', 'FIVERR', 'UPWORK'];
 
 // The three Meta-owned platforms that connect together
 const META_PLATFORMS = ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK'];

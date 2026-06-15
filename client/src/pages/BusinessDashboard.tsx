@@ -397,6 +397,14 @@ export default function BusinessDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                       {r.riskScore != null && <RiskBadge score={r.riskScore} />}
+                      
+                      {r.depositStatus === 'PAID' && r.cryptoDepositTxHash?.startsWith('STAKED_') && (
+                        <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container uppercase tracking-widest">
+                          <ShieldCheckIcon className="h-3.5 w-3.5" />
+                          {r.cryptoDepositTxHash.split('_')[1]} PAB Staked
+                        </span>
+                      )}
+
                       <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: sc.bg, color: sc.color }}>
                         {sc.icon} {sc.label}
                       </span>
@@ -406,9 +414,9 @@ export default function BusinessDashboard() {
                             className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-tertiary-container text-on-tertiary-container hover:opacity-80 transition-opacity">
                             ✓ Done
                           </button>
-                          <button onClick={() => { if (confirm('Mark as no-show?')) noShowMutation.mutate(r.id); }}
+                          <button onClick={() => { if (confirm('Mark as no-show? This will slash any staked deposit.')) noShowMutation.mutate(r.id); }}
                             className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-error-container text-on-error-container hover:opacity-80 transition-opacity">
-                            ✕ No-Show
+                            ✕ {r.cryptoDepositTxHash?.startsWith('STAKED_') ? 'Slash Stake' : 'No-Show'}
                           </button>
                         </div>
                       )}

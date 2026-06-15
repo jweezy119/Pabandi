@@ -254,7 +254,7 @@ export default function ReservationsPage() {
                        <button 
                          disabled={cancelMutation.isLoading}
                          onClick={() => {
-                           if (confirm(`Cancel your reservation at ${r.business?.name || 'this business'}?\n\nNote: Late cancellations may affect your reliability score.`)) {
+                           if (confirm(`Cancel your reservation at ${r.business?.name || 'this business'}?\n\nCancellation Policy:\n- >24 hours: 100% Refund\n- 2-24 hours: 50% Refund\n- <2 hours: No Refund (0%)\n\nNote: Late cancellations may also affect your reliability score.`)) {
                              cancelMutation.mutate(r.id);
                            }
                          }}

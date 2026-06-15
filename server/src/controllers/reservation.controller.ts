@@ -410,13 +410,16 @@ export const cancelReservation = async (
       business?.timezone || 'America/New_York'
     );
 
-    if (
-      reservationDateTime.diff(moment(), 'hours') < cancellationHours
-    ) {
-      throw new CustomError(
-        `Reservations must be cancelled at least ${cancellationHours} hours in advance`,
-        400
-      );
+    const hoursUntilReservation = reservationDateTime.diff(moment(), 'hours');
+    
+    // Tiered Cancellation Rules
+    let refundPercentage = 100;
+    if (hoursUntilReservation < cancellationHours) {
+      if (hoursUntilReservation < 2) {
+        refundPercentage = 0; // Less than 2 hours: 0% refund
+      } else {
+        refundPercentage = 50; // Late cancel (but > 2h): 50% refund
+      }
     }
 
     const cancelled = await prisma.reservation.update({
@@ -427,23 +430,68 @@ export const cancelReservation = async (
       },
     });
 
-    const isLateCancel = reservationDateTime.diff(moment(), 'hours') < (cancellationHours + 12);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'CANCELLED', isLateCancel);
+    const isLateCancel = hoursUntilReservation < (cancellationHours + 12);
+    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'CANCELLED', isLateCancel, reservation.id);
 
     // Trigger Webhook
     webhookService.dispatch('reservation.cancelled', cancelled.businessId, {
       reservation: cancelled,
     });
 
-    // Process refunds if deposit was paid
+    // Process refunds if deposit was paid or staked
     if (reservation.depositRequired && reservation.depositStatus === 'PAID') {
       try {
-        if (reservation.cryptoDepositTxHash) {
-          logger.info(`Crypto refund requested manually for reservation ${reservation.id} with txHash ${reservation.cryptoDepositTxHash}`);
-        } else {
-          // Fiat refund via payment router (Safepay for PKR, PayPal for USD)
+        // --- TIERED CRYPTO STAKE REFUND ---
+        if (reservation.cryptoDepositTxHash?.startsWith('STAKED_')) {
+          const stakedAmount = parseFloat(reservation.cryptoDepositTxHash.split('_')[1]);
+          const userRefund = stakedAmount * (refundPercentage / 100);
+          const businessComp = stakedAmount - userRefund;
+
+          // Refund User
+          if (userRefund > 0) {
+            await prisma.wallet.upsert({
+              where: { userId: reservation.customerId },
+              update: { balance: { increment: userRefund } },
+              create: { userId: reservation.customerId, balance: userRefund }
+            });
+          }
+
+          // Compensate Business
+          if (businessComp > 0 && business?.ownerId) {
+            await prisma.wallet.upsert({
+              where: { userId: business.ownerId },
+              update: { balance: { increment: businessComp } },
+              create: { userId: business.ownerId, balance: businessComp }
+            });
+          }
+
+          await prisma.reservation.update({
+            where: { id: reservation.id },
+            data: { cryptoDepositTxHash: `CANCELLED_REFUND${refundPercentage}` }
+          });
+          logger.info(`Crypto tiered refund: ${refundPercentage}% to user (${userRefund} PAB), ${businessComp} to business.`);
+        } 
+        // --- FIAT REFUND ---
+        else {
           const currency = business?.currency || 'USD';
-          await paymentRouter.refundDeposit(currency, reservation.id, reservation.depositAmount || 0);
+          const originalFiatAmount = reservation.depositAmount || 0;
+          const fiatRefundAmount = originalFiatAmount * (refundPercentage / 100);
+          
+          if (fiatRefundAmount > 0) {
+            await paymentRouter.refundDeposit(currency, reservation.id, fiatRefundAmount);
+          }
+          
+          // Update payment records
+          await prisma.payment.updateMany({
+            where: { reservationId: reservation.id },
+            data: {
+              status: 'REFUNDED',
+              refunded: true,
+              refundedAt: new Date(),
+              refundAmount: fiatRefundAmount,
+            },
+          });
+          logger.info(`Successfully processed ${refundPercentage}% fiat refund of ${currency} ${fiatRefundAmount}`);
         }
 
         // Update reservation to record that deposit is no longer active
@@ -453,19 +501,6 @@ export const cancelReservation = async (
             depositPaid: false,
           },
         });
-
-        // Update payment records associated with this reservation
-        await prisma.payment.updateMany({
-          where: { reservationId: reservation.id },
-          data: {
-            status: 'REFUNDED',
-            refunded: true,
-            refundedAt: new Date(),
-            refundAmount: reservation.depositAmount || 0,
-          },
-        });
-
-        logger.info(`Successfully processed refund of ${business?.currency || 'USD'} ${reservation.depositAmount} for cancelled reservation: ${reservation.id}`);
       } catch (refundError) {
         logger.error(`Error processing refund for reservation ${reservation.id}:`, refundError);
       }
@@ -574,7 +609,7 @@ export const completeReservation = async (
 
     // Update Scores
     await reviewService.calculateReliabilityScore(reservation.businessId);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'COMPLETED');
+    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'COMPLETED', false, reservation.id);
 
     res.json({
       success: true,
@@ -624,7 +659,7 @@ export const markNoShow = async (
 
     // Update Scores (Business and User)
     await reviewService.calculateReliabilityScore(reservation.businessId);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'NO_SHOW');
+    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'NO_SHOW', false, reservation.id);
 
     res.json({
       success: true,

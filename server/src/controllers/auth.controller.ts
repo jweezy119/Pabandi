@@ -8,6 +8,7 @@ import type { Secret, JwtPayload } from 'jsonwebtoken';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { odooService } from '../services/odoo.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -109,6 +110,18 @@ export const register = async (
     );
 
     logger.info(`New user registered: ${user.email} ${user.role === 'BUSINESS_OWNER' ? '(Business: ' + req.body.businessName + ')' : ''}`);
+
+    // Sync to Odoo CRM if business owner
+    if (resolvedRole === UserRole.BUSINESS_OWNER && req.body.businessName) {
+      // Fire and forget (don't block the request)
+      odooService.syncNewBusiness({
+        firstName,
+        lastName,
+        email,
+        phone,
+        businessName: req.body.businessName
+      }).catch(err => logger.error('Failed async Odoo sync:', err));
+    }
 
     res.status(201).json({
       success: true,

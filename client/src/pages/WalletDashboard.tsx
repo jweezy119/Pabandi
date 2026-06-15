@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
+import { ShieldCheckIcon, UserCircleIcon, FingerPrintIcon, ShareIcon } from '@heroicons/react/24/solid';
 import {
-  WalletIcon, ArrowUpRightIcon,
+  ArrowUpRightIcon,
   StarIcon, LinkIcon, XMarkIcon, CheckCircleIcon,
   ExclamationTriangleIcon, BoltIcon,
   TrophyIcon, FireIcon, CurrencyDollarIcon,
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import apiClient, { cryptoService } from '../services/api';
+import apiClient, { cryptoService, walletService, socialService } from '../services/api';
 
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | null;
@@ -255,15 +256,41 @@ const WalletDashboard: React.FC = () => {
     }
   });
 
-  const { data: wallet, isLoading, refetch } = useQuery('pab-wallet', async () => {
+  const { data: balances, isLoading, refetch } = useQuery('pab-wallet-balances', async () => {
+    const res = await walletService.getBalances();
+    return res.data?.data;
+  }, { retry: false, refetchOnWindowFocus: false });
+
+  // Fallback to getting rewards from cryptoService to show history
+  const { data: cryptoWallet } = useQuery('pab-wallet-rewards', async () => {
     const res = await cryptoService.getWallet();
     return res.data?.data;
   }, { retry: false, refetchOnWindowFocus: false });
 
-  const balance = Number(wallet?.balance || 0);
+  // Web3 Trust Matrix Data
+  const { data: badgeData } = useQuery('my-badge-dashboard', async () => {
+    const res = await socialService.getMyBadge();
+    return res.data?.data;
+  }, { retry: false, refetchOnWindowFocus: false });
+
+  const { data: userData } = useQuery('auth-me-dashboard', async () => {
+    const res = await apiClient.get('/auth/me');
+    return res.data?.data;
+  }, { retry: false, refetchOnWindowFocus: false });
+
+  const reliabilityScore = badgeData?.reliabilityScore || 100;
+  const socialTrustBoost = badgeData?.socialTrustBoost || 0;
+  const isKycVerified = userData?.kycStatus === 'VERIFIED';
+  const socialPlatformsCount = badgeData?.socialSignals?.length || 0;
+  const hasWeb3 = !!connected;
+  
+  const offChainBalance = Number(balances?.offChainBalance || 0);
+  const onChainBalance = Number(balances?.onChainBalance || 0);
+  const balance = offChainBalance + onChainBalance;
+  
   const usdValue = (balance * 0.15).toFixed(2);
-  const totalEarned = wallet?.totalEarned || 0;
-  const rewards = wallet?.recentRewards || [];
+  const totalEarned = cryptoWallet?.totalEarned || 0;
+  const rewards = cryptoWallet?.recentRewards || [];
 
   // Mock reliability stats for SBT (would come from analytics in production)
   const totalBookings = rewards.filter((r: any) => r.type === 'RESERVATION_COMPLETION').length;
@@ -349,57 +376,94 @@ const WalletDashboard: React.FC = () => {
         {/* ── Balance Cards ── */}
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
-          {/* Main Balance */}
-          <div className="md:col-span-2 relative overflow-hidden rounded-3xl p-7 text-white shadow-md border border-primary/20" style={{
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)',
-          }}>
-            {/* Shimmer */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 3s infinite', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 200, height: 200, top: -60, right: -40, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.2), transparent)', filter: 'blur(30px)', pointerEvents: 'none' }} />
-
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                <div className="p-2.5 rounded-xl bg-white/20 border border-white/30 backdrop-blur-sm">
-                  <WalletIcon className="h-6 w-6 text-white" />
+          {/* Split Balance Card */}
+          <div className="md:col-span-2 flex flex-col gap-4">
+            
+            {/* Pabandi Vault (Off-Chain) */}
+            <div className="relative overflow-hidden rounded-3xl p-6 text-white shadow-md border border-primary/20" style={{
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-container) 100%)',
+            }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 4s infinite', pointerEvents: 'none' }} />
+              
+              <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">Pabandi Vault</span>
+                    <span className="font-body text-[10px] text-white/70">Off-Chain</span>
+                  </div>
+                  <div>
+                    <span className="font-headline text-4xl sm:text-5xl font-black text-white">{offChainBalance.toLocaleString()}</span>
+                    <span className="font-headline text-lg text-white/80 ml-2">PAB</span>
+                  </div>
+                  <p className="font-body text-xs text-white/70 mt-1">Available for Staking & Direct Booking</p>
                 </div>
-                <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">Active Balance</span>
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <span className="font-headline text-5xl sm:text-6xl font-black text-white">{balance.toLocaleString()}</span>
-                <span className="font-headline text-xl text-white/80 ml-2">PAB</span>
-              </div>
-              <p className="font-body text-xs text-white/70 mb-5">≈ ${usdValue} USD · Based on PAB/USDT rate</p>
-
-              {connected ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-                  <span className="font-body text-xs text-white/80 font-medium">◎ {shortAddr(connected.address)} · Solana</span>
-                  {connected.type === 'phantom' && balance > 0 && !transferSuccess && (
+                
+                {/* Withdraw Button */}
+                <div className="text-right">
+                  {connected && connected.type === 'phantom' && offChainBalance > 0 && !transferSuccess && (
                     <button type="button" onClick={() => transferMutation.mutate()} disabled={transferMutation.isLoading}
-                      className="font-body text-xs font-bold px-4 py-2 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5">
-                      {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Solana</>}
+                      className="font-body text-xs font-bold px-4 py-2.5 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5 shadow-sm">
+                      {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Web3</>}
                     </button>
                   )}
-                  {transferSuccess && (
-                    <div className="w-full mt-2 p-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm animate-fade-in">
-                      <p className="text-[11px] font-bold text-white flex items-center gap-1.5 mb-1">
-                        <CheckCircleIcon className="h-4 w-4 text-[#5fa98c]" />
-                        Successfully withdrawn {transferSuccess.amount.toLocaleString()} PAB!
-                      </p>
-                      {transferSuccess.txHash && (
-                        <a href={`https://solscan.io/tx/${transferSuccess.txHash}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/70 hover:text-white underline underline-offset-2 flex items-center gap-1">
-                          View on Solscan <ArrowUpRightIcon className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
+                  {!connected && (
+                    <button onClick={() => { setShowModal(true); setError(''); }}
+                      className="font-body text-xs text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2">
+                      <LinkIcon className="h-4 w-4" /> Connect Phantom to withdraw
+                    </button>
                   )}
                 </div>
-              ) : (
-                <button onClick={() => { setShowModal(true); setError(''); }}
-                  className="font-body text-xs text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2">
-                  <LinkIcon className="h-4 w-4" /> Connect Phantom to withdraw
-                </button>
+              </div>
+              
+              {transferSuccess && (
+                <div className="w-full mt-4 p-3 bg-white/10 border border-white/20 rounded-xl backdrop-blur-sm animate-fade-in">
+                  <p className="text-[11px] font-bold text-white flex items-center gap-1.5 mb-1">
+                    <CheckCircleIcon className="h-4 w-4 text-[#5fa98c]" />
+                    Successfully withdrawn {transferSuccess.amount.toLocaleString()} PAB!
+                  </p>
+                  {transferSuccess.txHash && (
+                    <a href={`https://solscan.io/tx/${transferSuccess.txHash}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/70 hover:text-white underline underline-offset-2 flex items-center gap-1">
+                      View on Solscan <ArrowUpRightIcon className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               )}
             </div>
+
+            {/* Web3 Wallet (On-Chain) */}
+            <div className="relative overflow-hidden rounded-3xl p-6 shadow-sm border border-outline-variant/30 bg-surface-container-lowest">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest border border-secondary/10">Web3 Wallet</span>
+                    {connected ? (
+                      <span className="font-body text-[10px] text-on-surface-variant flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                        {connected.chainName}
+                      </span>
+                    ) : (
+                      <span className="font-body text-[10px] text-on-surface-variant">Not Connected</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-headline text-3xl sm:text-4xl font-black text-on-surface">{onChainBalance.toLocaleString()}</span>
+                    <span className="font-headline text-base text-on-surface-variant ml-2">PAB</span>
+                  </div>
+                  <p className="font-body text-xs text-on-surface-variant mt-1">Self-Custodial Balance</p>
+                </div>
+                
+                {connected && connected.type === 'phantom' && (
+                  <div className="text-right flex flex-col items-end gap-2">
+                    <span className="font-body text-xs font-bold text-on-surface-variant">◎ {shortAddr(connected.address)}</span>
+                    <a href={`https://solscan.io/account/${connected.address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" 
+                      className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                      View Account <ArrowUpRightIcon className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
 
           {/* Stats */}
@@ -421,21 +485,96 @@ const WalletDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Web3 Tech Explainer ── */}
-        <div className="animate-fade-up-delay-2 grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-          {[
-            { icon: '🛡️', title: 'Soulbound Identity', desc: 'Your reliability score minted as a non-transferable NFT — permanently yours on Solana.', colorClass: 'text-primary', bgClass: 'bg-primary-container' },
-            { icon: '⚡', title: 'Smart Contract Escrow', desc: 'Deposits held trustlessly on-chain. Auto-release on completion. Zero chargebacks.', colorClass: 'text-secondary', bgClass: 'bg-secondary-container' },
-            { icon: '🎫', title: 'VIP Memberships', desc: 'Mint exclusive NFTs from your favorite businesses for priority booking and discounts.', colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', badge: 'Live' },
-            { icon: '✅', title: 'Token-Gated Reviews', desc: 'Only wallets holding a cryptographic proof-of-attendance NFT can leave reviews.', colorClass: 'text-[#d97706]', bgClass: 'bg-[#fef3c7]', badge: 'Live' },
-          ].map(s => (
-            <div key={s.title} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 relative overflow-hidden shadow-sm">
-              {s.badge && <span className={`absolute top-4 right-4 font-body text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${s.colorClass} ${s.bgClass}`}>{s.badge}</span>}
-              <div className="text-3xl mb-3 drop-shadow-sm">{s.icon}</div>
-              <h3 className={`font-headline text-sm font-black mb-1.5 ${s.colorClass}`}>{s.title}</h3>
-              <p className="font-body text-xs text-on-surface-variant leading-relaxed">{s.desc}</p>
+        {/* ── Web3 Reliability Matrix ── */}
+        <div className="animate-fade-up-delay-2 mb-10">
+          <div className="mb-5">
+            <h2 className="font-headline text-xl font-black text-on-surface">Web3 Trust Matrix</h2>
+            <p className="font-body text-sm text-on-surface-variant mt-1">
+              Transparent, cryptographic proof of the factors powering your Pabandi Reliability Score.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-stretch">
+            {/* The 4 Pillars */}
+            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Pillar 1: Historical Proof */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 flex gap-3 shadow-sm relative overflow-hidden">
+                <div className="bg-primary/10 text-primary p-2.5 rounded-xl h-fit border border-primary/20"><CheckCircleIcon className="h-6 w-6" /></div>
+                <div>
+                  <h4 className="font-headline text-sm font-bold text-on-surface">Historical Proof</h4>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">On-chain ledger of your bookings and show-up rate.</p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-primary text-on-primary">{showRate}% Rate</span>
+                    <span className="font-body text-[10px] text-on-surface-variant">{totalBookings} Bookings</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 2: Identity (KYC) */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 flex gap-3 shadow-sm relative overflow-hidden">
+                <div className="bg-secondary/10 text-secondary p-2.5 rounded-xl h-fit border border-secondary/20"><FingerPrintIcon className="h-6 w-6" /></div>
+                <div>
+                  <h4 className="font-headline text-sm font-bold text-on-surface">Identity Proof</h4>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Government-grade identity verification for ultimate trust.</p>
+                  {isKycVerified ? (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-secondary text-on-secondary flex items-center w-fit gap-1"><ShieldCheckIcon className="h-3 w-3" /> Verified Identity</span>
+                  ) : (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant flex items-center w-fit gap-1"><UserCircleIcon className="h-3 w-3" /> Pseudonymous</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Pillar 3: Social Graph */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 flex gap-3 shadow-sm relative overflow-hidden">
+                <div className="bg-tertiary/10 text-tertiary p-2.5 rounded-xl h-fit border border-tertiary/20"><ShareIcon className="h-6 w-6" /></div>
+                <div>
+                  <h4 className="font-headline text-sm font-bold text-on-surface">Social Graph</h4>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Reputation merged from Fiverr, Upwork, and LinkedIn.</p>
+                  {socialPlatformsCount > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-tertiary text-on-tertiary">+{socialTrustBoost} pts Boost</span>
+                      <span className="font-body text-[10px] text-on-surface-variant">{socialPlatformsCount} Connected</span>
+                    </div>
+                  ) : (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">0 Connected</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Pillar 4: Web3 Custody */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 flex gap-3 shadow-sm relative overflow-hidden">
+                <div className="bg-[#d97706]/10 text-[#d97706] p-2.5 rounded-xl h-fit border border-[#d97706]/20"><BoltIcon className="h-6 w-6" /></div>
+                <div>
+                  <h4 className="font-headline text-sm font-bold text-on-surface">Web3 Custody</h4>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Cryptographic wallet connecting your SBTs to reality.</p>
+                  {hasWeb3 ? (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-[#d97706] text-white flex items-center w-fit gap-1"><LinkIcon className="h-3 w-3" /> Wallet Linked</span>
+                  ) : (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">Not Linked</span>
+                  )}
+                </div>
+              </div>
+
             </div>
-          ))}
+
+            {/* Final Trust Score Box */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-2xl p-6 shadow-sm border border-primary/20 flex flex-col justify-center items-center text-center" style={{
+              background: 'linear-gradient(135deg, var(--color-surface-container-lowest) 0%, var(--color-primary-container) 150%)',
+            }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, var(--color-primary) 0%, transparent 60%)', opacity: 0.05, pointerEvents: 'none' }} />
+              <ShieldCheckIcon className="h-12 w-12 text-primary mb-3 drop-shadow-md" />
+              <h3 className="font-headline text-sm font-bold text-on-surface mb-1">Standard Trust Score</h3>
+              <div className="flex items-baseline gap-1 mt-1 mb-2">
+                <span className="font-headline text-6xl font-black text-primary drop-shadow-sm">{reliabilityScore}</span>
+                <span className="font-headline text-xl font-bold text-on-surface-variant">/100</span>
+              </div>
+              <p className="font-body text-xs text-on-surface-variant leading-relaxed max-w-[200px]">
+                Calculated transparently using your booking history, social graph, and identity proofs.
+              </p>
+            </div>
+            
+          </div>
         </div>
 
         {/* ── Rewards History ── */}
