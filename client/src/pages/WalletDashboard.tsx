@@ -165,8 +165,13 @@ function RewardRow({ reward, index }: { reward: any; index: number }) {
           </p>
         </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
+      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
         <span className="font-headline" style={{ fontSize: '0.875rem', fontWeight: 800, color }}>+{reward.amount} PAB</span>
+        {reward.metadata?.aiBonus > 0 && (
+          <span className="font-body text-[9px] px-[6px] py-[2px] rounded uppercase font-bold" style={{ background: `${color}15`, color: color }}>
+            AI Override Bonus
+          </span>
+        )}
       </div>
     </div>
   );

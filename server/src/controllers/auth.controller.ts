@@ -24,6 +24,8 @@ interface RegisterBody {
   role?: string;
   businessName?: string;
   googlePlaceId?: string;
+  fiverrUrl?: string;
+  upworkUrl?: string;
 }
 
 interface LoginBody {
@@ -82,7 +84,15 @@ export const register = async (
               googlePlaceId: req.body.googlePlaceId,
             }
           }
-        })
+        }),
+        ...(req.body.fiverrUrl || req.body.upworkUrl ? {
+          socialIdentities: {
+            create: [
+              ...(req.body.fiverrUrl ? [{ platform: 'FIVERR' as const, platformHandle: req.body.fiverrUrl, trustBoost: 15 }] : []),
+              ...(req.body.upworkUrl ? [{ platform: 'UPWORK' as const, platformHandle: req.body.upworkUrl, trustBoost: 15 }] : [])
+            ]
+          }
+        } : {})
       },
       select: {
         id: true,
@@ -148,6 +158,7 @@ export const login = async (
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { business: true }
     });
 
     if (!user) {
@@ -186,6 +197,7 @@ export const login = async (
           lastName: user.lastName,
           phone: user.phone,
           role: user.role,
+          business: user.business,
         },
         token,
         refreshToken,

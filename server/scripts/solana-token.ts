@@ -11,13 +11,23 @@ import {
 } from '@solana/spl-token';
 import * as fs from 'fs';
 import * as path from 'path';
+import bs58 from 'bs58';
+import * as dotenv from 'dotenv';
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Load or create a keypair for the "Treasury" / Mint Authority
 const WALLET_PATH = path.join(__dirname, '..', 'treasury-wallet.json');
 
 function getWallet(): Keypair {
+  if (process.env.SOLANA_PRIVATE_KEY) {
+    const secret = bs58.decode(process.env.SOLANA_PRIVATE_KEY);
+    console.log('Using Treasury Wallet from SOLANA_PRIVATE_KEY in .env');
+    return Keypair.fromSecretKey(secret);
+  }
+
   if (fs.existsSync(WALLET_PATH)) {
     const secret = JSON.parse(fs.readFileSync(WALLET_PATH, 'utf-8'));
+    console.log('Using Treasury Wallet from treasury-wallet.json');
     return Keypair.fromSecretKey(new Uint8Array(secret));
   } else {
     const newWallet = Keypair.generate();

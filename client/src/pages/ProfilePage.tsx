@@ -519,10 +519,17 @@ export default function ProfilePage() {
   // ── Social connect handlers ──────────────────────────────────────────────
 
   const handleConnect = async (platformId: string) => {
+    let platformHandle = undefined;
+    if (platformId === 'FIVERR' || platformId === 'UPWORK') {
+      const input = prompt(`Enter your ${platformId === 'FIVERR' ? 'Fiverr' : 'Upwork'} Profile URL:`);
+      if (!input) return;
+      platformHandle = input;
+    }
+
     setConnectingPlatform(platformId);
     setSocialErrors(prev => ({ ...prev, [platformId]: '' }));
     try {
-      const res: any = await socialService.connect(platformId);
+      const res: any = await socialService.connect(platformId, platformHandle);
       const boost = res?.data?.data?.trustBoost ?? 0;
       setConnected(prev => ({ ...prev, [platformId]: true }));
       await Promise.all([refetchIdentities(), refetchBadge()]);
@@ -663,9 +670,13 @@ export default function ProfilePage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 relative">
           <div className="flex items-end gap-5 -mt-12 pb-6">
             <div className="relative shrink-0">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center text-3xl font-black text-on-primary font-headline shadow-lg">
-                {initials}
-              </div>
+              {user.profilePictureUrl ? (
+                <img src={user.profilePictureUrl} alt={`${user.firstName}'s avatar`} className="w-24 h-24 rounded-full border-4 border-surface shadow-lg object-cover" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center text-3xl font-black text-on-primary font-headline shadow-lg">
+                  {initials}
+                </div>
+              )}
               <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-tertiary-fixed border-2 border-surface shadow-sm" />
             </div>
             <div className="flex-1 pb-1">

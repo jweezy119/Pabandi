@@ -97,8 +97,16 @@ export default function HomePage() {
             <span className="material-symbols-outlined text-[16px]">stars</span>
             Your Time is Valuable
           </div>
-          <h2 className="font-headline text-[2.75rem] md:text-[4rem] leading-[1.05] font-bold text-on-surface tracking-[-0.02em] mb-4">
-            Premium Bookings. Zero Deposits. Your Trust Rewarded.
+          <h2 className="font-headline text-[2.75rem] md:text-[4rem] leading-[1.05] font-black tracking-[-0.02em] mb-6 flex flex-col gap-1 cursor-default group">
+            <span className="text-on-surface transition-all duration-500 group-hover:tracking-wide">
+              Premium Bookings.
+            </span>
+            <span className="text-on-surface-variant transition-all duration-500 group-hover:text-on-surface group-hover:translate-x-2">
+              Zero Deposits.
+            </span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[#38bdf8] to-primary bg-[length:200%_auto] transition-all duration-500 group-hover:-translate-y-1 group-hover:drop-shadow-lg inline-block" style={{ animation: 'gradient 3s linear infinite' }}>
+              Your Trust Rewarded.
+            </span>
           </h2>
           <p className="font-body text-on-surface-variant text-lg leading-relaxed">
             Skip the waitlist at Karachi's most exclusive venues. Build your Pabandi Score and unlock instant reservations with zero deposits. Booking made effortless.

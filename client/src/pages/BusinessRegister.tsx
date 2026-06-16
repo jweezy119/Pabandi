@@ -43,10 +43,25 @@ export default function BusinessRegister() {
           ...updatedUser,
         });
       }
-      queryClient.invalidateQueries('my-business');
+      if (response.data?.data?.business) {
+        queryClient.setQueryData('my-business', response.data.data.business);
+      } else {
+        queryClient.invalidateQueries('my-business');
+      }
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register business. Please try again.');
+      if (err.response?.status === 409 || err.response?.data?.message?.includes('already has a business')) {
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          useAuthStore.getState().setUser({ ...currentUser, role: 'BUSINESS_OWNER' });
+        }
+        queryClient.invalidateQueries('my-business');
+        navigate('/dashboard');
+        return;
+      }
+      const rawErrorMsg = err.response?.data?.message;
+      const debugDetails = rawErrorMsg || (err.message ? `[${err.name}: ${err.message}]` : JSON.stringify(err));
+      setError(`Failed to register business. Details: ${debugDetails}`);
     } finally {
       setLoading(false);
     }

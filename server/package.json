@@ -42,6 +42,9 @@
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
+    "passport-linkedin-oauth2": "^2.0.0",
+    "passport-tiktok-auth": "^1.0.12",
+    "passport-twitter": "^1.0.4",
     "redis": "^4.6.12",
     "winston": "^3.19.0",
     "zod": "^3.22.4"
@@ -55,6 +58,8 @@
     "@types/node": "^20.10.6",
     "@types/nodemailer": "^6.4.14",
     "@types/passport-facebook": "^3.0.4",
+    "@types/passport-linkedin-oauth2": "^1.5.6",
+    "@types/passport-twitter": "^1.0.40",
     "chokidar": "^5.0.0",
     "nodemon": "^3.1.14",
     "picomatch": "^4.0.4",

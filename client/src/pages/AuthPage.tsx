@@ -20,6 +20,24 @@ const FacebookIcon = () => (
   </svg>
 );
 
+const XIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
+
+const LinkedInIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z"/>
+  </svg>
+);
+
 const BuildingIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
@@ -50,6 +68,7 @@ export default function AuthPage() {
     email: '', password: '', confirmPassword: '',
     firstName: '', lastName: '', phone: '',
     businessName: '', googlePlaceId: '',
+    fiverrUrl: '', upworkUrl: '',
   });
   const urlError = searchParams.get('error');
   const [error, setError] = useState(() => {
@@ -87,7 +106,7 @@ export default function AuthPage() {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok' | null>(null);
 
   const handleGoogleAuth = () => {
     setOauthLoading('google');
@@ -101,6 +120,27 @@ export default function AuthPage() {
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
+  };
+
+  const handleTwitterAuth = () => {
+    setOauthLoading('twitter');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    window.location.href = `${backendUrl}/api/v1/auth/twitter?role=${role}`;
+  };
+
+  const handleLinkedInAuth = () => {
+    setOauthLoading('linkedin');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    window.location.href = `${backendUrl}/api/v1/auth/linkedin?role=${role}`;
+  };
+
+  const handleTikTokAuth = () => {
+    setOauthLoading('tiktok');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
   };
 
 
@@ -123,7 +163,7 @@ export default function AuthPage() {
       if (mode === 'login') {
         await login(formData.email, formData.password);
       } else {
-        await register({
+          await register({
           email: formData.email,
           password: formData.password,
           firstName: formData.firstName,
@@ -134,6 +174,8 @@ export default function AuthPage() {
             businessName: formData.businessName,
             googlePlaceId: formData.googlePlaceId || undefined,
           }),
+          fiverrUrl: formData.fiverrUrl || undefined,
+          upworkUrl: formData.upworkUrl || undefined,
         } as any);
       }
       navigate('/dashboard');
@@ -250,6 +292,20 @@ export default function AuthPage() {
                 {isSignup ? 'Sign up with Facebook' : 'Sign in with Facebook'}</>
               )}
             </button>
+            <div className="grid grid-cols-3 gap-3 mt-1">
+              <button onClick={handleTwitterAuth} title="Continue with X"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                {oauthLoading === 'twitter' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <XIcon />}
+              </button>
+              <button onClick={handleLinkedInAuth} title="Continue with LinkedIn"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                {oauthLoading === 'linkedin' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <LinkedInIcon />}
+              </button>
+              <button onClick={handleTikTokAuth} title="Continue with TikTok"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                {oauthLoading === 'tiktok' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <TikTokIcon />}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 my-6">
@@ -327,6 +383,25 @@ export default function AuthPage() {
                     className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
                     placeholder="+1 312 489 6967 or +92 300 1234567" />
                   {fieldErrors.phone && <FieldError msg={fieldErrors.phone} />}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="fiverrUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Fiverr URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
+                    <input id="fiverrUrl" name="fiverrUrl" type="url"
+                      value={formData.fiverrUrl} onChange={handleChange}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.fiverrUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      placeholder="https://fiverr.com/..." />
+                    {fieldErrors.fiverrUrl && <FieldError msg={fieldErrors.fiverrUrl} />}
+                  </div>
+                  <div>
+                    <label htmlFor="upworkUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Upwork URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
+                    <input id="upworkUrl" name="upworkUrl" type="url"
+                      value={formData.upworkUrl} onChange={handleChange}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.upworkUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      placeholder="https://upwork.com/..." />
+                    {fieldErrors.upworkUrl && <FieldError msg={fieldErrors.upworkUrl} />}
+                  </div>
                 </div>
               </>
             )}

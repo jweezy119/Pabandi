@@ -132,7 +132,7 @@ export default function BusinessDashboard() {
   const qc = useQueryClient();
   const [business, setBusiness] = useState<any>(null);
 
-  const { data: bizData } = useQuery('my-business', async () => {
+  const { data: bizData, isLoading: isBizLoading, isFetching } = useQuery('my-business', async () => {
     const res = await businessService.getMyBusiness().catch(() => null);
     return res?.data?.data?.business || null;
   });
@@ -169,7 +169,15 @@ export default function BusinessDashboard() {
   const riskLevel = overallRisk >= 60 ? 'CRITICAL' : overallRisk >= 40 ? 'HIGH' : overallRisk >= 20 ? 'MODERATE' : 'LOW';
   const riskC = RISK_COLORS[riskLevel];
 
-  if (!business) {
+  if (isBizLoading || (!business && isFetching)) {
+    return (
+      <div className="bg-surface min-h-screen p-8 animate-pulse text-center">
+        Loading your business dashboard...
+      </div>
+    );
+  }
+
+  if (!business && !isFetching) {
     return (
       <div className="bg-surface min-h-screen flex items-center justify-center p-8">
         <div className="text-center max-w-sm">

@@ -34,7 +34,8 @@ export class CryptoService {
     userId: string,
     amount: number,
     type: RewardType,
-    reservationId?: string
+    reservationId?: string,
+    metadata?: any
   ) {
     await tx.cryptoReward.create({
       data: {
@@ -43,6 +44,7 @@ export class CryptoService {
         amount,
         type,
         status: 'CLAIMABLE',
+        metadata: metadata || null,
       },
     });
 
@@ -58,8 +60,29 @@ export class CryptoService {
    */
   async rewardReservationCompletion(userId: string, reservationId: string): Promise<void> {
     try {
-      const amount = PAB_REWARD_RULES.customer.CHECK_IN;
-      logger.info(`PAB +${amount} customer ${userId} reservation ${reservationId}`);
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        select: { riskScore: true, customer: { select: { reliabilityScore: true } } }
+      });
+      if (!reservation) return;
+
+      let amount = PAB_REWARD_RULES.customer.CHECK_IN; // 50 base
+
+      // 1. Reliability Multiplier
+      const rScore = reservation.customer.reliabilityScore || 100;
+      const reliabilityMultiplier = rScore / 100.0; // 0.0 to 1.0
+
+      // 2. Proving AI Wrong Bonus
+      const aiRisk = reservation.riskScore || 0;
+      let aiBonus = 0;
+      if (aiRisk >= 60) {
+        // High risk but showed up! Give them up to 50% extra base reward
+        aiBonus = PAB_REWARD_RULES.customer.CHECK_IN * ((aiRisk - 60) / 100.0) * 2; 
+      }
+
+      amount = Math.floor((amount * reliabilityMultiplier) + aiBonus);
+
+      logger.info(`PAB +${amount} customer ${userId} reservation ${reservationId} (Base: ${PAB_REWARD_RULES.customer.CHECK_IN}, R-Score: ${rScore}, AI-Risk: ${aiRisk}, AI Bonus: ${aiBonus})`);
 
       await prisma.$transaction(async (tx) => {
         const existing = await tx.cryptoReward.findFirst({
@@ -67,7 +90,11 @@ export class CryptoService {
         });
         if (existing) return;
 
-        await this.creditPab(tx, userId, amount, 'RESERVATION_COMPLETION', reservationId);
+        await this.creditPab(tx, userId, amount, 'RESERVATION_COMPLETION', reservationId, {
+          baseAmount: PAB_REWARD_RULES.customer.CHECK_IN,
+          reliabilityMultiplier,
+          aiBonus
+        });
         await tx.reservation.update({
           where: { id: reservationId },
           data: { rewardEarned: { increment: amount } },
@@ -84,14 +111,29 @@ export class CryptoService {
    */
   async rewardBusinessForCompletion(businessId: string, reservationId: string): Promise<void> {
     try {
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        select: { riskScore: true }
+      });
       const business = await prisma.business.findUnique({
         where: { id: businessId },
         select: { id: true, ownerId: true },
       });
       if (!business) return;
 
-      const amount = PAB_REWARD_RULES.business.HONORED_BOOKING;
-      logger.info(`PAB +${amount} business owner ${business.ownerId} reservation ${reservationId}`);
+      let amount = PAB_REWARD_RULES.business.HONORED_BOOKING; // 25 base
+      
+      // Risk Acceptance Bonus for Business
+      const aiRisk = reservation?.riskScore || 0;
+      let aiBonus = 0;
+      if (aiRisk >= 60) {
+        // Business took a chance on a high risk user and it paid off
+        aiBonus = PAB_REWARD_RULES.business.HONORED_BOOKING * ((aiRisk - 50) / 100.0) * 1.5;
+      }
+      
+      amount = Math.floor(amount + aiBonus);
+
+      logger.info(`PAB +${amount} business owner ${business.ownerId} reservation ${reservationId} (Base: ${PAB_REWARD_RULES.business.HONORED_BOOKING}, AI-Risk: ${aiRisk}, Risk Bonus: ${aiBonus})`);
 
       await prisma.$transaction(async (tx) => {
         if (business.ownerId) {
@@ -101,7 +143,11 @@ export class CryptoService {
             });
 
             if (!existingBusinessReward) {
-              await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId);
+              await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId, {
+                baseAmount: PAB_REWARD_RULES.business.HONORED_BOOKING,
+                aiRisk,
+                aiBonus
+              });
             }
           } catch (err) {
             console.error(`Failed to reward business ${business.id}:`, err);
@@ -214,6 +260,7 @@ export class CryptoService {
         amount: r.amount,
         status: r.status,
         createdAt: r.createdAt,
+        metadata: r.metadata,
         businessName: r.reservation?.business?.name,
         reservationId: r.reservationId,
       })),

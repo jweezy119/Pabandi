@@ -22,8 +22,12 @@ model User {
   fcmToken          String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  profilePictureUrl String?
   googleId          String?        @unique
   facebookId        String?        @unique
+  twitterId         String?        @unique
+  tiktokId          String?        @unique
+  linkedinId        String?        @unique
   resetToken        String?
   resetTokenExpires DateTime?
   business          Business?
@@ -242,6 +246,7 @@ model CryptoReward {
   type          String
   status        String       @default("CLAIMABLE")
   txHash        String?
+  metadata      Json?
   createdAt     DateTime     @default(now())
   reservation   Reservation? @relation(fields: [reservationId], references: [id])
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)

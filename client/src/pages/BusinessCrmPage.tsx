@@ -35,7 +35,7 @@ function RiskBadge({ score }: { score: number }) {
 export default function BusinessCrmPage() {
   const [businessId, setBusinessId] = useState<string | null>(null);
 
-  const { data: bizData, isLoading: isBizLoading } = useQuery('my-business', async () => {
+  const { data: bizData, isLoading: isBizLoading, isFetching } = useQuery('my-business', async () => {
     const res = await businessService.getMyBusiness().catch(() => null);
     return res?.data?.data?.business || null;
   });
@@ -52,7 +52,7 @@ export default function BusinessCrmPage() {
 
   const customers = custData?.data?.data?.customers || [];
 
-  if (isBizLoading) {
+  if (isBizLoading || (!businessId && isFetching)) {
     return (
       <div className="bg-surface min-h-screen flex items-center justify-center p-8">
         <p className="text-on-surface-variant animate-pulse font-medium">Loading CRM data...</p>
@@ -60,7 +60,7 @@ export default function BusinessCrmPage() {
     );
   }
 
-  if (!businessId) {
+  if (!businessId && !isFetching) {
     return (
       <div className="bg-surface min-h-screen flex items-center justify-center p-8">
         <div className="text-center max-w-sm">

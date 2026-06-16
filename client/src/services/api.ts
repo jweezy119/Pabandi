@@ -111,7 +111,7 @@ export const socialService = {
   getIdentities: () => apiClient.get('/social/identities'),
   /** Get the full computed badge with social boost applied */
   getMyBadge: () => apiClient.get('/social/my-badge'),
-  connect: (platform: string) => apiClient.post(`/social/connect/${platform}`),
+  connect: (platform: string, platformHandle?: string) => apiClient.post(`/social/connect/${platform}`, { platformHandle }),
   disconnect: (platform: string) => apiClient.delete(`/social/disconnect/${platform}`),
   connectMeta: () => apiClient.post('/social/connect/META'),
   disconnectMeta: () => apiClient.delete('/social/disconnect/META'),

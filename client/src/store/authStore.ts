@@ -9,6 +9,7 @@ interface User {
   lastName: string;
   phone?: string;
   role: string;
+  profilePictureUrl?: string;
 }
 
 interface WalletState {

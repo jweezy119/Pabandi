@@ -151,7 +151,11 @@ router.post('/connect/:platform', async (req: AuthRequest, res: Response, next: 
       return res.status(400).json({ success: false, error: `Unsupported platform: ${platform}` });
     }
 
-    const stub = STUB_PROFILES[platform];
+    const stub = { ...STUB_PROFILES[platform] };
+
+    if (req.body.platformHandle && (platform === 'FIVERR' || platform === 'UPWORK')) {
+      stub.platformHandle = req.body.platformHandle;
+    }
 
     // Compute trust boost for this single identity
     const { totalBoost } = badgeService.computeSocialTrustBoost([{ platform, ...stub }]);

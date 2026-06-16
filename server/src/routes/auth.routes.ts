@@ -31,6 +31,8 @@ router.post(
       .customSanitizer((v: string) => v?.replace(/[\s\-().]/g, ''))
       .matches(/^\+?\d{7,15}$/)
       .withMessage('Please enter a valid phone number.'),
+    body('fiverrUrl').optional({ checkFalsy: true }).isURL().withMessage('Please enter a valid Fiverr URL.'),
+    body('upworkUrl').optional({ checkFalsy: true }).isURL().withMessage('Please enter a valid Upwork URL.'),
   ],
   validateRequest,
   register
@@ -165,6 +167,84 @@ router.get(
     return res.redirect(
       `${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`
     );
+  }
+);
+
+// ── Twitter OAuth ──────────────────────────────────────────────────────────
+
+router.get('/twitter', (req: Request, res: Response, next: NextFunction) => {
+  const role = (req.query.role as string) || 'customer';
+  passport.authenticate('twitter', {
+    state: role,
+  })(req, res, next);
+});
+
+router.get(
+  '/twitter/callback',
+  passport.authenticate('twitter', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=twitter_failed` }),
+  (req: Request, res: Response) => {
+    const user = req.user as any;
+    if (!user) {
+      return res.redirect(`${FRONTEND_URL}/login?error=twitter_failed`);
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+  }
+);
+
+// ── LinkedIn OAuth ─────────────────────────────────────────────────────────
+
+router.get('/linkedin', (req: Request, res: Response, next: NextFunction) => {
+  const role = (req.query.role as string) || 'customer';
+  passport.authenticate('linkedin', {
+    state: role,
+  })(req, res, next);
+});
+
+router.get(
+  '/linkedin/callback',
+  passport.authenticate('linkedin', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=linkedin_failed` }),
+  (req: Request, res: Response) => {
+    const user = req.user as any;
+    if (!user) {
+      return res.redirect(`${FRONTEND_URL}/login?error=linkedin_failed`);
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+  }
+);
+
+// ── TikTok OAuth ───────────────────────────────────────────────────────────
+
+router.get('/tiktok', (req: Request, res: Response, next: NextFunction) => {
+  const role = (req.query.role as string) || 'customer';
+  passport.authenticate('tiktok', {
+    state: role,
+  })(req, res, next);
+});
+
+router.get(
+  '/tiktok/callback',
+  passport.authenticate('tiktok', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=tiktok_failed` }),
+  (req: Request, res: Response) => {
+    const user = req.user as any;
+    if (!user) {
+      return res.redirect(`${FRONTEND_URL}/login?error=tiktok_failed`);
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
