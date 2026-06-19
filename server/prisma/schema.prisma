@@ -84,6 +84,8 @@ model Business {
   reservations       Reservation[]
   tables             Table[]
   webhookEndpoints   WebhookEndpoint[]
+  sourcingOrders     SourcingOrder[]
+  trendSuggestions   TrendSuggestion[]
 
   @@index([ownerId])
   @@index([city])
@@ -420,4 +422,49 @@ model SocialIdentity {
   @@index([userId])
 }
 
+enum SourcingOrderStatus {
+  SUGGESTED
+  ORDERED
+  SHIPPED
+  FULFILLED
+  CANCELLED
+}
 
+model SourcingOrder {
+  id               String              @id @default(cuid())
+  businessId       String
+  items            Json                // Array of { itemName, quantity, estimatedPrice, accioUrl }
+  status           SourcingOrderStatus @default(SUGGESTED)
+  estimatedCostPKR Float
+  accioWorkOrderId String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  business         Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+enum TrendStatus {
+  SUGGESTED
+  SOURCED
+  SERVICE_LAUNCHED
+  DISMISSED
+}
+
+model TrendSuggestion {
+  id                   String      @id @default(cuid())
+  businessId           String
+  equipmentName        String
+  description          String
+  estimatedCostPKR     Float
+  suggestedServicePrice Float
+  projectedBookings    Int
+  projectedRoiPercent  Float
+  status               TrendStatus @default(SUGGESTED)
+  accioWorkUrl         String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  business             Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}

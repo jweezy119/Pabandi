@@ -72,7 +72,7 @@ export default function Layout() {
           <div className="hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 h-[72px] items-center gap-8">
             <DesktopNavLink to="/" current={location.pathname === '/'}>{t('layout_explore')}</DesktopNavLink>
             <DesktopNavLink to="/technology" current={location.pathname === '/technology'}>{t('layout_technology')}</DesktopNavLink>
-            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>{t('layout_web3', 'Web3')}</DesktopNavLink>
+            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>{t('layout_web3')}</DesktopNavLink>
             <DesktopNavLink to="/join" current={location.pathname === '/join'}>{t('layout_for_businesses')}</DesktopNavLink>
             <DesktopNavLink to="/developer" current={location.pathname === '/developer'}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
@@ -140,7 +140,7 @@ export default function Layout() {
             <span>{t('layout_footer_text')}</span>
             <div className="flex gap-4 flex-wrap justify-center">
               <Link to="/technology" className="hover:text-primary transition-colors">{t('layout_technology')}</Link>
-              <Link to="/web3" className="hover:text-primary transition-colors">{t('layout_web3', 'Web3')}</Link>
+              <Link to="/web3" className="hover:text-primary transition-colors">{t('layout_web3')}</Link>
               <Link to="/join" className="hover:text-primary transition-colors">{t('layout_for_businesses')}</Link>
               <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>{t('layout_api_docs')}</Link>
               <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>{t('layout_trust_layer')}</Link>

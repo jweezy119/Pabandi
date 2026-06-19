@@ -64,6 +64,7 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
         uint32  totalBookings;
         uint64  mintedAt;
         string  pseudonymousId;  // privacy-preserving ID, not the real userId
+        string  aiTrustProfile;  // DashScope AI generated behavioral summary
     }
 
     mapping(uint256 => BadgeData) public badgeData;
@@ -79,7 +80,8 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
         address indexed to,
         uint8 tier,
         string pseudonymousId,
-        uint16 reliabilityScore
+        uint16 reliabilityScore,
+        string aiTrustProfile
     );
     event BadgeUpgraded(
         address indexed wallet,
@@ -104,13 +106,15 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
      * @param pseudonymousId   Privacy-preserving ID (HMAC of real userId).
      * @param reliabilityScore Snapshot reliability score at mint time.
      * @param totalBookings    Snapshot total bookings at mint time.
+     * @param aiTrustProfile   DashScope AI generated trust profile.
      */
     function mintBadge(
         address to,
         uint8   tier,
         string calldata pseudonymousId,
         uint16  reliabilityScore,
-        uint32  totalBookings
+        uint32  totalBookings,
+        string calldata aiTrustProfile
     ) external onlyRole(MINTER_ROLE) returns (uint256 tokenId) {
         require(tier < 4, "Soulbound: invalid tier");
         require(to != address(0), "Soulbound: zero address");
@@ -128,12 +132,13 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
             reliabilityScore: reliabilityScore,
             totalBookings:    totalBookings,
             mintedAt:         uint64(block.timestamp),
-            pseudonymousId:   pseudonymousId
+            pseudonymousId:   pseudonymousId,
+            aiTrustProfile:   aiTrustProfile
         });
 
         _setTokenURI(tokenId, _buildTokenURI(tokenId));
 
-        emit BadgeMinted(tokenId, to, tier, pseudonymousId, reliabilityScore);
+        emit BadgeMinted(tokenId, to, tier, pseudonymousId, reliabilityScore, aiTrustProfile);
     }
 
     /**
@@ -145,7 +150,8 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
         uint8   newTier,
         string calldata pseudonymousId,
         uint16  reliabilityScore,
-        uint32  totalBookings
+        uint32  totalBookings,
+        string calldata aiTrustProfile
     ) external onlyRole(MINTER_ROLE) returns (uint256) {
         require(newTier < 4, "Soulbound: invalid tier");
         uint8 currentHighest = getHighestTier(wallet);
@@ -155,7 +161,7 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
         uint8 oldTier = currentHighest;
         emit BadgeUpgraded(wallet, oldTier, newTier, 0); // tokenId updated below
 
-        uint256 newTokenId = this.mintBadge(wallet, newTier, pseudonymousId, reliabilityScore, totalBookings);
+        uint256 newTokenId = this.mintBadge(wallet, newTier, pseudonymousId, reliabilityScore, totalBookings, aiTrustProfile);
         emit BadgeUpgraded(wallet, oldTier, newTier, newTokenId);
         return newTokenId;
     }
@@ -231,7 +237,8 @@ contract PabandiSoulbound is ERC721, ERC721URIStorage, AccessControl {
             '{"trait_type":"Tier","value":"', tier.name, '"},',
             '{"trait_type":"Reliability Score","value":', uint256(data.reliabilityScore).toString(), '},',
             '{"trait_type":"Total Bookings","value":', uint256(data.totalBookings).toString(), '},',
-            '{"trait_type":"Soulbound","value":true}',
+            '{"trait_type":"Soulbound","value":true},',
+            '{"trait_type":"AI Trust Profile","value":"', data.aiTrustProfile, '"}',
             ']}'
         ));
 

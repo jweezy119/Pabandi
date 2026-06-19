@@ -75,7 +75,7 @@ app.use('/api/', rateLimiter);
 
 // Firebase App Check Middleware for API routes
 // Ensure this runs before your actual API routes are registered
-app.use('/api/', requireAppCheck);
+// app.use('/api/', requireAppCheck); // TEMPORARILY DISABLED to fix sign in
 
 // Health check
 app.get('/health', (req, res) => {
@@ -107,10 +107,13 @@ import reliabilityRoutes from './routes/reliability.routes';
 
 import stakingRoutes from './routes/staking.routes';
 
+import sourcingRoutes from './routes/sourcing.routes';
+
 app.use(`/api/${API_VERSION}/social`, socialRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
 app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
+app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 

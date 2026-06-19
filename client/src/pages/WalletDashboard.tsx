@@ -44,12 +44,20 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
 }) {
   const [minting, setMinting] = useState(false);
   const [minted, setMinted] = useState(false);
+  const [aiProfile, setAiProfile] = useState<string | null>(null);
 
   const handleMint = async () => {
     if (!earned || minted) return;
     setMinting(true);
-    await new Promise(r => setTimeout(r, 2000)); // simulated mint
-    setMinted(true);
+    try {
+      const res = await cryptoService.mintBadge();
+      if (res.data?.data?.badge?.aiTrustProfile) {
+        setAiProfile(res.data.data.badge.aiTrustProfile);
+      }
+      setMinted(true);
+    } catch (e: any) {
+      alert(e.response?.data?.error || 'Failed to mint badge');
+    }
     setMinting(false);
   };
 
@@ -131,6 +139,18 @@ function SBTCard({ tier, earned, totalBookings, showRate }: {
       ) : (
         <div className="font-body" style={{ padding: '8px 0', fontSize: 10, color: 'var(--color-on-surface-variant)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           🔒 LOCKED — Keep booking to unlock
+        </div>
+      )}
+
+      {aiProfile && (
+        <div className="mt-4 p-3 bg-[#111111] border border-[#333333] rounded-xl relative overflow-hidden animate-fade-in">
+          <div className="absolute top-0 left-0 w-1 h-full bg-[#ff6a00]" />
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#ff6a00]">DashScope AI Analysis</span>
+          </div>
+          <p className="text-xs text-gray-300 leading-relaxed font-mono">
+            {aiProfile}
+          </p>
         </div>
       )}
     </div>

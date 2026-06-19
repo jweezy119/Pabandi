@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { blockchainService } from './blockchain.service';
+import { dashscopeService } from './ai/dashscope.service';
 
 // ─── Platform boost weights ───────────────────────────────────────────────────
 const PLATFORM_BOOST: Record<string, { base: number; maxBoost: number }> = {
@@ -175,14 +176,16 @@ export class BadgeService {
     const signedHash = 'sha256:' + crypto.createHmac('sha256', salt).update(payloadStr).digest('hex');
 
     // --- Autonomous Blockchain Sync ---
-    prisma.wallet.findUnique({ where: { userId } }).then(wallet => {
+    prisma.wallet.findUnique({ where: { userId } }).then(async wallet => {
       if (wallet?.address) {
+        const aiTrustProfile = await dashscopeService.generateTrustProfile(userId);
         blockchainService.checkAndMintEligibleBadge(
           wallet.address,
           pseudonymousId,
           effectiveScore,
           totalBookings,
-          attendanceRate
+          attendanceRate,
+          aiTrustProfile
         ).catch(err => logger.error('[AutonomousSync] Error syncing badge:', err.message));
       }
     }).catch(err => logger.error('[AutonomousSync] Error fetching wallet:', err.message));
