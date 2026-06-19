@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'react-query';
-import { ShieldCheckIcon, UserCircleIcon, FingerPrintIcon, ShareIcon } from '@heroicons/react/24/solid';
+import { ShieldCheckIcon, UserCircleIcon, FingerPrintIcon, ShareIcon , UsersIcon } from '@heroicons/react/24/solid';
 import {
   ArrowUpRightIcon,
   StarIcon, LinkIcon, XMarkIcon, CheckCircleIcon,
@@ -307,6 +307,7 @@ const WalletDashboard: React.FC = () => {
 
   const reliabilityScore = badgeData?.reliabilityScore || 100;
   const socialTrustBoost = badgeData?.socialTrustBoost || 0;
+  const graphTrustBoost = badgeData?.graphTrustBoost || 0;
   const isKycVerified = userData?.kycStatus === 'VERIFIED';
   const socialPlatformsCount = badgeData?.socialSignals?.length || 0;
   const hasWeb3 = !!connected;
@@ -522,7 +523,7 @@ const WalletDashboard: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-stretch">
-            {/* The 4 Pillars */}
+            {/* The 5 Pillars */}
             <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Pillar 1: Historical Proof */}
@@ -579,6 +580,22 @@ const WalletDashboard: React.FC = () => {
                     <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-[#d97706] text-white flex items-center w-fit gap-1"><LinkIcon className="h-3 w-3" /> Wallet Linked</span>
                   ) : (
                     <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">Not Linked</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Pillar 5: Network Trust */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-4 flex gap-3 shadow-sm relative overflow-hidden">
+                <div className="bg-[#8b5cf6]/10 text-[#8b5cf6] p-2.5 rounded-xl h-fit border border-[#8b5cf6]/20"><UsersIcon className="h-6 w-6" /></div>
+                <div>
+                  <h4 className="font-headline text-sm font-bold text-on-surface">Graph Trust</h4>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Sybil resistance through network referral scoring.</p>
+                  {graphTrustBoost !== 0 ? (
+                    <span className={`font-body text-xs font-bold px-2 py-0.5 rounded flex items-center w-fit gap-1 ${graphTrustBoost > 0 ? 'bg-[#8b5cf6] text-white' : 'bg-error text-on-error'}`}>
+                      {graphTrustBoost > 0 ? '+' : ''}{graphTrustBoost} pts
+                    </span>
+                  ) : (
+                    <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">No Referral Data</span>
                   )}
                 </div>
               </div>

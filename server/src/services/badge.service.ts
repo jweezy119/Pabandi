@@ -26,6 +26,7 @@ export interface BadgePayload {
   socialSignals: string[];
   badges: string[];
   socialTrustBoost: number;
+  graphTrustBoost?: number;
   verifiedAt: string;
   signedHash: string;
 }
@@ -127,7 +128,12 @@ export class BadgeService {
     const [user, stats, identities] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { reliabilityScore: true },
+        select: { 
+          reliabilityScore: true,
+          referredBy: {
+            select: { id: true, reliabilityScore: true }
+          }
+        },
       }),
       prisma.reservation.groupBy({
         by: ['status'],
@@ -147,8 +153,16 @@ export class BadgeService {
 
     const { totalBoost, breakdown } = this.computeSocialTrustBoost(identities);
 
-    // Effective reliability score with social boost (capped at 100)
-    const effectiveScore = Math.min(100, Math.round(user.reliabilityScore + totalBoost));
+    // Calculate Graph Trust Bonus / Penalty
+    let graphTrustBoost = 0;
+    if (user.referredBy) {
+      if (user.referredBy.reliabilityScore >= 90) graphTrustBoost = 5;
+      else if (user.referredBy.reliabilityScore < 30) graphTrustBoost = -10;
+    }
+
+    // Effective reliability score with social and graph boost (capped at 100, min 0)
+    let effectiveScore = Math.round(user.reliabilityScore + totalBoost + graphTrustBoost);
+    effectiveScore = Math.max(0, Math.min(100, effectiveScore));
     const tier: BadgePayload['tier'] =
       effectiveScore >= 80 ? 'EXCELLENT' : effectiveScore >= 50 ? 'AVERAGE' : 'RISKY';
 
@@ -200,7 +214,8 @@ export class BadgeService {
       socialSignals: identities.map(i => i.platform),
       badges,
       socialTrustBoost: totalBoost,
-      verifiedAt,
+      graphTrustBoost,
+      verifiedAt: new Date().toISOString(),
       signedHash,
     };
   }

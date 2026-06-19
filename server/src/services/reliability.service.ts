@@ -177,7 +177,12 @@ export class ReliabilityService {
   async getUserReliabilityProfile(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { reliabilityScore: true }
+      select: { 
+        reliabilityScore: true,
+        referredBy: {
+          select: { id: true, reliabilityScore: true }
+        }
+      }
     });
 
     if (!user) return null;
@@ -191,11 +196,34 @@ export class ReliabilityService {
     const completionCount = stats.find(s => s.status === 'COMPLETED')?._count.id || 0;
     const noShowCount = stats.find(s => s.status === 'NO_SHOW')?._count.id || 0;
 
+    let baseScore = user.reliabilityScore;
+    let graphTrustEffect = 0;
+    let graphTrustReason = '';
+
+    // Calculate Graph Trust (Sybil Resistance / Referral Bonus)
+    if (user.referredBy) {
+      if (user.referredBy.reliabilityScore >= 90) {
+        graphTrustEffect = 5;
+        graphTrustReason = 'Referred by a Highly Reliable user (+5 Boost)';
+      } else if (user.referredBy.reliabilityScore < 30) {
+        graphTrustEffect = -10;
+        graphTrustReason = 'Guilt by Association: Referred by an unreliable user (-10 Penalty)';
+      }
+    }
+
+    let finalScore = Math.max(0, Math.min(100, baseScore + graphTrustEffect));
+
     return {
-      score: user.reliabilityScore,
-      tier: user.reliabilityScore >= 80 ? 'EXCELLENT' : (user.reliabilityScore >= 50 ? 'AVERAGE' : 'RISKY'),
+      score: finalScore,
+      baseScore: baseScore,
+      tier: finalScore >= 80 ? 'EXCELLENT' : (finalScore >= 50 ? 'AVERAGE' : 'RISKY'),
       totalCompleted: completionCount,
-      totalNoShows: noShowCount
+      totalNoShows: noShowCount,
+      graphTrust: user.referredBy ? {
+        referrerScore: user.referredBy.reliabilityScore,
+        effect: graphTrustEffect,
+        reason: graphTrustReason
+      } : null
     };
   }
 

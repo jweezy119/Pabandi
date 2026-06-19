@@ -9,27 +9,30 @@ datasource db {
 }
 
 model User {
-  id                String         @id @default(cuid())
-  email             String         @unique
-  phone             String?        @unique
+  id                String           @id @default(cuid())
+  email             String           @unique
+  phone             String?          @unique
   passwordHash      String
   firstName         String
   lastName          String
-  role              UserRole       @default(CUSTOMER)
-  isEmailVerified   Boolean        @default(false)
-  isPhoneVerified   Boolean        @default(false)
-  reliabilityScore  Float          @default(100)
+  role              UserRole         @default(CUSTOMER)
+  isEmailVerified   Boolean          @default(false)
+  isPhoneVerified   Boolean          @default(false)
+  reliabilityScore  Float            @default(100)
   fcmToken          String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   profilePictureUrl String?
-  googleId          String?        @unique
-  facebookId        String?        @unique
-  twitterId         String?        @unique
-  tiktokId          String?        @unique
-  linkedinId        String?        @unique
+  googleId          String?          @unique
+  facebookId        String?          @unique
+  twitterId         String?          @unique
+  tiktokId          String?          @unique
+  linkedinId        String?          @unique
   resetToken        String?
   resetTokenExpires DateTime?
+  referredById      String?
+  referredBy        User?            @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]           @relation("UserReferrals")
   business          Business?
   cryptoRewards     CryptoReward[]
   payments          Payment[]
@@ -352,7 +355,7 @@ model ApiClient {
   callsUsed         Int           @default(0)
   callsLimit        Int           @default(500)
   isActive          Boolean       @default(true)
-  paymentMethod     String?       // 'safepay', 'solana', 'bsc', 'free'
+  paymentMethod     String? // 'safepay', 'solana', 'bsc', 'free'
   transactionHash   String?       @unique // safepay tracker or crypto tx hash
   walletAddress     String?
   billingMode       BillingMode   @default(PAY_AS_YOU_GO)
@@ -366,15 +369,15 @@ model ApiClient {
 }
 
 model ApiUsageLog {
-  id          String    @id @default(cuid())
-  clientId    String
-  endpoint    String
-  statusCode  Int
-  latencyMs   Int
-  costFiat    Float     @default(0)
-  costCrypto  Float     @default(0)
-  createdAt   DateTime  @default(now())
-  client      ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  clientId   String
+  endpoint   String
+  statusCode Int
+  latencyMs  Int
+  costFiat   Float     @default(0)
+  costCrypto Float     @default(0)
+  createdAt  DateTime  @default(now())
+  client     ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([createdAt])
@@ -401,22 +404,21 @@ enum SocialPlatform {
   UPWORK
 }
 
-
 model SocialIdentity {
-  id              String         @id @default(cuid())
-  userId          String
-  platform        SocialPlatform
-  platformHandle  String?
-  accountAgeDays  Int?
-  isVerified      Boolean        @default(false)
-  completeness    Float?         // 0.0 – 1.0
-  rating          Float?         // Fiverr/Upwork star rating
-  completionRate  Float?         // Fiverr/Upwork order completion %
-  accountLevel    String?        // "Top Rated", "Level 2", etc.
-  trustBoost      Float          @default(0.0)
-  connectedAt     DateTime       @default(now())
-  lastRefreshed   DateTime       @default(now())
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String         @id @default(cuid())
+  userId         String
+  platform       SocialPlatform
+  platformHandle String?
+  accountAgeDays Int?
+  isVerified     Boolean        @default(false)
+  completeness   Float? // 0.0 – 1.0
+  rating         Float? // Fiverr/Upwork star rating
+  completionRate Float? // Fiverr/Upwork order completion %
+  accountLevel   String? // "Top Rated", "Level 2", etc.
+  trustBoost     Float          @default(0.0)
+  connectedAt    DateTime       @default(now())
+  lastRefreshed  DateTime       @default(now())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, platform])
   @@index([userId])
@@ -433,7 +435,7 @@ enum SourcingOrderStatus {
 model SourcingOrder {
   id               String              @id @default(cuid())
   businessId       String
-  items            Json                // Array of { itemName, quantity, estimatedPrice, accioUrl }
+  items            Json // Array of { itemName, quantity, estimatedPrice, accioUrl }
   status           SourcingOrderStatus @default(SUGGESTED)
   estimatedCostPKR Float
   accioWorkOrderId String?
@@ -452,19 +454,19 @@ enum TrendStatus {
 }
 
 model TrendSuggestion {
-  id                   String      @id @default(cuid())
-  businessId           String
-  equipmentName        String
-  description          String
-  estimatedCostPKR     Float
+  id                    String      @id @default(cuid())
+  businessId            String
+  equipmentName         String
+  description           String
+  estimatedCostPKR      Float
   suggestedServicePrice Float
-  projectedBookings    Int
-  projectedRoiPercent  Float
-  status               TrendStatus @default(SUGGESTED)
-  accioWorkUrl         String?
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
-  business             Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  projectedBookings     Int
+  projectedRoiPercent   Float
+  status                TrendStatus @default(SUGGESTED)
+  accioWorkUrl          String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  business              Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
