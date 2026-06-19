@@ -22,6 +22,11 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import { WaitlistPage } from './pages/WaitlistPage';
+import Web3Page from './pages/Web3Page';
+import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -35,8 +40,10 @@ function App() {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
+    <LanguageProvider>
+      <Routes>
+        <Route path="/waitlist" element={<WaitlistPage />} />
+        <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
 
         {/* Unified auth page for both login & register */}
@@ -56,6 +63,7 @@ function App() {
         <Route path="join" element={<BusinessJoinPage />} />
         <Route path="business/join" element={<BusinessJoinPage />} />
         <Route path="technology" element={<TechnologyPage />} />
+        <Route path="web3" element={<Web3Page />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />
@@ -63,6 +71,10 @@ function App() {
         <Route path="developer" element={<DeveloperPortalPage />} />
         {/* Social & Professional Trust Layer — public */}
         <Route path="trust" element={<TrustPage />} />
+        {/* Privacy Policy */}
+        <Route path="privacy" element={<PrivacyPolicyPage />} />
+        {/* Terms of Service */}
+        <Route path="terms" element={<TermsOfServicePage />} />
 
         <Route
           path="dashboard"
@@ -96,8 +108,9 @@ function App() {
           path="profile"
           element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
         />
-      </Route>
-    </Routes>
+        </Route>
+      </Routes>
+    </LanguageProvider>
   );
 }
 

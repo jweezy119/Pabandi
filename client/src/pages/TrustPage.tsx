@@ -435,7 +435,7 @@ export default function TrustPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h2 style={{ fontSize: '30px', fontWeight: 700, marginBottom: '6px', letterSpacing: '-0.02em' }}>Connect Your Platforms</h2>
-            <p style={{ color: '#64748b', fontSize: '14px' }}>Each connection is opt-in. Disconnect any time. No feeds, no messages, no private data.</p>
+            <p style={{ color: '#64748b', fontSize: '14px' }}>This is completely optional, and we only see your account’s age and star rating to give you a trust bonus. Disconnect any time. No feeds, no messages, no private data.</p>
           </div>
           {connectedCount > 0 && (
             <div style={{ padding: '10px 20px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '12px', color: '#22c55e', fontWeight: 700, fontSize: '14px' }}>

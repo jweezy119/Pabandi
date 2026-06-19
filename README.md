@@ -1,6 +1,10 @@
-# Pabandi - AI-Powered Reservation System
+# Pabandi - Agentic AI Booking Ecosystem
 
-Pabandi is an AI-powered booking ecosystem built for the modern service economy. For businesses, we actively protect your bottom line by using AI to predict no-shows and secure revenue upfront with dynamic, risk-based deposits. For customers, we offer a seamless booking journey powered by a next-generation Web3 loyalty program. Arrive for your appointment, and you earn PAB tokens—digital assets that hold real value, redeemable for future services or transferable to your personal crypto wallet.
+> **Official Entrant: Alibaba CoCreate 2026 Pitch Competition**
+> 
+> Pabandi is positioned for the "Agentic Business" track, demonstrating how AI agents can autonomously manage front-desk operations, predict no-shows, and secure revenue for SMEs globally.
+
+Pabandi is an Agentic AI booking ecosystem built for the modern service economy. For businesses, our autonomous AI agent actively protects your bottom line by predicting no-shows and negotiating dynamic, risk-based deposits. For customers, we offer a seamless booking journey powered by a next-generation Web3 loyalty program. Arrive for your appointment, and you earn PAB tokens—digital assets that hold real value, redeemable for future services or transferable to your personal crypto wallet.
 
 ## 🎯 Features
 
@@ -79,7 +83,7 @@ npm run site
 ## 📁 Project Structure
 
 ```
-karachi-booking-platform/
+pabandi-booking-platform/
 ├── server/                 # Backend API
 │   ├── src/
 │   │   ├── controllers/    # Route handlers
@@ -106,13 +110,13 @@ This application is designed with compliance in mind:
 - **Payment Security**: PCI-DSS compliant payment processing via Stripe
 - **GDPR-like Features**: User data rights and privacy controls
 
-## 🤖 AI Features
+## 🤖 Agentic AI Features
 
-The platform uses machine learning to:
+The platform deploys an autonomous AI agent to:
 - Predict no-show probability for each reservation
 - Calculate a real-time risk score based on customer reliability, weather, time, and historical data
-- Automatically enforce dynamic deposit amounts (via Safepay) for high-risk bookings
-- Identify patterns in booking behavior to optimize table turnover
+- Automatically negotiate and enforce dynamic deposit amounts (via Safepay/Stripe) for high-risk bookings
+- Identify patterns in booking behavior to optimize table turnover autonomously
 
 ## 💰 Payments & Crypto Ecosystem
 
@@ -138,4 +142,4 @@ MIT License - See LICENSE file for details
 For support and inquiries, please contact the development team.
 
 ---
-**Built with ❤️ for businesses across the United States 🇺🇸**
+**Built for Global SMEs 🌍**

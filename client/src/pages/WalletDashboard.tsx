@@ -9,6 +9,7 @@ import {
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import apiClient, { cryptoService, walletService, socialService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | null;
@@ -203,6 +204,7 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
 
 /* ── Main Component ── */
 const WalletDashboard: React.FC = () => {
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [showSBT, setShowSBT] = useState(false);
   const [connected, setConnected] = useState<ConnectedWallet | null>(null);
@@ -318,10 +320,10 @@ const WalletDashboard: React.FC = () => {
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-              ⚡ PAB Wallet
+              ⚡ {t('PAB Wallet', 'PAB Wallet')}
             </h1>
             <p className="font-body text-sm text-on-surface-variant mt-1.5">
-              Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges
+              {t('Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges', 'Pabandi Reliability Tokens kamayein — Solana par nikalen, NFT badges banayein')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -332,7 +334,7 @@ const WalletDashboard: React.FC = () => {
                 color: showSBT ? 'var(--color-on-tertiary-container)' : 'var(--color-on-surface-variant)',
                 border: `1px solid ${showSBT ? 'var(--color-tertiary)' : 'var(--color-outline-variant)'}`,
               }}>
-              🪙 NFT Badges
+              🪙 {t('NFT Badges', 'NFT Badges')}
             </button>
             {connected ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -346,7 +348,7 @@ const WalletDashboard: React.FC = () => {
               </div>
             ) : (
               <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="bg-primary text-on-primary px-4 py-2.5 rounded-xl font-body text-sm font-semibold hover:opacity-90 transition-opacity flex items-center shadow-sm">
-                <LinkIcon className="h-4 w-4 inline mr-2" />Connect Wallet
+                <LinkIcon className="h-4 w-4 inline mr-2" />{t('Connect Wallet', 'Wallet Connect Karein')}
               </button>
             )}
           </div>
@@ -393,14 +395,14 @@ const WalletDashboard: React.FC = () => {
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">Pabandi Vault</span>
-                    <span className="font-body text-[10px] text-white/70">Off-Chain</span>
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">{t('Pabandi Vault', 'Pabandi Vault')}</span>
+                    <span className="font-body text-[10px] text-white/70">{t('Off-Chain', 'Off-Chain')}</span>
                   </div>
                   <div>
                     <span className="font-headline text-4xl sm:text-5xl font-black text-white">{offChainBalance.toLocaleString()}</span>
                     <span className="font-headline text-lg text-white/80 ml-2">PAB</span>
                   </div>
-                  <p className="font-body text-xs text-white/70 mt-1">Available for Staking & Direct Booking</p>
+                  <p className="font-body text-xs text-white/70 mt-1">{t('Available for Staking & Direct Booking', 'Staking aur direct booking ke liye maujood')}</p>
                 </div>
                 
                 {/* Withdraw Button */}
@@ -440,7 +442,7 @@ const WalletDashboard: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest border border-secondary/10">Web3 Wallet</span>
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest border border-secondary/10">{t('Web3 Wallet', 'Web3 Wallet')}</span>
                     {connected ? (
                       <span className="font-body text-[10px] text-on-surface-variant flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
@@ -454,7 +456,7 @@ const WalletDashboard: React.FC = () => {
                     <span className="font-headline text-3xl sm:text-4xl font-black text-on-surface">{onChainBalance.toLocaleString()}</span>
                     <span className="font-headline text-base text-on-surface-variant ml-2">PAB</span>
                   </div>
-                  <p className="font-body text-xs text-on-surface-variant mt-1">Self-Custodial Balance</p>
+                  <p className="font-body text-xs text-on-surface-variant mt-1">{t('Self-Custodial Balance', 'Self-Custodial Balance')}</p>
                 </div>
                 
                 {connected && connected.type === 'phantom' && (

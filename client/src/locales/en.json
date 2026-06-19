@@ -1,0 +1,22 @@
+{
+  "layout_logout": "Logout",
+  "layout_sign_in": "Sign In",
+  "layout_sign_up": "Sign Up",
+  "layout_explore": "Explore",
+  "layout_technology": "Technology",
+  "layout_web3": "Web3",
+  "layout_for_businesses": "For Businesses",
+  "layout_dashboard": "Dashboard",
+  "layout_bookings": "Bookings",
+  "layout_crm": "CRM",
+  "layout_wallet": "Wallet",
+  "layout_profile": "Profile",
+  "layout_loyalty": "Loyalty",
+  "layout_api_docs": "API Docs",
+  "layout_trust_layer": "Trust Layer",
+  "layout_terms_of_service": "Terms of Service",
+  "layout_terms": "Terms of Service",
+  "layout_privacy": "Privacy Policy",
+  "layout_contact": "Contact Us",
+  "layout_footer_text": "© 2026 Pabandi. AI-powered bookings."
+}

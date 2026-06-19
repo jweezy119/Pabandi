@@ -1,7 +1,7 @@
 {
   "name": "pabandi",
   "version": "1.0.0",
-  "description": "Pabandi – AI-powered booking and no-show prevention platform",
+  "description": "Pabandi – Agentic AI booking ecosystem for Alibaba CoCreate 2026",
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
@@ -24,8 +24,9 @@
     "booking",
     "reservation",
     "ai",
-    "karachi",
-    "pakistan",
+    "agentic-ai",
+    "alibaba-cocreate",
+    "b2b",
     "no-show-prediction"
   ],
   "author": "Lead Developer",

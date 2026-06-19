@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../context/LanguageContext';
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
@@ -82,6 +83,7 @@ export default function AuthPage() {
 
   const { login, register } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const clearErrors = () => { setError(''); setFieldErrors({}); };
 
@@ -221,11 +223,11 @@ export default function AuthPage() {
           <div className="flex gap-2 mb-6 bg-surface-container-low p-1 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
-              Sign In
+              {t("Sign In", "Log In")}
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
-              Create Account
+              {t("Create Account", "Account Banayein")}
             </button>
           </div>
 
@@ -240,7 +242,7 @@ export default function AuthPage() {
                     : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
                 }`}>
                 <UserIcon />
-                Customer
+                {t("Customer", "Sarif")}
               </button>
               <button
                 onClick={() => setRole('business')}
@@ -250,7 +252,7 @@ export default function AuthPage() {
                     : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
                 }`}>
                 <BuildingIcon />
-                Business
+                {t("Business", "Karobar")}
               </button>
             </div>
           )}
@@ -259,15 +261,15 @@ export default function AuthPage() {
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold font-headline text-on-surface">
               {isSignup
-                ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
-                : 'Welcome Back'}
+                ? (isBusiness ? t('List Your Business', 'Apna Karobar Shamil Karein') : t('Join Pabandi', 'Pabandi Join Karein'))
+                : t('Welcome Back', 'Khush Aamdeed')}
             </h1>
             <p className="mt-1.5 text-sm text-on-surface-variant font-body">
               {isSignup
                 ? (isBusiness
-                    ? 'Connect your Google Business profile and start accepting bookings'
-                    : 'Book top businesses globally — for free, always')
-                : 'Sign in to access your bookings and dashboard'}
+                    ? t('Connect your Google Business profile and start accepting bookings', 'Google Business profile connect karein aur bookings lena shuru karein')
+                    : t('Book top businesses globally — for free, always', 'Dunya bhar ke behtareen businesses book karein — hamesha muft'))
+                : t('Sign in to access your bookings and dashboard', 'Apni bookings aur dashboard dekhne ke liye sign in karein')}
             </p>
           </div>
 
@@ -310,7 +312,7 @@ export default function AuthPage() {
 
           <div className="flex items-center gap-3 my-6">
             <hr className="flex-1 border-outline-variant/20" />
-            <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">or continue with email</span>
+            <span className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">{t("or continue with email", "ya email se jaari rakhein")}</span>
             <hr className="flex-1 border-outline-variant/20" />
           </div>
 

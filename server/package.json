@@ -15,6 +15,7 @@
     "deploy:run": "gcloud run deploy pabandi-backend --source . --region asia-south1 --allow-unauthenticated --project pabandi-42c5b"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@prisma/client": "^5.7.1",
     "@solana/spl-token": "^0.4.14",
@@ -46,6 +47,7 @@
     "passport-tiktok-auth": "^1.0.12",
     "passport-twitter": "^1.0.4",
     "redis": "^4.6.12",
+    "twilio": "^6.0.2",
     "winston": "^3.19.0",
     "zod": "^3.22.4"
   },

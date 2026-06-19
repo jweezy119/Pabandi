@@ -1,0 +1,21 @@
+{
+  "layout_logout": "Log Out",
+  "layout_sign_in": "Sign In",
+  "layout_sign_up": "Sign Up",
+  "layout_explore": "Daryaft Karein",
+  "layout_technology": "Technology",
+  "layout_web3": "Web3",
+  "layout_for_businesses": "Karobar Ke Liye",
+  "layout_dashboard": "Dashboard",
+  "layout_bookings": "Bookings",
+  "layout_crm": "CRM",
+  "layout_wallet": "Wallet",
+  "layout_profile": "Profile",
+  "layout_loyalty": "Loyalty",
+  "layout_api_docs": "API Docs",
+  "layout_trust_layer": "Aitmaad",
+  "layout_terms": "Sharait O Zawabit",
+  "layout_privacy": "Privacy Policy",
+  "layout_contact": "Rabta Karein",
+  "layout_footer_text": "© 2026 Pabandi. AI-powered bookings."
+}

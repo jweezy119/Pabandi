@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { getToken } from 'firebase/app-check';
+import { appCheck } from '../lib/firebase';
 
 // @ts-ignore
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
@@ -15,12 +17,22 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token
-apiClient.interceptors.request.use((config) => {
+// Request interceptor to add auth token and App Check token
+apiClient.interceptors.request.use(async (config) => {
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  try {
+    const appCheckTokenResponse = await getToken(appCheck, false);
+    if (appCheckTokenResponse.token) {
+      config.headers['X-Firebase-AppCheck'] = appCheckTokenResponse.token;
+    }
+  } catch (error) {
+    console.error('Failed to get App Check token', error);
+  }
+
   return config;
 });
 

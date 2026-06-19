@@ -66,7 +66,7 @@ export class CryptoService {
       });
       if (!reservation) return;
 
-      let amount = PAB_REWARD_RULES.customer.CHECK_IN; // 50 base
+      let amount: number = PAB_REWARD_RULES.customer.CHECK_IN; // 50 base
 
       // 1. Reliability Multiplier
       const rScore = reservation.customer.reliabilityScore || 100;
@@ -121,7 +121,7 @@ export class CryptoService {
       });
       if (!business) return;
 
-      let amount = PAB_REWARD_RULES.business.HONORED_BOOKING; // 25 base
+      let amount: number = PAB_REWARD_RULES.business.HONORED_BOOKING; // 25 base
       
       // Risk Acceptance Bonus for Business
       const aiRisk = reservation?.riskScore || 0;

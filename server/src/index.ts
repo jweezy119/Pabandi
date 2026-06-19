@@ -11,12 +11,16 @@ import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
 import { configurePassport } from './utils/passport';
 import { startDbKeepalive } from './utils/dbKeepalive';
+import { initFirebaseAdmin } from './utils/firebase';
+import { requireAppCheck } from './middleware/appCheck.middleware';
 
 // Load environment variables FIRST
 dotenv.config();
 
 // Import routes
 import authRoutes from './routes/auth.routes';
+import badgeRoutes from './routes/badge.routes';
+import whatsappRoutes from './routes/whatsapp.routes';
 import businessRoutes from './routes/business.routes';
 import reservationRoutes from './routes/reservation.routes';
 import paymentRoutes from './routes/payment.routes';
@@ -28,9 +32,13 @@ import externalRoutes from './routes/external.routes';
 import apiClientsRoutes from './routes/apiClients.routes';
 import socialRoutes from './routes/social.routes';
 import walletRoutes from './routes/wallet.routes';
+import waitlistRoutes from './routes/waitlist.routes';
 
 const app = express();
 const httpServer = createServer(app);
+
+// Initialize Firebase Admin globally
+initFirebaseAdmin();
 
 // Configure Passport strategies (env vars loaded above)
 configurePassport();
@@ -66,6 +74,10 @@ app.use((req, res, next) => {
 // Rate limiting
 app.use('/api/', rateLimiter);
 
+// Firebase App Check Middleware for API routes
+// Ensure this runs before your actual API routes are registered
+app.use('/api/', requireAppCheck);
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -85,6 +97,8 @@ app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
+app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
+app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 
 import apiSubscriptionRoutes from './routes/api-subscription.routes';
@@ -98,6 +112,8 @@ app.use(`/api/${API_VERSION}/social`, socialRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
 app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
+app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
+app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 
 // ── Pabandi Intelligence API (B2B) ──────────────────────────────────────────
 // Separate from /api/v1/ so it can be independently rate-limited and versioned

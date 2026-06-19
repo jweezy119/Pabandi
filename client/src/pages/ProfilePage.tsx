@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../context/LanguageContext';
 import { reservationService, cryptoService, socialService } from '../services/api';
 import {
   CalendarIcon,
@@ -461,6 +462,7 @@ function LoyaltyTab({
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '' });
   const [activeTab, setActiveTab] = useState<'history' | 'badges' | 'connections' | 'loyalty'>('history');
@@ -648,8 +650,8 @@ export default function ProfilePage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-surface">
         <div className="text-center">
-          <p className="text-on-surface-variant mb-4 font-body">Please sign in to view your profile.</p>
-          <Link to="/login" className="bg-primary text-on-primary px-6 py-2.5 rounded-md font-body text-sm font-medium hover:opacity-90 transition-opacity">Sign In</Link>
+          <p className="text-on-surface-variant mb-4 font-body">{t("Please sign in to view your profile.", "Apni profile dekhne ke liye baraye meherbani sign in karein.")}</p>
+          <Link to="/login" className="bg-primary text-on-primary px-6 py-2.5 rounded-md font-body text-sm font-medium hover:opacity-90 transition-opacity">{t("Sign In", "Log In")}</Link>
         </div>
       </div>
     );
@@ -722,7 +724,7 @@ export default function ProfilePage() {
               <button onClick={() => setEditing(true)}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm"
               >
-                <PencilIcon className="h-3.5 w-3.5" /> Edit Profile
+                <PencilIcon className="h-3.5 w-3.5" /> {t("Edit Profile", "Profile Edit Karein")}
               </button>
             )}
           </div>
@@ -735,10 +737,10 @@ export default function ProfilePage() {
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Bookings', value: reservations.length, colorClass: 'text-primary' },
-            { label: 'Completed', value: completed, colorClass: 'text-tertiary' },
-            { label: 'PAB Tokens', value: pabBalance.toLocaleString(), colorClass: 'text-secondary' },
-            { label: 'Loyalty Tier', value: loyaltyTier.emoji, colorClass: 'text-on-surface', sub: loyaltyTier.name },
+            { label: t('Total Bookings', 'Kul Bookings'), value: reservations.length, colorClass: 'text-primary' },
+            { label: t('Completed', 'Mukammal'), value: completed, colorClass: 'text-tertiary' },
+            { label: t('PAB Tokens', 'PAB Tokens'), value: pabBalance.toLocaleString(), colorClass: 'text-secondary' },
+            { label: t('Loyalty Tier', 'Loyalty Tier'), value: loyaltyTier.emoji, colorClass: 'text-on-surface', sub: loyaltyTier.name },
           ].map(s => (
             <div key={s.label} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-5 text-center shadow-sm hover:shadow-md transition-shadow">
               <p className={`text-2xl md:text-3xl font-black font-headline ${s.colorClass}`}>{s.value}</p>
@@ -752,7 +754,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Trust Score — uses server-computed effective score */}
           <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Reliability Score</p>
+            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">{t('Reliability Score', 'Pabandi Score')}</p>
             <div className="flex justify-center">
               <ArcGauge
                 value={effectiveScore}
@@ -774,7 +776,7 @@ export default function ProfilePage() {
           <div className="bg-gradient-to-br from-primary to-primary-container border border-outline-variant/20 rounded-2xl p-6 text-center shadow-md relative overflow-hidden">
             <div className="absolute w-[120px] h-[120px] -top-8 -right-8 rounded-full bg-secondary-container/20 blur-xl pointer-events-none" />
             <div className="text-3xl mb-1 text-secondary-fixed">⚡</div>
-            <p className="text-[11px] font-bold text-secondary-fixed mb-2 uppercase tracking-widest">PAB Balance</p>
+            <p className="text-[11px] font-bold text-secondary-fixed mb-2 uppercase tracking-widest">{t('PAB Balance', 'PAB Balance')}</p>
             <p className="text-4xl font-black font-headline text-white drop-shadow-sm">
               {pabBalance.toLocaleString()}
             </p>
@@ -791,7 +793,7 @@ export default function ProfilePage() {
 
           {/* Show rate gauge */}
           <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Show Rate</p>
+            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">{t('Show Rate', 'Show Rate')}</p>
             <div className="flex justify-center">
               <ArcGauge value={showRate} color="#031f38" label="Show %" />
             </div>

@@ -3,25 +3,8 @@ import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 
-// Initialize Firebase Admin for Push Notifications
-let firebaseInitialized = false;
-try {
-  if (process.env.FIREBASE_PRIVATE_KEY) {
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      }),
-    });
-    firebaseInitialized = true;
-    logger.info('Firebase Admin initialized for Push Notifications');
-  } else {
-    logger.warn('Firebase Admin credentials missing, Push Notifications disabled.');
-  }
-} catch (error) {
-  logger.error('Failed to initialize Firebase Admin', error);
-}
+// Use globally initialized admin from utils/firebase.ts
+const isFirebaseInitialized = () => admin.apps.length > 0;
 
 // Initialize strict Gmail Email transporter
 const emailTransporter = nodemailer.createTransport({
@@ -46,7 +29,7 @@ export class NotificationService {
     }
   ): Promise<boolean> {
     try {
-      if (!firebaseInitialized || !fcmToken) {
+      if (!isFirebaseInitialized() || !fcmToken) {
         logger.warn('Cannot send Push Notification: Missing Firebase setup or FCM Token.');
         return false;
       }

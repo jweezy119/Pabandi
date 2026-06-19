@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { Strategy as TwitterStrategy } from 'passport-twitter';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
+// @ts-ignore
 import { Strategy as TikTokStrategy } from 'passport-tiktok-auth';
 import { prisma } from './database';
 import { UserRole } from '@prisma/client';
@@ -236,7 +237,7 @@ export function configurePassport() {
           scope: ['user.info.basic'],
           passReqToCallback: true,
         },
-        async (req: any, _accessToken, _refreshToken, profile, done) => {
+        async (req: any, _accessToken: string, _refreshToken: string, profile: any, done: any) => {
           try {
             const email = profile.emails?.[0]?.value || `${profile.id}@tiktok.oauth.placeholder`;
             const profilePictureUrl = profile.avatar_url;

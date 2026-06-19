@@ -211,4 +211,4 @@ For issues or questions, refer to the main README.md or contact the development 
 
 ---
 
-**Built for businesses in Karachi, Pakistan** 🇵🇰
+**Built for Global SMEs** 🌍

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import App from './App';
 import AuthHydrationGate from './components/AuthHydrationGate';
+import './i18n';
 import './index.css';
 
 const queryClient = new QueryClient({

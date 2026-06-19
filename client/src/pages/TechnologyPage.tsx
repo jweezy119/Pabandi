@@ -123,6 +123,9 @@ export default function TechnologyPage() {
             <p className="font-body text-sm text-on-surface-variant leading-relaxed relative z-10">
               Pseudonymous users carry higher risk. By securely integrating government-grade ID verification, we filter out bots and malicious actors, ensuring the person booking is exactly who they claim to be.
             </p>
+            <p className="font-body text-sm text-primary mt-3 leading-relaxed relative z-10">
+              We verify check-ins with a simple GPS fence and timestamp. We do not track you outside appointments. Your reliability score is yours; we don’t sell it.
+            </p>
           </div>
 
           {/* Pillar 3 */}
