@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "client/dist",
+    "public": "site",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,6 +8,10 @@
       "**/verify.mjs"
     ],
     "rewrites": [
+      {
+        "source": "/app/**",
+        "destination": "/app/index.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"
@@ -75,6 +79,15 @@
       },
       {
         "source": "index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "app/index.html",
         "headers": [
           {
             "key": "Cache-Control",
