@@ -185,6 +185,35 @@ export class BlockchainService {
     totalBookings: number
   ): Promise<MintBadgeResult> {
     const tierName = BADGE_TIER_NAMES[tier];
+    const isSolana = !walletAddress.startsWith('0x');
+
+    if (isSolana) {
+      const web3 = await this.getSolanaWeb3();
+      if (!web3) return { success: false, chain: 'solana', tier, tierName, error: '@solana/web3.js missing' };
+      try {
+        const BADGE_PROGRAM_ID = new web3.PublicKey(
+          process.env.SOLANA_BADGE_PROGRAM_ID || 'BadgPkeyPabandiReliabilityBadge1111111111111'
+        );
+        const owner = new web3.PublicKey(walletAddress);
+        const [pda] = web3.PublicKey.findProgramAddressSync(
+          [Buffer.from('badge'), owner.toBuffer(), Buffer.from([tier])],
+          BADGE_PROGRAM_ID
+        );
+
+        logger.info(`[Blockchain] Prepared Solana badge mint for ${walletAddress} PDA: ${pda.toBase58()}`);
+        return { 
+          success: true, 
+          chain: 'solana', 
+          tier, 
+          tierName, 
+          badgePDA: pda.toBase58()
+        };
+      } catch (err: any) {
+         logger.error('[Blockchain] Solana Soulbound mint preparation failed:', err.message);
+         return { success: false, chain: 'solana', tier, tierName, error: err.message };
+      }
+    }
+
     const ethers = await this.getEthers();
     const signer = await this.getSigner();
 

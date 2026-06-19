@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { blockchainService } from './blockchain.service';
 
 // ─── Platform boost weights ───────────────────────────────────────────────────
 const PLATFORM_BOOST: Record<string, { base: number; maxBoost: number }> = {
@@ -172,6 +173,19 @@ export class BadgeService {
     const payloadStr = `${pseudonymousId}:${effectiveScore}:${attendanceRate}:${verifiedAt}`;
     const salt = process.env.BADGE_SALT || process.env.JWT_SECRET || 'pabandi_badge_salt_v1';
     const signedHash = 'sha256:' + crypto.createHmac('sha256', salt).update(payloadStr).digest('hex');
+
+    // --- Autonomous Blockchain Sync ---
+    prisma.wallet.findUnique({ where: { userId } }).then(wallet => {
+      if (wallet?.address) {
+        blockchainService.checkAndMintEligibleBadge(
+          wallet.address,
+          pseudonymousId,
+          effectiveScore,
+          totalBookings,
+          attendanceRate
+        ).catch(err => logger.error('[AutonomousSync] Error syncing badge:', err.message));
+      }
+    }).catch(err => logger.error('[AutonomousSync] Error fetching wallet:', err.message));
 
     return {
       pseudonymousId,

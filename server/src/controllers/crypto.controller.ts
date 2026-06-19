@@ -146,65 +146,20 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
 
     // Compute badge status
     const badge = await badgeService.computeBadgeStatus(userId);
+    const showRate = badge.totalBookings > 0 ? badge.attendanceRate : 100;
 
-    // Determine tier from badge data
-    const tierMap: Record<string, BadgeTier> = {
-      Bronze: BadgeTier.Bronze,
-      Silver: BadgeTier.Silver,
-      Gold:   BadgeTier.Gold,
-      Platinum: BadgeTier.Platinum,
-    };
+    const mintResult = await blockchainService.checkAndMintEligibleBadge(
+      wallet.address,
+      badge.pseudonymousId,
+      badge.reliabilityScore,
+      badge.totalBookings,
+      showRate
+    );
 
-    // Compute tier from booking stats
-    const showRate = badge.totalBookings > 0
-      ? Math.round((badge.attendanceRate))
-      : 100;
-
-    let tier: BadgeTier | null = null;
-    if (badge.totalBookings >= 25 && showRate >= 97) tier = BadgeTier.Platinum;
-    else if (badge.totalBookings >= 10 && showRate >= 90) tier = BadgeTier.Gold;
-    else if (badge.totalBookings >= 5  && showRate >= 80) tier = BadgeTier.Silver;
-    else if (badge.totalBookings >= 1  && showRate >= 70) tier = BadgeTier.Bronze;
-
-    if (tier === null) {
+    if (!mintResult) {
       throw new CustomError(
         'Complete at least 1 booking with 70%+ show rate to earn your first badge',
         400
-      );
-    }
-
-    // Detect chain from wallet
-    const isPhantom = wallet.currency === 'SOL';
-    const chain = isPhantom ? 'solana' : 'bsc';
-
-    let mintResult;
-    if (isPhantom) {
-      // Solana: return PDA + instruction for client-side signing (Anchor)
-      const { PublicKey } = await import('@solana/web3.js');
-      const BADGE_PROGRAM_ID = new PublicKey(
-        process.env.SOLANA_BADGE_PROGRAM_ID || 'BadgPkeyPabandiReliabilityBadge1111111111111'
-      );
-      const owner = new PublicKey(wallet.address);
-      const [pda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('badge'), owner.toBuffer(), Buffer.from([tier])],
-        BADGE_PROGRAM_ID
-      );
-      mintResult = {
-        success: true,
-        chain: 'solana',
-        tier,
-        tierName: ['Bronze Patron', 'Silver Reliable', 'Gold Trustee', 'Platinum Oracle'][tier],
-        badgePDA: pda.toBase58(),
-        note: 'Sign the Anchor transaction in your Phantom wallet to finalize minting.',
-      };
-    } else {
-      // BSC: mint via server relayer
-      mintResult = await blockchainService.mintSoulboundBadge(
-        wallet.address,
-        tier,
-        badge.pseudonymousId,
-        badge.reliabilityScore,
-        badge.totalBookings
       );
     }
 
@@ -224,7 +179,7 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
         },
       },
       message: mintResult.success
-        ? `${mintResult.tierName} Soulbound Badge ${chain === 'solana' ? 'ready to mint' : 'minted'} successfully!`
+        ? `${mintResult.tierName} Soulbound Badge ${mintResult.chain === 'solana' ? 'ready to mint' : 'minted'} successfully!`
         : 'Badge minting queued — will be processed shortly.',
     });
   } catch (error) {
