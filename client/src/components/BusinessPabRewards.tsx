@@ -38,7 +38,7 @@ export default function BusinessPabRewards() {
           >
             Solana · $PAB Rewards
           </span>
-          <h2 className="text-xl font-black text-[#e8e8e8] mt-2">Earn $PAB for running a tight operation</h2>
+          <h2 className="text-xl font-black text-[#e8e8e8] mt-2 flex items-center gap-2"><img src="/logo-coin-3d.jpg" alt="PAB" className="h-6 w-6 rounded-full object-cover" />Earn $PAB for running a tight operation</h2>
           <p className="text-sm text-[#757575] mt-1 max-w-xl">
             Businesses earn Pabandi tokens automatically — withdraw to your Phantom wallet on Solana.
           </p>

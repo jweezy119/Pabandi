@@ -38,8 +38,8 @@ export default function Layout() {
                 <span className="material-symbols-outlined">person</span>
               </div>
             )}
-            <Link to="/">
-              <h1 className="font-headline font-semibold text-2xl tracking-tighter text-primary">Pabandi</h1>
+            <Link to="/" className="flex items-center gap-2">
+              <img src="/logo-company.jpg" alt="Pabandi" className="h-8 w-auto mix-blend-screen" />
             </Link>
           </div>
           

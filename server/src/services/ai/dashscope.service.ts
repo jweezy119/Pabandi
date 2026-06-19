@@ -1,10 +1,11 @@
 import { logger } from '../../utils/logger';
 import { prisma } from '../../utils/database';
+import axios from 'axios';
 
 export class DashscopeService {
   /**
-   * Mock implementation of Alibaba Cloud DashScope (Qwen) API call.
-   * In a production environment, this would call the actual Alibaba API.
+   * Implementation of Alibaba Cloud DashScope (Qwen) API call for Trust Profiles.
+   * Falls back to a heuristic algorithm if the API key is missing or fails.
    */
   async generateTrustProfile(userId: string): Promise<string> {
     try {
@@ -31,17 +32,49 @@ export class DashscopeService {
       
       const attendanceRate = Math.round((completed / total) * 100);
 
-      // 2. Format a mock prompt that we would send to DashScope
-      const mockPrompt = `
-        System: You are an Alibaba Cloud Qwen AI evaluating user behavioral reliability for Pabandi.
+      // 2. Format a prompt for DashScope
+      const prompt = `
+        System: You are an Alibaba Cloud Qwen AI evaluating user behavioral reliability for Pabandi, a premium booking platform.
         User Data: ${total} total bookings, ${attendanceRate}% attendance rate.
         Socials: ${user.socialIdentities.length > 0 ? 'Verified Professional' : 'Unverified'}.
-        Generate a 2-sentence Trust Profile summary.
+        Generate a 2-sentence Trust Profile summary outlining their reliability. Do not include introductory text, just the summary.
       `;
 
-      logger.info(`[DashScope] Calling AI generation with prompt: ${mockPrompt.substring(0, 50)}...`);
+      // 3. Try to call DashScope API
+      const apiKey = process.env.DASHSCOPE_API_KEY;
+      if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+        try {
+          logger.info(`[DashScope] Calling Alibaba Cloud API for user: ${userId}`);
+          const response = await axios.post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+            model: 'qwen-turbo',
+            input: {
+              messages: [
+                { role: 'system', content: 'You are an AI assistant analyzing user reliability.' },
+                { role: 'user', content: prompt }
+              ]
+            },
+            parameters: {
+              result_format: 'message'
+            }
+          }, {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
 
-      // 3. Mock the AI response based on the metrics
+          if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
+            const aiText = response.data.output.choices[0].message.content.trim();
+            return `[DashScope AI]: ${aiText}`;
+          }
+        } catch (apiError: any) {
+          logger.error(`[DashScope API Error] Failed to generate profile via API, falling back to heuristics: ${apiError.message}`);
+        }
+      } else {
+        logger.warn('[DashScope] DASHSCOPE_API_KEY is not set or placeholder. Falling back to heuristic Trust Profile.');
+      }
+
+      // 4. Fallback heuristic logic
       let aiSummary = "";
       if (attendanceRate >= 95) {
         aiSummary = "Highly reliable patron with exceptional attendance. Verified professional who consistently fulfills booking commitments.";
@@ -53,11 +86,10 @@ export class DashscopeService {
         aiSummary = "High-risk profile with frequent no-shows. strict deposit requirements strongly recommended.";
       }
 
-      // Add a slight variance for the "AI" feel
       const adverbs = ["Demonstrates", "Shows", "Maintains"];
       const adverb = adverbs[Math.floor(Math.random() * adverbs.length)];
       
-      return `[DashScope Qwen AI]: ${adverb} a ${attendanceRate}% adherence rate. ${aiSummary}`;
+      return `[DashScope Qwen AI (Fallback)]: ${adverb} a ${attendanceRate}% adherence rate. ${aiSummary}`;
 
     } catch (error) {
       logger.error('Error generating AI Trust Profile via DashScope:', error);

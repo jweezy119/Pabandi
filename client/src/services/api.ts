@@ -5,7 +5,7 @@ import { appCheck } from '../lib/firebase';
 
 // @ts-ignore
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
-const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-server-97129395003.asia-south1.run.app');
+const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-backend-97129395003.asia-south1.run.app');
 const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
 export const API_HOST = _baseHost;
 const API_BASE_URL = `${_baseHost}/api/v1`;

@@ -112,35 +112,35 @@ export default function AuthPage() {
 
   const handleGoogleAuth = () => {
     setOauthLoading('google');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/google?role=${role}`;
   };
 
   const handleFacebookAuth = () => {
     setOauthLoading('facebook');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/facebook?role=${role}`;
   };
 
   const handleTwitterAuth = () => {
     setOauthLoading('twitter');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/twitter?role=${role}`;
   };
 
   const handleLinkedInAuth = () => {
     setOauthLoading('linkedin');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/linkedin?role=${role}`;
   };
 
   const handleTikTokAuth = () => {
     setOauthLoading('tiktok');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-server-97129395003.asia-south1.run.app';
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
   };
