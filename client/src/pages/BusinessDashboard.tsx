@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { analyticsService, reservationService, businessService } from '../services/api';
+import { analyticsService, reservationService, businessService, sourcingService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
   CalendarIcon,
@@ -15,6 +15,9 @@ import {
   ClockIcon,
   BoltIcon,
   ArrowTrendingUpIcon,
+  ShoppingCartIcon,
+  SparklesIcon,
+  ArrowUpRightIcon,
 } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
@@ -127,6 +130,96 @@ function LiveIndicator() {
   );
 }
 
+/* ── Accio Work Growth Widget (Trend-to-Service) ── */
+function AccioGrowthWidget({ businessId }: { businessId: string }) {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery(['trends', businessId], () => sourcingService.getTrends(), { enabled: !!businessId });
+  const launchMutation = useMutation((trendId: string) => sourcingService.launchTrend(trendId), {
+    onSuccess: () => qc.invalidateQueries(['trends', businessId]),
+  });
+
+  if (isLoading || !data?.data) return null;
+
+  const trends = data.data.trends || [];
+
+  if (trends.length === 0) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-[#FF6A00]/10 to-[#FF0000]/5 border border-[#FF6A00]/30 rounded-xl p-6 mb-6">
+      <SectionHeader 
+        title="Accio Work: Growth Opportunities" 
+        subtitle="AI-curated business expansion trends and equipment sourcing."
+        action={
+          <span className="flex items-center gap-1 font-label text-[10px] font-bold px-3 py-1 rounded-full bg-white text-[#FF6A00] shadow-sm uppercase tracking-widest">
+            <SparklesIcon className="h-3.5 w-3.5" /> Powered by Alibaba
+          </span>
+        } 
+      />
+      
+      <div className="space-y-4">
+        {trends.map((trend: any) => (
+          <div key={trend.id} className="bg-white rounded-lg p-5 shadow-sm border border-[#FF6A00]/20 flex flex-col md:flex-row justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-headline text-lg font-bold text-on-surface">{trend.equipmentName}</h3>
+                {trend.status === 'SERVICE_LAUNCHED' && (
+                  <span className="font-label text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#059669]/10 text-[#059669] uppercase tracking-wider">
+                    Service Active
+                  </span>
+                )}
+              </div>
+              <p className="font-body text-sm text-on-surface-variant mb-4">{trend.description}</p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Est. Cost</p>
+                  <p className="font-headline text-sm font-bold">PKR {trend.estimatedCostPKR.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Service Price</p>
+                  <p className="font-headline text-sm font-bold text-[#059669]">PKR {trend.suggestedServicePrice}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Proj. Bookings</p>
+                  <p className="font-headline text-sm font-bold">{trend.projectedBookings}/mo</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Proj. ROI</p>
+                  <p className="font-headline text-sm font-bold text-primary">{trend.projectedRoiPercent}%</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col justify-center gap-3 border-t md:border-t-0 md:border-l border-outline-variant/30 pt-4 md:pt-0 md:pl-6 min-w-[200px]">
+              {trend.status === 'SERVICE_LAUNCHED' ? (
+                <div className="text-center p-3 bg-surface-container-lowest rounded-xl border border-outline-variant/30">
+                  <CheckCircleIcon className="h-6 w-6 text-[#059669] mx-auto mb-1" />
+                  <p className="font-body text-xs font-bold text-on-surface">Equipment Ordered & Service Live</p>
+                </div>
+              ) : (
+                <>
+                  <a href={trend.accioWorkUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 font-body text-sm font-bold px-4 py-2.5 rounded-lg border border-[#FF6A00]/50 text-[#FF6A00] hover:bg-[#FF6A00]/10 transition-colors text-center">
+                    <ArrowUpRightIcon className="h-4 w-4" />
+                    Source on Alibaba
+                  </a>
+                  <button 
+                    onClick={() => { if (confirm('Order equipment via Accio and launch this new service automatically?')) launchMutation.mutate(trend.id); }}
+                    disabled={launchMutation.isLoading}
+                    className="flex items-center justify-center gap-2 font-body text-sm font-bold px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#FF6A00] to-[#FF0000] text-white hover:opacity-90 transition-opacity shadow-md disabled:opacity-50"
+                  >
+                    <ShoppingCartIcon className="h-4 w-4" />
+                    {launchMutation.isLoading ? 'Launching...' : '1-Click Launch'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function BusinessDashboard() {
   const { user } = useAuthStore();
   const qc = useQueryClient();
@@ -206,6 +299,12 @@ export default function BusinessDashboard() {
                 Dashboard
               </h1>
               <LiveIndicator />
+              <div className="hidden sm:flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-md bg-surface-container-high border border-outline-variant/30 shadow-sm">
+                <span style={{ fontSize: 14 }}>✨</span>
+                <span className="font-label text-[10px] font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FF6A00] to-[#FF0000]">
+                  Powered by Alibaba DashScope AI
+                </span>
+              </div>
             </div>
             <p className="font-body text-sm text-on-surface-variant">
               Welcome back, <span className="font-semibold text-primary">{user?.firstName}</span> · {business.name}
@@ -358,6 +457,9 @@ export default function BusinessDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Accio Work Growth Widget ── */}
+        {businessId && <AccioGrowthWidget businessId={businessId} />}
 
         {/* ── Map + Reviews ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

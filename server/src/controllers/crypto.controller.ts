@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { cryptoService } from '../services/cryptoService';
 import { blockchainService } from '../services/blockchain.service';
 import { badgeService } from '../services/badge.service';
+import { dashscopeService } from '../services/ai/dashscope.service';
 import { CustomError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
 import { BadgeTier } from '../types/blockchain.types';
@@ -148,12 +149,16 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
     const badge = await badgeService.computeBadgeStatus(userId);
     const showRate = badge.totalBookings > 0 ? badge.attendanceRate : 100;
 
+    // Generate AI Trust Profile using Alibaba DashScope mock
+    const aiTrustProfile = await dashscopeService.generateTrustProfile(userId);
+
     const mintResult = await blockchainService.checkAndMintEligibleBadge(
       wallet.address,
       badge.pseudonymousId,
       badge.reliabilityScore,
       badge.totalBookings,
-      showRate
+      showRate,
+      aiTrustProfile
     );
 
     if (!mintResult) {
@@ -172,6 +177,7 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
           tier: badge.tier,
           totalBookings: badge.totalBookings,
           attendanceRate: badge.attendanceRate,
+          aiTrustProfile: aiTrustProfile,
         },
         contractAddresses: {
           soulbound: process.env.SOULBOUND_CONTRACT_ADDRESS || null,

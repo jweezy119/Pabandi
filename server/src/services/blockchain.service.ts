@@ -62,7 +62,7 @@ const ESCROW_ABI = [
 ];
 
 const SOULBOUND_ABI = [
-  'function mintBadge(address to, uint8 tier, string calldata pseudonymousId, uint16 reliabilityScore, uint32 totalBookings) external returns (uint256)',
+  'function mintBadge(address to, uint8 tier, string calldata pseudonymousId, uint16 reliabilityScore, uint32 totalBookings, string calldata aiTrustProfile) external returns (uint256)',
   'function verifyBadge(address wallet, uint8 minTier) external view returns (bool)',
 ];
 
@@ -177,12 +177,13 @@ export class BlockchainService {
 
   // ── Soulbound NFT ──────────────────────────────────────────────────────────
 
-  async mintSoulboundBadge(
+  async mintBadge(
     walletAddress: string,
     tier: BadgeTier,
     pseudonymousId: string,
     reliabilityScore: number,
-    totalBookings: number
+    totalBookings: number,
+    aiTrustProfile: string = "AI profile generation in progress..."
   ): Promise<MintBadgeResult> {
     const tierName = BADGE_TIER_NAMES[tier];
     const isSolana = !walletAddress.startsWith('0x');
@@ -225,7 +226,7 @@ export class BlockchainService {
     try {
       const contract = new ethers.Contract(SOULBOUND_ADDRESS, SOULBOUND_ABI, signer);
       const tx = await contract.mintBadge(
-        walletAddress, tier, pseudonymousId, reliabilityScore, totalBookings
+        walletAddress, tier, pseudonymousId, reliabilityScore, totalBookings, aiTrustProfile
       );
       const receipt = await tx.wait();
       logger.info(`[Blockchain] Minted ${tierName} badge → ${walletAddress} tx:${receipt.hash}`);
@@ -289,12 +290,13 @@ export class BlockchainService {
     pseudonymousId: string,
     reliabilityScore: number,
     totalBookings: number,
-    showRate: number
+    showRate: number,
+    aiTrustProfile: string
   ): Promise<MintBadgeResult | null> {
     const eligibleTier = computeEligibleTier(totalBookings, showRate);
     if (eligibleTier === null || !walletAddress) return null;
-    return this.mintSoulboundBadge(
-      walletAddress, eligibleTier, pseudonymousId, reliabilityScore, totalBookings
+    return this.mintBadge(
+      walletAddress, eligibleTier, pseudonymousId, reliabilityScore, totalBookings, aiTrustProfile
     );
   }
 

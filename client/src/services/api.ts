@@ -143,4 +143,11 @@ export const stakingService = {
   slash: (data: { reservationId: string }) => apiClient.post('/staking/slash', data),
 };
 
+export const sourcingService = {
+  analyzeDemand: () => apiClient.get('/sourcing/analyze'),
+  confirmOrder: (orderId: string) => apiClient.post(`/sourcing/order/${orderId}/confirm`),
+  getTrends: () => apiClient.get('/sourcing/trends'),
+  launchTrend: (trendId: string) => apiClient.post(`/sourcing/trends/${trendId}/launch`),
+};
+
 export default apiClient;
