@@ -6,6 +6,7 @@ export interface ScoreChangeReceipt {
   newScore: number;
   basePoints: number;
   contextWeight: number;
+  valueMultiplier: number;
   expectedProbability: number;
   actualOutcome: number;
   streakBonus: number;
@@ -39,6 +40,20 @@ export class ReliabilityService {
   }
 
   /**
+   * Determine the Value Multiplier based on financial context (Skin in the Game)
+   */
+  private calculateValueMultiplier(reservationValue?: number): number {
+    if (reservationValue === undefined || reservationValue <= 0) return 1.0;
+    
+    if (reservationValue < 20) return 0.8; // Low stakes
+    if (reservationValue < 100) return 1.0; // Standard stakes
+    if (reservationValue < 500) return 1.5; // Medium stakes
+    if (reservationValue < 1000) return 2.0; // High stakes
+    if (reservationValue < 5000) return 3.0; // Very high stakes
+    return 5.0; // Whale stakes
+  }
+
+  /**
    * Determine the Actual Outcome (A) based on the event status
    */
   private getActualOutcome(status: string, isLateCancel: boolean): number {
@@ -56,7 +71,8 @@ export class ReliabilityService {
     userId: string, 
     status: 'COMPLETED' | 'NO_SHOW' | 'CANCELLED',
     isLateCancel: boolean = false,
-    reservationId?: string
+    reservationId?: string,
+    reservationValue?: number
   ): Promise<{ newScore: number, receipt: ScoreChangeReceipt } | null> {
     try {
       const user = await prisma.user.findUnique({
@@ -72,6 +88,7 @@ export class ReliabilityService {
       // Fetch Context
       let contextWeight = 1.0;
       let streakBonus = 0;
+      let valueMultiplier = this.calculateValueMultiplier(reservationValue);
       
       if (reservationId) {
         const reservation = await prisma.reservation.findUnique({
@@ -104,8 +121,8 @@ export class ReliabilityService {
       const E = S / 100.0;
       const A = this.getActualOutcome(status, isLateCancel);
       
-      // New Score = S + (K * C) * (A - E)
-      const mathSwing = (this.K_FACTOR * contextWeight) * (A - E);
+      // New Score = S + (K * C * V) * (A - E)
+      const mathSwing = (this.K_FACTOR * contextWeight * valueMultiplier) * (A - E);
       let totalChange = mathSwing + streakBonus;
 
       // Determine reasoning for receipt
@@ -132,6 +149,7 @@ export class ReliabilityService {
         newScore: Number(newScore.toFixed(1)),
         basePoints: this.K_FACTOR,
         contextWeight,
+        valueMultiplier,
         expectedProbability: E,
         actualOutcome: A,
         streakBonus,
@@ -179,6 +197,60 @@ export class ReliabilityService {
       totalCompleted: completionCount,
       totalNoShows: noShowCount
     };
+  }
+
+  /**
+   * Run periodically to apply velocity decay to user reliability scores.
+   * If a user hasn't made a booking in a long time, their score decays towards 50.
+   */
+  async applyTimeDecay() {
+    try {
+      // Find users whose last reservation was more than 30 days ago
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const usersToDecay = await prisma.user.findMany({
+        where: {
+          role: 'CUSTOMER',
+          // Only decay if their score is significantly different from 50
+          NOT: {
+            reliabilityScore: {
+              gte: 48,
+              lte: 52
+            }
+          },
+          reservations: {
+            none: {
+              createdAt: {
+                gte: thirtyDaysAgo
+              }
+            }
+          }
+        },
+        select: { id: true, reliabilityScore: true }
+      });
+
+      let updatedCount = 0;
+      for (const user of usersToDecay) {
+        // Decay by 1 point towards 50
+        const S = user.reliabilityScore;
+        let newScore = S;
+        if (S > 50) newScore -= 1;
+        else if (S < 50) newScore += 1;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { reliabilityScore: newScore }
+        });
+        updatedCount++;
+      }
+
+      logger.info(`Velocity Decay Processed: Decayed scores for ${updatedCount} inactive users.`);
+      return updatedCount;
+    } catch (error) {
+      logger.error('Error applying time decay:', error);
+      throw error;
+    }
   }
 }
 

@@ -431,7 +431,13 @@ export const cancelReservation = async (
     });
 
     const isLateCancel = hoursUntilReservation < (cancellationHours + 12);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'CANCELLED', isLateCancel, reservation.id);
+    await reliabilityService.updateScoreForReservationActivity(
+      reservation.customerId, 
+      'CANCELLED', 
+      isLateCancel, 
+      reservation.id, 
+      reservation.depositAmount || 0
+    );
 
     // Trigger Webhook
     webhookService.dispatch('reservation.cancelled', cancelled.businessId, {
@@ -609,7 +615,13 @@ export const completeReservation = async (
 
     // Update Scores
     await reviewService.calculateReliabilityScore(reservation.businessId);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'COMPLETED', false, reservation.id);
+    await reliabilityService.updateScoreForReservationActivity(
+      reservation.customerId, 
+      'COMPLETED', 
+      false, 
+      reservation.id, 
+      reservation.depositAmount || 0
+    );
 
     res.json({
       success: true,
@@ -659,7 +671,13 @@ export const markNoShow = async (
 
     // Update Scores (Business and User)
     await reviewService.calculateReliabilityScore(reservation.businessId);
-    await reliabilityService.updateScoreForReservationActivity(reservation.customerId, 'NO_SHOW', false, reservation.id);
+    await reliabilityService.updateScoreForReservationActivity(
+      reservation.customerId, 
+      'NO_SHOW', 
+      false, 
+      reservation.id, 
+      reservation.depositAmount || 0
+    );
 
     res.json({
       success: true,
