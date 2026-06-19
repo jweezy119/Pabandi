@@ -272,7 +272,7 @@ export function configurePassport() {
             return done(err);
           }
         }
-      )
+      ) as any
     );
   }
 

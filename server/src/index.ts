@@ -19,7 +19,6 @@ dotenv.config();
 
 // Import routes
 import authRoutes from './routes/auth.routes';
-import badgeRoutes from './routes/badge.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
 import businessRoutes from './routes/business.routes';
 import reservationRoutes from './routes/reservation.routes';
@@ -97,7 +96,7 @@ app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
-app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
+// app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 
