@@ -1,6 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { logger } from '../../utils/logger';
 import { prisma } from '../../utils/database';
+import axios from 'axios';
 
 interface ReservationFeatures {
   customerHistory?: {
@@ -98,7 +99,65 @@ export class NoShowPredictor {
    */
   async predict(features: ReservationFeatures): Promise<PredictionResult> {
     try {
-      // If model is not available, use rule-based prediction
+      // 1. Try DashScope AI API first
+      const apiKey = process.env.DASHSCOPE_API_KEY;
+      if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+        try {
+          const prompt = `
+            Analyze this reservation data and predict the no-show probability for a premium booking platform in Pakistan.
+            Customer History: ${JSON.stringify(features.customerHistory || {})}
+            Time Factors: ${JSON.stringify(features.timeFactors || {})}
+            Booking Factors: ${JSON.stringify(features.bookingFactors || {})}
+            Business Factors: ${JSON.stringify(features.businessFactors || {})}
+            
+            Return ONLY a valid JSON object with this exact structure (no markdown, no markdown backticks):
+            {
+              "riskScore": <number between 0 and 100>,
+              "factors": { "<reason_string>": <positive_or_negative_number_impact> }
+            }
+          `;
+          
+          const response = await axios.post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+            model: 'qwen-turbo',
+            input: {
+              messages: [
+                { role: 'system', content: 'You are an AI predictive risk analysis system. Only output JSON.' },
+                { role: 'user', content: prompt }
+              ]
+            },
+            parameters: {
+              result_format: 'message'
+            }
+          }, {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.data?.output?.choices?.length > 0) {
+            const aiText = response.data.output.choices[0].message.content.trim();
+            const cleaned = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const aiResult = JSON.parse(cleaned);
+            
+            const riskScore = Math.max(0, Math.min(100, aiResult.riskScore || 30));
+            const probability = riskScore / 100;
+            const factors = aiResult.factors || {};
+            const riskLevel = this.getRiskLevel(riskScore);
+            const depositRecommendation = this.calculateDynamicDeposit(features, riskScore);
+            
+            const overbookingAdvice = features.businessFactors?.businessCategory === 'EVENT_VENUE'
+              ? this.calculateOverbookingAdvice(features, riskScore)
+              : undefined;
+              
+            return { probability, riskScore, riskLevel, factors, depositRecommendation, overbookingAdvice };
+          }
+        } catch (apiError: any) {
+          logger.error(`[DashScope] Failed prediction API call, falling back to heuristic ML: ${apiError.message}`);
+        }
+      }
+
+      // If DashScope is not available, try ML model or fall back to rule-based
       if (!this.isModelLoaded) {
         return this.ruleBasedPrediction(features);
       }

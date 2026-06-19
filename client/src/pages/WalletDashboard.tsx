@@ -341,7 +341,7 @@ const WalletDashboard: React.FC = () => {
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-              ⚡ {t('PAB Wallet', 'PAB Wallet')}
+               <img src="/logo-coin-neon.jpg" alt="PAB" className="inline-block h-8 w-8 rounded-full border border-primary/30 mr-1 align-sub" />  {t('PAB Wallet', 'PAB Wallet')}
             </h1>
             <p className="font-body text-sm text-on-surface-variant mt-1.5">
               {t('Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges', 'Pabandi Reliability Tokens kamayein — Solana par nikalen, NFT badges banayein')}
@@ -558,7 +558,7 @@ const WalletDashboard: React.FC = () => {
                 <div className="bg-tertiary/10 text-tertiary p-2.5 rounded-xl h-fit border border-tertiary/20"><ShareIcon className="h-6 w-6" /></div>
                 <div>
                   <h4 className="font-headline text-sm font-bold text-on-surface">Social Graph</h4>
-                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Reputation merged from Fiverr, Upwork, and LinkedIn.</p>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-2 leading-relaxed">Reputation dynamically synced across global B2B and B2C platforms.</p>
                   {socialPlatformsCount > 0 ? (
                     <div className="flex items-center gap-2">
                       <span className="font-body text-xs font-bold px-2 py-0.5 rounded bg-tertiary text-on-tertiary">+{socialTrustBoost} pts Boost</span>
