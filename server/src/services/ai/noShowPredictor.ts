@@ -117,7 +117,7 @@ export class NoShowPredictor {
             }
           `;
           
-          const response = await axios.post('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+          const response = await axios.post('https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
             model: 'qwen-turbo',
             input: {
               messages: [
