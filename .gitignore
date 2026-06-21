@@ -83,3 +83,4 @@ temp/
 # Firebase cache/config
 .firebase/
 
+.env

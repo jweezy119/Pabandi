@@ -4,7 +4,7 @@
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,6 +16,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "baseUrl": "./src",
+    "types": ["node"],
     "paths": {
       "@/*": ["*"],
       "@controllers/*": ["controllers/*"],
@@ -26,6 +27,6 @@
       "@ai/*": ["ai/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "dist"]
 }
