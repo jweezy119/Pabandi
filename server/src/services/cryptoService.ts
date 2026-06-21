@@ -1,7 +1,8 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-
-/** $PAB reward amounts — aligned with public marketing copy */
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { getOrCreateAssociatedTokenAccount, transfer } from '@solana/spl-token';
+import bs58 from 'bs58';
 export const PAB_REWARD_RULES = {
   customer: {
     CHECK_IN: 50,
@@ -222,6 +223,85 @@ export class CryptoService {
       update: { address, currency: 'SOL' },
       create: { userId, address, balance: 0, currency: 'SOL' },
     });
+  }
+
+  /**
+   * Withdraw PAB to connected Solana wallet.
+   */
+  async withdrawToSolana(userId: string, amount: number): Promise<{ txHash?: string, success: boolean, message: string }> {
+    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    if (!wallet || wallet.balance < amount) {
+      throw new Error("Insufficient local PAB balance");
+    }
+    if (!wallet.address || wallet.currency !== 'SOL') {
+      throw new Error("No Solana wallet connected");
+    }
+
+    // Process in DB first to prevent double-spending race conditions
+    await prisma.wallet.update({
+      where: { userId },
+      data: { balance: { decrement: amount } }
+    });
+
+    try {
+      if (!process.env.SOLANA_PRIVATE_KEY) {
+        logger.warn(`Simulating Solana withdrawal of ${amount} PAB to ${wallet.address} (No private key found in .env)`);
+        // Log a simulated reward event so it shows up in history
+        await prisma.cryptoReward.create({
+          data: {
+            userId,
+            amount: -amount,
+            type: 'BUSINESS_RELIABILITY_BONUS', // fallback type or create a WITHDRAWAL type in schema if we had one
+            status: 'CLAIMABLE',
+            metadata: { note: "Simulated on-chain withdrawal" }
+          }
+        });
+        return { success: true, message: "Simulated withdrawal successful" };
+      }
+
+      const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
+      const payer = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
+      const mintPublicKey = new PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS!);
+      const recipientPublicKey = new PublicKey(wallet.address);
+
+      // Get ATAs
+      const fromAta = await getOrCreateAssociatedTokenAccount(connection, payer, mintPublicKey, payer.publicKey);
+      const toAta = await getOrCreateAssociatedTokenAccount(connection, payer, mintPublicKey, recipientPublicKey);
+
+      const amountRaw = amount * 10 ** 9; // 9 decimals
+
+      const txSignature = await transfer(
+        connection,
+        payer,
+        fromAta.address,
+        toAta.address,
+        payer.publicKey,
+        amountRaw
+      );
+
+      logger.info(`Successfully withdrew ${amount} PAB to ${wallet.address}. Tx: ${txSignature}`);
+      
+      // Log the withdrawal event
+      await prisma.cryptoReward.create({
+          data: {
+            userId,
+            amount: -amount,
+            type: 'BUSINESS_RELIABILITY_BONUS', // Represents withdrawal
+            status: 'CLAIMABLE',
+            metadata: { note: "On-chain withdrawal", txHash: txSignature }
+          }
+      });
+
+      return { success: true, txHash: txSignature, message: "Withdrawal successful" };
+    } catch (e) {
+      // Revert if on-chain fails
+      logger.error('Solana withdrawal failed, reverting balance.', e);
+      await prisma.wallet.update({
+        where: { userId },
+        data: { balance: { increment: amount } }
+      });
+      throw e;
+    }
   }
 
   /**

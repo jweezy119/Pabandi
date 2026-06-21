@@ -8,6 +8,8 @@ import {
   getBusinessReviews,
   claimBusiness,
   getBusinessCustomers,
+  generateBookingLink,
+  getBusinessBySlug,
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 
@@ -255,6 +257,7 @@ router.get('/me', authenticate, async (req: any, res, next) => {
 });
 
 // Publicly accessible business routes (with optional auth)
+router.get('/slug/:slug', optionalAuthenticate, getBusinessBySlug);
 router.get('/:id', optionalAuthenticate, getBusiness);
 router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
 
@@ -269,5 +272,6 @@ router.put('/:id', authorize('BUSINESS_OWNER', 'ADMIN'), updateBusiness);
 router.get('/:id/reservations', getBusinessReservations);
 router.get('/:id/analytics', getBusinessAnalytics);
 router.get('/:id/customers', getBusinessCustomers);
+router.post('/:id/generate-link', generateBookingLink);
 
 export default router;

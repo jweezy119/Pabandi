@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-import { getToken } from 'firebase/app-check';
-import { appCheck } from '../lib/firebase';
+// import { getToken } from 'firebase/app-check';
+// import { appCheck } from '../lib/firebase';
 
 // @ts-ignore
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
@@ -23,15 +23,22 @@ apiClient.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
+  // Try-catch block for App Check is disabled to prevent hangs on the live site/localhost
+  /*
   try {
-    const appCheckTokenResponse = await getToken(appCheck, false);
-    if (appCheckTokenResponse.token) {
-      config.headers['X-Firebase-AppCheck'] = appCheckTokenResponse.token;
+    const isLocalhost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+    if (!isLocalhost) {
+      const appCheckTokenResponse = await getToken(appCheck, false);
+      if (appCheckTokenResponse.token) {
+        config.headers['X-Firebase-AppCheck'] = appCheckTokenResponse.token;
+      }
     }
   } catch (error) {
     console.error('Failed to get App Check token', error);
   }
+  */
 
   return config;
 });
@@ -77,6 +84,10 @@ export const businessService = {
   getPublicBusinesses: (params?: any) => apiClient.get('/businesses', { params }),
   /** Claim an unclaimed business */
   claimBusiness: (id: string) => apiClient.post(`/businesses/${id}/claim`),
+  /** Generate short booking link */
+  generateBookingLink: (id: string) => apiClient.post(`/businesses/${id}/generate-link`),
+  /** Get business by slug for short booking link */
+  getBusinessBySlug: (slug: string) => apiClient.get(`/businesses/slug/${slug}`),
 };
 
 export const reservationService = {
@@ -148,6 +159,7 @@ export const sourcingService = {
   confirmOrder: (orderId: string) => apiClient.post(`/sourcing/order/${orderId}/confirm`),
   getTrends: () => apiClient.get('/sourcing/trends'),
   launchTrend: (trendId: string) => apiClient.post(`/sourcing/trends/${trendId}/launch`),
+  consultAdvisor: (message: string) => apiClient.post('/sourcing/consult', { message }),
 };
 
 export default apiClient;

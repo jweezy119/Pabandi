@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../services/api';
 import {
@@ -96,7 +96,14 @@ const PlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.ma
 export default function NewReservationPage() {
   const { user } = useAuthStore();
 
-  const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(null);
+  const location = useLocation();
+  const initialPlace = location.state?.googlePlaceId ? {
+    googlePlaceId: location.state.googlePlaceId,
+    name: location.state.placeName,
+    address: 'Loading address...',
+  } : null;
+
+  const [selectedPlace, setSelectedPlace] = useState<GooglePlaceDetails | null>(initialPlace);
   const [, setMapCenter] = useState({ lat: 37.0902, lng: -95.7129 });
 
   useEffect(() => {
@@ -115,6 +122,31 @@ export default function NewReservationPage() {
           }
         }
       );
+    }
+
+    // If we have an initial place from state, we should fetch its full details
+    if (initialPlace && initialPlace.googlePlaceId) {
+      // We can't easily fetch full place details without the PlacesService here,
+      // but the user will see the name and can proceed, or they can re-select.
+      // Ideally we would fetch it from our backend /businesses if it exists.
+      apiClient.get(`/businesses?googlePlaceId=${initialPlace.googlePlaceId}&search=${encodeURIComponent(initialPlace.name)}`)
+        .then(res => {
+          const matchingBiz = res.data?.data?.businesses?.[0];
+          if (matchingBiz) {
+            setSelectedPlace({ 
+              googlePlaceId: initialPlace.googlePlaceId,
+              name: initialPlace.name,
+              address: matchingBiz.address || '',
+              id: matchingBiz.id, 
+              walletAddress: matchingBiz.walletAddress,
+              phone: matchingBiz.phone,
+              isClaimed: matchingBiz.isClaimed,
+              rating: matchingBiz.rating,
+              photoUrl: matchingBiz.coverImageUrl || matchingBiz.logoUrl
+            });
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 

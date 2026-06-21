@@ -50,14 +50,14 @@ const PLATFORMS = [
     maxBoost: '+3 pts',
   },
   {
-    id: 'TRUTH_SOCIAL',
-    name: 'Truth Social',
-    emoji: '🇺🇸',
-    color: '#FF6A00',
-    glow: 'rgba(255,106,0,0.2)',
-    tagline: 'Community Trust',
-    dataPoints: ['Account age & verification status', 'Profile consistency'],
-    benefit: 'Up to +3 reliability points. Share your Pabandi streak to your Truth Social community.',
+    id: 'TIKTOK',
+    name: 'TikTok',
+    emoji: '🎵',
+    color: '#FE2C55',
+    glow: 'rgba(254,44,85,0.2)',
+    tagline: 'Content Creator Trust',
+    dataPoints: ['Account verification status', 'Follower bracket tier', 'Profile completeness'],
+    benefit: 'Up to +3 reliability points. Earn extra trust boosts for posting content about your venue check-ins.',
     maxBoost: '+3 pts',
   },
 ];
@@ -342,12 +342,22 @@ export default function TrustPage() {
     LINKEDIN: `Maintaining professional punctuality across all platforms. Pabandi Reliability Score: ${displayScore}/100 (${tier}).\n\n#Reliability #ProfessionalDevelopment`,
     FIVERR: `Physical-world reliability verified by Pabandi AI. Score: ${displayScore}/100. Combined with Fiverr performance for 360° trust.`,
     UPWORK: `${displayScore}% reliability across ${connectedCount} verified platforms. Pabandi Verified — physical and digital trust combined.`,
-    TRUTH_SOCIAL: `Building a verified reliability record that travels everywhere. Pabandi Score: ${displayScore}/100.`,
+    TIKTOK: `Showed up on time! My Pabandi reliability score is ${displayScore}/100. Porting my social reputation. #PabandiReliable #ShowUp`,
   };
 
   const handleConnect = async (platformId: string) => {
+    const platform = PLATFORMS.find(p => p.id === platformId);
+    const platformName = platform ? platform.name : platformId;
+    
+    const handle = window.prompt(`Enter your ${platformName} username, email or profile link to connect:`);
+    if (handle === null) return;
+    if (!handle.trim()) {
+      alert('A valid handle is required to connect.');
+      return;
+    }
+
     try {
-      await socialService.connect(platformId);
+      await socialService.connect(platformId, handle.trim());
       setConnected(prev => ({ ...prev, [platformId]: true }));
     } catch (err) {
       console.error('Failed to connect platform', platformId, err);
@@ -544,7 +554,7 @@ export default function TrustPage() {
               <div style={{ fontSize: '12px', fontWeight: 800, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>For Service Providers</div>
               <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px', lineHeight: 1.2 }}>Verified Reliable Business Badge</h2>
               <p style={{ color: '#64748b', fontSize: '15px', lineHeight: 1.7, marginBottom: '24px' }}>
-                Businesses earn a "Verified Reliable Business" badge displayable on LinkedIn company pages, Fiverr agency profiles, Upwork agencies, and X/Truth Social business accounts. The badge links to a live verification page showing real attendance metrics.
+                Businesses earn a "Verified Reliable Business" badge displayable on LinkedIn company pages, Fiverr agency profiles, Upwork agencies, and X/TikTok business accounts. The badge links to a live verification page showing real attendance metrics.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {['98% booking attendance rate', 'Average customer rating 4.9', 'Verified by Pabandi AI', '200+ successful bookings'].map(item => (

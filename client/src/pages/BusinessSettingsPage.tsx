@@ -21,8 +21,10 @@ const CATEGORIES = [
   { value: 'SALON', label: '💇 Salon / Barbershop' },
   { value: 'SPA', label: '🧖 Spa / Wellness' },
   { value: 'CLINIC', label: '🏥 Clinic / Medical' },
+  { value: 'HOSPITAL', label: '🏥 Hospital / Healthcare' },
   { value: 'FITNESS_CENTER', label: '🏋️ Fitness / Gym' },
   { value: 'EVENT_VENUE', label: '🎪 Event Venue / VIP' },
+  { value: 'FREELANCE', label: '💻 Freelance / Gig Worker' },
   { value: 'OTHER', label: '📦 Other' },
 ];
 
@@ -43,6 +45,7 @@ export default function BusinessSettingsPage() {
     address: '',
     googlePlaceId: '',
     category: 'OTHER',
+    reliabilityScore: 100,
   });
 
   const [aiSettings, setAiSettings] = useState({
@@ -74,6 +77,7 @@ export default function BusinessSettingsPage() {
         address: bizRes.address || '',
         googlePlaceId: bizRes.googlePlaceId || '',
         category: bizRes.category || 'OTHER',
+        reliabilityScore: bizRes.reliabilityScore ?? 100,
       });
       if (bizRes.settings) {
         setAiSettings(prev => ({
@@ -123,6 +127,7 @@ export default function BusinessSettingsPage() {
         address: businessData.address,
         googlePlaceId: businessData.googlePlaceId,
         category: businessData.category,
+        reliabilityScore: Number(businessData.reliabilityScore),
       },
     });
   };
@@ -197,6 +202,11 @@ export default function BusinessSettingsPage() {
                 <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Google Place ID</label>
                 <input type="text" className="input-field" value={businessData.googlePlaceId} onChange={e => setBusinessData({ ...businessData, googlePlaceId: e.target.value })} />
                 <p className="mt-1.5 text-xs text-[#757575]">Used to fetch your Google Reviews for the dashboard.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Reliability Score (Self-Market)</label>
+                <input type="number" min="0" max="100" className="input-field" value={businessData.reliabilityScore} onChange={e => setBusinessData({ ...businessData, reliabilityScore: Number(e.target.value) })} />
+                <p className="mt-1.5 text-xs text-[#757575]">Set your public reliability score (0-100) to market yourself better.</p>
               </div>
             </div>
             <SaveButton onClick={() => {}} label="Save Profile" />

@@ -1,11 +1,10 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import PageTransition from './PageTransition';
 import { useAuthStore } from '../store/authStore';
 import { useEffect } from 'react';
-import { useLanguage } from '../context/LanguageContext';
 
 export default function Layout() {
   const { isAuthenticated, user, logout, fetchWalletData } = useAuthStore();
-  const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,62 +43,46 @@ export default function Layout() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Language Toggle */}
-            <button 
-              type="button"
-              onClick={(e) => { e.preventDefault(); toggleLanguage(); }}
-              className="font-bold text-xs bg-surface-container-high text-on-surface border border-outline-variant/50 px-3 py-1.5 rounded-full hover:bg-surface-container-highest transition-colors"
-            >
-              {language === 'en' ? 'EN' : 'UR'}
-            </button>
             <button type="button" className="text-on-surface hover:opacity-80 transition-opacity w-10 h-10 flex items-center justify-center bg-surface-container-low rounded-full border border-outline-variant/30">
               <span className="material-symbols-outlined">notifications</span>
             </button>
             {isAuthenticated && (
               <button onClick={handleLogout} className="hidden md:flex text-sm text-error bg-error-container/20 px-4 py-2 rounded-md hover:bg-error-container/40">
-                {t('layout_logout')}
+                Log Out
               </button>
             )}
             {!isAuthenticated && (
               <div className="hidden md:flex gap-2">
-                <Link to="/login" className="text-sm font-medium px-4 py-2 text-on-surface-variant hover:text-primary transition-colors">{t('layout_sign_in')}</Link>
-                <Link to="/register" className="btn-primary py-2 px-4 text-sm">{t('layout_sign_up')}</Link>
+                <Link to="/login" className="text-sm font-medium px-4 py-2 text-on-surface-variant hover:text-primary transition-colors">Sign In</Link>
+                <Link to="/register" className="btn-primary py-2 px-4 text-sm">Sign Up</Link>
               </div>
             )}
           </div>
 
           {/* Desktop Navigation Cluster (Visible only on md+) */}
-          <div className="hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 h-[72px] items-center gap-8">
-            <DesktopNavLink to="/" current={location.pathname === '/'}>{t('layout_explore')}</DesktopNavLink>
-            <DesktopNavLink to="/technology" current={location.pathname === '/technology'}>{t('layout_technology')}</DesktopNavLink>
-            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>{t('layout_web3')}</DesktopNavLink>
-            <DesktopNavLink to="/join" current={location.pathname === '/join'}>{t('layout_for_businesses')}</DesktopNavLink>
-            <DesktopNavLink to="/developer" current={location.pathname === '/developer'}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                {t('layout_api_docs')}
-                <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>NEW</span>
-              </span>
-            </DesktopNavLink>
-            <DesktopNavLink to="/trust" current={location.pathname === '/trust'}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                {t('layout_trust_layer')}
-                <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #0A66C2, #1DBF73)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>NEW</span>
-              </span>
-            </DesktopNavLink>
+          <div className="hidden md:flex absolute top-0 left-1/2 -translate-x-1/2 h-[72px] items-center gap-8 font-headline">
+            <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
+            <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Pricing</DesktopNavLink>
+            <DesktopNavLink to="/technology" current={location.pathname === '/technology'}>Technology</DesktopNavLink>
+            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
+            <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
+            <DesktopNavLink to="/join" current={location.pathname === '/join'}>For Businesses</DesktopNavLink>
+            <DesktopNavLink to="/developer" current={location.pathname === '/developer'}>API Docs</DesktopNavLink>
+            <DesktopNavLink to="/trust" current={location.pathname === '/trust'}>Trust Layer</DesktopNavLink>
             {isAuthenticated && (
               <>
-                <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
-                  {user?.role === 'BUSINESS_OWNER' ? t('layout_dashboard') : t('layout_bookings')}
+                <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
+                  {user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'Dashboard' : 'Bookings'}
                 </DesktopNavLink>
                 {user?.role === 'BUSINESS_OWNER' && (
                   <DesktopNavLink to="/business/crm" current={location.pathname === '/business/crm'}>
-                    {t('layout_crm')}
+                    CRM
                   </DesktopNavLink>
                 )}
-                <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>{t('layout_wallet')}</DesktopNavLink>
+                <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>Wallet</DesktopNavLink>
                 <DesktopNavLink to="/profile" current={location.pathname === '/profile' || location.pathname === '/loyalty'}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    {t('layout_profile')}
+                    Profile
                     <span style={{ fontSize: '9px', fontWeight: 800, background: 'linear-gradient(135deg, #CD7F32, #D97706)', color: '#fff', padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' }}>🏆</span>
                   </span>
                 </DesktopNavLink>
@@ -109,27 +92,29 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-grow w-full">
-        <Outlet />
+      <main className="flex-grow pt-[72px]">
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
 
       {!isAuthPage && !isDetailScreen && (
         <>
           {/* BottomNavBar Shared Component */}
           <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
-            <MobileTab to="/" icon="explore" label={t('layout_explore')} current={location.pathname === '/'} />
+            <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
             {user?.role === 'BUSINESS_OWNER' && (
-              <MobileTab to="/business/crm" icon="groups" label={t('layout_crm')} current={location.pathname === '/business/crm'} />
+              <MobileTab to="/business/crm" icon="groups" label="CRM" current={location.pathname === '/business/crm'} />
             )}
             <MobileTab 
-              to={user?.role === 'BUSINESS_OWNER' ? '/dashboard' : '/reservations'} 
-              icon={user?.role === 'BUSINESS_OWNER' ? 'dashboard' : 'calendar_month'} 
-              label={user?.role === 'BUSINESS_OWNER' ? t('layout_dashboard') : t('layout_bookings')} 
+              to={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? '/dashboard' : '/reservations'} 
+              icon={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'dashboard' : 'calendar_month'} 
+              label={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'Dashboard' : 'Bookings'} 
               current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')} 
             />
-            <MobileTab to="/wallet" icon="payments" label={t('layout_wallet')} current={location.pathname === '/wallet'} />
-            <MobileTabLoyalty to="/profile" label={t('layout_loyalty')} current={location.pathname === '/profile'} />
-            <MobileTab to="/profile" icon="person" label={t('layout_profile')} current={location.pathname === '/profile'} />
+            <MobileTab to="/wallet" icon="payments" label="Wallet" current={location.pathname === '/wallet'} />
+            <MobileTabLoyalty to="/profile" label="Loyalty" current={location.pathname === '/profile'} />
+            <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
           </nav>
         </>
       )}
@@ -137,17 +122,19 @@ export default function Layout() {
       {!isAuthPage && (
         <footer className="hidden md:block mt-16 py-8 border-t border-outline-variant/20 bg-surface-container-lowest">
           <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
-            <span>{t('layout_footer_text')}</span>
-            <div className="flex gap-4 flex-wrap justify-center">
-              <Link to="/technology" className="hover:text-primary transition-colors">{t('layout_technology')}</Link>
-              <Link to="/web3" className="hover:text-primary transition-colors">{t('layout_web3')}</Link>
-              <Link to="/join" className="hover:text-primary transition-colors">{t('layout_for_businesses')}</Link>
-              <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>{t('layout_api_docs')}</Link>
-              <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>{t('layout_trust_layer')}</Link>
-              <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 {t('layout_loyalty')}</Link>
-              <Link to="/terms" className="hover:text-primary transition-colors">{t('layout_terms')}</Link>
-              <Link to="/privacy" className="hover:text-primary transition-colors">{t('layout_privacy')}</Link>
-              <Link to="/contact" className="hover:text-primary transition-colors font-medium">{t('layout_contact')}</Link>
+            <span>© 2026 Pabandi Global</span>
+            <div className="flex gap-4 flex-wrap justify-center font-headline text-xs">
+              <Link to="/pricing" className="hover:text-primary transition-colors font-bold text-primary">Pricing</Link>
+              <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
+              <Link to="/web3" className="hover:text-primary transition-colors">Web3</Link>
+              <Link to="/hospitality" className="hover:text-primary transition-colors font-semibold" style={{ color: '#10b981' }}>🏨 Hospitality</Link>
+              <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
+              <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
+              <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
+              <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 Loyalty</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+              <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact</Link>
             </div>
           </div>
         </footer>

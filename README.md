@@ -105,25 +105,35 @@ pabandi-booking-platform/
 
 ## 🔐 Security & Compliance
 
-This application is designed with compliance in mind:
-- **Data Protection**: Aligned with CCPA (California Consumer Privacy Act) and GDPR-like rights
-- **Payment Security**: PCI-DSS compliant payment processing via Stripe
-- **GDPR-like Features**: User data rights and privacy controls
+This application is designed with strict regulatory and religious compliance in mind:
+- **Sharia Compliance (Hibah Model)**: The traditional "Staking APY" model has been completely replaced with a Sharia-compliant "Community Loyalty Pool." Users earn fixed *Hibah* (gifts) based on their real-world reliability score, avoiding *Riba* (interest).
+- **KYC/AML Compliance**: Strict identity verification (Email & Phone KYC) is required before any user can withdraw $PAB to their decentralized Solana wallet, protecting the ecosystem from bad actors.
+- **Data Protection**: Aligned with CCPA (California Consumer Privacy Act) and GDPR-like rights.
+- **Payment Security**: PCI-DSS compliant payment processing via Stripe.
+
+## 🪙 $PAB Tokenomics & Blockchain Security
+
+The Pabandi Reliability Token ($PAB) is natively deployed on the **Solana** blockchain with strict, immutable security guarantees to protect our community and investors:
+
+- **100% Non-Mintable**: The Mint Authority has been permanently revoked (`2N8w8D7UQeMiLXTAfMTb15aUAYVHePKqufrvXjL74kdCzjqiBnS3cGeAv9jxutT7RKBGfMLf7TC8R1tNHiVXdSQ8`). The supply is hard-capped at exactly **1 Billion $PAB**.
+- **100% Non-Freezable**: The Freeze Authority has been permanently revoked (`5a3AkREb4tc66BKnjhcCP2niVSsWqQy9RcYRBkiDY92YKXEBfYWa2ofCppZJMcDiLR5zUWYLBGoVzgLe8tePTjwR`). No entity can ever lock or seize user wallets.
+- **Liquidity Locked Forever**: The initial Liquidity Pool (LP) tokens on Raydium have been **permanently burned** (`48Kc38iyKR6ERUZGcjWqsWrfnj6p8UWYhRzZXxUWk5AfvzJyWYZiVqJEfp7pArpoKX3rvYhAd7hzHEYQT31RtN1R`), ensuring the liquidity can never be drained (Un-ruggable).
+- **Token Contract**: `Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ`
 
 ## 🤖 Agentic AI Features
 
 The platform deploys an autonomous AI agent to:
 - Predict no-show probability for each reservation
 - Calculate a real-time risk score based on customer reliability, weather, time, and historical data
-- Automatically negotiate and enforce dynamic deposit amounts (via Safepay/Stripe) for high-risk bookings
+- Automatically negotiate and enforce dynamic deposit amounts for high-risk bookings
 - Identify patterns in booking behavior to optimize table turnover autonomously
 
-## 💰 Payments & Crypto Ecosystem
+## 💰 Payments Ecosystem
 
-Pabandi features a dual-payment architecture:
-1. **Stripe Integration**: Handles standard fiat transactions for the US market — credit/debit cards, Apple Pay, and Google Pay. Deposits are captured via Stripe Checkout Sessions.
-2. **Safepay Integration** *(Pakistan market)*: Retained as a secondary gateway supporting local Pakistani payment methods (Credit/Debit, JazzCash).
-3. **Web3 Crypto Wallet**: Customers can connect their MetaMask (BNB Smart Chain) or Phantom (Solana) wallets to the platform. They earn `$PAB` token rewards for successful check-ins and verified Google reviews, driving loyalty through decentralized incentives.
+Pabandi features a robust payment architecture:
+1. **Stripe Integration**: Handles standard fiat transactions for the US market — credit/debit cards, Apple Pay, and Google Pay. 
+2. **Safepay Integration**: Retained as a secondary gateway supporting local Pakistani payment methods (Credit/Debit, JazzCash).
+3. **Web3 Crypto Integration**: Customers connect their Phantom (Solana) wallets to the platform to track their Hibah rewards and execute high-speed, low-cost crypto withdrawals.
 
 ## 📱 API Documentation
 

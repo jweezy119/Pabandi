@@ -9,11 +9,13 @@ import BusinessRegister from './pages/BusinessRegister';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import BookingPage from './pages/BookingPage';
+import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
 import BusinessCrmPage from './pages/BusinessCrmPage';
 import WalletDashboard from './pages/WalletDashboard';
 import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
+import BusinessModelPage from './pages/BusinessModelPage';
 import TechnologyPage from './pages/TechnologyPage';
 import ContactPage from './pages/ContactPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
@@ -26,6 +28,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
+import HospitalityPage from './pages/HospitalityPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -58,12 +61,16 @@ function App() {
 
         <Route path="business/:id" element={<BusinessProfilePage />} />
         <Route path="business/:id/book" element={<BookingPage />} />
+        <Route path="b/:slug" element={<ShortLinkBookingPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         {/* Business partner landing page — public */}
         <Route path="join" element={<BusinessJoinPage />} />
         <Route path="business/join" element={<BusinessJoinPage />} />
+        <Route path="pricing" element={<BusinessModelPage />} />
+        <Route path="business-model" element={<BusinessModelPage />} />
         <Route path="technology" element={<TechnologyPage />} />
         <Route path="web3" element={<Web3Page />} />
+        <Route path="hospitality" element={<HospitalityPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password/:token" element={<ResetPasswordPage />} />

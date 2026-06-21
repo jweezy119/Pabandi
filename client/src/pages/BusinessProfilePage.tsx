@@ -259,7 +259,7 @@ export default function BusinessProfilePage() {
       },
       {
         id: 'promo-2',
-        title: 'Karachi Web3 Meetup Venue Discount',
+        title: 'Global Web3 Meetup Venue Discount',
         desc: 'Show your Pabandi Soulbound NFT (Gold Patron or above) to get 15% off your final bill. Valid for table bookings containing 4+ guests.',
         badge: 'SBT Loyalty',
         color: 'from-primary/5 to-[#38bdf8]/10',
@@ -368,7 +368,7 @@ export default function BusinessProfilePage() {
               
               <p className="font-body text-sm text-slate-300 flex items-center">
                 <MapPinIcon className="h-4 w-4 mr-1.5 text-slate-400" /> 
-                {business.address}, {business.city}, Pakistan
+                {business.address}, {business.city}
               </p>
             </div>
             
@@ -438,7 +438,7 @@ export default function BusinessProfilePage() {
                 <div className="space-y-4">
                   <h3 className="font-headline text-2xl font-black text-primary">About Venue</h3>
                   <p className="font-body text-base text-on-surface-variant leading-relaxed">
-                    {business.description || `${business.name} is a premier ${getCategoryLabel(business.category).toLowerCase()} destination located in ${business.city}, Pakistan. Discover premium quality and service with Pabandi reliability.`}
+                    {business.description || `${business.name} is a premier ${getCategoryLabel(business.category).toLowerCase()} destination located in ${business.city}. Discover premium quality and service with Pabandi reliability.`}
                   </p>
                 </div>
 
@@ -497,7 +497,7 @@ export default function BusinessProfilePage() {
                 <div className="space-y-2">
                   <h3 className="font-headline text-2xl font-black text-primary">Active Promotions</h3>
                   <p className="font-body text-sm text-on-surface-variant">
-                    Exclusive rewards and token-back deals for checkout bookings in Pakistan.
+                    Exclusive rewards and token-back deals for checkout bookings globally.
                   </p>
                 </div>
 
@@ -705,23 +705,23 @@ export default function BusinessProfilePage() {
                   ))}
                 </div>
 
-                {/* Mock Social Feed (Pakistan & Web3 community focus) */}
+                {/* Mock Social Feed (Global Web3 community focus) */}
                 <div className="border-t border-outline-variant/20 pt-8 space-y-4">
                   <h4 className="font-headline text-lg font-bold text-on-surface">Recent Community Buzz</h4>
                   <div className="space-y-4 max-w-lg">
                     {[
                       {
-                        user: 'solana_pakistan',
-                        name: 'Solana Pakistan 🇵🇰',
-                        handle: '@solanapakistan',
+                        user: 'solana_global',
+                        name: 'Solana Global 🌐',
+                        handle: '@solanaglobal',
                         avatar: '🪙',
-                        text: `Great catching up with the devs and creators at ${business.name} last night! Easiest check-in flow with @PabandiApp score. Earned our loyalty PAB tokens. #SolanaPakistan #KarachiWeb3`,
+                        text: `Great catching up with the devs and creators at ${business.name} last night! Easiest check-in flow with @PabandiApp score. Earned our loyalty PAB tokens. #Solana #GlobalWeb3`,
                         time: '12h ago'
                       },
                       {
-                        user: 'karachi_foodie',
-                        name: 'Karachi Food Diaries',
-                        handle: '@karachi_food',
+                        user: 'global_foodie',
+                        name: 'Global Food Diaries',
+                        handle: '@global_food',
                         avatar: '🍽️',
                         text: `Highly recommend booking a slot at ${business.name} via Pabandi. Completely zero deposit fee once your score hits 800. Checking in takes 3 seconds at the door.`,
                         time: '1d ago'

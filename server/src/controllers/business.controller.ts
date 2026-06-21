@@ -807,3 +807,81 @@ export const getBusinessCustomers = async (
     next(error);
   }
 };
+
+export const generateBookingLink = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const business = await prisma.business.findUnique({
+      where: { id }
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    if (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      throw new CustomError('Not authorized', 403);
+    }
+
+    // Generate slug from name
+    let baseSlug = business.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    if (!baseSlug) baseSlug = 'business';
+
+    // Ensure uniqueness
+    let slug = baseSlug;
+    let count = 1;
+    while (true) {
+      const existing = await prisma.business.findFirst({ where: { slug, id: { not: id } } });
+      if (!existing) break;
+      slug = `${baseSlug}-${count}`;
+      count++;
+    }
+
+    const updated = await prisma.business.update({
+      where: { id },
+      data: { slug },
+    });
+
+    res.json({
+      success: true,
+      data: { slug: updated.slug },
+      message: 'Booking link generated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBusinessBySlug = async (
+  req: Request | any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { slug } = req.params;
+
+    const business = await prisma.business.findUnique({
+      where: { slug }
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: business.id,
+        name: business.name,
+        slug: business.slug,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

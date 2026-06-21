@@ -67,7 +67,11 @@ export const connectSolanaWallet = async (req: AuthRequest, res: Response, next:
 export const requestSolanaTransfer = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { amount } = req.body;
-    const wallet = await prisma.wallet.findUnique({ where: { userId: req.user!.id } });
+    const wallet = await prisma.wallet.findUnique({ where: { userId: req.user!.id }, include: { user: true } });
+    
+    if (!wallet?.user?.isEmailVerified || !wallet?.user?.isPhoneVerified) {
+      throw new CustomError('Identity Verification (Phone & Email) is required before withdrawing funds to Solana to comply with AML laws.', 403);
+    }
     if (!wallet?.address || wallet.currency !== 'SOL') {
       throw new CustomError('Connect a Phantom (Solana) wallet first', 400);
     }
@@ -187,6 +191,100 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
       message: mintResult.success
         ? `${mintResult.tierName} Soulbound Badge ${mintResult.chain === 'solana' ? 'ready to mint' : 'minted'} successfully!`
         : 'Badge minting queued — will be processed shortly.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const stakeTokens = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) throw new CustomError('Invalid deposit amount', 400);
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { wallet: true } });
+    if (!user || !user.wallet) throw new CustomError('Wallet not found', 404);
+
+    if (user.wallet.balance < amount) throw new CustomError('Insufficient liquid balance', 400);
+
+    await prisma.$transaction(async (tx) => {
+      // Deduct from balance, add to loyalty pool
+      await tx.wallet.update({
+        where: { id: user.wallet!.id },
+        data: {
+          balance: { decrement: amount },
+          totalStaked: { increment: amount }
+        }
+      });
+      // Record transaction
+      await tx.stakeTransaction.create({
+        data: {
+          userId: user.id,
+          amount: amount,
+          type: 'STAKE', // Internal type
+          apyAtTime: 0 // No APY in Hibah
+        }
+      });
+    });
+
+    res.json({ success: true, message: `Successfully deposited ${amount} $PAB into the Community Loyalty Pool.` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const unstakeTokens = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) throw new CustomError('Invalid withdrawal amount', 400);
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { wallet: true } });
+    if (!user || !user.wallet) throw new CustomError('Wallet not found', 404);
+
+    if (user.wallet.totalStaked < amount) throw new CustomError('Insufficient loyalty pool balance', 400);
+
+    // Hibah (Gift) Calculation based purely on Reliability Score, NOT time-locked interest
+    let hibahBonusMultiplier = 0;
+    if (user.reliabilityScore >= 95) hibahBonusMultiplier = 0.05; // 5% flat bonus
+    else if (user.reliabilityScore >= 85) hibahBonusMultiplier = 0.02; // 2% flat bonus
+    else if (user.reliabilityScore >= 70) hibahBonusMultiplier = 0.01; // 1% flat bonus
+
+    const hibahGift = Number((amount * hibahBonusMultiplier).toFixed(2));
+
+    await prisma.$transaction(async (tx) => {
+      await tx.wallet.update({
+        where: { id: user.wallet!.id },
+        data: {
+          balance: { increment: amount + hibahGift },
+          totalStaked: { decrement: amount }
+        }
+      });
+      // Record withdrawal
+      await tx.stakeTransaction.create({
+        data: {
+          userId: user.id,
+          amount: amount,
+          type: 'UNSTAKE',
+          apyAtTime: 0
+        }
+      });
+      // Record Hibah
+      if (hibahGift > 0) {
+        await tx.stakeTransaction.create({
+          data: {
+            userId: user.id,
+            amount: hibahGift,
+            type: 'YIELD_PAYOUT', // Keeping internal DB enum for compatibility
+            apyAtTime: 0
+          }
+        });
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Withdrew ${amount} $PAB. The Treasury gifted you a Hibah bonus of ${hibahGift} $PAB for your ${user.reliabilityScore} Reliability Score!`, 
+      data: { yieldEarned: hibahGift } 
     });
   } catch (error) {
     next(error);

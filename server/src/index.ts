@@ -16,6 +16,7 @@ import { requireAppCheck } from './middleware/appCheck.middleware';
 
 // Load environment variables FIRST
 dotenv.config();
+dotenv.config({ path: '.env.contracts' });
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -32,6 +33,7 @@ import apiClientsRoutes from './routes/apiClients.routes';
 import socialRoutes from './routes/social.routes';
 import walletRoutes from './routes/wallet.routes';
 import waitlistRoutes from './routes/waitlist.routes';
+import hospitalityRoutes from './routes/hospitality.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +52,7 @@ const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';
 
 // Security and Performance middleware
+app.set('trust proxy', 1); // Essential for rate limiting behind Cloud Run
 app.use(helmet());
 app.use(compression());
 const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/app\/?$/, '');
@@ -116,6 +119,8 @@ app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
+app.use(`/api/${API_VERSION}/hospitality`, hospitalityRoutes);
+app.use('/api/hospitality', hospitalityRoutes); // Short alias for PMS webhooks
 
 // ── Pabandi Intelligence API (B2B) ──────────────────────────────────────────
 // Separate from /api/v1/ so it can be independently rate-limited and versioned

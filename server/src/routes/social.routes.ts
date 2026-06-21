@@ -153,7 +153,7 @@ router.post('/connect/:platform', async (req: AuthRequest, res: Response, next: 
 
     const stub = { ...STUB_PROFILES[platform] };
 
-    if (req.body.platformHandle && (platform === 'FIVERR' || platform === 'UPWORK')) {
+    if (req.body.platformHandle) {
       stub.platformHandle = req.body.platformHandle;
     }
 

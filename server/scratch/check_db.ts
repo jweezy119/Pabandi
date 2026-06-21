@@ -2,10 +2,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const businesses = await prisma.business.findMany();
-  console.log('Businesses in DB:', businesses);
-  const users = await prisma.user.findMany({ include: { business: true } });
-  console.log('Users and their businesses:', users.map(u => ({ email: u.email, role: u.role, business: u.business?.name })));
+  console.log('DATABASE_URL from process.env:', process.env.DATABASE_URL);
+  const users = await prisma.user.findMany({ select: { email: true, role: true } });
+  console.log('Users in DB:', users);
 }
 
 main()

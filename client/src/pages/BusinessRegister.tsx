@@ -111,8 +111,10 @@ export default function BusinessRegister() {
               <option value="SALON">Salon</option>
               <option value="SPA">Spa</option>
               <option value="CLINIC">Clinic</option>
+              <option value="HOSPITAL">Hospital</option>
               <option value="FITNESS_CENTER">Fitness Center</option>
               <option value="EVENT_VENUE">Event Venue</option>
+              <option value="FREELANCE">Freelance</option>
               <option value="OTHER">Other</option>
             </select>
           </div>
