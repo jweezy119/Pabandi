@@ -7,10 +7,15 @@ import { logger } from './logger';
 const EVERY_4_DAYS = ['0', '3', '*', '*', '*'].join(' ').replace('* *', '*/4 *');
 
 export function startDbKeepalive() {
-  pingDatabase('startup');
+  // Fire-and-forget: never block server startup on DB keepalive
+  pingDatabase('startup').catch((err) => {
+    logger.warn('[Keepalive] Startup DB ping skipped: ' + (err?.message || err));
+  });
 
   cron.schedule(EVERY_4_DAYS, () => {
-    pingDatabase('scheduled');
+    pingDatabase('scheduled').catch((err) => {
+      logger.warn('[Keepalive] Scheduled DB ping failed: ' + (err?.message || err));
+    });
   });
 
   logger.info('[Keepalive] DB keepalive scheduled - runs every 4 days');

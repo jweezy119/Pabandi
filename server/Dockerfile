@@ -3,8 +3,8 @@ FROM node:18-bullseye-slim AS builder
 
 WORKDIR /usr/src/app
 
-# Install native dependencies required for bcrypt and tensorflow
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+# Install native dependencies required for bcrypt, prisma, and tensorflow
+RUN apt-get update && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -27,14 +27,15 @@ COPY package*.json ./
 COPY prisma ./prisma/
 RUN npm install --omit=dev
 
-# Copy built files from builder
+# Copy built files and prisma artifacts from builder
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
 
-# Run the web service on container startup.
-ENV PORT 8080
+# Cloud Run will set PORT=8080 automatically
 ENV NODE_ENV production
 EXPOSE 8080
 
-CMD [ "npm", "start" ]
+# Graceful startup with retry logic for slow init
+CMD ["sh", "-c", "node dist/index.js"]
 
