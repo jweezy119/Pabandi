@@ -9,8 +9,6 @@ import {
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import apiClient, { cryptoService, walletService, socialService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
-
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | null;
 interface ConnectedWallet { address: string; type: WalletType; chainName: string; }
@@ -223,8 +221,7 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
 }
 
 /* ── Main Component ── */
-const WalletDashboard: React.FC = () => {
-  const { t } = useLanguage();
+export default function WalletDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [showSBT, setShowSBT] = useState(false);
   const [connected, setConnected] = useState<ConnectedWallet | null>(null);
@@ -257,18 +254,70 @@ const WalletDashboard: React.FC = () => {
   const connectPhantom = async () => {
     setError(''); setLoadingWallet('phantom');
     try {
-      const solana = (window as any).solana;
-      if (!solana?.isPhantom) throw new Error('Phantom wallet not found. Please install the Phantom extension.');
-      const resp = await solana.connect();
-      const address: string = resp.publicKey.toString();
+      let provider: any = null;
+      
+      // 1. Try Phantom's specific modern injection
+      if ('phantom' in window && (window as any).phantom?.solana) {
+        provider = (window as any).phantom.solana;
+      }
+      // 2. Try the legacy global injection
+      else if ((window as any).solana) {
+        provider = (window as any).solana;
+      }
+
+      if (!provider) {
+        throw new Error('No Solana wallet found. Please install Phantom or enable Brave Wallet.');
+      }
+      
+      // Some providers require a manual connection request
+      let resp;
+      try {
+        resp = await provider.connect();
+      } catch (e: any) {
+        // If connection is rejected by user, throw it
+        if (e.code === 4001) throw new Error('Connection rejected by user.');
+        throw e;
+      }
+
+      const address: string = resp.publicKey ? resp.publicKey.toString() : provider.publicKey.toString();
+      
+      if (!address) {
+         throw new Error("Could not read wallet address.");
+      }
+
       saveWallet({ address, type: 'phantom', chainName: 'Solana' });
       await cryptoService.connectSolana(address).catch(() => { });
       setShowModal(false);
-    } catch (err: any) { setError(err?.message || 'Connection failed.'); }
+    } catch (err: any) { 
+      console.error("Solana Connection Error:", err);
+      setError(err?.message || 'Connection failed.'); 
+    }
     finally { setLoadingWallet(null); }
   };
 
   const [transferSuccess, setTransferSuccess] = useState<{ amount: number; txHash?: string } | null>(null);
+  
+  // Staking State
+  const [stakeAmount, setStakeAmount] = useState<number>(0);
+  const [unstakeAmount, setUnstakeAmount] = useState<number>(0);
+
+  const stakeMutation = useMutation((amount: number) => apiClient.post('/crypto/wallet/stake', { amount }), {
+    onSuccess: (res) => {
+      alert(res.data?.message || 'Deposited successfully');
+      refetch();
+      setStakeAmount(0);
+    },
+    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to deposit')
+  });
+
+  const unstakeMutation = useMutation((amount: number) => apiClient.post('/crypto/wallet/unstake', { amount }), {
+    onSuccess: (res) => {
+      alert(res.data?.message || 'Withdrew successfully');
+      refetch();
+      setUnstakeAmount(0);
+    },
+    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to withdraw')
+  });
 
   const transferMutation = useMutation(() => cryptoService.requestSolanaTransfer(), {
     onSuccess: (res) => {
@@ -308,13 +357,19 @@ const WalletDashboard: React.FC = () => {
   const reliabilityScore = badgeData?.reliabilityScore || 100;
   const socialTrustBoost = badgeData?.socialTrustBoost || 0;
   const graphTrustBoost = badgeData?.graphTrustBoost || 0;
-  const isKycVerified = userData?.kycStatus === 'VERIFIED';
+  const isKycVerified = userData?.isEmailVerified && userData?.isPhoneVerified;
   const socialPlatformsCount = badgeData?.socialSignals?.length || 0;
   const hasWeb3 = !!connected;
   
   const offChainBalance = Number(balances?.offChainBalance || 0);
   const onChainBalance = Number(balances?.onChainBalance || 0);
-  const balance = offChainBalance + onChainBalance;
+  const totalStaked = Number(balances?.totalStaked || 0);
+  const balance = offChainBalance + onChainBalance + totalStaked;
+  
+  let currentHibah = 0;
+  if (reliabilityScore >= 95) currentHibah = 5;
+  else if (reliabilityScore >= 85) currentHibah = 2;
+  else if (reliabilityScore >= 70) currentHibah = 1;
   
   const usdValue = (balance * 0.15).toFixed(2);
   const totalEarned = cryptoWallet?.totalEarned || 0;
@@ -341,10 +396,10 @@ const WalletDashboard: React.FC = () => {
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-               <img src="/logo-coin-neon.jpg" alt="PAB" className="inline-block h-8 w-8 rounded-full border border-primary/30 mr-1 align-sub" />  {t('PAB Wallet', 'PAB Wallet')}
+               <img src="/logo-coin-neon.jpg" alt="PAB" className="inline-block h-8 w-8 rounded-full border border-primary/30 mr-1 align-sub" /> PAB Wallet
             </h1>
             <p className="font-body text-sm text-on-surface-variant mt-1.5">
-              {t('Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges', 'Pabandi Reliability Tokens kamayein — Solana par nikalen, NFT badges banayein')}
+              Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -355,7 +410,7 @@ const WalletDashboard: React.FC = () => {
                 color: showSBT ? 'var(--color-on-tertiary-container)' : 'var(--color-on-surface-variant)',
                 border: `1px solid ${showSBT ? 'var(--color-tertiary)' : 'var(--color-outline-variant)'}`,
               }}>
-              🪙 {t('NFT Badges', 'NFT Badges')}
+              🪙 NFT Badges
             </button>
             {connected ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -369,7 +424,7 @@ const WalletDashboard: React.FC = () => {
               </div>
             ) : (
               <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="bg-primary text-on-primary px-4 py-2.5 rounded-xl font-body text-sm font-semibold hover:opacity-90 transition-opacity flex items-center shadow-sm">
-                <LinkIcon className="h-4 w-4 inline mr-2" />{t('Connect Wallet', 'Wallet Connect Karein')}
+                <LinkIcon className="h-4 w-4 inline mr-2" />Connect Wallet
               </button>
             )}
           </div>
@@ -404,6 +459,67 @@ const WalletDashboard: React.FC = () => {
         {/* ── Balance Cards ── */}
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
+          {/* Loyalty Pool (Hibah) */}
+          <div className="md:col-span-3 flex flex-col gap-4 relative overflow-hidden rounded-3xl p-6 shadow-md border border-secondary/20" style={{
+              background: 'linear-gradient(135deg, var(--color-surface-container-low) 0%, var(--color-surface-container-highest) 100%)',
+            }}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+              
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary text-on-secondary uppercase tracking-widest shadow-[0_0_10px_var(--color-secondary)]">Community Loyalty Pool</span>
+                  <span className="font-body text-[10px] font-bold text-secondary">Earn up to 5% Hibah Gift</span>
+                </div>
+                <div>
+                  <span className="font-headline text-4xl sm:text-5xl font-black text-on-surface">{totalStaked.toLocaleString()}</span>
+                  <span className="font-headline text-xl font-bold text-on-surface-variant ml-2">$PAB Locked</span>
+                </div>
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-surface border border-outline-variant/30 rounded-lg">
+                   <FireIcon className="h-4 w-4 text-orange-500" /> 
+                   <span className="font-body text-xs font-bold text-on-surface">Community Gift: <span className={currentHibah === 5 ? 'text-[#14F195]' : 'text-primary'}>{currentHibah}% Flat Bonus</span></span>
+                   <span className="font-body text-[10px] text-on-surface-variant ml-1">(Based on {reliabilityScore} Trust Score)</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                 <div className="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+                    <input 
+                      type="number" 
+                      value={stakeAmount || ''} 
+                      onChange={e => setStakeAmount(Number(e.target.value))}
+                      placeholder="Amount"
+                      className="bg-transparent border-none outline-none w-24 px-4 py-3 font-body text-sm text-on-surface font-bold placeholder-on-surface-variant/50" 
+                    />
+                    <button 
+                      onClick={() => stakeMutation.mutate(stakeAmount)}
+                      disabled={stakeMutation.isLoading || stakeAmount <= 0 || stakeAmount > offChainBalance}
+                      className="bg-primary text-white font-bold text-sm px-5 py-3 hover:bg-primary/90 disabled:opacity-50 transition-colors border-l border-outline-variant"
+                    >
+                      Deposit
+                    </button>
+                 </div>
+                 
+                 <div className="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+                    <input 
+                      type="number" 
+                      value={unstakeAmount || ''} 
+                      onChange={e => setUnstakeAmount(Number(e.target.value))}
+                      placeholder="Amount"
+                      className="bg-transparent border-none outline-none w-24 px-4 py-3 font-body text-sm text-on-surface font-bold placeholder-on-surface-variant/50" 
+                    />
+                    <button 
+                      onClick={() => unstakeMutation.mutate(unstakeAmount)}
+                      disabled={unstakeMutation.isLoading || unstakeAmount <= 0 || unstakeAmount > totalStaked}
+                      className="bg-secondary text-white font-bold text-sm px-5 py-3 hover:bg-secondary/90 disabled:opacity-50 transition-colors border-l border-outline-variant"
+                    >
+                      Withdraw + Hibah
+                    </button>
+                 </div>
+              </div>
+
+            </div>
+          </div>
+
           {/* Split Balance Card */}
           <div className="md:col-span-2 flex flex-col gap-4">
             
@@ -416,14 +532,14 @@ const WalletDashboard: React.FC = () => {
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">{t('Pabandi Vault', 'Pabandi Vault')}</span>
-                    <span className="font-body text-[10px] text-white/70">{t('Off-Chain', 'Off-Chain')}</span>
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-black/20 text-white uppercase tracking-widest backdrop-blur-sm">Pabandi Vault</span>
+                    <span className="font-body text-[10px] text-white/70">Off-Chain</span>
                   </div>
                   <div>
                     <span className="font-headline text-4xl sm:text-5xl font-black text-white">{offChainBalance.toLocaleString()}</span>
                     <span className="font-headline text-lg text-white/80 ml-2">PAB</span>
                   </div>
-                  <p className="font-body text-xs text-white/70 mt-1">{t('Available for Staking & Direct Booking', 'Staking aur direct booking ke liye maujood')}</p>
+                  <p className="font-body text-xs text-white/70 mt-1">Available for Staking & Direct Booking</p>
                 </div>
                 
                 {/* Withdraw Button */}
@@ -450,7 +566,7 @@ const WalletDashboard: React.FC = () => {
                     Successfully withdrawn {transferSuccess.amount.toLocaleString()} PAB!
                   </p>
                   {transferSuccess.txHash && (
-                    <a href={`https://solscan.io/tx/${transferSuccess.txHash}?cluster=devnet`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/70 hover:text-white underline underline-offset-2 flex items-center gap-1">
+                    <a href={`https://solscan.io/tx/${transferSuccess.txHash}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/70 hover:text-white underline underline-offset-2 flex items-center gap-1">
                       View on Solscan <ArrowUpRightIcon className="h-3 w-3" />
                     </a>
                   )}
@@ -463,7 +579,7 @@ const WalletDashboard: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest border border-secondary/10">{t('Web3 Wallet', 'Web3 Wallet')}</span>
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest border border-secondary/10">Web3 Wallet</span>
                     {connected ? (
                       <span className="font-body text-[10px] text-on-surface-variant flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
@@ -477,13 +593,13 @@ const WalletDashboard: React.FC = () => {
                     <span className="font-headline text-3xl sm:text-4xl font-black text-on-surface">{onChainBalance.toLocaleString()}</span>
                     <span className="font-headline text-base text-on-surface-variant ml-2">PAB</span>
                   </div>
-                  <p className="font-body text-xs text-on-surface-variant mt-1">{t('Self-Custodial Balance', 'Self-Custodial Balance')}</p>
+                  <p className="font-body text-xs text-on-surface-variant mt-1">Self-Custodial Balance</p>
                 </div>
                 
                 {connected && connected.type === 'phantom' && (
                   <div className="text-right flex flex-col items-end gap-2">
                     <span className="font-body text-xs font-bold text-on-surface-variant">◎ {shortAddr(connected.address)}</span>
-                    <a href={`https://solscan.io/account/${connected.address}?cluster=devnet`} target="_blank" rel="noopener noreferrer" 
+                    <a href={`https://solscan.io/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
                       className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
                       View Account <ArrowUpRightIcon className="h-3 w-3" />
                     </a>
@@ -684,4 +800,3 @@ const WalletDashboard: React.FC = () => {
   );
 };
 
-export default WalletDashboard;

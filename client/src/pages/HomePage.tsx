@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useQuery } from 'react-query';
 import { businessService } from '../services/api';
-import { MapPinIcon } from '@heroicons/react/24/outline';
-import { useLanguage } from '../context/LanguageContext';
+import { MapPinIcon, BuildingStorefrontIcon } from '@heroicons/react/24/outline';
+import { APIProvider, useMapsLibrary, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 
 // Haversine distance calculation (in km)
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -18,29 +19,62 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
   return R * c;
 };
 
+// Global Places Search Bar component
+const GlobalPlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
+  const [placeAutocomplete, setPlaceAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const places = useMapsLibrary('places');
+
+  useEffect(() => {
+    if (!places || !inputRef.current) return;
+
+    const options = {
+      fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos', 'reviews', 'formatted_phone_number', 'website'],
+      strictBounds: false,
+    };
+
+    setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
+  }, [places]);
+
+  useEffect(() => {
+    if (!placeAutocomplete) return;
+
+    placeAutocomplete.addListener('place_changed', () => {
+      onPlaceSelect(placeAutocomplete.getPlace());
+    });
+  }, [onPlaceSelect, placeAutocomplete]);
+
+  return (
+    <div className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 group focus-within:bg-surface-container-lowest focus-within:outline focus-within:outline-1 focus-within:outline-outline-variant/20 transition-all duration-300 shadow-sm w-full mx-auto">
+      <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
+      <input
+        ref={inputRef}
+        type="text"
+        placeholder="Look up any location globally to book..."
+        className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none"
+      />
+    </div>
+  );
+};
+
 export default function HomePage() {
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
   const [category, setCategory] = useState('ALL');
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [locLoading, setLocLoading] = useState(false);
-  const { t } = useLanguage();
-
-  // Debounce search input to query as user types without overloading server
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      setSearchQuery(searchInput);
-    }, 500);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchInput]);
+  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
+  const [selectedMapPlace, setSelectedMapPlace] = useState<google.maps.places.PlaceResult | null>(null);
+  
+  const revealRef1 = useScrollReveal<HTMLDivElement>();
+  const revealRef2 = useScrollReveal<HTMLDivElement>();
+  const revealRef3 = useScrollReveal<HTMLDivElement>();
+  const revealRef4 = useScrollReveal<HTMLDivElement>();
 
   const { data, isLoading } = useQuery(
-    ['businesses', category, searchQuery, userLoc],
+    ['businesses', category, userLoc],
     async () => {
       const params: any = {
         category: category !== 'ALL' ? category : undefined,
-        search: searchQuery || undefined
       };
       if (userLoc) {
         params.latitude = userLoc.lat;
@@ -76,12 +110,16 @@ export default function HomePage() {
     );
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchQuery(searchInput);
-  };
+  const handleGlobalPlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
+    if (place.geometry?.location) {
+      setMapCenter({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
+      setSelectedMapPlace(place);
+    } else if (place.place_id && place.name) {
+      navigate('/reservations/new', { state: { googlePlaceId: place.place_id, placeName: place.name } });
+    }
+  }, [navigate]);
 
-  const categories = ['ALL', 'RESTAURANT', 'SPA', 'CLINIC', 'FITNESS_CENTER', 'SALON'];
+  const categories = ['ALL', 'RESTAURANT', 'SPA', 'CLINIC', 'HOSPITAL', 'FITNESS_CENTER', 'SALON', 'FREELANCE'];
   const getCategoryLabel = (c: string) => {
     if (c === 'ALL') return 'All Categories';
     if (c === 'RESTAURANT') return 'Fine Dining';
@@ -92,130 +130,100 @@ export default function HomePage() {
   return (
     <div className="w-full pb-28 md:pb-10 font-body">
       
-      {/* NEW HERO SECTION */}
-      <section className="relative w-full bg-[#0f172a] text-white overflow-hidden py-24 md:py-32 border-b border-slate-800">
-        {/* Animated Background */}
+      {/* IMMERSIVE HERO WITH MAP */}
+      <section className="relative w-full bg-[#0f172a] text-white py-16 md:py-24 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Grid pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-          
-          {/* Animated glowing orbs */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-          <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob" />
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob animation-delay-2000" />
         </div>
 
-        {/* Blurred Neon Map Background */}
-        <div className="absolute inset-0 opacity-[0.15] pointer-events-none flex items-center justify-center">
-           <svg viewBox="0 0 800 800" className="w-full h-full object-cover blur-[2px]">
-             {/* Abstract Map Dots representing Pakistan */}
-             <g fill="rgba(20,241,149,0.6)">
-               <circle cx="300" cy="400" r="4" className="animate-pulse" />
-               <circle cx="350" cy="350" r="3" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
-               <circle cx="450" cy="200" r="5" className="animate-pulse" style={{ animationDelay: '1s' }} />
-               <circle cx="500" cy="500" r="4" className="animate-pulse" style={{ animationDelay: '0.2s' }} />
-               <circle cx="400" cy="600" r="6" className="animate-pulse" style={{ animationDelay: '1.5s' }} />
-               <circle cx="200" cy="300" r="4" className="animate-pulse" style={{ animationDelay: '0.8s' }} />
-             </g>
-             {/* Glowing connecting lines */}
-             <path d="M300 400 L350 350 L450 200 L500 500 L400 600 Z" stroke="rgba(6,182,212,0.3)" strokeWidth="1" fill="none" />
-           </svg>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col xl:flex-row gap-12">
           {/* Left Col - Copy */}
-          <div className="flex-1 space-y-8">
-            <h1 className="font-headline text-5xl md:text-7xl font-black tracking-tight leading-[1.1]">
-              {t("Your Reliability", "Aapki Pabandi")} <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">{t("Finally Pays.", "Ab Faida Degi.")}</span>
-              <br/>
-              <span className="italic text-slate-400 font-medium">{t("Literally.", "Haqeeqat Mein.")}</span>
+          <div className="flex-1 space-y-8 max-w-2xl mx-auto xl:mx-0 pt-8">
+            <h1 className="font-headline text-5xl md:text-7xl font-black tracking-tight leading-[1.1] stagger-item">
+              Your Reliability <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">Finally Pays.</span>
             </h1>
-            <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl">
-              {t("A high Pabandi Score means zero deposits. Every booking you honor mints", "Pabandi Score zyada hone ka matlab zero deposits. Har poori ki gayi booking se kamayein")} <span className="font-bold text-pink-400">$PAB</span> {t("to your wallet. And businesses get paid for trusting you. Good customers just became the VIPs they always deserved to be.", "seedha apne wallet mein. Achay customers ab VIPs hain.")}
+            <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
+              Look up any location globally to book right away. A high Pabandi Score means zero deposits. Every booking you honor mints <span className="font-bold text-pink-400">$PAB</span> to your wallet.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <div className="group relative">
-                <button className="relative w-full sm:w-auto px-8 py-4 bg-white text-[#0f172a] font-bold rounded-xl shadow-[0_0_20px_rgba(20,241,149,0.3)] hover:shadow-[0_0_30px_rgba(20,241,149,0.5)] transition-all overflow-hidden flex items-center justify-center gap-2">
-                  <span className="absolute inset-0 w-full h-full border-[2px] border-transparent group-hover:border-[#14F195] transition-colors rounded-xl"></span>
-                  <span className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#14F195] to-transparent -translate-x-full group-hover:animate-[slideRight_1.5s_infinite]"></span>
-                  {t("Start Earning $PAB", "$PAB Kamana Shuru Karein")}
-                </button>
-                {/* Tooltip */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg whitespace-nowrap pointer-events-none">
-                  {t("Connect your wallet and let your reliability do the rest.", "Apna wallet connect karein aur faida uthayein.")}
-                </div>
-              </div>
-              <button className="px-8 py-4 border border-slate-700 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
-                {t("How It Works", "Ye Kaise Kaam Karta Hai")} <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
+            
+            {/* Search Bar prominently placed in the hero for immediate immersion */}
+            <div className="pt-4 relative z-50 stagger-item">
+               <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Find & Book Anywhere</p>
+               <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
+                 <GlobalPlaceAutocomplete onPlaceSelect={handleGlobalPlaceSelect} />
+               </APIProvider>
+            </div>
+
+            <div className="flex gap-4 pt-6 text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
+               <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> Global</span>
+               <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> AI Protected</span>
+               <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> Earn $PAB</span>
             </div>
           </div>
 
-          {/* Right Col - Visual Concept (Gauge + Cards) */}
-          <div className="flex-1 relative w-full aspect-square max-w-md mx-auto">
-            {/* The Gauge */}
-            <div className="absolute inset-0 flex items-center justify-center">
-               <svg viewBox="0 0 200 200" className="w-full h-full drop-shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                 {/* Background Arc */}
-                 <path d="M40 160 A 85 85 0 1 1 160 160" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="12" strokeLinecap="round" />
-                 {/* Foreground Arc (Animated) */}
-                 <path d="M40 160 A 85 85 0 1 1 160 160" fill="none" stroke="url(#cyanMintGrad)" strokeWidth="12" strokeLinecap="round" strokeDasharray="400" strokeDashoffset="400" className="animate-[fillGauge_2s_ease-out_forwards]" />
-                 <defs>
-                   <linearGradient id="cyanMintGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                     <stop offset="0%" stopColor="#06b6d4" />
-                     <stop offset="100%" stopColor="#14F195" />
-                   </linearGradient>
-                 </defs>
-                 <text x="100" y="110" textAnchor="middle" fill="white" fontSize="42" fontWeight="900" className="font-headline">91</text>
-                 <text x="100" y="135" textAnchor="middle" fill="#94a3b8" fontSize="12" fontWeight="600" className="font-body uppercase tracking-widest">{t("Reliability", "Pabandi")}</text>
-               </svg>
-            </div>
+          {/* Right Col - The Interactive Map */}
+          <div className="flex-1 relative w-full h-[500px] xl:h-[600px] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.15)] border border-white/10 stagger-item" style={{ animationDelay: '240ms' }}>
+            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
+              <Map
+                defaultZoom={13}
+                center={mapCenter}
+                onCenterChanged={(ev) => setMapCenter(ev.detail.center)}
+                gestureHandling={'greedy'}
+                disableDefaultUI={true}
+                mapId="pabandi_global_map_hero"
+                className="w-full h-full"
+              >
+                {selectedMapPlace && selectedMapPlace.geometry?.location && (
+                  <AdvancedMarker
+                    position={{ lat: selectedMapPlace.geometry.location.lat(), lng: selectedMapPlace.geometry.location.lng() }}
+                  >
+                    <Pin background={'#14F195'} borderColor={'#06b6d4'} glyphColor={'#0f172a'} />
+                  </AdvancedMarker>
+                )}
+              </Map>
 
-            {/* Floating Glass Cards */}
-            <div className="absolute top-[15%] -left-[10%] bg-white/5 backdrop-blur-xl border border-white/10 p-3 rounded-lg shadow-xl animate-[float_6s_ease-in-out_infinite]">
-               <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t("Base Reward", "Base Inaam")}</div>
-               <div className="text-lg text-[#14F195] font-bold">+50 PAB</div>
-            </div>
+              {/* Floating Bottom Panel for Selected Place */}
+              {selectedMapPlace && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40 animate-[slideUp_0.3s_ease-out]">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="min-w-0 pr-4">
+                      <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">{selectedMapPlace.name}</h3>
+                      <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">{selectedMapPlace.formatted_address}</p>
+                    </div>
+                    <button onClick={() => setSelectedMapPlace(null)} className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0">
+                      <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-5 mt-3">
+                    <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-amber-500/20">
+                      Unclaimed
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant font-medium">Not on Pabandi yet</span>
+                  </div>
 
-            <div className="absolute bottom-[25%] -right-[10%] bg-white/5 backdrop-blur-xl border border-white/10 p-3 rounded-lg shadow-xl animate-[float_5s_ease-in-out_infinite_reverse]">
-               <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">{t("Multiplier", "Multiplier")}</div>
-               <div className="text-lg text-[#06b6d4] font-bold">x1.2 {t("Reliability", "Pabandi")}</div>
-            </div>
-
-            {/* Falling $PAB coins */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-               <div className="absolute w-4 h-4 bg-gradient-to-tr from-[#14F195] to-emerald-400 rounded-full blur-[1px] animate-[fall_3s_linear_infinite] left-[20%] top-[-10%] shadow-[0_0_10px_rgba(20,241,149,0.8)]"></div>
-               <div className="absolute w-3 h-3 bg-gradient-to-tr from-[#14F195] to-emerald-400 rounded-full blur-[1px] animate-[fall_4s_linear_infinite] left-[70%] top-[-10%] delay-700 shadow-[0_0_10px_rgba(20,241,149,0.8)]"></div>
-            </div>
+                  <button 
+                    onClick={() => navigate('/reservations/new', { state: { googlePlaceId: selectedMapPlace.place_id, placeName: selectedMapPlace.name } })}
+                    className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] hover:shadow-[0_12px_24px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
+                  >
+                    Make Reservation
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </button>
+                </div>
+              )}
+            </APIProvider>
           </div>
         </div>
       </section>
 
-      {/* ORIGINAL APP CONTENT - App Directory, Searching, Near You */}
-      <div className="max-w-5xl mx-auto px-6 md:px-8 space-y-12 mt-16">
+      {/* Categories & Curated List */}
+      <div className="max-w-7xl mx-auto px-6 md:px-8 space-y-12 mt-12">
         
-        {/* Search Bar & Categories */}
-        <section className="space-y-6">
-          <div className="text-center mb-8">
-             <h2 className="font-headline text-3xl font-bold text-on-surface">{t("Explore Pakistan's Best Spots", "Pakistan Ki Behtareen Jaghein Daryaft Karein")}</h2>
-          </div>
-          <form onSubmit={handleSearch} className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 group focus-within:bg-surface-container-lowest focus-within:outline focus-within:outline-1 focus-within:outline-outline-variant/20 transition-all duration-300 shadow-sm max-w-2xl mx-auto">
-            <span className="material-symbols-outlined text-outline mr-3">search</span>
-            <input 
-              className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none" 
-              placeholder={t("Find places, categories, or services...", "Jaghein, categories ya services talash karein...")} 
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-            />
-            <button type="submit" className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-4 py-1.5 rounded text-sm font-body font-medium ml-2 shadow-[0_4px_12px_rgba(1,29,53,0.15)] hover:shadow-lg transition-shadow">
-              {t("Search", "Talash Karein")}
-            </button>
-          </form>
-          
-          {/* Category Filters */}
-          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* Category Filters */}
+        <section ref={revealRef1} className="reveal">
+          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {categories.map((c) => (
               <button
                 key={c}
@@ -233,10 +241,10 @@ export default function HomePage() {
         </section>
 
       {/* Featured Businesses */}
-      <section className="space-y-6">
+      <section ref={revealRef2} className="space-y-6 reveal">
         <div className="flex justify-between items-center">
           <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-            {userLoc ? t('Near You', 'Aap Ke Qareeb') : t('Curated for You', 'Aap Ke Liye')}
+            {userLoc ? 'Near You' : 'Curated for You'}
           </h3>
           <button 
             onClick={handleGetLocation} 
@@ -244,7 +252,7 @@ export default function HomePage() {
             className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
           >
             <MapPinIcon className="h-4 w-4" />
-            {locLoading ? t('Locating...', 'Talash Jaari...') : t('Near Me', 'Mere Qareeb')}
+            {locLoading ? 'Locating...' : 'Near Me'}
           </button>
         </div>
         
@@ -255,7 +263,7 @@ export default function HomePage() {
         ) : businesses.length === 0 ? (
           <div className="text-center py-12 bg-surface-container-low rounded-xl">
             <p className="font-body text-on-surface-variant">No businesses found matching your criteria.</p>
-            <button onClick={() => { setSearchInput(''); setSearchQuery(''); setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
+            <button onClick={() => { setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
               Clear filters
             </button>
           </div>
@@ -361,7 +369,7 @@ export default function HomePage() {
       </section>
 
       {/* Technology Promo Banner */}
-      <section className="bg-primary/5 rounded-3xl p-8 md:p-12 border border-primary/10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-sm tile-hover glowing-border">
+      <section ref={revealRef3} className="bg-primary/5 rounded-3xl p-8 md:p-12 border border-primary/10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-sm tile-hover glowing-border reveal">
         <div className="max-w-xl space-y-4">
           <div className="flex items-center gap-2 text-primary font-label text-sm font-bold uppercase tracking-wider">
             <span className="material-symbols-outlined text-[18px]">memory</span>
@@ -390,7 +398,7 @@ export default function HomePage() {
       </section>
 
       {/* Social Trust Layer Promo */}
-      <section className="rounded-3xl overflow-hidden border border-outline-variant/10 relative" style={{ background: 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)' }}>
+      <section ref={revealRef4} className="rounded-3xl overflow-hidden border border-outline-variant/10 relative reveal" style={{ background: 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.12) 0%, transparent 60%)' }} />
         <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 space-y-3">

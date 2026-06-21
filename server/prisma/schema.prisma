@@ -22,23 +22,24 @@ model User {
   fcmToken          String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  profilePictureUrl String?
   googleId          String?          @unique
   facebookId        String?          @unique
-  twitterId         String?          @unique
-  tiktokId          String?          @unique
-  linkedinId        String?          @unique
   resetToken        String?
   resetTokenExpires DateTime?
+  linkedinId        String?          @unique
+  profilePictureUrl String?
+  tiktokId          String?          @unique
+  twitterId         String?          @unique
   referredById      String?
-  referredBy        User?            @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals         User[]           @relation("UserReferrals")
   business          Business?
   cryptoRewards     CryptoReward[]
   payments          Payment[]
   reservations      Reservation[]
-  wallet            Wallet?
   socialIdentities  SocialIdentity[]
+  referredBy        User?            @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]           @relation("UserReferrals")
+  wallet            Wallet?
+  stakeTransactions StakeTransaction[]
 
   @@index([email])
   @@index([phone])
@@ -57,7 +58,6 @@ model Business {
   phone              String
   email              String
   website            String?
-  externalBookingUrl String?
   logoUrl            String?
   coverImageUrl      String?
   latitude           Float?
@@ -80,15 +80,17 @@ model Business {
   reliabilityScore   Float?
   state              String            @default("")
   isClaimed          Boolean           @default(true)
+  externalBookingUrl String?
+  slug               String?           @unique
   owner              User?             @relation(fields: [ownerId], references: [id])
   businessHours      BusinessHours[]
   settings           BusinessSettings?
   googleReviews      GoogleReview[]
   reservations       Reservation[]
-  tables             Table[]
-  webhookEndpoints   WebhookEndpoint[]
   sourcingOrders     SourcingOrder[]
+  tables             Table[]
   trendSuggestions   TrendSuggestion[]
+  webhookEndpoints   WebhookEndpoint[]
 
   @@index([ownerId])
   @@index([city])
@@ -155,8 +157,8 @@ model Reservation {
   rewardEarned        Float?            @default(0)
   googleReviewId      String?
   depositStatus       DepositStatus     @default(NOT_REQUIRED)
-  isConcierge         Boolean           @default(false)
   conciergeDetails    Json?
+  isConcierge         Boolean           @default(false)
   cryptoRewards       CryptoReward[]
   payments            Payment[]
   business            Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -233,14 +235,15 @@ model NotificationLog {
 }
 
 model Wallet {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  address   String?
-  balance   Float    @default(0)
-  currency  String   @default("PAB")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  address     String?
+  balance     Float    @default(0)
+  totalStaked Float    @default(0)
+  currency    String   @default("PAB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CryptoReward {
@@ -251,8 +254,8 @@ model CryptoReward {
   type          String
   status        String       @default("CLAIMABLE")
   txHash        String?
-  metadata      Json?
   createdAt     DateTime     @default(now())
+  metadata      Json?
   reservation   Reservation? @relation(fields: [reservationId], references: [id])
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -283,6 +286,95 @@ model WebhookEndpoint {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model ApiClient {
+  id                String        @id @default(cuid())
+  name              String
+  email             String        @unique
+  apiKey            String        @unique
+  tier              ApiTier       @default(STARTER)
+  callsUsed         Int           @default(0)
+  callsLimit        Int           @default(500)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  paymentMethod     String?
+  transactionHash   String?       @unique
+  walletAddress     String?
+  billingMode       BillingMode   @default(PAY_AS_YOU_GO)
+  preferredCurrency CurrencyType  @default(PAB)
+  usageLogs         ApiUsageLog[]
+
+  @@index([apiKey])
+  @@index([email])
+}
+
+model ApiUsageLog {
+  id         String    @id @default(cuid())
+  clientId   String
+  endpoint   String
+  statusCode Int
+  latencyMs  Int
+  createdAt  DateTime  @default(now())
+  costCrypto Float     @default(0)
+  costFiat   Float     @default(0)
+  client     ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+}
+
+model SocialIdentity {
+  id             String         @id @default(cuid())
+  userId         String
+  platform       SocialPlatform
+  platformHandle String?
+  accountAgeDays Int?
+  isVerified     Boolean        @default(false)
+  completeness   Float?
+  rating         Float?
+  completionRate Float?
+  accountLevel   String?
+  trustBoost     Float          @default(0.0)
+  connectedAt    DateTime       @default(now())
+  lastRefreshed  DateTime       @default(now())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model SourcingOrder {
+  id               String              @id @default(cuid())
+  businessId       String
+  items            Json
+  status           SourcingOrderStatus @default(SUGGESTED)
+  estimatedCostPKR Float
+  accioWorkOrderId String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  business         Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+model TrendSuggestion {
+  id                    String      @id @default(cuid())
+  businessId            String
+  equipmentName         String
+  description           String
+  estimatedCostPKR      Float
+  suggestedServicePrice Float
+  projectedBookings     Int
+  projectedRoiPercent   Float
+  status                TrendStatus @default(SUGGESTED)
+  accioWorkUrl          String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  business              Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -338,49 +430,14 @@ enum BusinessCategory {
   FITNESS_CENTER
   EVENT_VENUE
   OTHER
+  HOSPITAL
+  FREELANCE
 }
 
 enum ApiTier {
   STARTER
   GROWTH
   ENTERPRISE
-}
-
-model ApiClient {
-  id                String        @id @default(cuid())
-  name              String
-  email             String        @unique
-  apiKey            String        @unique
-  tier              ApiTier       @default(STARTER)
-  callsUsed         Int           @default(0)
-  callsLimit        Int           @default(500)
-  isActive          Boolean       @default(true)
-  paymentMethod     String? // 'safepay', 'solana', 'bsc', 'free'
-  transactionHash   String?       @unique // safepay tracker or crypto tx hash
-  walletAddress     String?
-  billingMode       BillingMode   @default(PAY_AS_YOU_GO)
-  preferredCurrency CurrencyType  @default(PAB)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  usageLogs         ApiUsageLog[]
-
-  @@index([apiKey])
-  @@index([email])
-}
-
-model ApiUsageLog {
-  id         String    @id @default(cuid())
-  clientId   String
-  endpoint   String
-  statusCode Int
-  latencyMs  Int
-  costFiat   Float     @default(0)
-  costCrypto Float     @default(0)
-  createdAt  DateTime  @default(now())
-  client     ApiClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  @@index([clientId])
-  @@index([createdAt])
 }
 
 enum BillingMode {
@@ -404,46 +461,12 @@ enum SocialPlatform {
   UPWORK
 }
 
-model SocialIdentity {
-  id             String         @id @default(cuid())
-  userId         String
-  platform       SocialPlatform
-  platformHandle String?
-  accountAgeDays Int?
-  isVerified     Boolean        @default(false)
-  completeness   Float? // 0.0 – 1.0
-  rating         Float? // Fiverr/Upwork star rating
-  completionRate Float? // Fiverr/Upwork order completion %
-  accountLevel   String? // "Top Rated", "Level 2", etc.
-  trustBoost     Float          @default(0.0)
-  connectedAt    DateTime       @default(now())
-  lastRefreshed  DateTime       @default(now())
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, platform])
-  @@index([userId])
-}
-
 enum SourcingOrderStatus {
   SUGGESTED
   ORDERED
   SHIPPED
   FULFILLED
   CANCELLED
-}
-
-model SourcingOrder {
-  id               String              @id @default(cuid())
-  businessId       String
-  items            Json // Array of { itemName, quantity, estimatedPrice, accioUrl }
-  status           SourcingOrderStatus @default(SUGGESTED)
-  estimatedCostPKR Float
-  accioWorkOrderId String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  business         Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
 }
 
 enum TrendStatus {
@@ -453,20 +476,14 @@ enum TrendStatus {
   DISMISSED
 }
 
-model TrendSuggestion {
-  id                    String      @id @default(cuid())
-  businessId            String
-  equipmentName         String
-  description           String
-  estimatedCostPKR      Float
-  suggestedServicePrice Float
-  projectedBookings     Int
-  projectedRoiPercent   Float
-  status                TrendStatus @default(SUGGESTED)
-  accioWorkUrl          String?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-  business              Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+model StakeTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  type      String   // 'STAKE' or 'UNSTAKE'
+  apyAtTime Float?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([businessId])
+  @@index([userId])
 }

@@ -1,10 +1,7 @@
-import { GoogleGenerativeAI, SchemaType, Tool } from '@google/generative-ai';
 import { prisma } from '../utils/database';
 import axios from 'axios';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
+const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const META_WA_ACCESS_TOKEN = process.env.META_WA_ACCESS_TOKEN || '';
 const META_WA_PHONE_NUMBER_ID = process.env.META_WA_PHONE_NUMBER_ID || '';
 
@@ -53,20 +50,20 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
 export const processWhatsAppMessage = async (phoneNumber: string, message: string, user: any | null) => {
   console.log(`[AI] Processing message from ${phoneNumber}: ${message}`);
   
-  if (!GEMINI_API_KEY) {
-    console.warn('[AI] Gemini API Key missing, returning default auto-reply.');
+  if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+    console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
     await sendWhatsAppMessage(phoneNumber, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
     return;
   }
 
   try {
     // Determine the role and context for the AI
-    let context = 'You are the Pabandi AI Assistant. Pabandi is a reservation and trust platform in Pakistan.\n';
+    let context = 'You are the Pabandi AI Assistant. Pabandi is a global reservation and trust platform.\n';
     
     if (user) {
       context += `The person you are talking to is ${user.firstName} ${user.lastName}, a registered ${user.role} on Pabandi.\n`;
       if (user.role === 'BUSINESS_OWNER') {
-        context += `As a business owner, they might ask about their reservations or want to manage their profile.\n`;
+        context += `As an enterprise owner, they might ask about their reservations or want to manage their profile.\n`;
       } else {
         context += `As a customer, they might want to book a table, check reservations, or ask about No-Show deposits.\n`;
       }
@@ -75,82 +72,43 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
     }
 
     context += `
-Keep your answers brief, conversational, and helpful. You can use English or Roman Urdu. 
+Keep your answers brief, conversational, and helpful. You must respond in English.
 If the user asks to book a table, acknowledge their request and tell them you are checking availability (simulate for now).
 Do not generate markdown or long lists.
 `;
 
-    const tools: Tool[] = [
-      {
-        functionDeclarations: [
-          {
-            name: "check_availability",
-            description: "Check if a business has availability at a specific time.",
-            parameters: {
-              type: SchemaType.OBJECT,
-              properties: {
-                businessName: { type: SchemaType.STRING, description: "The name of the business" },
-                time: { type: SchemaType.STRING, description: "The requested time, e.g., '8:00 PM'" },
-                partySize: { type: SchemaType.NUMBER, description: "Number of people" }
-              },
-              required: ["businessName", "time", "partySize"]
-            }
-          },
-          {
-            name: "create_reservation",
-            description: "Create a reservation for the user after they have confirmed the details.",
-            parameters: {
-              type: SchemaType.OBJECT,
-              properties: {
-                businessName: { type: SchemaType.STRING, description: "The name of the business" },
-                time: { type: SchemaType.STRING, description: "The requested time" },
-                partySize: { type: SchemaType.NUMBER, description: "Number of people" }
-              },
-              required: ["businessName", "time", "partySize"]
-            }
-          }
+    const payload = {
+      model: 'qwen-turbo',
+      input: {
+        messages: [
+          { role: 'system', content: context },
+          { role: 'user', content: message }
         ]
+      },
+      parameters: {
+        result_format: 'message'
       }
-    ];
+    };
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash', tools });
-    const chat = model.startChat({
-      history: [
-        { role: 'user', parts: [{ text: context }] },
-        { role: 'model', parts: [{ text: 'Understood. I will assist the user.' }] }
-      ]
-    });
-    
-    let result = await chat.sendMessage([{ text: message }]);
-    
-    // Handle function calls if the AI decides to use a tool
-    if (result.response.functionCalls() && result.response.functionCalls()!.length > 0) {
-      const call = result.response.functionCalls()![0];
-      let functionResponseText = "";
-      const args: any = call.args;
-
-      if (call.name === "check_availability") {
-        console.log(`[AI Function] Checking availability for ${args.businessName} at ${args.time}`);
-        // Mock database check
-        functionResponseText = `Yes, there is a table available for ${args.partySize} at ${args.time}. The No-Show deposit is 500 PKR.`;
-      } else if (call.name === "create_reservation") {
-        console.log(`[AI Function] Creating reservation for ${args.businessName} at ${args.time}`);
-        // Mock database creation
-        functionResponseText = `Reservation successfully created! Your table for ${args.partySize} is confirmed.`;
-      }
-
-      result = await chat.sendMessage([{
-        functionResponse: {
-          name: call.name,
-          response: { result: functionResponseText }
+    const response = await axios.post(
+      'https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', 
+      payload, 
+      {
+        headers: {
+          'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
+          'Content-Type': 'application/json'
         }
-      }]);
-    }
+      }
+    );
 
-    const aiResponse = result.response.text().trim();
+    let aiResponse = "I'm sorry, I couldn't process your request.";
+    if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
+      aiResponse = response.data.output.choices[0].message.content.trim();
+    }
+    
     await sendWhatsAppMessage(phoneNumber, aiResponse);
-  } catch (error) {
-    console.error('[AI] Error generating AI response:', error);
+  } catch (error: any) {
+    console.error('[AI] Error generating AI response from DashScope:', error.response?.data || error.message);
     await sendWhatsAppMessage(phoneNumber, 'Sorry, I am having trouble understanding right now. Please try again later!');
   }
 };

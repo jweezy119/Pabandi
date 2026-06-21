@@ -96,6 +96,39 @@ export class DashscopeService {
       return "AI Trust Profile temporarily unavailable.";
     }
   }
+
+  /**
+   * Helper to perform generic text generation using Alibaba Cloud Qwen AI model.
+   */
+  async generateText(systemPrompt: string, userPrompt: string): Promise<string> {
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey || apiKey === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+      throw new Error('DASHSCOPE_API_KEY is not configured');
+    }
+
+    const response = await axios.post('https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+      model: 'qwen-turbo',
+      input: {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]
+      },
+      parameters: {
+        result_format: 'message'
+      }
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
+      return response.data.output.choices[0].message.content.trim();
+    }
+    throw new Error('No content returned from DashScope');
+  }
 }
 
 export const dashscopeService = new DashscopeService();

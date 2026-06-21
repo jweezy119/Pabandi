@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -10,79 +9,19 @@ const CheckIcon = () => (
   </svg>
 );
 
-// ── Data ───────────────────────────────────────────────────────────────
-const BENEFITS = [
-  {
-    icon: '🧠',
-    color: '#3b82f6',
-    glow: 'rgba(59,130,246,0.15)',
-    title: 'AI No-Show Prediction', titleUrdu: 'AI No-Show Prediction',
-    desc: 'Our proprietary machine learning engine analyzes behavioral signals to predict the probability of a no-show before it happens.', descUrdu: 'Hamara machine learning engine customers ke aane se pehle hi no-show ki paish-goi karta hai.',
-  },
-  {
-    icon: '⛓️',
-    color: '#14F195',
-    glow: 'rgba(20,241,149,0.15)',
-    title: 'Trustless Solana Escrow', titleUrdu: 'Solana Escrow ka Tahafuz',
-    desc: 'Deposits are held securely in Solana smart contracts and instantly released to you if a customer no-shows — zero chargebacks.', descUrdu: 'Deposits Solana smart contracts mein mehfooz rehte hain aur agar customer no-show kare, to foran aapko mil jatay hain — no chargebacks.',
-  },
-  {
-    icon: '🪙',
-    color: '#9945FF',
-    glow: 'rgba(153,69,255,0.15)',
-    title: 'Earn $PAB Crypto Rewards', titleUrdu: '$PAB Crypto Inamaat Kamayen',
-    desc: 'You earn $PAB tokens for every booking you honor. Accumulate tokens to unlock priority placement and governance rights.', descUrdu: 'Aap har mukammal booking par $PAB tokens kamatay hain. Tokens jama kar ke priority placement aur mazeed fawaid haasil karein.',
-  },
-  {
-    icon: '🛡️',
-    color: '#10b981',
-    glow: 'rgba(16,185,129,0.15)',
-    title: 'Pabandi Score Protection', titleUrdu: 'Pabandi Score Tahafuz',
-    desc: 'Customers are scored by our AI based on their reliability. Bad actors are automatically blocked from making high-risk bookings.', descUrdu: 'Customers ka Pabandi Score AI banata hai. Kharab score walay high-risk bookings nahi kar saktay.',
-  },
-  {
-    icon: '📊',
-    color: '#ec4899',
-    glow: 'rgba(236,72,153,0.15)',
-    title: 'Real-Time Analytics', titleUrdu: 'Real-Time Tajziya',
-    desc: 'Track your protected revenue, no-show reduction rates, and crypto earnings through your dedicated business dashboard.', descUrdu: 'Apne business dashboard se mehfooz aamdani, no-show mein kami, aur crypto earnings track karein.',
-  },
-  {
-    icon: '⭐',
-    color: '#f97316',
-    glow: 'rgba(249,115,22,0.15)',
-    title: 'Verified Google Reviews', titleUrdu: 'Tasdeeq-shuda Google Reviews',
-    desc: 'Only customers who actually checked in via Pabandi can leave a review, protecting your reputation from fake bots.', descUrdu: 'Sirf wo customers review de saktay hain jinhon ne waqai visit kiya ho. Fake reviews se bachayen.',
-  },
-];
-
-const INCENTIVES = [
-  { emoji: '🎁', title: '6 Months Free', titleUrdu: '6 Mahinay Free', desc: 'Zero subscription fees for founding partners. No credit card required to start.', descUrdu: 'Founding partners ke liye 6 mahinay muft. Credit card ki zaroorat nahi.' },
-  { emoji: '🏅', title: 'Founding Business Badge', titleUrdu: 'Founding Business Badge', desc: 'A permanent "Founding Partner" badge on your profile, visible to all customers.', descUrdu: 'Aapki profile par "Founding Partner" badge jo hamesha nazar aayega.' },
-  { emoji: '📌', title: 'Featured Listing', titleUrdu: 'Featured Listing', desc: 'Your business appears at the top of search results in your category for 6 months.', descUrdu: 'Aap ka business 6 mahinay tak search results mein sab se oopar nazar aayega.' },
-  { emoji: '📞', title: 'Dedicated Setup Support', titleUrdu: 'Khusoosi Setup Support', desc: 'Our team personally sets up your business profile. You don\'t have to do anything technical.', descUrdu: 'Hamari team aapki profile setup karegi. Aapko kuch technical karne ki zaroorat nahi.' },
-];
-
-const STEPS = [
-  { num: '01', title: 'Fill in the form below', titleUrdu: 'Neechay diya gaya form pur karein', desc: 'Business name, category, and contact details. Takes 2 minutes.', descUrdu: 'Business ka naam, category, aur contact details dein. Sirf 2 minute lagenge.' },
-  { num: '02', title: 'We set up your profile', titleUrdu: 'Hum aapki profile banayenge', desc: 'Our team builds your full profile, syncs with Google Maps, and handles all technical setup.', descUrdu: 'Hamari team aapki profile mukammal karegi, Google Maps link karegi, aur technical kaam sambhalegi.' },
-  { num: '03', title: 'Start receiving bookings', titleUrdu: 'Bookings wasool karna shuru karein', desc: 'Share your unique Pabandi link. Customers book, you get notified instantly.', descUrdu: 'Apna Pabandi link share karein. Customer book karega, aur aapko foran notification milega.' },
-];
-
 const CATEGORIES = [
-  { en: 'Restaurant', ur: 'Restaurant' },
-  { en: 'Cafe', ur: 'Cafe' },
-  { en: 'Salon', ur: 'Salon' },
-  { en: 'Spa', ur: 'Spa' },
-  { en: 'Clinic', ur: 'Clinic' },
-  { en: 'Fitness Center', ur: 'Fitness Center' },
-  { en: 'Event Venue', ur: 'Event Venue' },
-  { en: 'Other', ur: 'Deegar' }
+  { id: 'HOTEL', label: 'Boutique Hotel & Hospitality' },
+  { id: 'RESTAURANT', label: 'Local Restaurant & Cafe' },
+  { id: 'EVENT_VENUE', label: 'Event Venue & Space' },
+  { id: 'CLINIC', label: 'Private Clinic' },
+  { id: 'HOSPITAL', label: 'Hospital & Healthcare' },
+  { id: 'FITNESS_CENTER', label: 'Fitness Studio & Gym' },
+  { id: 'SPA', label: 'Salon & Spa' },
+  { id: 'FREELANCE', label: 'Freelance & Gig Worker' },
+  { id: 'OTHER', label: 'Other Small Business' }
 ];
 
-// ── Component ──────────────────────────────────────────────────────────
 export default function BusinessJoinPage() {
-  const { t } = useLanguage();
   const [form, setForm] = useState({
     businessName: '', ownerName: '', phone: '', email: '', category: '', city: '',
     country: 'United States',
@@ -114,8 +53,6 @@ export default function BusinessJoinPage() {
     }
     setLoading(true);
     try {
-      // Store interest lead in database via the auth register flow
-      // or a dedicated /leads endpoint — for now we use register + business creation
       await apiClient.post('/auth/register', {
         email: form.email,
         password: form.password,
@@ -131,7 +68,7 @@ export default function BusinessJoinPage() {
       if (msg.includes('already exists')) {
         setError('An account with this email already exists. Please sign in instead.');
       } else {
-        setError(msg || 'Something went wrong. Please try again or call us at +1 (800) 000-0000.');
+        setError(msg || 'Something went wrong. Please try again or contact support.');
       }
     } finally {
       setLoading(false);
@@ -141,525 +78,551 @@ export default function BusinessJoinPage() {
   if (submitted) {
     return (
       <div 
-        style={{ 
-          background: '#080e17', 
-          color: '#edf1f5',
-          ['--color-bg' as any]: '#080e17',
-          ['--color-text' as any]: '#edf1f5',
-          ['--color-text-muted' as any]: '#9e9e9e',
-          ['--color-surface' as any]: '#0f172a',
-          ['--color-surface-raised' as any]: '#1e293b',
-          minHeight: '100vh' 
-        }} 
-        className="flex items-center justify-center p-6"
+        className="flex items-center justify-center p-6 bg-[#080e17] text-[#edf1f5] min-h-screen"
       >
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">🎉</div>
-          <h2 className="text-3xl font-black mb-3 text-[#e8e8e8]" >{t("You're In!", "Aap Shamil Ho Gaye!")}</h2>
-          <p className="text-base mb-2 text-[#757575]" >
-            {t("Welcome to Pabandi", "Pabandi mein Khush Aamdeed")}, <span style={{ fontWeight: 700 }}>{form.businessName}</span>!
+          <h2 className="text-3xl font-black mb-3 text-[#e8e8e8]">Application Received!</h2>
+          <p className="text-base mb-2 text-[#757575]">
+            Welcome to the Global Network, <span style={{ fontWeight: 700 }}>{form.businessName}</span>!
           </p>
-          <p className="text-sm mb-8 text-[#9e9e9e]" >
-            {t("Our team will WhatsApp you at", "Hamari team aapko")} <strong className="text-[#616161]">{form.phone}</strong> {t("within 24 hours to complete your setup — completely free.", "par 24 ghanton mein WhatsApp karegi aapka setup mukammal karne ke liye — bilkul muft.")}
+          <p className="text-sm mb-8 text-[#9e9e9e]">
+            Our onboarding team will contact you at <strong className="text-[#616161]">{form.phone}</strong> within 24 hours to help set up your business profile.
           </p>
           <div className="rounded-2xl p-5 mb-8 text-left space-y-3"
             style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
             {[
-              t('6 months free — activated', '6 mahinay muft — active ho gaya'), 
-              t('Founding Business badge — reserved', 'Founding Business badge — mehfooz ho gaya'), 
-              t('Featured listing — queued', 'Featured listing — qataar mein hai')
+              '6 months Starter tier — activated', 
+              'Founding Business badge — reserved', 
+              'Global local listing — queued'
             ].map(item => (
               <div key={item} className="flex items-center gap-3 text-sm font-medium" style={{ color: '#34d399' }}>
                 <CheckIcon /> {item}
               </div>
             ))}
           </div>
-          <Link to="/" className="btn-secondary text-sm">← {t("Back to Home", "Wapas Home Par")}</Link>
+          <Link to="/" className="btn-secondary text-sm">← Back to Global Directory</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      background: '#080e17', 
-      color: '#edf1f5',
-      ['--color-bg' as any]: '#080e17',
-      ['--color-text' as any]: '#edf1f5',
-      ['--color-text-muted' as any]: '#9e9e9e',
-      ['--color-surface' as any]: '#0f172a',
-      ['--color-surface-raised' as any]: '#1e293b'
-    }}>
-
+    <div className="bg-[#080e17] text-[#edf1f5] font-body min-h-screen selection:bg-blue-500/30">
+      
       {/* ── Nav ─────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b" style={{ background: 'rgba(8,14,23,0.9)', backdropFilter: 'blur(20px)', borderColor: 'rgba(255,255,255,0.06)' }}>
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white"
-              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>P</div>
-            <span className="font-bold text-sm text-[#e8e8e8]" >Pabandi</span>
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#080e17]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 text-sm font-bold hover:opacity-80 transition-opacity">
+            <span className="text-slate-400">← Back</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-xs font-medium text-[#9e9e9e]" >{t("Sign in", "Log in karein")}</Link>
-            <a href="#join-form" className="btn-primary text-xs py-2 px-4">{t("Get Started Free", "Muft Shuru Karein")}</a>
+            <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
+            <a href="#join-form" className="bg-white text-black text-sm font-bold py-2 px-5 rounded-full hover:bg-slate-200 transition-colors">Register</a>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-24 pb-20 px-4">
-        <div className="glow-blob w-[600px] h-[600px] top-[-200px] left-1/2 -translate-x-1/2"
-          style={{ background: 'rgba(37,99,235,0.1)', position: 'absolute', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
-        <div className="glow-blob w-[400px] h-[400px] bottom-0 right-0"
-          style={{ background: 'rgba(124,58,237,0.08)', position: 'absolute', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none' }} />
+      <section className="relative overflow-hidden pt-20 pb-24 px-6">
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          {/* Founding badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold tracking-widest uppercase"
-            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', color: '#fbbf24' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-          {t("Founding Partner Program — 🇺🇸 USA & 🇵🇰 Pakistan", "Founding Partner Program — 🇺🇸 USA aur 🇵🇰 Pakistan")}
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-[#e8e8e8]" >
-            {t("Protect Your Revenue.", "Apni Aamdani Mehfooz Karein.")}<br />
-            <span style={{ background: 'linear-gradient(135deg,#0ea5e9, #14F195)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t("Eliminate No-Shows with AI.", "AI ke zariye No-Shows khatam karein.")}
-            </span>
-          </h1>
-
-          <p className="text-lg max-w-2xl mx-auto mb-10" style={{ lineHeight: 1.7 }}>
-            {t("Pabandi is the Web3-powered reservation platform that uses predictive AI and Solana smart contracts to guarantee your bookings.", "Pabandi aik Web3 reservation platform hai jo predictive AI aur Solana smart contracts ka istemaal kar ke aapki bookings ki zamanat deta hai.")}
-            <strong className="text-[#14F195]"> {t("Zero Chargebacks. 100% Protection.", "Zero Chargebacks. 100% Tahafuz.")} </strong>
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a href="#join-form" className="btn-primary text-base px-8 py-4">
-              {t("Claim Your Free Spot →", "Apni Muft Jagah Reserve Karein →")}
-            </a>
-            <div className="flex items-center gap-2 text-sm text-[#9e9e9e]" >
-              <div className="flex -space-x-2">
-                {['🍽️','💇','🏋️'].map((e) => (
-                  <div key={e} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm"
-                    style={{ borderColor: 'var(--color-bg)', background: 'var(--color-surface-raised)' }}>{e}</div>
-                ))}
-              </div>
-              <span>{t("Join", "Shamil hon")} <strong className="text-[#616161]">50+ {t("businesses", "businesses")}</strong> {t("already on the waitlist", "jo pehle se waitlist par hain")}</span>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold tracking-widest uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              🏢 For Businesses
             </div>
-          </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[
-              { val: t('Forever', 'Hamesha'), label: t('Base CRM Free', 'Base CRM Muft') },
-              { val: '98%', label: t('Show-up Rate', 'Aane ka Tanasub') },
-              { val: t('2 min', '2 minute'), label: t('Setup Time', 'Setup ka Waqt') },
-              { val: '24/7', label: t('Support', 'Madad') },
-            ].map(s => (
-              <div key={s.val + s.label} className="rounded-2xl p-4"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="text-2xl font-black mb-1" style={{ color: '#e8e8e8' }}>{s.val}</p>
-                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-white font-headline tracking-tight">
+              Hire an <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">AI Agent</span><br />to secure your revenue.
+            </h1>
 
-      {/* ── Incentives ──────────────────────────────────────────── */}
-      <section className="py-20 px-4" style={{ background: 'var(--color-surface)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#00FFB0' }}>{t("Founding Partner Perks", "Founding Partner Fawaid")}</p>
-            <h2 className="text-4xl font-black mb-4" style={{ color: '#e8e8e8', fontFamily: 'Space Grotesk, sans-serif' }}>{t("Start For Free. Pay When You Win.", "Muft Shuru Karein. Kamyabi Par Pay Karein.")}</h2>
-            <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
-              {t("Join the first 100 businesses to unlock our Base CRM forever free. Upgrade to our Outcome-Based AI protection when you're ready to eliminate no-shows for good.", "Pehle 100 businesses mein shamil hon aur hamara Base CRM hamesha ke liye muft hasil karein. Jab aap no-shows ko mukammal khatam karna chahein to hamari Outcome-Based AI protection par upgrade karein.")}
+            <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-xl">
+              Pabandi's Agentic AI analyses customer history, weather, local events, and 40+ data points autonomously. High-risk? The agent negotiates and captures a deposit automatically — before they even leave your page.
             </p>
-          </div>
 
-          <div className="grid sm:grid-cols-2 gap-5">
-            {INCENTIVES.map(inc => (
-              <div key={inc.title} className="rounded-2xl p-6 flex items-start gap-5"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="text-3xl shrink-0">{inc.emoji}</div>
-                <div>
-                  <h3 className="font-bold text-base mb-1.5" style={{ color: '#e8e8e8' }}>{t(inc.title, inc.titleUrdu)}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{t(inc.desc, inc.descUrdu)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Urgency bar */}
-          <div className="mt-8 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap"
-            style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-            <div>
-              <p className="font-bold text-sm" style={{ color: '#fbbf24' }}>⚡ {t("Only 63 founding spots remaining", "Sirf 63 founding spots baqi hain")}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#d97706' }}>{t("Spots are going fast. Sign up today to lock in your free Base CRM forever.", "Spots tezi se bhar rahi hain. Aaj hi sign up karein aur apna Base CRM hamesha ke liye muft hasil karein.")}</p>
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
+              <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-lg px-8 py-4 rounded-xl font-bold hover:bg-slate-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                Register Your Business →
+              </a>
+              <a href="#how-it-works" className="w-full sm:w-auto text-center text-lg px-8 py-4 rounded-xl font-bold text-white border border-white/10 hover:bg-white/5 transition-all">
+                See How It Works
+              </a>
             </div>
-            <a href="#join-form" className="btn-primary text-sm px-6 py-2.5 shrink-0">
-              {t("Reserve My Spot", "Apni Jagah Mehfooz Karein")}
-            </a>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Deep Dive: Why Partner With Us ──────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto space-y-20">
-          
-          {/* Financial Impact */}
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#ec4899' }}>{t("The Financial Impact", "Maali Asraat")}</p>
-              <h2 className="text-3xl font-black mb-4 text-[#e8e8e8] leading-tight">{t("Stop Losing 20% of Your Revenue to No-Shows", "No-Shows ki wajah se 20% Aamdani Khona Band Karein")}</h2>
-              <p className="text-base text-[#757575] leading-relaxed mb-6">
-                {t("The average service business loses thousands of dollars a month to last-minute cancellations and ghosting. Our AI engine instantly evaluates the risk of every booking. If a customer is high-risk, we automatically lock a deposit in a Solana smart contract. If they don't show, you get paid instantly. Zero chargebacks, guaranteed.", "Aam tor par service business aakhri waqt ki cancellations se hazaron dollar khota hai. Hamara AI engine har booking ka risk janchta hai. Agar customer high-risk ho, to hum Solana smart contract mein deposit lock kar dete hain. Agar wo na aaye to aapko foran paisay mil jate hain. Zero chargebacks, zamanat ke sath.")}
-              </p>
-            </div>
-            <div className="rounded-2xl p-8 border border-[rgba(236,72,153,0.2)] bg-[rgba(236,72,153,0.05)] relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-500/20 blur-3xl rounded-full"></div>
-              <h3 className="font-bold text-lg text-white mb-4 relative z-10">{t("Average Monthly Recovery", "Ost Mahana Wapsi")}</h3>
-              <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 relative z-10 mb-2">
-                +$4,200
-              </div>
-              <p className="text-sm text-pink-200/80 relative z-10">{t("Based on 15 saved bookings per month.", "Mahana 15 bachi hui bookings ki bunyad par.")}</p>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-semibold text-slate-300">
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Built for Global SMEs</span>
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Agentic Business</span>
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Solana Web3</span>
             </div>
           </div>
 
-          {/* Marketing Impact */}
-          <div className="grid md:grid-cols-2 gap-12 items-center flex-row-reverse">
-            <div className="order-2 md:order-1 rounded-2xl p-8 border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.05)] relative overflow-hidden">
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full"></div>
-              <h3 className="font-bold text-lg text-white mb-4 relative z-10">{t("High-Intent Traffic", "Ziada Pukhta Iraday wali Traffic")}</h3>
-              <div className="space-y-4 relative z-10">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="text-sm text-emerald-100/70">{t("Average Pabandi Score", "Ost Pabandi Score")}</span>
-                  <span className="text-emerald-400 font-bold">810 {t("(Elite)", "(Aala)")}</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="text-sm text-emerald-100/70">{t("Show-up Rate", "Aane ka Tanasub")}</span>
-                  <span className="text-emerald-400 font-bold">99.2%</span>
-                </div>
+          {/* ── Mock Dashboard UI ──────────────────────────────── */}
+          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl relative">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="font-bold text-lg text-white">Pabandi Business Dashboard</h3>
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                <span className="material-symbols-outlined text-sm">notifications</span>
               </div>
             </div>
-            <div className="order-1 md:order-2">
-              <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#10b981' }}>{t("The Marketing Funnel", "Marketing Funnel")}</p>
-              <h2 className="text-3xl font-black mb-4 text-[#e8e8e8] leading-tight">{t("Attract the Best Customers in Your City", "Apne Shehar ke Behtareen Customers ko Mutawajjah Karein")}</h2>
-              <p className="text-base text-[#757575] leading-relaxed mb-6">
-                {t("Pabandi isn't just a booking tool; it's a vetted network. By partnering with us, your business is placed in front of users who have proven their reliability through their high Pabandi Scores. Better customers mean higher spend per ticket and zero wasted time.", "Pabandi sirf ek booking tool nahi hai; ye aik tasdeeq shuda network hai. Hamare sath partner banne se, aapka business un users ke samne pesh hota hai jinhon ne apne high Pabandi Scores se khud ko qabil-e-aitamad sabit kiya hai. Behtar customers ka matlab hai zyada kharch aur waqt ka zaya na hona.")}
-              </p>
-            </div>
-          </div>
 
-        </div>
-      </section>
-
-      {/* ── Industry Matrix ─────────────────────────────────────── */}
-      <section className="py-20 px-4" style={{ background: 'var(--color-bg)' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#0ea5e9' }}>{t("Tailored Protection", "Makhsoos Tahafuz")}</p>
-            <h2 className="text-4xl font-black mb-4 text-[#e8e8e8]">{t("How the Matrix Protects Your Industry", "Matrix Aapke Industry Ko Kaise Bachata Hai")}</h2>
-            <p className="text-base text-[#757575] max-w-2xl mx-auto leading-relaxed">
-              {t("Different businesses face different risks. The Trust Matrix dynamically weighs the four data layers to provide custom, outcome-based protection for your specific avenue of business.", "Mukhtalif businesses ko mukhtalif khatraat hote hain. Trust Matrix char data layers ko istemaal kar ke aapke business ke mutabiq custom, nateeja-khez tahafuz faraham karta hai.")}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            
-            {/* Fine Dining */}
-            <div className="rounded-3xl p-8 relative overflow-hidden group" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-all"></div>
-              <div className="text-4xl mb-4 relative z-10">🍽️</div>
-              <h3 className="text-xl font-bold text-[#e8e8e8] mb-2 relative z-10">{t("Fine Dining & Restaurants", "Fine Dining aur Restaurants")}</h3>
-              <p className="text-sm text-[#9e9e9e] leading-relaxed mb-4 relative z-10">
-                {t("Empty tables during peak hours devastate margins. For dining, the Matrix heavily weighs the", "Peak hours mein khali tables nuqsan deh hote hain. Dining ke liye, Matrix ")} <strong className="text-blue-400">{t("Historical Show Rate", "Pichli Haazri ki Sharah")}</strong> {t("to filter out chronic no-showers and ensure high-demand slots are filled by reliable patrons.", "par ziada zor deta hai taake aadi no-showers ko filter kiya ja sake aur ahem slots qabil-e-aitamad gahkon se bhare jayen.")}
-              </p>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-white/5 rounded-2xl p-4">
+                <div className="text-slate-400 text-xs mb-1">Today's Bookings</div>
+                <div className="text-3xl font-black text-white">24</div>
+              </div>
+              <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20">
+                <div className="text-emerald-400 text-xs mb-1">Revenue Protected</div>
+                <div className="text-3xl font-black text-emerald-400">$48K</div>
+              </div>
             </div>
 
-            {/* Salons & Spas */}
-            <div className="rounded-3xl p-8 relative overflow-hidden group" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-pink-500/20 transition-all"></div>
-              <div className="text-4xl mb-4 relative z-10">💇</div>
-              <h3 className="text-xl font-bold text-[#e8e8e8] mb-2 relative z-10">{t("Salons & Spas", "Salons aur Spas")}</h3>
-              <p className="text-sm text-[#9e9e9e] leading-relaxed mb-4 relative z-10">
-                {t("A late cancellation leaves high-value block times unfillable. For salons, the Matrix focuses on", "Der se cancellation ahem block times ko khali chhor deti hai. Salons ke liye, Matrix ")} <strong className="text-pink-400">{t("Cancellation Lead Time", "Cancellation Lead Time")}</strong>{t(", automatically requiring escrow deposits from users who frequently cancel at the last minute.", "par tawajjo deta hai, un users se automatically escrow deposit mangta hai jo aksar aakhri waqt par cancel karte hain.")}
-              </p>
-            </div>
+            <div className="space-y-4">
+              <div className="bg-white/5 p-4 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-blue-400">AK</div>
+                  <div>
+                    <div className="font-bold text-white text-sm">Ayesha Khan</div>
+                    <div className="text-xs text-slate-400">2:00 PM · Table for 4</div>
+                  </div>
+                </div>
+                <div className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-bold">Low Risk</div>
+              </div>
 
-            {/* Event Venues */}
-            <div className="rounded-3xl p-8 relative overflow-hidden group" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-500/20 transition-all"></div>
-              <div className="text-4xl mb-4 relative z-10">🎪</div>
-              <h3 className="text-xl font-bold text-[#e8e8e8] mb-2 relative z-10">{t("Event Venues & Planners", "Event Venues aur Planners")}</h3>
-              <p className="text-sm text-[#9e9e9e] leading-relaxed mb-4 relative z-10">
-                {t("Huge deposits and massive revenue are at stake. For venues, the Matrix prioritizes", "Baray deposits aur bhari aamdani dao par hoti hai. Venues ke liye, Matrix ")} <strong className="text-purple-400">{t("Verified Identity (KYC)", "Tasdeeq shuda Shanakht (KYC)")}</strong> {t("and", "aur")} <strong className="text-purple-400">{t("Social Graph Analytics", "Social Graph Analytics")}</strong> {t("to guarantee that large bookings are backed by real, vetted individuals.", "ko tarjeeh deta hai taake bari bookings ke peechay asli, janchay hue afraad hon.")}
-              </p>
-            </div>
+              <div className="bg-white/5 p-4 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center font-bold text-amber-400">MR</div>
+                  <div>
+                    <div className="font-bold text-white text-sm">M. Rehman</div>
+                    <div className="text-xs text-slate-400">3:30 PM · Table for 2</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-bold inline-block mb-1">Med Risk</div>
+                  <div className="text-[10px] text-slate-400">$5 dep.</div>
+                </div>
+              </div>
 
-            {/* Clinics */}
-            <div className="rounded-3xl p-8 relative overflow-hidden group" style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-all"></div>
-              <div className="text-4xl mb-4 relative z-10">🩺</div>
-              <h3 className="text-xl font-bold text-[#e8e8e8] mb-2 relative z-10">{t("Clinics & Healthcare", "Clinics aur Healthcare")}</h3>
-              <p className="text-sm text-[#9e9e9e] leading-relaxed mb-4 relative z-10">
-                {t("Patient flow integrity is critical for both revenue and care delivery. The Matrix looks at", "Mareezon ka bahao aamdani aur dekh bhal dono ke liye ahem hai. Matrix ")} <strong className="text-emerald-400">{t("Consistent Reliability", "Musalsal Qabiliyat")}</strong> {t("across the ecosystem to ensure high-priority appointment slots are respected.", "par nazar rakhta hai taake aham appointment slots ka ehtaram ho.")}
-              </p>
+              <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                <div className="flex items-center gap-3 relative z-10">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center font-bold text-rose-400">SZ</div>
+                  <div>
+                    <div className="font-bold text-white text-sm">Sara Zaidi</div>
+                    <div className="text-xs text-slate-400">5:00 PM · Table for 6</div>
+                  </div>
+                </div>
+                <div className="text-right relative z-10">
+                  <div className="text-xs px-2 py-1 rounded bg-rose-500/20 text-rose-400 font-bold inline-block mb-1">High Risk</div>
+                  <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded">$15 dep.</div>
+                </div>
+              </div>
             </div>
 
           </div>
         </div>
       </section>
 
-      {/* ── API & Integrations ──────────────────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#8b5cf6' }}>{t("Seamless Integration", "Bagair Kisi Rukawat Ke Integration")}</p>
-            <h2 className="text-4xl font-black mb-4 text-[#e8e8e8]">{t("Connect Your Ecosystem", "Apne Ecosystem Ko Joriye")}</h2>
-            <p className="text-base text-[#757575] max-w-2xl mx-auto leading-relaxed">
-              {t("Whether you are a solo operator using our Free CRM, or an enterprise needing direct API access, Pabandi connects seamlessly.", "Chahe aap hamara Free CRM istemaal karne walay solo operator hon, ya direct API access chahne wali enterprise, Pabandi asani se connect ho jata hai.")}
-            </p>
+      {/* ── Mini Stats Bar ──────────────────────────────────────── */}
+      <section className="border-y border-white/5 bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
+          <div className="text-center px-4">
+            <div className="text-4xl font-black text-white mb-2">82%</div>
+            <div className="text-sm text-slate-400">Reduction in no-shows</div>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="rounded-3xl p-8 border border-white/10" style={{ background: 'var(--color-surface-raised)' }}>
-              <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined">developer_board</span>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{t("Enterprise API & SDKs", "Enterprise API aur SDKs")}</h3>
-              <p className="text-slate-400 mb-6 leading-relaxed">
-                {t("Add our Trust Matrix directly to your existing app. Pay only for what you use with our Pay-As-You-Go pricing model, and accept fiat or $PAB token natively.", "Hamara Trust Matrix direct apni mojooda app mein shamil karein. Hamare Pay-As-You-Go pricing model ke sath sirf utna pay karein jitna istemaal karein, aur fiat ya $PAB token qabool karein.")} 
-              </p>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center gap-3 text-sm text-slate-300">
-                  <span className="text-blue-400 material-symbols-outlined text-[18px]">check_circle</span>
-                  {t("Node.js / TypeScript SDK", "Node.js / TypeScript SDK")}
-                </li>
-                <li className="flex items-center gap-3 text-sm text-slate-300">
-                  <span className="text-blue-400 material-symbols-outlined text-[18px]">check_circle</span>
-                  {t("Real-time Webhook Events", "Real-time Webhook Events")}
-                </li>
-              </ul>
-              <a href="#" className="text-blue-400 text-sm font-bold hover:underline flex items-center gap-1">{t("View API Docs", "API Docs Dekhein")} <span className="material-symbols-outlined text-[16px]">arrow_forward</span></a>
-            </div>
-
-            <div className="rounded-3xl p-8 border border-white/10" style={{ background: 'var(--color-surface-raised)' }}>
-              <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined">widgets</span>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">{t("Open Source CRM Integration", "Open Source CRM Integration")}</h3>
-              <p className="text-slate-400 mb-6 leading-relaxed">
-                {t("Connect your free Pabandi account to powerful open-source CRMs like Odoo or Cal.com. Manage your schedule and pipeline with zero monthly fees.", "Apne muft Pabandi account ko taqatwar open-source CRMs jaise Odoo ya Cal.com se joriye. Bagair kisi mahana fee ke apna schedule manage karein.")}
-              </p>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center gap-3 text-sm text-slate-300">
-                  <span className="text-purple-400 material-symbols-outlined text-[18px]">check_circle</span>
-                  {t("Native Odoo Community Sync", "Native Odoo Community Sync")}
-                </li>
-                <li className="flex items-center gap-3 text-sm text-slate-300">
-                  <span className="text-purple-400 material-symbols-outlined text-[18px]">check_circle</span>
-                  {t("Cal.com Scheduling Infrastructure", "Cal.com Scheduling Infrastructure")}
-                </li>
-              </ul>
-              <a href="#" className="text-purple-400 text-sm font-bold hover:underline flex items-center gap-1">{t("Explore CRM Partners", "CRM Partners Explore Karein")} <span className="material-symbols-outlined text-[16px]">arrow_forward</span></a>
-            </div>
+          <div className="text-center px-4">
+            <div className="text-4xl font-black text-white mb-2">40+</div>
+            <div className="text-sm text-slate-400">AI risk data points</div>
+          </div>
+          <div className="text-center px-4">
+            <div className="text-4xl font-black text-white mb-2">$0</div>
+            <div className="text-sm text-slate-400">Setup cost</div>
+          </div>
+          <div className="text-center px-4">
+            <div className="text-4xl font-black text-white mb-2">5 min</div>
+            <div className="text-sm text-slate-400">To go live</div>
           </div>
         </div>
       </section>
 
-      {/* ── Benefits ────────────────────────────────────────────── */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-[#9e9e9e]" >{t("Platform Features", "Platform ki Khususiyat")}</p>
-            <h2 className="text-4xl font-black text-[#e8e8e8]" >{t("Next-Gen Web3 Infrastructure", "Nai Nasal ka Web3 Infrastructure")}</h2>
+      {/* ── Features ───────────────────────────────────────────── */}
+      <section className="py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-20">
+            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Features</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Everything your business<br />needs to win.</h2>
+            <p className="text-xl text-slate-400 max-w-2xl">From automated deposits to webhook integrations with your existing CRM — Pabandi slots in, not over.</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {BENEFITS.map(b => (
-              <div key={b.title} className="rounded-2xl p-6 transition-transform hover:-translate-y-1"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl mb-4"
-                  style={{ background: b.glow }}>
-                  {b.icon}
-                </div>
-                <h3 className="font-bold text-base mb-2 text-[#e8e8e8]" >{t(b.title, b.titleUrdu)}</h3>
-                <p className="text-sm leading-relaxed text-[#757575]" >{t(b.desc, b.descUrdu)}</p>
-              </div>
-            ))}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">🤖</div>
+              <h3 className="text-xl font-bold text-white mb-3">Agentic Risk Scoring</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Your AI agent scores each booking autonomously using customer history, weather, and time-of-day patterns. Strategy updates as conditions change.</p>
+            </div>
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">💳</div>
+              <h3 className="text-xl font-bold text-white mb-3">Dynamic Deposit Capture</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">High-risk bookings trigger automatic deposit requests. Accepts PayPal, Alibaba Pay, Binance Pay, and Solana (USDC). Funds settle directly to your account in USD.</p>
+            </div>
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">📊</div>
+              <h3 className="text-xl font-bold text-white mb-3">Real-Time Analytics</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Track booking patterns, no-show rates, revenue protected, and table turnover in a clean dashboard. Export to CSV or connect via webhook.</p>
+            </div>
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">🔔</div>
+              <h3 className="text-xl font-bold text-white mb-3">Automated Reminders</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">SMS via Twilio and email via SendGrid reminders go out automatically at 24h, 2h, and 30 minutes before every reservation.</p>
+            </div>
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">🔗</div>
+              <h3 className="text-xl font-bold text-white mb-3">Webhooks & CRM Integration</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">Push booking events to your POS, CRM, or any system via outbound webhooks. Full REST API available for custom integrations.</p>
+            </div>
+            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+              <div className="text-4xl mb-6">🌐</div>
+              <h3 className="text-xl font-bold text-white mb-3">Global Compliance</h3>
+              <p className="text-slate-400 text-sm leading-relaxed">PCI-DSS compliant data handling. Accepts PayPal, Alibaba Pay, Binance Pay & Solana globally. Multi-lingual support built for international scale.</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── How It Works ────────────────────────────────────────── */}
-      <section className="py-20 px-4" style={{ background: 'var(--color-surface)' }}>
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-[#9e9e9e]" >{t("Getting Started", "Shuruaat Kaise Karein")}</p>
-            <h2 className="text-4xl font-black text-[#e8e8e8]" >{t("Live in 24 Hours", "24 Ghanton Mein Live")}</h2>
+      <section id="how-it-works" className="py-32 px-6 bg-white/[0.02] border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-20 text-center">
+            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ How It Works</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Up and running in minutes.</h2>
           </div>
 
-          <div className="space-y-4">
-            {STEPS.map((step) => (
-              <div key={step.num} className="rounded-2xl p-6 flex items-start gap-6"
-                style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="text-3xl font-black shrink-0" style={{ color: 'rgba(59,130,246,0.3)', fontVariantNumeric: 'tabular-nums' }}>
-                  {step.num}
-                </div>
-                <div>
-                  <h3 className="font-bold text-base mb-1 text-[#e8e8e8]" >{t(step.title, step.titleUrdu)}</h3>
-                  <p className="text-sm text-[#757575]" >{t(step.desc, step.descUrdu)}</p>
-                </div>
-              </div>
-            ))}
+          <div className="grid md:grid-cols-4 gap-12 relative">
+            <div className="hidden md:block absolute top-8 left-12 right-12 h-[2px] bg-white/10"></div>
+            
+            <div className="relative">
+              <div className="w-16 h-16 bg-[#0f172a] border-2 border-blue-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">01</div>
+              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Register Your Business</h3>
+              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Add your venue, set business hours, table capacity, and your deposit preference threshold.</p>
+            </div>
+            <div className="relative">
+              <div className="w-16 h-16 bg-[#0f172a] border-2 border-white/20 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">02</div>
+              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Share Your Booking Link</h3>
+              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">A branded link your customers use to book. Embed it on your site, WhatsApp, or Instagram bio.</p>
+            </div>
+            <div className="relative">
+              <div className="w-16 h-16 bg-[#0f172a] border-2 border-emerald-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">03</div>
+              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Your Agent Takes Over</h3>
+              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Our Agentic AI runs instantly. Low risk? Auto-confirmed. High risk? The agent negotiates a deposit automatically.</p>
+            </div>
+            <div className="relative">
+              <div className="w-16 h-16 bg-[#0f172a] border-2 border-purple-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">04</div>
+              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Get Paid, Stay Protected</h3>
+              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Deposits settle to your account. No-shows? Keep the deposit. Shows up? It's credited to their bill.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Sign-Up Form ─────────────────────────────────────────── */}
-      <section id="join-form" className="py-24 px-4">
-        <div className="max-w-xl mx-auto">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-xs font-bold tracking-widest uppercase"
-              style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
-              🎁 {t("6 Months Free · No Credit Card", "6 Mahinay Free · Credit Card Ki Zaroorat Nahi")}
+      {/* ── $PAB for Business ───────────────────────────────────── */}
+      <section className="py-32 px-6">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+          <div>
+            <div className="text-[#14F195] font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">token</span> $PAB for Business
             </div>
-            <h2 className="text-4xl font-black mb-3 text-[#e8e8e8]" >{t("Claim Your Free Spot", "Apni Muft Jagah Reserve Karein")}</h2>
-            <p className="text-sm text-[#757575]" >
-              {t("Fill in your details and our team will WhatsApp you within 24 hours to complete setup.", "Apni tafseelat darj karein aur hamari team aapka setup mukammal karne ke liye 24 ghanton mein WhatsApp karegi.")}
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">Get paid in tokens,<br />not just dollars.</h2>
+            <p className="text-xl text-slate-400 mb-10 leading-relaxed">
+              Pabandi rewards venues that honor bookings and fight no-shows — automatically credited to your business wallet, cashable on Solana.
             </p>
+
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">✓</div>
+                <div>
+                  <div className="font-bold text-white flex items-center gap-3">Honored booking <span className="text-[#14F195] text-sm">+25 $PAB</span></div>
+                  <div className="text-sm text-slate-400 mt-1">Every reservation you mark completed earns your business instant $PAB.</div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">🛡️</div>
+                <div>
+                  <div className="font-bold text-white flex items-center gap-3">No-show protected <span className="text-[#14F195] text-sm">+40 $PAB</span></div>
+                  <div className="text-sm text-slate-400 mt-1">When a deposit is kept after a no-show, you earn bonus $PAB on top of protected revenue.</div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">📉</div>
+                <div>
+                  <div className="font-bold text-white flex items-center gap-3">Low no-show month <span className="text-[#14F195] text-sm">+75 $PAB</span></div>
+                  <div className="text-sm text-slate-400 mt-1">Hit reliability targets and unlock monthly $PAB bonuses for your venue.</div>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">🤝</div>
+                <div>
+                  <div className="font-bold text-white flex items-center gap-3">Refer a business <span className="text-[#14F195] text-sm">+150 $PAB</span></div>
+                  <div className="text-sm text-slate-400 mt-1">Bring another venue to Pabandi and earn a one-time $PAB referral reward.</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl p-8"
-            style={{ background: 'var(--color-surface-raised)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="bg-[#14F195]/5 border border-[#14F195]/20 rounded-3xl p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#14F195]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            
+            <h3 className="text-2xl font-bold text-white mb-2 relative z-10">Payout to Phantom on Solana</h3>
+            <p className="text-slate-400 text-sm mb-8 relative z-10">Register your business, connect Phantom in settings, and transfer earned $PAB to your Solana address anytime.</p>
 
+            <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 relative z-10 mb-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#14F195]/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#14F195] text-sm">account_balance_wallet</span>
+                  </div>
+                  <span className="font-bold text-white">Business $PAB Wallet</span>
+                </div>
+                <div className="text-xs font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">Not connected</div>
+              </div>
+              <div className="text-5xl font-black text-white mb-2 flex items-center gap-3">
+                840 <span className="text-xl text-[#14F195]">$PAB</span>
+              </div>
+              <div className="text-xs text-slate-400 mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#14F195] animate-pulse"></span> Live Business earnings (example)
+              </div>
+              <button className="w-full bg-[#9945FF] text-white py-3 rounded-xl font-bold hover:bg-[#9945FF]/90 transition-colors flex items-center justify-center gap-2">
+                ◎ Connect Phantom
+              </button>
+            </div>
+
+            <ul className="space-y-3 relative z-10">
+              <li className="flex items-center gap-3 text-sm text-slate-300">
+                <span className="text-[#14F195]">✓</span> Complete bookings → $PAB credited automatically
+              </li>
+              <li className="flex items-center gap-3 text-sm text-slate-300">
+                <span className="text-[#14F195]">✓</span> Connect Phantom wallet in your dashboard
+              </li>
+              <li className="flex items-center gap-3 text-sm text-slate-300">
+                <span className="text-[#14F195]">✓</span> Transfer $PAB on Solana when you're ready
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pricing ─────────────────────────────────────────────── */}
+      <section className="py-32 px-6 bg-[#0f172a] border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Pricing</div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">Simple, transparent pricing.</h2>
+            <p className="text-xl text-slate-400">No setup fees. No contracts. Cancel any time.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Starter */}
+            <div className="bg-[#080e17] rounded-3xl p-8 border border-white/10 flex flex-col">
+              <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
+              <div className="text-3xl font-black text-white mb-4">Free <span className="text-lg text-slate-500 font-normal">/ forever</span></div>
+              <p className="text-sm text-slate-400 mb-8 h-10">Perfect for single-location businesses just getting started.</p>
+              <ul className="space-y-4 mb-10 flex-1">
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Up to 50 bookings / month</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> AI risk scoring</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> SMS & email reminders</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Basic analytics dashboard</li>
+              </ul>
+              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Start Free →</a>
+            </div>
+
+            {/* Growth */}
+            <div className="bg-gradient-to-b from-[#0f172a] to-[#080e17] rounded-3xl p-8 border border-blue-500 flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Most Popular</div>
+              <h3 className="text-2xl font-bold text-white mb-2">Growth</h3>
+              <div className="text-3xl font-black text-white mb-4">$29 <span className="text-lg text-slate-500 font-normal">/ month</span></div>
+              <p className="text-sm text-slate-400 mb-8 h-10">For active venues that need full protection and automation.</p>
+              <ul className="space-y-4 mb-10 flex-1">
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Unlimited bookings</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Dynamic deposit capture</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Webhook & CRM integration</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Advanced analytics + exports</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Priority support (WhatsApp)</li>
+              </ul>
+              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25">Get Growth →</a>
+            </div>
+
+            {/* Enterprise */}
+            <div className="bg-[#080e17] rounded-3xl p-8 border border-white/10 flex flex-col">
+              <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
+              <div className="text-3xl font-black text-white mb-4">Custom</div>
+              <p className="text-sm text-slate-400 mb-8 h-10">Multi-location chains, hotels, and high-volume venues.</p>
+              <ul className="space-y-4 mb-10 flex-1">
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Multi-location management</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Custom AI model training</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Dedicated account manager</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> SLA + uptime guarantee</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> White-label option</li>
+              </ul>
+              <a href="mailto:sales@pabandi.com" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Contact Sales →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Registration Form ───────────────────────────────────── */}
+      <section id="join-form" className="py-32 px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Ready to protect your revenue?</h2>
+            <p className="text-xl text-slate-400">Join hundreds of businesses globally using Pabandi to eliminate no-shows and run tighter operations.</p>
+          </div>
+
+          <div className="bg-[#0f172a] rounded-3xl p-8 md:p-10 border border-white/10 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+            
             {error && (
-              <div className="mb-5 px-4 py-3 rounded-xl text-sm font-medium"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-                {t(error, error)}
+              <div className="mb-6 px-4 py-3 rounded-xl text-sm font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400 relative z-10">
+                {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Business Name", "Business Ka Naam")}</label>
+                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Business Name</label>
                 <input name="businessName" value={form.businessName} onChange={handleChange}
-                  placeholder={t("e.g. Kolachi Restaurant", "Mislan: Kolachi Restaurant")}
-                  className="input-field w-full" />
+                  placeholder="e.g. The Corner Cafe"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Owner / Manager Name", "Malik / Manager Ka Naam")}</label>
+                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Your Full Name</label>
                 <input name="ownerName" value={form.ownerName} onChange={handleChange}
-                  placeholder={t("Your full name", "Aapka poora naam")}
-                  className="input-field w-full" />
+                  placeholder="Jane Doe"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("WhatsApp Number", "WhatsApp Number")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Phone Number</label>
                   <input name="phone" value={form.phone} onChange={handleChange}
                     placeholder="+1 (555) 000-0000"
-                    className="input-field w-full" />
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Email", "Email")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Email Address</label>
                   <input name="email" type="email" value={form.email} onChange={handleChange}
                     placeholder="you@business.com"
-                    className="input-field w-full" />
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Category", "Category")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Category</label>
                   <select name="category" value={form.category} onChange={handleChange}
-                    className="input-field w-full appearance-none">
-                    <option value="" disabled>{t("Select...", "Muntakhib karein...")}</option>
-                    {CATEGORIES.map(c => <option key={c.en} value={c.en.toUpperCase().replace(' ', '_')}>{t(c.en, c.ur)}</option>)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors appearance-none">
+                    <option value="" disabled>Select...</option>
+                    {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Country", "Mulk")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Region</label>
                   <select name="country" value={form.country} onChange={handleChange}
-                    className="input-field w-full appearance-none">
-                    <option value="United States">🇺🇸 United States</option>
-                    <option value="Pakistan">🇵🇰 Pakistan</option>
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors appearance-none">
+                    <option value="United States">🇺🇸 North America</option>
+                    <option value="Europe">🇪🇺 Europe</option>
+                    <option value="Asia">🌏 Asia Pacific</option>
+                    <option value="Global">🌍 Global / Multiple</option>
                   </select>
                 </div>
               </div>
 
-              {/* Password row */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Password", "Password")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Password</label>
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       value={form.password}
                       onChange={handleChange}
-                      placeholder={t("Min. 8 characters", "Kam az kam 8 huroof")}
-                      className="input-field w-full pr-10"
+                      placeholder="Min. 8 characters"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors pr-16"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold transition-colors text-[#e8e8e8]" >
-                      {showPassword ? t('Hide', 'Chupayen') : t('Show', 'Dekhayen')}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+                      {showPassword ? 'HIDE' : 'SHOW'}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[#9e9e9e]" >{t("Confirm Password", "Password Tasdeeq Karein")}</label>
+                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Confirm Password</label>
                   <input
                     name="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    placeholder={t("Repeat password", "Password dobara likhein")}
-                    className="input-field w-full"
+                    placeholder="Repeat password"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
                 </div>
               </div>
 
               <button type="submit" disabled={loading}
-                className="btn-primary w-full py-4 text-base font-bold mt-2">
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {t("Submitting...", "Jama kiya ja raha hai...")}
-                  </span>
-                ) : `🎉 ${t('Claim My Free 6 Months', 'Apne 6 Mahinay Free Claim Karein')}`}
+                className="w-full py-4 rounded-xl text-lg font-bold bg-white text-black hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4">
+                {loading ? 'Processing...' : 'Register Your Business →'}
               </button>
-
-              <p className="text-center text-xs text-[#e8e8e8]" >
-                {t("No credit card · No contracts · Cancel anytime", "No credit card · Koi contract nahi · Kabhi bhi cancel karein")}
-              </p>
+              
+              <div className="text-center mt-4">
+                 <span className="text-slate-500 text-sm">Need a custom enterprise plan? <a href="mailto:sales@pabandi.com" className="text-white font-bold hover:underline">Request a Demo</a></span>
+              </div>
             </form>
-          </div>
-
-          {/* Trust row */}
-          <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
-            {[
-              t('🔒 Secure & Private', '🔒 Mehfooz aur Niji'), 
-              t('🇺🇸 Built for the USA', '🇺🇸 USA ke liye banaya gaya'), 
-              t('⚡ Live in 24hrs', '⚡ 24 ghanton mein Live')
-            ].map(txt => (
-              <span key={txt} className="text-xs font-medium text-[#e8e8e8]" >{txt}</span>
-            ))}
           </div>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t py-8 px-4 text-center"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <p className="text-xs">© 2026 Pabandi · {t("United States", "United States")} · <a href="mailto:hello@pabandi.com" className="hover:text-blue-400 transition-colors">hello@pabandi.com</a></p>
+      <footer className="border-t border-white/5 py-12 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div>
+            <h4 className="font-bold text-white mb-4">Pabandi</h4>
+            <p className="text-slate-400 text-sm leading-relaxed">AI-powered reservations with smart no-show prevention and Web3 loyalty rewards. Built for global scale.</p>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Business</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><Link to="/business/join" className="hover:text-white transition-colors">Overview</Link></li>
+              <li><Link to="/business/join" className="hover:text-white transition-colors">Features</Link></li>
+              <li><Link to="/business/join" className="hover:text-white transition-colors">$PAB Rewards</Link></li>
+              <li><Link to="/business/join" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><a href="mailto:sales@pabandi.com" className="hover:text-white transition-colors">Request Demo</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Customer</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><Link to="/" className="hover:text-white transition-colors">Overview</Link></li>
+              <li><Link to="/web3" className="hover:text-white transition-colors">PAB Tokens</Link></li>
+              <li><Link to="/login" className="hover:text-white transition-colors">Sign Up</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Company</h4>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+          <p>© 2026 Pabandi Technologies. All rights reserved.</p>
+          <p>Built for Global SMEs 🌍</p>
+        </div>
       </footer>
-
     </div>
   );
 }

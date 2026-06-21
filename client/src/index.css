@@ -5,31 +5,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Emil Kowalski Easing Tokens ───────────────────────────────────────────
+   Strong custom curves — built-in CSS easings are too weak.
+   Source: animations.dev
+─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* subtle bounce */
+}
+
 @layer base {
   body {
     @apply bg-background text-on-background font-body min-h-screen;
-    background-color: #f6fafe;
-    color: #171c1f;
-  }
-  
-  h1, h2, h3, h4, h5, h6 { 
-    @apply font-headline;
   }
 
-  /* Override dark mode remappings since we are switching to light mode */
-  /* Remove legacy button styles if any persist */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
 }
 
 @layer components {
-  /* Common UI component classes found in the new templates */
+
+  /* ── Buttons — pressable, tactile ──────────────────────────────────────── */
+  /* Emil: "Add transform: scale(0.97) on :active. This gives instant
+     feedback, making the UI feel like it is truly listening." */
   .btn-primary {
-    @apply bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-md py-3.5 px-6 font-headline font-bold text-sm tracking-wide shadow-[0_4px_12px_rgba(3,31,56,0.15)] hover:shadow-[0_6px_16px_rgba(3,31,56,0.2)] transition-shadow flex items-center justify-center gap-2;
+    @apply bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-md py-3.5 px-6 font-headline font-bold text-sm tracking-wide flex items-center justify-center gap-2;
+    transition: transform 160ms var(--ease-out),
+                box-shadow 200ms var(--ease-out),
+                opacity 160ms var(--ease-out);
+    box-shadow: 0 4px 12px rgba(3, 31, 56, 0.15);
   }
-  
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(3, 31, 56, 0.25);
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-primary:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(3, 31, 56, 0.12);
+  }
+
   .btn-secondary {
-    @apply bg-transparent border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-highest rounded-md py-3.5 px-6 font-headline font-bold text-sm tracking-wide transition-colors flex items-center justify-center gap-2;
+    @apply bg-transparent border border-outline-variant/40 text-on-surface-variant rounded-md py-3.5 px-6 font-headline font-bold text-sm tracking-wide flex items-center justify-center gap-2;
+    transition: transform 160ms var(--ease-out),
+                background-color 150ms var(--ease-out),
+                border-color 150ms var(--ease-out);
   }
-  
+
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover {
+      @apply bg-surface-container-highest;
+    }
+  }
+
+  .btn-secondary:active {
+    transform: scale(0.97);
+  }
+
+  /* ── Cards ──────────────────────────────────────────────────────────────── */
   .card-surface {
     @apply bg-surface-container-lowest rounded-xl shadow-[0_4px_12px_rgba(1,29,53,0.02)] p-6;
   }
@@ -38,20 +77,35 @@
     @apply bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20;
   }
 
+  /* ── Input — only GPU-safe properties ──────────────────────────────────── */
   .input-field {
-    @apply w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm transition-all focus:bg-surface-container-lowest;
+    @apply w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm;
+    transition: border-color 150ms var(--ease-out),
+                box-shadow 150ms var(--ease-out),
+                background-color 150ms var(--ease-out);
   }
 
+  .input-field:focus {
+    @apply bg-surface-container-lowest;
+  }
+
+  /* ── Tile Hover — Emil: max ~220ms, subtle lift ─────────────────────────
+     Old: 0.4s — way too slow for a hover (Emil max: ~250ms UI elements)
+  ─────────────────────────────────────────────────────────────────────────── */
   .tile-hover {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 220ms var(--ease-out),
+                box-shadow 220ms var(--ease-out),
+                border-color 220ms var(--ease-out);
   }
 
-  .tile-hover:hover {
-    transform: translateY(-4px) scale(1.005);
-    @apply shadow-[0_20px_40px_rgba(1,29,53,0.08)] border-primary/20;
+  @media (hover: hover) and (pointer: fine) {
+    .tile-hover:hover {
+      transform: translateY(-3px) scale(1.003);
+      @apply shadow-[0_16px_36px_rgba(1,29,53,0.07)] border-primary/20;
+    }
   }
 
-  /* Interactive glowing gradient border for Web3 elements */
+  /* ── Glowing border (Web3 elements) ────────────────────────────────────── */
   .glowing-border {
     position: relative;
   }
@@ -68,39 +122,172 @@
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0.3;
-    transition: opacity 0.3s ease, padding 0.3s ease;
+    transition: opacity 200ms var(--ease-out), padding 200ms var(--ease-out);
   }
 
-  .glowing-border:hover::after {
+  @media (hover: hover) and (pointer: fine) {
+    .glowing-border:hover::after {
+      opacity: 1;
+      padding: 2px;
+    }
+  }
+
+  /* ── Modal / Dialog Entry ───────────────────────────────────────────────
+     Emil: "Never animate from scale(0) — start scale(0.95) + opacity"
+     Modals stay center-origin (correct — not trigger-anchored).
+  ─────────────────────────────────────────────────────────────────────────── */
+  .modal-enter {
+    animation: modalIn 250ms var(--ease-out) both;
+  }
+
+  .modal-overlay-enter {
+    animation: overlayIn 200ms var(--ease-out) both;
+  }
+
+  /* ── Page Transition ────────────────────────────────────────────────────── */
+  .page-enter {
+    animation: pageIn 200ms var(--ease-out) both;
+  }
+
+  /* ── Scroll Reveal ──────────────────────────────────────────────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 450ms var(--ease-out),
+                transform 450ms var(--ease-out);
+  }
+
+  .reveal.in-view {
     opacity: 1;
-    padding: 2px;
+    transform: translateY(0);
+  }
+
+  /* Stagger siblings in a reveal group */
+  .reveal-group .reveal:nth-child(1) { transition-delay: 0ms; }
+  .reveal-group .reveal:nth-child(2) { transition-delay: 60ms; }
+  .reveal-group .reveal:nth-child(3) { transition-delay: 120ms; }
+  .reveal-group .reveal:nth-child(4) { transition-delay: 180ms; }
+  .reveal-group .reveal:nth-child(5) { transition-delay: 240ms; }
+  .reveal-group .reveal:nth-child(6) { transition-delay: 300ms; }
+
+  /* ── Stagger Entrance (for static lists / hero elements) ───────────────── */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeSlideUp 350ms var(--ease-out) both;
+  }
+
+  .stagger-item:nth-child(1) { animation-delay: 0ms; }
+  .stagger-item:nth-child(2) { animation-delay: 60ms; }
+  .stagger-item:nth-child(3) { animation-delay: 120ms; }
+  .stagger-item:nth-child(4) { animation-delay: 180ms; }
+  .stagger-item:nth-child(5) { animation-delay: 240ms; }
+  .stagger-item:nth-child(6) { animation-delay: 300ms; }
+  .stagger-item:nth-child(7) { animation-delay: 360ms; }
+  .stagger-item:nth-child(8) { animation-delay: 420ms; }
+
+  /* ── Nav active underline slide ─────────────────────────────────────────── */
+  .nav-active-bar {
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 250ms var(--ease-out);
+  }
+
+  .nav-active-bar.active {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────── */
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
 @keyframes slideRight {
-  0% { transform: translateX(-100%); }
+  0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
 
 @keyframes fillGauge {
   from { stroke-dashoffset: 400; }
-  to { stroke-dashoffset: 120; }
+  to   { stroke-dashoffset: 120; }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
+  50%       { transform: translateY(-15px); }
 }
 
 @keyframes fall {
-  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
   100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
+}
+
+/* ─── Accessibility: Reduced Motion ────────────────────────────────────────
+   Emil: "Reduced motion means fewer and gentler animations, not zero.
+   Keep opacity/color transitions. Remove movement."
+─────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Keep opacity/color transitions for comprehension */
+  .btn-primary,
+  .btn-secondary {
+    transition: opacity 150ms linear !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }

@@ -203,10 +203,10 @@ export default function Web3Page() {
               </div>
 
               <div className="flex flex-wrap gap-4 pt-2">
-                <button className="px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
+                <button onClick={() => window.open('https://raydium.io/swap/?inputCurrency=sol&outputCurrency=Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ', '_blank')} className="px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">
                   {t("Buy $PAB Now →", "$PAB Abhi Khareedain →")}
                 </button>
-                <button className="px-8 py-4 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-slate-50 transition-colors">
+                <button onClick={() => window.open('https://discord.gg/pabandi', '_blank')} className="px-8 py-4 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-slate-50 transition-colors">
                   {t("Join Discord for Updates", "Updates Ke Liye Discord Join Karein")}
                 </button>
               </div>

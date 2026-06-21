@@ -5,8 +5,8 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { logger } from '../utils/logger';
 
-// Use the default devnet RPC, or the one from ENV if set
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+// Use the mainnet-beta RPC, or the one from ENV if set
+const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
 
 export const getBalances = async (req: AuthRequest, res: Response) => {
@@ -27,6 +27,7 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
     }
 
     const offChainBalance = user.wallet?.balance || 0;
+    const totalStaked = user.wallet?.totalStaked || 0;
     let onChainBalance = 0;
 
     // 2. Get On-Chain (Solana) Balance if they have linked a wallet
@@ -52,7 +53,8 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
       data: {
         offChainBalance,
         onChainBalance,
-        totalBalance: offChainBalance + onChainBalance,
+        totalStaked,
+        totalBalance: offChainBalance + onChainBalance + totalStaked,
         solanaWalletAddress: user.wallet?.address || null,
         mintAddress: process.env.SOLANA_PAB_MINT_ADDRESS || null
       }

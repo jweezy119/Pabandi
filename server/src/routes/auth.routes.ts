@@ -22,7 +22,7 @@ router.post(
   '/register',
   authRateLimiter,
   [
-    body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email address.'),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Please enter a valid email address.'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.'),
     body('firstName').trim().notEmpty().withMessage('First name is required.'),
     body('lastName').trim().notEmpty().withMessage('Last name is required.'),
@@ -42,7 +42,7 @@ router.post(
   '/login',
   authRateLimiter,
   [
-    body('email').isEmail().normalizeEmail(),
+    body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }),
     body('password').notEmpty(),
   ],
   validateRequest,
@@ -55,7 +55,7 @@ router.post('/verify/phone', authenticate, verifyPhone);
 
 router.post(
   '/forgot-password',
-  [body('email').isEmail().normalizeEmail()],
+  [body('email').isEmail().normalizeEmail({ gmail_remove_dots: false })],
   validateRequest,
   forgotPassword
 );

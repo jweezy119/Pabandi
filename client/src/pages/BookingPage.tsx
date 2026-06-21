@@ -40,8 +40,8 @@ export default function BookingPage() {
   );
   
   const analytics = analyticsData?.data?.analytics;
-  const reliabilityScore = analytics?.reliabilityScore || 4.8;
-  const googleRating = analytics?.googleRating || 4.9;
+  const reliabilityScore = business?.reliabilityScore ?? 100;
+  const googleRating = business?.rating || analytics?.googleRating || 4.9;
 
   // Get Wallet Balance for Staking
   const { data: walletData } = useQuery('pab-wallet-balances', async () => {

@@ -33,13 +33,13 @@ interface ReservationFeatures {
   serviceFactors?: {
     serviceType?: string;       // e.g. "Hair Coloring", "Bridal Makeup"
     serviceDurationMinutes?: number;
-    estimatedValuePKR?: number;
+    estimatedValueUSD?: number;
   };
   /** Event / VIP specific */
   eventFactors?: {
     eventCapacity?: number;
     isVIP?: boolean;
-    ticketPricePKR?: number;
+    ticketPriceUSD?: number;
   };
 }
 
@@ -50,7 +50,7 @@ export interface PredictionResult {
   factors: Record<string, number>;
   depositRecommendation: {
     required: boolean;
-    amountPKR: number;
+    amountUSD: number;
     strategy: 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
     reason: string;
     /** Deposit is applied toward the total purchase */
@@ -66,27 +66,27 @@ export interface PredictionResult {
 // ── Pakistan Market Deposit Constants ──────────────────────────
 const DEPOSIT_CONFIG = {
   RESTAURANT: {
-    perPersonMin: 500,
-    perPersonMax: 2000,
-    baseFlatPKR: 1000,
+    perPersonMin: 5,
+    perPersonMax: 20,
+    baseFlatUSD: 10,
   },
   SALON: {
     percentageMin: 0.20,
     percentageMax: 0.30,
-    baseFlatPKR: 800,
+    baseFlatUSD: 8,
   },
   SPA: {
     percentageMin: 0.20,
     percentageMax: 0.30,
-    baseFlatPKR: 1000,
+    baseFlatUSD: 10,
   },
   EVENT_VENUE: {
-    perTicketMin: 1000,
-    perTicketMax: 5000,
-    baseFlatPKR: 2000,
+    perTicketMin: 10,
+    perTicketMax: 50,
+    baseFlatUSD: 20,
   },
   OTHER: {
-    baseFlatPKR: 500,
+    baseFlatUSD: 5,
   },
 } as const;
 
@@ -345,7 +345,7 @@ export class NoShowPredictor {
       case 'SALON':
       case 'SPA': {
         const duration = features.serviceFactors?.serviceDurationMinutes || 60;
-        const serviceValue = features.serviceFactors?.estimatedValuePKR || 2000;
+        const serviceValue = features.serviceFactors?.estimatedValueUSD || 50;
 
         // Multi-hour services (2+ hours) are higher risk: more commitment, more likely to bail
         if (duration >= 120) {
@@ -376,7 +376,7 @@ export class NoShowPredictor {
 
       case 'EVENT_VENUE': {
         const isVIP = features.eventFactors?.isVIP || false;
-        const ticketPrice = features.eventFactors?.ticketPricePKR || 3000;
+        const ticketPrice = features.eventFactors?.ticketPriceUSD || 20;
 
         // VIP bookings have moderate no-show (people book speculatively)
         if (isVIP) {
@@ -385,13 +385,13 @@ export class NoShowPredictor {
         }
 
         // High ticket price can actually reduce no-show (sunk cost)
-        if (ticketPrice > 10000) {
+        if (ticketPrice > 100) {
           totalAdjustment -= 5;
           factors.highTicketCommitment = -5;
         }
 
         // Free or very cheap events have highest no-show
-        if (ticketPrice < 1000) {
+        if (ticketPrice < 10) {
           totalAdjustment += 15;
           factors.lowPriceHighNoShow = 15;
         }
@@ -434,7 +434,7 @@ export class NoShowPredictor {
     if (riskScore < 25 || isLoyalCustomer) {
       return {
         required: false,
-        amountPKR: 0,
+        amountUSD: 0,
         strategy: 'AI_DYNAMIC',
         reason: isLoyalCustomer
           ? 'Trusted returning customer — deposit waived as loyalty reward'
@@ -445,60 +445,57 @@ export class NoShowPredictor {
 
     // Risk multiplier: scales deposit proportionally (0.5 at risk 30, up to 1.5 at risk 100)
     const riskMultiplier = 0.3 + (riskScore / 100) * 1.2;
-    let amountPKR = 0;
+    let amountUSD = 0;
     let reason = '';
+    const config = DEPOSIT_CONFIG;
 
     switch (category) {
       case 'RESTAURANT': {
-        const perPerson = Math.round(
-          DEPOSIT_CONFIG.RESTAURANT.perPersonMin +
-          (DEPOSIT_CONFIG.RESTAURANT.perPersonMax - DEPOSIT_CONFIG.RESTAURANT.perPersonMin) * (riskScore / 100)
-        );
-        amountPKR = perPerson * groupSize;
-        reason = `PKR ${perPerson}/person × ${groupSize} guests (risk-adjusted)`;
+        let perPerson = config.RESTAURANT.baseFlatUSD * riskMultiplier;
+        perPerson = Math.max(config.RESTAURANT.perPersonMin, Math.min(perPerson, config.RESTAURANT.perPersonMax));
+        amountUSD = perPerson * groupSize;
+        reason = `$${Math.round(perPerson)}/person × ${groupSize} guests (risk-adjusted)`;
         break;
       }
 
       case 'SALON':
       case 'SPA': {
-        const serviceValue = features.serviceFactors?.estimatedValuePKR || 3000;
-        const config = category === 'SPA' ? DEPOSIT_CONFIG.SPA : DEPOSIT_CONFIG.SALON;
-        const percentage = config.percentageMin +
-          (config.percentageMax - config.percentageMin) * (riskScore / 100);
-        amountPKR = Math.round(serviceValue * percentage);
-        amountPKR = Math.max(amountPKR, config.baseFlatPKR);
-        reason = `${Math.round(percentage * 100)}% of PKR ${serviceValue.toLocaleString()} service value`;
+        const c = category === 'SPA' ? config.SPA : config.SALON;
+        const serviceValue = features.serviceFactors?.estimatedValueUSD || 50;
+        const percentage = c.percentageMin + (riskMultiplier - 1) * (c.percentageMax - c.percentageMin);
+        amountUSD = Math.round(serviceValue * percentage);
+        amountUSD = Math.max(amountUSD, c.baseFlatUSD);
+        reason = `${Math.round(percentage * 100)}% of $${serviceValue.toLocaleString()} service value`;
         break;
       }
 
       case 'EVENT_VENUE': {
-        const ticketPrice = features.eventFactors?.ticketPricePKR || 3000;
-        amountPKR = Math.round(
-          Math.min(
-            ticketPrice * 0.5, // Cap at 50% of ticket
-            DEPOSIT_CONFIG.EVENT_VENUE.perTicketMin +
-            (DEPOSIT_CONFIG.EVENT_VENUE.perTicketMax - DEPOSIT_CONFIG.EVENT_VENUE.perTicketMin) * (riskScore / 100)
-          )
+        const ticketPrice = features.eventFactors?.ticketPriceUSD || 20;
+        const isVIP = features.eventFactors?.isVIP || false;
+        
+        amountUSD = Math.round(
+          (ticketPrice * (isVIP ? 0.5 : 0.3)) * riskMultiplier * groupSize
         );
-        amountPKR = Math.max(amountPKR, DEPOSIT_CONFIG.EVENT_VENUE.perTicketMin);
+        
+        amountUSD = Math.min(amountUSD, config.EVENT_VENUE.perTicketMax * groupSize);
+        amountUSD = Math.max(amountUSD, config.EVENT_VENUE.perTicketMin);
         reason = `Event booking deposit (risk-adjusted, capped at 50% of ticket)`;
         break;
       }
 
       default: {
-        amountPKR = Math.round(DEPOSIT_CONFIG.OTHER.baseFlatPKR * riskMultiplier);
+        amountUSD = Math.round(config.OTHER.baseFlatUSD * riskMultiplier);
         reason = `Standard deposit (AI risk: ${riskScore}%)`;
         break;
       }
     }
 
-    // Round to nearest 50 PKR for cleanliness
-    amountPKR = Math.round(amountPKR / 50) * 50;
-    amountPKR = Math.max(amountPKR, 500); // Minimum PKR 500
+    // Ensure minimum USD 5
+    amountUSD = Math.max(Math.round(amountUSD), 5);
 
     return {
       required: riskScore >= 35,
-      amountPKR,
+      amountUSD,
       strategy: 'AI_DYNAMIC',
       reason,
       creditedTowardPurchase: true,

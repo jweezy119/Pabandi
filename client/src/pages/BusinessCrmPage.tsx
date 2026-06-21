@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
+import { LinkIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import { useMutation, useQueryClient } from 'react-query';
 import { businessService } from '../services/api';
 
 import { 
@@ -39,6 +41,16 @@ export default function BusinessCrmPage() {
     const res = await businessService.getMyBusiness().catch(() => null);
     return res?.data?.data?.business || null;
   });
+
+    const qc = useQueryClient();
+  const generateLinkMutation = useMutation(
+    () => businessService.generateBookingLink(businessId!),
+    {
+      onSuccess: () => {
+        qc.invalidateQueries('my-business');
+      }
+    }
+  );
 
   useEffect(() => {
     if (bizData?.id) setBusinessId(bizData.id);
@@ -81,6 +93,49 @@ export default function BusinessCrmPage() {
     <div className="bg-surface min-h-screen text-on-surface pb-24 md:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         
+                {/* Booking Link Section */}
+        {businessId && (
+          <div className="mb-10 bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-headline text-lg font-bold text-on-surface mb-1 flex items-center gap-2">
+                <LinkIcon className="h-5 w-5 text-primary" /> Your Custom Booking Link
+              </h2>
+              <p className="font-body text-sm text-on-surface-variant">
+                Share this link on your Instagram, Facebook, or website to let patrons book directly.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {bizData?.slug ? (
+                <div className="flex items-center bg-surface-container-lowest border border-outline-variant/30 rounded-xl overflow-hidden">
+                  <div className="px-4 py-2.5 font-mono text-sm text-on-surface select-all">
+                    {window.location.origin}/b/{bizData.slug}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/b/${bizData.slug}`);
+                      alert('Copied to clipboard!');
+                    }}
+                    className="px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary transition-colors flex items-center justify-center border-l border-outline-variant/30"
+                  >
+                    <ClipboardDocumentIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => {
+                    generateLinkMutation.mutate();
+                  }}
+                  disabled={generateLinkMutation.isLoading}
+                  className="btn-primary py-2.5 px-6 rounded-xl font-bold flex items-center gap-2"
+                >
+                  {generateLinkMutation.isLoading ? 'Generating...' : 'Generate Short Link'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-outline-variant/20 pb-6">
           <div>

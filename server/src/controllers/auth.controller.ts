@@ -154,6 +154,7 @@ export const login = async (
 ) => {
   try {
     const { email, password } = req.body;
+    logger.info(`Login controller received email: '${email}'`);
 
     // Find user
     const user = await prisma.user.findUnique({

@@ -15,7 +15,13 @@ for (const line of envContent.split('\n')) {
       value = value.slice(1, -1);
     }
     if (key !== 'PORT') {
-      envVars.push(`${key}=${value}`);
+      if (key === 'BACKEND_URL') {
+        envVars.push(`BACKEND_URL=https://pabandi-backend-97129395003.asia-south1.run.app`);
+      } else if (key === 'FRONTEND_URL') {
+        envVars.push(`FRONTEND_URL=https://pabandi-42c5b.web.app`);
+      } else {
+        envVars.push(`${key}=${value}`);
+      }
     }
   }
 }

@@ -22,6 +22,8 @@ import {
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
 import BusinessPabRewards from '../components/BusinessPabRewards';
+import AccioDemandSourcingWidget from '../components/AccioDemandSourcingWidget';
+import AlibabaQwenConsultantWidget from '../components/AlibabaQwenConsultantWidget';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -458,8 +460,18 @@ export default function BusinessDashboard() {
           </div>
         )}
 
-        {/* ── Accio Work Growth Widget ── */}
-        {businessId && <AccioGrowthWidget businessId={businessId} />}
+        {/* ── Accio Demand Sourcing Widget ── */}
+        {businessId && <AccioDemandSourcingWidget businessId={businessId} />}
+
+        {/* ── Accio Work Growth & Chat Grid ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            {businessId && <AccioGrowthWidget businessId={businessId} />}
+          </div>
+          <div>
+            <AlibabaQwenConsultantWidget />
+          </div>
+        </div>
 
         {/* ── Map + Reviews ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

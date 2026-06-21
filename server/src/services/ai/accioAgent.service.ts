@@ -1,5 +1,6 @@
 import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
+import { dashscopeService } from './dashscope.service';
 
 export interface AccioSourcingItem {
   itemName: string;
@@ -137,13 +138,14 @@ export class AccioAgentService {
       const business = await prisma.business.findUnique({ where: { id: businessId } });
       if (!business) throw new Error('Business not found');
 
-      // Generate a mock suggestion based on business category
+      // Default mock suggestions if AI is disabled or fails
       let equipmentName = 'General POS Kiosk';
       let description = 'Self-service kiosk to speed up ordering and payments.';
       let cost = 85000;
       let servicePrice = 0;
       let bookings = 150;
       let url = 'https://www.alibaba.com/trade/search?SearchText=self+service+kiosk';
+      let projectedRoiPercent = ((bookings * servicePrice) / cost) * 100;
 
       if (business.category === 'SALON' || business.category === 'SPA') {
         equipmentName = 'Professional LED Therapy Bed';
@@ -161,7 +163,48 @@ export class AccioAgentService {
         url = 'https://www.alibaba.com/trade/search?SearchText=commercial+espresso+machine';
       }
 
-      const projectedRoiPercent = ((bookings * servicePrice) / cost) * 100;
+      const apiKey = process.env.DASHSCOPE_API_KEY;
+      if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
+        try {
+          logger.info(`[Accio Sourcing Opportunities] Requesting Qwen AI suggestion for business: ${businessId}`);
+          const systemPrompt = 'You are an AI business growth advisor for a premium booking platform in Pakistan. You must suggest high-margin, trending equipment/services that the business can source on Alibaba to grow their sales. Only output a valid JSON object matching the requested schema.';
+          const userPrompt = `
+            Analyze this business profile and suggest one specific profitable trending equipment or tech item they can source on Alibaba to expand their services:
+            Business Name: ${business.name}
+            Category: ${business.category}
+            Description: ${business.description || 'A service business.'}
+            City: ${business.city || 'Karachi'}
+            
+            Return ONLY a valid JSON object with the following schema:
+            {
+              "equipmentName": "Name of the equipment or technology",
+              "description": "2-sentence compelling description of why this is a high-growth trend for this business",
+              "estimatedCostPKR": <number representing local equipment purchase cost, between 50000 and 1000000>,
+              "suggestedServicePrice": <number representing fee charged per session/order in PKR, between 300 and 10000>,
+              "projectedBookings": <estimated number of monthly bookings/sales for this service, between 30 and 300>,
+              "projectedRoiPercent": <ROI percentage value, between 10 and 200>
+            }
+          `;
+
+          const aiResponse = await dashscopeService.generateText(systemPrompt, userPrompt);
+          const cleaned = aiResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+          const aiResult = JSON.parse(cleaned);
+
+          if (aiResult.equipmentName && aiResult.description) {
+            equipmentName = aiResult.equipmentName;
+            description = aiResult.description;
+            cost = Number(aiResult.estimatedCostPKR) || cost;
+            servicePrice = Number(aiResult.suggestedServicePrice) || servicePrice;
+            bookings = Number(aiResult.projectedBookings) || bookings;
+            projectedRoiPercent = Number(aiResult.projectedRoiPercent) || projectedRoiPercent;
+            url = `https://www.alibaba.com/trade/search?SearchText=${encodeURIComponent(equipmentName)}`;
+          }
+        } catch (apiError: any) {
+          logger.error(`[DashScope Sourcing Opportunity] AI Sourcing suggestion failed, falling back to heuristics: ${apiError.message}`);
+        }
+      }
+
+      projectedRoiPercent = servicePrice > 0 ? ((bookings * servicePrice) / cost) * 100 : projectedRoiPercent;
 
       // Check if it already exists
       const existing = await prisma.trendSuggestion.findFirst({

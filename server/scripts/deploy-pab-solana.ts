@@ -17,7 +17,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
 
 // Constants
 const TOKEN_DECIMALS = 9;
@@ -31,30 +31,17 @@ async function main() {
   if (process.env.SOLANA_PRIVATE_KEY) {
     payer = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
     console.log("✅ Loaded payer from SOLANA_PRIVATE_KEY.");
-  } else {
-    payer = Keypair.generate();
-    console.log("⚠️ No SOLANA_PRIVATE_KEY found. Generated a new local keypair.");
-    console.log(`🔑 Private Key (save this!): ${bs58.encode(payer.secretKey)}`);
     console.log(`👛 Public Key: ${payer.publicKey.toBase58()}`);
-    
-    // Attempt to fund it
-    try {
-      console.log("🪂 Requesting airdrop of 2 SOL...");
-      const signature = await connection.requestAirdrop(payer.publicKey, 2 * LAMPORTS_PER_SOL);
-      await connection.confirmTransaction(signature, "confirmed");
-      console.log("✅ Airdrop successful!");
-    } catch (e) {
-      console.error("❌ Airdrop failed. Please fund the wallet manually at: https://faucet.solana.com/");
-      console.log(`Wallet address: ${payer.publicKey.toBase58()}`);
-      return;
-    }
+  } else {
+    console.error("⚠️ No SOLANA_PRIVATE_KEY found in .env. Please set it to deploy to Mainnet.");
+    return;
   }
 
   const balance = await connection.getBalance(payer.publicKey);
   console.log(`💰 Payer Balance: ${balance / LAMPORTS_PER_SOL} SOL`);
 
-  if (balance < 0.1 * LAMPORTS_PER_SOL) {
-      console.error("❌ Insufficient SOL. Please fund the wallet.");
+  if (balance < 0.005 * LAMPORTS_PER_SOL) {
+      console.error("❌ Insufficient SOL. You need at least 0.005 SOL to deploy the token.");
       return;
   }
 
@@ -107,7 +94,7 @@ async function main() {
 
   console.log("\n🎉 Solana PAB Token Deployment Complete!");
   console.log(`Mint Address: ${mintAddress.toBase58()}`);
-  console.log(`You can view this token on Solana Explorer: https://explorer.solana.com/address/${mintAddress.toBase58()}?cluster=devnet`);
+  console.log(`You can view this token on Solana Explorer: https://explorer.solana.com/address/${mintAddress.toBase58()}`);
 }
 
 main().catch(console.error);
