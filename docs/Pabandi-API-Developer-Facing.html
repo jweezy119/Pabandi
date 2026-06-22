@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pabandi API — Reliability Score as Portable Identity</title>
+<style>
+  :root {
+    --bg: #0b0c10;
+    --panel: #1f2833;
+    --accent: #66fcf1;
+    --text: #c5c6c7;
+    --muted: #8a8d91;
+    --success: #45a29e;
+    --warn: #f6c90e;
+    --err: #e5484d;
+    --code-bg: #141d22;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+  nav {
+    background: var(--panel);
+    border-bottom: 1px solid #2a3544;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav .inner {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 12px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  nav a {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  nav a:hover { color: var(--accent); }
+  h1 {
+    font-size: 2.5em;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+    margin: 36px 0 8px;
+    line-height: 1.1;
+  }
+  h2 {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a3544;
+    scroll-margin-top: 60px;
+  }
+  h3 {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 24px 0 8px;
+  }
+  p { margin: 12px 0; color: #b8bbbe; }
+  .lead {
+    font-size: 1.2em;
+    color: #d5d6d7;
+    font-weight: 300;
+    margin: 0 0 32px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--accent);
+    border: 1px solid #2a3544;
+    font-family: monospace;
+  }
+  .tag.success { color: #3fb950; border-color: #2a3544; }
+  .tag.warn { color: #f6c90e; border-color: #2a3544; }
+  .tag.err { color: #e5484d; border-color: #2a3544; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    background: var(--code-bg);
+    color: #d2d6db;
+    border: 1px solid #2a3544;
+    border-radius: 4px;
+  }
+  code.inline { padding: 2px 6px; font-size: 12px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid #2a3544;
+    border-radius: 6px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: #d2d6db;
+    line-height: 1.45;
+  }
+  .kwd { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .num { color: #d2a8ff; }
+  .key { color: #7ee787; }
+  .bool { color: #79c0ff; }
+  .comment { color: #8b949e; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    background: #181f2a;
+    padding: 10px 12px;
+    font-weight: 600;
+    color: #e6edf3;
+    border-bottom: 2px solid #2a3544;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #2a3544;
+    vertical-align: top;
+  }
+  tr:hover td { background: #161b24; }
+  .method {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #1b2332;
+    color: #d2a8ff;
+    border: 1px solid #2a3544;
+  }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: #11161d;
+    padding: 12px 16px;
+    margin: 20px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+  }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.err { border-left-color: var(--err); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+  .card {
+    background: var(--panel);
+    border: 1px solid #2a3544;
+    border-radius: 8px;
+    padding: 16px;
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgb(0 0 0 / 0.4); border-color: #39424f; }
+  .card h4 { margin: 0 0 6px; font-weight: 600; color: #ffffff; }
+  .card p { margin: 0; font-size: 13px; color: var(--muted); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #1b2332;
+    border: 1px solid #2a3544;
+    color: #b4b8be;
+  }
+  .footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid #2a3544;
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .footer a { color: var(--muted); }
+  .endpoint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid #2a3544;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0 8px;
+  }
+  .endpoint code { font-size: 12px; color: var(--accent); background: transparent; border: none; }
+  .endpoint .path { flex: 1; font-family: monospace; color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <strong style="color:#fff">&#9632; Pabandi API</strong>
+    <a href="#overview">Overview</a>
+    <a href="#pasport">Passport</a>
+    <a href="#endpoints">Endpoints</a>
+    <a href="#live-sale">Live Sale Example</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<h1>Pabandi API</h1>
+<p class="lead">Reliability score as portable identity. One score. Every platform. Real behavior, not self-reported claims.</p>
+<span class="tag">v0.1 Beta</span>
+<span class="tag success">Free for beta partners</span>
+<a href="mailto:team@pabandi.com" style="float:right; background:var(--accent); color:#0b0c10; padding:8px 16px; border-radius:6px; font-weight:600;">Get API Key</a>
+
+<h2 id="overview">Overview</h2>
+<p>
+Pabandi is building a portable reliability layer for Pakistan's informal economy. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
+</p>
+
+<p><strong>The problem today:</strong> every live sale, wholesale order, and booking is secured by "bro trust" or advance payment. The informal economy bleeds 20–30% to no-pays and ghosting because there's no portable trust layer.</p>
+
+<p><strong>The Pabandi answer:</strong> users build a <strong>Trust Score</strong> through real behavior (showing up, paying on time, completing bookings). That score becomes their <strong>Passport</strong> — a portable, on-chain reputation ID any platform can verify.</p>
+
+<h3>Use cases</h3>
+<div class="grid">
+  <div class="card">
+    <h4>Live selling</h4>
+    <p>Verify buyer score before allowing pay-on-delivery on Instagram/TikTok live drops.</p>
+  </div>
+  <div class="card">
+    <h4>Booking platforms</h4>
+    <p>Flag high-risk appointments before confirmation for salons, clinics, drivers.</p>
+  </div>
+  <div class="card">
+    <h4>Marketplaces</h4>
+    <p>Weight bids by seller reliability. OLX-style local platforms can reduce fraud.</p>
+  </div>
+  <div class="card">
+    <h4>Freelance tools</h4>
+    <p>Port reputation from Pabandi into gig platforms. Better rates for better history.</p>
+  </div>
+  <div class="card">
+    <h4>Gated access</h4>
+    <p>Require minimum score for premium or vetted community access.</p>
+  </div>
+</div>
+
+<h2 id="pasport">The Passport Object</h2>
+<p>Every verified Pabandi user has a Passport — a snapshot of their on-chain reliability history.</p>
+<pre><code>{
+  <span class="key">"wallet_address"</span>: <span class="str">"68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs"</span>,
+  <span class="key">"trust_score"</span>: <span class="num">742</span>,
+  <span class="key">"score_tier"</span>: <span class="str">"Gold"</span>,
+  <span class="key">"total_actions"</span>: <span class="num">148</span>,
+  <span class="key">"punctuality_rate"</span>: <span class="num">0.94</span>,
+  <span class="key">"completed_bookings"</span>: <span class="num">139</span>,
+  <span class="key">"missed_bookings"</span>: <span class="num">9</span>,
+  <span class="key">"disputes_lost"</span>: <span class="num">1</span>,
+  <span class="key">"disputes_won"</span>: <span class="num">2</span>,
+  <span class="key">"first_seen"</span>: <span class="str">"2025-08-12T00:00:00Z"</span>,
+  <span class="key">"last_updated"</span>: <span class="str">"2026-06-20T18:32:00Z"</span>,
+  <span class="key">"flags"</span>: [<span class="str">"repeat_no_show_resolved"</span>, <span class="str">"high_value_buyer"</span>]
+}</code></pre>
+
+<h3>Score tiers</h3>
+<table>
+  <tr><th>Tier</th><th>Score</th><th>Population</th><th>Permission</th></tr>
+  <tr><td><strong>Platinum</strong></td><td>850–1000</td><td>Top 5%</td><td>No deposit, highest-value transactions</td></tr>
+  <tr><td><strong>Gold</strong></td><td>700–849</td><td>Reliable users</td><td>COD / live-sale allowed without staking</td></tr>
+  <tr><td><strong>Silver</strong></td><td>500–699</td><td>Proven track record</td><td>Approved with reduced deposit</td></tr>
+  <tr><td><strong>Bronze</strong></td><td>300–499</td><td>New / inconsistent</td><td>Standard deposit required</td></tr>
+  <tr><td><strong>Unrated</strong></td><td>&lt;300 or none</td><td>—</td><td>Deposit or prepay</td></tr>
+</table>
+
+<h2 id="endpoints">Endpoints</h2>
+
+<h3><span class="method">POST</span> /api/v1/verify</h3>
+<p>Returns the full Passport object for a wallet address. Optionally enforce a minimum tier.</p>
+<pre><code>{
+  <span class="key">"wallet_address"</span>: <span class="str">"68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs"</span>,
+  <span class="key">"required_tier"</span>: <span class="str">"Gold"</span>          <span class="comment">// optional — enforce minimum tier</span>
+}</code></pre>
+
+<details style="background:var(--panel);border:1px solid #2a3544;border-radius:8px;padding:12px;margin:12px 0">
+  <summary><strong>Response codes</strong></summary>
+  <pre><code><span class="comment">// 200 — eligible</span>
+{ <span class="key">"status"</span>: <span class="str">"eligible"</span>, <span class="key">"passport"</span>: { ... } }
+
+<span class="comment">// 402 — below threshold (when required_tier set)</span>
+{ <span class="key">"status"</span>: <span class="str">"not_eligible"</span>, <span class="key">"score_tier"</span>: <span class="str">"Silver"</span>, <span class="key">"action_required"</span>: <span class="str">"deposit_required"</span> }
+
+<span class="comment">// 404 — no passport yet</span>
+{ <span class="key">"status"</span>: <span class="str">"not_found"</span>, <span class="key">"onboarding_link"</span>: <span class="str">"https://pabandi-42c5b.web.app"</span> }</code></pre>
+</details>
+
+<h3><span class="method">POST</span> /api/v1/eligibility</h3>
+<p>Lightweight yes/no check. For high-traffic surfaces where you don't need the full Passport.</p>
+<pre><code>{
+  <span class="key">"wallet_address"</span>: <span class="str">"68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs"</span>,
+  <span class="key">"required_tier"</span>: <span class="str">"Gold"</span>
+}</code></pre>
+<pre><code><span class="comment">// 200</span>
+{ <span class="key">"status"</span>: <span class="str">"eligible"</span>, <span class="key">"score_tier"</span>: <span class="str">"Gold"</span> }</code></pre>
+
+<h3><span class="method">POST</span> /api/v1/incidents</h3>
+<p>Report a no-show, fraud, or dispute outcome. Requires platform auth.</p>
+<pre><code>{
+  <span class="key">"subject_wallet"</span>: <span class="str">"68AQ..."</span>,
+  <span class="key">"incident_type"</span>: <span class="str">"no_show"</span>,
+  <span class="key">"reference_id"</span>: <span class="str">"order_4532"</span>,
+  <span class="key">"notes"</span>: <span class="str">"Buyer did not collect item from live sale."</span>,
+  <span class="key">"platform_id"</span>: <span class="str">"instagram_live_seller_xyz"</span>
+}</code></pre>
+
+<h3><span class="method">POST</span> /api/v1/webhooks/subscribe</h3>
+<p>Get real-time score-change notifications for a wallet.</p>
+<pre><code>{
+  <span class="key">"wallet_address"</span>: <span class="str">"68AQ..."</span>,
+  <span class="key">"callback_url"</span>: <span class="str">"https://yourplatform.com/api/pabandi-webhook"</span>,
+  <span class="key">"events"</span>: [<span class="str">"score_changed"</span>, <span class="str">"tier_changed"</span>]
+}</code></pre>
+
+<h2 id="live-sale">Live-Sale Integration</h2>
+<p>Minimal Node.js backend showing how a live-selling checkout would check buyer score:</p>
+<pre><code><span class="kwd">import</span> express <span class="kwd">from</span> <span class="str">'express'</span>;
+<span class="kwd">const</span> app = express();
+
+app.post(<span class="str">'<span class="key">/live-sale/checkout</span>'</span>, <span class="kwd">async</span> (req, res) => {
+  <span class="kwd">const</span> { <span class="key">buyer_wallet</span> } = req.body;
+
+  <span class="kwd">const</span> result = <span class="kwd">await</span> fetch(
+    <span class="str">'https://pabandi-42c5b.web.app/api/v1/verify'</span>,
+    {
+      headers: {
+        <span class="key">'Authorization'</span>: <span class="str">`Bearer ${process.env.PABANDI_API_KEY}`</span>,
+        <span class="key">'Content-Type'</span>: <span class="str">'application/json'</span>
+      },
+      body: JSON.stringify({
+        wallet_address: buyer_wallet,
+        required_tier: <span class="str">'Gold'</span>
+      }),
+      method: <span class="str">'POST'</span>
+    }
+  );
+
+  <span class="kwd">const</span> data = <span class="kwd">await</span> result.json();
+
+  <span class="kwd">if</span> (data.status === <span class="str">'eligible'</span>) {
+    <span class="kwd">return</span> res.json({ checkout_allowed: <span class="bool">true</span>, score: data.passport.trust_score });
+  } <span class="kwd">else</span> {
+    <span class="kwd">return</span> res.json({
+      checkout_allowed: <span class="bool">false</span>,
+      reason: <span class="str">'Score below Gold tier'</span>,
+      deposit_amount_pab: <span class="num">500</span>
+    });
+  }
+});</code></pre>
+
+<h2 id="faq">FAQ</h2>
+<details style="background:var(--panel);border:1px solid #2a3544;border-radius:8px;padding:12px 16px;margin:10px 0">
+  <summary><strong>Q: Is this KYC?</strong></summary>
+  <p style="margin:8px 0 0">No. Pabandi is behavior-based, not identity-based. Users don't upload documents. Their score is built from actions they've already taken.</p>
+</details>
+<details style="background:var(--panel);border:1px solid #2a3544;border-radius:8px;padding:12px 16px;margin:10px 0">
+  <summary><strong>Q: Is my user data private?</strong></summary>
+  <p style="margin:8px 0 0">You receive only what the user explicitly shares — the Passport object. No booking history, no wallet transactions.</p>
+</details>
+<details style="background:var(--panel);border:1px solid #2a3544;border-radius:8px;padding:12px 16px;margin:10px 0">
+  <summary><strong>Q: How do I get an API key?</strong></summary>
+  <p style="margin:8px 0 0">Email <a href="mailto:team@pabandi.com">team@pabandi.com</a> with your platform name, expected volume, and use case. We're onboarding 10 beta partners for June 2026.</p>
+</details>
+
+<h2 id="limits">Rate Limits</h2>
+<table>
+  <tr><th>Plan</th><th>Requests/day</th><th>Webhooks</th><th>Cost</th></tr>
+  <tr><td><strong>Sandbox</strong></td><td>1,000</td><td>1 event type</td><td>Free</td></tr>
+  <tr><td><strong>Growth</strong></td><td>50,000</td><td>10 wallets</td><td>Free (beta)</td></tr>
+  <tr><td><strong>Enterprise</strong></td><td>Unlimited</td><td>Unlimited</td><td>Free (beta)</td></tr>
+</table>
+<p class="callout warn">Pricing activates at $0.001 / verification call only after beta ends at 100K monthly requests. Until then, it's free.</p>
+
+<div class="footer">
+  <div>
+    <a href="mailto:team@pabandi.com">team@pabandi.com</a>
+  </div>
+  <div>
+    <a href="https://x.com/PabandiGlobal">@PabandiGlobal</a>
+  </div>
+  <div>
+    <a href="https://pabandi-42c5b.web.app">pabandi-42c5b.web.app</a>
+  </div>
+  <div style="margin-left:auto;color:#8a8d91;font-size:12px;">
+    Built for Pakistan. Wada pura karo. Inaam pao.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
