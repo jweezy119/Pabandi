@@ -7,6 +7,7 @@ import {
   ScoreTier,
 } from '../services/passport.service';
 import { logger } from '../utils/logger';
+import { ecommerceReliabilityPredictor } from '../services/ai/ecommerceReliabilityPredictor';
 
 const router = Router();
 
@@ -159,6 +160,38 @@ router.post('/incidents', async (req: ApiKeyRequest, res: Response): Promise<any
     });
   } catch (error) {
     logger.error('[Passport] /incidents error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /api/v1/passport/predict-ecommerce
+ * 
+ * Predicts the reliability of a buyer or seller on an e-commerce platform.
+ * Emphasizes that Pabandi is an intelligence layer and does not process payments.
+ * 
+ * Body: EcommerceFeatures object
+ * Returns: EcommercePredictionResult object
+ */
+router.post('/predict-ecommerce', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const features = req.body;
+    
+    if (!features || !features.role) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid features. "role" (BUYER or SELLER) is required.',
+      });
+    }
+
+    const result = await ecommerceReliabilityPredictor.predict(features);
+
+    return res.status(200).json({
+      success: true,
+      prediction: result,
+    });
+  } catch (error) {
+    logger.error('[Passport] /predict-ecommerce error:', error);
     return res.status(500).json({ success: false, error: 'Internal server error.' });
   }
 });
