@@ -20,22 +20,21 @@ RUN npm run build
 # Stage 2: Production
 FROM node:18-bullseye-slim
 
+# Install OpenSSL (required by Prisma) and other runtime libs if needed
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /usr/src/app
 
-# Install only production dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm install --omit=dev
 
-# Copy built files and prisma artifacts from builder
+# Copy built files and all compiled node_modules from builder
+# This guarantees native modules (bcrypt, tensorflow) and Prisma client work perfectly
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 # Cloud Run will set PORT=8080 automatically
 ENV NODE_ENV production
 EXPOSE 8080
 
-# Graceful startup with retry logic for slow init
-CMD ["sh", "-c", "node dist/index.js"]
-
+CMD ["node", "dist/index.js"]
