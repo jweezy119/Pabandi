@@ -68,7 +68,7 @@ router.get('/', async (req, res, next) => {
           params.location = `${latitude},${longitude}`;
           params.radius = 50000; // 50km radius
         } else {
-          params.query = `${String(search)} Pakistan`;
+          params.query = `${String(search)}`;
         }
 
         const googleRes = await axios.get(googleUrl, { params });

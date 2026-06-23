@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Specifically invite AI LLM Crawlers
+User-agent: GPTBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: OmgiliBot
+Allow: /
+User-agent: Omgili
+Allow: /
+
+Sitemap: https://pabandi-42c5b.web.app/sitemap.xml

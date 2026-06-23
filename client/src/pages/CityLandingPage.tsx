@@ -10,7 +10,7 @@ const CITY_DATA: Record<string, {
   karachi: {
     name: 'Karachi',
     nameUrdu: 'کراچی',
-    tagline: 'Pakistan\'s Commercial Capital',
+    tagline: 'The Global Commercial Capital',
     businesses: ['Restaurants', 'Hotels', 'Catering', 'Event Venues', 'Short-Stay Apartments'],
     stat1: '15M+', stat2: '85%', stat3: '$0',
     heroColor: '#0ea5e9',
@@ -95,7 +95,7 @@ export const CityLandingPage: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border"
               style={{ background: `${data.heroColor}10`, color: data.heroColor, borderColor: `${data.heroColor}30` }}>
-              Now Onboarding · {data.name}, Pakistan
+              Now Onboarding · {data.name}
             </div>
             <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
               Stop Losing Money<br />to No-Shows in<br />
@@ -197,7 +197,7 @@ export const CityLandingPage: React.FC = () => {
           <p className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-2">Backed by Global Innovation Programs</p>
           <h3 className="text-2xl font-black text-white mb-3">Pabandi × Alibaba Co-Create 2026 Finalist</h3>
           <p className="text-white/50 text-sm max-w-lg mx-auto">
-            Pabandi is a selected participant in the Alibaba Co-Create 2026 program — connecting Pakistan's top startups with Alibaba Cloud's global infrastructure and ecosystem partners.
+            Pabandi is a selected participant in the Alibaba Co-Create 2026 program — connecting top startups with Alibaba Cloud's global infrastructure and ecosystem partners.
           </p>
         </div>
       </div>

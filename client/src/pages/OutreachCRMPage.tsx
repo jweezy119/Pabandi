@@ -17,8 +17,8 @@ const STATUSES = [
 ];
 
 const WA_TEMPLATES: Record<string, string> = {
-  karachi: `السلام علیکم {name}! 🙏\n\nI'm reaching out from Pabandi — Pakistan's first Halal Web3 booking platform, launching exclusively in Karachi this month.\n\nWe're eliminating restaurant and hotel no-shows using a blockchain escrow system — zero interest, 100% Sharia-compliant.\n\n✅ Free to join\n✅ No credit card required\n✅ Guaranteed deposits on every booking\n\nWould you be open to a quick 10-minute WhatsApp call to see how it works for {businessName}?\n\npabandi-42c5b.web.app/karachi`,
-  lahore: `السلام علیکم {name}! 🙏\n\nPabandi — لاہور کا پہلا Halal Web3 بکنگ پلیٹ فارم — آپ سے رابطہ کر رہا ہے۔\n\nہم ریستوران اور ہوٹل کے نو شو ختم کر رہے ہیں — بالکل سود سے پاک، Sharia کے مطابق۔\n\n✅ مفت رجسٹریشن\n✅ ہر بکنگ پر گارنٹی شدہ ڈپازٹ\n\nکیا ہم {businessName} کے لیے 10 منٹ کی بات کر سکتے ہیں؟\n\npabandi-42c5b.web.app/lahore`,
+  karachi: `Hello {name}! 🙏\n\nI'm reaching out from Pabandi — the world's first Halal Web3 booking platform, launching exclusively in your area this month.\n\nWe're eliminating restaurant and hotel no-shows using a blockchain escrow system — zero interest, 100% Sharia-compliant.\n\n✅ Free to join\n✅ No credit card required\n✅ Guaranteed deposits on every booking\n\nWould you be open to a quick 10-minute WhatsApp call to see how it works for {businessName}?\n\npabandi-42c5b.web.app/karachi`,
+  lahore: `Hello {name}! 🙏\n\nI'm reaching out from Pabandi — the world's first Halal Web3 booking platform, launching exclusively in your area this month.\n\nWe're eliminating restaurant and hotel no-shows using a blockchain escrow system — zero interest, 100% Sharia-compliant.\n\n✅ Free to join\n✅ No credit card required\n✅ Guaranteed deposits on every booking\n\nWould you be open to a quick 10-minute WhatsApp call to see how it works for {businessName}?\n\npabandi-42c5b.web.app/lahore`,
   default: `Hello {name}! 👋\n\nI'm reaching out from Pabandi — a Halal booking platform that eliminates no-shows using Web3 escrow technology.\n\nFree to join. Would love to show you how it works for {businessName}.\n\npabandi-42c5b.web.app`,
 };
 

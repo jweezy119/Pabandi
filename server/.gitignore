@@ -1,2 +1,4 @@
 treasury-wallet.json
 env.yaml
+.env.bak
+.env.contracts.bak
