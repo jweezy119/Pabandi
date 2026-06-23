@@ -136,6 +136,10 @@ app.use(`/api/${API_VERSION}/passport`, passportRoutes);
 import networkRoutes from './routes/network.routes';
 app.use(`/api/${API_VERSION}/network`, networkRoutes);
 
+// ── Omni-Channel Integrations API (TikTok Shop Webhooks, etc) ────────────────
+import integrationsRoutes from './routes/integrations.routes';
+app.use(`/api/${API_VERSION}/integrations`, integrationsRoutes);
+
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   try {

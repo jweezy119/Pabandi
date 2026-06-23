@@ -77,5 +77,23 @@ async function run() {
   await shopifyCheckoutWebhookHandler();
 }
 
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
 // Note: To run this against the actual DB, the Pabandi server must be running.
-console.log("Shopify Plugin Demo Ready. Start the server on port 5000 and execute this script to test.");
+console.log("Starting Shopify Plugin Demo...");
+async function start() {
+  await prisma.apiClient.upsert({
+    where: { apiKey: PABANDI_API_KEY },
+    update: {},
+    create: {
+      name: 'Shopify Demo Client',
+      email: 'demo@shopify.pabandi.com',
+      apiKey: PABANDI_API_KEY,
+    }
+  });
+  await run();
+  console.log("Demo Complete.");
+  await prisma.$disconnect();
+}
+start();
