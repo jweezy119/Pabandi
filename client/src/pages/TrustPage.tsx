@@ -110,7 +110,7 @@ const PRIVACY_ITEMS = [
   },
   {
     q: 'Will my data be sold or shared?',
-    a: 'Never. Aggregated, anonymised trend data may appear in industry reports (e.g. "no-show rates in Karachi restaurants on Fridays"), but individual identities are always protected.',
+    a: 'Never. Aggregated, anonymised trend data may appear in industry reports (e.g. "COD rejection rates in e-commerce on Fridays"), but individual identities are always protected.',
   },
   {
     q: 'How often is my social data refreshed?',

@@ -132,6 +132,10 @@ app.use('/external/v1', externalRoutes);
 import passportRoutes from './routes/passport.routes';
 app.use(`/api/${API_VERSION}/passport`, passportRoutes);
 
+// ── Zero-Knowledge Network API (Shopify/E-Commerce Plugins) ──────────────────
+import networkRoutes from './routes/network.routes';
+app.use(`/api/${API_VERSION}/network`, networkRoutes);
+
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   try {

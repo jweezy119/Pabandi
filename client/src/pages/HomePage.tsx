@@ -119,9 +119,12 @@ export default function HomePage() {
     }
   }, [navigate]);
 
-  const categories = ['ALL', 'RESTAURANT', 'SPA', 'CLINIC', 'HOSPITAL', 'FITNESS_CENTER', 'SALON', 'FREELANCE'];
+  const categories = ['ALL', 'ECOMMERCE', 'MARKETPLACE', 'LIVE_SELLER', 'RESTAURANT', 'SPA', 'CLINIC', 'HOSPITAL', 'FITNESS_CENTER', 'SALON', 'FREELANCE'];
   const getCategoryLabel = (c: string) => {
     if (c === 'ALL') return 'All Categories';
+    if (c === 'ECOMMERCE') return 'E-Commerce';
+    if (c === 'MARKETPLACE') return 'Marketplace';
+    if (c === 'LIVE_SELLER') return 'Live Seller';
     if (c === 'RESTAURANT') return 'Fine Dining';
     if (c === 'FITNESS_CENTER') return 'Fitness';
     return c.charAt(0) + c.slice(1).toLowerCase();
