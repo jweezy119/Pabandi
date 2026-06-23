@@ -536,9 +536,9 @@ export default function BusinessDashboard() {
                             className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-tertiary-container text-on-tertiary-container hover:opacity-80 transition-opacity">
                             ✓ Done
                           </button>
-                          <button onClick={() => { if (confirm('Mark as no-show? This will slash any staked deposit.')) noShowMutation.mutate(r.id); }}
+                          <button onClick={() => { if (confirm('Mark as no-show? We will automatically handle any deposit or staked funds.')) noShowMutation.mutate(r.id); }}
                             className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-error-container text-on-error-container hover:opacity-80 transition-opacity">
-                            ✕ {r.cryptoDepositTxHash?.startsWith('STAKED_') ? 'Slash Stake' : 'No-Show'}
+                            ✕ {r.cryptoDepositTxHash?.startsWith('STAKED_') ? 'Process No-Show' : 'No-Show'}
                           </button>
                         </div>
                       )}

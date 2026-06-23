@@ -152,6 +152,10 @@ export const reliabilityService = {
 export const stakingService = {
   stake: (data: { reservationId: string; amount: number }) => apiClient.post('/staking/stake', data),
   slash: (data: { reservationId: string }) => apiClient.post('/staking/slash', data),
+  // Yield Staking Pool
+  getPoolStatus: () => apiClient.get('/staking/pool/status'),
+  stakeYield: (amount: number) => apiClient.post('/staking/pool/stake', { amount }),
+  unstakeYield: (positionId: string) => apiClient.post('/staking/pool/unstake', { positionId }),
 };
 
 export const sourcingService = {

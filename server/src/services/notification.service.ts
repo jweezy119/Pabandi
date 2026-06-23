@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
+import { sendWhatsAppMessage } from './ai.service';
 
 // Use globally initialized admin from utils/firebase.ts
 const isFirebaseInitialized = () => admin.apps.length > 0;
@@ -143,7 +144,9 @@ export class NotificationService {
       const reservation = await prisma.reservation.findUnique({
         where: { id: reservationId },
         include: {
-          business: true,
+          business: {
+            include: { settings: true },
+          },
           customer: true,
         },
       });
@@ -173,6 +176,12 @@ export class NotificationService {
           reservationTime: reservation.reservationTime,
           customerName: reservation.customerName,
         });
+      }
+
+      // Send WhatsApp confirmation
+      if (reservation.business.settings?.sendWhatsAppReminders && reservation.customerPhone) {
+        const msg = `Hi ${reservation.customerName}! Your reservation at *${reservation.business.name}* is CONFIRMED for ${new Date(reservation.reservationDate).toLocaleDateString()} at ${reservation.reservationTime}. We look forward to seeing you!`;
+        await sendWhatsAppMessage(reservation.customerPhone, msg);
       }
 
       // Log notification
@@ -244,6 +253,12 @@ export class NotificationService {
           });
         }
 
+        // Send WhatsApp Reminder
+        if (settings?.sendWhatsAppReminders && reservation.customerPhone) {
+          const msg = `Reminder: Hi ${reservation.customerName}, your reservation at *${reservation.business.name}* is coming up on ${reservationDate.toLocaleDateString()} at ${reservation.reservationTime}.`;
+          await sendWhatsAppMessage(reservation.customerPhone, msg);
+        }
+
         await prisma.reservation.update({
           where: { id: reservationId },
           data: { reminderSentAt: new Date() },
@@ -251,6 +266,57 @@ export class NotificationService {
       }
     } catch (error) {
       logger.error('Failed to send reminder', error);
+    }
+  }
+  /**
+   * Send WhatsApp notification to business owner on new booking
+   */
+  async sendBusinessNotification(reservationId: string): Promise<void> {
+    try {
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: {
+          business: {
+            include: { settings: true },
+          },
+        },
+      });
+
+      if (!reservation) return;
+
+      const settings = reservation.business.settings;
+      if (settings?.notifyOwnerOnNewBooking && settings?.whatsappNumber) {
+        const msg = `🔔 *New Booking Alert*\n\nYou have a new reservation at *${reservation.business.name}*!\n\nName: ${reservation.customerName}\nDate: ${new Date(reservation.reservationDate).toLocaleDateString()}\nTime: ${reservation.reservationTime}\nGuests: ${reservation.numberOfGuests}\nPhone: ${reservation.customerPhone}`;
+        await sendWhatsAppMessage(settings.whatsappNumber, msg);
+      }
+    } catch (error) {
+      logger.error('Failed to send business notification', error);
+    }
+  }
+
+  /**
+   * Send WhatsApp review request after completion
+   */
+  async sendReviewRequest(reservationId: string): Promise<void> {
+    try {
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: {
+          business: {
+            include: { settings: true },
+          },
+        },
+      });
+
+      if (!reservation) return;
+
+      const settings = reservation.business.settings;
+      if (settings?.requestFeedbackAfterBooking && reservation.customerPhone) {
+        const msg = `Hi ${reservation.customerName}! Thank you for visiting *${reservation.business.name}*. We hope you had a great experience! Please let us know how we did by leaving a review on our Pabandi page. Your feedback helps us improve!`;
+        await sendWhatsAppMessage(reservation.customerPhone, msg);
+      }
+    } catch (error) {
+      logger.error('Failed to send review request', error);
     }
   }
 }

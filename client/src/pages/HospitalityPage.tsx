@@ -78,7 +78,7 @@ const FAQS = [
     a: 'We support USD via Solana (USDC), PayPal, Alibaba Pay, and Binance Pay. All deposits are priced in USD and settled on Solana for trustless escrow.',
   },
   {
-    q: 'Is this Sharia-compliant for Muslim-majority markets?',
+    q: 'Does this comply with Islamic finance principles?',
     a: 'Yes. The escrow mechanism does not charge interest. Guest funds are held, not lent. See our Halal Staking documentation for more details.',
   },
 ];

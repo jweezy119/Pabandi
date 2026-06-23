@@ -323,9 +323,9 @@ export default function BusinessModelPage() {
             </div>
 
             <div className="p-4 bg-white/10 rounded-xl border border-white/10">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">Yield Redistribution</h4>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">Halal Yield Redistribution</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                **20% of all API revenue** is pooled and distributed as staking rewards to stakers of the PAB utility token, aligning token holders with platform scaling.
+                **20% of all API revenue** is pooled and distributed as Halal Staking rewards to stakers of the PAB utility token, aligning token holders with platform scaling.
               </p>
             </div>
           </div>
@@ -371,7 +371,7 @@ export default function BusinessModelPage() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">No Ribā (Interest)</p>
                 <h4 className="text-sm font-bold text-white mb-1.5">Zero Fixed Returns</h4>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Stakers receive <strong className="text-white">no predetermined interest rate</strong>. All rewards are a proportional share of actual platform revenue. If the platform earns more, stakers earn more — profit only, never guaranteed income.
+                  Stakers receive <strong className="text-white">no predetermined interest rate</strong>. All rewards are a proportional share of actual platform revenue (Mudarabah). If the platform earns more, stakers earn more — profit only, never guaranteed income.
                 </p>
               </div>
             </div>
@@ -473,10 +473,10 @@ export default function BusinessModelPage() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-8">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Pabandi Halal Staking vs. Conventional DeFi</h4>
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px]">
+              <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left text-slate-400 pb-2 pr-4 font-bold">Feature</th>
+                    <th className="pb-2 pr-4 font-bold text-slate-300">Feature</th>
                     <th className="text-center text-emerald-400 pb-2 pr-4 font-bold">Pabandi Halal Staking</th>
                     <th className="text-center text-slate-500 pb-2 font-bold">Conventional DeFi Yield</th>
                   </tr>
@@ -510,15 +510,15 @@ export default function BusinessModelPage() {
               borderColor: 'rgba(34, 197, 94, 0.25)',
             }}
           >
-            <div className="flex-1">
+            <div className="text-center w-full">
               <p className="text-sm font-bold text-white">Join the Halal Staking Pool</p>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Earn proportional profit-share from Pabandi's booking platform revenue. Sharia-compliant. Fully on-chain. Auditable by any Islamic finance scholar.
+              <p className="text-[11px] text-slate-400 mt-1 mb-4">
+                Earn proportional profit-share from Pabandi's booking platform revenue. Sharia-compliant.
               </p>
+              <Link to="/wallet" className="inline-block px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                Start Halal Staking →
+              </Link>
             </div>
-            <Link to="/dashboard" className="btn-primary shrink-0 px-6 py-2.5 text-xs font-bold whitespace-nowrap">
-              Start Halal Staking →
-            </Link>
           </div>
         </div>
 

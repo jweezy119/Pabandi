@@ -92,7 +92,20 @@ export const executeSolanaDeposit = async (amountInSol: number, businessWalletAd
 
     const provider = (window as any).solana;
     if (!provider || !provider.isPhantom) {
-      throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
+      // Check if user is on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        const url = encodeURIComponent(window.location.href);
+        const ref = encodeURIComponent(window.location.origin);
+        // Phantom universal deep link format
+        window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
+        return {
+          success: false,
+          error: 'Redirecting to Phantom App...'
+        };
+      } else {
+        throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
+      }
     }
 
     // Connect wallet

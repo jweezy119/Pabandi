@@ -121,20 +121,26 @@ export default function Layout() {
       
       {!isAuthPage && (
         <footer className="hidden md:block mt-16 py-8 border-t border-outline-variant/20 bg-surface-container-lowest">
-          <div className="max-w-7xl mx-auto px-6 text-center text-sm text-on-surface-variant flex justify-between items-center">
-            <span>© 2026 Pabandi Global</span>
-            <div className="flex gap-4 flex-wrap justify-center font-headline text-xs">
-              <Link to="/pricing" className="hover:text-primary transition-colors font-bold text-primary">Pricing</Link>
-              <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
-              <Link to="/web3" className="hover:text-primary transition-colors">Web3</Link>
-              <Link to="/hospitality" className="hover:text-primary transition-colors font-semibold" style={{ color: '#10b981' }}>🏨 Hospitality</Link>
-              <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
-              <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
-              <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
-              <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 Loyalty</Link>
-              <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
-              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
-              <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact</Link>
+          <div className="max-w-7xl mx-auto px-6 flex flex-col gap-4">
+            <div className="text-center text-sm text-on-surface-variant flex justify-between items-center">
+              <span>© 2026 Pabandi Global</span>
+              <div className="flex gap-4 flex-wrap justify-center font-headline text-xs">
+                <Link to="/pricing" className="hover:text-primary transition-colors font-bold text-primary">Pricing</Link>
+                <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
+                <Link to="/web3" className="hover:text-primary transition-colors">Web3</Link>
+                <Link to="/hospitality" className="hover:text-primary transition-colors font-semibold" style={{ color: '#10b981' }}>🏨 Hospitality</Link>
+                <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
+                <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
+                <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
+                <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 Loyalty</Link>
+                <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
+                <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+                <Link to="/contact" className="hover:text-primary transition-colors font-medium">Contact</Link>
+              </div>
+            </div>
+            <div className="text-center text-xs text-on-surface-variant/70 border-t border-outline-variant/10 pt-4 mt-2">
+              <p className="mb-1 font-mono text-[10px]">$PAB Token Contract (Solana Mainnet): <span className="text-primary font-bold">Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ</span></p>
+              <p>Trading exclusively on Raydium. Never send funds to unverified addresses.</p>
             </div>
           </div>
         </footer>

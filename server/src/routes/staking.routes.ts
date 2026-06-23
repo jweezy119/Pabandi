@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { stakeCollateral, resolveStake, releaseStake } from '../controllers/staking.controller';
+import { stakeCollateral, resolveStake, releaseStake, getStakingStatus, stakeYield, unstakeYield } from '../controllers/staking.controller';
 import { authenticate as requireAuth, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -12,5 +12,10 @@ router.post('/resolve', requireAuth, authorize('BUSINESS_OWNER', 'BUSINESS_STAFF
 
 // System/Business releases 100% of earnest money back to customer upon check-in
 router.post('/release', requireAuth, authorize('BUSINESS_OWNER', 'BUSINESS_STAFF', 'ADMIN'), releaseStake);
+
+// Yield Staking Pool Routes
+router.get('/pool/status', requireAuth, getStakingStatus);
+router.post('/pool/stake', requireAuth, stakeYield);
+router.post('/pool/unstake', requireAuth, unstakeYield);
 
 export default router;

@@ -29,6 +29,9 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
 import HospitalityPage from './pages/HospitalityPage';
+import AirdropPage from './pages/AirdropPage';
+import CityLandingPage from './pages/CityLandingPage';
+import OutreachCRMPage from './pages/OutreachCRMPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -46,6 +49,9 @@ function App() {
     <LanguageProvider>
       <Routes>
         <Route path="/waitlist" element={<WaitlistPage />} />
+        <Route path="/airdrop" element={<AirdropPage />} />
+        <Route path="/karachi" element={<CityLandingPage />} />
+        <Route path="/lahore" element={<CityLandingPage />} />
         <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
 
@@ -94,6 +100,10 @@ function App() {
         <Route
           path="business/crm"
           element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="outreach"
+          element={isAuthenticated && user?.role === 'ADMIN' ? <OutreachCRMPage /> : <Navigate to="/login" />}
         />
         <Route
           path="business/settings"

@@ -254,6 +254,7 @@ export const createReservation = async (
     // Send confirmation notification if not concierge (concierge sends its own once confirmed)
     if (!isConcierge) {
       await notificationService.sendConfirmation(reservation.id);
+      await notificationService.sendBusinessNotification(reservation.id);
     } else {
       if (business.phone) {
         logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
@@ -622,6 +623,9 @@ export const completeReservation = async (
       reservation.id, 
       reservation.depositAmount || 0
     );
+
+    // Ask for feedback via WhatsApp
+    await notificationService.sendReviewRequest(reservation.id);
 
     res.json({
       success: true,

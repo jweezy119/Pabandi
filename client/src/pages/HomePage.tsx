@@ -145,7 +145,7 @@ export default function HomePage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">Finally Pays.</span>
             </h1>
             <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
-              Look up any location globally to book right away. A high Pabandi Score means zero deposits. Every booking you honor mints <span className="font-bold text-pink-400">$PAB</span> to your wallet.
+              Instantly book any business globally. Maintain a high Reliability Score to unlock zero-deposit bookings, and earn real-world <span className="font-bold text-pink-400">$PAB</span> rewards for every appointment you honor.
             </p>
             
             {/* Search Bar prominently placed in the hero for immediate immersion */}

@@ -109,6 +109,7 @@ app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);
 import reliabilityRoutes from './routes/reliability.routes';
 
 import stakingRoutes from './routes/staking.routes';
+import airdropRoutes from './routes/airdrop.routes';
 
 import sourcingRoutes from './routes/sourcing.routes';
 
@@ -116,6 +117,7 @@ app.use(`/api/${API_VERSION}/social`, socialRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
 app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
+app.use(`/api/${API_VERSION}/airdrop`, airdropRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
@@ -125,6 +127,10 @@ app.use('/api/hospitality', hospitalityRoutes); // Short alias for PMS webhooks
 // ── Pabandi Intelligence API (B2B) ──────────────────────────────────────────
 // Separate from /api/v1/ so it can be independently rate-limited and versioned
 app.use('/external/v1', externalRoutes);
+
+// ── Pabandi Reliability Passport API (Public, API-key gated) ─────────────────
+import passportRoutes from './routes/passport.routes';
+app.use(`/api/${API_VERSION}/passport`, passportRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

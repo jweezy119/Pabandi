@@ -31,10 +31,18 @@ export const apiKeyAuth = async (
   next: NextFunction
 ) => {
   req.requestStartTime = Date.now();
-  const apiKey = req.headers['x-api-key'] as string | undefined;
+
+  // Support both x-api-key header and Bearer token (developer docs convention)
+  let apiKey = req.headers['x-api-key'] as string | undefined;
+  if (!apiKey) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      apiKey = authHeader.slice(7).trim();
+    }
+  }
 
   if (!apiKey) {
-    return next(new CustomError('Missing x-api-key header', 401));
+    return next(new CustomError('Missing API key. Provide via x-api-key header or Authorization: Bearer <key>', 401));
   }
 
   try {

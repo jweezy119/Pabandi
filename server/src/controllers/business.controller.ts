@@ -288,9 +288,21 @@ export const updateBusiness = async (
       throw new CustomError('Unauthorized', 403);
     }
 
+    const { settings, ...businessData } = req.body;
+
+    const updateData: any = { ...businessData };
+    if (settings) {
+      updateData.settings = {
+        upsert: {
+          create: settings,
+          update: settings,
+        }
+      };
+    }
+
     const updated = await prisma.business.update({
       where: { id },
-      data: req.body,
+      data: updateData,
     });
 
     res.json({

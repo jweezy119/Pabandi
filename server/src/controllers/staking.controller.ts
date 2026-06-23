@@ -134,3 +134,124 @@ export const releaseStake = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: 'Failed to release deposit' });
   }
 };
+
+// ==========================================
+// YIELD STAKING POOL (MUDARABAH PROFIT-SHARING)
+// ==========================================
+
+export const getStakingStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const positions = await prisma.stakingPosition.findMany({
+      where: { userId, status: 'ACTIVE' }
+    });
+
+    const totalStakedByUser = positions.reduce((sum, pos) => sum + pos.amount, 0);
+
+    const allPositions = await prisma.stakingPosition.findMany({
+      where: { status: 'ACTIVE' }
+    });
+    const globalTotalStaked = allPositions.reduce((sum, pos) => sum + pos.amount, 0);
+
+    const estimatedYield = globalTotalStaked > 0 ? 12.5 : 0; // 12.5% placeholder
+
+    res.json({
+      success: true,
+      totalStaked: totalStakedByUser,
+      globalTotalStaked,
+      estimatedYield,
+      positions
+    });
+  } catch (error) {
+    logger.error('Error fetching staking status:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+export const stakeYield = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid staking amount' });
+    }
+
+    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    if (!wallet || wallet.balance < amount) {
+      return res.status(400).json({ success: false, error: 'Insufficient PAB balance in Vault' });
+    }
+
+    await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId },
+        data: { balance: { decrement: amount } }
+      }),
+      prisma.stakingPosition.create({
+        data: {
+          userId,
+          amount,
+          status: 'ACTIVE'
+        }
+      }),
+      prisma.stakeTransaction.create({
+        data: {
+          userId,
+          amount,
+          type: 'YIELD_STAKE'
+        }
+      })
+    ]);
+
+    res.json({ success: true, message: `Successfully staked ${amount} PAB` });
+  } catch (error) {
+    logger.error('Error staking:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};
+
+export const unstakeYield = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { positionId } = req.body;
+    if (!positionId) {
+      return res.status(400).json({ success: false, error: 'Position ID is required' });
+    }
+
+    const position = await prisma.stakingPosition.findFirst({
+      where: { id: positionId, userId, status: 'ACTIVE' }
+    });
+
+    if (!position) {
+      return res.status(404).json({ success: false, error: 'Active staking position not found' });
+    }
+
+    await prisma.$transaction([
+      prisma.stakingPosition.update({
+        where: { id: positionId },
+        data: { status: 'WITHDRAWN' }
+      }),
+      prisma.wallet.update({
+        where: { userId },
+        data: { balance: { increment: position.amount } }
+      }),
+      prisma.stakeTransaction.create({
+        data: {
+          userId,
+          amount: position.amount,
+          type: 'YIELD_UNSTAKE'
+        }
+      })
+    ]);
+
+    res.json({ success: true, message: `Successfully unstaked ${position.amount} PAB` });
+  } catch (error) {
+    logger.error('Error unstaking:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+};

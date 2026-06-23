@@ -18,7 +18,7 @@ model User {
   role              UserRole         @default(CUSTOMER)
   isEmailVerified   Boolean          @default(false)
   isPhoneVerified   Boolean          @default(false)
-  reliabilityScore  Float            @default(100)
+  reliabilityScore  Float            @default(750)
   fcmToken          String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -40,6 +40,10 @@ model User {
   referrals         User[]           @relation("UserReferrals")
   wallet            Wallet?
   stakeTransactions StakeTransaction[]
+  stakingPositions  StakingPosition[]
+  disputesAgainst   Dispute[]        @relation("DisputesAgainst")
+  disputesFiled     Dispute[]        @relation("DisputesFiled")
+  flags             UserFlag[]
 
   @@index([email])
   @@index([phone])
@@ -210,9 +214,13 @@ model BusinessSettings {
   autoRequireDeposit    Boolean  @default(false)
   sendEmailReminders    Boolean  @default(true)
   reminderHoursBefore   Int      @default(24)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  sendPushReminders     Boolean  @default(true)
+  sendPushReminders           Boolean  @default(true)
+  sendWhatsAppReminders       Boolean  @default(true)
+  notifyOwnerOnNewBooking     Boolean  @default(true)
+  whatsappNumber              String?
+  requestFeedbackAfterBooking Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
   business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
@@ -235,16 +243,20 @@ model NotificationLog {
 }
 
 model Wallet {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  address     String?
-  balance     Float    @default(0)
-  totalStaked Float    @default(0)
-  currency    String   @default("PAB")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  address           String?
+  balance           Float     @default(0)
+  totalStaked       Float     @default(0)
+  currency          String    @default("PAB")
+  airdropClaimed    Boolean   @default(false)
+  airdropAmount     Float?
+  airdropClaimedAt  DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 
 model CryptoReward {
   id            String       @id @default(cuid())
@@ -307,6 +319,7 @@ model ApiClient {
   billingMode       BillingMode   @default(PAY_AS_YOU_GO)
   preferredCurrency CurrencyType  @default(PAB)
   usageLogs         ApiUsageLog[]
+  disputes          Dispute[]
 
   @@index([apiKey])
   @@index([email])
@@ -486,4 +499,63 @@ model StakeTransaction {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model StakingPosition {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float    // Amount of PAB staked
+  status    String   @default("ACTIVE") // 'ACTIVE', 'WITHDRAWN'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Dispute {
+  id            String         @id @default(cuid())
+  userId        String
+  reportedById  String?
+  apiClientId   String?
+  type          DisputeType
+  description   String?
+  outcome       DisputeOutcome @default(PENDING)
+  resolvedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
+  reporter      User?          @relation("DisputesFiled", fields: [reportedById], references: [id])
+  apiClient     ApiClient?     @relation(fields: [apiClientId], references: [id])
+
+  @@index([userId])
+  @@index([apiClientId])
+}
+
+model UserFlag {
+  id        String   @id @default(cuid())
+  userId    String
+  flag      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flag])
+  @@index([userId])
+}
+
+enum DisputeType {
+  NO_SHOW
+  FRAUD
+  NON_PAYMENT
+  HARASSMENT
+  QUALITY_ISSUE
+  OTHER
+}
+
+enum DisputeOutcome {
+  PENDING
+  UPHELD
+  DISMISSED
+  RESOLVED
 }

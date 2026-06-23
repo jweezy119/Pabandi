@@ -10,10 +10,11 @@ import {
   InformationCircleIcon,
   ExclamationTriangleIcon,
   ShieldCheckIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
 
-type Tab = 'profile' | 'webhooks' | 'payments' | 'ai';
+type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 const CATEGORIES = [
@@ -57,6 +58,13 @@ export default function BusinessSettingsPage() {
     autoRequireDeposit: true,
   });
 
+  const [notificationSettings, setNotificationSettings] = useState({
+    sendWhatsAppReminders: true,
+    notifyOwnerOnNewBooking: true,
+    whatsappNumber: '',
+    requestFeedbackAfterBooking: true,
+  });
+
   const [webhook, setWebhook] = useState({
     targetUrl: '',
     secret: 'whsec_7x9A1b2C3d4E5f6G',
@@ -80,6 +88,12 @@ export default function BusinessSettingsPage() {
         reliabilityScore: bizRes.reliabilityScore ?? 100,
       });
       if (bizRes.settings) {
+        setNotificationSettings({
+          sendWhatsAppReminders: bizRes.settings.sendWhatsAppReminders ?? true,
+          notifyOwnerOnNewBooking: bizRes.settings.notifyOwnerOnNewBooking ?? true,
+          whatsappNumber: bizRes.settings.whatsappNumber || '',
+          requestFeedbackAfterBooking: bizRes.settings.requestFeedbackAfterBooking ?? true,
+        });
         setAiSettings(prev => ({
           ...prev,
           aiStrictness: 100 - (bizRes.settings.aiRiskThreshold || 30),
@@ -142,6 +156,15 @@ export default function BusinessSettingsPage() {
       },
       profile: {
         category: businessData.category,
+      },
+    });
+  };
+
+  const handleSaveNotifications = () => {
+    setSaveStatus('saving');
+    saveMutation.mutate({
+      settings: {
+        ...notificationSettings,
       },
     });
   };
@@ -211,6 +234,64 @@ export default function BusinessSettingsPage() {
             </div>
             <SaveButton onClick={() => {}} label="Save Profile" />
           </form>
+        );
+
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-[#e8e8e8]">WhatsApp Automations</h3>
+              <p className="text-sm text-[#757575]">Configure automated WhatsApp messages for your customers and yourself.</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#1a1a1a] border border-[#ffffff15] space-y-4">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-[#ffffff15] bg-[#181818] cursor-pointer">
+                <input type="checkbox" checked={notificationSettings.sendWhatsAppReminders}
+                  onChange={e => setNotificationSettings({ ...notificationSettings, sendWhatsAppReminders: e.target.checked })}
+                  className="w-4 h-4 rounded border-[#ffffff25] text-[#10b981] focus:ring-emerald-500" />
+                <div>
+                  <p className="text-sm font-bold text-[#e8e8e8]">Customer Reminders & Confirmations</p>
+                  <p className="text-xs text-[#757575]">Send WhatsApp messages to customers when they book, and 24 hours before their reservation.</p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-[#ffffff15] bg-[#181818] cursor-pointer">
+                <input type="checkbox" checked={notificationSettings.requestFeedbackAfterBooking}
+                  onChange={e => setNotificationSettings({ ...notificationSettings, requestFeedbackAfterBooking: e.target.checked })}
+                  className="w-4 h-4 rounded border-[#ffffff25] text-[#10b981] focus:ring-emerald-500" />
+                <div>
+                  <p className="text-sm font-bold text-[#e8e8e8]">Post-Booking Review Requests</p>
+                  <p className="text-xs text-[#757575]">Automatically ask customers for feedback on WhatsApp after their reservation is marked complete.</p>
+                </div>
+              </label>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#1a1a1a] border border-[#ffffff15]">
+              <h4 className="font-bold text-[#e8e8e8] mb-4">Business Owner Notifications</h4>
+              
+              <label className="flex items-center gap-3 p-3 mb-4 rounded-xl border border-[#ffffff15] bg-[#181818] cursor-pointer">
+                <input type="checkbox" checked={notificationSettings.notifyOwnerOnNewBooking}
+                  onChange={e => setNotificationSettings({ ...notificationSettings, notifyOwnerOnNewBooking: e.target.checked })}
+                  className="w-4 h-4 rounded border-[#ffffff25] text-[#0ea5e9] focus:ring-blue-500" />
+                <div>
+                  <p className="text-sm font-bold text-[#e8e8e8]">Notify me on new bookings</p>
+                  <p className="text-xs text-[#757575]">Get a WhatsApp ping immediately whenever a new reservation is created.</p>
+                </div>
+              </label>
+
+              {notificationSettings.notifyOwnerOnNewBooking && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Your WhatsApp Number</label>
+                  <input type="text" className="input-field" placeholder="+923001234567"
+                    value={notificationSettings.whatsappNumber}
+                    onChange={e => setNotificationSettings({ ...notificationSettings, whatsappNumber: e.target.value })} />
+                  <p className="text-xs text-[#757575] mt-1.5">Include country code (e.g., +92).</p>
+                </div>
+              )}
+            </div>
+
+            <SaveButton onClick={handleSaveNotifications} label="Save Notifications" />
+          </div>
         );
 
       case 'webhooks':
@@ -445,6 +526,10 @@ export default function BusinessSettingsPage() {
             <button onClick={() => setActiveTab('profile')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'profile' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
               <UserCircleIcon className="w-5 h-5" /> Business Profile
+            </button>
+            <button onClick={() => setActiveTab('notifications')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'notifications' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
+              <BellIcon className="w-5 h-5" /> Notifications & WhatsApp
             </button>
             <button onClick={() => setActiveTab('webhooks')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'webhooks' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>

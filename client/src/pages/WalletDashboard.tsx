@@ -8,7 +8,7 @@ import {
   TrophyIcon, FireIcon, CurrencyDollarIcon,
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import apiClient, { cryptoService, walletService, socialService } from '../services/api';
+import apiClient, { cryptoService, walletService, socialService, stakingService } from '../services/api';
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | null;
 interface ConnectedWallet { address: string; type: WalletType; chainName: string; }
@@ -299,24 +299,29 @@ export default function WalletDashboard() {
   
   // Staking State
   const [stakeAmount, setStakeAmount] = useState<number>(0);
-  const [unstakeAmount, setUnstakeAmount] = useState<number>(0);
 
-  const stakeMutation = useMutation((amount: number) => apiClient.post('/crypto/wallet/stake', { amount }), {
+  const { data: poolStatus, refetch: refetchPool } = useQuery('yield-pool-status', async () => {
+    const res = await stakingService.getPoolStatus();
+    return res.data;
+  }, { refetchOnWindowFocus: false });
+
+  const stakeMutation = useMutation((amount: number) => stakingService.stakeYield(amount), {
     onSuccess: (res) => {
-      alert(res.data?.message || 'Deposited successfully');
+      alert(res.data?.message || 'Staked successfully');
       refetch();
+      refetchPool();
       setStakeAmount(0);
     },
-    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to deposit')
+    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to stake')
   });
 
-  const unstakeMutation = useMutation((amount: number) => apiClient.post('/crypto/wallet/unstake', { amount }), {
+  const unstakeMutation = useMutation((positionId: string) => stakingService.unstakeYield(positionId), {
     onSuccess: (res) => {
-      alert(res.data?.message || 'Withdrew successfully');
+      alert(res.data?.message || 'Unstaked successfully');
       refetch();
-      setUnstakeAmount(0);
+      refetchPool();
     },
-    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to withdraw')
+    onError: (err: any) => alert(err?.response?.data?.error || 'Failed to unstake')
   });
 
   const transferMutation = useMutation(() => cryptoService.requestSolanaTransfer(), {
@@ -366,10 +371,6 @@ export default function WalletDashboard() {
   const totalStaked = Number(balances?.totalStaked || 0);
   const balance = offChainBalance + onChainBalance + totalStaked;
   
-  let currentHibah = 0;
-  if (reliabilityScore >= 95) currentHibah = 5;
-  else if (reliabilityScore >= 85) currentHibah = 2;
-  else if (reliabilityScore >= 70) currentHibah = 1;
   
   const usdValue = (balance * 0.15).toFixed(2);
   const totalEarned = cryptoWallet?.totalEarned || 0;
@@ -459,66 +460,6 @@ export default function WalletDashboard() {
         {/* ── Balance Cards ── */}
         <div className="animate-fade-up-delay-1 grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
-          {/* Loyalty Pool (Hibah) */}
-          <div className="md:col-span-3 flex flex-col gap-4 relative overflow-hidden rounded-3xl p-6 shadow-md border border-secondary/20" style={{
-              background: 'linear-gradient(135deg, var(--color-surface-container-low) 0%, var(--color-surface-container-highest) 100%)',
-            }}>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-              
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-secondary text-on-secondary uppercase tracking-widest shadow-[0_0_10px_var(--color-secondary)]">Community Loyalty Pool</span>
-                  <span className="font-body text-[10px] font-bold text-secondary">Earn up to 5% Hibah Gift</span>
-                </div>
-                <div>
-                  <span className="font-headline text-4xl sm:text-5xl font-black text-on-surface">{totalStaked.toLocaleString()}</span>
-                  <span className="font-headline text-xl font-bold text-on-surface-variant ml-2">$PAB Locked</span>
-                </div>
-                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-surface border border-outline-variant/30 rounded-lg">
-                   <FireIcon className="h-4 w-4 text-orange-500" /> 
-                   <span className="font-body text-xs font-bold text-on-surface">Community Gift: <span className={currentHibah === 5 ? 'text-[#14F195]' : 'text-primary'}>{currentHibah}% Flat Bonus</span></span>
-                   <span className="font-body text-[10px] text-on-surface-variant ml-1">(Based on {reliabilityScore} Trust Score)</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                 <div className="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
-                    <input 
-                      type="number" 
-                      value={stakeAmount || ''} 
-                      onChange={e => setStakeAmount(Number(e.target.value))}
-                      placeholder="Amount"
-                      className="bg-transparent border-none outline-none w-24 px-4 py-3 font-body text-sm text-on-surface font-bold placeholder-on-surface-variant/50" 
-                    />
-                    <button 
-                      onClick={() => stakeMutation.mutate(stakeAmount)}
-                      disabled={stakeMutation.isLoading || stakeAmount <= 0 || stakeAmount > offChainBalance}
-                      className="bg-primary text-white font-bold text-sm px-5 py-3 hover:bg-primary/90 disabled:opacity-50 transition-colors border-l border-outline-variant"
-                    >
-                      Deposit
-                    </button>
-                 </div>
-                 
-                 <div className="flex items-center bg-surface border border-outline-variant rounded-xl overflow-hidden shadow-sm">
-                    <input 
-                      type="number" 
-                      value={unstakeAmount || ''} 
-                      onChange={e => setUnstakeAmount(Number(e.target.value))}
-                      placeholder="Amount"
-                      className="bg-transparent border-none outline-none w-24 px-4 py-3 font-body text-sm text-on-surface font-bold placeholder-on-surface-variant/50" 
-                    />
-                    <button 
-                      onClick={() => unstakeMutation.mutate(unstakeAmount)}
-                      disabled={unstakeMutation.isLoading || unstakeAmount <= 0 || unstakeAmount > totalStaked}
-                      className="bg-secondary text-white font-bold text-sm px-5 py-3 hover:bg-secondary/90 disabled:opacity-50 transition-colors border-l border-outline-variant"
-                    >
-                      Withdraw + Hibah
-                    </button>
-                 </div>
-              </div>
-
-            </div>
-          </div>
 
           {/* Split Balance Card */}
           <div className="md:col-span-2 flex flex-col gap-4">
@@ -594,10 +535,16 @@ export default function WalletDashboard() {
                     <span className="font-headline text-base text-on-surface-variant ml-2">PAB</span>
                   </div>
                   <p className="font-body text-xs text-on-surface-variant mt-1">Self-Custodial Balance</p>
+                  <div className="mt-2 text-[9px] font-mono text-on-surface-variant/70 border border-outline-variant/20 bg-surface px-2 py-1 rounded w-fit select-all cursor-copy" title="Copy Contract Address">
+                    CA: Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ
+                  </div>
                 </div>
                 
                 {connected && connected.type === 'phantom' && (
                   <div className="text-right flex flex-col items-end gap-2">
+                    <button onClick={disconnect} className="font-body text-[10px] text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1">
+                      <XMarkIcon className="h-3 w-3" /> Disconnect
+                    </button>
                     <span className="font-body text-xs font-bold text-on-surface-variant">◎ {shortAddr(connected.address)}</span>
                     <a href={`https://solscan.io/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
                       className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
@@ -606,6 +553,72 @@ export default function WalletDashboard() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Halal Yield Staking Pool */}
+            <div className="relative overflow-hidden rounded-3xl p-6 shadow-sm border border-emerald-500/30" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%)' }}>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 uppercase tracking-widest border border-emerald-500/30">Halal Staking Pool</span>
+                    <span className="font-body text-[10px] text-emerald-500/70">Mudarabah Profit-Share</span>
+                  </div>
+                  <div>
+                    <span className="font-headline text-3xl font-black text-white">{poolStatus?.totalStaked?.toFixed(2) || '0.00'}</span>
+                    <span className="font-headline text-base text-emerald-400 ml-2">PAB Staked</span>
+                  </div>
+                  <p className="font-body text-xs text-white/70 mt-1">Est. Platform Yield: <strong className="text-emerald-400">{poolStatus?.estimatedYield || 0}%</strong></p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input 
+                    type="number" 
+                    value={stakeAmount || ''} 
+                    onChange={(e) => setStakeAmount(Number(e.target.value))}
+                    placeholder={`Stake PAB (Max: ${offChainBalance})`}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50"
+                  />
+                  <button 
+                    onClick={() => setStakeAmount(offChainBalance)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 uppercase"
+                  >
+                    Max
+                  </button>
+                </div>
+                <button 
+                  onClick={() => stakeMutation.mutate(stakeAmount)}
+                  disabled={stakeMutation.isLoading || !stakeAmount || stakeAmount <= 0 || stakeAmount > offChainBalance}
+                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {stakeMutation.isLoading ? 'Staking...' : 'Stake PAB'}
+                </button>
+              </div>
+
+              {/* Active Positions */}
+              {poolStatus?.positions && poolStatus.positions.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-white/10">
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-3">Active Positions</p>
+                  <div className="space-y-2">
+                    {poolStatus.positions.map((pos: any) => (
+                      <div key={pos.id} className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                        <div>
+                          <p className="text-sm font-bold text-white">{pos.amount} PAB</p>
+                          <p className="text-[10px] text-white/50">Staked on {new Date(pos.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <button 
+                          onClick={() => unstakeMutation.mutate(pos.id)}
+                          disabled={unstakeMutation.isLoading}
+                          className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        >
+                          {unstakeMutation.isLoading ? '...' : 'Unstake'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
