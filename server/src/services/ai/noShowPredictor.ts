@@ -63,7 +63,7 @@ export interface PredictionResult {
   };
 }
 
-// ── Pakistan Market Deposit Constants ──────────────────────────
+// ── Emerging Market Deposit Constants ──────────────────────────
 const DEPOSIT_CONFIG = {
   RESTAURANT: {
     perPersonMin: 5,
@@ -104,7 +104,7 @@ export class NoShowPredictor {
       if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
         try {
           const prompt = `
-            Analyze this reservation data and predict the no-show probability for a premium booking platform in Pakistan.
+            Analyze this reservation data and predict the no-show probability for a premium booking platform globally.
             Customer History: ${JSON.stringify(features.customerHistory || {})}
             Time Factors: ${JSON.stringify(features.timeFactors || {})}
             Booking Factors: ${JSON.stringify(features.bookingFactors || {})}

@@ -78,7 +78,7 @@ export const register = async (
             create: {
               name: req.body.businessName,
               category: 'RESTAURANT', // Default category
-              address: 'Pakistan',
+              address: 'Global',
               phone: phone || '',
               email: email,
               googlePlaceId: req.body.googlePlaceId,

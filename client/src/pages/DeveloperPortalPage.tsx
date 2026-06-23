@@ -154,7 +154,7 @@ export default function DeveloperPortalPage() {
       {/* ── Overview & Problem ────────────────────────────────────────────────── */}
       <section style={{ padding: '0 24px 60px', maxWidth: '900px', margin: '0 auto' }}>
         <p style={{ fontSize: '18px', color: '#e2e8f0', lineHeight: 1.8, marginBottom: '24px' }}>
-          Pabandi is building a portable reliability layer for Pakistan's informal economy. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
+          Pabandi is building a portable reliability layer for the global informal economy. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
         </p>
         <p style={{ fontSize: '16px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '24px', paddingLeft: '20px', borderLeft: '4px solid #334155' }}>
           <strong>The problem today:</strong> Every live sale, wholesale order, and booking is secured by "bro trust" or advance payment. The informal economy bleeds 20–30% to no-pays and ghosting because there's no portable trust layer.
@@ -479,7 +479,7 @@ export default function DeveloperPortalPage() {
           <a href="https://twitter.com/PabandiGlobal" target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none' }}>@PabandiGlobal</a>
         </p>
         <p style={{ color: '#475569', fontSize: '13px' }}>
-          Built for Pakistan. Wada pura karo. Inaam pao.
+          Built for the world. Keep your word. Earn rewards.
         </p>
       </footer>
     </div>

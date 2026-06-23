@@ -209,7 +209,7 @@ export default function PropertyConnectWizard({ onClose }: Props) {
                 <input
                   id="property-country-input"
                   type="text"
-                  placeholder="e.g. Pakistan, UAE, Kenya"
+                  placeholder="e.g. UAE, Kenya, USA"
                   value={state.country}
                   onChange={(e) => update({ country: e.target.value })}
                   className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary"

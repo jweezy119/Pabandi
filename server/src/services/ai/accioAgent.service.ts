@@ -167,7 +167,7 @@ export class AccioAgentService {
       if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
         try {
           logger.info(`[Accio Sourcing Opportunities] Requesting Qwen AI suggestion for business: ${businessId}`);
-          const systemPrompt = 'You are an AI business growth advisor for a premium booking platform in Pakistan. You must suggest high-margin, trending equipment/services that the business can source on Alibaba to grow their sales. Only output a valid JSON object matching the requested schema.';
+          const systemPrompt = 'You are an AI business growth advisor for a premium booking platform globally. You must suggest high-margin, trending equipment/services that the business can source on Alibaba to grow their sales. Only output a valid JSON object matching the requested schema.';
           const userPrompt = `
             Analyze this business profile and suggest one specific profitable trending equipment or tech item they can source on Alibaba to expand their services:
             Business Name: ${business.name}

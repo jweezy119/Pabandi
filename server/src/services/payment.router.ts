@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
  * Dual-market Payment Router
  *
  * Routes payment to the correct gateway based on the business currency:
- *   PKR → Safepay  (Pakistan market)
+ *   PKR → Safepay  (Local market)
  *   USD / other → PayPal  (USA / global market)
  *
  * This keeps both markets live simultaneously with zero code changes
@@ -27,8 +27,8 @@ export const paymentRouter = {
     const curr = currency.toUpperCase();
 
     if (curr === 'PKR') {
-      // Pakistan market → Safepay (amount is already in PKR)
-      logger.info(`[PaymentRouter] Routing PKR ${amount} → Safepay (Pakistan)`);
+      // Local market → Safepay (amount is already in PKR)
+      logger.info(`[PaymentRouter] Routing PKR ${amount} → Safepay (Local)`);
       const url = await safepayService.createCheckoutUrl(amount, reservationId);
       return { url, gateway: 'safepay' };
     } else {
