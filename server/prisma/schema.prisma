@@ -445,6 +445,9 @@ enum BusinessCategory {
   OTHER
   HOSPITAL
   FREELANCE
+  ECOMMERCE
+  MARKETPLACE
+  LIVE_SELLER
 }
 
 enum ApiTier {
@@ -472,6 +475,8 @@ enum SocialPlatform {
   FACEBOOK
   FIVERR
   UPWORK
+  INSTAGRAM_SHOP
+  SHOPIFY
 }
 
 enum SourcingOrderStatus {
@@ -514,22 +519,34 @@ model StakingPosition {
 }
 
 model Dispute {
-  id            String         @id @default(cuid())
-  userId        String
-  reportedById  String?
-  apiClientId   String?
-  type          DisputeType
-  description   String?
-  outcome       DisputeOutcome @default(PENDING)
-  resolvedAt    DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  user          User           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
-  reporter      User?          @relation("DisputesFiled", fields: [reportedById], references: [id])
-  apiClient     ApiClient?     @relation(fields: [apiClientId], references: [id])
+  id               String          @id @default(cuid())
+  userId           String?
+  hashedIdentityId String?
+  reportedById     String?
+  apiClientId      String?
+  type             DisputeType
+  description      String?
+  outcome          DisputeOutcome  @default(PENDING)
+  resolvedAt       DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  user             User?           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
+  hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
+  reporter         User?           @relation("DisputesFiled", fields: [reportedById], references: [id])
+  apiClient        ApiClient?      @relation(fields: [apiClientId], references: [id])
 
   @@index([userId])
+  @@index([hashedIdentityId])
   @@index([apiClientId])
+}
+
+model HashedIdentity {
+  hash           String    @id
+  riskScore      Float     @default(70)
+  totalIncidents Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  disputes       Dispute[]
 }
 
 model UserFlag {
@@ -551,6 +568,9 @@ enum DisputeType {
   HARASSMENT
   QUALITY_ISSUE
   OTHER
+  COD_REJECTION
+  RETURN_FRAUD
+  COUNTERFEIT_ITEM
 }
 
 enum DisputeOutcome {

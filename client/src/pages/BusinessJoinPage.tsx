@@ -11,6 +11,9 @@ const CheckIcon = () => (
 
 const CATEGORIES = [
   { id: 'HOTEL', label: 'Boutique Hotel & Hospitality' },
+  { id: 'ECOMMERCE', label: 'E-commerce Platform' },
+  { id: 'MARKETPLACE', label: 'Online Marketplace' },
+  { id: 'LIVE_SELLER', label: 'Live Seller / Drop' },
   { id: 'RESTAURANT', label: 'Local Restaurant & Cafe' },
   { id: 'EVENT_VENUE', label: 'Event Venue & Space' },
   { id: 'CLINIC', label: 'Private Clinic' },

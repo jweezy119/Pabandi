@@ -9,7 +9,7 @@ export default function BusinessRegister() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: 'RESTAURANT',
+    category: 'ECOMMERCE',
     address: '',
     city: '',
     phone: '',
@@ -91,7 +91,7 @@ export default function BusinessRegister() {
               value={formData.name}
               onChange={handleChange}
               className="input-field"
-              placeholder="Your Restaurant Name"
+              placeholder="Your Business / Platform Name"
             />
           </div>
 
@@ -107,6 +107,9 @@ export default function BusinessRegister() {
               onChange={handleChange}
               className="input-field"
             >
+              <option value="ECOMMERCE">E-Commerce Platform</option>
+              <option value="MARKETPLACE">Online Marketplace</option>
+              <option value="LIVE_SELLER">Live Seller</option>
               <option value="RESTAURANT">Restaurant</option>
               <option value="SALON">Salon</option>
               <option value="SPA">Spa</option>

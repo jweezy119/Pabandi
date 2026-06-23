@@ -11,7 +11,7 @@ const CITY_DATA: Record<string, {
     name: 'Karachi',
     nameUrdu: 'کراچی',
     tagline: 'The Global Commercial Capital',
-    businesses: ['Restaurants', 'Hotels', 'Catering', 'Event Venues', 'Short-Stay Apartments'],
+    businesses: ['Live Sellers', 'E-commerce Platforms', 'Restaurants', 'Freelancers', 'Event Venues'],
     stat1: '15M+', stat2: '85%', stat3: '$0',
     heroColor: '#0ea5e9',
     accentColor: '#0284c7',
@@ -21,7 +21,7 @@ const CITY_DATA: Record<string, {
     name: 'Lahore',
     nameUrdu: 'لاہور',
     tagline: 'The Heart of Punjab',
-    businesses: ['Restaurants', 'Wedding Venues', 'Hotels', 'Boutique Stays', 'Food Caterers'],
+    businesses: ['Live Sellers', 'Marketplaces', 'E-commerce Platforms', 'Boutique Stays', 'Food Caterers'],
     stat1: '13M+', stat2: '80%', stat3: '$0',
     heroColor: '#f59e0b',
     accentColor: '#d97706',
@@ -98,7 +98,7 @@ export const CityLandingPage: React.FC = () => {
               Now Onboarding · {data.name}
             </div>
             <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
-              Stop Losing Money<br />to No-Shows in<br />
+              Stop Losing Money<br />to COD Rejections &<br />No-Shows in<br />
               <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, #10b981)` }}>
                 {data.name}
               </span>
@@ -155,7 +155,7 @@ export const CityLandingPage: React.FC = () => {
                   <input required value={formData.name} onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
                     placeholder="Your Full Name" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
                   <input required value={formData.businessName} onChange={e => setFormData(f => ({ ...f, businessName: e.target.value }))}
-                    placeholder="Business Name (Restaurant, Hotel...)" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
+                    placeholder="Business Name (Marketplace, E-Commerce...)" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
                   <input required value={formData.phone} onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))}
                     placeholder="WhatsApp Number (+92...)" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
                   <select required value={formData.type} onChange={e => setFormData(f => ({ ...f, type: e.target.value }))}

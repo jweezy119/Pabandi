@@ -18,6 +18,9 @@ type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 const CATEGORIES = [
+  { value: 'ECOMMERCE', label: '🛍️ E-Commerce Platform' },
+  { value: 'MARKETPLACE', label: '🤝 Online Marketplace' },
+  { value: 'LIVE_SELLER', label: '🎥 Live Seller' },
   { value: 'RESTAURANT', label: '🍽️ Restaurant / Dining' },
   { value: 'SALON', label: '💇 Salon / Barbershop' },
   { value: 'SPA', label: '🧖 Spa / Wellness' },
@@ -398,7 +401,7 @@ export default function BusinessSettingsPage() {
               <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#8b5cf6]" />
               <p className="text-sm text-[#9e9e9e]">
                 Your business is categorized as <strong>{CATEGORIES.find(c => c.value === businessData.category)?.label || businessData.category}</strong>.
-                The AI uses industry-specific risk models — restaurants weigh group size and Friday nights,
+                The AI uses industry-specific risk models — e-commerce weighs COD rejections, restaurants weigh group size,
                 salons focus on service duration and value, event venues track capacity and VIP bookings.
               </p>
             </div>
