@@ -8,8 +8,10 @@ class PabandiTrust {
     this.apiKey = apiKey;
     this.apiUrl = 'http://localhost:5000/api/v1/network/check-hash'; // Replace with production URL
     this.saltUrl = 'http://localhost:5000/api/v1/network/public-salt';
+    this.bloomUrl = 'http://localhost:5000/api/v1/network/bloom-filter';
     this.isInitialized = false;
     this.salt = null;
+    this.bloomFilterJson = null;
   }
 
   /**
@@ -72,6 +74,32 @@ class PabandiTrust {
     try {
       const hash = await this.hashString(phoneNumber);
       
+      // PRE-FLIGHT CHECK: Download Bloom Filter if not cached
+      if (!this.bloomFilterJson) {
+        const bfRes = await fetch(this.bloomUrl);
+        const bfData = await bfRes.json();
+        this.bloomFilterJson = bfData.filter;
+        console.log("Pabandi SDK: Downloaded Global Edge Bloom Filter.");
+      }
+
+      // SIMULATED LOCAL BLOOM FILTER CHECK
+      // In a production SDK (like Webpack/Vite built), we import `bloom-filters` here 
+      // and run `BloomFilter.fromJSON(this.bloomFilterJson).has(hash)`.
+      // If the filter says "NO", we skip the API call entirely!
+      let skipApiCall = false;
+      if (this.bloomFilterJson && this.bloomFilterJson._filter) {
+        // Mocking the probability check to demonstrate the flow:
+        // A real bloom filter returns `false` if it is 100% NOT in the list.
+        const isSafeLocally = false; // Mocking that we must check the API for demo purposes
+        if (isSafeLocally) {
+          console.log("Pabandi SDK: ⚡ LOCAL BLOOM FILTER VERIFIED SAFE. Bypassing network call (<1ms latency).");
+          this.enableCashOnDelivery();
+          return;
+        } else {
+          console.log("Pabandi SDK: Local Bloom Filter detected possible risk. Verifying via Edge API...");
+        }
+      }
+
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {

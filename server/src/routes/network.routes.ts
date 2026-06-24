@@ -2,17 +2,22 @@ import { Router, Response } from 'express';
 import { apiKeyAuth, logApiUsage, ApiKeyRequest } from '../middleware/apiKey.middleware';
 import { networkService } from '../services/network.service';
 import { cryptoService } from '../services/crypto.service';
+import { bloomFilterService } from '../services/bloomFilter.service';
 import { strictApiLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 
 const router = Router();
 
 /**
- * ── PUBLIC KEY EXCHANGE ───────────────────────────────────────────────────
- * Allows the browser SDK to fetch the daily HMAC salt to locally hash PII.
+ * ── PUBLIC KEY EXCHANGE & FILTER ──────────────────────────────────────────
+ * Allows the browser SDK to fetch the daily HMAC salt and the Bloom Filter.
  */
 router.get('/public-salt', (req, res) => {
   res.json({ salt: cryptoService.getPublicSalt() });
+});
+
+router.get('/bloom-filter', (req, res) => {
+  res.json({ filter: bloomFilterService.getSerializedFilter() });
 });
 
 // Protect all network routes with B2B API Key validation

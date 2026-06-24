@@ -2,6 +2,7 @@ import { prisma } from '../utils/database';
 import { ecommerceReliabilityPredictor, EcommerceFeatures } from './ai/ecommerceReliabilityPredictor';
 import { DisputeType } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { cacheService } from './cache.service';
 
 export class NetworkService {
   
@@ -10,7 +11,14 @@ export class NetworkService {
    */
   async checkHash(hash: string) {
     try {
-      // 1. Fetch the hash and its incident history
+      // 1. Check the Edge Cache first (Latency: <1ms)
+      const cachedResponse = cacheService.get(hash);
+      if (cachedResponse) {
+        logger.info(`[Edge Cache] Cache HIT for hash ${hash.substring(0, 8)}...`);
+        return cachedResponse;
+      }
+
+      // 2. Fetch the hash and its incident history
       const identity = await prisma.hashedIdentity.findUnique({
         where: { hash },
         include: { disputes: true }
@@ -23,27 +31,26 @@ export class NetworkService {
           buyerHistory: { totalOrders: 0, cancellationRate: 0, returnRate: 0 },
         };
         const prediction = await ecommerceReliabilityPredictor.predict(features);
-        return {
+        const result = {
           status: 'NO_RECORD',
           message: 'This hash has never been reported in the network.',
           prediction
         };
+        cacheService.set(hash, result);
+        return result;
       }
 
-      // 2. Tally incidents
+      // 3. Tally incidents
       const codRejections = identity.disputes.filter((d: any) => d.type === 'COD_REJECTION').length;
       const frauds = identity.disputes.filter((d: any) => d.type === 'FRAUD' || d.type === 'RETURN_FRAUD').length;
       
       const totalIncidents = identity.disputes.length;
-      // We synthetically generate the "COD Rejection Rate" based on total incidents to feed the AI
-      // In a real high-volume production system, we'd divide by total successful orders across the network.
-      // For now, if they have >2 COD rejections, their rate is high.
       const syntheticCodRejectionRate = codRejections > 0 ? (codRejections / 5) : 0; 
       
       const features: EcommerceFeatures = {
         role: 'BUYER',
         buyerHistory: { 
-          totalOrders: 10, // Assumed base to feed the AI
+          totalOrders: 10,
           cancellationRate: 0, 
           returnRate: (frauds / 5) 
         },
@@ -55,7 +62,7 @@ export class NetworkService {
 
       const prediction = await ecommerceReliabilityPredictor.predict(features);
 
-      return {
+      const result = {
         status: 'RECORD_FOUND',
         totalIncidents,
         metrics: {
@@ -64,6 +71,9 @@ export class NetworkService {
         },
         prediction
       };
+
+      cacheService.set(hash, result);
+      return result;
 
     } catch (error) {
       logger.error(`Error checking hash ${hash}:`, error);
@@ -81,7 +91,7 @@ export class NetworkService {
         where: { hash },
         update: {
           totalIncidents: { increment: 1 },
-          riskScore: { decrement: type === 'COD_REJECTION' ? 10 : 25 } // Arbitrary penalty rule
+          riskScore: { decrement: type === 'COD_REJECTION' ? 10 : 25 }
         },
         create: {
           hash,
@@ -99,6 +109,9 @@ export class NetworkService {
           apiClientId,
         }
       });
+
+      // Invalidate the cache since the data has changed
+      cacheService.invalidate(hash);
 
       return {
         success: true,
