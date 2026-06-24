@@ -253,6 +253,84 @@ export default function DeveloperPortalPage() {
         </div>
       </section>
 
+      {/* ── Visual Flow Explanation ───────────────────────────────────────────── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '40px', letterSpacing: '-0.02em', textAlign: 'center' }}>
+          How the Zero-Knowledge API Works
+        </h2>
+        
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: '24px', background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          {/* Animated Background Gradient */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%',
+            background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.05))',
+            pointerEvents: 'none'
+          }} />
+
+          {/* Step 1: Input */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '1px solid #334155' }}>1</div>
+            <div style={{ flex: 1, background: '#0f172a', padding: '16px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px', fontWeight: 600 }}>SHOPIFY CHECKOUT</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '18px' }}>📱</span>
+                <span style={{ fontSize: '16px', fontFamily: 'monospace', color: '#cbd5e1' }}>+92 300 1234567</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #334155, #6366f1)' }} />
+
+          {/* Step 2: Hashing */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(79,70,229,0.4)' }}>2</div>
+            <div style={{ flex: 1, background: 'linear-gradient(90deg, #1e1b4b, #312e81)', padding: '16px 20px', borderRadius: '12px', border: '1px solid #4f46e5' }}>
+              <div style={{ fontSize: '13px', color: '#a5b4fc', marginBottom: '8px', fontWeight: 600 }}>BROWSER SDK (LOCAL HASHING)</div>
+              <div style={{ fontSize: '14px', fontFamily: 'monospace', color: '#e0e7ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                SHA256 <span style={{ color: '#818cf8' }}>&rarr;</span> e422fcdcdca08ddd52cb07d33fae3617...
+              </div>
+              <div style={{ fontSize: '12px', color: '#818cf8', marginTop: '6px' }}>* Raw phone number never leaves the browser.</div>
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #6366f1, #0ea5e9)' }} />
+
+          {/* Step 3: Pabandi Trust Oracle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#0ea5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(14,165,233,0.4)' }}>3</div>
+            <div style={{ flex: 1, background: '#0c4a6e', padding: '16px 20px', borderRadius: '12px', border: '1px solid #0ea5e9' }}>
+              <div style={{ fontSize: '13px', color: '#bae6fd', marginBottom: '8px', fontWeight: 600 }}>PABANDI ZERO-KNOWLEDGE API</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ padding: '4px 8px', background: 'rgba(239,68,68,0.2)', color: '#fca5a5', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>CRITICAL RISK</span>
+                <span style={{ fontSize: '14px', color: '#e0f2fe' }}>80% probability of COD Rejection based on global network history.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #0ea5e9, #f43f5e)' }} />
+
+          {/* Step 4: Action */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(244,63,94,0.4)' }}>4</div>
+            <div style={{ flex: 1, background: '#4c0519', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e11d48' }}>
+              <div style={{ fontSize: '13px', color: '#fecdd3', marginBottom: '8px', fontWeight: 600 }}>SHOPIFY CHECKOUT UPDATED</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.5, textDecoration: 'line-through' }}>
+                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #fda4af' }} />
+                <span style={{ fontSize: '16px', color: '#ffe4e6' }}>Cash on Delivery</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#fda4af', marginTop: '6px' }}>SDK dynamically hides risky payment methods instantly.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Endpoints ─────────────────────────────────────────────────────────── */}
       <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
         <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '32px', letterSpacing: '-0.02em' }}>

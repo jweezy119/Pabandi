@@ -1,6 +1,8 @@
 import axios from 'axios';
+import crypto from 'crypto';
 
 const WEBHOOK_URL = 'http://localhost:5000/api/v1/integrations/tiktok/webhook';
+const TIKTOK_APP_SECRET = 'demo_tiktok_secret';
 
 async function simulateTikTokWebhook() {
   console.log("--- Simulating TikTok Shop Webhook (New Order) ---");
@@ -11,17 +13,19 @@ async function simulateTikTokWebhook() {
       order_id: 'TT-SHOP-999888777',
       order_status: 'UNPAID',
       payment_method: 'COD',
-      // TikTok Shop provides the raw PII to the seller's webhook:
       buyer_phone: '+923001234567',
       buyer_name: 'Test Buyer'
     }
   };
 
+  const rawBody = JSON.stringify(payload);
+  const signature = crypto.createHmac('sha256', TIKTOK_APP_SECRET).update(rawBody).digest('hex');
+
   try {
     const response = await axios.post(WEBHOOK_URL, payload, {
       headers: {
         'Content-Type': 'application/json',
-        // 'x-tts-signature': '...' (In production we verify this)
+        'x-tts-signature': signature
       }
     });
 

@@ -7,7 +7,9 @@ class PabandiTrust {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.apiUrl = 'http://localhost:5000/api/v1/network/check-hash'; // Replace with production URL
+    this.saltUrl = 'http://localhost:5000/api/v1/network/public-salt';
     this.isInitialized = false;
+    this.salt = null;
   }
 
   /**
@@ -35,14 +37,31 @@ class PabandiTrust {
   }
 
   /**
-   * Securely hashes a string locally (SHA256).
-   * Ensures raw PII NEVER leaves the browser.
+   * Securely hashes a string locally (HMAC-SHA256).
+   * Ensures raw PII NEVER leaves the browser and protects against rainbow tables.
    */
   async hashString(str) {
+    if (!this.salt) {
+      const res = await fetch(this.saltUrl);
+      const data = await res.json();
+      this.salt = data.salt;
+      console.log("Pabandi SDK: Fetched daily salt for HMAC.");
+    }
+
     const encoder = new TextEncoder();
     const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const keyData = encoder.encode(this.salt);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+
+    const signature = await crypto.subtle.sign("HMAC", cryptoKey, data);
+    const hashArray = Array.from(new Uint8Array(signature));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 

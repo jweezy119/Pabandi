@@ -1,9 +1,19 @@
 import { Router, Response } from 'express';
 import { apiKeyAuth, logApiUsage, ApiKeyRequest } from '../middleware/apiKey.middleware';
 import { networkService } from '../services/network.service';
+import { cryptoService } from '../services/crypto.service';
+import { strictApiLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+/**
+ * ── PUBLIC KEY EXCHANGE ───────────────────────────────────────────────────
+ * Allows the browser SDK to fetch the daily HMAC salt to locally hash PII.
+ */
+router.get('/public-salt', (req, res) => {
+  res.json({ salt: cryptoService.getPublicSalt() });
+});
 
 // Protect all network routes with B2B API Key validation
 router.use(apiKeyAuth);
@@ -15,7 +25,7 @@ router.use(logApiUsage);
  * Check a hashed identity against the zero-knowledge blocklist.
  * Used by e-commerce checkout flows (e.g. Shopify plugins) to decide whether to hide COD.
  */
-router.post('/check-hash', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+router.post('/check-hash', strictApiLimiter, async (req: ApiKeyRequest, res: Response): Promise<any> => {
   try {
     const { hash } = req.body;
     
