@@ -16,7 +16,7 @@ import { requireAppCheck } from './middleware/appCheck.middleware';
 
 // Load environment variables FIRST
 dotenv.config();
-dotenv.config({ path: '.env.contracts' });
+try { dotenv.config({ path: '.env.contracts' }); } catch (err) { logger.warn('.env.contracts not loaded'); }
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -39,14 +39,14 @@ const app = express();
 const httpServer = createServer(app);
 
 // Initialize Firebase Admin globally
-initFirebaseAdmin();
+try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
 // Configure Passport strategies (env vars loaded above)
-configurePassport();
+try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
 app.use(passport.initialize());
 
 // Start DB keepalive to prevent Supabase free-tier pause
-startDbKeepalive();
+try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' + (err as Error).message); }
 
 const PORT = process.env.PORT || 5000;
 const API_VERSION = process.env.API_VERSION || 'v1';

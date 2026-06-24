@@ -35,4 +35,4 @@ EXPOSE 5000
 ENV NODE_ENV=production
 
 # Start the server (includes Prisma migration before start)
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy || true && node dist/index.js"]
