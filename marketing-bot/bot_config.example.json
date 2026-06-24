@@ -1,0 +1,20 @@
+{
+  "_comment": "Create bot_config.json from this template. Never commit real credentials.",
+  "twitter": {
+    "api_key": "YOUR_TWITTER_API_KEY",
+    "api_secret": "YOUR_TWITTER_API_SECRET",
+    "access_token": "YOUR_TWITTER_ACCESS_TOKEN",
+    "access_secret": "YOUR_TWITTER_ACCESS_SECRET",
+    "bearer_token": "YOUR_TWITTER_BEARER_TOKEN"
+  },
+  "instagram": {
+    "access_token": "YOUR_INSTAGRAM_GRAPH_TOKEN",
+    "page_id": "YOUR_FACEBOOK_PAGE_ID",
+    "ig_user_id": "YOUR_INSTAGRAM_USER_ID"
+  },
+  "schedule": {
+    "auto_post": false,
+    "check_interval_minutes": 60,
+    "engagement_limit_per_day": 10
+  }
+}
