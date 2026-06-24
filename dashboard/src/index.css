@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-slate-100 font-sans antialiased m-0 p-0 overflow-x-hidden;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-dark-800/50 backdrop-blur-md border border-slate-700/50 shadow-xl rounded-xl;
+  }
+  
+  .glass-button {
+    @apply bg-brand-500/10 hover:bg-brand-500/20 text-brand-500 border border-brand-500/20 transition-all rounded-lg font-medium;
+  }
+}
