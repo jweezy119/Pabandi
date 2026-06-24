@@ -29,7 +29,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Expose the API port
-EXPOSE 5000
+EXPOSE 8080
 
 # Set production environment
 ENV NODE_ENV=production

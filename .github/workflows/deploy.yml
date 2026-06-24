@@ -55,30 +55,33 @@ jobs:
           FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
           FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
         run: |
+          test -n "$DATABASE_URL" || { echo '::error::Missing secret: DATABASE_URL'; exit 1; }
+          test -n "$DIRECT_URL" || { echo '::error::Missing secret: DIRECT_URL'; exit 1; }
+          test -n "$FRONTEND_URL" || { echo '::error::Missing secret: FRONTEND_URL'; exit 1; }
           cat <<EOF > env.yaml
           NODE_ENV: "production"
-          DATABASE_URL: "${DATABASE_URL:-placeholder_database_url}"
-          DIRECT_URL: "${DIRECT_URL:-placeholder_direct_url}"
-          FRONTEND_URL: "${FRONTEND_URL:-placeholder_frontend_url}"
+          DATABASE_URL: "${DATABASE_URL}"
+          DIRECT_URL: "${DIRECT_URL}"
+          FRONTEND_URL: "${FRONTEND_URL}"
           BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
-          JWT_SECRET: "${JWT_SECRET:-placeholder_jwt_secret}"
-          JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:-placeholder_jwt_refresh_secret}"
-          FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-placeholder_firebase_project_id}"
-          FIREBASE_CLIENT_EMAIL: "${FIREBASE_CLIENT_EMAIL:-placeholder_firebase_client_email}"
-          FIREBASE_PRIVATE_KEY: "${FIREBASE_PRIVATE_KEY:-placeholder_firebase_private_key}"
-          GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-placeholder_google_client_id}"
-          GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-placeholder_google_client_secret}"
-          GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY:-placeholder_google_maps_api_key}"
-          SMTP_USER: "${SMTP_USER:-placeholder_smtp_user}"
-          SMTP_PASS: "${SMTP_PASS:-placeholder_smtp_pass}"
-          SAFEPAY_API_KEY: "${SAFEPAY_API_KEY:-placeholder_safepay_api_key}"
-          SAFEPAY_SECRET_KEY: "${SAFEPAY_SECRET_KEY:-placeholder_safepay_secret_key}"
-          SAFEPAY_WEBHOOK_SECRET: "${SAFEPAY_WEBHOOK_SECRET:-placeholder_safepay_webhook_secret}"
-          PAYPAL_CLIENT_ID: "${PAYPAL_CLIENT_ID:-placeholder_paypal_client_id}"
-          PAYPAL_CLIENT_SECRET: "${PAYPAL_CLIENT_SECRET:-placeholder_paypal_client_secret}"
-          PAYPAL_WEBHOOK_ID: "${PAYPAL_WEBHOOK_ID:-placeholder_paypal_webhook_id}"
-          FACEBOOK_APP_ID: "${FACEBOOK_APP_ID:-placeholder_facebook_app_id}"
-          FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET:-placeholder_facebook_app_secret}"
+          JWT_SECRET: "${JWT_SECRET}"
+          JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+          FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
+          FIREBASE_CLIENT_EMAIL: "${FIREBASE_CLIENT_EMAIL}"
+          FIREBASE_PRIVATE_KEY: "${FIREBASE_PRIVATE_KEY}"
+          GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+          GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
+          GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY}"
+          SMTP_USER: "${SMTP_USER}"
+          SMTP_PASS: "${SMTP_PASS}"
+          SAFEPAY_API_KEY: "${SAFEPAY_API_KEY}"
+          SAFEPAY_SECRET_KEY: "${SAFEPAY_SECRET_KEY}"
+          SAFEPAY_WEBHOOK_SECRET: "${SAFEPAY_WEBHOOK_SECRET}"
+          PAYPAL_CLIENT_ID: "${PAYPAL_CLIENT_ID}"
+          PAYPAL_CLIENT_SECRET: "${PAYPAL_CLIENT_SECRET}"
+          PAYPAL_WEBHOOK_ID: "${PAYPAL_WEBHOOK_ID}"
+          FACEBOOK_APP_ID: "${FACEBOOK_APP_ID}"
+          FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET}"
           EOF
 
           gcloud run deploy pabandi-server \
