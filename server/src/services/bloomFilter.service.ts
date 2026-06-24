@@ -31,7 +31,7 @@ class BloomFilterService {
       // Initialize a new Bloom filter.
       // Sizing it for 1,000,000 items with a 1% false positive rate
       const itemCount = Math.max(riskyIdentities.length, 1000); // minimum size
-      const filter = new BloomFilter(itemCount, 0.01);
+      const filter = BloomFilter.create(itemCount, 0.01);
 
       riskyIdentities.forEach(identity => {
         filter.add(identity.hash);
