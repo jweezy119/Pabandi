@@ -48,7 +48,7 @@ app.use(passport.initialize());
 // Start DB keepalive to prevent Supabase free-tier pause
 try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' + (err as Error).message); }
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 5000);
 const API_VERSION = process.env.API_VERSION || 'v1';
 
 // Security and Performance middleware

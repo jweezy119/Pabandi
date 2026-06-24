@@ -36,6 +36,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          BACKEND_URL: https://pabandi-server-97129395003.asia-south1.run.app
+          PORT: "8080"
+          API_VERSION: v1
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -60,10 +63,12 @@ jobs:
           test -n "$FRONTEND_URL" || { echo '::error::Missing secret: FRONTEND_URL'; exit 1; }
           cat <<EOF > env.yaml
           NODE_ENV: "production"
+          PORT: "${PORT}"
+          API_VERSION: "${API_VERSION}"
           DATABASE_URL: "${DATABASE_URL}"
           DIRECT_URL: "${DIRECT_URL}"
           FRONTEND_URL: "${FRONTEND_URL}"
-          BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
+          BACKEND_URL: "${BACKEND_URL}"
           JWT_SECRET: "${JWT_SECRET}"
           JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
           FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
