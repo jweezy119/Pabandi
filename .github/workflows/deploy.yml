@@ -63,7 +63,6 @@ jobs:
           test -n "$FRONTEND_URL" || { echo '::error::Missing secret: FRONTEND_URL'; exit 1; }
           cat <<EOF > env.yaml
           NODE_ENV: "production"
-          PORT: "${PORT}"
           API_VERSION: "${API_VERSION}"
           DATABASE_URL: "${DATABASE_URL}"
           DIRECT_URL: "${DIRECT_URL}"
