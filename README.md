@@ -4,13 +4,18 @@
 > 
 > Pabandi is positioned for the "Agentic Business" track, demonstrating how AI agents can autonomously manage front-desk operations, predict no-shows, and secure revenue for SMEs globally.
 
-Pabandi is an Agentic AI booking ecosystem built for the modern service economy. For businesses, our autonomous AI agent actively protects your bottom line by predicting no-shows and negotiating dynamic, risk-based deposits. For customers, we offer a seamless booking journey powered by a next-generation Web3 loyalty program. Arrive for your appointment, and you earn PAB tokens—digital assets that hold real value, redeemable for future services or transferable to your personal crypto wallet.
+Pabandi is a Dual-Engine Trust Ecosystem. For businesses in high-friction markets like Pakistan, our **Consumer Booking App** actively protects bottom lines by predicting no-shows and negotiating dynamic, risk-based deposits. This live, real-world data engine feeds our **Zero-Knowledge Fraud Network API**—a highly scalable, global infrastructure layer that allows giants like Shopify, TikTok Shop, and Daraz to instantly block fraud and Cash-On-Delivery (COD) abuse without violating consumer privacy.
+
+By combining a localized consumer booking app with a global B2B API, Pabandi has created a proprietary data flywheel that no competitor can copy.
 
 ## 🎯 Features
 
 - **Translucent Neony Design**: A highly premium, frosted-glass interface featuring a dark slate base, high-blur glass surfaces, and glowing neon accents (cyan, mint, pink) for maximum modern appeal.
 - **Solana Web3 Integration**: Native Solana blockchain integration. Users automatically earn **Pabandi Reliability Tokens (PAB)** dropped directly to their Phantom/Solflare wallets for every successful booking and check-in.
 - **AI Reliability Score**: Proprietary ML models analyze user booking histories, location context, and time variables to generate a dynamic "no-show risk score." High-risk users are dynamically prompted for upfront deposits.
+- **The Dual-Engine Flywheel**: 
+  1. **The Data Engine (Consumer App)**: A booking platform for salons, clinics, and live sellers in Pakistan. It generates proprietary, on-chain reliability behavior data in real-time.
+  2. **The Global Layer (Zero-Knowledge API)**: A scalable, monetizable B2B infrastructure that integrates with Daraz, Shopify, and TikTok Shop to block COD fraud globally.
 - **WhatsApp Automation**: Complete integration with Meta Cloud API for automated booking confirmations, 24-hour reminders, owner alerts, and post-booking review requests.
 - **Seamless Maps Integration**: Integrated Google Maps embedded directly into the marketing site and reservation dashboards to discover and visualize real-time local business data.
 - **Business Management**: Complete business registration, webhook integrations, and native CRM synchronization (Odoo JSON-RPC and Cal.com).

@@ -22,6 +22,11 @@ export class ReviewService {
             const res = await fetch(googleUrl);
             const response = (await res.json()) as any;
 
+            if (response.status !== 'OK') {
+                logger.warn(`Google Places API returned status ${response.status}: ${response.error_message || 'No error message'}. Skipping review sync to avoid crash.`);
+                return;
+            }
+
             const placeDiff = response.result;
             
             if (!placeDiff) {
