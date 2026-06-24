@@ -109,7 +109,7 @@ export class NotificationService {
   ): Promise<boolean> {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@karachibooking.pk',
+        from: process.env.EMAIL_FROM || 'noreply@pabandi.pk',
         to: email,
         subject: 'Reset Your Pabandi Password',
         html: `

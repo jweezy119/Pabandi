@@ -145,7 +145,7 @@ export const consultAdvisor = async (req: Request, res: Response) => {
     });
     const noShowRate = totalReservations > 0 ? Math.round((noShowReservations / totalReservations) * 100) : 0;
 
-    const systemPrompt = `You are a state-of-the-art AI Business Consultant powered by Alibaba Cloud Qwen (qwen-turbo) for Pabandi, the leading AI-Crypto reliability booking platform. You help merchants optimize slots, prevent no-shows, source inventory on Alibaba, and drive growth.`;
+    const systemPrompt = `You are a state-of-the-art AI Business Consultant powered by Alibaba Cloud Qwen (qwen-turbo) for Pabandi — launching first in Pakistan, built for global scale. You help merchants reduce no-shows, optimize slots, and grow revenue in local emerging markets.`;
     
     const userPrompt = `
       Merchant Message: "${message}"

@@ -58,7 +58,7 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
 
   try {
     // Determine the role and context for the AI
-    let context = 'You are the Pabandi AI Assistant. Pabandi is a global reservation and trust platform.\n';
+    let context = 'You are the Pabandi AI Assistant. Pabandi is a reliability and trust layer launching first in Pakistan, built for informal commerce worldwide.\n';
     
     if (user) {
       context += `The person you are talking to is ${user.firstName} ${user.lastName}, a registered ${user.role} on Pabandi.\n`;
