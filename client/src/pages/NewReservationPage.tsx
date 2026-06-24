@@ -361,6 +361,36 @@ export default function NewReservationPage() {
           <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 mb-8">
             <FieldLabel>Search Business to Book</FieldLabel>
             <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
+            
+            {/* Fallback Demo Venues */}
+            <div className="mt-4 pt-4 border-t border-outline-variant/20">
+              <p className="text-xs text-on-surface-variant font-medium mb-3 uppercase tracking-wider">Or select a demo venue</p>
+              <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {[
+                  { id: 'demo_1', name: 'Karachi Gymkhana', address: 'Club Road, Karachi', phone: '+92 300 111 2222', rating: 4.8 },
+                  { id: 'demo_2', name: 'Cafe Flo', address: 'Clifton Block 4, Karachi', phone: '+92 300 333 4444', rating: 4.9 },
+                  { id: 'demo_3', name: 'Toni&Guy', address: 'DHA Phase 6, Karachi', phone: '+92 300 555 6666', rating: 4.7 }
+                ].map(venue => (
+                  <button 
+                    key={venue.id}
+                    onClick={() => setSelectedPlace({ 
+                      googlePlaceId: venue.id, 
+                      name: venue.name, 
+                      address: venue.address, 
+                      phone: venue.phone, 
+                      rating: venue.rating,
+                      userRatingsTotal: 124,
+                      isClaimed: true,
+                      photoUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=400'
+                    })}
+                    className="flex-shrink-0 bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 rounded-lg px-4 py-2 text-left transition-colors"
+                  >
+                    <div className="text-sm font-bold text-primary">{venue.name}</div>
+                    <div className="text-xs text-on-surface-variant">{venue.address}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {selectedPlace ? (
@@ -515,14 +545,22 @@ export default function NewReservationPage() {
                 <div className="rounded-xl overflow-hidden shadow-sm border border-outline-variant/20 flex flex-col bg-surface-container-lowest">
                   
                   <div className="h-64 bg-surface-container-low relative">
-                    <iframe
-                      title="Location Map"
-                      width="100%" height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&q=place_id:${selectedPlace.googlePlaceId}`}>
-                    </iframe>
+                    {selectedPlace.googlePlaceId.startsWith('demo_') ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-surface-container-low text-on-surface-variant p-4 text-center border-b border-outline-variant/20">
+                        <MapPinIcon className="h-8 w-8 mb-2 opacity-50" />
+                        <p className="text-sm font-medium uppercase tracking-wider">Demo Venue Selected</p>
+                        <p className="text-xs opacity-70 mt-1">Map visualization disabled in demo mode.</p>
+                      </div>
+                    ) : (
+                      <iframe
+                        title="Location Map"
+                        width="100%" height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}&q=place_id:${selectedPlace.googlePlaceId}`}>
+                      </iframe>
+                    )}
                   </div>
 
                   <div className="p-6 flex-1 flex flex-col space-y-6">
