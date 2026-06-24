@@ -37,7 +37,6 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           BACKEND_URL: https://pabandi-server-97129395003.asia-south1.run.app
-          PORT: "8080"
           API_VERSION: v1
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
