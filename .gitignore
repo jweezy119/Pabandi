@@ -84,3 +84,5 @@ temp/
 .firebase/
 
 .env
+
+marketing-bot/.venv/
