@@ -1,40 +1,38 @@
-# Stage 1: Build
-FROM node:18-bullseye-slim AS builder
+# Use Node.js Alpine for a lightweight footprint
+FROM node:18-alpine AS builder
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Install native dependencies required for bcrypt, prisma, and tensorflow
-RUN apt-get update && apt-get install -y python3 make g++ openssl && rm -rf /var/lib/apt/lists/*
-
+# Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install ALL dependencies (including devDependencies for build)
-RUN npm install
+# Install dependencies
+RUN npm ci
 
-# Copy source and build
+# Copy the rest of the source code
 COPY . .
+
+# Generate Prisma Client and build TypeScript
 RUN npx prisma generate
 RUN npm run build
 
-# Stage 2: Production
-FROM node:18-bullseye-slim
+# --- Production Image ---
+FROM node:18-alpine
 
-# Install OpenSSL (required by Prisma) and other runtime libs if needed
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-WORKDIR /usr/src/app
+# Copy built artifacts and dependencies
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 
-COPY package*.json ./
-COPY prisma ./prisma/
+# Expose the API port
+EXPOSE 5000
 
-# Copy built files and all compiled node_modules from builder
-# This guarantees native modules (bcrypt, tensorflow) and Prisma client work perfectly
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Set production environment
+ENV NODE_ENV=production
 
-# Cloud Run will set PORT=8080 automatically
-ENV NODE_ENV production
-EXPOSE 8080
-
-CMD ["node", "dist/src/index.js"]
+# Start the server (includes Prisma migration before start)
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
