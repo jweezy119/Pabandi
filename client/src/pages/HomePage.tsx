@@ -157,7 +157,7 @@ export default function HomePage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">Finally Pays.</span>
             </h1>
             <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
-              Instantly book any business globally. Maintain a high Reliability Score to unlock zero-deposit bookings, and earn real-world <span className="font-bold text-pink-400">$PAB</span> rewards for every appointment you honor.
+              Launching first in Pakistan’s informal economy — salons, clinics, and live sellers — with a reliability layer built to scale globally. Earn <span className="font-bold text-pink-400">$PAB</span> rewards for every appointment you honor.
             </p>
             
             {/* Search Bar prominently placed in the hero for immediate immersion */}
