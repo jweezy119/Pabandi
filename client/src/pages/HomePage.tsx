@@ -64,7 +64,16 @@ export default function HomePage() {
   const [locLoading, setLocLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
   const [selectedMapPlace, setSelectedMapPlace] = useState<google.maps.places.PlaceResult | null>(null);
+  const [mapError, setMapError] = useState(false);
   
+  // Detect Google Maps Authentication/Quota Failures
+  useEffect(() => {
+    (window as any).gm_authFailure = () => {
+      console.warn("Google Maps Auth/Quota Failure Detected. Falling back to Demo Mode.");
+      setMapError(true);
+    };
+  }, []);
+
   const revealRef1 = useScrollReveal<HTMLDivElement>();
   const revealRef2 = useScrollReveal<HTMLDivElement>();
   const revealRef3 = useScrollReveal<HTMLDivElement>();
@@ -154,9 +163,34 @@ export default function HomePage() {
             {/* Search Bar prominently placed in the hero for immediate immersion */}
             <div className="pt-4 relative z-50 stagger-item">
                <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Find & Book Anywhere</p>
-               <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
-                 <GlobalPlaceAutocomplete onPlaceSelect={handleGlobalPlaceSelect} />
-               </APIProvider>
+               {mapError ? (
+                 <div className="bg-surface-container-low rounded-lg p-4 shadow-sm w-full border border-outline-variant/20">
+                   <p className="text-xs text-on-surface-variant font-medium mb-3 uppercase tracking-wider">Demo Venues (Map Offline)</p>
+                   <div className="flex flex-col gap-2">
+                     {[
+                       { id: 'demo_1', name: 'Karachi Gymkhana', address: 'Club Road, Karachi' },
+                       { id: 'demo_2', name: 'Cafe Flo', address: 'Clifton Block 4, Karachi' },
+                       { id: 'demo_3', name: 'Toni&Guy', address: 'DHA Phase 6, Karachi' }
+                     ].map(venue => (
+                       <button 
+                         key={venue.id}
+                         onClick={() => navigate('/reservations/new', { state: { googlePlaceId: venue.id, placeName: venue.name } })}
+                         className="flex items-center justify-between bg-surface-container-highest hover:bg-surface-container border border-outline-variant/10 rounded-lg px-4 py-2 text-left transition-colors"
+                       >
+                         <div>
+                           <div className="text-sm font-bold text-primary">{venue.name}</div>
+                           <div className="text-xs text-on-surface-variant">{venue.address}</div>
+                         </div>
+                         <span className="material-symbols-outlined text-primary text-sm">arrow_forward</span>
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+               ) : (
+                 <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
+                   <GlobalPlaceAutocomplete onPlaceSelect={handleGlobalPlaceSelect} />
+                 </APIProvider>
+               )}
             </div>
 
             <div className="flex gap-4 pt-6 text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
@@ -168,55 +202,67 @@ export default function HomePage() {
 
           {/* Right Col - The Interactive Map */}
           <div className="flex-1 relative w-full h-[500px] xl:h-[600px] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.15)] border border-white/10 stagger-item" style={{ animationDelay: '240ms' }}>
-            <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
-              <Map
-                defaultZoom={13}
-                center={mapCenter}
-                onCenterChanged={(ev) => setMapCenter(ev.detail.center)}
-                gestureHandling={'greedy'}
-                disableDefaultUI={true}
-                mapId="pabandi_global_map_hero"
-                className="w-full h-full"
-              >
-                {selectedMapPlace && selectedMapPlace.geometry?.location && (
-                  <AdvancedMarker
-                    position={{ lat: selectedMapPlace.geometry.location.lat(), lng: selectedMapPlace.geometry.location.lng() }}
-                  >
-                    <Pin background={'#14F195'} borderColor={'#06b6d4'} glyphColor={'#0f172a'} />
-                  </AdvancedMarker>
-                )}
-              </Map>
+            {mapError ? (
+              <div className="w-full h-full bg-[#0f172a] flex flex-col items-center justify-center border border-slate-800 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200')] bg-cover bg-center opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
+                <div className="relative z-10 text-center p-8">
+                  <MapPinIcon className="h-12 w-12 mx-auto mb-4 text-[#14F195] opacity-80" />
+                  <h3 className="text-2xl font-bold text-white mb-2 font-headline">Global Map Offline</h3>
+                  <p className="text-slate-400 max-w-sm mx-auto text-sm">You are currently in Demo Mode. Select one of the Demo Venues from the search bar to proceed with the interactive booking flow.</p>
+                </div>
+              </div>
+            ) : (
+              <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
+                <Map
+                  defaultZoom={13}
+                  center={mapCenter}
+                  onCenterChanged={(ev) => setMapCenter(ev.detail.center)}
+                  gestureHandling={'greedy'}
+                  disableDefaultUI={true}
+                  mapId="pabandi_global_map_hero"
+                  className="w-full h-full"
+                >
+                  {selectedMapPlace && selectedMapPlace.geometry?.location && (
+                    <AdvancedMarker
+                      position={{ lat: selectedMapPlace.geometry.location.lat(), lng: selectedMapPlace.geometry.location.lng() }}
+                    >
+                      <Pin background={'#14F195'} borderColor={'#06b6d4'} glyphColor={'#0f172a'} />
+                    </AdvancedMarker>
+                  )}
+                </Map>
 
-              {/* Floating Bottom Panel for Selected Place */}
-              {selectedMapPlace && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40 animate-[slideUp_0.3s_ease-out]">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="min-w-0 pr-4">
-                      <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">{selectedMapPlace.name}</h3>
-                      <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">{selectedMapPlace.formatted_address}</p>
+                {/* Floating Bottom Panel for Selected Place */}
+                {selectedMapPlace && (
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40 animate-[slideUp_0.3s_ease-out]">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="min-w-0 pr-4">
+                        <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">{selectedMapPlace.name}</h3>
+                        <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">{selectedMapPlace.formatted_address}</p>
+                      </div>
+                      <button onClick={() => setSelectedMapPlace(null)} className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0">
+                        <span className="material-symbols-outlined text-lg">close</span>
+                      </button>
                     </div>
-                    <button onClick={() => setSelectedMapPlace(null)} className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0">
-                      <span className="material-symbols-outlined text-lg">close</span>
+                    
+                    <div className="flex items-center gap-2 mb-5 mt-3">
+                      <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-amber-500/20">
+                        Unclaimed
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant font-medium">Not on Pabandi yet</span>
+                    </div>
+
+                    <button 
+                      onClick={() => navigate('/reservations/new', { state: { googlePlaceId: selectedMapPlace.place_id, placeName: selectedMapPlace.name } })}
+                      className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] hover:shadow-[0_12px_24px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
+                    >
+                      Make Reservation
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </button>
                   </div>
-                  
-                  <div className="flex items-center gap-2 mb-5 mt-3">
-                    <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-amber-500/20">
-                      Unclaimed
-                    </span>
-                    <span className="text-[11px] text-on-surface-variant font-medium">Not on Pabandi yet</span>
-                  </div>
-
-                  <button 
-                    onClick={() => navigate('/reservations/new', { state: { googlePlaceId: selectedMapPlace.place_id, placeName: selectedMapPlace.name } })}
-                    className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] hover:shadow-[0_12px_24px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
-                  >
-                    Make Reservation
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </button>
-                </div>
-              )}
-            </APIProvider>
+                )}
+              </APIProvider>
+            )}
           </div>
         </div>
       </section>

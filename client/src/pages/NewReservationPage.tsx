@@ -157,6 +157,16 @@ export default function NewReservationPage() {
     notes: '',
     paymentMethod: 'safepay' as PaymentMethod,
   });
+
+  const [mapError, setMapError] = useState(false);
+  // Detect Google Maps Authentication/Quota Failures
+  useEffect(() => {
+    (window as any).gm_authFailure = () => {
+      console.warn("Google Maps Auth/Quota Failure Detected. Falling back to Demo Mode.");
+      setMapError(true);
+    };
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -360,7 +370,14 @@ export default function NewReservationPage() {
           {/* Unified Autocomplete Search Bar */}
           <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 mb-8">
             <FieldLabel>Search Business to Book</FieldLabel>
-            <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
+            {mapError ? (
+              <div className="bg-surface-container-low rounded-lg p-4 w-full border border-outline-variant/20 mb-4 text-center">
+                <p className="text-sm font-medium text-on-surface-variant">Google Maps Search is currently offline.</p>
+                <p className="text-xs text-outline mt-1">Please select a Demo Venue below to continue.</p>
+              </div>
+            ) : (
+              <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
+            )}
             
             {/* Fallback Demo Venues */}
             <div className="mt-4 pt-4 border-t border-outline-variant/20">
