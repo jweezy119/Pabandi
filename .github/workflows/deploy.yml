@@ -57,11 +57,17 @@ jobs:
           FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
           FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
         run: |
-          required_vars=(DATABASE_URL DIRECT_URL FRONTEND_URL JWT_SECRET JWT_REFRESH_SECRET FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY SMTP_USER SMTP_PASS SAFEPAY_API_KEY PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET)
+          required_vars=(DATABASE_URL DIRECT_URL FRONTEND_URL JWT_SECRET JWT_REFRESH_SECRET FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY SMTP_USER SMTP_PASS SAFEPAY_API_KEY)
           for v in "${required_vars[@]}"; do
             if [ -z "${!v}" ]; then
               echo "::error::Missing required secret: $v"
               exit 1
+            fi
+          done
+          optional_vars=(PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET PAYPAL_WEBHOOK_ID)
+          for v in "${optional_vars[@]}"; do
+            if [ -z "${!v}" ]; then
+              echo "::warning::Optional secret not set: $v (PayPal features disabled until configured)"
             fi
           done
           cat <<'EOF' > env.yaml
