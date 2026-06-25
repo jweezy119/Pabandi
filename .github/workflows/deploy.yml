@@ -103,9 +103,7 @@ jobs:
             --region asia-south1 \
             --platform managed \
             --allow-unauthenticated \
-            --env-vars-file env.yaml \
-            --health-check-path /healthz \
-            --restart-policy Always
+            --env-vars-file env.yaml
 
   deploy-frontend:
     name: Deploy Frontend to Firebase
