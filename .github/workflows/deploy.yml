@@ -57,10 +57,14 @@ jobs:
           FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
           FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
         run: |
-          test -n "$DATABASE_URL" || { echo '::error::Missing secret: DATABASE_URL'; exit 1; }
-          test -n "$DIRECT_URL" || { echo '::error::Missing secret: DIRECT_URL'; exit 1; }
-          test -n "$FRONTEND_URL" || { echo '::error::Missing secret: FRONTEND_URL'; exit 1; }
-          cat <<EOF > env.yaml
+          required_vars=(DATABASE_URL DIRECT_URL FRONTEND_URL JWT_SECRET JWT_REFRESH_SECRET FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY SMTP_USER SMTP_PASS SAFEPAY_API_KEY PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET)
+          for v in "${required_vars[@]}"; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Missing required secret: $v"
+              exit 1
+            fi
+          done
+          cat <<'EOF' > env.yaml
           NODE_ENV: "production"
           API_VERSION: "${API_VERSION}"
           DATABASE_URL: "${DATABASE_URL}"
@@ -85,6 +89,7 @@ jobs:
           PAYPAL_WEBHOOK_ID: "${PAYPAL_WEBHOOK_ID}"
           FACEBOOK_APP_ID: "${FACEBOOK_APP_ID}"
           FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET}"
+          LOG_LEVEL: "info"
           EOF
 
           gcloud run deploy pabandi-server \
@@ -92,7 +97,9 @@ jobs:
             --region asia-south1 \
             --platform managed \
             --allow-unauthenticated \
-            --env-vars-file env.yaml
+            --env-vars-file env.yaml \
+            --health-check-path /healthz \
+            --restart-policy Always
 
   deploy-frontend:
     name: Deploy Frontend to Firebase

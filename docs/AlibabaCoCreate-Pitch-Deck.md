@@ -23,8 +23,8 @@ Open with a story. “Last month a Karachi seller told me out of 50 live-sale or
 ---
 
 ## SLIDE 2: Market Opportunity
-**Visual:** World map highlighting Pakistan + Southeast Asia + MENA with stats  
-**Headline:** $15B informal economy, starting in Pakistan. Architecture built for global scale.
+**Visual:** Pakistan street commerce / live selling scene + Daraz ecosystem context
+**Headline:** Pakistan-first lab. Alibaba-ready architecture.
 
 **Bullets:**
 - **Pakistan first lab:** 20M+ freelancers, 500K+ salons/clinics, booming live-sale culture
@@ -102,8 +102,8 @@ Walk the judges through the user journey: buyer earns score → seller verifies 
 ---
 
 ## SLIDE 7: Alibaba Integration Path
-**Visual:** Alibaba ecosystem icons (Daraz, Alibaba.com, 1688, AliExpress)  
-**Headline:** Pabandi plugs directly into Alibaba’s commerce stack
+**Visual:** Daraz + Pakistan commerce / Alibaba ecosystem context  
+**Headline:** Pabandi plugs directly into Alibaba’s emerging-market commerce stack
 
 **Bullets:**
 - **Daraz (SEA + Pakistan):** COD rejection losses = perfect Pabandi use case
@@ -111,11 +111,11 @@ Walk the judges through the user journey: buyer earns score → seller verifies 
 - **1688 / AliExpress:** Cross-border buyer/seller trust layer
 - **Temu / emerging-market platforms:** Same COD reliability problem at scale
 
-**Ask options:**
-1. **API partnership** — Daraz integrates Passport verify into checkout
-2. **SDK co-brand** — “Verified by Pabandi” badge on Alibaba merchant pages
-3. **Pilot program** — 1,000 sellers in Pakistan test Passport-verified COD
-4. **Acquisition / investment** — bring reliability layer into Alibaba infra
+**Ask sequence:**
+1. **Pilot partnership** — 1,000 sellers in Pakistan test Passport-verified COD through Daraz checkout
+2. **API partnership** — Daraz integrates Passport verify into checkout/confirmation flow
+3. **SDK co-brand** — “Verified by Pabandi” badge on merchant pages
+4. **Enterprise SLA** — Dedicated instances for Daraz Pro / high-volume sellers
 
 **Speaker notes:**
 “This isn’t a pitch to be bought. It’s a pitch to partner. Your merchants lose money to the exact problem we solved. Let’s test it together.”
@@ -156,8 +156,8 @@ Walk the judges through the user journey: buyer earns score → seller verifies 
 ---
 
 ## SLIDE 10: Vision
-**Visual:** Globe with Pabandi Passport stamp on multiple countries  
-**Headline:** The reliability layer for the next billion internet users
+**Visual:** Pakistan → Daraz network → Alibaba ecosystem expansion  
+**Headline:** The reliability layer for emerging-market commerce
 
 **Bullets:**
 - **Phase 1 (now):** Pakistan lab — merchant API + live-seller beta
@@ -175,8 +175,8 @@ Walk the judges through the user journey: buyer earns score → seller verifies 
 **Q: Why should Alibaba work with you instead of building this themselves?**  
 A: “Building a behavior-scoring AI model on informal-economy data takes 12+ months and local partnerships we already have. Alibaba has the merchants. We have the trust layer. Faster to partner than build.”
 
-**Q: How is this different from Alibaba’s existing trust systems (Zhima Credit, seller ratings)?**  
-A: “Zhima Credit is China-internal and identity-based. Pabandi is behavior-based, cross-border, and works outside formal banking systems. It solves a problem Alibaba’s current systems can’t touch — informal-economy trust in emerging markets.”
+**Q: Why partner with a Pakistan-first startup? Why not build this inside Alibaba?**  
+A: “Informal-economy trust requires behavior data most platforms don’t have. We’re already collecting ground-truth reliability signals in Pakistan — a market where Daraz already has massive scale and where Zhima-style systems don’t translate. Faster to partner in the problem market than replicate it from Beijing.”
 
 **Q: What does success look like in 12 months?**  
 A: “10,000 active Passport holders in Pakistan. 3 platform integrations (Daraz, Shopify, one local). $X in verified transactions. Zero fraud incidents on Pabandi-verified COD orders.”

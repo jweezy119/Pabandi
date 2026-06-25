@@ -80,7 +80,7 @@ app.use('/api/', rateLimiter);
 // Ensure this runs before your actual API routes are registered
 // app.use('/api/', requireAppCheck); // TEMPORARILY DISABLED to fix sign in
 
-// Health check
+// Health check endpoints
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
@@ -88,6 +88,10 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     googleOAuth: !!process.env.GOOGLE_CLIENT_ID,
   });
+});
+
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // API Routes
