@@ -139,4 +139,4 @@ jobs:
           npm install -g firebase-tools
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > firebase-sa.json
           firebase use --add --project ${{ secrets.GCP_PROJECT_ID }}
-          firebase deploy --only hosting --project ${{ secrets.GCP_PROJECT_ID }} --token "${{ secrets.FIREBASE_TOKEN }}"
+          firebase deploy --only hosting --project ${{ secrets.GCP_PROJECT_ID }} --token "${{ secrets.FIREBASE_TOKEN }}" --force
