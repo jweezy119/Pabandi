@@ -33,7 +33,7 @@ jobs:
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e DIRECT_URL="${{ secrets.DIRECT_URL }}" \
             pabandi-server-builder \
-            npx prisma migrate deploy
+            sh -lc "npx prisma migrate resolve --applied init && npx prisma migrate deploy"
 
       - name: Build and Push Production Image
         run: |-
