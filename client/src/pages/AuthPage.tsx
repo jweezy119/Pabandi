@@ -143,6 +143,8 @@ export default function AuthPage() {
     window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
   };
 
+  const isSignup = mode === 'signup';
+  const isBusiness = role === 'business';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,9 +195,6 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
-
-  const isSignup = mode === 'signup';
-  const isBusiness = role === 'business';
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-12 bg-surface">
