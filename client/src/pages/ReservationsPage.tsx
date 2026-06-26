@@ -5,12 +5,7 @@ import { Link } from 'react-router-dom';
 import { reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import {
-  ClockIcon,
-  CalendarIcon, PlusIcon,
-  CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon,
-  ShieldCheckIcon, EllipsisVerticalIcon
-} from '@heroicons/react/24/outline';
+import { CalendarIcon, ClockIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; accent: string; icon: React.ReactNode }> = {
   CONFIRMED:  { label: 'Confirmed',  bg: 'bg-tertiary-fixed', color: 'text-on-tertiary-fixed-variant', accent: 'bg-tertiary-fixed-dim', icon: <CheckCircleIcon className="h-4 w-4" /> },
@@ -289,11 +284,14 @@ export default function ReservationsPage() {
                         </div>
                      )}
                      
-                     {/* More options button (placeholder) */}
+                     {/* Past actions for customer reservations */}
                      {!isBusinessOwner && (
-                       <button className="w-10 h-10 border border-outline-variant/30 text-primary rounded-md flex items-center justify-center hover:bg-surface-variant transition-colors">
-                         <EllipsisVerticalIcon className="h-5 w-5" />
-                       </button>
+                       <Link
+                         to={`/business/${r.businessId}`}
+                         className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-2.5 rounded-md hover:opacity-90 transition-opacity text-center block"
+                       >
+                         Book Again
+                       </Link>
                      )}
                   </div>
                 </div>
