@@ -26,8 +26,17 @@ jobs:
       - name: Authorize Docker
         run: gcloud auth configure-docker
 
-      - name: Build and Push Container
-        run: |
+      - name: Run Prisma Migrations
+        run: |-
+          docker build --target builder -t pabandi-server-builder ./server
+          docker run --rm \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e DIRECT_URL="${{ secrets.DIRECT_URL }}" \
+            pabandi-server-builder \
+            npx prisma migrate deploy
+
+      - name: Build and Push Production Image
+        run: |-
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server ./server
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server
 

@@ -144,7 +144,14 @@
     animation: overlayIn 200ms var(--ease-out) both;
   }
 
-  /* ── Page Transition ────────────────────────────────────────────────────── */
+  /* ── Mobile bottom nav ─────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 8px);
+  }
+}
+
+/* ── Page Transition ────────────────────────────────────────────────────── */
   .page-enter {
     animation: pageIn 200ms var(--ease-out) both;
   }
