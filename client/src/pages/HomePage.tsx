@@ -1,78 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useQuery } from 'react-query';
 import { businessService } from '../services/api';
 import { MapPinIcon, BuildingStorefrontIcon } from '@heroicons/react/24/outline';
-import { APIProvider, useMapsLibrary, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import HomeMap from '../components/HomeMap';
 
 // Haversine distance calculation (in km)
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371; 
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 };
 
-// Global Places Search Bar component
-const GlobalPlaceAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
-  const [placeAutocomplete, setPlaceAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const places = useMapsLibrary('places');
-
-  useEffect(() => {
-    if (!places || !inputRef.current) return;
-
-    const options = {
-      fields: ['place_id', 'geometry', 'name', 'formatted_address', 'rating', 'user_ratings_total', 'photos', 'reviews', 'formatted_phone_number', 'website'],
-      strictBounds: false,
-    };
-
-    setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
-  }, [places]);
-
-  useEffect(() => {
-    if (!placeAutocomplete) return;
-
-    placeAutocomplete.addListener('place_changed', () => {
-      onPlaceSelect(placeAutocomplete.getPlace());
-    });
-  }, [onPlaceSelect, placeAutocomplete]);
-
-  return (
-    <div className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 group focus-within:bg-surface-container-lowest focus-within:outline focus-within:outline-1 focus-within:outline-outline-variant/20 transition-all duration-300 shadow-sm w-full mx-auto">
-      <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
-      <input
-        ref={inputRef}
-        type="text"
-        placeholder="Look up any location globally to book..."
-        className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none"
-      />
-    </div>
-  );
-};
+const INITIAL_CENTER = { lat: 24.8607, lng: 67.0011 };
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [category, setCategory] = useState('ALL');
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
   const [locLoading, setLocLoading] = useState(false);
-  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
-  const [selectedMapPlace, setSelectedMapPlace] = useState<google.maps.places.PlaceResult | null>(null);
-  const [mapError, setMapError] = useState(false);
-  
-  // Detect Google Maps Authentication/Quota Failures
-  useEffect(() => {
-    (window as any).gm_authFailure = () => {
-      console.warn("Google Maps Auth/Quota Failure Detected. Falling back to Demo Mode.");
-      setMapError(true);
-    };
-  }, []);
+  const [mapCenter, setMapCenter] = useState(INITIAL_CENTER);
+  const [selectedMapPlace, setSelectedMapPlace] = useState<{ name: string; address?: string; lat: number; lng: number } | null>(null);
+  const [search, setSearch] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const revealRef1 = useScrollReveal<HTMLDivElement>();
   const revealRef2 = useScrollReveal<HTMLDivElement>();
@@ -82,12 +41,13 @@ export default function HomePage() {
   const { data, isLoading } = useQuery(
     ['businesses', category, userLoc],
     async () => {
-      const params: any = {
-        category: category !== 'ALL' ? category : undefined,
-      };
+      const params: any = { category: category !== 'ALL' ? category : undefined };
       if (userLoc) {
         params.latitude = userLoc.lat;
         params.longitude = userLoc.lng;
+      }
+      if (search.trim().length) {
+        params.search = search.trim();
       }
       const res = await businessService.getPublicBusinesses(params);
       return res.data?.data?.businesses || [];
@@ -99,8 +59,8 @@ export default function HomePage() {
 
   if (userLoc) {
     businesses = [...businesses].sort((a, b) => {
-      const distA = getDistance(userLoc.lat, userLoc.lng, a.latitude || 24.86, a.longitude || 67.00);
-      const distB = getDistance(userLoc.lat, userLoc.lng, b.latitude || 24.86, b.longitude || 67.00);
+      const distA = getDistance(userLoc.lat, userLoc.lng, a.latitude || INITIAL_CENTER.lat, a.longitude || INITIAL_CENTER.lng);
+      const distB = getDistance(userLoc.lat, userLoc.lng, b.latitude || INITIAL_CENTER.lat, b.longitude || INITIAL_CENTER.lng);
       return distA - distB;
     });
   }
@@ -113,20 +73,54 @@ export default function HomePage() {
         setLocLoading(false);
       },
       (err) => {
-        console.error("Location access denied or failed", err);
+        console.error('Location access denied or failed', err);
         setLocLoading(false);
       }
     );
   };
 
-  const handleGlobalPlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
-    if (place.geometry?.location) {
-      setMapCenter({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
-      setSelectedMapPlace(place);
-    } else if (place.place_id && place.name) {
-      navigate('/reservations/new', { state: { googlePlaceId: place.place_id, placeName: place.name } });
+  const geocodeAddress = useCallback(async (query: string) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+      const json = await res.json();
+      if (json[0]) {
+        const lat = parseFloat(json[0].lat);
+        const lng = parseFloat(json[0].lon);
+        const name = json[0].display_name.split(',')[0];
+        return { lat, lng, name, address: json[0].display_name };
+      }
+    } catch (e) {
+      console.error('Geocode failed', e);
     }
-  }, [navigate]);
+    return null;
+  }, []);
+
+  const handleSearch = useCallback(async () => {
+    const q = search.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    setSelectedMapPlace(null);
+    const hit = await geocodeAddress(q);
+    if (hit) {
+      setMapCenter({ lat: hit.lat, lng: hit.lng });
+      setSelectedMapPlace({ name: hit.name || q, address: hit.address, lat: hit.lat, lng: hit.lng });
+    } else {
+      navigate('/reservations/new', { state: { googlePlaceId: undefined, placeName: q, address: q } });
+    }
+    setSearchLoading(false);
+  }, [search, geocodeAddress, navigate]);
+
+  const handlePlaceSelect = useCallback((place: { name: string; address?: string; lat: number; lng: number }) => {
+    setMapCenter({ lat: place.lat, lng: place.lng });
+    setSelectedMapPlace(place);
+  }, []);
+
+  const handleBookPlace = useCallback(
+    (place: { name: string; address?: string; lat: number; lng: number }) => {
+      navigate('/reservations/new', { state: { placeName: place.name, address: place.address, lat: place.lat, lng: place.lng } });
+    },
+    [navigate]
+  );
 
   const categories = ['ALL', 'ECOMMERCE', 'MARKETPLACE', 'LIVE_SELLER', 'RESTAURANT', 'SPA', 'CLINIC', 'HOSPITAL', 'FITNESS_CENTER', 'SALON', 'FREELANCE'];
   const getCategoryLabel = (c: string) => {
@@ -141,7 +135,6 @@ export default function HomePage() {
 
   return (
     <div className="w-full pb-28 md:pb-10 font-body">
-      
       {/* IMMERSIVE HERO WITH MAP */}
       <section className="relative w-full bg-[#0f172a] text-white py-16 md:py-24 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -159,38 +152,50 @@ export default function HomePage() {
             <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
               Launching first in Pakistan’s informal economy — salons, clinics, and live sellers — with a reliability layer built to scale globally. Earn <span className="font-bold text-pink-400">$PAB</span> rewards for every appointment you honor.
             </p>
-            
-            {/* Search Bar prominently placed in the hero for immediate immersion */}
+
+            {/* Search */}
             <div className="pt-4 relative z-50 stagger-item">
-               <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Find & Book Anywhere</p>
-               {mapError ? (
-                 <div className="bg-surface-container-low rounded-lg p-4 shadow-sm w-full border border-outline-variant/20">
-                   <p className="text-xs text-on-surface-variant font-medium mb-3 uppercase tracking-wider">Demo Venues (Map Offline)</p>
-                   <div className="flex flex-col gap-2">
-                     {[
-                       { id: 'demo_1', name: 'Karachi Gymkhana', address: 'Club Road, Karachi' },
-                       { id: 'demo_2', name: 'Cafe Flo', address: 'Clifton Block 4, Karachi' },
-                       { id: 'demo_3', name: 'Toni&Guy', address: 'DHA Phase 6, Karachi' }
-                     ].map(venue => (
-                       <button 
-                         key={venue.id}
-                         onClick={() => navigate('/reservations/new', { state: { googlePlaceId: venue.id, placeName: venue.name } })}
-                         className="flex items-center justify-between bg-surface-container-highest hover:bg-surface-container border border-outline-variant/10 rounded-lg px-4 py-2 text-left transition-colors"
-                       >
-                         <div>
-                           <div className="text-sm font-bold text-primary">{venue.name}</div>
-                           <div className="text-xs text-on-surface-variant">{venue.address}</div>
-                         </div>
-                         <span className="material-symbols-outlined text-primary text-sm">arrow_forward</span>
-                       </button>
-                     ))}
-                   </div>
-                 </div>
-               ) : (
-                 <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
-                   <GlobalPlaceAutocomplete onPlaceSelect={handleGlobalPlaceSelect} />
-                 </APIProvider>
-               )}
+              <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">Find & Book Anywhere</p>
+              <div className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 shadow-sm w-full border border-outline-variant/20">
+                <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
+                <input
+                  ref={searchInputRef}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSearch();
+                  }}
+                  type="text"
+                  placeholder="Search a city, venue or address..."
+                  className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none"
+                />
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading}
+                  className="ml-2 px-3 py-1.5 rounded-md bg-primary text-on-primary text-xs font-bold"
+                >
+                  {searchLoading ? '...' : 'Search'}
+                </button>
+              </div>
+
+              <div className="mt-3 flex gap-2 flex-wrap">
+                <button
+                  onClick={handleGetLocation}
+                  disabled={locLoading}
+                  className="flex items-center gap-1.5 text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
+                >
+                  <MapPinIcon className="h-3.5 w-3.5" /> {locLoading ? 'Locating...' : 'Near Me'}
+                </button>
+                {['Karachi', 'Lahore', 'Islamabad'].map((city) => (
+                  <button
+                    key={city}
+                    onClick={() => handlePlaceSelect({ name: city, lat: 24.8607, lng: 67.0011 })}
+                    className="text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-4 pt-6 text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
@@ -201,67 +206,42 @@ export default function HomePage() {
           </div>
 
           {/* Right Col - The Interactive Map */}
-          <div className="flex-1 relative w-full h-[500px] xl:h-[600px] rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.15)] border border-white/10 stagger-item" style={{ animationDelay: '240ms' }}>
-            {mapError ? (
-              <div className="w-full h-full bg-[#0f172a] flex flex-col items-center justify-center border border-slate-800 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1200')] bg-cover bg-center opacity-20"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent"></div>
-                <div className="relative z-10 text-center p-8">
-                  <MapPinIcon className="h-12 w-12 mx-auto mb-4 text-[#14F195] opacity-80" />
-                  <h3 className="text-2xl font-bold text-white mb-2 font-headline">Global Map Offline</h3>
-                  <p className="text-slate-400 max-w-sm mx-auto text-sm">You are currently in Demo Mode. Select one of the Demo Venues from the search bar to proceed with the interactive booking flow.</p>
-                </div>
-              </div>
-            ) : (
-              <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''} language="en">
-                <Map
-                  defaultZoom={13}
-                  center={mapCenter}
-                  onCenterChanged={(ev) => setMapCenter(ev.detail.center)}
-                  gestureHandling={'greedy'}
-                  disableDefaultUI={true}
-                  mapId="pabandi_global_map_hero"
-                  className="w-full h-full"
-                >
-                  {selectedMapPlace && selectedMapPlace.geometry?.location && (
-                    <AdvancedMarker
-                      position={{ lat: selectedMapPlace.geometry.location.lat(), lng: selectedMapPlace.geometry.location.lng() }}
-                    >
-                      <Pin background={'#14F195'} borderColor={'#06b6d4'} glyphColor={'#0f172a'} />
-                    </AdvancedMarker>
-                  )}
-                </Map>
+          <div className="flex-1 relative w-full h-[500px] xl:h-[600px] rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)] stagger-item" style={{ animationDelay: '240ms' }}>
+            <HomeMap
+              center={mapCenter}
+              selectedPlace={selectedMapPlace ? {
+                geometry: {
+                  location: {
+                    lat: () => selectedMapPlace.lat,
+                    lng: () => selectedMapPlace.lng,
+                  },
+                },
+                name: selectedMapPlace.name,
+                formatted_address: selectedMapPlace.address,
+              } as any : null}
+              onCenterChange={(next) => setMapCenter(next)}
+            />
 
-                {/* Floating Bottom Panel for Selected Place */}
-                {selectedMapPlace && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40 animate-[slideUp_0.3s_ease-out]">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="min-w-0 pr-4">
-                        <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">{selectedMapPlace.name}</h3>
-                        <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">{selectedMapPlace.formatted_address}</p>
-                      </div>
-                      <button onClick={() => setSelectedMapPlace(null)} className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0">
-                        <span className="material-symbols-outlined text-lg">close</span>
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mb-5 mt-3">
-                      <span className="px-2.5 py-1 bg-amber-500/10 text-amber-500 text-[11px] font-bold uppercase tracking-wider rounded-lg border border-amber-500/20">
-                        Unclaimed
-                      </span>
-                      <span className="text-[11px] text-on-surface-variant font-medium">Not on Pabandi yet</span>
-                    </div>
-
-                    <button 
-                      onClick={() => navigate('/reservations/new', { state: { googlePlaceId: selectedMapPlace.place_id, placeName: selectedMapPlace.name } })}
-                      className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] hover:shadow-[0_12px_24px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
-                    >
-                      Make Reservation
-                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </button>
+            {selectedMapPlace && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="min-w-0 pr-4">
+                    <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">{selectedMapPlace.name}</h3>
+                    <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">{selectedMapPlace.address}</p>
                   </div>
-                )}
-              </APIProvider>
+                  <button onClick={() => setSelectedMapPlace(null)} className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0">
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => handleBookPlace(selectedMapPlace)}
+                  className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all flex items-center justify-center gap-2"
+                >
+                  Make Reservation
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -269,17 +249,17 @@ export default function HomePage() {
 
       {/* Categories & Curated List */}
       <div className="max-w-7xl mx-auto px-6 md:px-8 space-y-12 mt-12">
-        
+
         {/* Category Filters */}
         <section ref={revealRef1} className="reveal">
-          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
                 className={`${
-                  category === c 
-                    ? 'bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]' 
+                  category === c
+                    ? 'bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]'
                     : 'bg-surface-container-low text-on-surface hover:bg-surface-container-highest'
                 } px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap transition-colors`}
               >
@@ -289,261 +269,147 @@ export default function HomePage() {
           </div>
         </section>
 
-      {/* Featured Businesses */}
-      <section ref={revealRef2} className="space-y-6 reveal">
-        <div className="flex justify-between items-center">
-          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-            {userLoc ? 'Near You' : 'Curated for You'}
-          </h3>
-          <button 
-            onClick={handleGetLocation} 
-            disabled={locLoading}
-            className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
-          >
-            <MapPinIcon className="h-4 w-4" />
-            {locLoading ? 'Locating...' : 'Near Me'}
-          </button>
-        </div>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : businesses.length === 0 ? (
-          <div className="text-center py-12 bg-surface-container-low rounded-xl">
-            <p className="font-body text-on-surface-variant">No businesses found matching your criteria.</p>
-            <button onClick={() => { setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
-              Clear filters
+        {/* Featured Businesses */}
+        <section ref={revealRef2} className="space-y-6 reveal">
+          <div className="flex justify-between items-center">
+            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+              {userLoc ? 'Near You' : 'Curated for You'}
+            </h3>
+            <button
+              onClick={handleGetLocation}
+              disabled={locLoading}
+              className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+            >
+              <MapPinIcon className="h-4 w-4" />
+              {locLoading ? 'Locating...' : 'Near Me'}
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
-            {/* Main Feature - First Business */}
-            {businesses[0] && (
-              <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[0].id}`} className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block tile-hover border border-outline-variant/10 glowing-border">
-                <img 
-                  alt={businesses[0].name} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  src={businesses[0].coverImageUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200"} 
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/40 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 p-6 w-full z-10">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
-                      {getCategoryLabel(businesses[0].category)}
-                    </span>
-                    <span className="flex items-center text-on-primary text-sm font-body">
-                      <span className="material-symbols-outlined text-[16px] mr-1 text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                      {businesses[0].rating?.toFixed(1) || '4.9'}
-                    </span>
-                    {businesses[0].isClaimed ? (
-                      <span className="bg-[#14F195]/20 text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#14F195]/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse"></span>
-                        Solana Protected
-                      </span>
-                    ) : (
-                      <span className="bg-amber-500/20 text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#f59e0b]/30">
-                        Unclaimed Listing
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="font-headline text-2xl font-bold text-on-primary mb-1">{businesses[0].name}</h4>
-                  <p className="font-body text-slate-300 text-sm max-w-md line-clamp-2">
-                    {businesses[0].description || `${businesses[0].city} • Discover our premium services.`}
-                  </p>
-                </div>
-              </Link>
-            )}
-            
-            {/* Secondary Stack - Next Two Businesses */}
-            <div className="md:col-span-4 flex flex-col gap-6">
-              {businesses[1] && (
-                <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[1].id}`} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border">
-                  <img 
-                    alt={businesses[1].name} 
-                    className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" 
-                    src={businesses[1].coverImageUrl || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600"} 
+
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : businesses.length === 0 ? (
+            <div className="text-center py-12 bg-surface-container-low rounded-xl">
+              <p className="font-body text-on-surface-variant">No businesses found matching your criteria.</p>
+              <button onClick={() => { setCategory('ALL'); }} className="mt-4 text-primary font-bold hover:underline">
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+              {/* Main Feature - First Business */}
+              {businesses[0] && (
+                <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[0].id}`} className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block tile-hover border border-outline-variant/10 glowing-border">
+                  <img
+                    alt={businesses[0].name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    src={businesses[0].coverImageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent"></div>
-                  <div className="absolute top-4 right-4 z-10">
-                    {businesses[1].isClaimed ? (
-                      <span className="bg-[#14F195]/30 backdrop-blur-md text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-[#14F195]/40">
-                        Solana
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/40 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6 w-full z-10">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                        {getCategoryLabel(businesses[0].category)}
                       </span>
-                    ) : (
-                      <span className="bg-amber-500/30 backdrop-blur-md text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-[#f59e0b]/40">
-                        Unclaimed
+                      <span className="flex items-center text-on-primary text-sm font-body">
+                        <span className="material-symbols-outlined text-[16px] mr-1 text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                        {businesses[0].rating?.toFixed(1) || '4.9'}
                       </span>
-                    )}
-                  </div>
-                  <div className="absolute bottom-0 left-0 p-5 z-10">
-                    <span className="bg-secondary-container text-on-secondary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">
-                      {getCategoryLabel(businesses[1].category)}
-                    </span>
-                    <h4 className="font-headline text-lg font-bold text-on-primary">{businesses[1].name}</h4>
+                      {businesses[0].isClaimed ? (
+                        <span className="bg-[#14F195]/20 text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#14F195]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" />
+                          Solana Protected
+                        </span>
+                      ) : (
+                        <span className="bg-amber-500/20 text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#f59e0b]/30">
+                          Unclaimed Listing
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-headline text-2xl font-bold text-on-primary mb-1">{businesses[0].name}</h4>
+                    <p className="font-body text-slate-300 text-sm max-w-md line-clamp-2">
+                      {businesses[0].description || `${businesses[0].city} • Discover our premium services.`}
+                    </p>
                   </div>
                 </Link>
               )}
-              
-              {businesses.length > 2 ? (
-                businesses[2] && (
+
+              {/* Secondary Stack - Next Two Businesses */}
+              <div className="md:col-span-4 flex flex-col gap-6">
+                {businesses[1] && (
+                  <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[1].id}`} className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border">
+                    <img
+                      alt={businesses[1].name}
+                      className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+                      src={businesses[1].coverImageUrl || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600'}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent" />
+                    <div className="absolute top-4 right-4 z-10">
+                      {businesses[1].isClaimed ? (
+                        <span className="bg-[#14F195]/30 backdrop-blur-md text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-[#14F195]/40">Solana</span>
+                      ) : (
+                        <span className="bg-amber-500/30 backdrop-blur-md text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-[#f59e0b]/40">Unclaimed</span>
+                      )}
+                    </div>
+                    <div className="absolute bottom-0 left-0 p-5 z-10">
+                      <span className="bg-secondary-container text-on-secondary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">
+                        {getCategoryLabel(businesses[1].category)}
+                      </span>
+                      <h4 className="font-headline text-lg font-bold text-on-primary">{businesses[1].name}</h4>
+                    </div>
+                  </Link>
+                )}
+
+                {businesses.length > 2 && businesses[2] && (
                   <Link target="_blank" rel="noopener noreferrer" to={`/business/${businesses[2].id}`} className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors shadow-sm tile-hover border border-outline-variant/10 glowing-border">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-headline text-lg font-bold text-on-surface">{businesses[2].name}</h4>
-                      {businesses[2].isClaimed ? (
-                        <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#14F195]/30">Solana</span>
-                      ) : (
-                        <span className="bg-amber-500/20 text-[#d97706] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#f59e0b]/30">Unclaimed</span>
-                      )}
+                      {businesses[2].isClaimed ? <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#14F195]/30">Solana</span> : <span className="bg-amber-500/20 text-[#d97706] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#f59e0b]/30">Unclaimed</span>}
                     </div>
                     <p className="font-body text-on-surface-variant text-sm mb-4 line-clamp-2">
-                      {businesses[2].description || `Located in ${businesses[2].city}. Explore our offerings.`}
+                      {businesses[2].description || `${businesses[2].city} • Premium service with Pabandi.`}
                     </p>
-                    <button className="flex items-center text-primary font-body text-sm font-semibold group-hover:gap-2 transition-all">
-                      Explore <span className="material-symbols-outlined text-[18px] ml-1">arrow_forward</span>
-                    </button>
+                    <div className="mt-auto flex items-center justify-between">
+                      <span className="text-xs text-on-surface-variant font-medium">{getCategoryLabel(businesses[2].category)} • {businesses[2].city}</span>
+                      <span className="text-primary text-sm font-bold group-hover:translate-x-1 transition-transform">Book →</span>
+                    </div>
                   </Link>
-                )
-              ) : (
-                <div className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors">
-                  <h4 className="font-headline text-lg font-bold text-on-surface mb-2">More coming soon</h4>
-                  <p className="font-body text-on-surface-variant text-sm mb-4">New businesses are registering in your area every day.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+          )}
+        </section>
 
-          </div>
-        )}
-      </section>
-
-      {/* Technology Promo Banner */}
-      <section ref={revealRef3} className="bg-primary/5 rounded-3xl p-8 md:p-12 border border-primary/10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-sm tile-hover glowing-border reveal">
-        <div className="max-w-xl space-y-4">
-          <div className="flex items-center gap-2 text-primary font-label text-sm font-bold uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[18px]">memory</span>
-            Breakthrough Technology
-          </div>
-          <h3 className="font-headline text-3xl font-bold text-on-surface">Experience No-Show Proof Bookings</h3>
-          <p className="font-body text-on-surface-variant text-lg">
-            Our proprietary AI risk engine evaluates reliability in real-time, building your personalized Pabandi Score. Book at top-tier venues with zero deposit when you maintain a high score, all powered by the Solana blockchain.
-          </p>
-          <div className="pt-2">
-            <Link to="/technology" className="text-primary font-semibold hover:underline flex items-center gap-1">
-              Learn how it works <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </Link>
-          </div>
-        </div>
-        <div className="w-full md:w-auto flex-shrink-0 relative">
-          <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full"></div>
-          <div className="relative bg-surface-container-highest p-6 rounded-2xl shadow-lg border border-outline-variant/20 flex flex-col items-center">
-            <div className="text-sm font-label uppercase tracking-widest text-on-surface-variant mb-2">Your Pabandi Score</div>
-            <div className="text-5xl font-headline font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]">
-              850
-            </div>
-            <div className="mt-2 text-xs font-bold bg-[#14F195]/20 text-[#10b981] px-2 py-1 rounded-md uppercase">Elite Status</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Trust Layer Promo */}
-      <section ref={revealRef4} className="rounded-3xl overflow-hidden border border-outline-variant/10 relative reveal" style={{ background: 'linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.12) 0%, transparent 60%)' }} />
-        <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-1 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-bold" style={{ color: '#818cf8' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#818cf8', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-              NEW — SECTION 6.4
-            </div>
-            <h3 className="font-headline text-2xl md:text-3xl font-bold" style={{ color: '#f1f5f9', letterSpacing: '-0.02em' }}>
-              Your Reputation Travels With You
-            </h3>
-            <p className="text-base leading-relaxed" style={{ color: '#94a3b8', maxWidth: '480px' }}>
-              Link your LinkedIn, Fiverr, or Upwork account. Earn a cross-platform trust boost, unlock zero-deposit bookings, and share your Pabandi Reliability Badge everywhere your reputation matters.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Link
-                to="/trust"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', boxShadow: '0 0 20px rgba(99,102,241,0.35)' }}
-              >
-                Explore Trust Layer →
-              </Link>
-              <Link
-                to="/profile"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#e2e8f0' }}
-              >
-                Connect Accounts
-              </Link>
-            </div>
-          </div>
-          {/* Platform pill badges */}
-          <div className="flex flex-col gap-3 shrink-0">
+        {/* App Features / proof grid */}
+        <section ref={revealRef3} className="reveal space-y-6">
+          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">Why book with Pabandi</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { emoji: '💼', name: 'LinkedIn', boost: '+5 pts', color: '#0A66C2' },
-              { emoji: '🟢', name: 'Fiverr', boost: '+8 pts', color: '#1DBF73' },
-              { emoji: '🔵', name: 'Upwork', boost: '+8 pts', color: '#14A800' },
-              { emoji: '🐦', name: 'X / Truth Social', boost: '+3 pts', color: '#818cf8' },
-            ].map(p => (
-              <div key={p.name} className="flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span className="text-lg">{p.emoji}</span>
-                <span className="text-sm font-medium" style={{ color: '#cbd5e1' }}>{p.name}</span>
-                <span className="text-xs font-bold ml-auto px-2 py-0.5 rounded-full" style={{ background: p.color + '20', color: p.color }}>{p.boost}</span>
+              { title: 'Reliability-First Booking', body: 'No-shows hurt trust. Pabandi protects reliability with AI-based no-show prediction.', accent: 'from-[#14F195] to-[#06b6d4]' },
+              { title: 'Earn $PAB on Honored Appointments', body: 'Customers can earn rewards when they show up and honor their reservation.', accent: 'from-[#f472b6] to-[#a855f7]' },
+              { title: 'Global + Local Map Search', body: 'Discover venues with openstreet-powered search, then book instantly.', accent: 'from-[#fbbf24] to-[#f97316]' },
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl bg-surface-container-lowest border border-outline-variant/10 p-6 glowing-border">
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.accent} mb-4`} />
+                <h4 className="font-headline font-bold text-on-surface mb-2">{item.title}</h4>
+                <p className="font-body text-sm text-on-surface-variant">{item.body}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Top Rated Institutions */}
-      {businesses.length > 3 && (
-        <section className="space-y-6">
-          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">More Top Rated Places</h3>
-          <div className="space-y-4">
-            {businesses.slice(3).map((biz: any) => (
-              <Link target="_blank" rel="noopener noreferrer" key={biz.id} to={`/business/${biz.id}`} className="bg-surface-container-lowest rounded-xl p-4 flex items-center justify-between shadow-[0_10px_20px_rgba(1,29,53,0.03)] group hover:bg-surface-container-lowest/80 border border-outline-variant/10 tile-hover glowing-border transition-all duration-300">
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-surface-container-highest relative">
-                    {biz.logoUrl || biz.coverImageUrl ? (
-                      <img alt={biz.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={biz.logoUrl || biz.coverImageUrl} />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-on-surface-variant font-headline font-bold text-2xl">
-                        {biz.name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className="font-headline text-lg font-bold text-on-surface">{biz.name}</h4>
-                      {biz.isClaimed ? (
-                        <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#14F195]/30">Solana Protected</span>
-                      ) : (
-                        <span className="bg-amber-500/20 text-[#d97706] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#f59e0b]/30">Unclaimed</span>
-                      )}
-                    </div>
-                    <p className="font-body text-on-surface-variant text-sm mb-3">
-                      {biz.address}, {biz.city}
-                    </p>
-                    <div className="flex gap-2">
-                      <span className="font-label text-xs text-on-surface-variant bg-surface-container-low px-2 py-1 rounded uppercase">
-                        {getCategoryLabel(biz.category)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mr-4">
-                  <span className="flex items-center text-on-surface font-body font-semibold text-sm bg-surface-container px-2 py-1 rounded">
-                    <span className="material-symbols-outlined text-[16px] text-[#f59e0b] mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    {biz.rating?.toFixed(1) || '4.8'}
-                  </span>
-                </div>
-              </Link>
-            ))}
+        {/* Social proof */}
+        <section ref={revealRef4} className="reveal">
+          <div className="rounded-3xl bg-surface-container-low border border-outline-variant/10 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+            <div>
+              <h3 className="font-headline text-2xl font-black text-primary mb-2">Join the Pabandi network</h3>
+              <p className="font-body text-on-surface-variant text-sm max-w-xl">Salons, clinics, fitness studios, and restaurants are moving to Pabandi to protect their time, reduce no-shows, and reward loyal customers.</p>
+            </div>
+            <Link to="/auth" className="bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold px-6 py-3 rounded-xl shadow-sm hover:opacity-90">Get Started</Link>
           </div>
         </section>
-      )}
-
       </div>
     </div>
   );
