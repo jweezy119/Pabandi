@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { useEffect, useRef } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 interface HomeMapProps {
   center: { lat: number; lng: number };
@@ -21,7 +21,7 @@ export default function HomeMap({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      style: "https://demotiles.maplibre.org/style.json",
       center: [center.lng, center.lat],
       zoom: 13,
     });
@@ -37,7 +37,7 @@ export default function HomeMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.on('moveend', () => {
+    map.on("moveend", () => {
       const c = map.getCenter();
       onCenterChange?.({ lat: c.lat, lng: c.lng });
     });
@@ -54,19 +54,24 @@ export default function HomeMap({
     if (!map) return;
 
     // Remove old markers
-    const existing = (map as any)._pabandiMarkers as maplibregl.Marker[] | undefined;
+    const existing = (map as any)._pabandiMarkers as
+      | maplibregl.Marker[]
+      | undefined;
     existing?.forEach((m) => m.remove());
     (map as any)._pabandiMarkers = [];
 
     if (selectedPlace?.geometry?.location) {
-      const marker = new maplibregl.Marker({ color: '#14F195' })
-        .setLngLat([selectedPlace.geometry.location.lng(), selectedPlace.geometry.location.lat()])
+      const marker = new maplibregl.Marker({ color: "#14F195" })
+        .setLngLat([
+          selectedPlace.geometry.location.lng(),
+          selectedPlace.geometry.location.lat(),
+        ])
         .setPopup(
           new maplibregl.Popup().setHTML(
-            `<strong>${selectedPlace.name || ''}</strong><br/>${
-              selectedPlace.formatted_address || ''
-            }`
-          )
+            `<strong>${selectedPlace.name || ""}</strong><br/>${
+              selectedPlace.formatted_address || ""
+            }`,
+          ),
         )
         .addTo(map);
       (map as any)._pabandiMarkers = [marker];
@@ -74,6 +79,9 @@ export default function HomeMap({
   }, [selectedPlace]);
 
   return (
-    <div ref={containerRef} className="w-full h-full rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)]" />
+    <div
+      ref={containerRef}
+      className="w-full h-full rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)]"
+    />
   );
 }
