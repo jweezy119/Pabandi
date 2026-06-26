@@ -35,4 +35,4 @@ EXPOSE 8080
 ENV NODE_ENV=production
 
 # Start the server (includes Prisma migration before start)
-CMD ["sh", "-c", "npx prisma migrate deploy || true && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy || true && node dist/src/index.js"]
