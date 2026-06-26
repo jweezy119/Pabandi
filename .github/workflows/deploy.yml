@@ -128,12 +128,11 @@ jobs:
           npm install
 
       - name: Build Frontend
-        run: |
+        run: |-
           cd client
           npm run build
         env:
           VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
-          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
 
       - name: Deploy to Firebase
         run: |-
