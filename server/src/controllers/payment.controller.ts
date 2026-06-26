@@ -131,7 +131,7 @@ export const processPaymentWebhook = async (
                    state === 'failed' ? 'FAILED' : 'FAILED'; // Use FAILED for cancelled payments too if not in enum
 
     const payment = await prisma.payment.update({
-      where: { id: reference }, // In Safepay we use reference for payment/reservation ID
+      where: { id: reference },
       data: {
         status: status,
         transactionId: tracker,
@@ -139,14 +139,13 @@ export const processPaymentWebhook = async (
       },
     });
 
-    // If deposit payment completed, update reservation
+    if (status === 'COMPLETED') {
+      const fee = +(payment.amount * 0.03).toFixed(2);
+      await prisma.payment.update({ where: { id: payment.id }, data: { platformFeeAmount: fee, platformFeeStatus: 'CAPTURED' } });
+    }
+
     if (payment.reservationId && status === 'COMPLETED') {
-      await prisma.reservation.update({
-        where: { id: payment.reservationId },
-        data: {
-          depositPaid: true,
-        },
-      });
+      await prisma.reservation.update({ where: { id: payment.reservationId }, data: { depositPaid: true } });
     }
 
     logger.info(`Payment webhook processed: ${payment.id} - ${status}`);
