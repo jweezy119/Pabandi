@@ -149,6 +149,11 @@
     animation: pageIn 200ms var(--ease-out) both;
   }
 
+  .macos-fade {
+    animation: macosFade 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    will-change: transform, opacity;
+  }
+
   /* ── Scroll Reveal ──────────────────────────────────────────────────────── */
   .reveal {
     opacity: 0;
@@ -234,6 +239,17 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes macosFade {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
