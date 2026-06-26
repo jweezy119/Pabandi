@@ -40,14 +40,6 @@ jobs:
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server ./server
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server
 
-      - name: Run Prisma Migrations
-        run: |
-          docker run --rm \
-            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            -e DIRECT_URL="${{ secrets.DIRECT_URL }}" \
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
-            npx prisma migrate deploy
-
       - name: Deploy to Cloud Run
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
