@@ -171,7 +171,7 @@ export default function Layout() {
 
       {!isAuthPage && !isDetailScreen && (
         <>
-          <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-2 pb-5 pt-3 md:hidden">
+          <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-2 pb-5 pt-3 md:hidden mobile-bottom-nav">
             <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
             {user?.role === 'BUSINESS_OWNER' && (
               <MobileTab to="/business/crm" icon="groups" label="CRM" current={location.pathname === '/business/crm'} />
@@ -184,7 +184,6 @@ export default function Layout() {
             />
             <MobileTab to="/wallet" icon="payments" label="Wallet" current={location.pathname === '/wallet'} />
             <MobileTabLoyalty to="/profile" label="Loyalty" current={location.pathname === '/profile'} />
-            <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
           </nav>
         </>
       )}
