@@ -115,7 +115,7 @@ export default function Layout() {
 
           <div className="hidden md:flex items-center gap-6 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
-            <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Pricing</DesktopNavLink>
+            <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Plans & Pricing</DesktopNavLink>
             <Dropdown label="Products" current={['/technology','/web3','/hospitality'].includes(location.pathname)}>
               <DropdownItem to="/technology">Technology</DropdownItem>
               <DropdownItem to="/web3">Web3</DropdownItem>
