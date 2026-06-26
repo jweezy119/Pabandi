@@ -113,46 +113,34 @@ export default function Layout() {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 font-headline text-sm">
-            <DesktopNavLink to="/" current={location.pathname === '/'}>Explore</DesktopNavLink>
-            <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Plans & Pricing</DesktopNavLink>
-            <Dropdown label="Products" current={['/technology','/web3','/hospitality'].includes(location.pathname)}>
-              <DropdownItem to="/technology">Technology</DropdownItem>
-              <DropdownItem to="/web3">Web3</DropdownItem>
-              <DropdownItem to="/hospitality">Hospitality</DropdownItem>
-            </Dropdown>
-            <Dropdown label="Solutions" current={['/join','/developer','/trust'].includes(location.pathname)}>
-              <DropdownItem to="/join">For Businesses</DropdownItem>
-              <DropdownItem to="/developer">API Docs</DropdownItem>
-              <DropdownItem to="/trust">Trust Layer</DropdownItem>
-            </Dropdown>
-            {isAuthenticated && (
-              <>
-                <DesktopNavLink to={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? '/dashboard' : '/reservations'} current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}>
-                  {user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'Dashboard' : 'Bookings'}
-                </DesktopNavLink>
-                {user?.role === 'BUSINESS_OWNER' && (
-                  <DesktopNavLink to="/business/crm" current={location.pathname === '/business/crm'}>CRM</DesktopNavLink>
-                )}
-                <DesktopNavLink to="/wallet" current={location.pathname === '/wallet'}>Wallet</DesktopNavLink>
-                <DesktopNavLink to="/profile" current={location.pathname === '/profile' || location.pathname === '/loyalty'}>
-                  <span className="inline-flex items-center gap-1">
-                    Profile
-                    <span className="text-[9px] font-extrabold px-1 py-0.5 rounded" style={{ background: 'linear-gradient(135deg, #CD7F32, #D97706)', color: '#fff', letterSpacing: '0.05em' }}>🏆</span>
-                  </span>
-                </DesktopNavLink>
-              </>
-            )}
-          </div>
+          <div className="hidden md:flex items-center gap-5 font-headline text-sm">
+              <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
+              <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Plans</DesktopNavLink>
+              <Dropdown label="Products" current={['/technology','/web3','/hospitality'].includes(location.pathname)}>
+                <DropdownItem to="/technology">Technology</DropdownItem>
+                <DropdownItem to="/web3">Web3</DropdownItem>
+                <DropdownItem to="/hospitality">Hospitality</DropdownItem>
+              </Dropdown>
+              <Dropdown label="For Business" current={['/join','/developer','/trust'].includes(location.pathname)}>
+                <DropdownItem to="/join">List Business</DropdownItem>
+                <DropdownItem to="/developer">API Docs</DropdownItem>
+                <DropdownItem to="/trust">Trust Layer</DropdownItem>
+              </Dropdown>
+            </div>
 
           <div className="flex items-center gap-2 md:gap-3">
-            <button type="button" className="text-on-surface hover:opacity-80 transition-opacity w-9 h-9 md:w-10 md:h-10 flex items-center justify-center bg-surface-container-low rounded-full border border-outline-variant/30">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
             {isAuthenticated ? (
-              <button onClick={handleLogout} className="hidden md:inline-flex text-sm text-error bg-error-container/20 px-3 py-1.5 rounded-md hover:bg-error-container/40">
-                Log Out
-              </button>
+              <Dropdown label={initials} current={false}>
+                <DropdownItem to="/dashboard">Dashboard</DropdownItem>
+                <DropdownItem to="/wallet">Wallet</DropdownItem>
+                <DropdownItem to="/profile">Profile</DropdownItem>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-error-container/20 transition-colors"
+                >
+                  Log Out
+                </button>
+              </Dropdown>
             ) : (
               <div className="hidden md:flex gap-2">
                 <Link to="/login" className="text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-colors">Sign In</Link>
@@ -173,9 +161,6 @@ export default function Layout() {
         <>
           <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-2 pb-5 pt-3 md:hidden mobile-bottom-nav">
             <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
-            {user?.role === 'BUSINESS_OWNER' && (
-              <MobileTab to="/business/crm" icon="groups" label="CRM" current={location.pathname === '/business/crm'} />
-            )}
             <MobileTab 
               to={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? '/dashboard' : '/reservations'} 
               icon={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'dashboard' : 'calendar_month'} 
