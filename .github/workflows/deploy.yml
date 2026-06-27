@@ -93,11 +93,15 @@ jobs:
         env:
           VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
 
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: Deploy to Firebase
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-sa.json
         run: |-
           npm install -g firebase-tools
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          
-          firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
+          firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECT_ID }}" --token "$(gcloud auth print-access-token)" --non-interactive
