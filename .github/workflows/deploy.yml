@@ -100,4 +100,4 @@ jobs:
           npm install -g firebase-tools
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > "$GOOGLE_APPLICATION_CREDENTIALS"
           
-          firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECT_ID }}" --token "$(gcloud auth print-access-token)"
+          firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECT_ID }}" --non-interactive
