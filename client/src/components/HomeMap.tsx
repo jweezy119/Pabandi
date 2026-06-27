@@ -1,71 +1,54 @@
-import { useEffect, useRef } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { useEffect } from 'react';
+
+// Fix for default marker icons in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Helper component to change map center
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+  return null;
+}
 
 interface HomeMapProps {
   center: { lat: number; lng: number };
-  onCenterChange?: (center: { lat: number; lng: number }) => void;
+  onCenterChanged?: (center: { lat: number; lng: number }) => void;
+  selectedPlace?: {
+    lat: number;
+    lng: number;
+    name?: string;
+  } | null;
 }
 
-type MarkerLike = { remove: () => void } | null;
-
-export default function HomeMap({ center, onCenterChange }: HomeMapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<MarkerLike[]>([]);
-
-  const clearMarkers = () => {
-    markersRef.current.forEach((marker) => marker?.remove());
-    markersRef.current = [];
-  };
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
-      center: [center.lng, center.lat],
-      zoom: 13,
-    });
-
-    mapRef.current = map;
-
-    return () => {
-      clearMarkers();
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.on("moveend", () => {
-      const c = map.getCenter();
-      onCenterChange?.({ lat: c.lat, lng: c.lng });
-    });
-  }, [onCenterChange]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.setCenter([center.lng, center.lat]);
-  }, [center]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    clearMarkers();
-
-    return () => clearMarkers();
-  }, [center]);
-
+export default function HomeMap({ center, selectedPlace }: HomeMapProps) {
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)]"
-    />
+    <div className="w-full h-full relative rounded-3xl overflow-hidden">
+      <MapContainer
+        center={[center.lat, center.lng]}
+        zoom={13}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <MapUpdater center={[center.lat, center.lng]} />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {selectedPlace && (
+          <Marker position={[selectedPlace.lat, selectedPlace.lng]}>
+            {selectedPlace.name && <Popup>{selectedPlace.name}</Popup>}
+          </Marker>
+        )}
+      </MapContainer>
+    </div>
   );
 }
