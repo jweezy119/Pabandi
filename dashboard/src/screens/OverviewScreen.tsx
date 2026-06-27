@@ -1,6 +1,5 @@
-import React from 'react';
 import { Shield, TrendingUp, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const mockData = [
   { name: 'Mon', blocked: 4, safe: 120 },
@@ -15,7 +14,6 @@ const mockData = [
 export default function OverviewScreen() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-bold text-slate-100 mb-2">Merchant Overview</h2>
@@ -30,8 +28,6 @@ export default function OverviewScreen() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Metric 1 */}
         <div className="glass-panel p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Shield size={64} />
@@ -44,7 +40,6 @@ export default function OverviewScreen() {
           </p>
         </div>
 
-        {/* Metric 2 */}
         <div className="glass-panel p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <AlertTriangle size={64} />
@@ -57,7 +52,6 @@ export default function OverviewScreen() {
           </p>
         </div>
 
-        {/* Metric 3 */}
         <div className="glass-panel p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <TrendingUp size={64} />
@@ -68,10 +62,8 @@ export default function OverviewScreen() {
             Approvals skipped network check
           </p>
         </div>
-
       </div>
 
-      {/* Chart */}
       <div className="glass-panel p-6 mt-8">
         <h3 className="text-xl font-bold mb-6">Traffic Analysis</h3>
         <div className="h-72 w-full">
@@ -89,7 +81,7 @@ export default function OverviewScreen() {
               </defs>
               <XAxis dataKey="name" stroke="#64748b" />
               <YAxis stroke="#64748b" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f1f5f9' }}
                 itemStyle={{ color: '#f1f5f9' }}
               />
@@ -99,7 +91,6 @@ export default function OverviewScreen() {
           </ResponsiveContainer>
         </div>
       </div>
-
     </div>
   );
 }

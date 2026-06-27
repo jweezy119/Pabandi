@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Copy, CheckCircle2, Terminal } from 'lucide-react';
 
 export default function IntegrationScreen() {
