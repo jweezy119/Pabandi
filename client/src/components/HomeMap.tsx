@@ -4,17 +4,20 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 interface HomeMapProps {
   center: { lat: number; lng: number };
-  selectedPlace?: google.maps.places.PlaceResult | null;
   onCenterChange?: (center: { lat: number; lng: number }) => void;
 }
 
-export default function HomeMap({
-  center,
-  selectedPlace,
-  onCenterChange,
-}: HomeMapProps) {
+type MarkerLike = { remove: () => void } | null;
+
+export default function HomeMap({ center, onCenterChange }: HomeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<MarkerLike[]>([]);
+
+  const clearMarkers = () => {
+    markersRef.current.forEach((marker) => marker?.remove());
+    markersRef.current = [];
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -29,6 +32,7 @@ export default function HomeMap({
     mapRef.current = map;
 
     return () => {
+      clearMarkers();
       map.remove();
       mapRef.current = null;
     };
@@ -53,30 +57,10 @@ export default function HomeMap({
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove old markers
-    const existing = (map as any)._pabandiMarkers as
-      | maplibregl.Marker[]
-      | undefined;
-    existing?.forEach((m) => m.remove());
-    (map as any)._pabandiMarkers = [];
+    clearMarkers();
 
-    if (selectedPlace?.geometry?.location) {
-      const marker = new maplibregl.Marker({ color: "#14F195" })
-        .setLngLat([
-          selectedPlace.geometry.location.lng(),
-          selectedPlace.geometry.location.lat(),
-        ])
-        .setPopup(
-          new maplibregl.Popup().setHTML(
-            `<strong>${selectedPlace.name || ""}</strong><br/>${
-              selectedPlace.formatted_address || ""
-            }`,
-          ),
-        )
-        .addTo(map);
-      (map as any)._pabandiMarkers = [marker];
-    }
-  }, [selectedPlace]);
+    return () => clearMarkers();
+  }, [center]);
 
   return (
     <div

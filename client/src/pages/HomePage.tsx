@@ -296,20 +296,6 @@ export default function HomePage() {
           >
             <HomeMap
               center={mapCenter}
-              selectedPlace={
-                selectedMapPlace
-                  ? ({
-                      geometry: {
-                        location: {
-                          lat: () => selectedMapPlace.lat,
-                          lng: () => selectedMapPlace.lng,
-                        },
-                      },
-                      name: selectedMapPlace.name,
-                      formatted_address: selectedMapPlace.address,
-                    } as any)
-                  : null
-              }
               onCenterChange={(next) => setMapCenter(next)}
             />
 
