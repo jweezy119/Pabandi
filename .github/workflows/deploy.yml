@@ -41,78 +41,37 @@ jobs:
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server
 
       - name: Deploy to Cloud Run
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-          BACKEND_URL: https://pabandi-server-97129395003.asia-south1.run.app
-          API_VERSION: v1
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          SAFEPAY_API_KEY: ${{ secrets.SAFEPAY_API_KEY }}
-          SAFEPAY_SECRET_KEY: ${{ secrets.SAFEPAY_SECRET_KEY }}
-          SAFEPAY_WEBHOOK_SECRET: ${{ secrets.SAFEPAY_WEBHOOK_SECRET }}
-          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
-          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
-          PAYPAL_WEBHOOK_ID: ${{ secrets.PAYPAL_WEBHOOK_ID }}
-          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
-          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
-        run: |
-          required_vars=(DATABASE_URL DIRECT_URL FRONTEND_URL JWT_SECRET JWT_REFRESH_SECRET FIREBASE_PROJECT_ID FIREBASE_CLIENT_EMAIL FIREBASE_PRIVATE_KEY SMTP_USER SMTP_PASS SAFEPAY_API_KEY)
-          for v in "${required_vars[@]}"; do
-            if [ -z "${!v}" ]; then
-              echo "::error::Missing required secret: $v"
-              exit 1
-            fi
-          done
-          optional_vars=(PAYPAL_CLIENT_ID PAYPAL_CLIENT_SECRET PAYPAL_WEBHOOK_ID)
-          for v in "${optional_vars[@]}"; do
-            if [ -z "${!v}" ]; then
-              echo "::warning::Optional secret not set: $v (PayPal features disabled until configured)"
-            fi
-          done
-          cat <<'EOF' > env.yaml
-          NODE_ENV: "production"
-          API_VERSION: "${API_VERSION}"
-          DATABASE_URL: "${DATABASE_URL}"
-          DIRECT_URL: "${DIRECT_URL}"
-          FRONTEND_URL: "${FRONTEND_URL}"
-          BACKEND_URL: "${BACKEND_URL}"
-          JWT_SECRET: "${JWT_SECRET}"
-          JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
-          FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID}"
-          FIREBASE_CLIENT_EMAIL: "${FIREBASE_CLIENT_EMAIL}"
-          FIREBASE_PRIVATE_KEY: "${FIREBASE_PRIVATE_KEY}"
-          GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
-          GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
-          GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY}"
-          SMTP_USER: "${SMTP_USER}"
-          SMTP_PASS: "${SMTP_PASS}"
-          SAFEPAY_API_KEY: "${SAFEPAY_API_KEY}"
-          SAFEPAY_SECRET_KEY: "${SAFEPAY_SECRET_KEY}"
-          SAFEPAY_WEBHOOK_SECRET: "${SAFEPAY_WEBHOOK_SECRET}"
-          PAYPAL_CLIENT_ID: "${PAYPAL_CLIENT_ID}"
-          PAYPAL_CLIENT_SECRET: "${PAYPAL_CLIENT_SECRET}"
-          PAYPAL_WEBHOOK_ID: "${PAYPAL_WEBHOOK_ID}"
-          FACEBOOK_APP_ID: "${FACEBOOK_APP_ID}"
-          FACEBOOK_APP_SECRET: "${FACEBOOK_APP_SECRET}"
-          LOG_LEVEL: "info"
-          EOF
-
+        run: |-
           gcloud run deploy pabandi-server \
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
             --region asia-south1 \
             --platform managed \
             --allow-unauthenticated \
-            --env-vars-file env.yaml
+            --set-env-vars NODE_ENV=production \
+            --set-env-vars API_VERSION=v1 \
+            --set-env-vars DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            --set-env-vars DIRECT_URL="${{ secrets.DIRECT_URL }}" \
+            --set-env-vars FRONTEND_URL="${{ secrets.FRONTEND_URL }}" \
+            --set-env-vars BACKEND_URL=https://pabandi-server-97129395003.asia-south1.run.app \
+            --set-env-vars JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --set-env-vars JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
+            --set-env-vars FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+            --set-env-vars FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}" \
+            --set-env-vars FIREBASE_PRIVATE_KEY="${{ secrets.FIREBASE_PRIVATE_KEY }}" \
+            --set-env-vars GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+            --set-env-vars GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+            --set-env-vars GOOGLE_MAPS_API_KEY="${{ secrets.GOOGLE_MAPS_API_KEY }}" \
+            --set-env-vars SMTP_USER="${{ secrets.SMTP_USER }}" \
+            --set-env-vars SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            --set-env-vars SAFEPAY_API_KEY="${{ secrets.SAFEPAY_API_KEY }}" \
+            --set-env-vars SAFEPAY_SECRET_KEY="${{ secrets.SAFEPAY_SECRET_KEY }}" \
+            --set-env-vars SAFEPAY_WEBHOOK_SECRET="${{ secrets.SAFEPAY_WEBHOOK_SECRET }}" \
+            --set-env-vars PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}" \
+            --set-env-vars PAYPAL_CLIENT_SECRET="${{ secrets.PAYPAL_CLIENT_SECRET }}" \
+            --set-env-vars PAYPAL_WEBHOOK_ID="${{ secrets.PAYPAL_WEBHOOK_ID }}" \
+            --set-env-vars FACEBOOK_APP_ID="${{ secrets.FACEBOOK_APP_ID }}" \
+            --set-env-vars FACEBOOK_APP_SECRET="${{ secrets.FACEBOOK_APP_SECRET }}" \
+            --set-env-vars LOG_LEVEL=info
 
   deploy-frontend:
     name: Deploy Frontend to Firebase
@@ -141,4 +100,4 @@ jobs:
           npm install -g firebase-tools
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > "$GOOGLE_APPLICATION_CREDENTIALS"
           
-          firebase deploy --only hosting --project "${{ secrets.FCPROJ }}" --token "${{ secrets.FIREBASE_TOKEN }}" --force
+          firebase deploy --only hosting --project "${{ secrets.FIREBASE_PROJECT_ID }}" --token "$(gcloud auth print-access-token)"
