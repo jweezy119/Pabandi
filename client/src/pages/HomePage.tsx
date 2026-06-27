@@ -296,7 +296,6 @@ export default function HomePage() {
           >
             <HomeMap
               center={mapCenter}
-              onCenterChange={(next) => setMapCenter(next)}
             />
 
             {selectedMapPlace && (
