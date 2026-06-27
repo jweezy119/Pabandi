@@ -86,3 +86,4 @@ temp/
 .env
 
 marketing-bot/.venv/
+firebase-service-account.json
