@@ -50,5 +50,5 @@ EXPOSE 8080
 # Set production environment
 ENV NODE_ENV=production
 
-# Start the server
-CMD ["node", "dist/src/index.js"]
+# Start the server (includes Prisma migration before start)
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/index.js"]
