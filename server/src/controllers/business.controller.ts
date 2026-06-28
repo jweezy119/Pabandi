@@ -4,6 +4,8 @@ import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
+import { osintService } from '../services/osint.service';
+import { logger } from '../utils/logger';
 
 export const createBusiness = async (
   req: AuthRequest,
@@ -37,6 +39,8 @@ export const createBusiness = async (
       ? (category as BusinessCategory)
       : BusinessCategory.OTHER;
 
+    // OSINT Checks are now handled asynchronously after business creation
+
     // Create business
     const business = await prisma.business.create({
       data: {
@@ -50,6 +54,8 @@ export const createBusiness = async (
         email,
         website,
         timezone: timezone || 'Asia/Karachi',
+        businessTier: 'STANDARD',
+        trustScore: 50.0,
       },
       include: {
         owner: {
@@ -70,13 +76,17 @@ export const createBusiness = async (
       },
     });
 
-    // Promote user to BUSINESS_OWNER if not already
     const user = await prisma.user.update({
       where: { id: req.user!.id },
       data: {
         role: UserRole.BUSINESS_OWNER,
       },
       select: { id: true, role: true },
+    });
+
+    // Fire off async OSINT checks (background)
+    osintService.queueOSINTChecks(req.user!.id, business.id).catch(err => {
+      logger.error('Background OSINT check failed', err);
     });
 
     res.status(201).json({

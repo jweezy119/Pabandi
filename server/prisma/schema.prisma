@@ -19,6 +19,10 @@ model User {
   isEmailVerified   Boolean          @default(false)
   isPhoneVerified   Boolean          @default(false)
   reliabilityScore  Float            @default(750)
+  trustScore        Float            @default(50.0)
+  verificationTier  String           @default("BASIC")
+  osintLastChecked  DateTime?
+  gracePeriodUntil  DateTime?
   fcmToken          String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -45,6 +49,7 @@ model User {
   disputesFiled     Dispute[]        @relation("DisputesFiled")
   flags             UserFlag[]
   deviceFingerprint String?
+  trustAudits       TrustAuditTrail[]
 
   @@index([email])
   @@index([phone])
@@ -83,6 +88,9 @@ model Business {
   rating             Float?
   reviewCount        Int               @default(0)
   reliabilityScore   Float?
+  karmaScore         Float             @default(50.0)
+  businessTier       String            @default("STANDARD")
+  trustScore         Float             @default(50.0)
   state              String            @default("")
   isClaimed          Boolean           @default(true)
   externalBookingUrl String?
@@ -592,3 +600,80 @@ enum DisputeOutcome {
   DISMISSED
   RESOLVED
 }
+
+model IdentityCluster {
+  id              String   @id @default(cuid())
+  deviceHash      String
+  paymentHash     String?
+  ipHash          String?
+  userIds         String[]
+  riskScore       Int
+  detectedAt      DateTime @default(now())
+}
+
+model TrustWitness {
+  id            String    @id @default(cuid())
+  witnessId     String
+  subjectId     String
+  stakeAmount   Float
+  witnessScore  Float
+  outcome       String
+  confirmedAt   DateTime?
+
+  @@unique([witnessId, subjectId])
+}
+
+model OutcomeBond {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Float
+  currency      String
+  status        String
+  bookedAt      DateTime
+  releaseAt     DateTime
+  slashedReason String?
+}
+
+model TrustAppeal {
+  id              String   @id @default(cuid())
+  userId          String
+  flagCode        String
+  businessContext String?
+  evidence        String[]
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TrustAuditTrail {
+  id            String   @id @default(cuid())
+  userId        String
+  previousScore Float
+  newScore      Float
+  changeReason  String
+  component     String   // OSINT, KARMA, RELIABILITY, SOCIAL, SYSTEM, MANUAL
+  severity      String   // "positive" | "neutral" | "negative"
+  weightUsed    Float?
+  metadata      Json?
+  previousHash  String?
+  currentHash   String   @unique
+  methodology   String   @default("1.0.0")
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([currentHash])
+  @@index([component])
+}
+
+model TrustMethodology {
+  id          String   @id @default(cuid())
+  version     String   @unique
+  description String
+  weights     Json
+  calibrations Json?
+  effectiveAt DateTime
+  retiredAt   DateTime?
+  isActive    Boolean  @default(false)
+}
+

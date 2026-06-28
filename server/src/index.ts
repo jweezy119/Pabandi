@@ -37,6 +37,7 @@ import socialRoutes from './routes/social.routes';
 import walletRoutes from './routes/wallet.routes';
 import waitlistRoutes from './routes/waitlist.routes';
 import hospitalityRoutes from './routes/hospitality.routes';
+import trustRoutes from './routes/trust.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -109,6 +110,7 @@ app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 // app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
+app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 
 import apiSubscriptionRoutes from './routes/api-subscription.routes';
 app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);

@@ -9,6 +9,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { odooService } from '../services/odoo.service';
+import { osintService } from '../services/osint.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -63,7 +64,10 @@ export const register = async (
       ? (role as UserRole)
       : UserRole.CUSTOMER;
 
-    // Create user
+    // 48-Hour Grace Period
+    const gracePeriodUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    // Create user immediately with BASIC tier
     const user = await prisma.user.create({
       data: {
         email,
@@ -72,6 +76,10 @@ export const register = async (
         lastName,
         phone,
         role: resolvedRole,
+        reliabilityScore: 750,
+        trustScore: 50.0,
+        verificationTier: 'BASIC',
+        gracePeriodUntil,
         // Create business profile if role is business owner
         ...(resolvedRole === UserRole.BUSINESS_OWNER && req.body.businessName && {
           business: {
@@ -104,6 +112,23 @@ export const register = async (
         createdAt: true,
         business: true,
       },
+    });
+
+    // Create pending Outcome Bond
+    await prisma.outcomeBond.create({
+      data: {
+        userId: user.id,
+        amount: 1.00, // $1 micro-bond (e.g. ~280 PKR)
+        currency: 'USD',
+        status: 'PENDING_PAYMENT',
+        bookedAt: new Date(),
+        releaseAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      }
+    });
+
+    // Fire off async OSINT checks (background)
+    osintService.queueOSINTChecks(user.id, user.business?.id).catch(err => {
+      logger.error('Background OSINT check failed', err);
     });
 
     // Generate tokens
@@ -382,3 +407,22 @@ export const resetPassword = async (
     next(error);
   }
 };
+
+export const getTrustAttestation = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { trustAttestationService } = await import('../services/trustAttestation.service');
+    const attestation = await trustAttestationService.issue(req.user!.id);
+    
+    res.json({
+      success: true,
+      data: { attestation },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

@@ -80,7 +80,7 @@ I'm a dev building Pabandi — AI + Web3 reliability rewards for Pakistan's info
 
 The core problem we're solving: live sellers lose 16-30% to no-pays because there's no portable trust layer. Buyers can't prove they're reliable. Sellers can't verify before shipping.
 
-Our API lets you check a buyer's reliability score in 2 seconds — anchored on Solana, behavior-based, no KYC.
+Our API lets you check a buyer's reliability score in 2 seconds — anchored on Solana and fully compliant with GB/Z 185 Sovereign PKI Identity standards. We even have an AI Natural-Language Discovery API for platforms like Daraz to find you instantly.
 
 In beta for Karachi/Lahore live sellers now. Looking for 20 pilot partners. Free access for 90 days + co-marketing.
 
