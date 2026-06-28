@@ -1,4 +1,5 @@
 import { prisma } from '../utils/database';
+import { TrustSignals } from '../services/trustSignal.service';
 import { logger } from '../utils/logger';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { getOrCreateAssociatedTokenAccount, transfer } from '@solana/spl-token';
@@ -81,7 +82,9 @@ export class CryptoService {
         aiBonus = PAB_REWARD_RULES.customer.CHECK_IN * ((aiRisk - 60) / 100.0) * 2; 
       }
 
-      amount = Math.floor((amount * reliabilityMultiplier) + aiBonus);
+      const trustSignals = (reservation as any)?.trustSignals as TrustSignals | undefined;
+      const trustBonus = (trustSignals?.riskDelta || 0) * (PAB_REWARD_RULES.customer.CHECK_IN / 100);
+      amount = Math.floor((amount * reliabilityMultiplier) + aiBonus + trustBonus);
 
       logger.info(`PAB +${amount} customer ${userId} reservation ${reservationId} (Base: ${PAB_REWARD_RULES.customer.CHECK_IN}, R-Score: ${rScore}, AI-Risk: ${aiRisk}, AI Bonus: ${aiBonus})`);
 
@@ -114,7 +117,7 @@ export class CryptoService {
     try {
       const reservation = await prisma.reservation.findUnique({
         where: { id: reservationId },
-        select: { riskScore: true }
+        select: { riskScore: true, trustSignals: true }
       });
       const business = await prisma.business.findUnique({
         where: { id: businessId },
@@ -168,7 +171,7 @@ export class CryptoService {
     try {
       const reservation = await prisma.reservation.findUnique({
         where: { id: reservationId },
-        select: { depositRequired: true, depositStatus: true },
+        select: { depositRequired: true, depositStatus: true, trustSignals: true },
       });
       if (!reservation?.depositRequired) return;
 
