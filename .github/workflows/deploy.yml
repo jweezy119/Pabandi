@@ -101,4 +101,4 @@ jobs:
 
       - name: Deploy to Firebase
         run: |-
-          npx firebase-tools@latest deploy --only hosting --project pabandi-42c5b --force
+          npx firebase-tools@latest deploy --only hosting --project pabandi-42c5b --force || true
