@@ -16,8 +16,8 @@ export const Scene2Reliability: React.FC = () => {
         style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
         className="text-5xl font-bold text-center px-8 mb-16"
       >
-        Powered by <br/>
-        <span className="text-secondary">AI Predictability</span>
+        The Engine Behind <br/>
+        <span className="text-secondary">Zero-Knowledge Trust</span>
       </h2>
 
       {/* Mock UI for Trust Matrix */}
@@ -37,11 +37,11 @@ export const Scene2Reliability: React.FC = () => {
         
         <div className="space-y-4">
           <div className="h-12 bg-white/5 rounded-xl border border-white/10 flex items-center px-4">
-             <span className="text-lg font-medium text-white/80">Web3 Soulbound Token</span>
-             <span className="ml-auto text-primary font-bold">Verified</span>
+             <span className="text-lg font-medium text-white/80">GB/Z 185.3 Hybrid PKI</span>
+             <span className="ml-auto text-primary font-bold">Bound</span>
           </div>
           <div className="h-12 bg-white/5 rounded-xl border border-white/10 flex items-center px-4">
-             <span className="text-lg font-medium text-white/80">On-Chain History</span>
+             <span className="text-lg font-medium text-white/80">On-Chain Oracle History</span>
              <span className="ml-auto text-secondary font-bold">Immutable</span>
           </div>
         </div>

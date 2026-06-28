@@ -1,0 +1,3230 @@
+{
+  "scheduled": [
+    {
+      "id": 1,
+      "platform": "twitter",
+      "text": "User data is only stored as necessary for reservation management",
+      "schedule_time": "2026-06-28T13:53:31.254884",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.254908"
+    },
+    {
+      "id": 2,
+      "platform": "twitter",
+      "text": "Support for local payment methods (JazzCash, EasyPaisa)",
+      "schedule_time": "2026-06-28T13:53:31.255277",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.255294"
+    },
+    {
+      "id": 3,
+      "platform": "twitter",
+      "text": "`POST /api/v1/api-subscription/safepay` \u2192 checkout URL for tiers",
+      "schedule_time": "2026-06-28T13:53:31.256140",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.256149"
+    },
+    {
+      "id": 4,
+      "platform": "twitter",
+      "text": "`POST /api/v1/api-subscription/verify` \u2192 provisions API key on payment",
+      "schedule_time": "2026-06-28T13:53:31.256387",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.256397"
+    },
+    {
+      "id": 5,
+      "platform": "twitter",
+      "text": "Admin provisioning endpoint: `POST /api/v1/admin/api-clients`",
+      "schedule_time": "2026-06-28T13:53:31.256593",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.256604"
+    },
+    {
+      "id": 6,
+      "platform": "twitter",
+      "text": "Quota/per-endpoint metering in `apiKey.middleware.ts`",
+      "schedule_time": "2026-06-28T13:53:31.256780",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.256787"
+    },
+    {
+      "id": 7,
+      "platform": "twitter",
+      "text": "3 tiers priced in PKR: STARTER (free/500 calls), GROWTH (PKR 27,500), ENTERPRISE (PKR 139,000)",
+      "schedule_time": "2026-06-28T13:53:31.256976",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.256983"
+    },
+    {
+      "id": 8,
+      "platform": "twitter",
+      "text": "Add a `/api` landing page in the existing client app (there\u2019s already a `pricing` route in `client/src/App.tsx`)",
+      "schedule_time": "2026-06-28T13:53:31.257200",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.257212"
+    },
+    {
+      "id": 9,
+      "platform": "twitter",
+      "text": "Replace the \u201cBusinessModelPage\u201d stub with real pricing, code samples, and a \u201cGet API Key\u201d CTA",
+      "schedule_time": "2026-06-28T13:53:31.257400",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.257407"
+    },
+    {
+      "id": 10,
+      "platform": "twitter",
+      "text": "3% fee on prepaid bookings via Safepay/PayPal. The existing payment webhooks and `Payment` model already support this.",
+      "schedule_time": "2026-06-28T13:53:31.257589",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.257596"
+    },
+    {
+      "id": 11,
+      "platform": "twitter",
+      "text": "Stake/unstake yield pool: The wallet + staking flow is built. Take 10% platform yield on staking rewards or operate a liquidity pool with market-making.",
+      "schedule_time": "2026-06-28T13:53:31.258191",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.258208"
+    },
+    {
+      "id": 12,
+      "platform": "twitter",
+      "text": "VIP tiers in app: Users pay PKR 500\u20132000/month for priority booking, refundable deposits, and badge acceleration. Sync to existing `User.tier`/`score` columns.",
+      "schedule_time": "2026-06-28T13:53:31.258454",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.258463"
+    },
+    {
+      "id": 13,
+      "platform": "twitter",
+      "text": "You already have `Payment` model, webhook hooks, and wallet state",
+      "schedule_time": "2026-06-28T13:53:31.258735",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.258746"
+    },
+    {
+      "id": 14,
+      "platform": "twitter",
+      "text": "Just add a `platformFee` field and bump it in the booking controller",
+      "schedule_time": "2026-06-28T13:53:31.259040",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.259047"
+    },
+    {
+      "id": 15,
+      "platform": "twitter",
+      "text": "Pabandi Identity API: Verify customer phone/email + reliability score before issuing a ticket or COD shipment. Charge per verification (fraction of a cent).",
+      "schedule_time": "2026-06-28T13:53:31.259340",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.259347"
+    },
+    {
+      "id": 16,
+      "platform": "twitter",
+      "text": "Business Analytics Export: Sell aggregated, anonymised demand/cancellation datasets to FMCG brands for market planning.",
+      "schedule_time": "2026-06-28T13:53:31.259606",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.259613"
+    },
+    {
+      "id": 17,
+      "platform": "twitter",
+      "text": "Reputation API: Let third-party apps query a user\u2019s Pabandi score. Use existing passport/badge tiers.",
+      "schedule_time": "2026-06-28T13:53:31.259870",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.259876"
+    },
+    {
+      "id": 18,
+      "platform": "twitter",
+      "text": "POST /api/v1/verify\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T13:53:31.261776",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.261787"
+    },
+    {
+      "id": 19,
+      "platform": "twitter",
+      "text": "POST /api/v1/eligibility\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T13:53:31.262250",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.262261"
+    },
+    {
+      "id": 20,
+      "platform": "twitter",
+      "text": "POST /api/v1/verify\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T13:53:31.262596",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.262604"
+    },
+    {
+      "id": 21,
+      "platform": "twitter",
+      "text": "POST /api/v1/incidents\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T13:53:31.262937",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.262946"
+    },
+    {
+      "id": 22,
+      "platform": "twitter",
+      "text": "POST /api/v1/webhooks/subscribe\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T13:53:31.263294",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.263302"
+    },
+    {
+      "id": 23,
+      "platform": "twitter",
+      "text": "Platinum: 850\u20131000 | Top 5% of users | Eligible for highest-value transactions, no deposit required",
+      "schedule_time": "2026-06-28T13:53:31.263616",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.263623"
+    },
+    {
+      "id": 24,
+      "platform": "twitter",
+      "text": "Gold: 700\u2013849 | Reliable | Eligible for COD/live-sale transactions without staking",
+      "schedule_time": "2026-06-28T13:53:31.263941",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.263947"
+    },
+    {
+      "id": 25,
+      "platform": "twitter",
+      "text": "Silver: 500\u2013699 | Proven track record | Eligible with reduced deposit",
+      "schedule_time": "2026-06-28T13:53:31.264273",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.264279"
+    },
+    {
+      "id": 26,
+      "platform": "twitter",
+      "text": "Bronze: 300\u2013499 | New or inconsistent | Eligible with standard deposit",
+      "schedule_time": "2026-06-28T13:53:31.264613",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.264619"
+    },
+    {
+      "id": 27,
+      "platform": "twitter",
+      "text": "Unrated: <300 or no history | Must deposit or pay upfront",
+      "schedule_time": "2026-06-28T13:53:31.264961",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.264968"
+    },
+    {
+      "id": 28,
+      "platform": "twitter",
+      "text": "Merchant-verified booking outcomes (completed vs. no-show)",
+      "schedule_time": "2026-06-28T13:53:31.265337",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.265344"
+    },
+    {
+      "id": 29,
+      "platform": "twitter",
+      "text": "AI-predicted risk signals adjusted by actual outcomes",
+      "schedule_time": "2026-06-28T13:53:31.265843",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.265851"
+    },
+    {
+      "id": 30,
+      "platform": "twitter",
+      "text": "Time-of-day reliability (8 PM bookings vs. 2 PM bookings)",
+      "schedule_time": "2026-06-28T13:53:31.266275",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.266283"
+    },
+    {
+      "id": 31,
+      "platform": "twitter",
+      "text": "Allows anyone to verify the score hasn't been backdated or manipulated",
+      "schedule_time": "2026-06-28T13:53:31.266670",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.266676"
+    },
+    {
+      "id": 32,
+      "platform": "twitter",
+      "text": "Enables community dispute resolution without trusting a centralized authority",
+      "schedule_time": "2026-06-28T13:53:31.267304",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.267316"
+    },
+    {
+      "id": 33,
+      "platform": "twitter",
+      "text": "More merchants \u2192 more data points per user \u2192 more accurate score",
+      "schedule_time": "2026-06-28T13:53:31.267731",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.267739"
+    },
+    {
+      "id": 34,
+      "platform": "twitter",
+      "text": "Better scores \u2192 more trust from partners \u2192 more merchants want to integrate",
+      "schedule_time": "2026-06-28T13:53:31.268193",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.268202"
+    },
+    {
+      "id": 35,
+      "platform": "twitter",
+      "text": "100K active app users\n\u2192 500K bookings/month\n\u2192 50M API calls/month (each booking generates ~100 verify calls)\n\u2192 $50,000/month API revenue\n\u2192 $600K/year recurring\n\u2192 Data improves AI \u2192 better scores \u2192 more API integrations \u2192 MORE USERS",
+      "schedule_time": "2026-06-28T13:53:31.270045",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.270061"
+    },
+    {
+      "id": 36,
+      "platform": "twitter",
+      "text": "\"Hi Daraz, integrate our reliability API!\"\nDaraz: \"Who are your users? Where's your data? Why should we trust your scores?\"\nYou:   \"Uhh... we built a model...\"\nDaraz: \"No pilots? No merchants? No proof? Call us when you have traction.\"",
+      "schedule_time": "2026-06-28T13:53:31.270871",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.270889"
+    },
+    {
+      "id": 37,
+      "platform": "twitter",
+      "text": "Investor: \"What's your revenue model?\"\nYou:     \"Booking commissions... 2%... maybe 3%...\"\nInvestor: \"That's a restaurant directory with escrow. Unicorns don't get built on 2%.\"",
+      "schedule_time": "2026-06-28T13:53:31.271410",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.271420"
+    },
+    {
+      "id": 38,
+      "platform": "twitter",
+      "text": "71d671b feat(ai): pivot to zero-knowledge hashed identity api for e-commerce\n8fb6aa6 feat(ai): add ecommerce reliability predictor for Daraz/Alibaba integration\n62a2971 chore: remove Pakistan references to keep phrasing global",
+      "schedule_time": "2026-06-28T13:53:31.271923",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.271932"
+    },
+    {
+      "id": 39,
+      "platform": "twitter",
+      "text": "`ecommerceReliabilityPredictor.ts` \u2014 this is the Daraz/Alibaba integration logic. Good.",
+      "schedule_time": "2026-06-28T13:53:31.272483",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.272494"
+    },
+    {
+      "id": 40,
+      "platform": "twitter",
+      "text": "Developer portal overhaul \u2014 docs are polished. Good.",
+      "schedule_time": "2026-06-28T13:53:31.273011",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.273019"
+    },
+    {
+      "id": 41,
+      "platform": "twitter",
+      "text": "`chore: remove Pakistan references` \u2014 this is rebrand risk",
+      "schedule_time": "2026-06-28T13:53:31.273563",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.273573"
+    },
+    {
+      "id": 42,
+      "platform": "twitter",
+      "text": "Deleting `.env.contracts` \u2014 could break deployment config",
+      "schedule_time": "2026-06-28T13:53:31.274167",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.274178"
+    },
+    {
+      "id": 43,
+      "platform": "twitter",
+      "text": "16\u201330% of live-sale and COD orders never get paid or collected",
+      "schedule_time": "2026-06-28T13:53:31.276027",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.276037"
+    },
+    {
+      "id": 44,
+      "platform": "twitter",
+      "text": "Sellers forced to choose: prepay (lose 60% sales) or trust (lose 30% revenue)",
+      "schedule_time": "2026-06-28T13:53:31.276714",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.276725"
+    },
+    {
+      "id": 45,
+      "platform": "twitter",
+      "text": "No portable trust infrastructure exists between platforms",
+      "schedule_time": "2026-06-28T13:53:31.277448",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.277463"
+    },
+    {
+      "id": 46,
+      "platform": "twitter",
+      "text": "Current \u201csolutions\u201d are KYC, escrow, or manual vetting \u2014 none scale for SMBs",
+      "schedule_time": "2026-06-28T13:53:31.278022",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.278031"
+    },
+    {
+      "id": 47,
+      "platform": "twitter",
+      "text": "Pakistan first lab: 20M+ freelancers, 500K+ salons/clinics, booming live-sale culture",
+      "schedule_time": "2026-06-28T13:53:31.278616",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.278625"
+    },
+    {
+      "id": 48,
+      "platform": "twitter",
+      "text": "Global TAM: $1.1T live-commerce market by 2026; $5T+ informal economy in emerging markets",
+      "schedule_time": "2026-06-28T13:53:31.279233",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.279242"
+    },
+    {
+      "id": 49,
+      "platform": "twitter",
+      "text": "Why Pakistan: No incumbent credit scoring; WhatsApp-native commerce; English/Urdu bilingual interface",
+      "schedule_time": "2026-06-28T13:53:31.279826",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.279834"
+    },
+    {
+      "id": 50,
+      "platform": "twitter",
+      "text": "Why now: AI + on-chain rep finally makes trust portable without KYC",
+      "schedule_time": "2026-06-28T13:53:31.280452",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.280460"
+    },
+    {
+      "id": 51,
+      "platform": "twitter",
+      "text": "Reliability Passport: On-chain, portable trust score built from real behavior (bookings, payments, no-shows)",
+      "schedule_time": "2026-06-28T13:53:31.281069",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.281077"
+    },
+    {
+      "id": 52,
+      "platform": "twitter",
+      "text": "AI Predictor: No-show risk model trained on Pakistan-specific transaction patterns",
+      "schedule_time": "2026-06-28T13:53:31.282100",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.282144"
+    },
+    {
+      "id": 53,
+      "platform": "twitter",
+      "text": "Merchant API: 2-second verification for any platform \u2014 live selling, Shopify, Daraz, bookings",
+      "schedule_time": "2026-06-28T13:53:31.282861",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.282872"
+    },
+    {
+      "id": 54,
+      "platform": "twitter",
+      "text": "Escrow + Rewards: Trustless deposits + $PAB punctuality rewards",
+      "schedule_time": "2026-06-28T13:53:31.283744",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.283757"
+    },
+    {
+      "id": 55,
+      "platform": "twitter",
+      "text": "Zero-knowledge Layer: Hash-verified identity API for e-commerce (Shopify/Daraz)",
+      "schedule_time": "2026-06-28T13:53:31.284456",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.284467"
+    },
+    {
+      "id": 56,
+      "platform": "twitter",
+      "text": "Pilot-ready: API endpoints live; merchant onboarding flow built; docs published",
+      "schedule_time": "2026-06-28T13:53:31.285189",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.285199"
+    },
+    {
+      "id": 57,
+      "platform": "twitter",
+      "text": "Developer traction: 5 API endpoints, 2 SDKs (Node.js, Next.js), docs + 1-page summary",
+      "schedule_time": "2026-06-28T13:53:31.285900",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.285910"
+    },
+    {
+      "id": 58,
+      "platform": "twitter",
+      "text": "Merchant pipeline: Live-seller outreach underway; 3 beta pilots in negotiation",
+      "schedule_time": "2026-06-28T13:53:31.286575",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.286585"
+    },
+    {
+      "id": 59,
+      "platform": "twitter",
+      "text": "Partnership hooks: Daraz API integration scoped; Shopify App store ready",
+      "schedule_time": "2026-06-28T13:53:31.287247",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.287257"
+    },
+    {
+      "id": 60,
+      "platform": "twitter",
+      "text": "Tech validation: Solana mainnet token deployed; Firebase + Prisma backend hardened for Cloud Run",
+      "schedule_time": "2026-06-28T13:53:31.287935",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.287944"
+    },
+    {
+      "id": 61,
+      "platform": "twitter",
+      "text": "Content engine: 90-day Twitter calendar + 5 launch threads ready; @PabandiGlobal active",
+      "schedule_time": "2026-06-28T13:53:31.288657",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.288667"
+    },
+    {
+      "id": 62,
+      "platform": "twitter",
+      "text": "Ethos / Orange Protocol: Score social/DeFi activity \u2014 not real-world behavior",
+      "schedule_time": "2026-06-28T13:53:31.289372",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.289381"
+    },
+    {
+      "id": 63,
+      "platform": "twitter",
+      "text": "Fuero: US-first, credit-bureau data, not informal-economy ready",
+      "schedule_time": "2026-06-28T13:53:31.290079",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.290087"
+    },
+    {
+      "id": 64,
+      "platform": "twitter",
+      "text": "Cheqd / VCs: Identity infra, no scoring, no merchant API",
+      "schedule_time": "2026-06-28T13:53:31.290890",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.290903"
+    },
+    {
+      "id": 65,
+      "platform": "twitter",
+      "text": "Pabandi: AI-observed reliability + on-chain Passport + merchant verification API",
+      "schedule_time": "2026-06-28T13:53:31.291634",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.291642"
+    },
+    {
+      "id": 66,
+      "platform": "twitter",
+      "text": "Daraz (SEA + Pakistan): COD rejection losses = perfect Pabandi use case",
+      "schedule_time": "2026-06-28T13:53:31.292415",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.292425"
+    },
+    {
+      "id": 67,
+      "platform": "twitter",
+      "text": "Alibaba.com B2B: Supplier reliability scoring for international trade",
+      "schedule_time": "2026-06-28T13:53:31.293183",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.293192"
+    },
+    {
+      "id": 68,
+      "platform": "twitter",
+      "text": "1688 / AliExpress: Cross-border buyer/seller trust layer",
+      "schedule_time": "2026-06-28T13:53:31.293957",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.293969"
+    },
+    {
+      "id": 69,
+      "platform": "twitter",
+      "text": "Temu / emerging-market platforms: Same COD reliability problem at scale",
+      "schedule_time": "2026-06-28T13:53:31.294822",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.294833"
+    },
+    {
+      "id": 70,
+      "platform": "twitter",
+      "text": "Merchant subscriptions: Bronze/Silver/Gold tiers for advanced features",
+      "schedule_time": "2026-06-28T13:53:31.296139",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.296205"
+    },
+    {
+      "id": 71,
+      "platform": "twitter",
+      "text": "$PAB ecosystem: Token rewards + staking + dispute fees",
+      "schedule_time": "2026-06-28T13:53:31.297192",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.297208"
+    },
+    {
+      "id": 72,
+      "platform": "twitter",
+      "text": "Data insights: Aggregated reliability analytics for platforms (anonymized)",
+      "schedule_time": "2026-06-28T13:53:31.298016",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.298024"
+    },
+    {
+      "id": 73,
+      "platform": "twitter",
+      "text": "Enterprise SLA: Dedicated instances for Shopify Plus / Daraz Pro merchants",
+      "schedule_time": "2026-06-28T13:53:31.298831",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.298839"
+    },
+    {
+      "id": 74,
+      "platform": "twitter",
+      "text": "Jawad Hussain \u2014 Founder, engineer, US-based but Pakistan-native",
+      "schedule_time": "2026-06-28T13:53:31.299641",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.299649"
+    },
+    {
+      "id": 75,
+      "platform": "twitter",
+      "text": "Hiring plan: Pakistan-based BD lead + merchant onboarding manager",
+      "schedule_time": "2026-06-28T13:53:31.300497",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.300509"
+    },
+    {
+      "id": 76,
+      "platform": "twitter",
+      "text": "Phase 1 (now): Pakistan lab \u2014 merchant API + live-seller beta",
+      "schedule_time": "2026-06-28T13:53:31.301541",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.301555"
+    },
+    {
+      "id": 77,
+      "platform": "twitter",
+      "text": "Phase 2 (6 months): Daraz pilot + Shopify app store launch",
+      "schedule_time": "2026-06-28T13:53:31.302400",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.302411"
+    },
+    {
+      "id": 78,
+      "platform": "twitter",
+      "text": "Phase 3 (12 months): Southeast Asia + MENA expansion",
+      "schedule_time": "2026-06-28T13:53:31.303241",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.303251"
+    },
+    {
+      "id": 79,
+      "platform": "twitter",
+      "text": "Phase 4 (24 months): Agent layer for AI commerce \u2014 autonomous reliability for AI-driven marketplaces",
+      "schedule_time": "2026-06-28T13:53:31.304087",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.304095"
+    },
+    {
+      "id": 80,
+      "platform": "twitter",
+      "text": "16\u201330% of live-sale and COD orders fail in informal commerce.",
+      "schedule_time": "2026-06-28T13:53:31.305672",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.305682"
+    },
+    {
+      "id": 81,
+      "platform": "twitter",
+      "text": "Sellers forced to choose: prepay and lose 60% of sales, or trust and lose 30% of revenue.",
+      "schedule_time": "2026-06-28T13:53:31.306695",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.306719"
+    },
+    {
+      "id": 82,
+      "platform": "twitter",
+      "text": "No portable trust layer exists between platforms. Current solutions \u2014 KYC, escrow, manual vetting \u2014 do not scale for SMBs.",
+      "schedule_time": "2026-06-28T13:53:31.307683",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.307693"
+    },
+    {
+      "id": 83,
+      "platform": "twitter",
+      "text": "Consumer Booking App: AI predicts no-shows and negotiates dynamic deposits.",
+      "schedule_time": "2026-06-28T13:53:31.308637",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.308649"
+    },
+    {
+      "id": 84,
+      "platform": "twitter",
+      "text": "Zero-Knowledge Fraud Network API: Global B2B infrastructure for Shopify, Daraz, and TikTok Shop.",
+      "schedule_time": "2026-06-28T13:53:31.309602",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.309612"
+    },
+    {
+      "id": 85,
+      "platform": "twitter",
+      "text": "Reliability Passport: Portable, on-chain trust score built from real behavior.",
+      "schedule_time": "2026-06-28T13:53:31.310519",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.310529"
+    },
+    {
+      "id": 86,
+      "platform": "twitter",
+      "text": "Web3 Rewards: Users earn $PAB for reliable behavior. Token is non-mintable and non-freezable on Solana.",
+      "schedule_time": "2026-06-28T13:53:31.311631",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.311646"
+    },
+    {
+      "id": 87,
+      "platform": "twitter",
+      "text": "Pakistan is Alibaba\u2019s largest emerging-market footprint and has the deepest COD fraud problem.",
+      "schedule_time": "2026-06-28T13:53:31.312686",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.312697"
+    },
+    {
+      "id": 88,
+      "platform": "twitter",
+      "text": "Daraz merchants already experience the exact workflow Pabandi solves: order confirmation, delivery risk, and cash recovery.",
+      "schedule_time": "2026-06-28T13:53:31.313727",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.313736"
+    },
+    {
+      "id": 89,
+      "platform": "twitter",
+      "text": "Alibaba.com and 1688 need supplier-side reliability scoring for cross-border trade. Pabandi\u2019s behavior layer can become that trust layer faster than an internal build.",
+      "schedule_time": "2026-06-28T13:53:31.314784",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.314794"
+    },
+    {
+      "id": 90,
+      "platform": "twitter",
+      "text": "Dual-engine flywheel: consumer app trains the model; merchant API monetizes it.",
+      "schedule_time": "2026-06-28T13:53:31.315798",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.315809"
+    },
+    {
+      "id": 91,
+      "platform": "twitter",
+      "text": "AI + on-chain behavior: not just social graph or DeFi history, but real booking and payment behavior.",
+      "schedule_time": "2026-06-28T13:53:31.316746",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.316760"
+    },
+    {
+      "id": 92,
+      "platform": "twitter",
+      "text": "Privacy-native: hash-verified identity API means platforms never receive raw buyer PII.",
+      "schedule_time": "2026-06-28T13:53:31.317700",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.317713"
+    },
+    {
+      "id": 93,
+      "platform": "twitter",
+      "text": "Backend hardened for Cloud Run and Firebase auth; client and dashboards build clean.",
+      "schedule_time": "2026-06-28T13:53:31.318680",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.318693"
+    },
+    {
+      "id": 94,
+      "platform": "twitter",
+      "text": "Repo includes live pitch deck, merchant dashboard, booking/reservation flows, social auth stubs, payment controller, network/integrations routes, SDK, and documentation.",
+      "schedule_time": "2026-06-28T13:53:31.319604",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.319619"
+    },
+    {
+      "id": 95,
+      "platform": "twitter",
+      "text": "Product-market fit targeted through Pakistan live-seller pilots and Shopify app-store readiness.",
+      "schedule_time": "2026-06-28T13:53:31.320546",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.320560"
+    },
+    {
+      "id": 96,
+      "platform": "twitter",
+      "text": "Blockchain: Solana + Web3.js, Phantom/Solflare wallet integration",
+      "schedule_time": "2026-06-28T13:53:31.321494",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.321506"
+    },
+    {
+      "id": 97,
+      "platform": "twitter",
+      "text": "Auth: JWT + Google/Facebook/LinkedIn/TikTok/X OAuth",
+      "schedule_time": "2026-06-28T13:53:31.322455",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.322469"
+    },
+    {
+      "id": 98,
+      "platform": "twitter",
+      "text": "Jawad Hussain \u2014 founder, full-stack engineer, US-based with Pakistan-market depth",
+      "schedule_time": "2026-06-28T13:53:31.323423",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.323436"
+    },
+    {
+      "id": 99,
+      "platform": "twitter",
+      "text": "Partnership and integration access with Alibaba\u2019s emerging-market commerce stack.",
+      "schedule_time": "2026-06-28T13:53:31.326421",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.326452"
+    },
+    {
+      "id": 100,
+      "platform": "twitter",
+      "text": "Pilot merchants to validate COD-rejection reduction at scale.",
+      "schedule_time": "2026-06-28T13:53:31.327618",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.327635"
+    },
+    {
+      "id": 101,
+      "platform": "twitter",
+      "text": "Advice on aligning API/SDK onboarding with Daraz/1688 developer ecosystems.",
+      "schedule_time": "2026-06-28T13:53:31.328667",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.328678"
+    },
+    {
+      "id": 102,
+      "platform": "twitter",
+      "text": "Pitch deck: pitch/Pabandi-Alibaba-CoCreate-2026.pptx",
+      "schedule_time": "2026-06-28T13:53:31.329792",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.329803"
+    },
+    {
+      "id": 103,
+      "platform": "twitter",
+      "text": "Pakistan's informal economy is $15B+.\nLive selling is booming.\nFreelance is growing.\nSalons. Clinics. Wholesale markets.\nEvery transaction is secured by one thing:\n\"Bro trust.\"\nIt's not enough.\nAnd everyone knows it.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T13:53:31.333069",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.333086"
+    },
+    {
+      "id": 104,
+      "platform": "twitter",
+      "text": "The current system forces sellers into a brutal choice:\nA) Accept payment first \u2192 lose 60% of impulse buyers\nB) Ship on trust \u2192 lose 16-30% to no-pays\nC) Only sell to friends \u2192 never scale\nEvery seller I've talked to is stuck in this triangle.",
+      "schedule_time": "2026-06-28T13:53:31.334380",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.334396"
+    },
+    {
+      "id": 105,
+      "platform": "twitter",
+      "text": "What if there was a fourth option?\nWhat if buyers had a portable reliability score?\nBuilt from real behavior.\nVerified on-chain.\nCheckable by any seller in 2 seconds.\nThat's what we built.",
+      "schedule_time": "2026-06-28T13:53:31.335521",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.335531"
+    },
+    {
+      "id": 106,
+      "platform": "twitter",
+      "text": "Introducing the Pabandi API.\nOne line of code. Any platform can now verify a buyer's trustworthiness before accepting pay-on-delivery.\nNo KYC. No paperwork. No waiting.\nJust: \"Is this person reliable?\" \u2192 Yes/No + Score Tier.\nThis changes everything for live sellers.",
+      "schedule_time": "2026-06-28T13:53:31.336733",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.336745"
+    },
+    {
+      "id": 107,
+      "platform": "twitter",
+      "text": "How does Pabandi score someone?\nShort answer: We don't ask. We observe.\nLong answer:\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T13:53:31.337879",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.337889"
+    },
+    {
+      "id": 108,
+      "platform": "twitter",
+      "text": "Step 1: User books something \u2014 salon, clinic, delivery, freelance gig.\nStep 2: AI predicts no-show probability before the appointment.\nStep 3: User either shows up or doesn't.\nStep 4: Outcome is recorded. Score updates.",
+      "schedule_time": "2026-06-28T13:53:31.339007",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.339023"
+    },
+    {
+      "id": 109,
+      "platform": "twitter",
+      "text": "The score is built from real transactions:\n\u2705 Completed bookings\n\u2705 On-time payments\n\u2b1c Missed appointments (negative signal)\n\u2b1c Disputes lost (negative signal)\nPlus AI adjustments for time-of-day reliability, service type, and seasonal patterns specific to Pakistan.",
+      "schedule_time": "2026-06-28T13:53:31.340094",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.340107"
+    },
+    {
+      "id": 110,
+      "platform": "twitter",
+      "text": "All of this is anchored on Solana.\nWhy on-chain? Because of the GB/Z 185 sovereign standards.\nTo work with Chinese tech giants (like Alibaba/Daraz), your trust layer must map to X.509 PKI certificates rooted in a trusted Certificate Authority.\nWe built the bridge.",
+      "schedule_time": "2026-06-28T13:53:31.341241",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.341256"
+    },
+    {
+      "id": 111,
+      "platform": "twitter",
+      "text": "We call this the Reliability Passport. (Or GB/Z 185.3 Hybrid PKI).\nIt's not a credit card. It's not KYC.\nIt's proof of behavior \u2014 bound via challenge-response to your on-chain history.\nThe same Passport that gets you COD on a salon appointment gets you pay-on-delivery everywhere.",
+      "schedule_time": "2026-06-28T13:53:31.342375",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.342383"
+    },
+    {
+      "id": 112,
+      "platform": "twitter",
+      "text": "I watched a live sale yesterday.\nSeller: \"iPhone 15 Pro, 400K, 10 units, comment SOLD\"\nBuyers: \"Sold! Sold! Sold!\"\nThen the seller sighed and said:\n\"Half of these will never come pick it up.\"\nThat's when I knew we had to ship this NOW.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T13:53:31.343534",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.343548"
+    },
+    {
+      "id": 113,
+      "platform": "twitter",
+      "text": "Here's the current flow for a Pakistan live seller:\n1. Post live \u2192 get DMs\n2. Send payment info \u2192 half ghost\n3. Ship anyway \u2192 lose money on no-pays\n4. Or ask for payment first \u2192 lose half your sales\nThe market accepts this as \"normal.\"",
+      "schedule_time": "2026-06-28T13:53:31.344832",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.344851"
+    },
+    {
+      "id": 114,
+      "platform": "twitter",
+      "text": "What if you could filter buyers by reliability?\n\"Only buyers with 700+ Pabandi score can pay on delivery.\"\n\"No-score buyers must prepay or use escrow.\"\nSeller gets COD confidence.\nBuyer with good score gets convenience.\nEveryone wins.",
+      "schedule_time": "2026-06-28T13:53:31.346880",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.346911"
+    },
+    {
+      "id": 115,
+      "platform": "twitter",
+      "text": "Developers: if you're building a platform in Pakistan, here's something you should consider.\nThe trust layer is the most valuable thing you can build \u2014 but also the hardest.\nUnless you don't have to build it yourself.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T13:53:31.348669",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.348691"
+    },
+    {
+      "id": 116,
+      "platform": "twitter",
+      "text": "Most platforms solve trust one of two ways:\n1. Centralized review system (Google reviews, Trustpilot)\n\u2192 Fakeable. Gamed. Siloed.\n2. Manual KYC + verification\n\u2192 Slow. Expensive. Legal liability.\nNeither scales for Pakistan's informal economy.",
+      "schedule_time": "2026-06-28T13:53:31.350386",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.350407"
+    },
+    {
+      "id": 117,
+      "platform": "twitter",
+      "text": "Pabandi takes a different approach:\nTrust as a public good.\nScore as infrastructure.\nVerification as an API call.\nYou don't need to build a review system.\nYou don't need to become a credit bureau.\nYou just call /api/v1/verify.",
+      "schedule_time": "2026-06-28T13:53:31.352072",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.352092"
+    },
+    {
+      "id": 118,
+      "platform": "twitter",
+      "text": "Docs: pabandi-42c5b.web.app/docs\nAPI base: pabandi-42c5b.web.app/api/v1\nBeta access: team@pabandi.com\nBuilt for Pakistan. Not in Pakistan.\nWada pura karo. Inaam pao.",
+      "schedule_time": "2026-06-28T13:53:31.353686",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.353704"
+    },
+    {
+      "id": 119,
+      "platform": "twitter",
+      "text": "We're 6 months in and the data already proves it.\nUsers with higher Pabandi scores show up 3x more often.\nMerchants who use escrow reduce no-shows by 40%.\nThe future isn't \"bro trust.\"\nIt's \"verified trust.\"\nWe're building that future. Starting here.\nWada pura karo. Inaam pao.",
+      "schedule_time": "2026-06-28T13:53:31.355320",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.355341"
+    },
+    {
+      "id": 120,
+      "platform": "twitter",
+      "text": "After each thread, reply to 3 Pakistani tech/crypto accounts with a relevant angle",
+      "schedule_time": "2026-06-28T13:53:31.357023",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.357044"
+    },
+    {
+      "id": 121,
+      "platform": "twitter",
+      "text": "DM @mominsaqib Thread 3 link with \"We're shipping the trust layer for Pakistan's informal economy\"",
+      "schedule_time": "2026-06-28T13:53:31.358952",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.358973"
+    },
+    {
+      "id": 122,
+      "platform": "twitter",
+      "text": "The current system forces sellers into a brutal choice:\nA) Accept payment first \u2192 lose 60% of impulse buyers\nB) Ship on trust \u2192 lose 16-30% to no-pays\nC) Only sell to friends \u2192 never scale\nEvery seller I've talked to is stuck in this triangle.",
+      "thread_part": 1,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.360602",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.360629"
+    },
+    {
+      "id": 122,
+      "platform": "twitter",
+      "text": "What if there was a fourth option?\nWhat if buyers had a portable reliability score?\nBuilt from real behavior.\nVerified on-chain.\nCheckable by any seller in 2 seconds.\nThat's what we built.",
+      "thread_part": 2,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.360602",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.360638"
+    },
+    {
+      "id": 122,
+      "platform": "twitter",
+      "text": "Introducing the Pabandi API.\nOne line of code. Any platform can now verify a buyer's trustworthiness before accepting pay-on-delivery.\nNo KYC. No paperwork. No waiting.\nJust: \"Is this person reliable?\" \u2192 Yes/No + Score Tier.\nThis changes everything for live sellers.",
+      "thread_part": 3,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.360602",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.360644"
+    },
+    {
+      "id": 125,
+      "platform": "twitter",
+      "text": "How does Pabandi score someone?\nShort answer: We don't ask. We observe.\nLong answer:\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T13:53:31.362493",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.362522"
+    },
+    {
+      "id": 125,
+      "platform": "twitter",
+      "text": "Step 1: User books something \u2014 salon, clinic, delivery, freelance gig.\nStep 2: AI predicts no-show probability before the appointment.\nStep 3: User either shows up or doesn't.\nStep 4: Outcome is recorded. Score updates.",
+      "thread_part": 2,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T13:53:31.362493",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.362529"
+    },
+    {
+      "id": 125,
+      "platform": "twitter",
+      "text": "The score is built from real transactions:\n\u2705 Completed bookings\n\u2705 On-time payments\n\u2b1c Missed appointments (negative signal)\n\u2b1c Disputes lost (negative signal)\nPlus AI adjustments for time-of-day reliability, service type, and seasonal patterns specific to Pakistan.",
+      "thread_part": 3,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T13:53:31.362493",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.362535"
+    },
+    {
+      "id": 125,
+      "platform": "twitter",
+      "text": "All of this is anchored on Solana.\nWhy on-chain? Because of the GB/Z 185 sovereign standards.\nTo work with Chinese tech giants (like Alibaba/Daraz), your trust layer must map to X.509 PKI certificates rooted in a trusted Certificate Authority.\nWe built the bridge.",
+      "thread_part": 4,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T13:53:31.362493",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.362539"
+    },
+    {
+      "id": 125,
+      "platform": "twitter",
+      "text": "We call this the Reliability Passport. (Or GB/Z 185.3 Hybrid PKI).\nIt's not a credit card. It's not KYC.\nIt's proof of behavior \u2014 bound via challenge-response to your on-chain history.\nThe same Passport that gets you COD on a salon appointment gets you pay-on-delivery everywhere.",
+      "thread_part": 5,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T13:53:31.362493",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.362544"
+    },
+    {
+      "id": 130,
+      "platform": "twitter",
+      "text": "I watched a live sale yesterday.\nSeller: \"iPhone 15 Pro, 400K, 10 units, comment SOLD\"\nBuyers: \"Sold! Sold! Sold!\"\nThen the seller sighed and said:\n\"Half of these will never come pick it up.\"\nThat's when I knew we had to ship this NOW.\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.364592",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.364614"
+    },
+    {
+      "id": 130,
+      "platform": "twitter",
+      "text": "Here's the current flow for a Pakistan live seller:\n1. Post live \u2192 get DMs\n2. Send payment info \u2192 half ghost\n3. Ship anyway \u2192 lose money on no-pays\n4. Or ask for payment first \u2192 lose half your sales\nThe market accepts this as \"normal.\"",
+      "thread_part": 2,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.364592",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.364620"
+    },
+    {
+      "id": 130,
+      "platform": "twitter",
+      "text": "What if you could filter buyers by reliability?\n\"Only buyers with 700+ Pabandi score can pay on delivery.\"\n\"No-score buyers must prepay or use escrow.\"\nSeller gets COD confidence.\nBuyer with good score gets convenience.\nEveryone wins.",
+      "thread_part": 3,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T13:53:31.364592",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.364624"
+    },
+    {
+      "id": 133,
+      "platform": "twitter",
+      "text": "Developers: if you're building a platform in Pakistan, here's something you should consider.\nThe trust layer is the most valuable thing you can build \u2014 but also the hardest.\nUnless you don't have to build it yourself.\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T13:53:31.366673",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.366694"
+    },
+    {
+      "id": 133,
+      "platform": "twitter",
+      "text": "Most platforms solve trust one of two ways:\n1. Centralized review system (Google reviews, Trustpilot)\n\u2192 Fakeable. Gamed. Siloed.\n2. Manual KYC + verification\n\u2192 Slow. Expensive. Legal liability.\nNeither scales for Pakistan's informal economy.",
+      "thread_part": 2,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T13:53:31.366673",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.366700"
+    },
+    {
+      "id": 133,
+      "platform": "twitter",
+      "text": "Pabandi takes a different approach:\nTrust as a public good.\nScore as infrastructure.\nVerification as an API call.\nYou don't need to build a review system.\nYou don't need to become a credit bureau.\nYou just call /api/v1/verify.",
+      "thread_part": 3,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T13:53:31.366673",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.366704"
+    },
+    {
+      "id": 133,
+      "platform": "twitter",
+      "text": "Docs: pabandi-42c5b.web.app/docs\nAPI base: pabandi-42c5b.web.app/api/v1\nBeta access: team@pabandi.com\nBuilt for Pakistan. Not in Pakistan.\nWada pura karo. Inaam pao.",
+      "thread_part": 4,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T13:53:31.366673",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.366708"
+    },
+    {
+      "id": 137,
+      "platform": "twitter",
+      "text": "We're 6 months in and the data already proves it.\nUsers with higher Pabandi scores show up 3x more often.\nMerchants who use escrow reduce no-shows by 40%.\nThe future isn't \"bro trust.\"\nIt's \"verified trust.\"\nWe're building that future. Starting here.\nWada pura karo. Inaam pao.",
+      "thread_part": 1,
+      "total_threads": 1,
+      "schedule_time": "2026-06-28T13:53:31.368702",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.368720"
+    },
+    {
+      "id": 138,
+      "platform": "twitter",
+      "text": "Assalamualaikum [Name],\nQuick question: what % of your live sale orders never get picked up or paid?\nBuilding something to fix that for Karachi/Lahore sellers. Would value 5 mins of your time.\n\u2014 [Your name], Pabandi",
+      "schedule_time": "2026-06-28T13:53:31.371877",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.371893"
+    },
+    {
+      "id": 139,
+      "platform": "twitter",
+      "text": "Sellers tagged in @TechJuicePK or @ProfitPakistan posts about social commerce",
+      "schedule_time": "2026-06-28T13:53:31.373958",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.373981"
+    },
+    {
+      "id": 140,
+      "platform": "twitter",
+      "text": "Book \u2192 Deposit (optional) \u2192 AI predicts risk \u2192 Show up \u2192 Earn $PAB\n\u2192 No-show \u2192 Deposit forfeited to business",
+      "schedule_time": "2026-06-28T13:53:31.377036",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.377055"
+    },
+    {
+      "id": 141,
+      "platform": "twitter",
+      "text": "Book \u06a9\u0631\u0648 \u2192 Deposit (\u0627\u062e\u062a\u06cc\u0627\u0631\u06cc) \u2192 AI risk \u067e\u06c1\u0686\u0627\u0646\u062a\u0627 \u06c1\u06d2 \u2192Time \u067e\u0631 \u0622\u0624 \u2192 $PAB \u06a9\u0645\u0627\u0624\n\u2192 No-show \u2192 Deposit business \u06a9\u0648 \u0645\u0644 \u062c\u0627\u062a\u0627 \u06c1\u06d2",
+      "schedule_time": "2026-06-28T13:53:31.379178",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.379203"
+    },
+    {
+      "id": 142,
+      "platform": "twitter",
+      "text": "60%+ of salon bookings in Karachi/Lahore are made via WhatsApp voice notes",
+      "schedule_time": "2026-06-28T13:53:31.381544",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.381569"
+    },
+    {
+      "id": 143,
+      "platform": "twitter",
+      "text": "Freelancers lose an estimated 20% of income to client no-shows",
+      "schedule_time": "2026-06-28T13:53:31.383857",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.383885"
+    },
+    {
+      "id": 144,
+      "platform": "twitter",
+      "text": "Businesses spend millions on reminders that still fail",
+      "schedule_time": "2026-06-28T13:53:31.385969",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.385989"
+    },
+    {
+      "id": 145,
+      "platform": "twitter",
+      "text": "There is no portable, verifiable trust score \u2014 reputation dies with each app",
+      "schedule_time": "2026-06-28T13:53:31.388009",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.388028"
+    },
+    {
+      "id": 146,
+      "platform": "twitter",
+      "text": "Utility: Booking deposits, dynamic rewards, API payments, governance (future)",
+      "schedule_time": "2026-06-28T13:53:31.390239",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.390272"
+    },
+    {
+      "id": 147,
+      "platform": "twitter",
+      "text": "Status: Mint authority revoked; supply permanently capped",
+      "schedule_time": "2026-06-28T13:53:31.391791",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.391810"
+    },
+    {
+      "id": 148,
+      "platform": "twitter",
+      "text": "Built *for* Pakistan, not *in* Pakistan \u2014 founder is a US-based Pakistani who studied the market remotely for 12 months before writing a line of code",
+      "schedule_time": "2026-06-28T13:53:31.393308",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.393325"
+    },
+    {
+      "id": 149,
+      "platform": "twitter",
+      "text": "Privacy-first: no WhatsApp message scraping, no social graph harvesting",
+      "schedule_time": "2026-06-28T13:53:31.395268",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.395291"
+    },
+    {
+      "id": 150,
+      "platform": "twitter",
+      "text": "Shariah-conscious design: \u201cearn-by-action\u201d model mirrors Islamic values of *amanah* (trustworthiness)",
+      "schedule_time": "2026-06-28T13:53:31.397311",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.397333"
+    },
+    {
+      "id": 151,
+      "platform": "twitter",
+      "text": "Open API: developers can build booking dApps on top of Pabandi\u2019s trust layer",
+      "schedule_time": "2026-06-28T13:53:31.399011",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.399033"
+    },
+    {
+      "id": 152,
+      "platform": "twitter",
+      "text": "Pilot partners: 10 salons / clinics in Karachi & Lahore (free 3-month pilot)",
+      "schedule_time": "2026-06-28T13:53:31.400691",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.400711"
+    },
+    {
+      "id": 153,
+      "platform": "twitter",
+      "text": "Developer interest: university hackathons, API integrations",
+      "schedule_time": "2026-06-28T13:53:31.402357",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.402375"
+    },
+    {
+      "id": 154,
+      "platform": "twitter",
+      "text": "Media coverage: long-form features on crypto adoption in Pakistan, trust economies, diaspora remittances",
+      "schedule_time": "2026-06-28T13:53:31.404251",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.404272"
+    },
+    {
+      "id": 155,
+      "platform": "twitter",
+      "text": "Primary logo: https://pabandi-42c5b.web.app/pab-logo.png",
+      "schedule_time": "2026-06-28T13:53:31.405931",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.405956"
+    },
+    {
+      "id": 156,
+      "platform": "twitter",
+      "text": "Brand colors: Deep navy `#011d35`, Solana green `#14F195`, purple `#9945FF`",
+      "schedule_time": "2026-06-28T13:53:31.407534",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.407544"
+    },
+    {
+      "id": 157,
+      "platform": "twitter",
+      "text": "\u06a9\u0631\u0627\u0686\u06cc \u0627\u0648\u0631 \u0644\u0627\u06c1\u0648\u0631 \u06a9\u06d2 \u0686\u06c1\u0631\u06c1 \u062a\u0631\u0627\u0634 \u06a9\u06d2 \u0628\u06a9\u06cc\u0646\u06af \u0645\u06cc\u06ba 60% \u0633\u06d2 \u0632\u06cc\u0627\u062f\u06c1 WhatsApp voice notes \u0633\u06d2 \u06c1\u0648\u062a\u06cc \u06c1\u06cc\u06ba",
+      "schedule_time": "2026-06-28T13:53:31.409104",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.409131"
+    },
+    {
+      "id": 158,
+      "platform": "twitter",
+      "text": "\u0641\u0631\u06cc \u0644\u0627\u0646\u0633\u0631\u0632 \u06a9\u0648 \u06a9\u0644\u0627\u0626\u0646\u0679\u0633 \u06a9\u06cc \u0639\u062f\u0645 \u0645\u0648\u062c\u0648\u062f\u06af\u06cc \u0645\u06cc\u06ba 20% \u0622\u0645\u062f\u0646\u06cc \u0636\u0627\u0626\u0639 \u06c1\u0648\u062a\u06cc \u06c1\u06d2",
+      "schedule_time": "2026-06-28T13:53:31.410711",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.410736"
+    },
+    {
+      "id": 159,
+      "platform": "twitter",
+      "text": "\u06a9\u0627\u0631\u0648\u0628\u0627\u0631 \u0627\u06cc\u06a9\u0634\u0646missible \u0645\u0627\u0633 \u0648\u0627\u0644\u06d2 \u06a9\u0631\u062a\u06d2 \u06c1\u06cc\u06ba \u2014 \u067e\u0627\u0628\u0646\u062f\u06cc \u06a9\u0627 \u067e\u0627\u0633 \u067e\u0648\u0631\u0679\u06cc\u0628\u0644 \u0633\u06a9\u0648\u0631",
+      "schedule_time": "2026-06-28T13:53:31.413778",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.413814"
+    },
+    {
+      "id": 160,
+      "platform": "twitter",
+      "text": "Utility: Booking deposits\u060c dynamic rewards\u060c API payments\u060c governance (\u0645\u0633\u062a\u0642\u0628\u0644 \u0645\u06cc\u06ba)",
+      "schedule_time": "2026-06-28T13:53:31.416104",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.416140"
+    },
+    {
+      "id": 161,
+      "platform": "twitter",
+      "text": "Status: Mint authority revoked\u061b supply permanently capped",
+      "schedule_time": "2026-06-28T13:53:31.418287",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.418305"
+    },
+    {
+      "id": 162,
+      "platform": "twitter",
+      "text": "Pilot partners: 10 Salon/\u06a9\u0644\u06cc\u0646\u06a9 \u06a9\u0631\u0627\u0686\u06cc \u0627\u0648\u0631 \u0644\u0627\u06c1\u0648\u0631 \u0645\u06cc\u06ba (free 3-month pilot)",
+      "schedule_time": "2026-06-28T13:53:31.420237",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.420258"
+    },
+    {
+      "id": 163,
+      "platform": "twitter",
+      "text": "Developer interest: university hackathons\u060c API integrations",
+      "schedule_time": "2026-06-28T13:53:31.422081",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.422101"
+    },
+    {
+      "id": 164,
+      "platform": "twitter",
+      "text": "Media coverage: \u067e\u0627\u06a9\u0633\u062a\u0627\u0646 \u0645\u06cc\u06ba crypto adoption\u060c trust economies\u060c diaspora remittances \u067e\u0631 long-form features",
+      "schedule_time": "2026-06-28T13:53:31.423984",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.424016"
+    },
+    {
+      "id": 165,
+      "platform": "twitter",
+      "text": "Install Firebase Tools\nnpm install -g firebase-tools\nInstall Google Cloud SDK\nDownload from https://cloud.google.com/sdk/docs/install",
+      "schedule_time": "2026-06-28T13:53:31.426674",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.426686"
+    },
+    {
+      "id": 166,
+      "platform": "twitter",
+      "text": "cd client\nnpm run build\nfirebase deploy --only hosting",
+      "schedule_time": "2026-06-28T13:53:31.429013",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.429035"
+    },
+    {
+      "id": 167,
+      "platform": "twitter",
+      "text": "Set up Google Cloud Budget Alerts to notify you if spending exceeds $1.",
+      "schedule_time": "2026-06-28T13:53:31.431254",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.431279"
+    },
+    {
+      "id": 168,
+      "platform": "twitter",
+      "text": "PAYMENT_GATEWAY=stripe\nSTRIPE_SECRET_KEY=sk_live_...\nSTRIPE_PUBLISHABLE_KEY=pk_live_...\nSTRIPE_WEBHOOK_SECRET=whsec_...",
+      "schedule_time": "2026-06-28T13:53:31.434598",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.434608"
+    },
+    {
+      "id": 169,
+      "platform": "twitter",
+      "text": "cd server\nnpm install stripe",
+      "schedule_time": "2026-06-28T13:53:31.436511",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.436534"
+    },
+    {
+      "id": 170,
+      "platform": "twitter",
+      "text": "JAZZCASH_MERCHANT_ID=your_merchant_id\nJAZZCASH_PASSWORD=your_password\nJAZZCASH_INTEGRITY_SALT=your_salt",
+      "schedule_time": "2026-06-28T13:53:31.438383",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.438402"
+    },
+    {
+      "id": 171,
+      "platform": "twitter",
+      "text": "EASYPAISA_STORE_ID=your_store_id\nEASYPAISA_HASH_KEY=your_hash_key\nEASYPAISA_MERCHANT_ID=your_merchant_id",
+      "schedule_time": "2026-06-28T13:53:31.440191",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.440207"
+    },
+    {
+      "id": 172,
+      "platform": "twitter",
+      "text": "stripe listen --forward-to localhost:5000/api/v1/payments/webhook",
+      "schedule_time": "2026-06-28T13:53:31.442778",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T11:53:31.442808"
+    },
+    {
+      "id": 173,
+      "platform": "twitter",
+      "text": "User data is only stored as necessary for reservation management",
+      "schedule_time": "2026-06-28T14:38:33.327993",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.328005"
+    },
+    {
+      "id": 174,
+      "platform": "twitter",
+      "text": "Support for local payment methods (JazzCash, EasyPaisa)",
+      "schedule_time": "2026-06-28T14:38:33.329974",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.329991"
+    },
+    {
+      "id": 175,
+      "platform": "twitter",
+      "text": "`POST /api/v1/api-subscription/safepay` \u2192 checkout URL for tiers",
+      "schedule_time": "2026-06-28T14:38:33.337757",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.337770"
+    },
+    {
+      "id": 176,
+      "platform": "twitter",
+      "text": "`POST /api/v1/api-subscription/verify` \u2192 provisions API key on payment",
+      "schedule_time": "2026-06-28T14:38:33.339720",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.339741"
+    },
+    {
+      "id": 177,
+      "platform": "twitter",
+      "text": "Admin provisioning endpoint: `POST /api/v1/admin/api-clients`",
+      "schedule_time": "2026-06-28T14:38:33.341544",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.341560"
+    },
+    {
+      "id": 178,
+      "platform": "twitter",
+      "text": "Quota/per-endpoint metering in `apiKey.middleware.ts`",
+      "schedule_time": "2026-06-28T14:38:33.343405",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.343414"
+    },
+    {
+      "id": 179,
+      "platform": "twitter",
+      "text": "3 tiers priced in PKR: STARTER (free/500 calls), GROWTH (PKR 27,500), ENTERPRISE (PKR 139,000)",
+      "schedule_time": "2026-06-28T14:38:33.345323",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.345337"
+    },
+    {
+      "id": 180,
+      "platform": "twitter",
+      "text": "Add a `/api` landing page in the existing client app (there\u2019s already a `pricing` route in `client/src/App.tsx`)",
+      "schedule_time": "2026-06-28T14:38:33.347451",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.347472"
+    },
+    {
+      "id": 181,
+      "platform": "twitter",
+      "text": "Replace the \u201cBusinessModelPage\u201d stub with real pricing, code samples, and a \u201cGet API Key\u201d CTA",
+      "schedule_time": "2026-06-28T14:38:33.349675",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.349685"
+    },
+    {
+      "id": 182,
+      "platform": "twitter",
+      "text": "3% fee on prepaid bookings via Safepay/PayPal. The existing payment webhooks and `Payment` model already support this.",
+      "schedule_time": "2026-06-28T14:38:33.351784",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.351799"
+    },
+    {
+      "id": 183,
+      "platform": "twitter",
+      "text": "Stake/unstake yield pool: The wallet + staking flow is built. Take 10% platform yield on staking rewards or operate a liquidity pool with market-making.",
+      "schedule_time": "2026-06-28T14:38:33.353906",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.353916"
+    },
+    {
+      "id": 184,
+      "platform": "twitter",
+      "text": "VIP tiers in app: Users pay PKR 500\u20132000/month for priority booking, refundable deposits, and badge acceleration. Sync to existing `User.tier`/`score` columns.",
+      "schedule_time": "2026-06-28T14:38:33.356186",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.356204"
+    },
+    {
+      "id": 185,
+      "platform": "twitter",
+      "text": "You already have `Payment` model, webhook hooks, and wallet state",
+      "schedule_time": "2026-06-28T14:38:33.358404",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.358413"
+    },
+    {
+      "id": 186,
+      "platform": "twitter",
+      "text": "Just add a `platformFee` field and bump it in the booking controller",
+      "schedule_time": "2026-06-28T14:38:33.360497",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.360506"
+    },
+    {
+      "id": 187,
+      "platform": "twitter",
+      "text": "Pabandi Identity API: Verify customer phone/email + reliability score before issuing a ticket or COD shipment. Charge per verification (fraction of a cent).",
+      "schedule_time": "2026-06-28T14:38:33.362591",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.362599"
+    },
+    {
+      "id": 188,
+      "platform": "twitter",
+      "text": "Business Analytics Export: Sell aggregated, anonymised demand/cancellation datasets to FMCG brands for market planning.",
+      "schedule_time": "2026-06-28T14:38:33.364779",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.364787"
+    },
+    {
+      "id": 189,
+      "platform": "twitter",
+      "text": "Reputation API: Let third-party apps query a user\u2019s Pabandi score. Use existing passport/badge tiers.",
+      "schedule_time": "2026-06-28T14:38:33.366953",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.366962"
+    },
+    {
+      "id": 190,
+      "platform": "twitter",
+      "text": "POST /api/v1/verify\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T14:38:33.370684",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.370693"
+    },
+    {
+      "id": 191,
+      "platform": "twitter",
+      "text": "POST /api/v1/eligibility\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T14:38:33.373156",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.373174"
+    },
+    {
+      "id": 192,
+      "platform": "twitter",
+      "text": "POST /api/v1/verify\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T14:38:33.376162",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.376194"
+    },
+    {
+      "id": 193,
+      "platform": "twitter",
+      "text": "POST /api/v1/incidents\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T14:38:33.378813",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.378841"
+    },
+    {
+      "id": 194,
+      "platform": "twitter",
+      "text": "POST /api/v1/webhooks/subscribe\nContent-Type: application/json\nAuthorization: Bearer YOUR_API_KEY",
+      "schedule_time": "2026-06-28T14:38:33.381364",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.381387"
+    },
+    {
+      "id": 195,
+      "platform": "twitter",
+      "text": "Platinum: 850\u20131000 | Top 5% of users | Eligible for highest-value transactions, no deposit required",
+      "schedule_time": "2026-06-28T14:38:33.384138",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.384162"
+    },
+    {
+      "id": 196,
+      "platform": "twitter",
+      "text": "Gold: 700\u2013849 | Reliable | Eligible for COD/live-sale transactions without staking",
+      "schedule_time": "2026-06-28T14:38:33.386635",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.386657"
+    },
+    {
+      "id": 197,
+      "platform": "twitter",
+      "text": "Silver: 500\u2013699 | Proven track record | Eligible with reduced deposit",
+      "schedule_time": "2026-06-28T14:38:33.389196",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.389217"
+    },
+    {
+      "id": 198,
+      "platform": "twitter",
+      "text": "Bronze: 300\u2013499 | New or inconsistent | Eligible with standard deposit",
+      "schedule_time": "2026-06-28T14:38:33.391542",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.391553"
+    },
+    {
+      "id": 199,
+      "platform": "twitter",
+      "text": "Unrated: <300 or no history | Must deposit or pay upfront",
+      "schedule_time": "2026-06-28T14:38:33.393798",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.393808"
+    },
+    {
+      "id": 200,
+      "platform": "twitter",
+      "text": "Merchant-verified booking outcomes (completed vs. no-show)",
+      "schedule_time": "2026-06-28T14:38:33.396321",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.396343"
+    },
+    {
+      "id": 201,
+      "platform": "twitter",
+      "text": "AI-predicted risk signals adjusted by actual outcomes",
+      "schedule_time": "2026-06-28T14:38:33.398970",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.398992"
+    },
+    {
+      "id": 202,
+      "platform": "twitter",
+      "text": "Time-of-day reliability (8 PM bookings vs. 2 PM bookings)",
+      "schedule_time": "2026-06-28T14:38:33.401481",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.401491"
+    },
+    {
+      "id": 203,
+      "platform": "twitter",
+      "text": "Allows anyone to verify the score hasn't been backdated or manipulated",
+      "schedule_time": "2026-06-28T14:38:33.403871",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.403880"
+    },
+    {
+      "id": 204,
+      "platform": "twitter",
+      "text": "Enables community dispute resolution without trusting a centralized authority",
+      "schedule_time": "2026-06-28T14:38:33.406364",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.406383"
+    },
+    {
+      "id": 205,
+      "platform": "twitter",
+      "text": "More merchants \u2192 more data points per user \u2192 more accurate score",
+      "schedule_time": "2026-06-28T14:38:33.408897",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.408915"
+    },
+    {
+      "id": 206,
+      "platform": "twitter",
+      "text": "Better scores \u2192 more trust from partners \u2192 more merchants want to integrate",
+      "schedule_time": "2026-06-28T14:38:33.411144",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.411156"
+    },
+    {
+      "id": 207,
+      "platform": "twitter",
+      "text": "100K active app users\n\u2192 500K bookings/month\n\u2192 50M API calls/month (each booking generates ~100 verify calls)\n\u2192 $50,000/month API revenue\n\u2192 $600K/year recurring\n\u2192 Data improves AI \u2192 better scores \u2192 more API integrations \u2192 MORE USERS",
+      "schedule_time": "2026-06-28T14:38:33.414889",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.414900"
+    },
+    {
+      "id": 208,
+      "platform": "twitter",
+      "text": "\"Hi Daraz, integrate our reliability API!\"\nDaraz: \"Who are your users? Where's your data? Why should we trust your scores?\"\nYou:   \"Uhh... we built a model...\"\nDaraz: \"No pilots? No merchants? No proof? Call us when you have traction.\"",
+      "schedule_time": "2026-06-28T14:38:33.417616",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.417639"
+    },
+    {
+      "id": 209,
+      "platform": "twitter",
+      "text": "Investor: \"What's your revenue model?\"\nYou:     \"Booking commissions... 2%... maybe 3%...\"\nInvestor: \"That's a restaurant directory with escrow. Unicorns don't get built on 2%.\"",
+      "schedule_time": "2026-06-28T14:38:33.421095",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.421136"
+    },
+    {
+      "id": 210,
+      "platform": "twitter",
+      "text": "71d671b feat(ai): pivot to zero-knowledge hashed identity api for e-commerce\n8fb6aa6 feat(ai): add ecommerce reliability predictor for Daraz/Alibaba integration\n62a2971 chore: remove Pakistan references to keep phrasing global",
+      "schedule_time": "2026-06-28T14:38:33.423768",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.423794"
+    },
+    {
+      "id": 211,
+      "platform": "twitter",
+      "text": "`ecommerceReliabilityPredictor.ts` \u2014 this is the Daraz/Alibaba integration logic. Good.",
+      "schedule_time": "2026-06-28T14:38:33.426231",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.426248"
+    },
+    {
+      "id": 212,
+      "platform": "twitter",
+      "text": "Developer portal overhaul \u2014 docs are polished. Good.",
+      "schedule_time": "2026-06-28T14:38:33.428530",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.428540"
+    },
+    {
+      "id": 213,
+      "platform": "twitter",
+      "text": "`chore: remove Pakistan references` \u2014 this is rebrand risk",
+      "schedule_time": "2026-06-28T14:38:33.430835",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.430854"
+    },
+    {
+      "id": 214,
+      "platform": "twitter",
+      "text": "Deleting `.env.contracts` \u2014 could break deployment config",
+      "schedule_time": "2026-06-28T14:38:33.434421",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.434451"
+    },
+    {
+      "id": 215,
+      "platform": "twitter",
+      "text": "16\u201330% of live-sale and COD orders never get paid or collected",
+      "schedule_time": "2026-06-28T14:38:33.439838",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.439858"
+    },
+    {
+      "id": 216,
+      "platform": "twitter",
+      "text": "Sellers forced to choose: prepay (lose 60% sales) or trust (lose 30% revenue)",
+      "schedule_time": "2026-06-28T14:38:33.443587",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.443618"
+    },
+    {
+      "id": 217,
+      "platform": "twitter",
+      "text": "No portable trust infrastructure exists between platforms",
+      "schedule_time": "2026-06-28T14:38:33.446404",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.446431"
+    },
+    {
+      "id": 218,
+      "platform": "twitter",
+      "text": "Current \u201csolutions\u201d are KYC, escrow, or manual vetting \u2014 none scale for SMBs",
+      "schedule_time": "2026-06-28T14:38:33.449606",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.449633"
+    },
+    {
+      "id": 219,
+      "platform": "twitter",
+      "text": "Pakistan first lab: 20M+ freelancers, 500K+ salons/clinics, booming live-sale culture",
+      "schedule_time": "2026-06-28T14:38:33.452378",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.452388"
+    },
+    {
+      "id": 220,
+      "platform": "twitter",
+      "text": "Global TAM: $1.1T live-commerce market by 2026; $5T+ informal economy in emerging markets",
+      "schedule_time": "2026-06-28T14:38:33.455563",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.455584"
+    },
+    {
+      "id": 221,
+      "platform": "twitter",
+      "text": "Why Pakistan: No incumbent credit scoring; WhatsApp-native commerce; English/Urdu bilingual interface",
+      "schedule_time": "2026-06-28T14:38:33.458282",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.458306"
+    },
+    {
+      "id": 222,
+      "platform": "twitter",
+      "text": "Why now: AI + on-chain rep finally makes trust portable without KYC",
+      "schedule_time": "2026-06-28T14:38:33.460842",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.460854"
+    },
+    {
+      "id": 223,
+      "platform": "twitter",
+      "text": "Reliability Passport: On-chain, portable trust score built from real behavior (bookings, payments, no-shows)",
+      "schedule_time": "2026-06-28T14:38:33.464681",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.464708"
+    },
+    {
+      "id": 224,
+      "platform": "twitter",
+      "text": "AI Predictor: No-show risk model trained on Pakistan-specific transaction patterns",
+      "schedule_time": "2026-06-28T14:38:33.467813",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.467832"
+    },
+    {
+      "id": 225,
+      "platform": "twitter",
+      "text": "Merchant API: 2-second verification for any platform \u2014 live selling, Shopify, Daraz, bookings",
+      "schedule_time": "2026-06-28T14:38:33.470749",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.470778"
+    },
+    {
+      "id": 226,
+      "platform": "twitter",
+      "text": "Escrow + Rewards: Trustless deposits + $PAB punctuality rewards",
+      "schedule_time": "2026-06-28T14:38:33.473907",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.473937"
+    },
+    {
+      "id": 227,
+      "platform": "twitter",
+      "text": "Zero-knowledge Layer: Hash-verified identity API for e-commerce (Shopify/Daraz)",
+      "schedule_time": "2026-06-28T14:38:33.476667",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.476687"
+    },
+    {
+      "id": 228,
+      "platform": "twitter",
+      "text": "Pilot-ready: API endpoints live; merchant onboarding flow built; docs published",
+      "schedule_time": "2026-06-28T14:38:33.479429",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.479453"
+    },
+    {
+      "id": 229,
+      "platform": "twitter",
+      "text": "Developer traction: 5 API endpoints, 2 SDKs (Node.js, Next.js), docs + 1-page summary",
+      "schedule_time": "2026-06-28T14:38:33.482568",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.482598"
+    },
+    {
+      "id": 230,
+      "platform": "twitter",
+      "text": "Merchant pipeline: Live-seller outreach underway; 3 beta pilots in negotiation",
+      "schedule_time": "2026-06-28T14:38:33.485807",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.485840"
+    },
+    {
+      "id": 231,
+      "platform": "twitter",
+      "text": "Partnership hooks: Daraz API integration scoped; Shopify App store ready",
+      "schedule_time": "2026-06-28T14:38:33.489563",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.489596"
+    },
+    {
+      "id": 232,
+      "platform": "twitter",
+      "text": "Tech validation: Solana mainnet token deployed; Firebase + Prisma backend hardened for Cloud Run",
+      "schedule_time": "2026-06-28T14:38:33.492471",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.492493"
+    },
+    {
+      "id": 233,
+      "platform": "twitter",
+      "text": "Content engine: 90-day Twitter calendar + 5 launch threads ready; @PabandiGlobal active",
+      "schedule_time": "2026-06-28T14:38:33.495297",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.495329"
+    },
+    {
+      "id": 234,
+      "platform": "twitter",
+      "text": "Ethos / Orange Protocol: Score social/DeFi activity \u2014 not real-world behavior",
+      "schedule_time": "2026-06-28T14:38:33.498104",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.498139"
+    },
+    {
+      "id": 235,
+      "platform": "twitter",
+      "text": "Fuero: US-first, credit-bureau data, not informal-economy ready",
+      "schedule_time": "2026-06-28T14:38:33.501049",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.501060"
+    },
+    {
+      "id": 236,
+      "platform": "twitter",
+      "text": "Cheqd / VCs: Identity infra, no scoring, no merchant API",
+      "schedule_time": "2026-06-28T14:38:33.503877",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.503887"
+    },
+    {
+      "id": 237,
+      "platform": "twitter",
+      "text": "Pabandi: AI-observed reliability + on-chain Passport + merchant verification API",
+      "schedule_time": "2026-06-28T14:38:33.506639",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.506650"
+    },
+    {
+      "id": 238,
+      "platform": "twitter",
+      "text": "Daraz (SEA + Pakistan): COD rejection losses = perfect Pabandi use case",
+      "schedule_time": "2026-06-28T14:38:33.509319",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.509329"
+    },
+    {
+      "id": 239,
+      "platform": "twitter",
+      "text": "Alibaba.com B2B: Supplier reliability scoring for international trade",
+      "schedule_time": "2026-06-28T14:38:33.511993",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.512003"
+    },
+    {
+      "id": 240,
+      "platform": "twitter",
+      "text": "1688 / AliExpress: Cross-border buyer/seller trust layer",
+      "schedule_time": "2026-06-28T14:38:33.514798",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.514810"
+    },
+    {
+      "id": 241,
+      "platform": "twitter",
+      "text": "Temu / emerging-market platforms: Same COD reliability problem at scale",
+      "schedule_time": "2026-06-28T14:38:33.517671",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.517685"
+    },
+    {
+      "id": 242,
+      "platform": "twitter",
+      "text": "Merchant subscriptions: Bronze/Silver/Gold tiers for advanced features",
+      "schedule_time": "2026-06-28T14:38:33.520622",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.520633"
+    },
+    {
+      "id": 243,
+      "platform": "twitter",
+      "text": "$PAB ecosystem: Token rewards + staking + dispute fees",
+      "schedule_time": "2026-06-28T14:38:33.523355",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.523365"
+    },
+    {
+      "id": 244,
+      "platform": "twitter",
+      "text": "Data insights: Aggregated reliability analytics for platforms (anonymized)",
+      "schedule_time": "2026-06-28T14:38:33.526087",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.526097"
+    },
+    {
+      "id": 245,
+      "platform": "twitter",
+      "text": "Enterprise SLA: Dedicated instances for Shopify Plus / Daraz Pro merchants",
+      "schedule_time": "2026-06-28T14:38:33.528745",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.528754"
+    },
+    {
+      "id": 246,
+      "platform": "twitter",
+      "text": "Jawad Hussain \u2014 Founder, engineer, US-based but Pakistan-native",
+      "schedule_time": "2026-06-28T14:38:33.531443",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.531456"
+    },
+    {
+      "id": 247,
+      "platform": "twitter",
+      "text": "Hiring plan: Pakistan-based BD lead + merchant onboarding manager",
+      "schedule_time": "2026-06-28T14:38:33.534321",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.534344"
+    },
+    {
+      "id": 248,
+      "platform": "twitter",
+      "text": "Phase 1 (now): Pakistan lab \u2014 merchant API + live-seller beta",
+      "schedule_time": "2026-06-28T14:38:33.537089",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.537100"
+    },
+    {
+      "id": 249,
+      "platform": "twitter",
+      "text": "Phase 2 (6 months): Daraz pilot + Shopify app store launch",
+      "schedule_time": "2026-06-28T14:38:33.540147",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.540164"
+    },
+    {
+      "id": 250,
+      "platform": "twitter",
+      "text": "Phase 3 (12 months): Southeast Asia + MENA expansion",
+      "schedule_time": "2026-06-28T14:38:33.543466",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.543489"
+    },
+    {
+      "id": 251,
+      "platform": "twitter",
+      "text": "Phase 4 (24 months): Agent layer for AI commerce \u2014 autonomous reliability for AI-driven marketplaces",
+      "schedule_time": "2026-06-28T14:38:33.546316",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.546329"
+    },
+    {
+      "id": 252,
+      "platform": "twitter",
+      "text": "16\u201330% of live-sale and COD orders fail in informal commerce.",
+      "schedule_time": "2026-06-28T14:38:33.550089",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.550099"
+    },
+    {
+      "id": 253,
+      "platform": "twitter",
+      "text": "Sellers forced to choose: prepay and lose 60% of sales, or trust and lose 30% of revenue.",
+      "schedule_time": "2026-06-28T14:38:33.553073",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.553094"
+    },
+    {
+      "id": 254,
+      "platform": "twitter",
+      "text": "No portable trust layer exists between platforms. Current solutions \u2014 KYC, escrow, manual vetting \u2014 do not scale for SMBs.",
+      "schedule_time": "2026-06-28T14:38:33.556064",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.556091"
+    },
+    {
+      "id": 255,
+      "platform": "twitter",
+      "text": "Consumer Booking App: AI predicts no-shows and negotiates dynamic deposits.",
+      "schedule_time": "2026-06-28T14:38:33.559159",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.559178"
+    },
+    {
+      "id": 256,
+      "platform": "twitter",
+      "text": "Zero-Knowledge Fraud Network API: Global B2B infrastructure for Shopify, Daraz, and TikTok Shop.",
+      "schedule_time": "2026-06-28T14:38:33.562320",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.562352"
+    },
+    {
+      "id": 257,
+      "platform": "twitter",
+      "text": "Reliability Passport: Portable, on-chain trust score built from real behavior.",
+      "schedule_time": "2026-06-28T14:38:33.565530",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.565542"
+    },
+    {
+      "id": 258,
+      "platform": "twitter",
+      "text": "Web3 Rewards: Users earn $PAB for reliable behavior. Token is non-mintable and non-freezable on Solana.",
+      "schedule_time": "2026-06-28T14:38:33.569067",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.569094"
+    },
+    {
+      "id": 259,
+      "platform": "twitter",
+      "text": "Pakistan is Alibaba\u2019s largest emerging-market footprint and has the deepest COD fraud problem.",
+      "schedule_time": "2026-06-28T14:38:33.572237",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.572248"
+    },
+    {
+      "id": 260,
+      "platform": "twitter",
+      "text": "Daraz merchants already experience the exact workflow Pabandi solves: order confirmation, delivery risk, and cash recovery.",
+      "schedule_time": "2026-06-28T14:38:33.575199",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.575208"
+    },
+    {
+      "id": 261,
+      "platform": "twitter",
+      "text": "Alibaba.com and 1688 need supplier-side reliability scoring for cross-border trade. Pabandi\u2019s behavior layer can become that trust layer faster than an internal build.",
+      "schedule_time": "2026-06-28T14:38:33.578147",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.578168"
+    },
+    {
+      "id": 262,
+      "platform": "twitter",
+      "text": "Dual-engine flywheel: consumer app trains the model; merchant API monetizes it.",
+      "schedule_time": "2026-06-28T14:38:33.580981",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.580994"
+    },
+    {
+      "id": 263,
+      "platform": "twitter",
+      "text": "AI + on-chain behavior: not just social graph or DeFi history, but real booking and payment behavior.",
+      "schedule_time": "2026-06-28T14:38:33.584083",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.584107"
+    },
+    {
+      "id": 264,
+      "platform": "twitter",
+      "text": "Privacy-native: hash-verified identity API means platforms never receive raw buyer PII.",
+      "schedule_time": "2026-06-28T14:38:33.587183",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.587212"
+    },
+    {
+      "id": 265,
+      "platform": "twitter",
+      "text": "Backend hardened for Cloud Run and Firebase auth; client and dashboards build clean.",
+      "schedule_time": "2026-06-28T14:38:33.590301",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.590330"
+    },
+    {
+      "id": 266,
+      "platform": "twitter",
+      "text": "Repo includes live pitch deck, merchant dashboard, booking/reservation flows, social auth stubs, payment controller, network/integrations routes, SDK, and documentation.",
+      "schedule_time": "2026-06-28T14:38:33.593453",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.593487"
+    },
+    {
+      "id": 267,
+      "platform": "twitter",
+      "text": "Product-market fit targeted through Pakistan live-seller pilots and Shopify app-store readiness.",
+      "schedule_time": "2026-06-28T14:38:33.596637",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.596651"
+    },
+    {
+      "id": 268,
+      "platform": "twitter",
+      "text": "Blockchain: Solana + Web3.js, Phantom/Solflare wallet integration",
+      "schedule_time": "2026-06-28T14:38:33.599616",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.599630"
+    },
+    {
+      "id": 269,
+      "platform": "twitter",
+      "text": "Auth: JWT + Google/Facebook/LinkedIn/TikTok/X OAuth",
+      "schedule_time": "2026-06-28T14:38:33.602614",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.602628"
+    },
+    {
+      "id": 270,
+      "platform": "twitter",
+      "text": "Jawad Hussain \u2014 founder, full-stack engineer, US-based with Pakistan-market depth",
+      "schedule_time": "2026-06-28T14:38:33.605660",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.605676"
+    },
+    {
+      "id": 271,
+      "platform": "twitter",
+      "text": "Partnership and integration access with Alibaba\u2019s emerging-market commerce stack.",
+      "schedule_time": "2026-06-28T14:38:33.608837",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.608864"
+    },
+    {
+      "id": 272,
+      "platform": "twitter",
+      "text": "Pilot merchants to validate COD-rejection reduction at scale.",
+      "schedule_time": "2026-06-28T14:38:33.612218",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.612248"
+    },
+    {
+      "id": 273,
+      "platform": "twitter",
+      "text": "Advice on aligning API/SDK onboarding with Daraz/1688 developer ecosystems.",
+      "schedule_time": "2026-06-28T14:38:33.615396",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.615423"
+    },
+    {
+      "id": 274,
+      "platform": "twitter",
+      "text": "Pitch deck: pitch/Pabandi-Alibaba-CoCreate-2026.pptx",
+      "schedule_time": "2026-06-28T14:38:33.618506",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.618520"
+    },
+    {
+      "id": 275,
+      "platform": "twitter",
+      "text": "Pakistan's informal economy is $15B+.\nLive selling is booming.\nFreelance is growing.\nSalons. Clinics. Wholesale markets.\nEvery transaction is secured by one thing:\n\"Bro trust.\"\nIt's not enough.\nAnd everyone knows it.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T14:38:33.623486",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.623502"
+    },
+    {
+      "id": 276,
+      "platform": "twitter",
+      "text": "The current system forces sellers into a brutal choice:\nA) Accept payment first \u2192 lose 60% of impulse buyers\nB) Ship on trust \u2192 lose 16-30% to no-pays\nC) Only sell to friends \u2192 never scale\nEvery seller I've talked to is stuck in this triangle.",
+      "schedule_time": "2026-06-28T14:38:33.626893",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.626918"
+    },
+    {
+      "id": 277,
+      "platform": "twitter",
+      "text": "What if there was a fourth option?\nWhat if buyers had a portable reliability score?\nBuilt from real behavior.\nVerified on-chain.\nCheckable by any seller in 2 seconds.\nThat's what we built.",
+      "schedule_time": "2026-06-28T14:38:33.629955",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.629982"
+    },
+    {
+      "id": 278,
+      "platform": "twitter",
+      "text": "Introducing the Pabandi API.\nOne line of code. Any platform can now verify a buyer's trustworthiness before accepting pay-on-delivery.\nNo KYC. No paperwork. No waiting.\nJust: \"Is this person reliable?\" \u2192 Yes/No + Score Tier.\nThis changes everything for live sellers.",
+      "schedule_time": "2026-06-28T14:38:33.633139",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.633163"
+    },
+    {
+      "id": 279,
+      "platform": "twitter",
+      "text": "How does Pabandi score someone?\nShort answer: We don't ask. We observe.\nLong answer:\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T14:38:33.636359",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.636383"
+    },
+    {
+      "id": 280,
+      "platform": "twitter",
+      "text": "Step 1: User books something \u2014 salon, clinic, delivery, freelance gig.\nStep 2: AI predicts no-show probability before the appointment.\nStep 3: User either shows up or doesn't.\nStep 4: Outcome is recorded. Score updates.",
+      "schedule_time": "2026-06-28T14:38:33.639806",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.639842"
+    },
+    {
+      "id": 281,
+      "platform": "twitter",
+      "text": "The score is built from real transactions:\n\u2705 Completed bookings\n\u2705 On-time payments\n\u2b1c Missed appointments (negative signal)\n\u2b1c Disputes lost (negative signal)\nPlus AI adjustments for time-of-day reliability, service type, and seasonal patterns specific to Pakistan.",
+      "schedule_time": "2026-06-28T14:38:33.643098",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.643135"
+    },
+    {
+      "id": 282,
+      "platform": "twitter",
+      "text": "All of this is anchored on Solana.\nWhy on-chain? Because of the GB/Z 185 sovereign standards.\nTo work with Chinese tech giants (like Alibaba/Daraz), your trust layer must map to X.509 PKI certificates rooted in a trusted Certificate Authority.\nWe built the bridge.",
+      "schedule_time": "2026-06-28T14:38:33.646308",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.646322"
+    },
+    {
+      "id": 283,
+      "platform": "twitter",
+      "text": "We call this the Reliability Passport. (Or GB/Z 185.3 Hybrid PKI).\nIt's not a credit card. It's not KYC.\nIt's proof of behavior \u2014 bound via challenge-response to your on-chain history.\nThe same Passport that gets you COD on a salon appointment gets you pay-on-delivery everywhere.",
+      "schedule_time": "2026-06-28T14:38:33.649420",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.649433"
+    },
+    {
+      "id": 284,
+      "platform": "twitter",
+      "text": "I watched a live sale yesterday.\nSeller: \"iPhone 15 Pro, 400K, 10 units, comment SOLD\"\nBuyers: \"Sold! Sold! Sold!\"\nThen the seller sighed and said:\n\"Half of these will never come pick it up.\"\nThat's when I knew we had to ship this NOW.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T14:38:33.652428",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.652443"
+    },
+    {
+      "id": 285,
+      "platform": "twitter",
+      "text": "Here's the current flow for a Pakistan live seller:\n1. Post live \u2192 get DMs\n2. Send payment info \u2192 half ghost\n3. Ship anyway \u2192 lose money on no-pays\n4. Or ask for payment first \u2192 lose half your sales\nThe market accepts this as \"normal.\"",
+      "schedule_time": "2026-06-28T14:38:33.655503",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.655519"
+    },
+    {
+      "id": 286,
+      "platform": "twitter",
+      "text": "What if you could filter buyers by reliability?\n\"Only buyers with 700+ Pabandi score can pay on delivery.\"\n\"No-score buyers must prepay or use escrow.\"\nSeller gets COD confidence.\nBuyer with good score gets convenience.\nEveryone wins.",
+      "schedule_time": "2026-06-28T14:38:33.658619",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.658634"
+    },
+    {
+      "id": 287,
+      "platform": "twitter",
+      "text": "Developers: if you're building a platform in Pakistan, here's something you should consider.\nThe trust layer is the most valuable thing you can build \u2014 but also the hardest.\nUnless you don't have to build it yourself.\n\ud83e\uddf5",
+      "schedule_time": "2026-06-28T14:38:33.661992",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.662007"
+    },
+    {
+      "id": 288,
+      "platform": "twitter",
+      "text": "Most platforms solve trust one of two ways:\n1. Centralized review system (Google reviews, Trustpilot)\n\u2192 Fakeable. Gamed. Siloed.\n2. Manual KYC + verification\n\u2192 Slow. Expensive. Legal liability.\nNeither scales for Pakistan's informal economy.",
+      "schedule_time": "2026-06-28T14:38:33.665382",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.665394"
+    },
+    {
+      "id": 289,
+      "platform": "twitter",
+      "text": "Pabandi takes a different approach:\nTrust as a public good.\nScore as infrastructure.\nVerification as an API call.\nYou don't need to build a review system.\nYou don't need to become a credit bureau.\nYou just call /api/v1/verify.",
+      "schedule_time": "2026-06-28T14:38:33.668659",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.668671"
+    },
+    {
+      "id": 290,
+      "platform": "twitter",
+      "text": "Docs: pabandi-42c5b.web.app/docs\nAPI base: pabandi-42c5b.web.app/api/v1\nBeta access: team@pabandi.com\nBuilt for Pakistan. Not in Pakistan.\nWada pura karo. Inaam pao.",
+      "schedule_time": "2026-06-28T14:38:33.671976",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.671990"
+    },
+    {
+      "id": 291,
+      "platform": "twitter",
+      "text": "We're 6 months in and the data already proves it.\nUsers with higher Pabandi scores show up 3x more often.\nMerchants who use escrow reduce no-shows by 40%.\nThe future isn't \"bro trust.\"\nIt's \"verified trust.\"\nWe're building that future. Starting here.\nWada pura karo. Inaam pao.",
+      "schedule_time": "2026-06-28T14:38:33.675348",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.675359"
+    },
+    {
+      "id": 292,
+      "platform": "twitter",
+      "text": "After each thread, reply to 3 Pakistani tech/crypto accounts with a relevant angle",
+      "schedule_time": "2026-06-28T14:38:33.678532",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.678541"
+    },
+    {
+      "id": 293,
+      "platform": "twitter",
+      "text": "DM @mominsaqib Thread 3 link with \"We're shipping the trust layer for Pakistan's informal economy\"",
+      "schedule_time": "2026-06-28T14:38:33.681595",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.681606"
+    },
+    {
+      "id": 294,
+      "platform": "twitter",
+      "text": "The current system forces sellers into a brutal choice:\nA) Accept payment first \u2192 lose 60% of impulse buyers\nB) Ship on trust \u2192 lose 16-30% to no-pays\nC) Only sell to friends \u2192 never scale\nEvery seller I've talked to is stuck in this triangle.",
+      "thread_part": 1,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.684834",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.684866"
+    },
+    {
+      "id": 294,
+      "platform": "twitter",
+      "text": "What if there was a fourth option?\nWhat if buyers had a portable reliability score?\nBuilt from real behavior.\nVerified on-chain.\nCheckable by any seller in 2 seconds.\nThat's what we built.",
+      "thread_part": 2,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.684834",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.684873"
+    },
+    {
+      "id": 294,
+      "platform": "twitter",
+      "text": "Introducing the Pabandi API.\nOne line of code. Any platform can now verify a buyer's trustworthiness before accepting pay-on-delivery.\nNo KYC. No paperwork. No waiting.\nJust: \"Is this person reliable?\" \u2192 Yes/No + Score Tier.\nThis changes everything for live sellers.",
+      "thread_part": 3,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.684834",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.684878"
+    },
+    {
+      "id": 297,
+      "platform": "twitter",
+      "text": "How does Pabandi score someone?\nShort answer: We don't ask. We observe.\nLong answer:\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T14:38:33.688031",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.688047"
+    },
+    {
+      "id": 297,
+      "platform": "twitter",
+      "text": "Step 1: User books something \u2014 salon, clinic, delivery, freelance gig.\nStep 2: AI predicts no-show probability before the appointment.\nStep 3: User either shows up or doesn't.\nStep 4: Outcome is recorded. Score updates.",
+      "thread_part": 2,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T14:38:33.688031",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.688050"
+    },
+    {
+      "id": 297,
+      "platform": "twitter",
+      "text": "The score is built from real transactions:\n\u2705 Completed bookings\n\u2705 On-time payments\n\u2b1c Missed appointments (negative signal)\n\u2b1c Disputes lost (negative signal)\nPlus AI adjustments for time-of-day reliability, service type, and seasonal patterns specific to Pakistan.",
+      "thread_part": 3,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T14:38:33.688031",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.688060"
+    },
+    {
+      "id": 297,
+      "platform": "twitter",
+      "text": "All of this is anchored on Solana.\nWhy on-chain? Because of the GB/Z 185 sovereign standards.\nTo work with Chinese tech giants (like Alibaba/Daraz), your trust layer must map to X.509 PKI certificates rooted in a trusted Certificate Authority.\nWe built the bridge.",
+      "thread_part": 4,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T14:38:33.688031",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.688072"
+    },
+    {
+      "id": 297,
+      "platform": "twitter",
+      "text": "We call this the Reliability Passport. (Or GB/Z 185.3 Hybrid PKI).\nIt's not a credit card. It's not KYC.\nIt's proof of behavior \u2014 bound via challenge-response to your on-chain history.\nThe same Passport that gets you COD on a salon appointment gets you pay-on-delivery everywhere.",
+      "thread_part": 5,
+      "total_threads": 5,
+      "schedule_time": "2026-06-28T14:38:33.688031",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.688076"
+    },
+    {
+      "id": 302,
+      "platform": "twitter",
+      "text": "I watched a live sale yesterday.\nSeller: \"iPhone 15 Pro, 400K, 10 units, comment SOLD\"\nBuyers: \"Sold! Sold! Sold!\"\nThen the seller sighed and said:\n\"Half of these will never come pick it up.\"\nThat's when I knew we had to ship this NOW.\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.691488",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.691505"
+    },
+    {
+      "id": 302,
+      "platform": "twitter",
+      "text": "Here's the current flow for a Pakistan live seller:\n1. Post live \u2192 get DMs\n2. Send payment info \u2192 half ghost\n3. Ship anyway \u2192 lose money on no-pays\n4. Or ask for payment first \u2192 lose half your sales\nThe market accepts this as \"normal.\"",
+      "thread_part": 2,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.691488",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.691509"
+    },
+    {
+      "id": 302,
+      "platform": "twitter",
+      "text": "What if you could filter buyers by reliability?\n\"Only buyers with 700+ Pabandi score can pay on delivery.\"\n\"No-score buyers must prepay or use escrow.\"\nSeller gets COD confidence.\nBuyer with good score gets convenience.\nEveryone wins.",
+      "thread_part": 3,
+      "total_threads": 3,
+      "schedule_time": "2026-06-28T14:38:33.691488",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.691518"
+    },
+    {
+      "id": 305,
+      "platform": "twitter",
+      "text": "Developers: if you're building a platform in Pakistan, here's something you should consider.\nThe trust layer is the most valuable thing you can build \u2014 but also the hardest.\nUnless you don't have to build it yourself.\n\ud83e\uddf5",
+      "thread_part": 1,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T14:38:33.694969",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.694982"
+    },
+    {
+      "id": 305,
+      "platform": "twitter",
+      "text": "Most platforms solve trust one of two ways:\n1. Centralized review system (Google reviews, Trustpilot)\n\u2192 Fakeable. Gamed. Siloed.\n2. Manual KYC + verification\n\u2192 Slow. Expensive. Legal liability.\nNeither scales for Pakistan's informal economy.",
+      "thread_part": 2,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T14:38:33.694969",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.694986"
+    },
+    {
+      "id": 305,
+      "platform": "twitter",
+      "text": "Pabandi takes a different approach:\nTrust as a public good.\nScore as infrastructure.\nVerification as an API call.\nYou don't need to build a review system.\nYou don't need to become a credit bureau.\nYou just call /api/v1/verify.",
+      "thread_part": 3,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T14:38:33.694969",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.694988"
+    },
+    {
+      "id": 305,
+      "platform": "twitter",
+      "text": "Docs: pabandi-42c5b.web.app/docs\nAPI base: pabandi-42c5b.web.app/api/v1\nBeta access: team@pabandi.com\nBuilt for Pakistan. Not in Pakistan.\nWada pura karo. Inaam pao.",
+      "thread_part": 4,
+      "total_threads": 4,
+      "schedule_time": "2026-06-28T14:38:33.694969",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.694991"
+    },
+    {
+      "id": 309,
+      "platform": "twitter",
+      "text": "We're 6 months in and the data already proves it.\nUsers with higher Pabandi scores show up 3x more often.\nMerchants who use escrow reduce no-shows by 40%.\nThe future isn't \"bro trust.\"\nIt's \"verified trust.\"\nWe're building that future. Starting here.\nWada pura karo. Inaam pao.",
+      "thread_part": 1,
+      "total_threads": 1,
+      "schedule_time": "2026-06-28T14:38:33.698736",
+      "tags": [
+        "thread"
+      ],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.698749"
+    },
+    {
+      "id": 310,
+      "platform": "twitter",
+      "text": "Assalamualaikum [Name],\nQuick question: what % of your live sale orders never get picked up or paid?\nBuilding something to fix that for Karachi/Lahore sellers. Would value 5 mins of your time.\n\u2014 [Your name], Pabandi",
+      "schedule_time": "2026-06-28T14:38:33.703006",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.703015"
+    },
+    {
+      "id": 311,
+      "platform": "twitter",
+      "text": "Sellers tagged in @TechJuicePK or @ProfitPakistan posts about social commerce",
+      "schedule_time": "2026-06-28T14:38:33.706481",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.706494"
+    },
+    {
+      "id": 312,
+      "platform": "twitter",
+      "text": "Book \u2192 Deposit (optional) \u2192 AI predicts risk \u2192 Show up \u2192 Earn $PAB\n\u2192 No-show \u2192 Deposit forfeited to business",
+      "schedule_time": "2026-06-28T14:38:33.710517",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.710526"
+    },
+    {
+      "id": 313,
+      "platform": "twitter",
+      "text": "Book \u06a9\u0631\u0648 \u2192 Deposit (\u0627\u062e\u062a\u06cc\u0627\u0631\u06cc) \u2192 AI risk \u067e\u06c1\u0686\u0627\u0646\u062a\u0627 \u06c1\u06d2 \u2192Time \u067e\u0631 \u0622\u0624 \u2192 $PAB \u06a9\u0645\u0627\u0624\n\u2192 No-show \u2192 Deposit business \u06a9\u0648 \u0645\u0644 \u062c\u0627\u062a\u0627 \u06c1\u06d2",
+      "schedule_time": "2026-06-28T14:38:33.714011",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.714026"
+    },
+    {
+      "id": 314,
+      "platform": "twitter",
+      "text": "60%+ of salon bookings in Karachi/Lahore are made via WhatsApp voice notes",
+      "schedule_time": "2026-06-28T14:38:33.717995",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.718010"
+    },
+    {
+      "id": 315,
+      "platform": "twitter",
+      "text": "Freelancers lose an estimated 20% of income to client no-shows",
+      "schedule_time": "2026-06-28T14:38:33.721633",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.721644"
+    },
+    {
+      "id": 316,
+      "platform": "twitter",
+      "text": "Businesses spend millions on reminders that still fail",
+      "schedule_time": "2026-06-28T14:38:33.725214",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.725232"
+    },
+    {
+      "id": 317,
+      "platform": "twitter",
+      "text": "There is no portable, verifiable trust score \u2014 reputation dies with each app",
+      "schedule_time": "2026-06-28T14:38:33.728530",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.728542"
+    },
+    {
+      "id": 318,
+      "platform": "twitter",
+      "text": "Utility: Booking deposits, dynamic rewards, API payments, governance (future)",
+      "schedule_time": "2026-06-28T14:38:33.731748",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.731766"
+    },
+    {
+      "id": 319,
+      "platform": "twitter",
+      "text": "Status: Mint authority revoked; supply permanently capped",
+      "schedule_time": "2026-06-28T14:38:33.735293",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.735310"
+    },
+    {
+      "id": 320,
+      "platform": "twitter",
+      "text": "Built *for* Pakistan, not *in* Pakistan \u2014 founder is a US-based Pakistani who studied the market remotely for 12 months before writing a line of code",
+      "schedule_time": "2026-06-28T14:38:33.738737",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.738753"
+    },
+    {
+      "id": 321,
+      "platform": "twitter",
+      "text": "Privacy-first: no WhatsApp message scraping, no social graph harvesting",
+      "schedule_time": "2026-06-28T14:38:33.742140",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.742161"
+    },
+    {
+      "id": 322,
+      "platform": "twitter",
+      "text": "Shariah-conscious design: \u201cearn-by-action\u201d model mirrors Islamic values of *amanah* (trustworthiness)",
+      "schedule_time": "2026-06-28T14:38:33.745556",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.745569"
+    },
+    {
+      "id": 323,
+      "platform": "twitter",
+      "text": "Open API: developers can build booking dApps on top of Pabandi\u2019s trust layer",
+      "schedule_time": "2026-06-28T14:38:33.749364",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.749381"
+    },
+    {
+      "id": 324,
+      "platform": "twitter",
+      "text": "Pilot partners: 10 salons / clinics in Karachi & Lahore (free 3-month pilot)",
+      "schedule_time": "2026-06-28T14:38:33.753135",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.753157"
+    },
+    {
+      "id": 325,
+      "platform": "twitter",
+      "text": "Developer interest: university hackathons, API integrations",
+      "schedule_time": "2026-06-28T14:38:33.756686",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.756699"
+    },
+    {
+      "id": 326,
+      "platform": "twitter",
+      "text": "Media coverage: long-form features on crypto adoption in Pakistan, trust economies, diaspora remittances",
+      "schedule_time": "2026-06-28T14:38:33.760255",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.760271"
+    },
+    {
+      "id": 327,
+      "platform": "twitter",
+      "text": "Primary logo: https://pabandi-42c5b.web.app/pab-logo.png",
+      "schedule_time": "2026-06-28T14:38:33.764776",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.764816"
+    },
+    {
+      "id": 328,
+      "platform": "twitter",
+      "text": "Brand colors: Deep navy `#011d35`, Solana green `#14F195`, purple `#9945FF`",
+      "schedule_time": "2026-06-28T14:38:33.769014",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.769049"
+    },
+    {
+      "id": 329,
+      "platform": "twitter",
+      "text": "\u06a9\u0631\u0627\u0686\u06cc \u0627\u0648\u0631 \u0644\u0627\u06c1\u0648\u0631 \u06a9\u06d2 \u0686\u06c1\u0631\u06c1 \u062a\u0631\u0627\u0634 \u06a9\u06d2 \u0628\u06a9\u06cc\u0646\u06af \u0645\u06cc\u06ba 60% \u0633\u06d2 \u0632\u06cc\u0627\u062f\u06c1 WhatsApp voice notes \u0633\u06d2 \u06c1\u0648\u062a\u06cc \u06c1\u06cc\u06ba",
+      "schedule_time": "2026-06-28T14:38:33.773357",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.773394"
+    },
+    {
+      "id": 330,
+      "platform": "twitter",
+      "text": "\u0641\u0631\u06cc \u0644\u0627\u0646\u0633\u0631\u0632 \u06a9\u0648 \u06a9\u0644\u0627\u0626\u0646\u0679\u0633 \u06a9\u06cc \u0639\u062f\u0645 \u0645\u0648\u062c\u0648\u062f\u06af\u06cc \u0645\u06cc\u06ba 20% \u0622\u0645\u062f\u0646\u06cc \u0636\u0627\u0626\u0639 \u06c1\u0648\u062a\u06cc \u06c1\u06d2",
+      "schedule_time": "2026-06-28T14:38:33.777387",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.777412"
+    },
+    {
+      "id": 331,
+      "platform": "twitter",
+      "text": "\u06a9\u0627\u0631\u0648\u0628\u0627\u0631 \u0627\u06cc\u06a9\u0634\u0646missible \u0645\u0627\u0633 \u0648\u0627\u0644\u06d2 \u06a9\u0631\u062a\u06d2 \u06c1\u06cc\u06ba \u2014 \u067e\u0627\u0628\u0646\u062f\u06cc \u06a9\u0627 \u067e\u0627\u0633 \u067e\u0648\u0631\u0679\u06cc\u0628\u0644 \u0633\u06a9\u0648\u0631",
+      "schedule_time": "2026-06-28T14:38:33.780994",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.781021"
+    },
+    {
+      "id": 332,
+      "platform": "twitter",
+      "text": "Utility: Booking deposits\u060c dynamic rewards\u060c API payments\u060c governance (\u0645\u0633\u062a\u0642\u0628\u0644 \u0645\u06cc\u06ba)",
+      "schedule_time": "2026-06-28T14:38:33.785107",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.785146"
+    },
+    {
+      "id": 333,
+      "platform": "twitter",
+      "text": "Status: Mint authority revoked\u061b supply permanently capped",
+      "schedule_time": "2026-06-28T14:38:33.788956",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.788969"
+    },
+    {
+      "id": 334,
+      "platform": "twitter",
+      "text": "Pilot partners: 10 Salon/\u06a9\u0644\u06cc\u0646\u06a9 \u06a9\u0631\u0627\u0686\u06cc \u0627\u0648\u0631 \u0644\u0627\u06c1\u0648\u0631 \u0645\u06cc\u06ba (free 3-month pilot)",
+      "schedule_time": "2026-06-28T14:38:33.792983",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.792995"
+    },
+    {
+      "id": 335,
+      "platform": "twitter",
+      "text": "Developer interest: university hackathons\u060c API integrations",
+      "schedule_time": "2026-06-28T14:38:33.796863",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.796878"
+    },
+    {
+      "id": 336,
+      "platform": "twitter",
+      "text": "Media coverage: \u067e\u0627\u06a9\u0633\u062a\u0627\u0646 \u0645\u06cc\u06ba crypto adoption\u060c trust economies\u060c diaspora remittances \u067e\u0631 long-form features",
+      "schedule_time": "2026-06-28T14:38:33.801048",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.801064"
+    },
+    {
+      "id": 337,
+      "platform": "twitter",
+      "text": "Install Firebase Tools\nnpm install -g firebase-tools\nInstall Google Cloud SDK\nDownload from https://cloud.google.com/sdk/docs/install",
+      "schedule_time": "2026-06-28T14:38:33.805829",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.805841"
+    },
+    {
+      "id": 338,
+      "platform": "twitter",
+      "text": "cd client\nnpm run build\nfirebase deploy --only hosting",
+      "schedule_time": "2026-06-28T14:38:33.810315",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.810348"
+    },
+    {
+      "id": 339,
+      "platform": "twitter",
+      "text": "Set up Google Cloud Budget Alerts to notify you if spending exceeds $1.",
+      "schedule_time": "2026-06-28T14:38:33.814559",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.814574"
+    },
+    {
+      "id": 340,
+      "platform": "twitter",
+      "text": "PAYMENT_GATEWAY=stripe\nSTRIPE_SECRET_KEY=sk_live_...\nSTRIPE_PUBLISHABLE_KEY=pk_live_...\nSTRIPE_WEBHOOK_SECRET=whsec_...",
+      "schedule_time": "2026-06-28T14:38:33.819848",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.819865"
+    },
+    {
+      "id": 341,
+      "platform": "twitter",
+      "text": "cd server\nnpm install stripe",
+      "schedule_time": "2026-06-28T14:38:33.824042",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.824071"
+    },
+    {
+      "id": 342,
+      "platform": "twitter",
+      "text": "JAZZCASH_MERCHANT_ID=your_merchant_id\nJAZZCASH_PASSWORD=your_password\nJAZZCASH_INTEGRITY_SALT=your_salt",
+      "schedule_time": "2026-06-28T14:38:33.828096",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.828133"
+    },
+    {
+      "id": 343,
+      "platform": "twitter",
+      "text": "EASYPAISA_STORE_ID=your_store_id\nEASYPAISA_HASH_KEY=your_hash_key\nEASYPAISA_MERCHANT_ID=your_merchant_id",
+      "schedule_time": "2026-06-28T14:38:33.831911",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.831946"
+    },
+    {
+      "id": 344,
+      "platform": "twitter",
+      "text": "stripe listen --forward-to localhost:5000/api/v1/payments/webhook",
+      "schedule_time": "2026-06-28T14:38:33.836200",
+      "tags": [],
+      "status": "pending",
+      "created_at": "2026-06-28T12:38:33.836234"
+    }
+  ],
+  "posted": [],
+  "engagement": []
+}

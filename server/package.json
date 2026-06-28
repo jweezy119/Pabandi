@@ -58,6 +58,7 @@
     "redis": "^4.6.12",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
+    "tweetnacl": "^1.0.3",
     "twilio": "^6.0.2",
     "winston": "^3.19.0",
     "zod": "^3.22.4"

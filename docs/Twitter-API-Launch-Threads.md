@@ -110,21 +110,21 @@ Plus AI adjustments for time-of-day reliability, service type, and seasonal patt
 ```
 All of this is anchored on Solana.
 
-Why on-chain?
+Why on-chain? Because of the GB/Z 185 sovereign standards.
 
-Because a score you can't prove is just a number. A score with an immutable audit trail is infrastructure.
+To work with Chinese tech giants (like Alibaba/Daraz), your trust layer must map to X.509 PKI certificates rooted in a trusted Certificate Authority.
 
-Anyone can verify. No one can manipulate. The math is public even if the raw data isn't.
+We built the bridge.
 ```
 
 **Tweet 5**
 ```
-We call this the Reliability Passport.
+We call this the Reliability Passport. (Or GB/Z 185.3 Hybrid PKI).
 
 It's not a credit card. It's not KYC.
-It's proof of behavior — minted as an asset you own and carry everywhere.
+It's proof of behavior — bound via challenge-response to your on-chain history.
 
-The same Passport that gets you COD on a salon appointment can also get you pay-on-delivery on a live sale.
+The same Passport that gets you COD on a salon appointment gets you pay-on-delivery everywhere.
 ```
 
 ---
@@ -235,14 +235,12 @@ You just call /api/v1/verify.
 
 **Tweet 4**
 ```
-And because it's on Solana:
+Even better? Our Natural-Language Discovery API (GB/Z 185.5 compliant).
 
-- Scores are timestamped and immutable
-- Users own their Passport data
-- No vendor lock-in
-- Audit trail is public
+Agents on your platform don't need complex GraphQL queries to find reliable vendors. 
+They just query: "Find a reliable beauty supplier in Karachi."
 
-This matters for developers who want to build trust without becoming the trust authority.
+Our AI parses the prose and returns the top 5 trusted profiles.
 ```
 
 **Tweet 5**
@@ -292,17 +290,17 @@ Phase 3 (6 months): Cross-platform network effects.
 → Better behavior → better score → better terms everywhere
 → Network locks in as switching cost
 
-Phase 4 (12 months): DePIN + agent layer for Pakistan's informal economy (topic for another thread)
+Phase 4 (12 months): DePIN + agent layer for Pakistan's informal economy.
 ```
 
 **Tweet 4**
 ```
-The thesis:
+But liquidity is key. How do we back the trust?
 
-Pakistan has no credit scoring infrastructure outside the formal banking system.
-15M+ freelancers, salons, clinics, live sellers, drivers, wholesalers — all operating on vibes.
+Enter Mudarabah Profit-Share (Halal Staking).
+Users can stake $PAB into our Zero-Shows Yield pool. If a booking is missed, the earnest deposit pays actual damages.
 
-AI + on-chain reputation is the first technology that can change this at scale.
+A culturally aligned yield system that actually fixes real-world commerce.
 ```
 
 **Tweet 5**

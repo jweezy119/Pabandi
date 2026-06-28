@@ -1,0 +1,14 @@
+{
+  "twitter": {
+    "api_key": "mv8ggKNkB6wASukpr7UC5DUOb",
+    "api_secret": "EeHCmAs2rSclpclZ4t2McF2yvS8IMVck439BhSP9qDpdfr8tV8",
+    "access_token": "2067020275372199937-C8prjbyOkqK5GwfLq6ucbae4R2smBY",
+    "access_secret": "5I4EvL5IsFgzfOgFgvszeqo6DkMzDV5QTwt0QwsU32tGG",
+    "bearer_token": "AAAAAAAAAAAAAAAAAAAAAAV8%2BQEAAAAAM%2FrGHe9zaLQztli872FZTBHLZ0o%3Dtq25W1JqTxcmSXZy8MXIYrtTPPa8uOpVkjo4fUPWPrmvHHopGR"
+  },
+  "instagram": {
+    "access_token": "",
+    "page_id": "",
+    "ig_user_id": ""
+  }
+}
