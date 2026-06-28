@@ -109,6 +109,7 @@ export const reservationService = {
 export const paymentService = {
   createPayment: (data: any) => apiClient.post('/payments', data),
   getPayment: (id: string) => apiClient.get(`/payments/${id}`),
+  createSubscriptionCheckout: (data: { planId?: string; amount: number; planName?: string }) => apiClient.post('/payments/subscription-checkout', data),
 };
 
 export const analyticsService = {

@@ -110,6 +110,45 @@ export const getPayment = async (
   }
 };
 
+export const createSubscriptionCheckout = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { planId, amount, planName } = req.body as {
+      planId?: string;
+      amount: number;
+      planName?: string;
+    };
+
+    if (!amount || amount <= 0) {
+      throw new CustomError('A valid subscription amount is required', 400);
+    }
+
+    const reference = `sub_${planId || 'custom'}_${Date.now()}`;
+
+    const checkoutUrl = await safepayService.createApiSubscriptionCheckoutUrl(amount, reference);
+
+    const payment = await prisma.payment.create({
+      data: {
+        userId: req.user!.id,
+        amount,
+        paymentMethod: 'safepay',
+        status: 'PENDING',
+        gatewayResponse: { planId, planName, reference },
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { checkoutUrl, payment },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const processPaymentWebhook = async (
   req: Request,
   res: Response,

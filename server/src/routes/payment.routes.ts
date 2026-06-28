@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createPayment, getPayment, processPaymentWebhook } from '../controllers/payment.controller';
+import { createPayment, getPayment, processPaymentWebhook, createSubscriptionCheckout } from '../controllers/payment.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -9,5 +9,6 @@ router.post('/simulate-webhook', processPaymentWebhook); // Mock frontend test e
 router.use(authenticate);
 router.post('/', createPayment);
 router.get('/:id', getPayment);
+router.post('/subscription-checkout', createSubscriptionCheckout);
 
 export default router;
