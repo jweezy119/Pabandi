@@ -34,6 +34,41 @@ export default function BusinessJoinPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+
+  const handlePlanCheckout = async (planName: string, price: number) => {
+    if (price === 0) {
+      window.location.hash = '#join-form';
+      return;
+    }
+    setIsProcessingCheckout(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          amount: price, // $29
+          paymentMethod: 'safepay',
+          reservationId: `sub_${planName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`
+        })
+      });
+      
+      const data = await res.json();
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+      }
+    } catch (e) {
+      console.error(e);
+      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+    }
+    setIsProcessingCheckout(false);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -451,7 +486,9 @@ export default function BusinessJoinPage() {
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Advanced analytics + exports</li>
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Priority support (WhatsApp)</li>
               </ul>
-              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25">Get Growth →</a>
+              <button onClick={() => handlePlanCheckout('Growth', 29)} disabled={isProcessingCheckout} className="w-full text-center py-4 rounded-xl font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
+                {isProcessingCheckout ? 'Processing...' : 'Pay with Safepay →'}
+              </button>
             </div>
 
             {/* Enterprise */}

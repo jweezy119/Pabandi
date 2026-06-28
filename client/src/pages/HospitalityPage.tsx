@@ -86,6 +86,43 @@ const FAQS = [
 export default function HospitalityPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+
+  const handlePlanCheckout = async (planName: string, price: number) => {
+    if (price === 0) {
+      setShowWizard(true);
+      return;
+    }
+    setIsProcessingCheckout(true);
+    try {
+      // Use Safepay for B2B Subscription Payment
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          amount: price, // $19
+          paymentMethod: 'safepay',
+          reservationId: `sub_${planName.toLowerCase().replace(/[^a-z0-9]/g, '_')}` // mock reference
+        })
+      });
+      
+      const data = await res.json();
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        // Fallback demo URL if backend isn't running fully
+        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+      }
+    } catch (e) {
+      console.error(e);
+      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+    }
+    setIsProcessingCheckout(false);
+  };
 
   return (
     <div style={{ background: '#0a0f1a', color: '#e8edf2' }} className="min-h-screen pb-24 md:pb-16 font-body">
@@ -389,8 +426,9 @@ export default function HospitalityPage() {
                 price: '$19',
                 sub: '/ month add-on',
                 features: ['Up to 5 properties', 'Beds24 + Cloudbeds', 'Auto-webhook escrow', '2.5% escrow commission', '$PAB guest rewards'],
-                cta: '1 Month Free Trial',
+                cta: 'Pay with Safepay',
                 highlight: true,
+                priceValue: 19,
               },
               {
                 name: 'Enterprise Hospitality',
@@ -434,12 +472,13 @@ export default function HospitalityPage() {
                   </ul>
                 </div>
                 <button
-                  onClick={() => cta !== 'Contact Sales' ? setShowWizard(true) : undefined}
-                  className={`w-full py-2.5 text-xs font-bold mt-6 rounded-xl transition-colors ${
-                    highlight ? 'btn-primary' : 'btn-secondary'
+                  onClick={() => cta !== 'Contact Sales' ? handlePlanCheckout(name, highlight ? 19 : 0) : undefined}
+                  disabled={isProcessingCheckout}
+                  className={`w-full py-2.5 text-xs font-bold mt-6 rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                    highlight ? 'btn-primary shadow-[0_0_20px_rgba(var(--color-primary),0.3)]' : 'btn-secondary'
                   }`}
                 >
-                  {cta}
+                  {isProcessingCheckout && highlight ? 'Processing...' : cta}
                 </button>
               </div>
             ))}

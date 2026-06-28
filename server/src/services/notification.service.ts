@@ -223,7 +223,13 @@ export class NotificationService {
       }
 
       const settings = reservation.business.settings;
-      const reminderHours = settings?.reminderHoursBefore || 24;
+      
+      // Track A: A/B test on timing (24h vs 1h before)
+      // Deterministic A/B assignment based on the last character of reservation ID
+      const lastChar = reservationId.charAt(reservationId.length - 1);
+      const isOneHourCohort = /[0-7a-m]/i.test(lastChar); // ~50% split
+      
+      const reminderHours = isOneHourCohort ? 1 : 24;
 
       const reservationDate = new Date(reservation.reservationDate);
       const reminderTime = new Date(
@@ -286,7 +292,8 @@ export class NotificationService {
 
       const settings = reservation.business.settings;
       if (settings?.notifyOwnerOnNewBooking && settings?.whatsappNumber) {
-        const msg = `🔔 *New Booking Alert*\n\nYou have a new reservation at *${reservation.business.name}*!\n\nName: ${reservation.customerName}\nDate: ${new Date(reservation.reservationDate).toLocaleDateString()}\nTime: ${reservation.reservationTime}\nGuests: ${reservation.numberOfGuests}\nPhone: ${reservation.customerPhone}`;
+        const dashboardUrl = `${process.env.FRONTEND_URL || 'https://pabandi.com'}/business/dashboard`;
+        const msg = `🔔 *New Booking Alert*\n\nYou have a new reservation at *${reservation.business.name}*!\n\nName: ${reservation.customerName}\nDate: ${new Date(reservation.reservationDate).toLocaleDateString()}\nTime: ${reservation.reservationTime}\nGuests: ${reservation.numberOfGuests}\nPhone: ${reservation.customerPhone}\n\n👉 View & Manage: ${dashboardUrl}`;
         await sendWhatsAppMessage(settings.whatsappNumber, msg);
       }
     } catch (error) {

@@ -35,8 +35,16 @@ export default function BusinessProfilePage() {
     customerName: '',
     customerPhone: '',
     specialRequests: '',
-    paymentMethod: 'paypal',
+    paymentMethod: 'safepay',
   });
+
+  // Hero Demo: Interactive AI Score Slider
+  const [demoScore, setDemoScore] = useState(
+    user?.reliabilityScore ? Math.round(user.reliabilityScore / 10) : 87
+  );
+  
+  // Calculate dynamic deposit based on the demo score
+  const dynamicDeposit = demoScore >= 80 ? 0 : demoScore >= 50 ? 5 : 15;
 
   // Load User Details into Booking Form when Authenticated
   useEffect(() => {
@@ -96,6 +104,11 @@ export default function BusinessProfilePage() {
     if (!isAuthenticated) {
       navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       return;
+    }
+    
+    // Haptic Feedback
+    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+      window.navigator.vibrate(50);
     }
 
     let transactionHash = undefined;
@@ -200,7 +213,7 @@ export default function BusinessProfilePage() {
             </div>
           )}
 
-          {!business.isClaimed && (
+          {!business.isClaimed && user?.role === 'BUSINESS_OWNER' && (
             <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your booking is processed immediately, please invite the owner to join:
@@ -355,13 +368,29 @@ export default function BusinessProfilePage() {
                 {business.isClaimed ? (
                   <span className="bg-[#14F195]/20 backdrop-blur-md text-[#14F195] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[#14F195]/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse"></span>
-                    Verified Solana Partner
+                    Verified Partner
                   </span>
                 ) : (
                   <span className="bg-amber-500/20 backdrop-blur-md text-[#fbbf24] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border border-[#fbbf24]/30">
                     Unclaimed Lead
                   </span>
                 )}
+              </div>
+
+              {/* Demo Control Slider for Pitch */}
+              <div className="flex items-center gap-3 mb-4 bg-black/40 p-2.5 rounded-lg backdrop-blur-md border border-white/10 w-fit glowing-border">
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Demo AI Control</span>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="99" 
+                  value={demoScore} 
+                  onChange={(e) => setDemoScore(parseInt(e.target.value))}
+                  className="w-32 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${demoScore >= 80 ? 'bg-green-500/20 text-green-300' : demoScore >= 50 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'}`}>
+                  {demoScore}% Reliable → ${dynamicDeposit} Deposit
+                </span>
               </div>
               
               <h1 className="font-headline text-3xl md:text-5xl font-black tracking-tight mb-2 leading-none">{business.name}</h1>
@@ -759,16 +788,17 @@ export default function BusinessProfilePage() {
                 </div>
                 
                 {/* Reliability SBT check indicators */}
-                <div className="text-right">
-                  <span className="font-headline text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]">
-                    {business.isClaimed ? 'Zero Dep' : 'No Deposit'}
+                <div className="text-right flex flex-col items-end">
+                  <span className={`font-headline text-lg font-black ${dynamicDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-amber-500'}`}>
+                    {dynamicDeposit === 0 ? 'Zero Deposit' : `$${dynamicDeposit} Deposit`}
                   </span>
-                  <p className="font-body text-[9px] text-[#10b981] font-bold uppercase tracking-wide">Pabandi score active</p>
+                  <p className="font-body text-[9px] text-[#10b981] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
                 </div>
               </div>
 
               {bookingMutation.isError && (
-                <div className="bg-error-container text-on-error-container p-3 rounded-lg mb-4 text-xs font-semibold border border-error/25">
+                <div className="bg-error-container text-on-error-container p-3 rounded-lg mb-4 text-xs font-semibold border border-error/25 flex items-center gap-2">
+                  <ShieldCheckIcon className="h-4 w-4" />
                   {(bookingMutation.error as any)?.response?.data?.message || 'Booking submission failed.'}
                 </div>
               )}
@@ -918,11 +948,16 @@ export default function BusinessProfilePage() {
                 <button 
                   type="submit" 
                   disabled={bookingMutation.isLoading}
-                  className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline text-sm font-bold py-3.5 rounded-xl shadow-md hover:opacity-95 transition-opacity flex justify-center items-center gap-2"
+                  className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
                 >
-                  {bookingMutation.isLoading ? 'Verifying...' : business.isClaimed ? 'Confirm Booking' : 'Book via Pabandi Agent'}
+                  {bookingMutation.isLoading ? 'Processing...' : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly')}
                 </button>
               </form>
+              
+              {/* Trust badge */}
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-on-surface-variant/50 uppercase tracking-widest font-label">
+                <ShieldCheckIcon className="h-4 w-4" /> SECURED BY PABANDI ESCROW
+              </div>
             </div>
           </div>
 

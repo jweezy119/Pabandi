@@ -10,6 +10,7 @@ interface User {
   phone?: string;
   role: string;
   profilePictureUrl?: string;
+  reliabilityScore?: number;
 }
 
 interface WalletState {

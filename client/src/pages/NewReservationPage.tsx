@@ -316,7 +316,7 @@ export default function NewReservationPage() {
             </div>
           )}
 
-          {!selectedPlace?.isClaimed && (
+          {!selectedPlace?.isClaimed && user?.role === 'BUSINESS_OWNER' && (
             <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your

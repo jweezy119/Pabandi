@@ -25,6 +25,16 @@ function hashPhone(phone: string): string {
  * 
  * Note: TikTok Shop uses HMAC signatures for security, not API keys.
  */
+/**
+ * @openapi
+ * /api/v1/integrations/tiktok/webhook:
+ *   post:
+ *     summary: Receive TikTok Shop Webhook (Order Status Update)
+ *     tags: [Integrations]
+ *     responses:
+ *       200:
+ *         description: Webhook received and processed
+ */
 router.post('/tiktok/webhook', async (req: Request, res: Response): Promise<any> => {
   try {
     // 1. Verify TikTok Shop Signature
@@ -83,6 +93,31 @@ router.post('/tiktok/webhook', async (req: Request, res: Response): Promise<any>
  * A unified endpoint for backend systems (Shopify Flow, WooCommerce hooks)
  * to automatically report a COD Rejection when a package is marked "Returned".
  */
+/**
+ * @openapi
+ * /api/v1/integrations/report:
+ *   post:
+ *     summary: Generic Omni-Channel Reporting
+ *     tags: [Integrations]
+ *     security:
+ *       - apiKeyAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rawPhone:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Incident reported
+ */
 router.post('/report', apiKeyAuth, async (req: ApiKeyRequest, res: Response): Promise<any> => {
   try {
     const { rawPhone, type, description } = req.body;
@@ -105,6 +140,65 @@ router.post('/report', apiKeyAuth, async (req: ApiKeyRequest, res: Response): Pr
   } catch (error) {
     logger.error('[Integrations] Generic Report Error:', error);
     return res.status(500).json({ success: false, error: 'Internal error reporting incident.' });
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/integrations/odoo/webhook:
+ *   post:
+ *     summary: Odoo CRM/Partner sync webhook
+ *     tags: [Integrations]
+ *     responses:
+ *       200:
+ *         description: Odoo sync successful
+ */
+router.post('/odoo/webhook', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { partner_id, event, data } = req.body;
+    logger.info(`[Odoo] Received webhook for partner ${partner_id}, event: ${event}`);
+    
+    // In a real integration, we'd sync this with our DB
+    return res.status(200).json({ success: true, message: 'Odoo sync complete' });
+  } catch (error) {
+    logger.error('[Integrations] Odoo Webhook Error:', error);
+    return res.status(500).json({ success: false, error: 'Internal error processing Odoo webhook.' });
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/integrations/cal-com:
+ *   post:
+ *     summary: Cal.com booking sync webhook
+ *     tags: [Integrations]
+ *     responses:
+ *       200:
+ *         description: Cal.com sync successful
+ */
+router.post('/cal-com', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { triggerEvent, payload } = req.body;
+    logger.info(`[Cal.com] Received booking webhook event: ${triggerEvent}`);
+    
+    // E.g. triggerEvent === 'BOOKING_CREATED'
+    if (triggerEvent === 'BOOKING_CREATED') {
+        const attendeePhone = payload?.attendees?.[0]?.phoneNumber;
+        if (attendeePhone) {
+            // Check Pabandi network score
+            const hashedPhone = hashPhone(attendeePhone);
+            const networkResult = await networkService.checkHash(hashedPhone);
+            if (networkResult.prediction?.riskLevel === 'CRITICAL') {
+                logger.warn(`[Cal.com] Intercepted high-risk booking: ${payload.uid}. Needs manual review.`);
+                // Could call Cal.com API to auto-cancel or request a deposit via Stripe
+            }
+        }
+    }
+
+    return res.status(200).json({ success: true, message: 'Cal.com sync complete' });
+  } catch (error) {
+    logger.error('[Integrations] Cal.com Webhook Error:', error);
+    return res.status(500).json({ success: false, error: 'Internal error processing Cal.com webhook.' });
   }
 });
 

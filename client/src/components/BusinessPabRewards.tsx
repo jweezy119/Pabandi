@@ -36,17 +36,17 @@ export default function BusinessPabRewards() {
             className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
             style={{ background: 'rgba(153,69,255,0.15)', color: '#c084fc' }}
           >
-            Solana · $PAB Rewards
+            Solana · PabPoints Rewards
           </span>
-          <h2 className="text-xl font-black text-[#e8e8e8] mt-2 flex items-center gap-2"><img src="/logo-coin-3d.jpg" alt="PAB" className="h-6 w-6 rounded-full object-cover" />Earn $PAB for running a tight operation</h2>
+          <h2 className="text-xl font-black text-[#e8e8e8] mt-2 flex items-center gap-2"><img src="/logo-coin-3d.jpg" alt="PabPoints" className="h-6 w-6 rounded-full object-cover" />Earn PabPoints for running a tight operation</h2>
           <p className="text-sm text-[#757575] mt-1 max-w-xl">
-            Businesses earn Pabandi tokens automatically — withdraw to your Phantom wallet on Solana.
+            Businesses earn Pabandi PabPoints automatically — withdraw to your Phantom wallet on Solana.
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575]">Your $PAB balance</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575]">Your PabPoints balance</p>
           <p className="text-3xl font-black" style={{ color: '#f0b429' }}>
-            {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-[#616161]">PAB</span>
+            {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-[#616161]">PTS</span>
           </p>
           {data?.solanaConnected ? (
             <p className="text-xs text-[#10b981] mt-1">◎ Phantom connected</p>
@@ -71,7 +71,7 @@ export default function BusinessPabRewards() {
 
       {data?.recentRewards?.length > 0 && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575] mb-2">Recent $PAB earnings</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#757575] mb-2">Recent PabPoints earnings</p>
           <div className="space-y-2">
             {data.recentRewards.slice(0, 5).map((r: { id: string; type: string; amount: number; createdAt: string }) => (
               <div
@@ -80,7 +80,7 @@ export default function BusinessPabRewards() {
                 style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid var(--color-border)' }}
               >
                 <span className="text-[#9e9e9e]">{REWARD_LABELS[r.type] || r.type}</span>
-                <span className="font-bold" style={{ color: '#22c55e' }}>+{r.amount} PAB</span>
+                <span className="font-bold" style={{ color: '#22c55e' }}>+{r.amount} PTS</span>
               </div>
             ))}
           </div>

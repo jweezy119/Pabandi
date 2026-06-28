@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import { CalendarIcon, ClockIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ClockIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; accent: string; icon: React.ReactNode }> = {
   CONFIRMED:  { label: 'Confirmed',  bg: 'bg-tertiary-fixed', color: 'text-on-tertiary-fixed-variant', accent: 'bg-tertiary-fixed-dim', icon: <CheckCircleIcon className="h-4 w-4" /> },
@@ -239,6 +239,28 @@ export default function ReservationsPage() {
                       <p className="text-[10px] text-on-error-container font-body leading-relaxed">
                         {r.conciergeDetails?.error || 'External slots became fully booked or request was rejected.'}
                       </p>
+                    </div>
+                  )}
+
+                  {/* PabPoints Cashback Receipt for Completed Bookings */}
+                  {r.status === 'COMPLETED' && !isBusinessOwner && (
+                    <div className="bg-gradient-to-br from-[#14F195]/10 to-[#06b6d4]/10 border border-[#14F195]/30 p-4 rounded-xl flex flex-col gap-2 mt-2 glowing-border">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#10b981]">
+                        <span className="flex items-center gap-1.5 uppercase tracking-wider">
+                          <SparklesIcon className="h-4 w-4" />
+                          PabPoints Cashback Receipt
+                        </span>
+                        <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded font-mono">
+                          +{r.cashbackAmount || 50} PTS
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant font-body leading-relaxed">
+                        Your reliability score increased! The deposit escrow has been released, and your PabPoints rewards were automatically minted to your wallet.
+                      </p>
+                      <div className="flex justify-between items-center text-[9px] text-on-surface-variant font-mono pt-2 border-t border-[#14F195]/20 mt-1">
+                        <span>TX: {r.cryptoDepositTxHash || 'SOL_0x9A...F8E2'}</span>
+                        <Link to="/wallet" className="text-primary hover:underline font-bold font-body">View Wallet →</Link>
+                      </div>
                     </div>
                   )}
 

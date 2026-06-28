@@ -18,6 +18,9 @@ import { requireAppCheck } from './middleware/appCheck.middleware';
 dotenv.config();
 try { dotenv.config({ path: '.env.contracts' }); } catch (err) { logger.warn('.env.contracts not loaded'); }
 
+import { setupSwagger } from './utils/swagger';
+
+
 // Import routes
 import authRoutes from './routes/auth.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
@@ -159,17 +162,37 @@ app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   }
 });
 
+// Setup Swagger UI and Docs
+setupSwagger(app);
+
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {
   res.json({
-    name: 'Pabandi API',
+    name: 'Pabandi Zero-Knowledge Fraud Network API & Consumer Booking Engine',
     version: API_VERSION,
+    description: 'Pabandi B2B API Documentation for the Alibaba CoCreate 2026 Agentic Business Pitch.',
     endpoints: {
-      auth: `POST /api/${API_VERSION}/auth/register`,
-      googleOAuth: `GET /api/${API_VERSION}/auth/google`,
-      business: `GET /api/${API_VERSION}/businesses`,
-      reservations: `GET /api/${API_VERSION}/reservations`,
+      consumerApp: {
+        auth: `POST /api/${API_VERSION}/auth/register`,
+        googleOAuth: `GET /api/${API_VERSION}/auth/google`,
+        business: `GET /api/${API_VERSION}/businesses`,
+        reservations: `GET /api/${API_VERSION}/reservations`,
+      },
+      b2bFraudNetwork: {
+        checkHash: `POST /api/${API_VERSION}/network/check-hash (Zero-Knowledge lookup)`,
+        reportHash: `POST /api/${API_VERSION}/network/report-hash (Report COD rejection/Fraud)`,
+        bloomFilter: `GET /api/${API_VERSION}/network/bloom-filter (Local-first filter)`,
+        publicSalt: `GET /api/${API_VERSION}/network/public-salt (Daily rotating HMAC salt)`,
+      },
+      omnichannelIntegrations: {
+        odooSync: `Auto-sync via Auth Controller (res.partner & crm.lead created on registration)`,
+        calCom: `POST /api/${API_VERSION}/integrations/cal-com`,
+        shopify: `POST /api/${API_VERSION}/integrations/shopify`,
+      },
     },
+    sdkExample: {
+      checkHash: `curl -X POST https://api.pabandi.com/api/v1/network/check-hash -H "Authorization: Bearer <API_KEY>" -d '{"hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'`,
+    }
   });
 });
 

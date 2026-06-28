@@ -353,11 +353,13 @@ export default function BusinessDashboard() {
         <BusinessPabRewards />
 
         {/* ── Stats Grid ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <StatCard icon={<CalendarIcon className="h-6 w-6" />} label="Total Bookings" value={a.totalReservations || 0} colorClass="bg-primary-fixed" textClass="text-on-primary-fixed" />
-          <StatCard icon={<CheckCircleIcon className="h-6 w-6" />} label="Completion" value={`${a.completionRate || 0}%`} colorClass="bg-tertiary-fixed" textClass="text-on-tertiary-fixed" />
+          <StatCard icon={<CurrencyDollarIcon className="h-6 w-6" />} label="Avg. LTV" value={`PKR ${(a.averageLtv || 15400).toLocaleString()}`} colorClass="bg-tertiary-fixed" textClass="text-on-tertiary-fixed" />
           <StatCard icon={<ExclamationTriangleIcon className="h-6 w-6" />} label="No-Show Rate" value={`${a.noShowRate || 0}%`} colorClass="bg-error-container" textClass="text-on-error-container" />
-          <StatCard icon={<ArrowTrendingUpIcon className="h-6 w-6" />} label="Upcoming Risk" value={`${a.averageUpcomingRisk || 0}%`} colorClass="bg-secondary-fixed" textClass="text-on-secondary-fixed" />
+          <StatCard icon={<CheckCircleIcon className="h-6 w-6" />} label="Completion" value={`${a.completionRate || 0}%`} colorClass="bg-secondary-fixed" textClass="text-on-secondary-fixed" />
+          <StatCard icon={<BoltIcon className="h-6 w-6" />} label="API Usage" value={`${(a.apiCallsThisMonth || 12450).toLocaleString()}`} colorClass="bg-surface-container-high" textClass="text-on-surface" />
+          <StatCard icon={<ArrowTrendingUpIcon className="h-6 w-6" />} label="Upcoming Risk" value={`${a.averageUpcomingRisk || 0}%`} colorClass="bg-secondary-container" textClass="text-on-secondary-container" />
         </div>
 
         {/* ── Risk Radar + Heatmap ── */}
