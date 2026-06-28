@@ -11,6 +11,7 @@ import { paymentRouter } from '../services/payment.router';
 import { webhookService } from '../services/webhook.service';
 import { notificationService } from '../services/notification.service';
 import { conciergeService } from '../services/conciergeService';
+import { trustSignalService } from '../services/trustSignal.service';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -137,6 +138,14 @@ export const createReservation = async (
       throw new CustomError('Business is closed on this day', 400);
     }
 
+    // Trust signal evaluation (OSINT augment)
+    const deviceFingerprint = (req.headers['x-device-fingerprint'] as string | undefined) || undefined;
+    const trustSignals = await trustSignalService.evaluateSignals({
+      email: customerEmail,
+      phone: customerPhone,
+      deviceFingerprint,
+    });
+
     // Get customer history for AI prediction
     const customerHistory = req.user
       ? await noShowPredictor.getCustomerHistory(req.user.id, business.id)
@@ -209,6 +218,7 @@ export const createReservation = async (
         noShowProbability: prediction.probability,
         riskScore: prediction.riskScore,
         aiFactors: prediction.factors,
+        trustSignals: trustSignals as any,
         depositRequired: !!depositAmount || !!req.body.transactionHash,
         depositAmount,
         depositStatus: !!req.body.transactionHash ? 'PAID' : (!!depositAmount ? 'PENDING' : 'NOT_REQUIRED'),
@@ -217,12 +227,7 @@ export const createReservation = async (
       },
       include: {
         business: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            address: true,
-          },
+          select: { id: true, name: true, phone: true, address: true },
         },
       },
     });

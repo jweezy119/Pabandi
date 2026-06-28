@@ -44,6 +44,7 @@ model User {
   disputesAgainst   Dispute[]        @relation("DisputesAgainst")
   disputesFiled     Dispute[]        @relation("DisputesFiled")
   flags             UserFlag[]
+  deviceFingerprint String?
 
   @@index([email])
   @@index([phone])
@@ -86,6 +87,9 @@ model Business {
   isClaimed          Boolean           @default(true)
   externalBookingUrl String?
   slug               String?           @unique
+  verifiedAt         DateTime?
+  deviceFingerprint String?
+  externalDetails    Json?
   owner              User?             @relation(fields: [ownerId], references: [id])
   businessHours      BusinessHours[]
   settings           BusinessSettings?
@@ -153,6 +157,7 @@ model Reservation {
   depositAmount       Float?
   depositPaid         Boolean           @default(false)
   source              String?
+  trustSignals        Json?
   notes               String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
@@ -399,6 +404,12 @@ enum UserRole {
   BUSINESS_STAFF
   CUSTOMER
   ADMIN
+}
+
+enum KycStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
 }
 
 enum ReservationStatus {
