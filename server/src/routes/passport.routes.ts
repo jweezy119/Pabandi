@@ -4,6 +4,7 @@ import {
   verifyPassport,
   checkEligibility,
   recordIncident,
+  bindX509Certificate,
   ScoreTier,
 } from '../services/passport.service';
 import { logger } from '../utils/logger';
@@ -160,6 +161,39 @@ router.post('/incidents', async (req: ApiKeyRequest, res: Response): Promise<any
     });
   } catch (error) {
     logger.error('[Passport] /incidents error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /api/v1/passport/bind-x509
+ * 
+ * Binds an X.509 PKI certificate to a Pabandi wallet identity.
+ * This ensures compliance with Chinese GB/Z 185.3 standards for verifiable 
+ * machine identity and root CA trust chains.
+ * 
+ * Body: { wallet_address: string, certificate: string, signed_nonce: string }
+ */
+router.post('/bind-x509', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { wallet_address, certificate, signed_nonce } = req.body;
+
+    if (!wallet_address || !certificate || !signed_nonce) {
+      return res.status(400).json({
+        success: false,
+        error: 'wallet_address, certificate, and signed_nonce are required.',
+      });
+    }
+
+    const result = await bindX509Certificate(wallet_address, certificate, signed_nonce);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    logger.error('[Passport] /bind-x509 error:', error);
     return res.status(500).json({ success: false, error: 'Internal server error.' });
   }
 });

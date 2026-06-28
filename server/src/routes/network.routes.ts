@@ -5,6 +5,7 @@ import { cryptoService } from '../services/crypto.service';
 import { bloomFilterService } from '../services/bloomFilter.service';
 import { strictApiLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
+import { discoverAgents } from '../controllers/discovery.controller';
 
 const router = Router();
 
@@ -85,5 +86,14 @@ router.post('/report-hash', async (req: ApiKeyRequest, res: Response): Promise<a
     return res.status(500).json({ success: false, error: 'Internal server error.' });
   }
 });
+
+/**
+ * POST /api/v1/network/discover
+ * 
+ * Natural-Language Discovery API (GB/Z 185.5 Compliance)
+ * Allows external agents to discover merchants/agents on the network using 
+ * semantic natural language queries rather than strict identifiers.
+ */
+router.post('/discover', discoverAgents);
 
 export default router;
