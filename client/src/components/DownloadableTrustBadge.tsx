@@ -1,10 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import * as htmlToImage from 'html-to-image';
-import { ShieldCheckIcon, DocumentDuplicateIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 interface DownloadableTrustBadgeProps {
   score: number;
-  tier: string;
   osintCount: number;
   noShowProbability: number;
   hashes: string[];
@@ -13,7 +12,6 @@ interface DownloadableTrustBadgeProps {
 
 export default function DownloadableTrustBadge({
   score,
-  tier,
   osintCount,
   noShowProbability,
   hashes,
