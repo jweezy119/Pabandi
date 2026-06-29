@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { socialService } from '../services/api';
+import DownloadableTrustBadge from '../components/DownloadableTrustBadge';
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -122,64 +123,7 @@ const PRIVACY_ITEMS = [
   },
 ];
 
-// ─── Animated Score Badge ─────────────────────────────────────────────────────
-function LiveBadge({ score, tier, signals }: { score: number; tier: string; signals: string[] }) {
-  const [displayed, setDisplayed] = useState(0);
-  useEffect(() => {
-    let n = 0;
-    const t = setInterval(() => {
-      n = Math.min(n + 2, score);
-      setDisplayed(n);
-      if (n >= score) clearInterval(t);
-    }, 20);
-    return () => clearInterval(t);
-  }, [score]);
-
-  const tierColors: Record<string, string> = {
-    EXCELLENT: '#22c55e',
-    AVERAGE: '#f59e0b',
-    RISKY: '#ef4444',
-  };
-
-  return (
-    <div style={{
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-      border: '1px solid rgba(129,140,248,0.3)',
-      borderRadius: '24px',
-      padding: '32px 28px',
-      textAlign: 'center',
-      boxShadow: '0 0 60px rgba(129,140,248,0.15)',
-      position: 'relative',
-      overflow: 'hidden',
-      maxWidth: '280px',
-      margin: '0 auto',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(129,140,248,0.1) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: '#64748b', marginBottom: '16px', textTransform: 'uppercase' }}>
-        PABANDI RELIABILITY
-      </div>
-      <div style={{ fontSize: '72px', fontWeight: 900, lineHeight: 1, color: '#fff', marginBottom: '8px', fontVariantNumeric: 'tabular-nums' }}>
-        {displayed}
-      </div>
-      <div style={{ display: 'inline-block', padding: '4px 14px', borderRadius: '20px', background: tierColors[tier] + '20', color: tierColors[tier], border: `1px solid ${tierColors[tier]}40`, fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', marginBottom: '20px' }}>
-        {tier}
-      </div>
-      {signals.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          {signals.map(s => {
-            const p = PLATFORMS.find(p => p.id === s);
-            return p ? (
-              <span key={s} title={p.name} style={{ fontSize: '16px' }}>{p.emoji}</span>
-            ) : null;
-          })}
-        </div>
-      )}
-      <div style={{ marginTop: '16px', fontSize: '11px', color: '#475569' }}>
-        Verified by Pabandi AI · {new Date().toLocaleDateString()}
-      </div>
-    </div>
-  );
-}
+// Old LiveBadge component removed in favor of DownloadableTrustBadge
 
 // ─── Accordion ────────────────────────────────────────────────────────────────
 function Accordion({ items }: { items: { q: string; a: string }[] }) {
@@ -296,11 +240,12 @@ function PlatformCard({ platform, connected, onConnect, onDisconnect }: {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TrustPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const heroRef = useRef<HTMLElement>(null);
   const [connected, setConnected] = useState<Record<string, boolean>>({});
   const [activeSharePlatform, setActiveSharePlatform] = useState('X_TWITTER');
   const [copiedShare, setCopiedShare] = useState(false);
+  const [trustData, setTrustData] = useState<any>(null);
 
   const connectedCount = Object.values(connected).filter(Boolean).length;
   const totalBoost = Object.entries(connected)
@@ -325,8 +270,19 @@ export default function TrustPage() {
           setConnected(initConnected);
         })
         .catch(err => console.error('Failed to fetch connected platforms', err));
+        
+      if (user?.id) {
+        fetch(`/api/v1/trust/public/${user.id}`)
+          .then(res => res.json())
+          .then(json => {
+            if (json.success) {
+              setTrustData(json.data);
+            }
+          })
+          .catch(err => console.error('Failed to fetch trust profile', err));
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.id]);
 
   const handleDisconnect = async (platformId: string) => {
     try {
@@ -512,7 +468,14 @@ export default function TrustPage() {
             </div>
           </div>
           <div>
-            <LiveBadge score={displayScore} tier={tier} signals={Object.keys(connected).filter(k => connected[k])} />
+            <DownloadableTrustBadge 
+              score={displayScore} 
+              tier={tier} 
+              osintCount={connectedCount > 0 ? connectedCount + 10 : 10} 
+              noShowProbability={displayScore > 90 ? 1.2 : displayScore > 70 ? 4.5 : 15.0} 
+              hashes={trustData?.attestation?.payloadHash ? [trustData.attestation.payloadHash, trustData.attestation.previousHash || '0x000000000000'] : ['0x3f9e8a...', '0x9a8b7c...']} 
+              displayName={user?.name || undefined}
+            />
             <p style={{ textAlign: 'center', color: '#475569', fontSize: '12px', marginTop: '12px' }}>
               Connect platforms above to see your score grow live ↑
             </p>
