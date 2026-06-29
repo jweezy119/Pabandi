@@ -470,11 +470,10 @@ export default function TrustPage() {
           <div>
             <DownloadableTrustBadge 
               score={displayScore} 
-              tier={tier} 
               osintCount={connectedCount > 0 ? connectedCount + 10 : 10} 
               noShowProbability={displayScore > 90 ? 1.2 : displayScore > 70 ? 4.5 : 15.0} 
               hashes={trustData?.attestation?.payloadHash ? [trustData.attestation.payloadHash, trustData.attestation.previousHash || '0x000000000000'] : ['0x3f9e8a...', '0x9a8b7c...']} 
-              displayName={user?.name || undefined}
+              displayName={user?.firstName ? `${user.firstName} ${user.lastName}` : undefined}
             />
             <p style={{ textAlign: 'center', color: '#475569', fontSize: '12px', marginTop: '12px' }}>
               Connect platforms above to see your score grow live ↑
