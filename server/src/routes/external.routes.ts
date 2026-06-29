@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { apiKeyAuth, logApiUsage } from '../middleware/apiKey.middleware';
 import {
   getReliabilityScore,
-  getPabandiUserProfile,
+  getPartnerTrustBadge,
+  reportTransactionOutcome,
   getUsage,
 } from '../controllers/external.controller';
 import rateLimit from 'express-rate-limit';
@@ -30,10 +31,16 @@ router.use(logApiUsage);
 router.post('/score', getReliabilityScore);
 
 /**
- * GET /external/v1/score/:userId
- * Fetch the public reliability profile of a known Pabandi user by their Pabandi ID.
+ * GET /external/v1/badge/:userId
+ * Fetch the public trust badge of a known Pabandi user by their Pabandi ID.
  */
-router.get('/score/:userId', getPabandiUserProfile);
+router.get('/badge/:userId', getPartnerTrustBadge);
+
+/**
+ * POST /external/v1/trust/report
+ * Report a transaction outcome (e.g., COMPLETED, NO_SHOW) to update the Trust Physics Engine.
+ */
+router.post('/trust/report', reportTransactionOutcome);
 
 /**
  * GET /external/v1/usage

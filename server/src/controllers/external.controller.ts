@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
+import { trustScoreService } from '../services/trustScore.service';
 import { ApiKeyRequest } from '../middleware/apiKey.middleware';
 import crypto from 'crypto';
 
@@ -101,9 +102,9 @@ export const getReliabilityScore = async (
   }
 };
 
-// ─── Public Pabandi User Profile ───────────────────────────────────────────────
+// ─── Partner Trust Badge (B2B API) ───────────────────────────────────────────────
 
-export const getPabandiUserProfile = async (
+export const getPartnerTrustBadge = async (
   req: ApiKeyRequest,
   res: Response,
   next: NextFunction
@@ -113,51 +114,74 @@ export const getPabandiUserProfile = async (
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { reliabilityScore: true, createdAt: true },
+      select: { 
+        trustScore: true, 
+        verificationTier: true,
+        socialIdentities: true
+      },
     });
 
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    const stats = await prisma.reservation.groupBy({
-      by: ['status'],
-      where: { customerId: userId },
-      _count: { id: true },
+    const latestAudit = await prisma.trustAuditTrail.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      select: { currentHash: true, previousHash: true }
     });
-
-    const getCount = (status: string) =>
-      stats.find((s) => s.status === status)?._count.id ?? 0;
-
-    const totalCompleted = getCount('COMPLETED');
-    const totalNoShows = getCount('NO_SHOW');
-    const totalReservations = stats.reduce((acc, s) => acc + s._count.id, 0);
-
-    const tier =
-      user.reliabilityScore >= 80
-        ? 'EXCELLENT'
-        : user.reliabilityScore >= 50
-        ? 'AVERAGE'
-        : 'RISKY';
 
     return res.status(200).json({
       success: true,
       data: {
         userId,
-        reliabilityScore: user.reliabilityScore,
-        tier,
-        totalReservations,
-        totalCompleted,
-        totalNoShows,
-        memberSince: user.createdAt,
+        score: user.trustScore,
+        tier: user.verificationTier,
+        osintSignals: 10 + user.socialIdentities.length, // baseline 10 + socials
+        hashes: latestAudit ? [latestAudit.currentHash, latestAudit.previousHash || '0x000000000000'] : ['0x000000000000'],
         meta: {
+          clientName: req.apiClient!.name,
           tier: req.apiClient!.tier,
           scoredAt: new Date().toISOString(),
         },
       },
     });
   } catch (error) {
-    logger.error('[External API] getPabandiUserProfile error:', error);
+    logger.error('[External API] getPartnerTrustBadge error:', error);
+    next(error);
+  }
+};
+
+// ─── Report Transaction Outcome ───────────────────────────────────────────────
+
+export const reportTransactionOutcome = async (
+  req: ApiKeyRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId, status, transactionId } = req.body;
+    
+    if (!userId || !status) {
+      return res.status(400).json({ success: false, error: 'userId and status are required' });
+    }
+
+    let severity: 'positive' | 'negative' | 'neutral' = 'neutral';
+    if (status === 'COMPLETED' || status === 'SUCCESS') severity = 'positive';
+    else if (status === 'NO_SHOW' || status === 'FRAUD') severity = 'negative';
+
+    await trustScoreService.processEvent(userId, {
+      component: 'EXTERNAL_B2B',
+      reason: `Partner ${req.apiClient?.name} reported ${status} for transaction ${transactionId || 'unknown'}`,
+      severity
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Transaction outcome '${status}' logged to Trust Physics Engine. Score calibration queued.`,
+    });
+  } catch (error) {
+    logger.error('[External API] reportTransactionOutcome error:', error);
     next(error);
   }
 };
