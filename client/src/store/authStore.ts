@@ -35,6 +35,7 @@ interface AuthState {
   disconnectWallet: () => void;
   setPabBalance: (balance: number, totalEarned?: number) => void;
   fetchWalletData: () => Promise<void>;
+  updateProfile: (updatedUser: Partial<User>) => void;
 }
 
 interface RegisterData {
@@ -125,6 +126,8 @@ export const useAuthStore = create<AuthState>()(
           // Wallet data fetch failed silently — non-critical
         }
       },
+      updateProfile: (updatedUser: Partial<User>) => 
+        set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : null })),
     }),
     {
       name: 'auth-storage',

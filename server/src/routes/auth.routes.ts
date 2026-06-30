@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation } from '../controllers/auth.controller';
+import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -53,6 +53,18 @@ router.post('/refresh', refreshToken);
 router.post('/verify/email', authenticate, verifyEmail);
 router.post('/verify/phone', authenticate, verifyPhone);
 router.get('/attestation', authenticate, getTrustAttestation);
+
+router.put(
+  '/profile',
+  authenticate,
+  [
+    body('firstName').trim().notEmpty().withMessage('First name is required.'),
+    body('lastName').trim().notEmpty().withMessage('Last name is required.'),
+  ],
+  validateRequest,
+  updateProfile
+);
+
 
 router.post(
   '/forgot-password',

@@ -56,17 +56,20 @@ export default function DownloadableTrustBadge({
   };
 
   return (
-    <div className="flex flex-col items-center">
-      {/* 
-        This is the actual element that will be converted to an image.
-        It uses inline styles and strict sizing to ensure html-to-image captures it perfectly.
-      */}
-      <div 
-        ref={badgeRef}
-        style={{
-          width: '380px',
-          height: '420px',
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    <div className="flex flex-col items-center w-full max-w-full">
+      {/* Wrapper to scale down on small screens without breaking html-to-image layout */}
+      <div className="w-full flex justify-center overflow-hidden min-[400px]:overflow-visible h-[360px] min-[400px]:h-[420px]">
+        <div className="transform scale-[0.85] min-[400px]:scale-100 origin-top">
+          {/* 
+            This is the actual element that will be converted to an image.
+            It uses inline styles and strict sizing to ensure html-to-image captures it perfectly.
+          */}
+          <div 
+            ref={badgeRef}
+            style={{
+              width: '380px',
+              height: '420px',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
           borderRadius: '24px',
           padding: '32px',
           position: 'relative',
@@ -168,11 +171,13 @@ export default function DownloadableTrustBadge({
           VERIFIED BY PABANDI.COM
         </div>
       </div>
+        </div>
+      </div>
 
       <button
         onClick={handleDownload}
         disabled={downloading}
-        className="mt-6 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-surface-container-high border border-outline-variant/20 text-on-surface font-bold hover:bg-surface-container-highest transition-colors shadow-sm w-[380px]"
+        className="mt-4 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-surface-container-high border border-outline-variant/20 text-on-surface font-bold hover:bg-surface-container-highest transition-colors shadow-sm w-full max-w-[380px]"
       >
         <ArrowDownTrayIcon className="w-5 h-5 text-primary" />
         {downloading ? 'Generating High-Res PNG...' : 'Download for Socials'}

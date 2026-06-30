@@ -77,6 +77,30 @@
     @apply bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20;
   }
 
+  /* ── Global Card Hover Effect ──────────────────────────────────────────── */
+  .bg-surface-container-lowest.rounded-xl,
+  .bg-surface-container-lowest.rounded-2xl,
+  .bg-surface-container-lowest.rounded-3xl,
+  .bg-surface-container-low.rounded-2xl,
+  .bg-surface-container-low.rounded-3xl,
+  .card-surface,
+  .auth-panel {
+    transition: transform 250ms var(--ease-out), box-shadow 250ms var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .bg-surface-container-lowest.rounded-xl:hover,
+    .bg-surface-container-lowest.rounded-2xl:hover,
+    .bg-surface-container-lowest.rounded-3xl:hover,
+    .bg-surface-container-low.rounded-2xl:hover,
+    .bg-surface-container-low.rounded-3xl:hover,
+    .card-surface:hover,
+    .auth-panel:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 28px rgba(1, 29, 53, 0.08);
+    }
+  }
+
   /* ── Input — only GPU-safe properties ──────────────────────────────────── */
   .input-field {
     @apply w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm;
