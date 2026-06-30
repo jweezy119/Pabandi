@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuthStore } from '../store/authStore';
 import { useLanguage } from '../context/LanguageContext';
-import { reservationService, cryptoService, socialService } from '../services/api';
+import { authService, reservationService, cryptoService, socialService } from '../services/api';
 import {
   CalendarIcon,
   StarIcon,
@@ -461,9 +461,10 @@ function LoyaltyTab({
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
   const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editName, setEditName] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '' });
   const [activeTab, setActiveTab] = useState<'history' | 'badges' | 'connections' | 'loyalty'>('history');
   const [connected, setConnected] = useState<Record<string, boolean>>({});
@@ -476,6 +477,38 @@ export default function ProfilePage() {
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
+
+  const handleSaveProfile = async () => {
+    if (!editName.firstName.trim() || !editName.lastName.trim()) {
+      addToast('First and last name are required', 'error');
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const res = await authService.updateProfile({
+        firstName: editName.firstName.trim(),
+        lastName: editName.lastName.trim()
+      });
+      const payload = res.data?.data ?? res.data;
+      const updatedUser = payload?.user;
+      if (updatedUser) {
+        updateProfile(updatedUser);
+      } else {
+        // Fallback if backend doesn't return the user correctly
+        updateProfile({
+          firstName: editName.firstName.trim(),
+          lastName: editName.lastName.trim()
+        });
+      }
+      setEditing(false);
+      addToast('Profile updated successfully', 'success');
+    } catch (err: any) {
+      addToast(err?.response?.data?.error || err?.message || 'Failed to update profile', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const SOCIAL_PLATFORMS = [
     { id: 'LINKEDIN', name: 'LinkedIn', emoji: '💼', color: '#0A66C2', boost: 5 },
@@ -712,16 +745,21 @@ export default function ProfilePage() {
               ) : (
                 <div className="flex gap-2 items-center">
                   <input value={editName.firstName} onChange={e => setEditName(n => ({ ...n, firstName: e.target.value }))}
-                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="First name" />
+                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="First name" disabled={isSaving} />
                   <input value={editName.lastName} onChange={e => setEditName(n => ({ ...n, lastName: e.target.value }))}
-                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="Last name" />
-                  <button onClick={() => setEditing(false)} className="bg-primary text-on-primary px-4 py-1.5 rounded-md font-body text-xs font-medium hover:opacity-90">Save</button>
-                  <button onClick={() => setEditing(false)} className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-medium">Cancel</button>
+                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="Last name" disabled={isSaving} />
+                  <button onClick={handleSaveProfile} disabled={isSaving} className="bg-primary text-on-primary px-4 py-1.5 rounded-md font-body text-xs font-medium hover:opacity-90 disabled:opacity-50">
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button onClick={() => setEditing(false)} disabled={isSaving} className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-medium disabled:opacity-50">Cancel</button>
                 </div>
               )}
             </div>
             {!editing && (
-              <button onClick={() => setEditing(true)}
+              <button onClick={() => {
+                setEditName({ firstName: user.firstName || '', lastName: user.lastName || '' });
+                setEditing(true);
+              }}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm"
               >
                 <PencilIcon className="h-3.5 w-3.5" /> {t("Edit Profile", "Profile Edit Karein")}

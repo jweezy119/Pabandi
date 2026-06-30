@@ -141,9 +141,7 @@ export default function HomePage() {
         lng: hit.lng,
       });
     } else {
-      navigate("/reservations/new", {
-        state: { googlePlaceId: undefined, placeName: q, address: q },
-      });
+      navigate(`/search?q=${encodeURIComponent(q)}`);
     }
     setSearchLoading(false);
   }, [search, geocodeAddress, navigate]);

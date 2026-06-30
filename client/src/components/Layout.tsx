@@ -16,7 +16,7 @@ function Dropdown({ label, children, current }: { label: string; children: React
   const ref = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} onMouseLeave={() => setOpen(false)}>
       <button
         onClick={() => setOpen(!open)}
         className={`font-body text-sm transition-colors flex items-center gap-1 ${current ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'}`}
@@ -27,8 +27,10 @@ function Dropdown({ label, children, current }: { label: string; children: React
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute top-full mt-2 bg-surface-bright border border-outline-variant/20 rounded-xl shadow-xl py-2 min-w-[180px] z-40">
-            {children}
+          <div className="absolute top-full left-0 pt-2 z-40" onClick={() => setOpen(false)}>
+            <div className="bg-surface-bright border border-outline-variant/20 rounded-xl shadow-xl py-2 min-w-[180px]">
+              {children}
+            </div>
           </div>
         </>
       )}

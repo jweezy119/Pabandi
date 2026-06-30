@@ -64,6 +64,8 @@ export const authService = {
   }) => apiClient.post('/auth/register', data),
   refreshToken: (refreshToken: string) =>
     apiClient.post('/auth/refresh', { refreshToken }),
+  updateProfile: (data: { firstName: string; lastName: string }) =>
+    apiClient.put('/auth/profile', data),
 };
 
 export const businessService = {

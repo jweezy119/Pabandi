@@ -32,6 +32,7 @@ import HospitalityPage from './pages/HospitalityPage';
 import AirdropPage from './pages/AirdropPage';
 import CityLandingPage from './pages/CityLandingPage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
+import SearchPage from './pages/SearchPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
         <Route path="/lahore" element={<CityLandingPage />} />
         <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="search" element={<SearchPage />} />
 
         {/* Unified auth page for both login & register */}
         <Route

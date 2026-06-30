@@ -426,3 +426,36 @@ export const getTrustAttestation = async (
   }
 };
 
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { firstName, lastName } = req.body;
+    
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { firstName, lastName },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        business: true,
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
