@@ -106,19 +106,22 @@ export default function AboutPage() {
             
             <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 mb-6 flex items-center gap-4">
               <span className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/30">
-                🎥
+                🌍
               </span>
-              The Next Evolution: Live Selling
+              The Global Evolution: Live Selling & Seamless Rentals
             </h2>
             <div className="space-y-6 text-slate-300 text-lg leading-relaxed font-light relative z-10">
               <p>
-                Pabandi isn't just stopping at reservations. The service economy thrives on engagement, and we are integrating a <strong className="text-white font-medium">Live Selling and Social Commerce</strong> aspect into the core Pabandi experience.
+                Pabandi isn't just stopping at reservations. The service economy thrives on engagement, and we are integrating a <strong className="text-white font-medium">Live Selling and Social Commerce</strong> aspect into the core Pabandi experience — scaling beyond services into <strong className="text-white font-medium">physical product sales</strong>.
               </p>
               <p>
-                Imagine a salon owner demonstrating a new bridal makeup technique on a live stream, directly to an audience of highly reliable (high trust score) customers. Viewers can instantly book an appointment during the stream, locking in their spot with a smart deposit powered by Pabandi's escrow.
+                Imagine a salon owner demonstrating a new bridal makeup technique on a live stream, directly to an audience of highly reliable customers. Viewers can instantly book an appointment or <strong className="text-emerald-400 font-medium">purchase the featured beauty products</strong> right from the stream, locking in their spot or order with a smart deposit powered by Pabandi's escrow.
               </p>
               <p>
-                This bridges the gap between digital discovery and physical fulfillment. Businesses can sell their time and services in real-time, leveraging their Pabandi reputation to convert viewers into verified, reliable bookings instantly. By combining Web3 trust mechanics with modern live-stream commerce, Pabandi will become the ultimate operating system for the service industry.
+                But our vision extends even further into <strong className="text-white font-medium">hotel and apartment rentals</strong>. No-shows and last-minute cancellations are just as devastating to property managers and hosts. By applying Pabandi's trust layer to the hospitality sector, guests can secure premium stays using their on-chain reliability score, while hosts are protected by automated smart-contract deposits.
+              </p>
+              <p>
+                This bridges the gap between digital discovery and physical fulfillment. Whether you are booking a haircut in Karachi, buying artisanal goods via a live stream, or renting an apartment in Dubai or London, Pabandi is building a <strong className="text-white font-medium">truly global product</strong>. By combining Web3 trust mechanics with modern commerce and hospitality, Pabandi is becoming the ultimate operating system for the service and rental economy worldwide.
               </p>
             </div>
           </div>
