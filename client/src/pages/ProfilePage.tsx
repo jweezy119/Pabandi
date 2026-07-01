@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuthStore } from '../store/authStore';
@@ -504,10 +504,10 @@ export default function ProfilePage() {
       setEditing(false);
       addToast('Profile updated successfully', 'success');
     } catch (err: any) {
-      const url = err?.config?.url || err?.config?.baseURL || 'unknown url';
+      const fullUrl = `${err?.config?.baseURL || ''}${err?.config?.url || ''}`;
       const msg = err?.response?.data?.error || err?.message || 'Failed to update profile';
-      console.error('Profile Save Error:', { url, msg, err });
-      addToast(`Error (${url}): ${msg}`, 'error');
+      console.error('Profile Save Error:', { fullUrl, msg, err });
+      addToast(`Error (${fullUrl}): ${msg}`, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -556,7 +556,33 @@ export default function ProfilePage() {
 
   // ── Social connect handlers ──────────────────────────────────────────────
 
+  // Listen for OAuth callbacks on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const socialSuccess = params.get('social_success');
+    const socialError = params.get('error');
+
+    if (socialSuccess) {
+      addToast(`${socialSuccess} connected! Your score has been updated 🎉`, 'success');
+      refetchIdentities();
+      refetchBadge();
+      // Remove params from URL to prevent refiring on reload
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (socialError) {
+      addToast(`Connection failed: ${socialError.replace(/_/g, ' ')}`, 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const handleConnect = async (platformId: string) => {
+    if (platformId === 'LINKEDIN' || platformId === 'FACEBOOK') {
+      const token = localStorage.getItem('token');
+      if (!token) return addToast('Please log in first', 'error');
+      setConnectingPlatform(platformId);
+      window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/${platformId.toLowerCase()}?token=${token}`;
+      return;
+    }
+
     let platformHandle = undefined;
     if (platformId === 'FIVERR' || platformId === 'UPWORK') {
       const input = prompt(`Enter your ${platformId === 'FIVERR' ? 'Fiverr' : 'Upwork'} Profile URL:`);
@@ -599,21 +625,10 @@ export default function ProfilePage() {
   };
 
   const handleConnectMeta = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return addToast('Please log in first', 'error');
     setConnectingPlatform('META');
-    setSocialErrors(prev => ({ ...prev, META: '' }));
-    try {
-      const res: any = await socialService.connectMeta();
-      setConnected(prev => ({ ...prev, WHATSAPP: true, INSTAGRAM: true, FACEBOOK: true }));
-      await Promise.all([refetchIdentities(), refetchBadge()]);
-      const boost = res?.data?.data?.totalBoost ?? 0;
-      addToast(`Meta platforms connected! Total boost +${boost} pts 🎉`, 'success');
-    } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Meta connection failed.';
-      setSocialErrors(prev => ({ ...prev, META: msg }));
-      addToast(msg, 'error');
-    } finally {
-      setConnectingPlatform(null);
-    }
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/facebook?token=${token}`;
   };
 
   const handleDisconnectMeta = async () => {

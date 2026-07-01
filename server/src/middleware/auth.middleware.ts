@@ -27,13 +27,19 @@ export const authenticate = (
   next: NextFunction
 ) => {
   try {
+    let token = '';
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query.token && typeof req.query.token === 'string') {
+      token = req.query.token;
+    }
+
+    if (!token) {
       throw new CustomError('No token provided', 401);
     }
 
-    const token = authHeader.substring(7);
     const secret = process.env.JWT_SECRET;
 
     if (!secret) {
