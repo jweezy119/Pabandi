@@ -504,7 +504,10 @@ export default function ProfilePage() {
       setEditing(false);
       addToast('Profile updated successfully', 'success');
     } catch (err: any) {
-      addToast(err?.response?.data?.error || err?.message || 'Failed to update profile', 'error');
+      const url = err?.config?.url || err?.config?.baseURL || 'unknown url';
+      const msg = err?.response?.data?.error || err?.message || 'Failed to update profile';
+      console.error('Profile Save Error:', { url, msg, err });
+      addToast(`Error (${url}): ${msg}`, 'error');
     } finally {
       setIsSaving(false);
     }

@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME = 'pabandi-shell';
+const CACHE_NAME = 'pabandi-shell-v2';
 
 const SHELL = [
   '/',
@@ -24,6 +24,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   const request = event.request;
+  
+  // Network first strategy
   event.respondWith(
     fetch(request)
       .then((response) => {
