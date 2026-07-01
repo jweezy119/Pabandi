@@ -33,6 +33,7 @@ import AirdropPage from './pages/AirdropPage';
 import CityLandingPage from './pages/CityLandingPage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
+import AboutPage from './pages/AboutPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
         <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="about" element={<AboutPage />} />
 
         {/* Unified auth page for both login & register */}
         <Route
