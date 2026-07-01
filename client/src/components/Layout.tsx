@@ -117,6 +117,7 @@ export default function Layout() {
 
           <div className="hidden md:flex items-center gap-5 font-headline text-sm">
               <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
+              <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>
               <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Plans</DesktopNavLink>
               <Dropdown label="Products" current={['/technology','/web3','/hospitality'].includes(location.pathname)}>
                 <DropdownItem to="/technology">Technology</DropdownItem>
@@ -181,6 +182,7 @@ export default function Layout() {
             <div className="text-center text-sm text-on-surface-variant flex flex-wrap justify-center items-center gap-x-4 gap-y-1">
               <span>© 2026 Pabandi Global</span>
               <span className="text-outline">·</span>
+              <Link to="/about" className="hover:text-primary transition-colors font-medium">About</Link>
               <Link to="/pricing" className="hover:text-primary transition-colors font-bold text-primary">Pricing</Link>
               <Link to="/technology" className="hover:text-primary transition-colors">Technology</Link>
               <Link to="/web3" className="hover:text-primary transition-colors">Web3</Link>
