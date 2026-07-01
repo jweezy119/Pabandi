@@ -301,7 +301,29 @@ export default function TrustPage() {
     TIKTOK: `Showed up on time! My Pabandi reliability score is ${displayScore}/100. Porting my social reputation. #PabandiReliable #ShowUp`,
   };
 
+  // Listen for OAuth callbacks on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const socialSuccess = params.get('social_success');
+    const socialError = params.get('error');
+
+    if (socialSuccess) {
+      alert(`${socialSuccess} connected successfully! Your score has been updated.`);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (socialError) {
+      alert(`Connection failed: ${socialError.replace(/_/g, ' ')}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const handleConnect = async (platformId: string) => {
+    if (platformId === 'LINKEDIN' || platformId === 'FACEBOOK') {
+      const token = localStorage.getItem('token');
+      if (!token) return alert('Please log in first');
+      window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/${platformId.toLowerCase()}?token=${token}`;
+      return;
+    }
+
     const platform = PLATFORMS.find(p => p.id === platformId);
     const platformName = platform ? platform.name : platformId;
     

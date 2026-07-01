@@ -261,7 +261,7 @@ export function configurePassport() {
             } else {
               user = await (prisma.user as any).update({
                 where: { email },
-                data: { 
+                data: {
                   tiktokId: profile.id,
                   profilePictureUrl: user.profilePictureUrl || profilePictureUrl
                 },
@@ -276,13 +276,40 @@ export function configurePassport() {
     );
   }
 
-  passport.serializeUser((user: any, done) => done(null, user.id));
-  passport.deserializeUser(async (id: string, done) => {
-    try {
-      const user = await prisma.user.findUnique({ where: { id } });
-      done(null, user);
-    } catch (err) {
-      done(err);
+  // ─── Connection Strategies (Profile binding without logging in) ────────
+  if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {
+    passport.use('facebook-connect', new FacebookStrategy({
+      clientID: FACEBOOK_APP_ID,
+      clientSecret: FACEBOOK_APP_SECRET,
+      callbackURL: `${BACKEND_URL}/api/v1/social/connect/facebook/callback`,
+      profileFields: ['id', 'emails', 'name', 'picture.type(large)']
+    }, (_accessToken, _refreshToken, profile, done) => {
+      return done(null, profile);
+    }));
+  }
+
+  if (LINKEDIN_CLIENT_ID && LINKEDIN_CLIENT_SECRET) {
+    passport.use('linkedin-connect', new LinkedInStrategy({
+      clientID: LINKEDIN_CLIENT_ID,
+      clientSecret: LINKEDIN_CLIENT_SECRET,
+      callbackURL: `${BACKEND_URL}/api/v1/social/connect/linkedin/callback`,
+      scope: ['r_emailaddress', 'r_liteprofile']
+    }, (_accessToken, _refreshToken, profile, done) => {
+      return done(null, profile);
+    }));
+  }
+
+  passport.serializeUser((user: any, done) => done(null, user.id || user));
+  passport.deserializeUser(async (obj: any, done) => {
+    if (typeof obj === 'string') {
+      try {
+        const user = await prisma.user.findUnique({ where: { id: obj } });
+        done(null, user);
+      } catch (err) {
+        done(err);
+      }
+    } else {
+      done(null, obj);
     }
   });
 }
