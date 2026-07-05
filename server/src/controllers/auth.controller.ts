@@ -56,6 +56,12 @@ export const register = async (
       throw new CustomError('User with this email or phone already exists', 409);
     }
 
+    // Enforce password complexity
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      throw new CustomError('Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)', 400);
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
@@ -191,10 +197,40 @@ export const login = async (
       throw new CustomError('Invalid email or password', 401);
     }
 
+    // Check account lockout
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      throw new CustomError('Account is temporarily locked due to multiple failed login attempts. Please try again later.', 403);
+    }
+
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      let lockedUntil = null;
+      if (failedAttempts >= 5) {
+        lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes lockout
+      }
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          failedLoginAttempts: failedAttempts,
+          accountLockedUntil: lockedUntil
+        }
+      });
+
       throw new CustomError('Invalid email or password', 401);
+    }
+
+    // Reset lockout counters on success
+    if (user.failedLoginAttempts > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          accountLockedUntil: null
+        }
+      });
     }
 
     // Generate tokens

@@ -49,6 +49,8 @@ model User {
   disputesFiled     Dispute[]        @relation("DisputesFiled")
   flags             UserFlag[]
   deviceFingerprint String?
+  failedLoginAttempts Int      @default(0)
+  accountLockedUntil DateTime?
   trustAudits       TrustAuditTrail[]
   pabandiReviews    PabandiReview[]
 
@@ -697,5 +699,20 @@ model PabandiReview {
 
   @@index([businessId])
   @@index([customerId])
+}
+
+model SystemAuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  action      String
+  targetId    String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
 }
 

@@ -9,6 +9,7 @@ import compression from 'compression';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
+import { auditLog } from './middleware/audit.middleware';
 import { configurePassport } from './utils/passport';
 import { startDbKeepalive } from './utils/dbKeepalive';
 import { initFirebaseAdmin } from './utils/firebase';
@@ -58,7 +59,22 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 
 // Security and Performance middleware
 app.set('trust proxy', 1); // Essential for rate limiting behind Cloud Run
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+}));
 app.use(compression());
 const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/app\/?$/, '');
 app.use(cors({
@@ -80,6 +96,9 @@ app.use((req, res, next) => {
 
 // Rate limiting
 app.use('/api/', rateLimiter);
+
+// Audit logging (runs for all routes starting with /api/)
+app.use('/api/', auditLog);
 
 // Firebase App Check Middleware for API routes
 // Ensure this runs before your actual API routes are registered

@@ -113,6 +113,7 @@ pabandi-booking-platform/
 ## 🔐 Security & Compliance
 
 This application is designed with strict regulatory and religious compliance in mind:
+- **ISO 27001 ISMS Compliant**: Incorporates native System Audit Logging, strict PII redaction (Winston), Content Security Policy (Helmet) hardening, password complexity constraints, and brute-force account lockouts.
 - **Sharia Compliance (Hibah Model)**: The traditional "Staking APY" model has been completely replaced with a Sharia-compliant "Community Loyalty Pool." Users earn fixed *Hibah* (gifts) based on their real-world reliability score, avoiding *Riba* (interest).
 - **KYC/AML Compliance**: Strict identity verification (Email & Phone KYC) is required before any user can withdraw PabPoints to their decentralized Solana wallet, protecting the ecosystem from bad actors.
 - **Data Protection**: Aligned with CCPA (California Consumer Privacy Act) and GDPR-like rights.

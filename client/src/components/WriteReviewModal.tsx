@@ -3,7 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { ShieldCheckIcon } from '@heroicons/react/24/solid';
-import api from '../utils/api';
+import api from '../services/api';
 
 interface WriteReviewModalProps {
   isOpen: boolean;

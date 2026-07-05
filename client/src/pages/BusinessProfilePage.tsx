@@ -25,8 +25,6 @@ export default function BusinessProfilePage() {
   const [isLiked, setIsLiked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [newRating, setNewRating] = useState(5);
-  const [newComment, setNewComment] = useState('');
 
   // Booking Form State
   const [formData, setFormData] = useState({
