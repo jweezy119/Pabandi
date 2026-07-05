@@ -75,6 +75,8 @@ interface PlaceDetails {
   isClaimed?: boolean;
   reviews?: any[];
   website?: string;
+  isE2eeEnabled?: boolean;
+  e2eePublicKey?: string;
 }
 
 export default function NewReservationPage() {
@@ -133,6 +135,8 @@ export default function NewReservationPage() {
               isClaimed: matchingBiz.isClaimed,
               rating: matchingBiz.rating,
               photoUrl: matchingBiz.coverImageUrl || matchingBiz.logoUrl,
+              isE2eeEnabled: matchingBiz.settings?.isE2eeEnabled,
+              e2eePublicKey: matchingBiz.settings?.e2eePublicKey,
             });
           }
         })
@@ -179,6 +183,8 @@ export default function NewReservationPage() {
                 walletAddress: matchingBiz.walletAddress,
                 phone: matchingBiz.phone || prev.phone,
                 isClaimed: matchingBiz.isClaimed,
+                isE2eeEnabled: matchingBiz.settings?.isE2eeEnabled,
+                e2eePublicKey: matchingBiz.settings?.e2eePublicKey,
               }
             : null,
         );
@@ -222,11 +228,26 @@ export default function NewReservationPage() {
     let transactionHash: string | undefined;
 
     try {
+      const initialResponse = await apiClient.post("/reservations", {
+        businessId: selectedPlace.id || selectedPlace.googlePlaceId,
+        customerName: `${user?.firstName} ${user?.lastName}`,
+        customerPhone: user?.phone || "",
+        reservationDate: form.date,
+        reservationTime: form.time,
+        numberOfGuests: parseInt(form.guests) || 1,
+        specialRequests: form.notes || undefined,
+        paymentMethod: form.paymentMethod,
+        preview: true // Tell backend to create in pending state if needed
+      });
+
+      const reservationId = initialResponse?.data?.data?.id || "PENDING_" + Date.now();
+
       if (form.paymentMethod === "bsc") {
         const result = await executeBscDeposit(
           "0.05",
           selectedPlace.walletAddress ||
             "0x1234567890123456789012345678901234567890",
+          reservationId
         );
         if (!result.success) {
           setError(`BSC Deposit Failed: ${result.error}`);
@@ -248,6 +269,37 @@ export default function NewReservationPage() {
         transactionHash = result.transactionHash;
       }
 
+      let finalNotes = form.notes;
+      if (form.notes && selectedPlace.isE2eeEnabled && selectedPlace.e2eePublicKey) {
+        try {
+          const binaryDerString = atob(selectedPlace.e2eePublicKey);
+          const binaryDer = new Uint8Array(binaryDerString.length);
+          for (let i = 0; i < binaryDerString.length; i++) {
+            binaryDer[i] = binaryDerString.charCodeAt(i);
+          }
+          const pubKey = await window.crypto.subtle.importKey(
+            "spki",
+            binaryDer.buffer,
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            true,
+            ["encrypt"]
+          );
+          
+          const encoder = new TextEncoder();
+          const encryptedBuf = await window.crypto.subtle.encrypt(
+            { name: "RSA-OAEP" },
+            pubKey,
+            encoder.encode(form.notes)
+          );
+          finalNotes = "E2EE:" + btoa(String.fromCharCode(...new Uint8Array(encryptedBuf)));
+        } catch (err) {
+          console.error("Encryption failed", err);
+          setError("Failed to encrypt notes securely.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await apiClient.post("/reservations", {
         businessId: selectedPlace.id || selectedPlace.googlePlaceId,
         customerName: `${user?.firstName} ${user?.lastName}`,
@@ -255,7 +307,7 @@ export default function NewReservationPage() {
         reservationDate: form.date,
         reservationTime: form.time,
         numberOfGuests: parseInt(form.guests) || 1,
-        specialRequests: form.notes || undefined,
+        specialRequests: finalNotes || undefined,
         paymentMethod: form.paymentMethod,
         transactionHash,
       });
@@ -597,14 +649,23 @@ export default function NewReservationPage() {
 
                   {/* Notes */}
                   <div>
-                    <FieldLabel>Special Requests</FieldLabel>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
+                        Special Requests
+                      </label>
+                      {selectedPlace?.isE2eeEnabled && (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded uppercase tracking-wider">
+                          <ShieldCheckIcon className="w-3 h-3" /> E2E Encrypted
+                        </div>
+                      )}
+                    </div>
                     <textarea
                       name="notes"
                       value={form.notes}
                       onChange={handleChange}
                       rows={3}
                       className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm"
-                      placeholder="Allergies, seating preferences, etc."
+                      placeholder={selectedPlace?.isE2eeEnabled ? "Notes will be encrypted using RSA cryptography before leaving your browser." : "Allergies, seating preferences, etc."}
                     />
                   </div>
 

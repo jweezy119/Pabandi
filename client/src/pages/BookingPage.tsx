@@ -96,7 +96,7 @@ export default function BookingPage() {
       setIsProcessingWeb3(true);
       try {
         if (formData.paymentMethod === 'bsc') {
-          const result = await executeBscDeposit(reservation.depositAmount?.toString() || "0.05", business.walletAddress || "0xMockBusinessAddress");
+          const result = await executeBscDeposit(reservation.depositAmount?.toString() || "0.05", business.walletAddress || "0xMockBusinessAddress", reservation.id);
           if (!result.success) throw new Error(result.error);
         } else if (formData.paymentMethod === 'solana') {
           const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress"); // Mocking conversion

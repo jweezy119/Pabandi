@@ -12,6 +12,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { businessService, reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import BusinessMap from '../components/BusinessMap';
+import { WriteReviewModal } from '../components/WriteReviewModal';
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
@@ -74,6 +75,8 @@ export default function BusinessProfilePage() {
   );
 
   const reviews = reviewsData?.data?.data?.reviews || [];
+  const pabandiReviews = reviewsData?.data?.data?.pabandiReviews || [];
+  const allReviewsCount = reviews.length + pabandiReviews.length;
 
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -114,8 +117,9 @@ export default function BusinessProfilePage() {
     let transactionHash = undefined;
 
     try {
+      const reservation = await reservationService.createReservation({ businessId: business.id, ...formData, preview: true });
       if (formData.paymentMethod === 'bsc') {
-        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress");
+        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress", reservation.data.data.id);
         if (!result.success) {
           alert(`BSC Deposit Failed: ${result.error}`);
           return;
@@ -437,7 +441,7 @@ export default function BusinessProfilePage() {
           {[
             { id: 'overview', label: 'Overview & Booking', icon: <CalendarDaysIcon className="h-4 w-4" /> },
             { id: 'promotions', label: 'Web3 Promotions', icon: <SparklesIcon className="h-4 w-4" /> },
-            { id: 'reviews', label: `Google Reviews (${reviews.length})`, icon: <ChatBubbleLeftRightIcon className="h-4 w-4" /> },
+            { id: 'reviews', label: `Reviews (${allReviewsCount})`, icon: <ChatBubbleLeftRightIcon className="h-4 w-4" /> },
             { id: 'media', label: 'Photos & Socials', icon: <PhotoIcon className="h-4 w-4" /> },
           ].map((tab) => (
             <button
@@ -554,9 +558,9 @@ export default function BusinessProfilePage() {
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-headline text-2xl font-black text-primary">Google Reviews</h3>
+                    <h3 className="font-headline text-2xl font-black text-primary">Reviews & Ratings</h3>
                     <p className="font-body text-sm text-on-surface-variant mt-0.5">
-                      Verified customer feedback pulled directly from Google Maps reviews.
+                      Verified customer feedback backed by cryptographic Proof of Visit and Google Maps.
                     </p>
                   </div>
                   
@@ -578,98 +582,70 @@ export default function BusinessProfilePage() {
                   </div>
                 </div>
 
-                {/* Write a Review & WhatsApp Communication Channel */}
-                <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm">
-                  {!showReviewForm ? (
-                    <div className="flex justify-between items-center flex-wrap gap-4">
-                      <div>
-                        <h4 className="font-headline font-bold text-on-surface text-sm">Have you visited {business.name}?</h4>
-                        <p className="font-body text-xs text-on-surface-variant mt-0.5">Share your experience directly with the business owner on WhatsApp.</p>
-                      </div>
-                      <button 
-                        onClick={() => setShowReviewForm(true)} 
-                        className="bg-primary/10 text-primary hover:bg-primary/20 px-5 py-2.5 rounded-xl text-xs font-bold font-headline transition-colors"
-                      >
-                        Write a Review
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-headline font-bold text-on-surface text-sm">Write your review</h4>
-                        <button 
-                          onClick={() => { setShowReviewForm(false); setNewComment(''); }} 
-                          className="text-xs text-on-surface-variant hover:text-primary transition-colors font-medium font-body"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-
-                      {/* Stars input */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium text-on-surface-variant mr-2 font-body">Rating:</span>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setNewRating(star)}
-                            className="text-yellow-400 focus:outline-none"
-                          >
-                            {star <= newRating ? (
-                              <StarIconSolid className="h-6 w-6" />
-                            ) : (
-                              <StarIcon className="h-6 w-6" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Comment input */}
-                      <div>
-                        <textarea
-                          rows={3}
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder={`How was your experience at ${business.name}? What did you order/do?`}
-                          className="w-full bg-surface-container border border-outline-variant/20 rounded-xl p-3 outline-none text-xs text-on-surface placeholder-on-surface-variant focus:ring-1 focus:ring-primary font-body"
-                        />
-                      </div>
-
-                      {/* Submit via WhatsApp button */}
-                      <div className="flex justify-end pt-2">
-                        <a
-                          href={`https://wa.me/${(business.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                            `Hi ${business.name}! I just left a ${newRating}-star review for you on Pabandi: "${newComment}".${
-                              !business.isClaimed 
-                                ? ` Please claim your profile to confirm reservations and respond: https://pabandi-42c5b.web.app/business/${business.id}` 
-                                : ''
-                            }`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => {
-                            setShowReviewForm(false);
-                            setNewComment('');
-                          }}
-                          className="bg-[#25D366] text-white hover:bg-[#20ba5a] text-xs font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 transition-all shadow-sm font-headline"
-                        >
-                          💬 Submit & Send to Owner via WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                {/* Write a Review */}
+                <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <h4 className="font-headline font-bold text-on-surface text-sm">Have you visited {business.name}?</h4>
+                    <p className="font-body text-xs text-on-surface-variant mt-0.5">Leave a cryptographically verified review.</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowReviewForm(true)} 
+                    className="bg-primary/10 text-primary hover:bg-primary/20 px-5 py-2.5 rounded-xl text-xs font-bold font-headline transition-colors flex items-center gap-2"
+                  >
+                    <ShieldCheckIcon className="h-4 w-4" /> Write Verified Review
+                  </button>
                 </div>
+
+                <WriteReviewModal
+                  isOpen={showReviewForm}
+                  onClose={() => setShowReviewForm(false)}
+                  businessId={business.id}
+                  reservationId={business.reservations?.[0]?.id || 'mock-id'} 
+                  onSuccess={() => refetch()}
+                />
 
                 {/* Reviews List */}
                 {reviewsLoading ? (
                   <div className="text-center py-8 text-on-surface-variant">Loading reviews...</div>
-                ) : reviews.length === 0 ? (
+                ) : allReviewsCount === 0 ? (
                   <div className="text-center py-10 bg-surface-container-low rounded-2xl border border-dashed border-outline-variant/30">
                     <ChatBubbleLeftRightIcon className="h-10 w-10 text-on-surface-variant opacity-40 mx-auto mb-2" />
                     <p className="text-sm font-body text-on-surface-variant">No reviews found for this venue.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Pabandi Native Verified Reviews */}
+                    {pabandiReviews.map((review: any) => (
+                      <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-primary/30 shadow-md space-y-3 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-primary text-on-primary text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1 uppercase tracking-wider shadow-sm">
+                          <ShieldCheckIcon className="h-3 w-3" />
+                          Verified on Blockchain
+                        </div>
+                        <div className="flex justify-between items-start gap-4 flex-wrap mt-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary text-sm font-headline uppercase shrink-0">
+                              {(review.customer?.firstName?.[0] || 'A')}
+                            </div>
+                            <div>
+                              <h4 className="font-headline font-bold text-sm text-on-surface leading-none">{review.customer?.firstName} {review.customer?.lastName}</h4>
+                              <span className="text-[10px] text-on-surface-variant font-body mt-1 block">
+                                {format(new Date(review.createdAt), 'MMMM dd, yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="flex text-yellow-400">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                i < review.rating ? <StarIconSolid key={i} className="h-3.5 w-3.5" /> : <StarIcon key={i} className="h-3.5 w-3.5" />
+                              ))}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="font-body text-sm text-on-surface-variant leading-relaxed font-medium">
+                          "{review.text}"
+                        </p>
+                      </div>
+                    ))}
                     {reviews.map((review: any) => (
                       <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm space-y-3">
                         <div className="flex justify-between items-start gap-4 flex-wrap">

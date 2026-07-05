@@ -34,6 +34,7 @@ import CityLandingPage from './pages/CityLandingPage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
+import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -70,8 +71,9 @@ function App() {
         />
 
         <Route path="business/:id" element={<BusinessProfilePage />} />
-        <Route path="business/:id/book" element={<BookingPage />} />
+        <Route path="user/:id" element={<PublicCustomerProfilePage />} />
         <Route path="b/:slug" element={<ShortLinkBookingPage />} />
+        <Route path="business/:id/book" element={<BookingPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
         {/* Business partner landing page — public */}
         <Route path="join" element={<BusinessJoinPage />} />

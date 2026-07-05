@@ -482,6 +482,11 @@ export const cancelReservation = async (
             data: { cryptoDepositTxHash: `CANCELLED_REFUND${refundPercentage}` }
           });
           logger.info(`Crypto tiered refund: ${refundPercentage}% to user (${userRefund} PAB), ${businessComp} to business.`);
+          
+          // Escrow Integration: If 100% refund, refund customer on-chain
+          if (refundPercentage === 100 && !reservation.cryptoDepositTxHash.startsWith('STAKED_')) {
+             await cryptoService.refundEscrowToCustomer(reservation.id);
+          }
         } 
         // --- FIAT REFUND ---
         else {
@@ -619,6 +624,25 @@ export const completeReservation = async (
     await cryptoService.rewardReservationCompletion(reservation.customerId, reservation.id);
     await cryptoService.rewardBusinessForCompletion(reservation.businessId, reservation.id);
 
+    // Escrow Integration: Release funds to business
+    if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
+      await cryptoService.releaseEscrowToBusiness(reservation.id);
+    }
+
+    // Proof of Visit SBT Minting
+    try {
+      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
+      if (customerWallet && customerWallet.address) {
+        await cryptoService.mintProofOfVisit(
+          customerWallet.address,
+          reservation.businessId,
+          reservation.business.name
+        );
+      }
+    } catch (e: any) {
+      console.error('[POV] Failed to mint SBT:', e.message);
+    }
+
     // Update Scores
     await reviewService.calculateReliabilityScore(reservation.businessId);
     await reliabilityService.updateScoreForReservationActivity(
@@ -677,6 +701,11 @@ export const markNoShow = async (
 
     // PAB reward for business when deposit protection applies
     await cryptoService.rewardBusinessNoShowProtected(reservation.businessId, reservation.id);
+
+    // Escrow Integration: Release deposit to business
+    if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
+      await cryptoService.releaseEscrowToBusiness(reservation.id);
+    }
 
     // Update Scores (Business and User)
     await reviewService.calculateReliabilityScore(reservation.businessId);

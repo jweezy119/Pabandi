@@ -1,9 +1,17 @@
 import { ethers } from 'ethers';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
-// Central Pabandi Treasury Address (Escrow)
-export const PABANDI_TREASURY_BSC = '0x1234567890123456789012345678901234567890'; // Placeholder
+// The address of our deployed Escrow Contract (BSC Testnet)
+export const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
 export const PABANDI_TREASURY_SOLANA = 'PABANDi111111111111111111111111111111111111'; // Placeholder
+
+// ABI for PabandiEscrow.sol
+const ESCROW_ABI = [
+  "function deposit(string memory _reservationId, address _business) external payable",
+  "function releaseToBusiness(string memory _reservationId) external",
+  "function refundToCustomer(string memory _reservationId) external",
+  "event DepositCreated(string reservationId, address customer, address business, uint256 amount)"
+];
 
 // Known placeholder addresses that should NOT receive real transactions
 const BSC_PLACEHOLDER_ADDRESSES = [
@@ -23,14 +31,13 @@ export interface Web3DepositResult {
 }
 
 /**
- * Executes a BSC (BNB) deposit using MetaMask or similar injected provider.
- * If the business has no real wallet yet, the deposit is recorded as pending
- * and no on-chain transaction is attempted.
+ * Executes a BSC (BNB) deposit using MetaMask, interacting with the Escrow Smart Contract.
  */
-export const executeBscDeposit = async (amountInBnb: string, businessWalletAddress: string): Promise<Web3DepositResult> => {
+export const executeBscDeposit = async (amountInBnb: string, businessWalletAddress: string, reservationId: string): Promise<Web3DepositResult> => {
   try {
-    // Check if the target address is a placeholder
-    const targetAddress = businessWalletAddress || PABANDI_TREASURY_BSC;
+    const targetAddress = businessWalletAddress || BSC_PLACEHOLDER_ADDRESSES[0];
+    
+    // In a production environment, you would ensure the targetAddress is valid.
     if (BSC_PLACEHOLDER_ADDRESSES.includes(targetAddress.toLowerCase()) || BSC_PLACEHOLDER_ADDRESSES.includes(targetAddress)) {
       console.log(`[BSC] Skipping on-chain deposit — business wallet is a placeholder. Deposit will be recorded as pending.`);
       return {
@@ -48,17 +55,17 @@ export const executeBscDeposit = async (amountInBnb: string, businessWalletAddre
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
 
-    console.log(`Executing BSC Deposit. Total: ${amountInBnb} BNB.`);
-    console.log(`Treasury receives 100%, Smart Contract instantly splits 20% to ${targetAddress} as Good Faith. 80% Escrowed.`);
+    console.log(`Executing BSC Escrow Deposit. Total: ${amountInBnb} BNB for Reservation: ${reservationId}.`);
 
-    // In a real implementation, this would be a contract call:
-    // const contract = new ethers.Contract(PABANDI_TREASURY_BSC, ABI, signer);
-    // const tx = await contract.depositAndSplit(businessWalletAddress, { value: ethers.parseEther(amountInBnb) });
+    // Call the deposit function on the PabandiEscrow contract
+    const escrowContract = new ethers.Contract(PABANDI_ESCROW_BSC, ESCROW_ABI, signer);
     
-    const tx = await signer.sendTransaction({
-      to: targetAddress,
-      value: ethers.parseEther(amountInBnb)
+    const tx = await escrowContract.deposit(reservationId, targetAddress, { 
+      value: ethers.parseEther(amountInBnb) 
     });
+    
+    console.log(`Transaction submitted: ${tx.hash}. Waiting for confirmation...`);
+    await tx.wait(); // Wait for 1 block confirmation
 
     return {
       success: true,
@@ -75,8 +82,6 @@ export const executeBscDeposit = async (amountInBnb: string, businessWalletAddre
 
 /**
  * Executes a Solana deposit using Phantom Wallet.
- * If the business has no real wallet yet, the deposit is recorded as pending
- * and no on-chain transaction is attempted.
  */
 export const executeSolanaDeposit = async (amountInSol: number, businessWalletAddress: string): Promise<Web3DepositResult> => {
   try {
@@ -92,32 +97,21 @@ export const executeSolanaDeposit = async (amountInSol: number, businessWalletAd
 
     const provider = (window as any).solana;
     if (!provider || !provider.isPhantom) {
-      // Check if user is on mobile
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (isMobile) {
         const url = encodeURIComponent(window.location.href);
         const ref = encodeURIComponent(window.location.origin);
-        // Phantom universal deep link format
         window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
-        return {
-          success: false,
-          error: 'Redirecting to Phantom App...'
-        };
+        return { success: false, error: 'Redirecting to Phantom App...' };
       } else {
         throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
       }
     }
 
-    // Connect wallet
     const resp = await provider.connect();
     const userPublicKey = new PublicKey(resp.publicKey.toString());
     const treasuryPublicKey = new PublicKey(targetAddress);
-
-    // Mainnet-beta or devnet
     const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-
-    console.log(`Executing Solana Deposit. Total: ${amountInSol} SOL.`);
-    console.log(`Treasury receives 100%, Smart Contract instantly splits 20% to ${targetAddress} as Good Faith. 80% Escrowed.`);
 
     const transaction = new Transaction().add(
       SystemProgram.transfer({
@@ -134,7 +128,6 @@ export const executeSolanaDeposit = async (amountInSol: number, businessWalletAd
     const signedTransaction = await provider.signTransaction(transaction);
     const txId = await connection.sendRawTransaction(signedTransaction.serialize());
     
-    // Wait for confirmation
     await connection.confirmTransaction(txId);
 
     return {

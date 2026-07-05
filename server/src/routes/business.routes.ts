@@ -12,123 +12,150 @@ import {
   getBusinessBySlug,
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
+import { rateLimiter } from '../middleware/rateLimiter';
+import { cacheService } from '../services/cache.service';
+import axios from 'axios';
 
 const router = Router();
 
-import axios from 'axios';
-
 // Public route to get businesses for the homepage/search
-router.get('/', async (req, res, next) => {
+// HARDENED: Rate limited to prevent scraping
+router.get('/', rateLimiter, async (req, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
     const { googlePlaceId, category, search, latitude, longitude } = req.query;
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-    let googleResults: any[] = [];
+    let osmResults: any[] = [];
+    
+    // HARDENED: Sanitize search string to prevent malformed Nominatim queries
+    const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
 
-    // 1. If coordinates are provided, attempt Google Places Nearby Search
-    if (latitude && longitude && apiKey) {
-      try {
+    // HARDENED: Generate a unique cache key based on search parameters
+    const cacheKey = `osm_search:${cleanSearch}:${latitude || 'null'}:${longitude || 'null'}:${category || 'ALL'}`;
+    const cachedOsmResults = cacheService.get(cacheKey);
+
+    if (cachedOsmResults) {
+      osmResults = cachedOsmResults;
+    } else {
+      // 1. Build Overpass Query
+      let overpassQuery = '';
+      if (latitude && longitude) {
         const lat = parseFloat(String(latitude));
         const lng = parseFloat(String(longitude));
-        const googleUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`;
         
-        let googleType = 'restaurant';
-        if (category === 'SALON') googleType = 'beauty_salon';
-        else if (category === 'SPA') googleType = 'spa';
-        else if (category === 'CLINIC') googleType = 'doctor';
-        else if (category === 'FITNESS_CENTER') googleType = 'gym';
-
-        const googleRes = await axios.get(googleUrl, {
-          params: {
-            location: `${lat},${lng}`,
-            radius: 5000, // 5km
-            key: apiKey,
-            type: googleType
-          }
-        });
-        
-        const places = googleRes.data?.results || [];
-        googleResults = googleResults.concat(places);
-      } catch (nearbyErr) {
-        console.error('Failed to query Google Places Nearby Search:', nearbyErr);
-      }
-    }
-
-    // 2. If searching, attempt Google Places Text Search
-    if (search && String(search).trim().length > 2 && apiKey) {
-      try {
-        const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
-        const params: any = {
-          query: String(search),
-          key: apiKey,
-        };
-        
-        if (latitude && longitude) {
-          params.location = `${latitude},${longitude}`;
-          params.radius = 50000; // 50km radius
-        } else {
-          params.query = `${String(search)}`;
+        if (cleanSearch && cleanSearch.length > 2) {
+          // Search by name around user location (50km radius)
+          overpassQuery = `
+            [out:json][timeout:10];
+            (
+              node["name"~"${cleanSearch}",i]["amenity"](around:50000,${lat},${lng});
+              node["name"~"${cleanSearch}",i]["shop"](around:50000,${lat},${lng});
+              node["name"~"${cleanSearch}",i]["leisure"](around:50000,${lat},${lng});
+            );
+            out center 15;
+          `;
+        } else if (!cleanSearch) {
+          // Nearby search without specific name, using category
+          let typeFilter = 'node["amenity"~"restaurant|cafe|clinic|hospital|fast_food|food_court|bar"]';
+          if (category === 'SALON') typeFilter = 'node["shop"~"beauty|hairdresser"]';
+          else if (category === 'SPA') typeFilter = 'node["shop"~"massage|beauty|wellness"]';
+          else if (category === 'CLINIC') typeFilter = 'node["amenity"~"clinic|hospital|doctor|dentist"]';
+          else if (category === 'FITNESS_CENTER') typeFilter = 'node["leisure"~"fitness_centre|sports_centre"]';
+          else if (category === 'RESTAURANT') typeFilter = 'node["amenity"~"restaurant|cafe|fast_food|food_court"]';
+          
+          overpassQuery = `
+            [out:json][timeout:10];
+            (
+              ${typeFilter}(around:10000,${lat},${lng});
+            );
+            out center 25;
+          `;
         }
+      } else if (cleanSearch && cleanSearch.length > 2) {
+        // Global or country-wide search if no location (Fallback bounding box for Pakistan approx)
+        overpassQuery = `
+          [out:json][timeout:10];
+          (
+            node["name"~"${cleanSearch}",i]["amenity"](23.6,60.8,37.1,77.8);
+            node["name"~"${cleanSearch}",i]["shop"](23.6,60.8,37.1,77.8);
+            node["name"~"${cleanSearch}",i]["leisure"](23.6,60.8,37.1,77.8);
+          );
+          out center 15;
+        `;
+      }
 
-        const googleRes = await axios.get(googleUrl, { params });
-        
-        const places = googleRes.data?.results || [];
-        googleResults = googleResults.concat(places);
-      } catch (googleErr) {
-        console.error('Failed to query Google Places API:', googleErr);
+      if (overpassQuery) {
+        try {
+          const overpassUrl = 'https://overpass-api.de/api/interpreter';
+          const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            timeout: 10000 // 10-second timeout for Overpass
+          });
+          const places = overpassRes.data?.elements || [];
+          osmResults = osmResults.concat(places);
+        } catch (err: any) {
+          console.warn('Overpass search failed (Fallback to local DB):', err.message);
+        }
+      }
+
+      // HARDENED: Save successful API results to memory cache
+      if (osmResults.length > 0) {
+        cacheService.set(cacheKey, osmResults);
       }
     }
     
-    // 1.5 If googlePlaceId is provided and does not exist in local DB, attempt dynamic Details import
-    if (googlePlaceId && apiKey) {
+    // 1.5 If googlePlaceId (osmId) is provided and does not exist in local DB, attempt dynamic Details import
+    if (googlePlaceId) {
       const existing = await prisma.business.findFirst({
         where: { googlePlaceId: String(googlePlaceId) }
       });
       
-      if (!existing) {
+      if (!existing && String(googlePlaceId).startsWith('osm-')) {
         try {
-          const googleRes = await axios.get(
-            `https://maps.googleapis.com/maps/api/place/details/json`, {
-              params: {
-                place_id: String(googlePlaceId),
-                fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,types,geometry,photos',
-                key: apiKey,
-              }
-            }
-          );
+          const osmId = String(googlePlaceId).replace('osm-', '');
+          const overpassUrl = 'https://overpass-api.de/api/interpreter';
+          const overpassQuery = `[out:json][timeout:5];node(${osmId});out;`;
           
-          if (googleRes.data?.result) {
-            const p = googleRes.data.result;
+          const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            timeout: 5000 // HARDENED: 5-second timeout
+          });
+          
+          if (overpassRes.data?.elements && overpassRes.data.elements.length > 0) {
+            const el = overpassRes.data.elements[0];
+            const tags = el.tags || {};
             
             let cat: any = 'RESTAURANT';
-            if (p.types) {
-              if (p.types.includes('restaurant') || p.types.includes('cafe') || p.types.includes('bakery')) cat = 'RESTAURANT';
-              else if (p.types.includes('spa') || p.types.includes('beauty_salon') || p.types.includes('hair_care')) cat = 'SPA';
-              else if (p.types.includes('gym') || p.types.includes('health')) cat = 'FITNESS_CENTER';
-            }
+            if (tags.shop === 'beauty' || tags.shop === 'hairdresser') cat = 'SALON';
+            else if (tags.shop === 'massage') cat = 'SPA';
+            else if (tags.amenity === 'clinic' || tags.amenity === 'hospital') cat = 'CLINIC';
+            else if (tags.leisure === 'fitness_centre') cat = 'FITNESS_CENTER';
             
             let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
-            if (p.photos && p.photos.length > 0) {
-              coverImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${p.photos[0].photo_reference}&key=${apiKey}`;
-            }
+            if (cat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+            if (cat === 'SPA') coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+            if (cat === 'FITNESS_CENTER') coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+            if (cat === 'CLINIC') coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+
+            const name = tags.name || 'Unknown Business';
+            const address = tags['addr:full'] || tags['addr:street'] || 'Unknown Address';
 
             const createdBiz = await prisma.business.create({
               data: {
                 googlePlaceId: String(googlePlaceId),
-                name: p.name || 'Unknown Business',
-                address: p.formatted_address || 'Unknown Address',
-                phone: p.international_phone_number || p.formatted_phone_number || '+92 300 0000000',
+                name: name,
+                address: address,
+                phone: tags.phone || '+92 300 0000000',
                 email: 'contact@pabandi.com',
-                website: p.website || null,
-                latitude: p.geometry?.location?.lat || 24.8607,
-                longitude: p.geometry?.location?.lng || 67.0011,
+                website: tags.website || null,
+                latitude: el.lat || 24.8607,
+                longitude: el.lon || 67.0011,
                 category: cat,
                 isClaimed: false,
-                rating: p.rating || 4.5,
-                reviewCount: p.user_ratings_total || 1,
-                city: p.formatted_address?.split(',')[1]?.trim() || 'Karachi',
-                description: `Imported Google listing for ${p.name}. Claim this profile to set up Web3 bookings.`,
+                rating: 4.5,
+                reviewCount: 1,
+                city: 'Karachi',
+                description: `Imported OpenStreetMap listing for ${name}. Claim this profile to set up Web3 bookings.`,
                 coverImageUrl,
               }
             });
@@ -140,7 +167,7 @@ router.get('/', async (req, res, next) => {
             });
           }
         } catch (detailsErr) {
-          console.error('Failed to import dynamic place on details fetch:', detailsErr);
+          console.warn('Failed to import dynamic place on OSM details fetch:', (detailsErr as Error).message);
         }
       }
     }
@@ -153,43 +180,54 @@ router.get('/', async (req, res, next) => {
     if (category && category !== 'ALL') {
       where.category = String(category);
     }
-    if (search) {
-      where.OR = [
-        { name: { contains: String(search), mode: 'insensitive' } },
-        { description: { contains: String(search), mode: 'insensitive' } },
-        { city: { contains: String(search), mode: 'insensitive' } }
-      ];
+    if (cleanSearch) {
+      const searchTerms = String(cleanSearch)
+        .trim()
+        .split(/\s+/)
+        .filter(term => term.length > 0);
+        
+      if (searchTerms.length > 0) {
+        where.AND = searchTerms.map(term => ({
+          OR: [
+            { name: { contains: term, mode: 'insensitive' } },
+            { description: { contains: term, mode: 'insensitive' } },
+            { city: { contains: term, mode: 'insensitive' } },
+            { category: { contains: term, mode: 'insensitive' } },
+            { address: { contains: term, mode: 'insensitive' } }
+          ]
+        }));
+      }
     }
     
     const dbBusinesses = await prisma.business.findMany({ 
       where,
       include: {
-        googleReviews: true
+        googleReviews: true,
+        settings: true
       }
     });
 
     const mergedBusinesses = [...dbBusinesses];
 
-    for (const place of googleResults) {
-      const gId = place.place_id;
-      if (!gId) continue;
+    for (const el of osmResults) {
+      const osmId = `osm-${el.id}`;
+      if (!el.id) continue;
 
-      const alreadyIncluded = mergedBusinesses.some(b => b.googlePlaceId === gId);
+      const alreadyIncluded = mergedBusinesses.some(b => b.googlePlaceId === osmId);
       if (alreadyIncluded) continue;
 
-      const types = place.types || [];
+      const tags = el.tags || {};
       let mappedCat: any = 'RESTAURANT';
-      if (types.includes('beauty_salon') || types.includes('hair_care')) mappedCat = 'SALON';
-      else if (types.includes('spa')) mappedCat = 'SPA';
-      else if (types.includes('doctor') || types.includes('hospital') || types.includes('clinic')) mappedCat = 'CLINIC';
-      else if (types.includes('gym') || types.includes('fitness_center')) mappedCat = 'FITNESS_CENTER';
-      else if (types.includes('event_venue') || types.includes('hall')) mappedCat = 'EVENT_VENUE';
+      if (tags.shop === 'beauty' || tags.shop === 'hairdresser' || tags.amenity === 'hairdresser') mappedCat = 'SALON';
+      else if (tags.shop === 'massage') mappedCat = 'SPA';
+      else if (tags.amenity === 'clinic' || tags.amenity === 'hospital' || tags.amenity === 'doctor') mappedCat = 'CLINIC';
+      else if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym') mappedCat = 'FITNESS_CENTER';
 
       if (category && category !== 'ALL' && mappedCat !== String(category)) {
         continue;
       }
 
-      const address = place.vicinity || place.formatted_address || '';
+      const address = tags['addr:full'] || tags['addr:street'] || tags.display_name || '';
       const addressLower = address.toLowerCase();
       let city = 'Karachi';
       if (addressLower.includes('lahore')) city = 'Lahore';
@@ -201,34 +239,32 @@ router.get('/', async (req, res, next) => {
       else if (addressLower.includes('quetta')) city = 'Quetta';
 
       let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
-      if (place.photos && place.photos.length > 0) {
-        coverImageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${place.photos[0].photo_reference}&key=${apiKey}`;
-      } else {
-        if (mappedCat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
-        if (mappedCat === 'SPA') coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
-        if (mappedCat === 'FITNESS_CENTER') coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
-        if (mappedCat === 'CLINIC') coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
-      }
+      if (mappedCat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'SPA') coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'FITNESS_CENTER') coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'CLINIC') coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+
+      const name = tags.name || 'Unknown Business';
 
       mergedBusinesses.push({
-        id: gId,
-        googlePlaceId: gId,
-        name: place.name,
-        description: `Imported Google listing for ${place.name}. Claim this profile to set up Web3 bookings.`,
+        id: osmId,
+        googlePlaceId: osmId,
+        name: name,
+        description: `Imported OpenStreetMap listing for ${name}. Claim this profile to set up Web3 bookings.`,
         category: mappedCat,
         address: address,
         city: city,
-        phone: place.formatted_phone_number || '+92 300 0000000',
+        phone: tags.phone || '+92 300 0000000',
         email: 'contact@pabandi.com',
-        website: place.website || null,
+        website: tags.website || null,
         coverImageUrl: coverImageUrl,
-        rating: place.rating || 4.5,
-        reviewCount: place.user_ratings_total || 1,
+        rating: 4.5,
+        reviewCount: 1,
         isVerified: false,
         isClaimed: false,
         isActive: true,
-        latitude: place.geometry?.location?.lat || 24.8607,
-        longitude: place.geometry?.location?.lng || 67.0011,
+        latitude: el.lat || 24.8607,
+        longitude: el.lon || 67.0011,
         googleReviews: []
       } as any);
     }
@@ -263,8 +299,6 @@ router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
 
 // All subsequent business routes require authentication
 router.use(authenticate);
-
-
 
 router.post('/', createBusiness);
 router.post('/:id/claim', claimBusiness);

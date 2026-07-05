@@ -687,14 +687,31 @@ export const getBusinessReviews = async (
     }
 
     // Fetch the updated reviews from DB
-    const updatedReviews = await prisma.googleReview.findMany({
+    const googleReviews = await prisma.googleReview.findMany({
       where: { businessId: id },
       orderBy: { time: 'desc' }
     });
 
+    const pabandiReviews = await prisma.pabandiReview.findMany({
+      where: { businessId: id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+            trustScore: true
+          }
+        }
+      }
+    });
+
     res.json({
       success: true,
-      data: { reviews: updatedReviews },
+      data: { 
+        reviews: googleReviews,
+        pabandiReviews: pabandiReviews
+      },
     });
   } catch (error) {
     next(error);

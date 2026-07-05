@@ -508,7 +508,8 @@ export default function BusinessDashboard() {
               {reservations.map((r: any) => {
                 const sc = STATUS_CONFIG[r.status] || STATUS_CONFIG.PENDING;
                 return (
-                  <div key={r.id} className="flex items-center justify-between p-3 rounded-lg bg-surface hover:bg-surface-container-low border border-outline-variant/30 transition-colors">
+                  <div key={r.id} className="flex flex-col p-3 rounded-lg bg-surface hover:bg-surface-container-low border border-outline-variant/30 transition-colors">
+                    <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-4">
                       {/* Avatar */}
                       <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center font-headline text-xs font-bold bg-primary-container text-on-primary-container">
@@ -546,6 +547,60 @@ export default function BusinessDashboard() {
                       )}
                     </div>
                   </div>
+                  {r.specialRequests && (
+                    <div className="w-full mt-3 p-3 rounded bg-surface-container-lowest border border-outline-variant/20">
+                      {r.specialRequests.startsWith('E2EE:') ? (
+                        <div className="flex flex-col gap-2">
+                           <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded w-fit uppercase tracking-wider">
+                              <ShieldCheckIcon className="w-3 h-3" /> E2E Encrypted Note
+                           </div>
+                           <label className="cursor-pointer text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1 w-fit">
+                              Upload .pem Private Key to Decrypt
+                              <input type="file" className="hidden" accept=".pem" onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                try {
+                                  const text = await file.text();
+                                  const base64 = text.replace(/(-----(BEGIN|END) PRIVATE KEY-----|\n|\r)/g, '');
+                                  const binaryDerString = atob(base64);
+                                  const binaryDer = new Uint8Array(binaryDerString.length);
+                                  for (let i = 0; i < binaryDerString.length; i++) {
+                                    binaryDer[i] = binaryDerString.charCodeAt(i);
+                                  }
+                                  const privKey = await window.crypto.subtle.importKey(
+                                    "pkcs8",
+                                    binaryDer.buffer,
+                                    { name: "RSA-OAEP", hash: "SHA-256" },
+                                    true,
+                                    ["decrypt"]
+                                  );
+                                  
+                                  const encryptedData = atob(r.specialRequests.replace('E2EE:', ''));
+                                  const encryptedBuffer = new Uint8Array(encryptedData.length);
+                                  for (let i = 0; i < encryptedData.length; i++) {
+                                    encryptedBuffer[i] = encryptedData.charCodeAt(i);
+                                  }
+                                  
+                                  const decryptedBuffer = await window.crypto.subtle.decrypt(
+                                    { name: "RSA-OAEP" },
+                                    privKey,
+                                    encryptedBuffer
+                                  );
+                                  
+                                  const decoder = new TextDecoder();
+                                  alert("Decrypted Note: \n\n" + decoder.decode(decryptedBuffer));
+                                } catch (err) {
+                                  alert("Decryption failed. Ensure you uploaded the correct private key.");
+                                }
+                              }} />
+                           </label>
+                        </div>
+                      ) : (
+                        <p className="font-body text-xs text-on-surface-variant italic">"{r.specialRequests}"</p>
+                      )}
+                    </div>
+                  )}
+                </div>
                 );
               })}
             </div>

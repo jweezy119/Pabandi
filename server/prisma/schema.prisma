@@ -50,6 +50,7 @@ model User {
   flags             UserFlag[]
   deviceFingerprint String?
   trustAudits       TrustAuditTrail[]
+  pabandiReviews    PabandiReview[]
 
   @@index([email])
   @@index([phone])
@@ -107,6 +108,7 @@ model Business {
   tables             Table[]
   trendSuggestions   TrendSuggestion[]
   webhookEndpoints   WebhookEndpoint[]
+  pabandiReviews     PabandiReview[]
 
   @@index([ownerId])
   @@index([city])
@@ -234,6 +236,8 @@ model BusinessSettings {
   notifyOwnerOnNewBooking     Boolean  @default(true)
   whatsappNumber              String?
   requestFeedbackAfterBooking Boolean  @default(true)
+  isE2eeEnabled               Boolean  @default(false)
+  e2eePublicKey               String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
   business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -675,5 +679,23 @@ model TrustMethodology {
   effectiveAt DateTime
   retiredAt   DateTime?
   isActive    Boolean  @default(false)
+}
+
+model PabandiReview {
+  id            String   @id @default(cuid())
+  businessId    String
+  customerId    String
+  reservationId String   @unique
+  rating        Int
+  text          String?
+  tokenId       String?  // The POV SBT Token ID
+  txHash        String?  // Transaction hash of the SBT mint
+  createdAt     DateTime @default(now())
+
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer      User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([customerId])
 }
 

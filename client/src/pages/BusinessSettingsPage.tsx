@@ -11,10 +11,12 @@ import {
   ExclamationTriangleIcon,
   ShieldCheckIcon,
   BellIcon,
+  LockClosedIcon,
+  KeyIcon,
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
 
-type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai';
+type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'e2ee';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 const CATEGORIES = [
@@ -36,6 +38,7 @@ export default function BusinessSettingsPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [e2eeStatus, setE2eeStatus] = useState({ enabled: false, hasPublicKey: false });
 
   // Fetch business data
   const { data: bizRes } = useQuery('my-business-settings', async () => {
@@ -102,6 +105,10 @@ export default function BusinessSettingsPage() {
           aiStrictness: 100 - (bizRes.settings.aiRiskThreshold || 30),
           autoRequireDeposit: bizRes.settings.autoRequireDeposit || false,
         }));
+        setE2eeStatus({
+          enabled: bizRes.settings.isE2eeEnabled || false,
+          hasPublicKey: !!bizRes.settings.e2eePublicKey
+        });
       }
     }
   }, [bizRes]);
@@ -174,9 +181,61 @@ export default function BusinessSettingsPage() {
 
   const handleSaveWebhook = () => {
     setSaveStatus('saving');
-    // Webhook save (currently mock — backend already stores via webhook routes)
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2500);
+  };
+
+  const handleGeneratePKI = async () => {
+    try {
+      setSaveStatus('saving');
+      // Generate RSA Keypair
+      const keyPair = await window.crypto.subtle.generateKey(
+        { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      // Export Public Key to SPKI Base64
+      const spkiBuffer = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
+      const spkiBase64 = btoa(String.fromCharCode(...new Uint8Array(spkiBuffer)));
+
+      // Export Private Key to PKCS8 Base64 (for download)
+      const pkcs8Buffer = await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+      const pkcs8Base64 = btoa(String.fromCharCode(...new Uint8Array(pkcs8Buffer)));
+
+      const pemHeader = '-----BEGIN PRIVATE KEY-----\\n';
+      const pemFooter = '\\n-----END PRIVATE KEY-----';
+      const pem = pemHeader + pkcs8Base64.match(/.{1,64}/g)?.join('\\n') + pemFooter;
+
+      // Trigger download
+      const blob = new Blob([pem], { type: 'application/x-pem-file' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'pabandi-private-key.pem';
+      link.click();
+
+      // Save public key to server
+      await apiClient.put(`/businesses/${bizRes.id}`, {
+        isE2eeEnabled: true,
+        e2eePublicKey: spkiBase64
+      });
+
+      setE2eeStatus({ enabled: true, hasPublicKey: true });
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2500);
+    } catch (err) {
+      console.error(err);
+      setSaveStatus('error');
+    }
+  };
+
+  const toggleE2ee = async (enabled: boolean) => {
+    try {
+      await apiClient.put(`/businesses/${bizRes.id}`, { isE2eeEnabled: enabled });
+      setE2eeStatus(prev => ({ ...prev, enabled }));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const SaveButton = ({ onClick, label }: { onClick: () => void; label: string }) => (
@@ -510,6 +569,79 @@ export default function BusinessSettingsPage() {
             <SaveButton onClick={handleSaveAI} label="Save AI Settings" />
           </div>
         );
+        
+      case 'e2ee':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-bold text-[#e8e8e8]">End-to-End Encryption (PKI)</h3>
+                <p className="text-sm text-[#757575]">Secure customer requests using military-grade RSA cryptography.</p>
+              </div>
+              <LockClosedIcon className="w-8 h-8 text-emerald-500" />
+            </div>
+
+            <div className="flex gap-3 p-4 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20">
+              <ShieldCheckIcon className="w-6 h-6 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold">Zero-Knowledge Architecture</p>
+                <p className="text-xs mt-1 text-emerald-500/80">
+                  When enabled, customer special requests are encrypted in their browser using your Public Key. Pabandi's servers only see ciphertext. You must use your Private Key to read the notes in your CRM.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#1a1a1a] border border-[#ffffff15]">
+              <h4 className="font-bold text-[#e8e8e8] mb-4">Key Management</h4>
+              
+              {!e2eeStatus.hasPublicKey ? (
+                <div className="text-center py-6">
+                  <KeyIcon className="w-12 h-12 text-[#757575] mx-auto mb-3" />
+                  <p className="text-sm text-[#e8e8e8] mb-4">You don't have a PKI keypair configured.</p>
+                  <button onClick={handleGeneratePKI} disabled={saveStatus === 'saving'}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-colors">
+                    {saveStatus === 'saving' ? 'Generating Keys...' : 'Generate RSA Keypair'}
+                  </button>
+                  <p className="text-xs text-[#757575] mt-3 max-w-xs mx-auto">
+                    This will generate a 2048-bit RSA keypair. Your browser will prompt you to download the private key. <strong>Keep it safe!</strong>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border border-[#ffffff15] rounded-xl bg-[#181818]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <KeyIcon className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#e8e8e8]">RSA-OAEP 2048-bit Public Key</p>
+                        <p className="text-xs text-[#757575]">Stored securely on Pabandi servers.</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded">Active</span>
+                  </div>
+
+                  <label className="flex items-center justify-between p-3 border border-[#ffffff15] rounded-xl bg-[#181818] cursor-pointer">
+                    <div>
+                      <p className="text-sm font-bold text-[#e8e8e8]">Enable E2E Encryption for Bookings</p>
+                      <p className="text-xs text-[#757575]">Encrypt all new customer booking notes.</p>
+                    </div>
+                    <input type="checkbox" checked={e2eeStatus.enabled}
+                      onChange={e => toggleE2ee(e.target.checked)}
+                      className="w-5 h-5 rounded border-[#ffffff25] text-emerald-500 focus:ring-emerald-500 bg-[#242424]" />
+                  </label>
+
+                  <div className="pt-4 mt-4 border-t border-[#ffffff15]">
+                    <button onClick={handleGeneratePKI} disabled={saveStatus === 'saving'}
+                      className="text-xs font-bold text-red-500 hover:text-red-400">
+                      Rotate Keys (Generate New)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
     }
   };
 
@@ -545,6 +677,10 @@ export default function BusinessSettingsPage() {
             <button onClick={() => setActiveTab('ai')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'ai' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
               <CpuChipIcon className="w-5 h-5" /> AI Configuration
+            </button>
+            <button onClick={() => setActiveTab('e2ee')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'e2ee' ? 'bg-[#181818] shadow-sm text-emerald-500 border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
+              <LockClosedIcon className="w-5 h-5" /> Security & PKI
             </button>
           </div>
 

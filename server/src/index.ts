@@ -38,6 +38,7 @@ import walletRoutes from './routes/wallet.routes';
 import waitlistRoutes from './routes/waitlist.routes';
 import hospitalityRoutes from './routes/hospitality.routes';
 import trustRoutes from './routes/trust.routes';
+import pabandiReviewRoutes from './routes/pabandiReview.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -111,6 +112,7 @@ app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
+app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
 import apiSubscriptionRoutes from './routes/api-subscription.routes';
 app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);
@@ -144,6 +146,9 @@ app.use(`/api/${API_VERSION}/passport`, passportRoutes);
 // ── Zero-Knowledge Network API (Shopify/E-Commerce Plugins) ──────────────────
 import networkRoutes from './routes/network.routes';
 app.use(`/api/${API_VERSION}/network`, networkRoutes);
+
+import userRoutes from './routes/user.routes';
+app.use(`/api/${API_VERSION}/users`, userRoutes);
 
 // ── Omni-Channel Integrations API (TikTok Shop Webhooks, etc) ────────────────
 import integrationsRoutes from './routes/integrations.routes';

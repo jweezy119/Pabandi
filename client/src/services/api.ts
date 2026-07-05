@@ -169,4 +169,9 @@ export const sourcingService = {
   consultAdvisor: (message: string) => apiClient.post('/sourcing/consult', { message }),
 };
 
+export const userService = {
+  searchUsers: (params?: any) => apiClient.get('/users/search', { params }),
+  getPublicProfile: (id: string) => apiClient.get(`/users/${id}/public`),
+};
+
 export default apiClient;
