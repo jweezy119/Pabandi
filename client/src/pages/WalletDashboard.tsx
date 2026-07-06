@@ -324,32 +324,43 @@ export default function WalletDashboard() {
   // Staking State
   const [stakeAmount, setStakeAmount] = useState<number>(0);
 
-  // Liquidity Pool State
-  const [lpPabAmount, setLpPabAmount] = useState<number>(0);
-  const [lpOtherAmount, setLpOtherAmount] = useState<number>(0);
-  const [isLpLoading, setIsLpLoading] = useState<boolean>(false);
+  // Stellar Liquidity Pool State
+  const [stellarPabAmount, setStellarPabAmount] = useState<number>(0);
+  const [stellarOtherAmount, setStellarOtherAmount] = useState<number>(0);
+  const [isStellarLoading, setIsStellarLoading] = useState<boolean>(false);
+
+  // Solana Liquidity Pool State
+  const [solanaPabAmount, setSolanaPabAmount] = useState<number>(0);
+  const [solanaOtherAmount, setSolanaOtherAmount] = useState<number>(0);
+  const [isSolanaLoading, setIsSolanaLoading] = useState<boolean>(false);
 
   const handleStellarLpDeposit = async () => {
-    if (!lpPabAmount || !lpOtherAmount) return;
-    setIsLpLoading(true);
-    const result = await executeStellarLiquidityDeposit(lpPabAmount.toString(), lpOtherAmount.toString());
-    setIsLpLoading(false);
-    if (result.success) {
-      alert('Liquidity successfully provided to Stellar AMM!');
-    } else {
-      alert(result.error || 'Failed to provide liquidity on Stellar.');
+    if (!stellarPabAmount || !stellarOtherAmount) return;
+    setIsStellarLoading(true);
+    try {
+      const result = await executeStellarLiquidityDeposit(stellarPabAmount.toString(), stellarOtherAmount.toString());
+      if (result.success) {
+        alert('Liquidity successfully provided to Stellar AMM!');
+      } else {
+        alert(result.error || 'Failed to provide liquidity on Stellar.');
+      }
+    } finally {
+      setIsStellarLoading(false);
     }
   };
 
   const handleSolanaLpDeposit = async () => {
-    if (!lpPabAmount || !lpOtherAmount) return;
-    setIsLpLoading(true);
-    const result = await executeSolanaLiquidityDeposit(lpPabAmount, lpOtherAmount);
-    setIsLpLoading(false);
-    if (result.success) {
-      alert('Liquidity successfully provided to Solana AMM!');
-    } else {
-      alert(result.error || 'Failed to provide liquidity on Solana.');
+    if (!solanaPabAmount || !solanaOtherAmount) return;
+    setIsSolanaLoading(true);
+    try {
+      const result = await executeSolanaLiquidityDeposit(solanaPabAmount, solanaOtherAmount);
+      if (result.success) {
+        alert('Liquidity successfully provided to Solana AMM!');
+      } else {
+        alert(result.error || 'Failed to provide liquidity on Solana.');
+      }
+    } finally {
+      setIsSolanaLoading(false);
     }
   };
 
@@ -710,25 +721,25 @@ export default function WalletDashboard() {
                 <div className="flex gap-2">
                   <input 
                     type="number" 
-                    value={lpPabAmount || ''} 
-                    onChange={(e) => setLpPabAmount(Number(e.target.value))}
+                    value={stellarPabAmount || ''} 
+                    onChange={(e) => setStellarPabAmount(Number(e.target.value))}
                     placeholder="PAB Amount"
                     className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
                   />
                   <input 
                     type="number" 
-                    value={lpOtherAmount || ''} 
-                    onChange={(e) => setLpOtherAmount(Number(e.target.value))}
+                    value={stellarOtherAmount || ''} 
+                    onChange={(e) => setStellarOtherAmount(Number(e.target.value))}
                     placeholder="BENJI Amount"
                     className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
                   />
                 </div>
                 <button 
                   onClick={handleStellarLpDeposit}
-                  disabled={isLpLoading || !lpPabAmount || !lpOtherAmount}
+                  disabled={isStellarLoading || !stellarPabAmount || !stellarOtherAmount}
                   className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLpLoading ? 'Depositing to Stellar...' : 'Provide Liquidity on Stellar'}
+                  {isStellarLoading ? 'Depositing to Stellar...' : 'Provide Liquidity on Stellar'}
                 </button>
               </div>
             </div>
@@ -752,25 +763,25 @@ export default function WalletDashboard() {
                 <div className="flex gap-2">
                   <input 
                     type="number" 
-                    value={lpPabAmount || ''} 
-                    onChange={(e) => setLpPabAmount(Number(e.target.value))}
+                    value={solanaPabAmount || ''} 
+                    onChange={(e) => setSolanaPabAmount(Number(e.target.value))}
                     placeholder="PAB Amount"
                     className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
                   />
                   <input 
                     type="number" 
-                    value={lpOtherAmount || ''} 
-                    onChange={(e) => setLpOtherAmount(Number(e.target.value))}
+                    value={solanaOtherAmount || ''} 
+                    onChange={(e) => setSolanaOtherAmount(Number(e.target.value))}
                     placeholder="SOL Amount"
                     className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
                   />
                 </div>
                 <button 
                   onClick={handleSolanaLpDeposit}
-                  disabled={isLpLoading || !lpPabAmount || !lpOtherAmount}
+                  disabled={isSolanaLoading || !solanaPabAmount || !solanaOtherAmount}
                   className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-purple-500 hover:bg-purple-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLpLoading ? 'Depositing to Solana...' : 'Provide Liquidity on Raydium'}
+                  {isSolanaLoading ? 'Depositing to Solana...' : 'Provide Liquidity on Raydium'}
                 </button>
               </div>
             </div>
