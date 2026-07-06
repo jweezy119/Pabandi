@@ -11,6 +11,7 @@ interface User {
   role: string;
   profilePictureUrl?: string;
   reliabilityScore?: number;
+  encryptedDietaryData?: string;
 }
 
 interface WalletState {

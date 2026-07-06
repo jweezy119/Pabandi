@@ -1,0 +1,19 @@
+# Pabandi
+
+> The World's First Halal Web3 Booking Platform.
+
+Pabandi is a Web3 hospitality and booking platform built on the Solana blockchain. It ensures zero no-shows, zero riba (interest), and guaranteed 100% halal compliance through its unique tokenized escrow system.
+
+## Core Features
+- **Universal Escrow**: Hotels, restaurants, and short-term rentals can secure bookings without relying on credit cards. Funds are held in a decentralized smart contract escrow.
+- **Halal Yield Staking**: Users can stake their $PAB tokens into the Halal Yield Staking Pool. Instead of interest-bearing loans, users earn a Mudarabah Profit-Share (estimated 15.5% APY) from platform revenues.
+- **AI Predictability & Web3 Trust Matrix**: Users are issued a Soulbound Token (SBT) representing their on-chain, immutable reliability score. This guarantees top-tier booking fidelity.
+
+## The $PAB Token
+- **Utility**: Escrow deposits, Halal Staking, and platform fee settlements.
+- **Ecosystem**: Built natively on Solana for lightning-fast, low-fee global transactions.
+- **Contract Address (CA)**: `Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ` (Solana Mainnet)
+
+## Links
+- App: https://pabandi-42c5b.web.app
+- Socials: https://x.com/PabandiGlobal

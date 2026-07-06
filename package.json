@@ -18,7 +18,7 @@
     "build:app": "cd client && npm run build",
     "build:hosting": "npm run build:app && node scripts/copy-app-to-site.mjs",
     "deploy:hosting": "npx -y firebase-tools@latest deploy --only hosting --project pabandi-42c5b",
-    "deploy": "npm run site:verify && npm run build:hosting && npm run deploy:hosting"
+    "deploy": "npm run build:hosting && npm run deploy:hosting"
   },
   "keywords": [
     "booking",

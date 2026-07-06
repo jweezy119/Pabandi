@@ -4,7 +4,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function DietaryPassportPage() {
-  const { user, checkAuth } = useAuthStore();
+  const { user, updateProfile } = useAuthStore();
   const [allergies, setAllergies] = useState<string>('');
   const [preferences, setPreferences] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,7 @@ export default function DietaryPassportPage() {
       });
       
       toast.success('Zero-Knowledge Passport saved securely.');
-      await checkAuth(); // Refresh user state
+      updateProfile({ encryptedDietaryData: encryptedBackup }); // Refresh user state
     } catch (error) {
       console.error(error);
       toast.error('Failed to save passport.');
