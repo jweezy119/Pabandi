@@ -34,6 +34,10 @@ interface LoginBody {
   password: string;
 }
 
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+import { encrypt } from '../utils/encryption';
+
 export const register = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response,
@@ -73,6 +77,11 @@ export const register = async (
     // 48-Hour Grace Period
     const gracePeriodUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
+    // Frictionless Solana Wallet Generation
+    const newWallet = Keypair.generate();
+    const solanaAddress = newWallet.publicKey.toBase58();
+    const encryptedSecret = encrypt(bs58.encode(newWallet.secretKey));
+
     // Create user immediately with BASIC tier
     const user = await prisma.user.create({
       data: {
@@ -86,6 +95,15 @@ export const register = async (
         trustScore: 50.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
+        // Create the frictionless wallet
+        wallet: {
+          create: {
+            address: solanaAddress,
+            encryptedSecret: encryptedSecret,
+            balance: 0,
+            currency: 'PAB'
+          }
+        },
         // Create business profile if role is business owner
         ...(resolvedRole === UserRole.BUSINESS_OWNER && req.body.businessName && {
           business: {

@@ -36,11 +36,11 @@ export default function BusinessPabRewards() {
             className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
             style={{ background: 'rgba(153,69,255,0.15)', color: '#c084fc' }}
           >
-            Solana · PabPoints Rewards
+            Solana · BNB Chain · Stellar · PabPoints Rewards
           </span>
           <h2 className="text-xl font-black text-[#e8e8e8] mt-2 flex items-center gap-2"><img src="/logo-coin-3d.jpg" alt="PabPoints" className="h-6 w-6 rounded-full object-cover" />Earn PabPoints for running a tight operation</h2>
           <p className="text-sm text-[#757575] mt-1 max-w-xl">
-            Businesses earn Pabandi PabPoints automatically — withdraw to your Phantom wallet on Solana.
+            Businesses earn Pabandi PabPoints automatically — withdraw to your preferred wallet on Solana, BNB Chain, or Stellar.
           </p>
         </div>
         <div className="text-right">
@@ -49,10 +49,10 @@ export default function BusinessPabRewards() {
             {isLoading ? '…' : balance.toLocaleString()} <span className="text-base text-[#616161]">PTS</span>
           </p>
           {data?.solanaConnected ? (
-            <p className="text-xs text-[#10b981] mt-1">◎ Phantom connected</p>
+            <p className="text-xs text-[#10b981] mt-1">◎ Wallet connected</p>
           ) : (
             <Link to="/business/settings" className="text-xs font-semibold text-purple-600 hover:underline mt-1 inline-block">
-              Connect Phantom for payouts →
+              Connect Web3 wallet for payouts →
             </Link>
           )}
         </div>

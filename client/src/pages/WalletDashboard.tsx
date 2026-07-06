@@ -9,8 +9,9 @@ import {
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import apiClient, { cryptoService, walletService, socialService, stakingService } from '../services/api';
+import { executeStellarLiquidityDeposit, executeSolanaLiquidityDeposit } from '../utils/web3';
 /* ── Types ── */
-type WalletType = 'metamask' | 'phantom' | null;
+type WalletType = 'metamask' | 'phantom' | 'freighter' | null;
 interface ConnectedWallet { address: string; type: WalletType; chainName: string; }
 
 function shortAddr(addr: string) { return addr.slice(0, 6) + '…' + addr.slice(-4); }
@@ -251,6 +252,29 @@ export default function WalletDashboard() {
     finally { setLoadingWallet(null); }
   };
 
+  const connectFreighter = async () => {
+    setError(''); setLoadingWallet('freighter');
+    try {
+      const isFreighterInstalled = (window as any).freighterApi && (window as any).freighterApi.isConnected;
+      if (!isFreighterInstalled || !(await (window as any).freighterApi.isConnected())) {
+        throw new Error('Freighter wallet not found. Please install the Freighter browser extension.');
+      }
+      const isAllowed = await (window as any).freighterApi.isAllowed();
+      if (!isAllowed) await (window as any).freighterApi.setAllowed();
+      
+      const publicKey = await (window as any).freighterApi.getPublicKey();
+      if (!publicKey) throw new Error('Could not get public key from Freighter.');
+      
+      saveWallet({ address: publicKey, type: 'freighter', chainName: 'Stellar' });
+      await apiClient.put('/auth/wallet', { address: publicKey, chain: 'STELLAR' }).catch(() => { });
+      setShowModal(false);
+    } catch (err: any) {
+      console.error("Stellar Connection Error:", err);
+      setError(err?.message || 'Connection failed.');
+    }
+    finally { setLoadingWallet(null); }
+  };
+
   const connectPhantom = async () => {
     setError(''); setLoadingWallet('phantom');
     try {
@@ -299,6 +323,38 @@ export default function WalletDashboard() {
   
   // Staking State
   const [stakeAmount, setStakeAmount] = useState<number>(0);
+
+  // Liquidity Pool State
+  const [lpPabAmount, setLpPabAmount] = useState<number>(0);
+  const [lpOtherAmount, setLpOtherAmount] = useState<number>(0);
+  const [isLpLoading, setIsLpLoading] = useState<boolean>(false);
+  const [lpSuccess, setLpSuccess] = useState<{ amount: number; txHash?: string; network: string } | null>(null);
+
+  const handleStellarLpDeposit = async () => {
+    if (!lpPabAmount || !lpOtherAmount) return;
+    setIsLpLoading(true);
+    const result = await executeStellarLiquidityDeposit(lpPabAmount.toString(), lpOtherAmount.toString());
+    setIsLpLoading(false);
+    if (result.success) {
+      setLpSuccess({ amount: lpPabAmount, txHash: result.transactionHash, network: 'Stellar' });
+      alert('Liquidity successfully provided to Stellar AMM!');
+    } else {
+      alert(result.error || 'Failed to provide liquidity on Stellar.');
+    }
+  };
+
+  const handleSolanaLpDeposit = async () => {
+    if (!lpPabAmount || !lpOtherAmount) return;
+    setIsLpLoading(true);
+    const result = await executeSolanaLiquidityDeposit(lpPabAmount, lpOtherAmount);
+    setIsLpLoading(false);
+    if (result.success) {
+      setLpSuccess({ amount: lpPabAmount, txHash: result.transactionHash, network: 'Solana' });
+      alert('Liquidity successfully provided to Solana AMM!');
+    } else {
+      alert(result.error || 'Failed to provide liquidity on Solana.');
+    }
+  };
 
   const { data: poolStatus, refetch: refetchPool } = useQuery('yield-pool-status', async () => {
     const res = await stakingService.getPoolStatus();
@@ -400,7 +456,7 @@ export default function WalletDashboard() {
                <img src="/logo-coin-neon.jpg" alt="PAB" className="inline-block h-8 w-8 rounded-full border border-primary/30 mr-1 align-sub" /> PAB Wallet
             </h1>
             <p className="font-body text-sm text-on-surface-variant mt-1.5">
-              Earn Pabandi Reliability Tokens — withdraw on Solana, mint NFT badges
+              Earn Pabandi Reliability Tokens — Available on Solana, BNB Chain, and Stellar.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -417,7 +473,7 @@ export default function WalletDashboard() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-primary-container text-on-primary-container border border-primary/20">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] inline-block" />
-                  {connected.type === 'phantom' ? '👻' : '🦊'} {shortAddr(connected.address)} · {connected.chainName}
+                  {connected.type === 'phantom' ? '👻' : connected.type === 'freighter' ? '🚢' : '🦊'} {shortAddr(connected.address)} · {connected.chainName}
                 </div>
                 <button onClick={disconnect} className="p-2.5 rounded-xl cursor-pointer bg-error-container text-on-error-container border border-error/20 hover:opacity-80 transition-opacity">
                   <XMarkIcon className="h-4 w-4" />
@@ -485,7 +541,7 @@ export default function WalletDashboard() {
                 
                 {/* Withdraw Button */}
                 <div className="text-right">
-                  {connected && connected.type === 'phantom' && offChainBalance > 0 && !transferSuccess && (
+                  {connected && offChainBalance > 0 && !transferSuccess && (
                     <button type="button" onClick={() => transferMutation.mutate()} disabled={transferMutation.isLoading}
                       className="font-body text-xs font-bold px-4 py-2.5 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5 shadow-sm">
                       {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Web3</>}
@@ -494,7 +550,7 @@ export default function WalletDashboard() {
                   {!connected && (
                     <button onClick={() => { setShowModal(true); setError(''); }}
                       className="font-body text-xs text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2">
-                      <LinkIcon className="h-4 w-4" /> Connect Phantom to withdraw
+                      <LinkIcon className="h-4 w-4" /> Connect Web3 wallet to withdraw
                     </button>
                   )}
                 </div>
@@ -538,18 +594,35 @@ export default function WalletDashboard() {
                   <div className="mt-2 text-[9px] font-mono text-on-surface-variant/70 border border-outline-variant/20 bg-surface px-2 py-1 rounded w-fit select-all cursor-copy" title="Copy Contract Address">
                     CA: Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ
                   </div>
+                  <div className="flex gap-2 mt-4">
+                    <span className="text-[9px] font-bold bg-[#14F195]/10 text-[#14F195] border border-[#14F195]/20 px-2 py-1 rounded">Solana</span>
+                    <span className="text-[9px] font-bold bg-[#F3BA2F]/10 text-[#F3BA2F] border border-[#F3BA2F]/20 px-2 py-1 rounded">BNB Chain</span>
+                    <span className="text-[9px] font-bold bg-surface-container-highest text-on-surface border border-outline-variant/30 px-2 py-1 rounded">Stellar</span>
+                  </div>
                 </div>
                 
-                {connected && connected.type === 'phantom' && (
+                {connected && (
                   <div className="text-right flex flex-col items-end gap-2">
                     <button onClick={disconnect} className="font-body text-[10px] text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1">
                       <XMarkIcon className="h-3 w-3" /> Disconnect
                     </button>
                     <span className="font-body text-xs font-bold text-on-surface-variant">◎ {shortAddr(connected.address)}</span>
-                    <a href={`https://solscan.io/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
-                      className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
-                      View Account <ArrowUpRightIcon className="h-3 w-3" />
-                    </a>
+                    {connected.type === 'phantom' ? (
+                      <a href={`https://solscan.io/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
+                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        View Account <ArrowUpRightIcon className="h-3 w-3" />
+                      </a>
+                    ) : connected.type === 'freighter' ? (
+                      <a href={`https://stellar.expert/explorer/testnet/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
+                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        View Account <ArrowUpRightIcon className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      <a href={`https://testnet.bscscan.com/address/${connected.address}`} target="_blank" rel="noopener noreferrer" 
+                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        View Account <ArrowUpRightIcon className="h-3 w-3" />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
@@ -620,6 +693,91 @@ export default function WalletDashboard() {
                 </div>
               )}
             </div>
+
+            {/* Stellar RWA Liquidity Pool */}
+            <div className="relative overflow-hidden rounded-3xl p-6 shadow-sm border border-blue-500/30" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%)' }}>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-400 uppercase tracking-widest border border-blue-500/30">Stellar AMM Pool</span>
+                    <span className="font-body text-[10px] text-blue-500/70">PAB / BENJI (FOBXX)</span>
+                  </div>
+                  <div>
+                    <span className="font-headline text-3xl font-black text-white">RWA Yield</span>
+                  </div>
+                  <p className="font-body text-xs text-white/70 mt-1">Earn DEX Trading Fees <strong className="text-blue-400">+ U.S. Treasury Yield</strong></p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <input 
+                    type="number" 
+                    value={lpPabAmount || ''} 
+                    onChange={(e) => setLpPabAmount(Number(e.target.value))}
+                    placeholder="PAB Amount"
+                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                  />
+                  <input 
+                    type="number" 
+                    value={lpOtherAmount || ''} 
+                    onChange={(e) => setLpOtherAmount(Number(e.target.value))}
+                    placeholder="BENJI Amount"
+                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                  />
+                </div>
+                <button 
+                  onClick={handleStellarLpDeposit}
+                  disabled={isLpLoading || !lpPabAmount || !lpOtherAmount}
+                  className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLpLoading ? 'Depositing to Stellar...' : 'Provide Liquidity on Stellar'}
+                </button>
+              </div>
+            </div>
+
+            {/* Solana DEX Liquidity Pool */}
+            <div className="relative overflow-hidden rounded-3xl p-6 shadow-sm border border-purple-500/30" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%)' }}>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-[10px] font-bold px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-400 uppercase tracking-widest border border-purple-500/30">Raydium LP Pool</span>
+                    <span className="font-body text-[10px] text-purple-500/70">PAB / SOL</span>
+                  </div>
+                  <div>
+                    <span className="font-headline text-3xl font-black text-white">DEX Yield</span>
+                  </div>
+                  <p className="font-body text-xs text-white/70 mt-1">High-frequency trading fees on <strong className="text-purple-400">Solana</strong></p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  <input 
+                    type="number" 
+                    value={lpPabAmount || ''} 
+                    onChange={(e) => setLpPabAmount(Number(e.target.value))}
+                    placeholder="PAB Amount"
+                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
+                  />
+                  <input 
+                    type="number" 
+                    value={lpOtherAmount || ''} 
+                    onChange={(e) => setLpOtherAmount(Number(e.target.value))}
+                    placeholder="SOL Amount"
+                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
+                  />
+                </div>
+                <button 
+                  onClick={handleSolanaLpDeposit}
+                  disabled={isLpLoading || !lpPabAmount || !lpOtherAmount}
+                  className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-purple-500 hover:bg-purple-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLpLoading ? 'Depositing to Solana...' : 'Provide Liquidity on Raydium'}
+                </button>
+              </div>
+            </div>
+
 
           </div>
 
@@ -799,6 +957,7 @@ export default function WalletDashboard() {
 
             <div className="flex flex-col gap-3">
               <WalletOption id="btn-connect-phantom" icon="👻" name="Phantom" desc="Recommended · Solana network for $PAB" badge="Solana" onClick={connectPhantom} loading={loadingWallet === 'phantom'} disabled={loadingWallet !== null && loadingWallet !== 'phantom'} />
+              <WalletOption id="btn-connect-freighter" icon="🚢" name="Freighter" desc="Stellar network · Franklin Templeton FOBXX" badge="Stellar" onClick={connectFreighter} loading={loadingWallet === 'freighter'} disabled={loadingWallet !== null && loadingWallet !== 'freighter'} />
               <WalletOption id="btn-connect-metamask" icon="🦊" name="MetaMask" desc="BNB Smart Chain · Legacy support" badge="BSC" onClick={connectMetaMask} loading={loadingWallet === 'metamask'} disabled={loadingWallet !== null && loadingWallet !== 'metamask'} />
             </div>
 

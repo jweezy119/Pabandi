@@ -65,3 +65,61 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, error: 'Failed to fetch balances' });
   }
 };
+
+import bcrypt from 'bcryptjs';
+import { decrypt } from '../utils/encryption';
+import { CustomError } from '../middleware/errorHandler';
+
+export const exportSecret = async (req: AuthRequest, res: Response, next: import('express').NextFunction) => {
+  try {
+    const userId = req.user?.id;
+    const { password } = req.body;
+
+    if (!userId) {
+      throw new CustomError('Unauthorized', 401);
+    }
+    if (!password) {
+      throw new CustomError('Password is required to export wallet secret', 400);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true },
+    });
+
+    if (!user) {
+      throw new CustomError('User not found', 404);
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      throw new CustomError('Invalid password. Export denied.', 403);
+    }
+
+    if (!user.wallet?.encryptedSecret) {
+      throw new CustomError('No custodial wallet found for this account.', 404);
+    }
+
+    const secretKeyBase58 = decrypt(user.wallet.encryptedSecret);
+
+    // Audit log this sensitive action
+    await prisma.systemAuditLog.create({
+      data: {
+        actorId: userId,
+        action: 'EXPORT_WALLET_SECRET',
+        targetId: user.wallet.id,
+        metadata: { ip: req.ip }
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        secretKey: secretKeyBase58
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};

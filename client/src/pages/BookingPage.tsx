@@ -7,8 +7,7 @@ import { format } from 'date-fns';
 import { ShieldCheckIcon, StarIcon, MapPinIcon, ClockIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
-import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
-
+import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -100,6 +99,9 @@ export default function BookingPage() {
           if (!result.success) throw new Error(result.error);
         } else if (formData.paymentMethod === 'solana') {
           const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress"); // Mocking conversion
+          if (!result.success) throw new Error(result.error);
+        } else if (formData.paymentMethod === 'stellar-franklin') {
+          const result = await executeStellarFranklinDeposit("10.00", business.walletAddress || "MockBusinessAddress"); // Mocking conversion
           if (!result.success) throw new Error(result.error);
         } else if (formData.paymentMethod === 'stake') {
           await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
@@ -380,7 +382,7 @@ export default function BookingPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-on-surface mb-2">Deposit Payment Method</label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-2">
                         {/* Safepay / Fiat */}
                         <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'safepay' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
                           <input type="radio" name="paymentMethod" value="safepay" checked={formData.paymentMethod === 'safepay'} onChange={handleChange} className="sr-only" />
@@ -400,6 +402,13 @@ export default function BookingPage() {
                           <input type="radio" name="paymentMethod" value="solana" checked={formData.paymentMethod === 'solana'} onChange={handleChange} className="sr-only" />
                           <span className="font-semibold text-on-surface text-sm">Web3 Solana</span>
                           <span className="text-[10px] text-on-surface-variant font-medium mt-1">SOL / USDC</span>
+                        </label>
+
+                        {/* Stellar Franklin Templeton */}
+                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'stellar-franklin' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
+                          <input type="radio" name="paymentMethod" value="stellar-franklin" checked={formData.paymentMethod === 'stellar-franklin'} onChange={handleChange} className="sr-only" />
+                          <span className="font-semibold text-on-surface text-sm">Web3 Stellar</span>
+                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">BENJI / FOBXX</span>
                         </label>
 
                         {/* Stake PAB */}

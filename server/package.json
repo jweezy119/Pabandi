@@ -15,6 +15,8 @@
     "studio": "prisma studio",
     "deploy:run": "gcloud run deploy pabandi-backend --source . --region asia-south1 --allow-unauthenticated --project pabandi-42c5b --env-vars-file env.yaml",
     "revoke:solana": "ts-node scripts/revoke-authorities.ts",
+    "make:immutable": "ts-node scripts/make-immutable.ts",
+    "update:metadata": "ts-node scripts/update-metadata.ts",
     "list:tokens": "ts-node scripts/list-wallet-tokens.ts",
     "burn:lp": "ts-node scripts/burn-lp.ts"
   },
@@ -24,6 +26,7 @@
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.5.1",
     "@metaplex-foundation/umi-bundle-defaults": "^1.5.1",
+    "@metaplex-foundation/umi-uploader-irys": "^1.5.0",
     "@prisma/client": "^5.7.1",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",

@@ -267,6 +267,7 @@ model Wallet {
   id                String    @id @default(cuid())
   userId            String    @unique
   address           String?
+  encryptedSecret   String?   // Base64 encoded encrypted Solana Secret Key
   balance           Float     @default(0)
   totalStaked       Float     @default(0)
   currency          String    @default("PAB")

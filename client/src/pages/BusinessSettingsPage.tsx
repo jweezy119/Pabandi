@@ -40,10 +40,22 @@ export default function BusinessSettingsPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [e2eeStatus, setE2eeStatus] = useState({ enabled: false, hasPublicKey: false });
 
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [exportedSecret, setExportedSecret] = useState('');
+  const [exportError, setExportError] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
   // Fetch business data
   const { data: bizRes } = useQuery('my-business-settings', async () => {
     const res = await businessService.getMyBusiness().catch(() => null);
     return res?.data?.data?.business || null;
+  });
+
+  // Fetch wallet data
+  const { data: walletData } = useQuery('my-wallet-balances', async () => {
+    const res = await apiClient.get('/wallet/balances').catch(() => null);
+    return res?.data?.data || null;
   });
 
   const [businessData, setBusinessData] = useState({
@@ -183,6 +195,20 @@ export default function BusinessSettingsPage() {
     setSaveStatus('saving');
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2500);
+  };
+
+  const handleExportSecret = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsExporting(true);
+    setExportError('');
+    try {
+      const res = await apiClient.post('/wallet/export-secret', { password });
+      setExportedSecret(res.data.data.secretKey);
+    } catch (err: any) {
+      setExportError(err.response?.data?.error || 'Failed to export secret key');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleGeneratePKI = async () => {
@@ -403,7 +429,7 @@ export default function BusinessSettingsPage() {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-[#e8e8e8]">Payments & Escrow</h3>
+              <h3 className="text-lg font-bold text-[#e8e8e8]">Payments & Web3 Escrow</h3>
               <p className="text-sm text-[#757575]">Configure how you receive deposits and payments. All deposits are credited toward the customer's total bill.</p>
             </div>
 
@@ -422,15 +448,41 @@ export default function BusinessSettingsPage() {
 
             <div className="p-5 rounded-2xl border border-[#8b5cf633] bg-gradient-to-br from-purple-50 to-emerald-50">
               <div className="flex justify-between items-start mb-4">
-                <h4 className="font-bold text-[#e8e8e8]">◎ Solana · $PAB Payouts</h4>
-                <span className="px-3 py-1 bg-[#8b5cf625] text-[#8b5cf6] text-xs font-bold rounded-full">Phantom</span>
+                <h4 className="font-bold text-[#e8e8e8]">◎ Web3 Wallet · Solana</h4>
+                <span className="px-3 py-1 bg-[#8b5cf625] text-[#8b5cf6] text-xs font-bold rounded-full">Custodial</span>
               </div>
               <p className="text-sm text-[#757575] mb-4">
-                Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.
+                Your automatically generated Solana wallet. You receive $PAB rewards here for honored bookings and no-show protection.
               </p>
-              <a href="/wallet" className="inline-flex px-4 py-2 bg-gradient-to-r from-purple-600 to-emerald-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm">
-                Connect Phantom Wallet →
-              </a>
+              
+              {walletData?.solanaWalletAddress ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-[#757575] mb-1.5">Your Solana Address</label>
+                    <div className="flex items-center gap-2">
+                      <input type="text" readOnly value={walletData.solanaWalletAddress} className="input-field bg-white/50 text-slate-900 flex-1 font-mono text-sm" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="flex-1 bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">PAB Balance</p>
+                      <p className="text-xl font-black text-slate-900 mt-1">{walletData.totalBalance?.toLocaleString()} PAB</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-2 border-t border-black/5">
+                    <p className="text-xs text-slate-600 mb-3">Want full custody over your funds outside of Pabandi?</p>
+                    <button 
+                      onClick={() => setExportModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+                      <LockClosedIcon className="w-4 h-4" /> Export Private Key
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-slate-600">Generating wallet...</p>
+              )}
             </div>
 
             {/* Deposit credit notice */}
@@ -693,6 +745,54 @@ export default function BusinessSettingsPage() {
         </div>
 
       </div>
+
+      {exportModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#181818] border border-[#ffffff15] p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-black text-white mb-2">Export Private Key</h2>
+            <p className="text-sm text-red-400 mb-6 font-semibold">
+              WARNING: Anyone with this key has full access to your funds. Never share this with anyone, including Pabandi staff.
+            </p>
+
+            {exportedSecret ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <p className="text-xs text-red-500 font-bold uppercase tracking-wide mb-2">Your Solana Secret Key</p>
+                  <p className="font-mono text-sm text-white break-all">{exportedSecret}</p>
+                </div>
+                <button onClick={() => { setExportModalOpen(false); setExportedSecret(''); setPassword(''); }} className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">
+                  I have copied it safely. Close.
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleExportSecret} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Enter Password to Confirm</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="input-field" 
+                    placeholder="••••••••" 
+                    required
+                  />
+                </div>
+                {exportError && <p className="text-sm text-red-500">{exportError}</p>}
+                
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setExportModalOpen(false)} className="flex-1 py-3 border border-[#ffffff25] text-white rounded-xl font-bold">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={isExporting} className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold">
+                    {isExporting ? 'Verifying...' : 'Reveal Key'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
