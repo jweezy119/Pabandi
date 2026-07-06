@@ -328,7 +328,6 @@ export default function WalletDashboard() {
   const [lpPabAmount, setLpPabAmount] = useState<number>(0);
   const [lpOtherAmount, setLpOtherAmount] = useState<number>(0);
   const [isLpLoading, setIsLpLoading] = useState<boolean>(false);
-  const [lpSuccess, setLpSuccess] = useState<{ amount: number; txHash?: string; network: string } | null>(null);
 
   const handleStellarLpDeposit = async () => {
     if (!lpPabAmount || !lpOtherAmount) return;
@@ -336,7 +335,6 @@ export default function WalletDashboard() {
     const result = await executeStellarLiquidityDeposit(lpPabAmount.toString(), lpOtherAmount.toString());
     setIsLpLoading(false);
     if (result.success) {
-      setLpSuccess({ amount: lpPabAmount, txHash: result.transactionHash, network: 'Stellar' });
       alert('Liquidity successfully provided to Stellar AMM!');
     } else {
       alert(result.error || 'Failed to provide liquidity on Stellar.');
@@ -349,7 +347,6 @@ export default function WalletDashboard() {
     const result = await executeSolanaLiquidityDeposit(lpPabAmount, lpOtherAmount);
     setIsLpLoading(false);
     if (result.success) {
-      setLpSuccess({ amount: lpPabAmount, txHash: result.transactionHash, network: 'Solana' });
       alert('Liquidity successfully provided to Solana AMM!');
     } else {
       alert(result.error || 'Failed to provide liquidity on Solana.');

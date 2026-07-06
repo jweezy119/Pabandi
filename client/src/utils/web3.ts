@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { isConnected, isAllowed, setAllowed, getPublicKey, signTransaction } from '@stellar/freighter-api';
+import { isConnected, isAllowed, setAllowed, getAddress, signTransaction } from '@stellar/freighter-api';
 
 // The address of our deployed Escrow Contract (BSC Testnet)
 export const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
@@ -174,7 +174,8 @@ export const executeStellarFranklinDeposit = async (amountInFobxx: string, busin
       await setAllowed();
     }
 
-    const publicKey = await getPublicKey();
+    const addressInfo = await getAddress();
+    const publicKey = addressInfo.address;
     if (!publicKey) {
       throw new Error('Could not get public key from Freighter.');
     }
@@ -200,8 +201,9 @@ export const executeStellarFranklinDeposit = async (amountInFobxx: string, busin
       .setTimeout(30)
       .build();
 
-    const signedTxXdr = await signTransaction(tx.toXDR(), 'TESTNET');
-    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase) as StellarSdk.Transaction;
+    const signResponse = await signTransaction(tx.toXDR(), { networkPassphrase: networkPassphrase });
+    if (signResponse.error) throw new Error(signResponse.error as string);
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signResponse.signedTxXdr, networkPassphrase) as StellarSdk.Transaction;
     const response = await server.submitTransaction(signedTx);
     
     console.log(`Stellar transaction submitted: ${response.hash}`);
@@ -227,7 +229,8 @@ export const executeStellarLiquidityDeposit = async (amountPab: string, amountBe
     if (!(await isConnected()) || !(await isAllowed())) {
       throw new Error('Freighter wallet not connected. Please connect your wallet first.');
     }
-    const publicKey = await getPublicKey();
+    const addressInfo = await getAddress();
+    const publicKey = addressInfo.address;
     if (!publicKey) throw new Error('Could not get public key from Freighter.');
 
     console.log(`Executing Stellar AMM Deposit: ${amountPab} PAB + ${amountBenji} BENJI`);
@@ -252,17 +255,20 @@ export const executeStellarLiquidityDeposit = async (amountPab: string, amountBe
       }))
       // Second, deposit into the LP
       .addOperation(StellarSdk.Operation.liquidityPoolDeposit({
-        liquidityPoolId: lpAsset.getLiquidityPoolId(),
+        liquidityPoolId: StellarSdk.getLiquidityPoolId("constant_product", lpAsset.getLiquidityPoolParameters()).toString("hex"),
         maxAmountA: amountPab,
         maxAmountB: amountBenji,
-        minPrice: new StellarSdk.Price(1, 1000), // Very loose slippage for testnet
-        maxPrice: new StellarSdk.Price(1000, 1),
+        minPrice: { n: 1, d: 1000 }, // Very loose slippage for testnet
+        maxPrice: { n: 1000, d: 1 },
       }))
       .setTimeout(60)
       .build();
 
-    const signedTxXdr = await signTransaction(tx.toXDR(), 'TESTNET');
-    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedTxXdr, StellarSdk.Networks.TESTNET) as StellarSdk.Transaction;
+    const signResponse = await signTransaction(tx.toXDR(), { networkPassphrase: StellarSdk.Networks.TESTNET });
+    if (signResponse.error) {
+      throw new Error(signResponse.error as string);
+    }
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signResponse.signedTxXdr, StellarSdk.Networks.TESTNET) as StellarSdk.Transaction;
     const response = await server.submitTransaction(signedTx);
 
     return {
