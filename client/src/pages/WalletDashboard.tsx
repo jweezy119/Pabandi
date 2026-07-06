@@ -386,7 +386,7 @@ export default function WalletDashboard() {
       refetch(); // refresh balance
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || 'Failed to withdraw to Solana');
+      alert(err?.response?.data?.message || err?.response?.data?.error || 'Failed to withdraw to Solana');
     }
   });
 
