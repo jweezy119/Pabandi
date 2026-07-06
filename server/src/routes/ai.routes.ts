@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { handleConciergeQuery } from '../controllers/ai.controller';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Concierge endpoint
-router.post('/concierge', authenticateToken, handleConciergeQuery);
+router.post('/concierge', authenticate, handleConciergeQuery);
 
 export default router;
