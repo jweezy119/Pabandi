@@ -133,6 +133,9 @@ app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
+import aiRoutes from './routes/ai.routes';
+app.use(`/api/${API_VERSION}/ai`, aiRoutes);
+
 import apiSubscriptionRoutes from './routes/api-subscription.routes';
 app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);
 

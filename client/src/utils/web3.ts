@@ -7,11 +7,17 @@ import { isConnected, isAllowed, setAllowed, getAddress, signTransaction } from 
 export const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
 export const PABANDI_TREASURY_SOLANA = 'PABANDi111111111111111111111111111111111111'; // Placeholder
 
+// BSC Testnet chain config
+export const BSC_TESTNET_CHAIN_ID = 97;    // 0x61
+export const BSC_MAINNET_CHAIN_ID = 56;    // 0x38
+export const SUPPORTED_BSC_CHAIN_IDS = [BSC_TESTNET_CHAIN_ID, BSC_MAINNET_CHAIN_ID];
+
 // ABI for PabandiEscrow.sol
 const ESCROW_ABI = [
   "function deposit(string memory _reservationId, address _business) external payable",
   "function releaseToBusiness(string memory _reservationId) external",
   "function refundToCustomer(string memory _reservationId) external",
+  "function reservations(string) view returns (string reservationId, address customer, address business, uint256 amount, bool isResolved)",
   "event DepositCreated(string reservationId, address customer, address business, uint256 amount)"
 ];
 
@@ -36,22 +42,120 @@ export interface Web3DepositResult {
   transactionHash?: string;
   error?: string;
   simulated?: boolean;
+  chain?: 'bsc' | 'solana' | 'stellar';
+  depositAmountOnChain?: string;
 }
 
 /**
+ * Generate a deterministic escrow reservation ID for on-chain use.
+ * This avoids the double-POST problem by creating the ID client-side.
+ */
+export const generateEscrowId = (userId: string): string => {
+  const timestamp = Date.now();
+  const hash = userId.slice(-6);
+  return `PBND_${timestamp}_${hash}`;
+};
+
+/**
+ * Ensures MetaMask is on the correct BSC chain. Prompts user to switch if not.
+ */
+const ensureBscChain = async (): Promise<void> => {
+  const ethereum = (window as any).ethereum;
+  if (!ethereum) throw new Error('No crypto wallet found.');
+
+  const chainIdHex = await ethereum.request({ method: 'eth_chainId' });
+  const chainId = parseInt(chainIdHex, 16);
+
+  if (!SUPPORTED_BSC_CHAIN_IDS.includes(chainId)) {
+    try {
+      // Try switching to BSC Testnet
+      await ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x61' }], // BSC Testnet
+      });
+    } catch (switchError: any) {
+      // If chain not added, add it
+      if (switchError.code === 4902) {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x61',
+            chainName: 'BNB Smart Chain Testnet',
+            nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
+            rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
+            blockExplorerUrls: ['https://testnet.bscscan.com'],
+          }],
+        });
+      } else {
+        throw new Error(`Please switch your wallet to BSC network. Current chain: ${chainId}`);
+      }
+    }
+  }
+};
+
+/**
+ * Pre-checks if the user has enough BNB balance for the deposit + gas.
+ */
+const checkBnbBalance = async (requiredBnb: string): Promise<{ sufficient: boolean; balance: string }> => {
+  const ethereum = (window as any).ethereum;
+  if (!ethereum) throw new Error('No crypto wallet found.');
+
+  const accounts = await ethereum.request({ method: 'eth_accounts' });
+  if (!accounts || accounts.length === 0) throw new Error('Wallet not connected.');
+
+  const balanceHex = await ethereum.request({
+    method: 'eth_getBalance',
+    params: [accounts[0], 'latest'],
+  });
+
+  const balance = ethers.formatEther(balanceHex);
+  const required = parseFloat(requiredBnb);
+  const gasBuffer = 0.005; // ~0.005 BNB for gas
+
+  return {
+    sufficient: parseFloat(balance) >= required + gasBuffer,
+    balance,
+  };
+};
+
+/**
+ * Pre-checks if the user has enough SOL balance for the deposit + fees.
+ */
+const checkSolBalance = async (requiredSol: number): Promise<{ sufficient: boolean; balance: number }> => {
+  const provider = (window as any).solana;
+  if (!provider || !provider.isPhantom) throw new Error('Phantom wallet not found.');
+
+  const resp = await provider.connect();
+  const publicKey = new PublicKey(resp.publicKey.toString());
+  const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+
+  const balance = await connection.getBalance(publicKey);
+  const balanceSol = balance / LAMPORTS_PER_SOL;
+  const feeBuffer = 0.01; // ~0.01 SOL for tx fee
+
+  return {
+    sufficient: balanceSol >= requiredSol + feeBuffer,
+    balance: balanceSol,
+  };
+};
+
+/**
  * Executes a BSC (BNB) deposit using MetaMask, interacting with the Escrow Smart Contract.
+ * Hardened: chain enforcement, balance pre-check, deterministic escrow ID.
  */
 export const executeBscDeposit = async (amountInBnb: string, businessWalletAddress: string, reservationId: string): Promise<Web3DepositResult> => {
   try {
     const targetAddress = businessWalletAddress || BSC_PLACEHOLDER_ADDRESSES[0];
     
-    // In a production environment, you would ensure the targetAddress is valid.
+    // Placeholder simulation
     if (BSC_PLACEHOLDER_ADDRESSES.includes(targetAddress.toLowerCase()) || BSC_PLACEHOLDER_ADDRESSES.includes(targetAddress)) {
       console.log(`[BSC] Skipping on-chain deposit — business wallet is a placeholder. Deposit will be recorded as pending.`);
       return {
         success: true,
         transactionHash: `pending_bsc_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
         simulated: true,
+        chain: 'bsc',
+        depositAmountOnChain: amountInBnb,
       };
     }
 
@@ -59,47 +163,84 @@ export const executeBscDeposit = async (amountInBnb: string, businessWalletAddre
       throw new Error('No crypto wallet found. Please install MetaMask or TrustWallet.');
     }
 
+    // Step 1: Enforce correct BSC chain
+    await ensureBscChain();
+
+    // Step 2: Connect wallet
     await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+
+    // Step 3: Pre-check balance
+    const { sufficient, balance } = await checkBnbBalance(amountInBnb);
+    if (!sufficient) {
+      throw new Error(`Insufficient BNB balance. You have ${parseFloat(balance).toFixed(4)} BNB but need ${amountInBnb} BNB + gas fees.`);
+    }
+
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
 
-    console.log(`Executing BSC Escrow Deposit. Total: ${amountInBnb} BNB for Reservation: ${reservationId}.`);
+    console.log(`[BSC] Executing Escrow Deposit. Amount: ${amountInBnb} BNB | Reservation: ${reservationId} | Business: ${targetAddress}`);
 
-    // Call the deposit function on the PabandiEscrow contract
+    // Step 4: Call the deposit function on the PabandiEscrow contract
     const escrowContract = new ethers.Contract(PABANDI_ESCROW_BSC, ESCROW_ABI, signer);
     
     const tx = await escrowContract.deposit(reservationId, targetAddress, { 
       value: ethers.parseEther(amountInBnb) 
     });
     
-    console.log(`Transaction submitted: ${tx.hash}. Waiting for confirmation...`);
-    await tx.wait(); // Wait for 1 block confirmation
+    console.log(`[BSC] Transaction submitted: ${tx.hash}. Waiting for confirmation...`);
+    const receipt = await tx.wait(); // Wait for 1 block confirmation
+
+    if (!receipt || receipt.status === 0) {
+      throw new Error('Transaction was reverted on-chain.');
+    }
+
+    console.log(`[BSC] Deposit confirmed in block ${receipt.blockNumber}. Gas used: ${receipt.gasUsed.toString()}`);
 
     return {
       success: true,
-      transactionHash: tx.hash
+      transactionHash: tx.hash,
+      chain: 'bsc',
+      depositAmountOnChain: amountInBnb,
     };
   } catch (err: any) {
     console.error('BSC Deposit Error:', err);
+
+    // User-friendly error messages
+    let errorMsg = err?.shortMessage || err?.message || 'Transaction failed or was rejected.';
+    if (err?.code === 'ACTION_REJECTED' || err?.code === 4001) {
+      errorMsg = 'You rejected the transaction in your wallet.';
+    } else if (errorMsg.includes('insufficient funds')) {
+      errorMsg = 'Insufficient BNB balance for this deposit + gas fees.';
+    }
+
     return {
       success: false,
-      error: err?.shortMessage || err?.message || 'Transaction failed or was rejected.'
+      error: errorMsg,
+      chain: 'bsc',
     };
   }
 };
 
 /**
  * Executes a Solana deposit using Phantom Wallet.
+ * Hardened: balance pre-check, treasury routing, deterministic escrow ID.
+ * Note: Solana deposits go to a Pabandi treasury wallet (not direct to business)
+ * since there's no on-chain Solana escrow program. Refunds are handled off-chain.
  */
-export const executeSolanaDeposit = async (amountInSol: number, businessWalletAddress: string): Promise<Web3DepositResult> => {
+export const executeSolanaDeposit = async (amountInSol: number, _businessWalletAddress: string): Promise<Web3DepositResult> => {
   try {
-    const targetAddress = businessWalletAddress || PABANDI_TREASURY_SOLANA;
+    // Always route to Pabandi treasury for escrow-like behavior
+    // The business wallet is tracked server-side for eventual payout
+    const targetAddress = PABANDI_TREASURY_SOLANA;
+    
     if (SOLANA_PLACEHOLDER_ADDRESSES.includes(targetAddress)) {
-      console.log(`[Solana] Skipping on-chain deposit — business wallet is a placeholder. Deposit will be recorded as pending.`);
+      console.log(`[Solana] Skipping on-chain deposit — treasury wallet is a placeholder. Deposit will be recorded as pending.`);
       return {
         success: true,
         transactionHash: `pending_sol_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
         simulated: true,
+        chain: 'solana',
+        depositAmountOnChain: amountInSol.toString(),
       };
     }
 
@@ -110,10 +251,16 @@ export const executeSolanaDeposit = async (amountInSol: number, businessWalletAd
         const url = encodeURIComponent(window.location.href);
         const ref = encodeURIComponent(window.location.origin);
         window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
-        return { success: false, error: 'Redirecting to Phantom App...' };
+        return { success: false, error: 'Redirecting to Phantom App...', chain: 'solana' };
       } else {
         throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
       }
+    }
+
+    // Step 1: Connect and pre-check balance
+    const { sufficient, balance } = await checkSolBalance(amountInSol);
+    if (!sufficient) {
+      throw new Error(`Insufficient SOL balance. You have ${balance.toFixed(4)} SOL but need ${amountInSol} SOL + fees.`);
     }
 
     const resp = await provider.connect();
@@ -121,32 +268,53 @@ export const executeSolanaDeposit = async (amountInSol: number, businessWalletAd
     const treasuryPublicKey = new PublicKey(targetAddress);
     const connection = new Connection("https://api.devnet.solana.com", "confirmed");
 
+    // Step 2: Build and sign transaction
     const transaction = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: userPublicKey,
         toPubkey: treasuryPublicKey,
-        lamports: amountInSol * LAMPORTS_PER_SOL,
+        lamports: Math.round(amountInSol * LAMPORTS_PER_SOL),
       })
     );
 
-    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = userPublicKey;
 
     const signedTransaction = await provider.signTransaction(transaction);
     const txId = await connection.sendRawTransaction(signedTransaction.serialize());
     
-    await connection.confirmTransaction(txId);
+    // Step 3: Confirm with timeout
+    const confirmation = await connection.confirmTransaction({
+      signature: txId,
+      blockhash,
+      lastValidBlockHeight,
+    }, 'confirmed');
+
+    if (confirmation.value.err) {
+      throw new Error(`Transaction failed on-chain: ${JSON.stringify(confirmation.value.err)}`);
+    }
+
+    console.log(`[Solana] Deposit confirmed: ${txId}`);
 
     return {
       success: true,
-      transactionHash: txId
+      transactionHash: txId,
+      chain: 'solana',
+      depositAmountOnChain: amountInSol.toString(),
     };
   } catch (err: any) {
     console.error('Solana Deposit Error:', err);
+
+    let errorMsg = err?.message || 'Transaction failed or was rejected.';
+    if (errorMsg.includes('User rejected')) {
+      errorMsg = 'You rejected the transaction in your wallet.';
+    }
+
     return {
       success: false,
-      error: err?.message || 'Transaction failed or was rejected.'
+      error: errorMsg,
+      chain: 'solana',
     };
   }
 };
@@ -163,6 +331,7 @@ export const executeStellarFranklinDeposit = async (amountInFobxx: string, busin
         success: true,
         transactionHash: `pending_stellar_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
         simulated: true,
+        chain: 'stellar',
       };
     }
 
@@ -210,13 +379,15 @@ export const executeStellarFranklinDeposit = async (amountInFobxx: string, busin
 
     return {
       success: true,
-      transactionHash: response.hash
+      transactionHash: response.hash,
+      chain: 'stellar',
     };
   } catch (err: any) {
     console.error('Stellar Deposit Error:', err);
     return {
       success: false,
-      error: err?.message || 'Transaction failed or was rejected.'
+      error: err?.message || 'Transaction failed or was rejected.',
+      chain: 'stellar',
     };
   }
 };

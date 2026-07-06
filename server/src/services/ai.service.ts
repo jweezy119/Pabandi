@@ -1,5 +1,6 @@
 import { prisma } from '../utils/database';
 import axios from 'axios';
+import { cryptoService } from './cryptoService';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const META_WA_ACCESS_TOKEN = process.env.META_WA_ACCESS_TOKEN || '';
@@ -50,6 +51,15 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
 export const processWhatsAppMessage = async (phoneNumber: string, message: string, user: any | null) => {
   console.log(`[AI] Processing message from ${phoneNumber}: ${message}`);
   
+  const lowerMsg = message.trim().toLowerCase();
+
+  if (user) {
+    if (lowerMsg === 'cancel') {
+      await handleWhatsAppCancellation(phoneNumber, user);
+      return;
+    }
+  }
+
   if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
     console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
     await sendWhatsAppMessage(phoneNumber, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
@@ -112,3 +122,68 @@ Do not generate markdown or long lists.
     await sendWhatsAppMessage(phoneNumber, 'Sorry, I am having trouble understanding right now. Please try again later!');
   }
 };
+
+/**
+ * Handle automatic cancellation triggered via WhatsApp
+ */
+async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
+  try {
+    // Find most recent active reservation
+    const reservation = await prisma.reservation.findFirst({
+      where: {
+        customerId: user.id,
+        status: { in: ['PENDING', 'CONFIRMED'] },
+      },
+      include: { business: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!reservation) {
+      await sendWhatsAppMessage(phoneNumber, "You don't have any upcoming reservations to cancel right now.");
+      return;
+    }
+
+    // Process the cancellation
+    await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: { status: 'CANCELLED' }
+    });
+
+    // Handle refund if deposit was paid
+    if (reservation.depositPaid) {
+      if (reservation.cryptoDepositTxHash && !reservation.cryptoDepositTxHash.startsWith('pending_')) {
+        // Crypto refund
+        try {
+          await cryptoService.refundEscrowToCustomer(reservation.id);
+        } catch (e) {
+          console.error('[WhatsApp Cancel] Failed to trigger crypto refund', e);
+        }
+      } else {
+        // Fiat/Safepay refund
+        const payment = await prisma.payment.findFirst({
+          where: { reservationId: reservation.id, status: 'COMPLETED' }
+        });
+        if (payment) {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: 'REFUNDED' }
+          });
+        }
+      }
+      
+      // Mark deposit as unpaid since it is refunded
+      await prisma.reservation.update({
+        where: { id: reservation.id },
+        data: { depositPaid: false }
+      });
+
+      await sendWhatsAppMessage(phoneNumber, `✅ Your reservation at *${reservation.business.name}* on ${reservation.reservationDate} has been cancelled. Your deposit has been automatically refunded to you!`);
+      return;
+    }
+
+    await sendWhatsAppMessage(phoneNumber, `✅ Your reservation at *${reservation.business.name}* on ${reservation.reservationDate} has been cancelled successfully.`);
+  } catch (error) {
+    console.error('[WhatsApp Cancel Error]:', error);
+    await sendWhatsAppMessage(phoneNumber, "Sorry, we encountered an error while trying to cancel your reservation. Please try again or use the app.");
+  }
+}

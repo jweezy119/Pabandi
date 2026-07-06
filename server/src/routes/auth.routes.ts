@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile } from '../controllers/auth.controller';
+import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile, updatePassword } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -63,6 +63,17 @@ router.put(
   ],
   validateRequest,
   updateProfile
+);
+
+router.put(
+  '/update-password',
+  authenticate,
+  [
+    body('currentPassword').notEmpty().withMessage('Current password is required.'),
+    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters long.'),
+  ],
+  validateRequest,
+  updatePassword
 );
 
 

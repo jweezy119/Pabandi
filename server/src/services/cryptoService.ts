@@ -130,6 +130,55 @@ export class CryptoService {
   }
 
   /**
+   * Reward customer with 1% cashback for booking via AI Concierge.
+   */
+  async triggerConciergeCashback(userId: string, reservationId: string): Promise<void> {
+    try {
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        select: { depositAmount: true, isConcierge: true }
+      });
+
+      if (!reservation || !reservation.isConcierge || !reservation.depositAmount) return;
+
+      // 1% of the deposit amount in PAB (or equivalent)
+      const amount = Math.floor(reservation.depositAmount * 0.01);
+
+      if (amount <= 0) return;
+
+      logger.info(`PAB +${amount} (1% Cashback) customer ${userId} via AI Concierge for reservation ${reservationId}`);
+
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.cryptoReward.findFirst({
+          where: { userId, reservationId, type: 'RESERVATION_COMPLETION', metadata: { equals: { note: 'Concierge Cashback' } } as any },
+        });
+        if (existing) return;
+
+        await this.creditPab(tx, userId, amount, 'RESERVATION_COMPLETION', reservationId, {
+          note: 'Concierge Cashback',
+          depositAmount: reservation.depositAmount
+        });
+
+        // Optionally immediately trigger withdrawal to Solana wallet if they have one connected
+        try {
+          const wallet = await tx.wallet.findUnique({ where: { userId } });
+          if (wallet?.address && wallet.currency === 'SOL') {
+            // Process async withdrawal
+            setTimeout(() => {
+              this.withdrawToSolana(userId, amount).catch(e => logger.error("Async cashback withdrawal failed", e));
+            }, 5000);
+          }
+        } catch (e) {
+           logger.error("Failed to check wallet for cashback auto-withdraw", e);
+        }
+      });
+    } catch (error) {
+      logger.error('Error triggering concierge cashback:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Reward business owner when they honor a completed booking.
    */
   async rewardBusinessForCompletion(businessId: string, reservationId: string): Promise<void> {

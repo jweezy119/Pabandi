@@ -64,7 +64,7 @@ export default function ContactPage() {
                 <span className="material-symbols-outlined text-on-surface-variant">call</span>
                 1-800-PABANDI
               </a>
-              <a href="#" className="flex items-center gap-3 text-on-surface hover:text-[#10b981] transition-colors font-semibold">
+              <a href="https://wa.me/18007222634" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-on-surface hover:text-[#10b981] transition-colors font-semibold">
                 <span className="material-symbols-outlined text-on-surface-variant">forum</span>
                 Partner WhatsApp Support
               </a>

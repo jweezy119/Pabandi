@@ -442,6 +442,12 @@ export const resetPassword = async (
       throw new CustomError('Invalid or expired reset token', 400);
     }
 
+    // Enforce password complexity
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      throw new CustomError('Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)', 400);
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
     await prisma.user.update({
@@ -456,6 +462,47 @@ export const resetPassword = async (
     res.json({
       success: true,
       message: 'Password reset successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = (req as any).user.id;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new CustomError('User not found', 404);
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new CustomError('Incorrect current password', 401);
+    }
+
+    // Enforce password complexity
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      throw new CustomError('Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)', 400);
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully',
     });
   } catch (error) {
     next(error);

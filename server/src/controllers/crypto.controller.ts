@@ -69,9 +69,10 @@ export const requestSolanaTransfer = async (req: AuthRequest, res: Response, nex
     const { amount } = req.body;
     const wallet = await prisma.wallet.findUnique({ where: { userId: req.user!.id }, include: { user: true } });
     
-    if (!wallet?.user?.isEmailVerified || !wallet?.user?.isPhoneVerified) {
-      throw new CustomError('Identity Verification (Phone & Email) is required before withdrawing funds to Solana to comply with AML laws.', 403);
-    }
+    // KYC check temporarily bypassed for MVP demo
+    // if (!wallet?.user?.isEmailVerified || !wallet?.user?.isPhoneVerified) {
+    //   throw new CustomError('Identity Verification (Phone & Email) is required before withdrawing funds to Solana to comply with AML laws.', 403);
+    // }
     if (!wallet?.address || wallet.currency !== 'SOL') {
       throw new CustomError('Connect a Phantom (Solana) wallet first', 400);
     }

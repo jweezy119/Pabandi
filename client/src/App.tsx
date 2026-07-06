@@ -22,6 +22,7 @@ import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
+import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -35,6 +36,7 @@ import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
+import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
@@ -116,6 +118,10 @@ function App() {
           element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />}
         />
         <Route
+          path="business/analytics"
+          element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />}
+        />
+        <Route
           path="reservations"
           element={isAuthenticated ? <ReservationsPage /> : <Navigate to="/login" />}
         />
@@ -130,6 +136,10 @@ function App() {
         <Route
           path="profile"
           element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="passport"
+          element={isAuthenticated ? <DietaryPassportPage /> : <Navigate to="/login" />}
         />
         </Route>
       </Routes>

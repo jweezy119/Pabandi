@@ -466,11 +466,15 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editName, setEditName] = useState({ firstName: user?.firstName || '', lastName: user?.lastName || '' });
-  const [activeTab, setActiveTab] = useState<'history' | 'badges' | 'connections' | 'loyalty'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'badges' | 'connections' | 'loyalty' | 'security'>('history');
   const [connected, setConnected] = useState<Record<string, boolean>>({});
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'success') => {
     const id = Date.now();
@@ -510,6 +514,26 @@ export default function ProfilePage() {
       addToast(`Error (${fullUrl}): ${msg}`, 'error');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      addToast('New password must be at least 8 characters long', 'error');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await authService.updatePassword({ currentPassword, newPassword });
+      addToast('Password updated successfully', 'success');
+      setCurrentPassword('');
+      setNewPassword('');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || 'Failed to update password';
+      addToast(msg, 'error');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -866,17 +890,18 @@ export default function ProfilePage() {
 
         {/* ── Tabs ── */}
         <div>
-          <div className="flex gap-1 mb-6 bg-surface-container-low border border-outline-variant/10 rounded-xl p-1 flex-wrap">
-            {(['history', 'loyalty', 'badges', 'connections'] as const).map(tab => (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide snap-x">
+            {(['history', 'loyalty', 'badges', 'connections', 'security'] as const).map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize ${
+                className={`snap-start whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
                   activeTab === tab
-                  ? 'bg-surface-container-lowest text-primary shadow-sm border border-outline-variant/20'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                    ? 'bg-surface-container-lowest text-primary border-primary/30 shadow-sm'
+                    : 'bg-transparent text-on-surface-variant border-transparent hover:bg-surface-container-low hover:text-on-surface'
                 }`}>
                 {tab === 'history'     ? '📅 Booking History' :
                  tab === 'loyalty'     ? '🏆 Loyalty Program' :
                  tab === 'badges'      ? '🏅 Achievements'    :
+                 tab === 'security'    ? '🔒 Security'        :
                                         '🔗 Connected Accounts'}
               </button>
             ))}
@@ -1101,8 +1126,52 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
-        </div>
 
+          {/* ── Security Tab ── */}
+          {activeTab === 'security' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-lg">
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-6">
+                  <ShieldCheckIcon className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-black text-on-surface font-headline tracking-tight">Security Settings</h2>
+                </div>
+                
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant">Current Password</label>
+                    <input 
+                      type="password" 
+                      required 
+                      value={currentPassword} 
+                      onChange={e => setCurrentPassword(e.target.value)}
+                      className="w-full bg-surface-container border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-2 outline-none font-body text-sm transition-colors hover:border-outline-variant/50" 
+                      placeholder="Enter current password" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant">New Password</label>
+                    <input 
+                      type="password" 
+                      required 
+                      value={newPassword} 
+                      onChange={e => setNewPassword(e.target.value)}
+                      className="w-full bg-surface-container border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-2 outline-none font-body text-sm transition-colors hover:border-outline-variant/50" 
+                      placeholder="Min. 8 characters" 
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isChangingPassword}
+                    className="mt-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg font-body text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 w-full"
+                  >
+                    {isChangingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );

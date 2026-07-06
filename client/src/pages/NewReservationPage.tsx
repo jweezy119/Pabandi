@@ -13,8 +13,9 @@ import {
   CurrencyDollarIcon,
   StarIcon,
   MapPinIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
-import { executeBscDeposit, executeSolanaDeposit } from "../utils/web3";
+import { executeBscDeposit, executeSolanaDeposit, generateEscrowId } from "../utils/web3";
 
 const TIME_SLOTS = [
   "09:00",
@@ -227,24 +228,15 @@ export default function NewReservationPage() {
     setLoading(true);
     let transactionHash: string | undefined;
 
-    try {
-      const initialResponse = await apiClient.post("/reservations", {
-        businessId: selectedPlace.id || selectedPlace.googlePlaceId,
-        customerName: `${user?.firstName} ${user?.lastName}`,
-        customerPhone: user?.phone || "",
-        reservationDate: form.date,
-        reservationTime: form.time,
-        numberOfGuests: parseInt(form.guests) || 1,
-        specialRequests: form.notes || undefined,
-        paymentMethod: form.paymentMethod,
-        preview: true // Tell backend to create in pending state if needed
-      });
+    const guestCount = parseInt(form.guests) || 1;
+    const requiredDeposit = guestCount * 0.02; // 0.02 BNB/SOL per guest
 
-      const reservationId = initialResponse?.data?.data?.id || "PENDING_" + Date.now();
+    try {
+      const reservationId = generateEscrowId(user?.id || 'anon');
 
       if (form.paymentMethod === "bsc") {
         const result = await executeBscDeposit(
-          "0.05",
+          requiredDeposit.toString(),
           selectedPlace.walletAddress ||
             "0x1234567890123456789012345678901234567890",
           reservationId
@@ -257,7 +249,7 @@ export default function NewReservationPage() {
         transactionHash = result.transactionHash;
       } else if (form.paymentMethod === "solana") {
         const result = await executeSolanaDeposit(
-          0.1,
+          requiredDeposit,
           selectedPlace.walletAddress ||
             "PABANDi111111111111111111111111111111111111",
         );
@@ -310,6 +302,7 @@ export default function NewReservationPage() {
         specialRequests: finalNotes || undefined,
         paymentMethod: form.paymentMethod,
         transactionHash,
+        depositAmount: transactionHash ? requiredDeposit : undefined,
       });
 
       const checkoutUrl = response?.data?.data?.checkoutUrl;
@@ -632,12 +625,17 @@ export default function NewReservationPage() {
                           onClick={() =>
                             handlePaymentMethodChange(m.id as PaymentMethod)
                           }
-                          className={`flex flex-col items-center justify-center py-3 rounded-lg border transition-all ${
+                          className={`relative flex flex-col items-center justify-center py-4 rounded-lg border transition-all overflow-hidden ${
                             form.paymentMethod === m.id
                               ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
                               : "border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low"
                           }`}
                         >
+                          {m.id !== "safepay" && (
+                            <div className="absolute top-0 right-0 bg-primary/10 text-primary text-[8px] font-bold px-1.5 py-0.5 rounded-bl uppercase tracking-widest border-b border-l border-primary/20">
+                              Escrow
+                            </div>
+                          )}
                           {m.icon}
                           <span className="mt-1 text-[11px] font-bold text-on-surface">
                             {m.label}
@@ -674,7 +672,7 @@ export default function NewReservationPage() {
                     disabled={loading}
                     className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all flex items-center justify-center gap-2"
                   >
-                    {loading ? "Processing..." : "Confirm Reservation"}
+                    {loading ? "Processing..." : (form.paymentMethod !== "safepay" ? `Lock Deposit & Book` : "Confirm Reservation")}
                   </button>
                 </form>
               </div>
@@ -732,6 +730,28 @@ export default function NewReservationPage() {
                       {form.paymentMethod}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl p-6 bg-surface-container-low border border-outline-variant/20">
+                <h3 className="font-headline text-lg font-bold text-primary mb-4 flex items-center gap-2">
+                  <LockClosedIcon className="h-5 w-5" /> Escrow Protection
+                </h3>
+                <div className="text-sm text-on-surface-variant space-y-3">
+                  <p>
+                    To protect our venue partners from no-shows, an upfront deposit is locked safely in the Pabandi Smart Contract.
+                  </p>
+                  <div className="flex justify-between items-center py-3 border-t border-b border-outline-variant/20 font-bold text-on-surface">
+                    <span>Required Deposit:</span>
+                    <span className="text-primary text-base">
+                      {form.paymentMethod !== 'safepay' 
+                        ? `${((parseInt(form.guests) || 1) * 0.02).toFixed(2)} ${form.paymentMethod === 'bsc' ? 'BNB' : 'SOL'}` 
+                        : 'Fiat Equivalent'}
+                    </span>
+                  </div>
+                  <p className="text-xs">
+                    This deposit will be automatically released to the business upon arrival. If the business cancels, you are refunded 100%.
+                  </p>
                 </div>
               </div>
 

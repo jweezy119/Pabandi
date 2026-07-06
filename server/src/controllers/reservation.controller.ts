@@ -6,12 +6,14 @@ import { noShowPredictor } from '../services/ai/noShowPredictor';
 import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
+import { ethers } from 'ethers';
 import { reliabilityService } from '../services/reliability.service';
 import { paymentRouter } from '../services/payment.router';
 import { webhookService } from '../services/webhook.service';
 import { notificationService } from '../services/notification.service';
 import { conciergeService } from '../services/conciergeService';
 import { trustSignalService } from '../services/trustSignal.service';
+import { sendWhatsAppMessage } from '../services/ai.service';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -177,6 +179,21 @@ export const createReservation = async (
       },
     };
 
+    // Validate transaction hash if present and real
+    if (req.body.transactionHash && !req.body.transactionHash.startsWith('pending_') && req.body.paymentMethod === 'bsc') {
+      try {
+        const provider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545');
+        const receipt = await provider.getTransactionReceipt(req.body.transactionHash);
+        if (!receipt || receipt.status !== 1) {
+          throw new CustomError('Invalid or failed transaction hash', 400);
+        }
+      } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+        logger.error(`Error verifying transaction hash: ${err.message}`);
+        throw new CustomError('Could not verify on-chain deposit', 400);
+      }
+    }
+
     // Get AI prediction
     const prediction = await noShowPredictor.predict(features);
 
@@ -186,8 +203,8 @@ export const createReservation = async (
       settings?.autoRequireDeposit &&
       prediction.riskScore >= (settings.aiRiskThreshold || 70);
 
-    let depositAmount = null;
-    if (requireDeposit || business.requireDeposit) {
+    let depositAmount = req.body.depositAmount || null;
+    if (!depositAmount && (requireDeposit || business.requireDeposit)) {
       if (business.depositPercentage) {
         // Calculate based on estimated bill (could be enhanced)
         depositAmount = 1000 * business.depositPercentage; // Placeholder
@@ -260,6 +277,17 @@ export const createReservation = async (
     if (!isConcierge) {
       await notificationService.sendConfirmation(reservation.id);
       await notificationService.sendBusinessNotification(reservation.id);
+      
+      // WhatsApp Integration: Send Booking Confirmation
+      if (customerPhone) {
+        const depositText = depositAmount || req.body.transactionHash 
+          ? "✅ Deposit secured safely via Pabandi Escrow." 
+          : "🌟 Booked with Zero Deposit! Your high Pabandi Trust Score waived the fee.";
+          
+        const body = `Hi ${customerName}! 👋\n\nYour reservation at *${business.name}* is confirmed for *${dateTime.format('MMMM Do YYYY')} at ${reservationTime}*.\n\n${depositText}\n\nNeed to cancel? Just reply to this message with *"Cancel"* to automatically cancel and refund your deposit.`;
+        
+        await sendWhatsAppMessage(customerPhone, body);
+      }
     } else {
       if (business.phone) {
         logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
@@ -483,11 +511,21 @@ export const cancelReservation = async (
           });
           logger.info(`Crypto tiered refund: ${refundPercentage}% to user (${userRefund} PAB), ${businessComp} to business.`);
           
-          // Escrow Integration: If 100% refund, refund customer on-chain
-          if (refundPercentage === 100 && !reservation.cryptoDepositTxHash.startsWith('STAKED_')) {
-             await cryptoService.refundEscrowToCustomer(reservation.id);
-          }
+          // Escrow Integration: STAKED refund is handled above in PAB
         } 
+        // --- ON-CHAIN CRYPTO DEPOSIT REFUND ---
+        else if (reservation.cryptoDepositTxHash && !reservation.cryptoDepositTxHash.startsWith('pending_')) {
+          if (refundPercentage === 100) {
+            await cryptoService.refundEscrowToCustomer(reservation.id);
+            await prisma.reservation.update({
+              where: { id: reservation.id },
+              data: { cryptoDepositTxHash: `REFUNDED_100` }
+            });
+            logger.info(`Crypto on-chain refund triggered for reservation ${reservation.id}`);
+          } else {
+            logger.warn(`Partial refunds not supported for on-chain escrow yet (${reservation.id})`);
+          }
+        }
         // --- FIAT REFUND ---
         else {
           const currency = business?.currency || 'USD';
@@ -623,6 +661,10 @@ export const completeReservation = async (
     // Trigger Crypto Rewards (User and Business)
     await cryptoService.rewardReservationCompletion(reservation.customerId, reservation.id);
     await cryptoService.rewardBusinessForCompletion(reservation.businessId, reservation.id);
+    
+    if (reservation.isConcierge) {
+      await cryptoService.triggerConciergeCashback(reservation.customerId, reservation.id);
+    }
 
     // Escrow Integration: Release funds to business
     if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {

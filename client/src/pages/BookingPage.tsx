@@ -8,6 +8,7 @@ import { ShieldCheckIcon, StarIcon, MapPinIcon, ClockIcon, PhoneIcon } from '@he
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
 import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
+import { encryptRsa } from '../utils/e2ee';
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -16,10 +17,15 @@ export default function BookingPage() {
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [isProcessingWeb3, setIsProcessingWeb3] = useState(false);
   
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialDate = urlParams.get('date') || '';
+  const initialTime = urlParams.get('time') || '';
+  const initialGuests = parseInt(urlParams.get('guests') || '2', 10);
+
   const [formData, setFormData] = useState({
-    reservationDate: '',
-    reservationTime: '',
-    numberOfGuests: 2,
+    reservationDate: initialDate,
+    reservationTime: initialTime,
+    numberOfGuests: initialGuests,
     customerName: '',
     customerPhone: '',
     specialRequests: '',
@@ -127,6 +133,23 @@ export default function BookingPage() {
     }
   }, [isAuthenticated, showBookingForm]);
 
+  const handleAttachPassport = async () => {
+    if (!user?.encryptedDietaryData || !business?.e2eePublicKey) return;
+    try {
+      const payload = JSON.parse(atob(user.encryptedDietaryData));
+      const textToEncrypt = `Allergies: ${payload.allergies}\nPreferences: ${payload.preferences}`;
+      const encrypted = await encryptRsa(textToEncrypt, business.e2eePublicKey);
+      setFormData(prev => ({
+        ...prev,
+        specialRequests: `E2EE:${encrypted}`
+      }));
+      alert('Dietary Passport attached and encrypted with Zero-Knowledge E2EE.');
+    } catch (e) {
+      console.error(e);
+      alert('Failed to attach passport.');
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -146,8 +169,12 @@ export default function BookingPage() {
       window.navigator.vibrate(50);
     }
     
+    // Check if coming from concierge
+    const urlParams = new URLSearchParams(window.location.search);
+    const isConcierge = urlParams.get('concierge') === 'true';
+    
     // Pass paymentMethod so the backend creates the fiat checkoutUrl if needed
-    bookingMutation.mutate({ businessId: id, ...formData });
+    bookingMutation.mutate({ businessId: id, isConcierge, ...formData });
   };
 
   if (businessLoading || !business) {
@@ -378,6 +405,23 @@ export default function BookingPage() {
                     <div>
                       <label className="block text-sm font-medium text-on-surface mb-1">Phone Number *</label>
                        <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="+1 (555) 000-0000" />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-on-surface">Special Requests</label>
+                        {user?.encryptedDietaryData && business?.e2eePublicKey && (
+                          <button 
+                            type="button" 
+                            onClick={handleAttachPassport}
+                            className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">lock</span>
+                            Attach Encrypted Dietary Passport
+                          </button>
+                        )}
+                      </div>
+                      <textarea name="specialRequests" value={formData.specialRequests} onChange={handleChange} rows={2} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="Any special requests or dietary needs..." />
                     </div>
 
                     <div>

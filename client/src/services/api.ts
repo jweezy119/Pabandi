@@ -66,6 +66,8 @@ export const authService = {
     apiClient.post('/auth/refresh', { refreshToken }),
   updateProfile: (data: { firstName: string; lastName: string }) =>
     apiClient.put('/auth/profile', data),
+  updatePassword: (data: { currentPassword: string; newPassword: string }) =>
+    apiClient.put('/auth/update-password', data),
 };
 
 export const businessService = {
@@ -117,6 +119,8 @@ export const paymentService = {
 export const analyticsService = {
   /** Fetches the full AI-powered dashboard analytics for the logged-in business owner */
   getDashboardAnalytics: () => apiClient.get('/analytics'),
+  /** Fetches extended time-series, deposit, and customer analytics for the dedicated analytics page */
+  getDetailedAnalytics: () => apiClient.get('/analytics/detailed'),
 };
 
 export const cryptoService = {

@@ -18,6 +18,7 @@ import {
   ShoppingCartIcon,
   SparklesIcon,
   ArrowUpRightIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
@@ -313,6 +314,9 @@ export default function BusinessDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link to="/business/analytics" className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant">
+              <ChartBarIcon className="h-4 w-4" /> Analytics
+            </Link>
             <Link to="/business/settings" className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant">
               <Cog6ToothIcon className="h-4 w-4" /> Settings
             </Link>

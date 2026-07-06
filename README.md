@@ -24,6 +24,8 @@ By combining a localized consumer booking app with a global B2B API, Pabandi has
 - **Payment Integration**: Secure fiat processing via **Stripe** (US cards, Apple Pay, Google Pay) with **Safepay** retained as a secondary gateway, plus native **Web3 Crypto Payments**.
 - **Automated Reminders**: WhatsApp, SMS, and email notifications to actively reduce no-shows.
 - **Analytics Dashboard**: Real-time insights into booking patterns, revenue, and crypto rewards.
+- **Global AI Concierge**: Powered by Alibaba Cloud's Qwen model via DashScope, this globally available floating chat widget assists users in finding restaurants and booking tables, automatically rewarding 1% crypto cashback on completed concierge reservations.
+- **Zero-Knowledge Dietary Passport (E2EE)**: Users can securely define allergies and preferences. This data is encrypted locally using Web Crypto API (RSA-OAEP) and stored securely. During booking, it is encrypted exclusively with the specific restaurant's public key, ensuring complete zero-knowledge privacy from Pabandi servers.
 - **AI Search & SEO Optimized**: Next-generation meta tags, OpenGraph, and JSON-LD structured data to ensure high visibility on AI Search Engines and Google Search.
 
 ## 🏗️ Architecture

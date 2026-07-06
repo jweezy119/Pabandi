@@ -10,12 +10,22 @@ contract PabandiEscrow {
     address public oracle; // The Pabandi Backend Server
     uint256 public platformFeePercent = 2; // Default 2% fee
 
+    // Reentrancy guard
+    bool private _locked;
+    modifier nonReentrant() {
+        require(!_locked, "ReentrancyGuard: reentrant call");
+        _locked = true;
+        _;
+        _locked = false;
+    }
+
     struct Reservation {
         string reservationId;
         address customer;
         address business;
         uint256 amount;
         bool isResolved;
+        uint256 timestamp;
     }
 
     // Mapping from reservation ID (string) to Reservation struct
@@ -24,6 +34,7 @@ contract PabandiEscrow {
     event DepositCreated(string reservationId, address customer, address business, uint256 amount);
     event FundsReleasedToBusiness(string reservationId, uint256 amount, uint256 fee);
     event FundsRefundedToCustomer(string reservationId, uint256 amount);
+    event EmergencyWithdraw(address to, uint256 amount);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this");
@@ -43,7 +54,7 @@ contract PabandiEscrow {
     /**
      * @dev Customers call this to stake their deposit against a reservation.
      */
-    function deposit(string memory _reservationId, address _business) external payable {
+    function deposit(string memory _reservationId, address _business) external payable nonReentrant {
         require(msg.value > 0, "Deposit must be greater than 0");
         require(reservations[_reservationId].amount == 0, "Reservation already exists");
 
@@ -52,7 +63,8 @@ contract PabandiEscrow {
             customer: msg.sender,
             business: _business,
             amount: msg.value,
-            isResolved: false
+            isResolved: false,
+            timestamp: block.timestamp
         });
 
         emit DepositCreated(_reservationId, msg.sender, _business, msg.value);
@@ -62,7 +74,7 @@ contract PabandiEscrow {
      * @dev Oracle calls this when a reservation is COMPLETED or NO_SHOW.
      * The business receives the deposit minus the platform fee.
      */
-    function releaseToBusiness(string memory _reservationId) external onlyOracle {
+    function releaseToBusiness(string memory _reservationId) external onlyOracle nonReentrant {
         Reservation storage res = reservations[_reservationId];
         require(res.amount > 0, "Reservation not found");
         require(!res.isResolved, "Already resolved");
@@ -89,7 +101,7 @@ contract PabandiEscrow {
      * @dev Oracle calls this when a reservation is CANCELLED by the business.
      * The customer gets a 100% full refund.
      */
-    function refundToCustomer(string memory _reservationId) external onlyOracle {
+    function refundToCustomer(string memory _reservationId) external onlyOracle nonReentrant {
         Reservation storage res = reservations[_reservationId];
         require(res.amount > 0, "Reservation not found");
         require(!res.isResolved, "Already resolved");
@@ -100,6 +112,32 @@ contract PabandiEscrow {
         require(success, "Refund to customer failed");
 
         emit FundsRefundedToCustomer(_reservationId, res.amount);
+    }
+
+    /**
+     * @dev Get reservation details (server-side verification).
+     */
+    function getReservation(string memory _reservationId) external view returns (Reservation memory) {
+        return reservations[_reservationId];
+    }
+
+    /**
+     * @dev Emergency withdraw stuck funds (e.g., if oracle dies). 
+     * Time-locked for 30 days after creation.
+     */
+    function emergencyWithdraw(string memory _reservationId) external nonReentrant {
+        Reservation storage res = reservations[_reservationId];
+        require(res.amount > 0, "Reservation not found");
+        require(!res.isResolved, "Already resolved");
+        require(msg.sender == res.customer || msg.sender == owner, "Unauthorized");
+        require(block.timestamp >= res.timestamp + 30 days, "Time lock not expired");
+
+        res.isResolved = true;
+
+        (bool success, ) = res.customer.call{value: res.amount}("");
+        require(success, "Refund failed");
+
+        emit EmergencyWithdraw(res.customer, res.amount);
     }
 
     /**
