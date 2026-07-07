@@ -3,7 +3,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
 // Use production endpoint if key is provided, else fallback for dev/testing
-const CHANNEX_API_URL = 'https://staging.channex.io/api/v1'; 
+const CHANNEX_API_URL = 'https://app.channex.io/api/v1'; 
 const API_KEY = process.env.CHANNEX_API_KEY;
 
 const channexClient = axios.create({
