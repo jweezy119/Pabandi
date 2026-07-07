@@ -982,6 +982,11 @@ export const updateBusinessService = async (req: AuthRequest, res: Response, nex
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
+    const existingService = await prisma.businessService.findUnique({ where: { id: serviceId } });
+    if (!existingService || existingService.businessId !== id) {
+      return res.status(404).json({ success: false, message: 'Service not found in this business' });
+    }
+
     const service = await prisma.businessService.update({
       where: { id: serviceId },
       data: {
@@ -1005,6 +1010,11 @@ export const deleteBusinessService = async (req: AuthRequest, res: Response, nex
 
     if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const existingService = await prisma.businessService.findUnique({ where: { id: serviceId } });
+    if (!existingService || existingService.businessId !== id) {
+      return res.status(404).json({ success: false, message: 'Service not found in this business' });
     }
 
     await prisma.businessService.delete({

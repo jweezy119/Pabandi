@@ -14,13 +14,14 @@ export const handleConciergeQuery = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "DashScope API key is not configured." });
     }
 
-    // Context for Qwen AI
     let systemContext = `You are the Pabandi AI Concierge powered by Alibaba Cloud Qwen.
 You help users find restaurants, salons, and make reservations.
 The user asking is ${user?.firstName || 'a guest'}.
 Please respond concisely.`;
 
-    if (walletAddress) {
+    const isValidSolanaAddress = (address: any) => typeof address === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+
+    if (walletAddress && isValidSolanaAddress(walletAddress)) {
       const profile = await blockchainService.getSolanaWalletProfile(walletAddress);
       if (profile && profile.status !== 'error') {
         systemContext += `\n\n[Web3 Intelligence]\nWe have analyzed the user's connected Solana wallet (${walletAddress}):\n`;
