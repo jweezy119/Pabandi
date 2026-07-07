@@ -112,6 +112,7 @@ model Business {
   trendSuggestions   TrendSuggestion[]
   webhookEndpoints   WebhookEndpoint[]
   pabandiReviews     PabandiReview[]
+  services           BusinessService[]
 
   @@index([ownerId])
   @@index([city])
@@ -181,11 +182,13 @@ model Reservation {
   depositStatus       DepositStatus     @default(NOT_REQUIRED)
   conciergeDetails    Json?
   isConcierge         Boolean           @default(false)
+  totalAmount         Float?
   cryptoRewards       CryptoReward[]
   payments            Payment[]
   business            Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer            User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
   table               Table?            @relation(fields: [tableId], references: [id])
+  services            ReservationService[]
 
   @@index([businessId])
   @@index([customerId])
@@ -716,5 +719,32 @@ model SystemAuditLog {
   @@index([actorId])
   @@index([action])
   @@index([createdAt])
+}
+
+model BusinessService {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  price       Float
+  duration    Int      // Duration in minutes
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reservationServices ReservationService[]
+
+  @@index([businessId])
+}
+
+model ReservationService {
+  id            String          @id @default(cuid())
+  reservationId String
+  serviceId     String
+  priceAtBooking Float
+  reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  service       BusinessService @relation(fields: [serviceId], references: [id])
+
+  @@unique([reservationId, serviceId])
 }
 

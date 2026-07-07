@@ -153,9 +153,22 @@ export default function NewReservationPage() {
     paymentMethod: "safepay" as PaymentMethod,
   });
 
+  const [businessServices, setBusinessServices] = useState<any[]>([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [isOtherService, setIsOtherService] = useState(false);
+  const [customServiceName, setCustomServiceName] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (selectedPlace?.id) {
+      apiClient.get(`/businesses/${selectedPlace.id}/services`)
+        .then(res => setBusinessServices(res.data?.data?.services || []))
+        .catch(() => setBusinessServices([]));
+    }
+  }, [selectedPlace?.id]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -303,6 +316,8 @@ export default function NewReservationPage() {
         paymentMethod: form.paymentMethod,
         transactionHash,
         depositAmount: transactionHash ? requiredDeposit : undefined,
+        serviceIds: selectedServiceIds,
+        customServiceNames: isOtherService && customServiceName ? [customServiceName] : [],
       });
 
       const checkoutUrl = response?.data?.data?.checkoutUrl;
@@ -508,6 +523,36 @@ export default function NewReservationPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Services */}
+                  {businessServices.length > 0 && (
+                    <div className="mb-5">
+                      <FieldLabel>Select Services</FieldLabel>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                        {businessServices.map(s => (
+                          <label key={s.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedServiceIds.includes(s.id) ? 'border-primary bg-primary/5 shadow-sm' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
+                            <input type="checkbox" className="mt-1 shrink-0 accent-primary" checked={selectedServiceIds.includes(s.id)} onChange={(e) => {
+                              if (e.target.checked) setSelectedServiceIds([...selectedServiceIds, s.id]);
+                              else setSelectedServiceIds(selectedServiceIds.filter(id => id !== s.id));
+                            }} />
+                            <div>
+                              <div className="text-sm font-bold text-on-surface">{s.name}</div>
+                              <div className="text-xs text-primary">${s.price.toFixed(2)} • {s.duration} mins</div>
+                            </div>
+                          </label>
+                        ))}
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isOtherService ? 'border-primary bg-primary/5 shadow-sm' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
+                           <input type="checkbox" className="shrink-0 accent-primary" checked={isOtherService} onChange={e => setIsOtherService(e.target.checked)} />
+                           <div className="text-sm font-bold text-on-surface">Other / Not Listed</div>
+                        </label>
+                      </div>
+                      {isOtherService && (
+                        <div className="mt-3">
+                           <input type="text" placeholder="Describe the service you need..." value={customServiceName} onChange={e => setCustomServiceName(e.target.value)} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Date + Time */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>

@@ -32,6 +32,8 @@ export const createReservation = async (
       customerPhone,
       customerEmail,
       specialRequests,
+      serviceIds,
+      customServiceNames,
     } = req.body;
 
     // Verify business exists and is active (check both id and googlePlaceId)
@@ -217,6 +219,28 @@ export const createReservation = async (
     const isConcierge = !business.isClaimed;
     const status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
 
+    // Calculate total amount from services
+    let totalAmount = 0;
+    const servicesToCreate: any[] = [];
+    
+    if (serviceIds && Array.isArray(serviceIds)) {
+      const selectedServices = await prisma.businessService.findMany({
+        where: { id: { in: serviceIds }, businessId: business.id }
+      });
+      for (const s of selectedServices) {
+        totalAmount += s.price;
+        servicesToCreate.push({ serviceId: s.id, priceAtBooking: s.price });
+      }
+    }
+
+    // Add custom service fallback logic if user inputs "Other" manually
+    // The frontend can pass customServiceNames if they select "Other" and type a custom service
+    let modifiedSpecialRequests = specialRequests;
+    if (customServiceNames && Array.isArray(customServiceNames) && customServiceNames.length > 0) {
+      const customString = `Custom Services requested: ${customServiceNames.join(', ')}`;
+      modifiedSpecialRequests = modifiedSpecialRequests ? `${modifiedSpecialRequests}\n\n${customString}` : customString;
+    }
+
     // Create reservation
     const reservation = await prisma.reservation.create({
       data: {
@@ -231,7 +255,7 @@ export const createReservation = async (
         customerName,
         customerPhone,
         customerEmail: customerEmail || req.user!.email,
-        specialRequests,
+        specialRequests: modifiedSpecialRequests,
         noShowProbability: prediction.probability,
         riskScore: prediction.riskScore,
         aiFactors: prediction.factors,
@@ -241,6 +265,12 @@ export const createReservation = async (
         depositStatus: !!req.body.transactionHash ? 'PAID' : (!!depositAmount ? 'PENDING' : 'NOT_REQUIRED'),
         cryptoDepositTxHash: req.body.transactionHash,
         source: 'web',
+        totalAmount: totalAmount > 0 ? totalAmount : null,
+        ...(servicesToCreate.length > 0 && {
+          services: {
+            create: servicesToCreate
+          }
+        })
       },
       include: {
         business: {

@@ -10,6 +10,10 @@ import {
   getBusinessCustomers,
   generateBookingLink,
   getBusinessBySlug,
+  getBusinessServices,
+  createBusinessService,
+  updateBusinessService,
+  deleteBusinessService
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimiter';
@@ -340,6 +344,7 @@ router.get('/me', authenticate, async (req: any, res, next) => {
 router.get('/slug/:slug', optionalAuthenticate, getBusinessBySlug);
 router.get('/:id', optionalAuthenticate, getBusiness);
 router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
+router.get('/:id/services', optionalAuthenticate, getBusinessServices);
 
 // All subsequent business routes require authentication
 router.use(authenticate);
@@ -351,5 +356,10 @@ router.get('/:id/reservations', getBusinessReservations);
 router.get('/:id/analytics', getBusinessAnalytics);
 router.get('/:id/customers', getBusinessCustomers);
 router.post('/:id/generate-link', generateBookingLink);
+
+// Business Services Management
+router.post('/:id/services', authorize('BUSINESS_OWNER', 'ADMIN'), createBusinessService);
+router.put('/:id/services/:serviceId', authorize('BUSINESS_OWNER', 'ADMIN'), updateBusinessService);
+router.delete('/:id/services/:serviceId', authorize('BUSINESS_OWNER', 'ADMIN'), deleteBusinessService);
 
 export default router;

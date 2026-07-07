@@ -13,10 +13,12 @@ import {
   BellIcon,
   LockClosedIcon,
   KeyIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
+import BusinessServicesManager from '../components/BusinessServicesManager';
 
-type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'e2ee';
+type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'e2ee' | 'services';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 const CATEGORIES = [
@@ -282,6 +284,18 @@ export default function BusinessSettingsPage() {
   };
 
   const renderTabContent = () => {
+    if (activeTab === 'services' && bizRes?.id) {
+      return (
+        <div className="animate-fade-in">
+          <div className="mb-6">
+            <h2 className="text-2xl font-black text-white">Services Catalog</h2>
+            <p className="text-gray-400 mt-1">Manage the specific services or items your customers can book.</p>
+          </div>
+          <BusinessServicesManager businessId={bizRes.id} />
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'profile':
         return (
@@ -717,6 +731,10 @@ export default function BusinessSettingsPage() {
             <button onClick={() => setActiveTab('notifications')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'notifications' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
               <BellIcon className="w-5 h-5" /> Notifications & WhatsApp
+            </button>
+            <button onClick={() => setActiveTab('services')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'services' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
+              <BriefcaseIcon className="w-5 h-5" /> Services Catalog
             </button>
             <button onClick={() => setActiveTab('webhooks')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'webhooks' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>

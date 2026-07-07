@@ -924,3 +924,94 @@ export const getBusinessBySlug = async (
     next(error);
   }
 };
+
+export const getBusinessServices = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    let businessId = id;
+    
+    // Support googlePlaceId lookup
+    if (id.startsWith('osm-') || id.length > 25) {
+      const b = await prisma.business.findFirst({ where: { OR: [{ id }, { googlePlaceId: id }] } });
+      if (b) businessId = b.id;
+    }
+
+    const services = await prisma.businessService.findMany({
+      where: { businessId, isActive: true },
+      orderBy: { createdAt: 'asc' }
+    });
+    res.json({ success: true, data: { services } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createBusinessService = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { name, description, price, duration, isActive } = req.body;
+    const business = await prisma.business.findUnique({ where: { id } });
+
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const service = await prisma.businessService.create({
+      data: {
+        businessId: id,
+        name,
+        description,
+        price: parseFloat(price),
+        duration: parseInt(duration),
+        isActive: isActive !== undefined ? isActive : true
+      }
+    });
+    res.json({ success: true, data: { service } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateBusinessService = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id, serviceId } = req.params;
+    const { name, description, price, duration, isActive } = req.body;
+    const business = await prisma.business.findUnique({ where: { id } });
+
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const service = await prisma.businessService.update({
+      where: { id: serviceId },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(price !== undefined && { price: parseFloat(price) }),
+        ...(duration !== undefined && { duration: parseInt(duration) }),
+        ...(isActive !== undefined && { isActive }),
+      }
+    });
+    res.json({ success: true, data: { service } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteBusinessService = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id, serviceId } = req.params;
+    const business = await prisma.business.findUnique({ where: { id } });
+
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    await prisma.businessService.delete({
+      where: { id: serviceId }
+    });
+    res.json({ success: true, message: 'Service deleted' });
+  } catch (error) {
+    next(error);
+  }
+};

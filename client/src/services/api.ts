@@ -92,6 +92,11 @@ export const businessService = {
   generateBookingLink: (id: string) => apiClient.post(`/businesses/${id}/generate-link`),
   /** Get business by slug for short booking link */
   getBusinessBySlug: (slug: string) => apiClient.get(`/businesses/slug/${slug}`),
+  /** Services Management */
+  getServices: (id: string) => apiClient.get(`/businesses/${id}/services`),
+  createService: (id: string, data: any) => apiClient.post(`/businesses/${id}/services`, data),
+  updateService: (id: string, serviceId: string, data: any) => apiClient.put(`/businesses/${id}/services/${serviceId}`, data),
+  deleteService: (id: string, serviceId: string) => apiClient.delete(`/businesses/${id}/services/${serviceId}`),
 };
 
 export const reservationService = {
