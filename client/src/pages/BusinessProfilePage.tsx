@@ -13,7 +13,7 @@ import { businessService, reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import BusinessMap from '../components/BusinessMap';
 import { WriteReviewModal } from '../components/WriteReviewModal';
-import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
+import { executeBscDeposit, executeSolanaDeposit, executeStablecoinDeposit, executeBitcoinDeposit } from '../utils/web3';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
 
@@ -127,6 +127,20 @@ export default function BusinessProfilePage() {
         const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress");
         if (!result.success) {
           alert(`Solana Deposit Failed: ${result.error}`);
+          return;
+        }
+        transactionHash = result.transactionHash;
+      } else if (formData.paymentMethod === 'stablecoin') {
+        const result = await executeStablecoinDeposit("10.00", business.walletAddress);
+        if (!result.success) {
+          alert(`Stablecoin Deposit Failed: ${result.error}`);
+          return;
+        }
+        transactionHash = result.transactionHash;
+      } else if (formData.paymentMethod === 'bitcoin') {
+        const result = await executeBitcoinDeposit("10.00", business.walletAddress);
+        if (!result.success) {
+          alert(`Bitcoin Deposit Failed: ${result.error}`);
           return;
         }
         transactionHash = result.transactionHash;
@@ -859,7 +873,7 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-2">Check-in Verification Method</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {/* Safepay / Fiat */}
                     <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
                       formData.paymentMethod === 'paypal' 
@@ -869,6 +883,28 @@ export default function BusinessProfilePage() {
                       <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleBookingChange} className="sr-only" />
                       <span className="font-bold text-xs">Safepay</span>
                       <span className="text-[9px] opacity-80 mt-0.5">PKR Card</span>
+                    </label>
+
+                    {/* Stablecoin (USD1 / USDC) */}
+                    <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
+                      formData.paymentMethod === 'stablecoin' 
+                        ? 'border-[#2775ca] bg-[#2775ca]/5 text-[#2775ca] ring-1 ring-[#2775ca]' 
+                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                    }`}>
+                      <input type="radio" name="paymentMethod" value="stablecoin" checked={formData.paymentMethod === 'stablecoin'} onChange={handleBookingChange} className="sr-only" />
+                      <span className="font-bold text-xs">USD1</span>
+                      <span className="text-[9px] opacity-80 mt-0.5">Stablecoin</span>
+                    </label>
+
+                    {/* Bitcoin (WBTC) */}
+                    <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
+                      formData.paymentMethod === 'bitcoin' 
+                        ? 'border-[#f7931a] bg-[#f7931a]/5 text-[#f7931a] ring-1 ring-[#f7931a]' 
+                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                    }`}>
+                      <input type="radio" name="paymentMethod" value="bitcoin" checked={formData.paymentMethod === 'bitcoin'} onChange={handleBookingChange} className="sr-only" />
+                      <span className="font-bold text-xs">Bitcoin</span>
+                      <span className="text-[9px] opacity-80 mt-0.5">Reserve</span>
                     </label>
 
                     {/* Solana */}

@@ -501,3 +501,84 @@ export const executeSolanaLiquidityDeposit = async (amountPab: number, amountSol
     };
   }
 };
+
+/**
+ * Executes a simulated Stablecoin deposit (e.g. USDC/USDT on BSC/Solana)
+ */
+export const executeStablecoinDeposit = async (amountUsd: string, businessAddress?: string): Promise<Web3DepositResult> => {
+  try {
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) throw new Error('No crypto wallet found. Please install MetaMask.');
+
+    // Pre-check for BSC Testnet since we use it as the primary EVM chain
+    await ensureBscChain();
+
+    const provider = new ethers.BrowserProvider(ethereum);
+    const signer = await provider.getSigner();
+
+    console.log(`Executing Stablecoin Deposit: ${amountUsd} USD to ${businessAddress || PABANDI_ESCROW_BSC}`);
+    
+    // Simulate smart contract interaction for ERC20 transfer / Escrow
+    const tx = await signer.sendTransaction({
+      to: PABANDI_ESCROW_BSC,
+      value: ethers.parseEther("0.0001") // Mock tiny BNB gas fee equivalent
+    });
+
+    await tx.wait();
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      chain: 'bsc',
+      depositAmountOnChain: amountUsd, // USD amount 
+    };
+  } catch (err: any) {
+    console.error('Stablecoin Deposit Error:', err);
+    return {
+      success: false,
+      error: err?.message || 'Transaction failed or was rejected.',
+      chain: 'bsc',
+    };
+  }
+};
+
+/**
+ * Executes a simulated Bitcoin deposit (e.g. Wrapped BTC on BSC/Solana or Lightning)
+ */
+export const executeBitcoinDeposit = async (amountUsd: string, businessAddress?: string): Promise<Web3DepositResult> => {
+  try {
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) throw new Error('No crypto wallet found. Please install MetaMask for WBTC.');
+
+    await ensureBscChain();
+
+    const provider = new ethers.BrowserProvider(ethereum);
+    const signer = await provider.getSigner();
+    
+    // Assuming 1 BTC = $100,000 for mock conversion
+    const btcAmount = (parseFloat(amountUsd) / 100000).toFixed(8);
+
+    console.log(`Executing Bitcoin (WBTC) Deposit: ${btcAmount} BTC to ${businessAddress || PABANDI_ESCROW_BSC}`);
+
+    const tx = await signer.sendTransaction({
+      to: PABANDI_ESCROW_BSC,
+      value: ethers.parseEther("0.0001") // Mock tiny BNB gas fee equivalent
+    });
+
+    await tx.wait();
+
+    return {
+      success: true,
+      transactionHash: tx.hash,
+      chain: 'bsc',
+      depositAmountOnChain: btcAmount,
+    };
+  } catch (err: any) {
+    console.error('Bitcoin Deposit Error:', err);
+    return {
+      success: false,
+      error: err?.message || 'Transaction failed or was rejected.',
+      chain: 'bsc',
+    };
+  }
+};
