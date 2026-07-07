@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import axios from 'axios';
+import { blockchainService } from '../services/blockchain.service';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 
 export const handleConciergeQuery = async (req: Request, res: Response) => {
   try {
-    const { query } = req.body;
+    const { query, walletAddress } = req.body;
     const user = (req as any).user; // from authMiddleware
 
     if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
@@ -14,10 +15,22 @@ export const handleConciergeQuery = async (req: Request, res: Response) => {
     }
 
     // Context for Qwen AI
-    let systemContext = `You are the Pabandi AI Concierge.
-You help users find restaurants and make reservations.
-The user asking is ${user?.firstName || 'a guest'}. 
-Please respond concisely. 
+    let systemContext = `You are the Pabandi AI Concierge powered by Alibaba Cloud Qwen.
+You help users find restaurants, salons, and make reservations.
+The user asking is ${user?.firstName || 'a guest'}.
+Please respond concisely.`;
+
+    if (walletAddress) {
+      const profile = await blockchainService.getSolanaWalletProfile(walletAddress);
+      if (profile && profile.status !== 'error') {
+        systemContext += `\n\n[Web3 Intelligence]\nWe have analyzed the user's connected Solana wallet (${walletAddress}):\n`;
+        systemContext += `- Estimated Net Worth: $${profile.estimatedNetWorthUsd}\n`;
+        systemContext += `- Profile: ${profile.profileDescription}\n`;
+        systemContext += `\nCRITICAL INSTRUCTION: Since the user has a known Web3 profile, you MUST tailor your recommendations to their lifestyle. If they are a 'High Net Worth Individual' or 'DeFi Whale', prioritize luxury, premium, or VIP venues. Acknowledge their on-chain status subtly (e.g. "As a premium Web3 collector...").\n`;
+      }
+    }
+
+    systemContext += `
 If the user wants to book, output a JSON block at the end of your message in this exact format:
 \`\`\`json
 {

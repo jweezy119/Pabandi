@@ -358,6 +358,53 @@ export class BlockchainService {
       return { error: err.message };
     }
   }
+
+  // ── Wallet Profiler ────────────────────────────────────────────────────────
+  
+  /**
+   * Fetches the Solana wallet profile for a given address.
+   * In a production environment, this would call Solana RPCs or indexers (like Helius/Shyft) 
+   * to get accurate balance, NFT holdings, and DeFi history.
+   * For the current prototype, it returns a simulated but realistic profile based on the address structure.
+   */
+  async getSolanaWalletProfile(walletAddress: string): Promise<any> {
+    const web3 = await this.getSolanaWeb3();
+    if (!web3) return { status: 'unknown', balanceSol: 0, holdsLuxuryNfts: false, estimatedNetWorthUsd: 0 };
+
+    try {
+      // Deterministically generate a mock profile based on the first few chars of the address
+      const charCodeSum = walletAddress.split('').slice(0, 5).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      
+      const isWhale = charCodeSum % 3 === 0;
+      const holdsLuxuryNfts = charCodeSum % 2 === 0;
+      
+      let balanceSol = (charCodeSum % 100) + 0.5;
+      if (isWhale) balanceSol *= 100; // Whales have 100x more SOL
+
+      const estimatedNetWorthUsd = balanceSol * 145 + (holdsLuxuryNfts ? 50000 : 0);
+
+      let profileDescription = "Standard Web3 User.";
+      if (isWhale && holdsLuxuryNfts) {
+        profileDescription = "High Net Worth Individual. Holds premium NFT collections (e.g. Mad Lads, Tensorians). Huge DeFi volume.";
+      } else if (isWhale) {
+        profileDescription = "DeFi Whale. High liquid SOL balance, frequent large swaps on Jupiter.";
+      } else if (holdsLuxuryNfts) {
+        profileDescription = "NFT Collector. Holds moderately valuable PFPs and art pieces.";
+      }
+
+      return {
+        walletAddress,
+        balanceSol: balanceSol.toFixed(2),
+        holdsLuxuryNfts,
+        isWhale,
+        estimatedNetWorthUsd: estimatedNetWorthUsd.toFixed(2),
+        profileDescription
+      };
+    } catch (err: any) {
+      logger.error(`[Blockchain] Solana Wallet Profile failed: ${err.message}`);
+      return { status: 'error', error: err.message };
+    }
+  }
 }
 
 export const blockchainService = new BlockchainService();

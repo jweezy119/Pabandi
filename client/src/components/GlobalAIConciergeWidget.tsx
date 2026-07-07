@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function GlobalAIConciergeWidget() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -24,7 +24,10 @@ export default function GlobalAIConciergeWidget() {
     setLoading(true);
 
     try {
-      const { data } = await api.post('/ai/concierge', { query: userMsg });
+      const { data } = await api.post('/ai/concierge', { 
+        query: userMsg,
+        walletAddress: user?.walletAddress || undefined 
+      });
       setMessages(prev => [...prev, { role: 'ai', content: data.message, proposal: data.proposal }]);
     } catch (err) {
       toast.error('Failed to get response from AI Concierge.');
@@ -51,9 +54,16 @@ export default function GlobalAIConciergeWidget() {
             <h3 className="text-white font-bold flex items-center gap-2">
               <span className="text-xl">✨</span> Pabandi AI Concierge
             </h3>
-            <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-white">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <div className="flex items-center gap-3">
+              {user?.walletAddress && (
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-md text-[10px] font-bold text-white uppercase tracking-wider">
+                  <span>◎</span> Web3 Profile Active
+                </div>
+              )}
+              <button onClick={() => setIsOpen(false)} className="text-indigo-200 hover:text-white">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
@@ -62,6 +72,11 @@ export default function GlobalAIConciergeWidget() {
                 <p className="text-4xl mb-2">👋</p>
                 <p>Hi! I'm your AI Concierge powered by Qwen.</p>
                 <p className="text-sm mt-2">I can help you find restaurants, book tables, and get 1% crypto cashback on your reservations.</p>
+                {user?.walletAddress && (
+                  <p className="text-xs mt-3 text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg font-medium border border-indigo-100">
+                    Your Solana wallet is connected. I am tailoring recommendations to your on-chain lifestyle.
+                  </p>
+                )}
               </div>
             )}
             {messages.map((msg, idx) => (

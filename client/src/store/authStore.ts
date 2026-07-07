@@ -12,6 +12,7 @@ interface User {
   profilePictureUrl?: string;
   reliabilityScore?: number;
   encryptedDietaryData?: string;
+  walletAddress?: string;
 }
 
 interface WalletState {
