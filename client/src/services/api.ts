@@ -68,6 +68,10 @@ export const authService = {
     apiClient.put('/auth/profile', data),
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.put('/auth/update-password', data),
+  getWalletNonce: (walletAddress: string) =>
+    apiClient.post('/auth/wallet/nonce', { walletAddress }),
+  verifyWalletLogin: (data: { walletAddress: string; signature: string }) =>
+    apiClient.post('/auth/wallet/verify', data),
 };
 
 export const businessService = {

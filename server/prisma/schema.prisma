@@ -34,6 +34,8 @@ model User {
   profilePictureUrl String?
   tiktokId          String?          @unique
   twitterId         String?          @unique
+  walletAddress     String?          @unique
+  nonce             String?
   referredById      String?
   business          Business?
   cryptoRewards     CryptoReward[]

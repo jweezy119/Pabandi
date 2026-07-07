@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile, updatePassword } from '../controllers/auth.controller';
+import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile, updatePassword, getNonce, verifyWallet } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -17,6 +17,10 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 
 // ── Email / Password auth ──────────────────────────────────────────────────
+
+router.post('/wallet/nonce', getNonce);
+router.post('/wallet/verify', verifyWallet);
+
 
 router.post(
   '/register',

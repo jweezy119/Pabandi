@@ -582,3 +582,24 @@ export const executeBitcoinDeposit = async (amountUsd: string, businessAddress?:
     };
   }
 };
+
+/**
+ * Prompts the user to sign a message using their injected Web3 wallet (MetaMask).
+ */
+export const signMessageWithWallet = async (message: string): Promise<{ address: string, signature: string }> => {
+  const ethereum = (window as any).ethereum;
+  if (!ethereum) throw new Error('No crypto wallet found. Please install MetaMask.');
+
+  const provider = new ethers.BrowserProvider(ethereum);
+  const accounts = await provider.send("eth_requestAccounts", []);
+  if (!accounts || accounts.length === 0) {
+    throw new Error('Please connect your wallet.');
+  }
+
+  const signer = await provider.getSigner();
+  const address = await signer.getAddress();
+  
+  const signature = await signer.signMessage(message);
+  
+  return { address, signature };
+};

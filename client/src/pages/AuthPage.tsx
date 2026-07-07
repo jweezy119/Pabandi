@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-
+import { authService } from '../services/api';
+import { signMessageWithWallet } from '../utils/web3';
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
@@ -36,6 +37,38 @@ const LinkedInIcon = () => (
 const TikTokIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z"/>
+  </svg>
+);
+
+const MetaMaskIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#E17726" d="M96.7,29.9c-2.4-7.4-4-11.4-4-11.4l-11.6,7.5l-12.7-8L80.8,4.9l4.5,1.7C85.3,6.6,99.1,37.3,96.7,29.9z" />
+    <path fill="#E27625" d="M3.3,29.9C5.7,22.5,7.3,18.5,7.3,18.5l11.6,7.5l12.7-8L19.2,4.9L14.7,6.6C14.7,6.6,0.9,37.3,3.3,29.9z" />
+    <path fill="#E27625" d="M68.4,18l-18.4,14L31.6,18l14.7-6.2l3.7,2l3.7-2L68.4,18z" />
+    <path fill="#D5BFB2" d="M68.4,18l-10.3,5.6l10.3,10.6L68.4,18z" />
+    <path fill="#D5BFB2" d="M31.6,18l10.3,5.6L31.6,34.2L31.6,18z" />
+    <path fill="#233447" d="M68.4,34.2l12.7-8L66,41.9l21.2,5.2c-0.1,0.1-5,7-5.5,7.6L68.4,34.2z" />
+    <path fill="#233447" d="M31.6,34.2l-12.7-8l15.1,15.7L12.8,47.1c0.1,0.1,5,7,5.5,7.6L31.6,34.2z" />
+    <path fill="#CC6228" d="M81.7,54.7L68.4,34.2l13.3,20.5L81.7,54.7z" />
+    <path fill="#CC6228" d="M18.3,54.7l13.3-20.5L18.3,54.7z" />
+    <path fill="#E27525" d="M66,41.9l-16,14.6l16-14.6H66z" />
+    <path fill="#E27525" d="M34,41.9l16,14.6l-16-14.6H34z" />
+    <path fill="#E27525" d="M50,56.5L34,41.9l16-10.2L50,56.5z" />
+    <path fill="#E27525" d="M50,56.5l16-14.6L50,31.7L50,56.5z" />
+    <path fill="#F6851B" d="M81.7,54.7L66,41.9L50,56.5l16,16.5L81.7,54.7z" />
+    <path fill="#F6851B" d="M18.3,54.7l15.7-12.8L50,56.5L34,73L18.3,54.7z" />
+    <path fill="#C0AD9E" d="M81.7,54.7l-15.7,18.3l15.7-9.5L81.7,54.7z" />
+    <path fill="#C0AD9E" d="M18.3,54.7l15.7,18.3L18.3,63.5L18.3,54.7z" />
+    <path fill="#161616" d="M66,73l-16-16.5L66,73z" />
+    <path fill="#161616" d="M34,73l16-16.5L34,73z" />
+    <path fill="#763D16" d="M66,73l15.7-9.5L66,73z" />
+    <path fill="#763D16" d="M34,73L18.3,63.5L34,73z" />
+    <path fill="#F6851B" d="M66,73l-16,13.7L50,86.7L66,73z" />
+    <path fill="#F6851B" d="M34,73l16,13.7L50,86.7L34,73z" />
+    <path fill="#F6851B" d="M66,73l-16,13.7l16-13.7H66z" />
+    <path fill="#F6851B" d="M34,73l16,13.7L34,73H34z" />
+    <path fill="#F6851B" d="M81.7,63.5l-15.7,9.5L66,73l15.7-9.5L81.7,63.5z" />
+    <path fill="#F6851B" d="M18.3,63.5l15.7,9.5L34,73L18.3,63.5z" />
   </svg>
 );
 
@@ -81,7 +114,7 @@ export default function AuthPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const { login, register } = useAuthStore();
+  const { login, register, loginWithWallet } = useAuthStore();
   const navigate = useNavigate();
   const clearErrors = () => { setError(''); setFieldErrors({}); };
 
@@ -106,7 +139,33 @@ export default function AuthPage() {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok' | 'wallet' | null>(null);
+
+  const handleWalletAuth = async () => {
+    try {
+      setOauthLoading('wallet');
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) {
+        throw new Error('MetaMask not detected. Please install it.');
+      }
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      const address = accounts[0];
+      
+      const res = await authService.getWalletNonce(address);
+      const nonce = res.data?.data?.nonce || res.data?.nonce;
+      
+      const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${address}\n\nNonce:\n${nonce}`;
+      const { signature } = await signMessageWithWallet(message);
+      
+      await loginWithWallet(address, signature);
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Wallet authentication failed.');
+    } finally {
+      setOauthLoading(null);
+    }
+  };
 
   const handleGoogleAuth = () => {
     setOauthLoading('google');
@@ -271,7 +330,17 @@ export default function AuthPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <button onClick={handleGoogleAuth}
+            <button onClick={handleWalletAuth} type="button"
+              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-[#E17726]/30 bg-[#E17726]/5 hover:bg-[#E17726]/10 text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              disabled={!!oauthLoading}>
+              {oauthLoading === 'wallet' ? (
+                <div className="w-5 h-5 border-2 border-[#E17726]/30 border-t-[#E17726] rounded-full animate-spin" />
+              ) : (
+                <><MetaMaskIcon />
+                {isSignup ? 'Sign up with Wallet' : 'Sign in with Wallet'}</>
+              )}
+            </button>
+            <button onClick={handleGoogleAuth} type="button"
               className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm"
               disabled={!!oauthLoading}>
               {oauthLoading === 'google' ? (

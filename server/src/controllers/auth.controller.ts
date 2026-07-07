@@ -559,4 +559,107 @@ export const updateProfile = async (
   }
 };
 
+export const getNonce = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+      throw new CustomError('Wallet address is required', 400);
+    }
 
+    const nonce = crypto.randomBytes(32).toString('hex');
+    let user = await prisma.user.findUnique({ where: { walletAddress } });
+
+    if (!user) {
+      // Create stub user
+      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
+      user = await prisma.user.create({
+        data: {
+          email: `${walletAddress.toLowerCase()}@web3.pabandi.local`, // placeholder
+          firstName: 'Web3',
+          lastName: 'User',
+          passwordHash,
+          walletAddress: walletAddress.toLowerCase(),
+          nonce
+        }
+      });
+    } else {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { nonce }
+      });
+    }
+
+    res.json({ success: true, data: { nonce: user.nonce } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyWallet = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { walletAddress, signature } = req.body;
+    if (!walletAddress || !signature) {
+      throw new CustomError('Wallet address and signature are required', 400);
+    }
+
+    const user = await prisma.user.findUnique({ 
+      where: { walletAddress: walletAddress.toLowerCase() }, 
+      include: { business: true } 
+    });
+    
+    if (!user || !user.nonce) {
+      throw new CustomError('Nonce not found. Please request a new nonce.', 400);
+    }
+
+    const { ethers } = await import('ethers');
+    const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${walletAddress}\n\nNonce:\n${user.nonce}`;
+    
+    const recoveredAddress = ethers.verifyMessage(message, signature);
+
+    if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+      throw new CustomError('Signature verification failed', 401);
+    }
+
+    // Clear nonce to prevent replay attacks
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { nonce: null }
+    });
+
+    // Generate tokens
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id } as JwtPayload,
+      JWT_REFRESH_SECRET as Secret,
+      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+    );
+
+    logger.info(`User logged in via wallet: ${user.walletAddress}`);
+
+    res.json({
+      success: true,
+      message: 'Wallet login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          role: user.role,
+          walletAddress: user.walletAddress,
+          business: user.business,
+        },
+        token,
+        refreshToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

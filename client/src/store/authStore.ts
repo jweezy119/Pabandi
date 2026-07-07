@@ -28,6 +28,7 @@ interface AuthState {
   isAuthenticated: boolean;
   wallet: WalletState;
   login: (email: string, password: string) => Promise<void>;
+  loginWithWallet: (walletAddress: string, signature: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
@@ -65,6 +66,15 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         const response = await authService.login(email, password);
         const payload = response.data?.data ?? response.data; // support both shapes
+        set({
+          user: payload.user,
+          token: payload.token,
+          isAuthenticated: true,
+        });
+      },
+      loginWithWallet: async (walletAddress: string, signature: string) => {
+        const response = await authService.verifyWalletLogin({ walletAddress, signature });
+        const payload = response.data?.data ?? response.data;
         set({
           user: payload.user,
           token: payload.token,
