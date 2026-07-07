@@ -45,7 +45,7 @@ export default function SearchPage() {
     }
   }, [searchType]);
 
-  const { data: businessData, isLoading: isLoadingBusinesses } = useQuery(
+  const { data: businessData, isFetching: isLoadingBusinesses } = useQuery(
     ['search-businesses', q, userLoc],
     async () => {
       const params: any = { search: q };
@@ -56,16 +56,16 @@ export default function SearchPage() {
       const res = await businessService.getPublicBusinesses(params);
       return res.data?.data?.businesses || [];
     },
-    { enabled: !!q && searchType === 'businesses', keepPreviousData: true }
+    { enabled: !!q && searchType === 'businesses' }
   );
 
-  const { data: userData, isLoading: isLoadingUsers } = useQuery(
+  const { data: userData, isFetching: isLoadingUsers } = useQuery(
     ['search-users', q],
     async () => {
       const res = await userService.searchUsers({ search: q });
       return res.data?.data?.users || [];
     },
-    { enabled: !!q && searchType === 'users', keepPreviousData: true }
+    { enabled: !!q && searchType === 'users' }
   );
 
   const { data: relatedData } = useQuery(
@@ -79,7 +79,7 @@ export default function SearchPage() {
       const res = await businessService.getPublicBusinesses(params);
       return res.data?.data?.businesses || [];
     },
-    { enabled: searchType === 'businesses', keepPreviousData: true }
+    { enabled: searchType === 'businesses' }
   );
 
   const businesses = businessData || [];
