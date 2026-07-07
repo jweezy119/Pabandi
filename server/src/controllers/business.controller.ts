@@ -134,96 +134,144 @@ export const getBusiness = async (
       },
     });
 
-    // If not found in DB, try fetching from Google Places API
+    // If not found in DB, try fetching dynamically
     if (!business) {
-      const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
-      if (apiKey) {
+      if (id.startsWith('osm-')) {
         try {
-          const googleRes = await axios.get(
-            `https://maps.googleapis.com/maps/api/place/details/json`, {
-              params: {
-                place_id: id,
-                fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,types,geometry,photos',
-                key: apiKey,
-              }
-            }
-          );
+          const parts = id.split('-');
+          const type = parts.length === 3 ? parts[1] : 'node';
+          const osmId = parts.length === 3 ? parts[2] : parts[1];
           
-          if (googleRes.data?.result) {
-            const p = googleRes.data.result;
+          const overpassUrl = 'https://overpass-api.de/api/interpreter';
+          const overpassQuery = `[out:json][timeout:5];${type}(${osmId});out center;`;
+          
+          const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
+            headers: { 
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
+            },
+            timeout: 5000
+          });
+          
+          if (overpassRes.data?.elements && overpassRes.data.elements.length > 0) {
+            const el = overpassRes.data.elements[0];
+            const tags = el.tags || {};
             
-            let category: BusinessCategory = BusinessCategory.OTHER;
-            if (p.types) {
-              if (p.types.includes('restaurant') || p.types.includes('cafe') || p.types.includes('bakery')) category = BusinessCategory.RESTAURANT;
-              else if (p.types.includes('spa') || p.types.includes('beauty_salon') || p.types.includes('hair_care')) category = BusinessCategory.SPA;
-              else if (p.types.includes('gym') || p.types.includes('health')) category = BusinessCategory.FITNESS_CENTER;
-            }
+            let category: BusinessCategory = BusinessCategory.RESTAURANT;
+            if (tags.shop === 'beauty' || tags.shop === 'hairdresser' || tags.amenity === 'hairdresser') category = BusinessCategory.SALON;
+            else if (tags.shop === 'massage') category = BusinessCategory.SPA;
+            else if (tags.amenity === 'clinic' || tags.amenity === 'hospital' || tags.amenity === 'doctor') category = BusinessCategory.CLINIC;
+            else if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym') category = BusinessCategory.FITNESS_CENTER;
             
-            // Extract a cover image from Google Photos if available
-            let coverImageUrl = undefined;
-            if (p.photos && p.photos.length > 0) {
-              try {
-                const photoRes = await axios.get(`https://maps.googleapis.com/maps/api/place/photo`, {
-                  params: {
-                    maxwidth: 1200,
-                    photoreference: p.photos[0].photo_reference,
-                    key: apiKey
-                  },
-                  maxRedirects: 0,
-                  validateStatus: (status) => status >= 200 && status < 400
-                });
-                // Google redirects to the actual image URL
-                if (photoRes.status === 302 && photoRes.headers.location) {
-                  coverImageUrl = photoRes.headers.location;
-                }
-              } catch (err) {
-                console.error("Failed to fetch photo redirect URL");
-              }
-            }
+            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+            if (category === BusinessCategory.SALON) coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+            if (category === BusinessCategory.SPA) coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+            if (category === BusinessCategory.FITNESS_CENTER) coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+            if (category === BusinessCategory.CLINIC) coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+
+            const name = tags.name || 'Unknown Business';
+            const address = tags['addr:full'] || tags['addr:street'] || 'Unknown Address';
 
             business = await prisma.business.create({
               data: {
                 googlePlaceId: id,
-                name: p.name || 'Unknown Business',
-                address: p.formatted_address || 'Unknown Address',
-                phone: p.international_phone_number || p.formatted_phone_number || 'No phone',
+                name: name,
+                address: address,
+                phone: tags.phone || '+92 300 0000000',
                 email: 'contact@example.com',
-                website: p.website || null,
-                latitude: p.geometry?.location?.lat || null,
-                longitude: p.geometry?.location?.lng || null,
-                category: category,
+                website: tags.website || null,
+                latitude: el.center?.lat || el.lat || null,
+                longitude: el.center?.lon || el.lon || null,
+                category,
                 isClaimed: false,
-                rating: p.rating || null,
-                reviewCount: p.user_ratings_total || 0,
-                city: p.formatted_address?.split(',')[1]?.trim() || 'Karachi',
-                description: 'Auto-generated profile from Google Maps data. Claim this profile to customize it.',
+                rating: 4.5,
+                reviewCount: 1,
+                city: 'Karachi',
+                description: `Imported OpenStreetMap listing for ${name}. Claim this profile to set up Web3 bookings.`,
                 coverImageUrl,
                 settings: {
                   create: {}
                 }
               },
               include: {
-                owner: {
-                  select: {
-                    id: true,
-                    email: true,
-                    firstName: true,
-                    lastName: true,
-                  },
-                },
+                owner: { select: { id: true, email: true, firstName: true, lastName: true } },
                 businessHours: true,
-                tables: {
-                  where: { isActive: true },
-                },
+                tables: { where: { isActive: true } },
                 settings: true,
-                googleReviews: {
-                  orderBy: { time: 'desc' }
-                },
+                googleReviews: { orderBy: { time: 'desc' } },
               }
             });
           }
-        } catch (apiErr) {
-          console.error('Failed to fetch business from Google Places:', apiErr);
+        } catch (osmErr: any) {
+          console.error('Failed to fetch business from OSM:', osmErr.message);
+        }
+      } else {
+        const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+        if (apiKey) {
+          try {
+            const googleRes = await axios.get(
+              `https://maps.googleapis.com/maps/api/place/details/json`, {
+                params: {
+                  place_id: id,
+                  fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,rating,user_ratings_total,types,geometry,photos',
+                  key: apiKey,
+                }
+              }
+            );
+            
+            if (googleRes.data?.result) {
+              const p = googleRes.data.result;
+              
+              let category: BusinessCategory = BusinessCategory.OTHER;
+              if (p.types) {
+                if (p.types.includes('restaurant') || p.types.includes('cafe') || p.types.includes('bakery')) category = BusinessCategory.RESTAURANT;
+                else if (p.types.includes('spa') || p.types.includes('beauty_salon') || p.types.includes('hair_care')) category = BusinessCategory.SPA;
+                else if (p.types.includes('gym') || p.types.includes('health')) category = BusinessCategory.FITNESS_CENTER;
+              }
+              
+              let coverImageUrl = undefined;
+              if (p.photos && p.photos.length > 0) {
+                try {
+                  const photoRes = await axios.get(`https://maps.googleapis.com/maps/api/place/photo`, {
+                    params: { maxwidth: 1200, photoreference: p.photos[0].photo_reference, key: apiKey },
+                    maxRedirects: 0,
+                    validateStatus: (status) => status >= 200 && status < 400
+                  });
+                  if (photoRes.status === 302 && photoRes.headers.location) coverImageUrl = photoRes.headers.location;
+                } catch (err) { }
+              }
+
+              business = await prisma.business.create({
+                data: {
+                  googlePlaceId: id,
+                  name: p.name || 'Unknown Business',
+                  address: p.formatted_address || 'Unknown Address',
+                  phone: p.international_phone_number || p.formatted_phone_number || 'No phone',
+                  email: 'contact@example.com',
+                  website: p.website || null,
+                  latitude: p.geometry?.location?.lat || null,
+                  longitude: p.geometry?.location?.lng || null,
+                  category: category,
+                  isClaimed: false,
+                  rating: p.rating || null,
+                  reviewCount: p.user_ratings_total || 0,
+                  city: p.formatted_address?.split(',')[1]?.trim() || 'Karachi',
+                  description: 'Auto-generated profile from Google Maps data. Claim this profile to customize it.',
+                  coverImageUrl,
+                  settings: { create: {} }
+                },
+                include: {
+                  owner: { select: { id: true, email: true, firstName: true, lastName: true } },
+                  businessHours: true,
+                  tables: { where: { isActive: true } },
+                  settings: true,
+                  googleReviews: { orderBy: { time: 'desc' } },
+                }
+              });
+            }
+          } catch (apiErr) {
+            console.error('Failed to fetch business from Google Places:', apiErr);
+          }
         }
       }
     }

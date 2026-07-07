@@ -172,76 +172,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
       }
     }
     
-    // === STEP 2.5: Dynamic import for specific OSM ID ===
-    if (googlePlaceId) {
-      const existing = await prisma.business.findFirst({
-        where: { googlePlaceId: String(googlePlaceId) }
-      });
-      
-      if (!existing && String(googlePlaceId).startsWith('osm-')) {
-        try {
-          const osmId = String(googlePlaceId).replace('osm-', '');
-          const overpassUrl = 'https://overpass-api.de/api/interpreter';
-          const overpassQuery = `[out:json][timeout:5];node(${osmId});out;`;
-          
-          const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
-            headers: { 
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
-            },
-            timeout: 5000
-          });
-          
-          if (overpassRes.data?.elements && overpassRes.data.elements.length > 0) {
-            const el = overpassRes.data.elements[0];
-            const tags = el.tags || {};
-            
-            let cat: any = 'RESTAURANT';
-            if (tags.shop === 'beauty' || tags.shop === 'hairdresser') cat = 'SALON';
-            else if (tags.shop === 'massage') cat = 'SPA';
-            else if (tags.amenity === 'clinic' || tags.amenity === 'hospital') cat = 'CLINIC';
-            else if (tags.leisure === 'fitness_centre') cat = 'FITNESS_CENTER';
-            
-            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
-            if (cat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
-            if (cat === 'SPA') coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
-            if (cat === 'FITNESS_CENTER') coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
-            if (cat === 'CLINIC') coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
 
-            const name = tags.name || 'Unknown Business';
-            const address = tags['addr:full'] || tags['addr:street'] || 'Unknown Address';
-
-            const createdBiz = await prisma.business.create({
-              data: {
-                googlePlaceId: String(googlePlaceId),
-                name: name,
-                address: address,
-                phone: tags.phone || '+92 300 0000000',
-                email: 'contact@pabandi.com',
-                website: tags.website || null,
-                latitude: el.lat || 24.8607,
-                longitude: el.lon || 67.0011,
-                category: cat,
-                isClaimed: false,
-                rating: 4.5,
-                reviewCount: 1,
-                city: 'Karachi',
-                description: `Imported OpenStreetMap listing for ${name}. Claim this profile to set up Web3 bookings.`,
-                coverImageUrl,
-              }
-            });
-
-            await prisma.businessSettings.create({
-              data: {
-                businessId: createdBiz.id,
-              },
-            });
-          }
-        } catch (detailsErr) {
-          console.warn('Failed to import dynamic place on OSM details fetch:', (detailsErr as Error).message);
-        }
-      }
-    }
 
     // === STEP 3: Prisma DB search (use ORIGINAL cleanSearch, not just searchKeyword) ===
     const where: any = { isActive: true };
@@ -285,7 +216,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
 
     // === STEP 4: Merge LocationIQ POI results ===
     for (const poi of locationIqPOIs) {
-      const poiId = `liq-${poi.place_id}`;
+      const poiId = (poi.osm_id && poi.osm_type) ? `osm-${poi.osm_type}-${poi.osm_id}` : `liq-${poi.place_id}`;
       if (seenIds.has(poiId)) continue;
       seenIds.add(poiId);
 
@@ -336,8 +267,8 @@ router.get('/', rateLimiter, async (req, res, next) => {
 
     // === STEP 5: Merge Overpass/OSM results ===
     for (const el of osmResults) {
-      const osmId = `osm-${el.id}`;
       if (!el.id) continue;
+      const osmId = `osm-${el.type || 'node'}-${el.id}`;
       if (seenIds.has(osmId)) continue;
       seenIds.add(osmId);
 
