@@ -30,8 +30,37 @@ router.get('/', rateLimiter, async (req, res, next) => {
     // HARDENED: Sanitize search string to prevent malformed Nominatim queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
 
+    const PAK_CITIES: Record<string, { lat: number, lng: number }> = {
+      'karachi': { lat: 24.8607, lng: 67.0011 },
+      'lahore': { lat: 31.5204, lng: 74.3587 },
+      'islamabad': { lat: 33.6844, lng: 73.0479 },
+      'rawalpindi': { lat: 33.5973, lng: 73.0479 },
+      'faisalabad': { lat: 31.4504, lng: 73.1350 },
+      'multan': { lat: 30.1575, lng: 71.5249 },
+      'peshawar': { lat: 34.0151, lng: 71.5249 },
+      'quetta': { lat: 30.1798, lng: 66.9750 },
+    };
+
+    let lat = latitude ? parseFloat(String(latitude)) : null;
+    let lng = longitude ? parseFloat(String(longitude)) : null;
+    let extractedCity = '';
+    
+    let searchKeyword = cleanSearch;
+    if (cleanSearch) {
+      for (const [city, coords] of Object.entries(PAK_CITIES)) {
+        const regex = new RegExp(`\\b${city}\\b`, 'i');
+        if (regex.test(cleanSearch)) {
+          lat = coords.lat;
+          lng = coords.lng;
+          extractedCity = city;
+          searchKeyword = cleanSearch.replace(regex, '').trim();
+          break;
+        }
+      }
+    }
+
     // HARDENED: Generate a unique cache key based on search parameters
-    const cacheKey = `osm_search:${cleanSearch}:${latitude || 'null'}:${longitude || 'null'}:${category || 'ALL'}`;
+    const cacheKey = `osm_search:${cleanSearch}:${lat || 'null'}:${lng || 'null'}:${category || 'ALL'}`;
     const cachedOsmResults = cacheService.get(cacheKey);
 
     if (cachedOsmResults) {
@@ -39,22 +68,21 @@ router.get('/', rateLimiter, async (req, res, next) => {
     } else {
       // 1. Build Overpass Query
       let overpassQuery = '';
-      if (latitude && longitude) {
-        const lat = parseFloat(String(latitude));
-        const lng = parseFloat(String(longitude));
+      if (lat && lng) {
         
-        if (cleanSearch && cleanSearch.length > 2) {
+        if (searchKeyword && searchKeyword.length > 2) {
           // Search by name around user location (50km radius)
           overpassQuery = `
             [out:json][timeout:10];
             (
-              node["name"~"${cleanSearch}",i]["amenity"](around:50000,${lat},${lng});
-              node["name"~"${cleanSearch}",i]["shop"](around:50000,${lat},${lng});
-              node["name"~"${cleanSearch}",i]["leisure"](around:50000,${lat},${lng});
+              node["name"~"(?i)${searchKeyword}"]["amenity"](around:50000,${lat},${lng});
+              node["name"~"(?i)${searchKeyword}"]["shop"](around:50000,${lat},${lng});
+              node["name"~"(?i)${searchKeyword}"]["leisure"](around:50000,${lat},${lng});
+              node["cuisine"~"(?i)${searchKeyword}"]["amenity"](around:50000,${lat},${lng});
             );
             out center 15;
           `;
-        } else if (!cleanSearch) {
+        } else if (!searchKeyword) {
           // Nearby search without specific name, using category
           let typeFilter = 'node["amenity"~"restaurant|cafe|clinic|hospital|fast_food|food_court|bar"]';
           if (category === 'SALON') typeFilter = 'node["shop"~"beauty|hairdresser"]';
@@ -71,14 +99,15 @@ router.get('/', rateLimiter, async (req, res, next) => {
             out center 25;
           `;
         }
-      } else if (cleanSearch && cleanSearch.length > 2) {
+      } else if (searchKeyword && searchKeyword.length > 2) {
         // Global or country-wide search if no location (Fallback bounding box for Pakistan approx)
         overpassQuery = `
           [out:json][timeout:10];
           (
-            node["name"~"${cleanSearch}",i]["amenity"](23.6,60.8,37.1,77.8);
-            node["name"~"${cleanSearch}",i]["shop"](23.6,60.8,37.1,77.8);
-            node["name"~"${cleanSearch}",i]["leisure"](23.6,60.8,37.1,77.8);
+            node["name"~"(?i)${searchKeyword}"]["amenity"](23.6,60.8,37.1,77.8);
+            node["name"~"(?i)${searchKeyword}"]["shop"](23.6,60.8,37.1,77.8);
+            node["name"~"(?i)${searchKeyword}"]["leisure"](23.6,60.8,37.1,77.8);
+            node["cuisine"~"(?i)${searchKeyword}"]["amenity"](23.6,60.8,37.1,77.8);
           );
           out center 15;
         `;
@@ -180,8 +209,8 @@ router.get('/', rateLimiter, async (req, res, next) => {
     if (category && category !== 'ALL') {
       where.category = String(category);
     }
-    if (cleanSearch) {
-      const searchTerms = String(cleanSearch)
+    if (searchKeyword) {
+      const searchTerms = String(searchKeyword)
         .trim()
         .split(/\s+/)
         .filter(term => term.length > 0);
@@ -191,11 +220,20 @@ router.get('/', rateLimiter, async (req, res, next) => {
           OR: [
             { name: { contains: term, mode: 'insensitive' } },
             { description: { contains: term, mode: 'insensitive' } },
-            { city: { contains: term, mode: 'insensitive' } },
             { category: { contains: term, mode: 'insensitive' } },
-            { address: { contains: term, mode: 'insensitive' } }
+            { address: { contains: term, mode: 'insensitive' } },
+            ...(extractedCity ? [] : [{ city: { contains: term, mode: 'insensitive' } }])
           ]
         }));
+      }
+    }
+
+    if (extractedCity) {
+      // If we extracted a city from the query, explicitly require it
+      if (where.AND) {
+        where.AND.push({ city: { contains: extractedCity, mode: 'insensitive' } });
+      } else {
+        where.AND = [{ city: { contains: extractedCity, mode: 'insensitive' } }];
       }
     }
     
