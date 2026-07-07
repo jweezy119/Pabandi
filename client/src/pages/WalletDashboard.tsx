@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import apiClient, { cryptoService, walletService, socialService, stakingService } from '../services/api';
 import { executeStellarLiquidityDeposit, executeSolanaLiquidityDeposit } from '../utils/web3';
+import { useAuthStore } from '../store/authStore';
 /* ── Types ── */
 type WalletType = 'metamask' | 'phantom' | 'freighter' | null;
 interface ConnectedWallet { address: string; type: WalletType; chainName: string; }
@@ -223,6 +224,7 @@ function WalletOption({ id, icon, name, desc, badge, onClick, disabled, loading 
 
 /* ── Main Component ── */
 export default function WalletDashboard() {
+  const { fetchWalletData } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [showSBT, setShowSBT] = useState(false);
   const [connected, setConnected] = useState<ConnectedWallet | null>(null);
@@ -232,9 +234,13 @@ export default function WalletDashboard() {
   useEffect(() => {
     const saved = localStorage.getItem('pabandi_wallet');
     if (saved) { try { setConnected(JSON.parse(saved)); } catch { } }
+    fetchWalletData();
   }, []);
 
-  const saveWallet = (w: ConnectedWallet) => { localStorage.setItem('pabandi_wallet', JSON.stringify(w)); setConnected(w); };
+  const saveWallet = (w: ConnectedWallet) => { 
+    localStorage.setItem('pabandi_wallet', JSON.stringify(w)); 
+    setConnected(w); 
+  };
   const disconnect = () => { localStorage.removeItem('pabandi_wallet'); setConnected(null); };
 
   const connectMetaMask = async () => {
@@ -247,6 +253,7 @@ export default function WalletDashboard() {
       await switchToBSC();
       saveWallet({ address: accounts[0], type: 'metamask', chainName: 'BNB Smart Chain' });
       await apiClient.put('/auth/wallet', { address: accounts[0], chain: 'BSC' }).catch(() => { });
+      await fetchWalletData();
       setShowModal(false);
     } catch (err: any) { setError(err?.message || 'Connection failed.'); }
     finally { setLoadingWallet(null); }
@@ -267,6 +274,7 @@ export default function WalletDashboard() {
       
       saveWallet({ address: publicKey, type: 'freighter', chainName: 'Stellar' });
       await apiClient.put('/auth/wallet', { address: publicKey, chain: 'STELLAR' }).catch(() => { });
+      await fetchWalletData();
       setShowModal(false);
     } catch (err: any) {
       console.error("Stellar Connection Error:", err);
@@ -311,6 +319,7 @@ export default function WalletDashboard() {
 
       saveWallet({ address, type: 'phantom', chainName: 'Solana' });
       await cryptoService.connectSolana(address).catch(() => { });
+      await fetchWalletData();
       setShowModal(false);
     } catch (err: any) { 
       console.error("Solana Connection Error:", err);

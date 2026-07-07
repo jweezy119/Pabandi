@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function GlobalAIConciergeWidget() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, wallet } = useAuthStore();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -26,7 +26,7 @@ export default function GlobalAIConciergeWidget() {
     try {
       const { data } = await api.post('/ai/concierge', { 
         query: userMsg,
-        walletAddress: user?.walletAddress || undefined 
+        walletAddress: wallet?.address || undefined 
       });
       setMessages(prev => [...prev, { role: 'ai', content: data.message, proposal: data.proposal }]);
     } catch (err) {
@@ -55,7 +55,7 @@ export default function GlobalAIConciergeWidget() {
               <span className="text-xl">✨</span> Pabandi AI Concierge
             </h3>
             <div className="flex items-center gap-3">
-              {user?.walletAddress && (
+              {wallet?.address && (
                 <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-md text-[10px] font-bold text-white uppercase tracking-wider">
                   <span>◎</span> Web3 Profile Active
                 </div>
@@ -72,7 +72,7 @@ export default function GlobalAIConciergeWidget() {
                 <p className="text-4xl mb-2">👋</p>
                 <p>Hi! I'm your AI Concierge powered by Qwen.</p>
                 <p className="text-sm mt-2">I can help you find restaurants, book tables, and get 1% crypto cashback on your reservations.</p>
-                {user?.walletAddress && (
+                {wallet?.address && (
                   <p className="text-xs mt-3 text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg font-medium border border-indigo-100">
                     Your Solana wallet is connected. I am tailoring recommendations to your on-chain lifestyle.
                   </p>

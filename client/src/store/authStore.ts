@@ -113,14 +113,14 @@ export const useAuthStore = create<AuthState>()(
           if (!get().isAuthenticated) return;
           const res = await cryptoService.getWallet();
           const data = res.data?.data ?? res.data;
-          if (data?.wallet) {
+          if (data) {
             set((state) => ({
               wallet: {
                 ...state.wallet,
-                pabBalance: data.wallet.balance || 0,
-                totalEarned: data.wallet.totalEarned || 0,
-                address: data.wallet.solanaAddress || state.wallet.address,
-                type: data.wallet.solanaAddress ? 'phantom' : state.wallet.type,
+                pabBalance: data.balance || 0,
+                totalEarned: data.totalEarned?._sum?.amount || data.totalEarned || 0,
+                address: data.solanaAddress || state.wallet.address,
+                type: data.solanaAddress ? 'phantom' : state.wallet.type,
               },
             }));
           }

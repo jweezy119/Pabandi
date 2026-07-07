@@ -39,8 +39,16 @@ import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { LanguageProvider } from './context/LanguageContext';
 
+import { useEffect } from 'react';
+
 function App() {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, fetchWalletData } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWalletData();
+    }
+  }, [isAuthenticated, fetchWalletData]);
 
   // Smart dashboard: route to correct page based on role
   const DashboardPage = () => {
