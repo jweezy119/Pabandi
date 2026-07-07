@@ -71,14 +71,17 @@ router.get('/', rateLimiter, async (req, res, next) => {
       if (lat && lng) {
         
         if (searchKeyword && searchKeyword.length > 2) {
+          // Remove generic terms for cuisine search so "mexican food" becomes "mexican"
+          const cuisineKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop)\b/gi, '').trim() || searchKeyword;
+          
           // Search by name around user location (50km radius)
           overpassQuery = `
             [out:json][timeout:10];
             (
-              node["name"~"(?i)${searchKeyword}"]["amenity"](around:50000,${lat},${lng});
-              node["name"~"(?i)${searchKeyword}"]["shop"](around:50000,${lat},${lng});
-              node["name"~"(?i)${searchKeyword}"]["leisure"](around:50000,${lat},${lng});
-              node["cuisine"~"(?i)${searchKeyword}"]["amenity"](around:50000,${lat},${lng});
+              node["name"~"${searchKeyword}",i]["amenity"](around:50000,${lat},${lng});
+              node["name"~"${searchKeyword}",i]["shop"](around:50000,${lat},${lng});
+              node["name"~"${searchKeyword}",i]["leisure"](around:50000,${lat},${lng});
+              node["cuisine"~"${cuisineKeyword}",i]["amenity"](around:50000,${lat},${lng});
             );
             out center 15;
           `;
@@ -100,14 +103,15 @@ router.get('/', rateLimiter, async (req, res, next) => {
           `;
         }
       } else if (searchKeyword && searchKeyword.length > 2) {
+        const cuisineKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop)\b/gi, '').trim() || searchKeyword;
         // Global or country-wide search if no location (Fallback bounding box for Pakistan approx)
         overpassQuery = `
           [out:json][timeout:10];
           (
-            node["name"~"(?i)${searchKeyword}"]["amenity"](23.6,60.8,37.1,77.8);
-            node["name"~"(?i)${searchKeyword}"]["shop"](23.6,60.8,37.1,77.8);
-            node["name"~"(?i)${searchKeyword}"]["leisure"](23.6,60.8,37.1,77.8);
-            node["cuisine"~"(?i)${searchKeyword}"]["amenity"](23.6,60.8,37.1,77.8);
+            node["name"~"${searchKeyword}",i]["amenity"](23.6,60.8,37.1,77.8);
+            node["name"~"${searchKeyword}",i]["shop"](23.6,60.8,37.1,77.8);
+            node["name"~"${searchKeyword}",i]["leisure"](23.6,60.8,37.1,77.8);
+            node["cuisine"~"${cuisineKeyword}",i]["amenity"](23.6,60.8,37.1,77.8);
           );
           out center 15;
         `;
@@ -117,7 +121,10 @@ router.get('/', rateLimiter, async (req, res, next) => {
         try {
           const overpassUrl = 'https://overpass-api.de/api/interpreter';
           const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { 
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
+            },
             timeout: 10000 // 10-second timeout for Overpass
           });
           const places = overpassRes.data?.elements || [];
@@ -146,7 +153,10 @@ router.get('/', rateLimiter, async (req, res, next) => {
           const overpassQuery = `[out:json][timeout:5];node(${osmId});out;`;
           
           const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { 
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
+            },
             timeout: 5000 // HARDENED: 5-second timeout
           });
           
@@ -220,7 +230,6 @@ router.get('/', rateLimiter, async (req, res, next) => {
           OR: [
             { name: { contains: term, mode: 'insensitive' } },
             { description: { contains: term, mode: 'insensitive' } },
-            { category: { contains: term, mode: 'insensitive' } },
             { address: { contains: term, mode: 'insensitive' } },
             ...(extractedCity ? [] : [{ city: { contains: term, mode: 'insensitive' } }])
           ]
