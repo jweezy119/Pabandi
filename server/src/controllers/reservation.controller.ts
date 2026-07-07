@@ -14,6 +14,7 @@ import { notificationService } from '../services/notification.service';
 import { conciergeService } from '../services/conciergeService';
 import { trustSignalService } from '../services/trustSignal.service';
 import { sendWhatsAppMessage } from '../services/ai.service';
+import { channexService } from '../services/channex.service';
 import moment from 'moment-timezone';
 
 export const createReservation = async (
@@ -350,6 +351,13 @@ export const createReservation = async (
         logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
       }
       conciergeService.processReservation(reservation.id);
+    }
+
+    // Attempt to push to Channex (non-blocking)
+    if (!isConcierge && status === 'CONFIRMED' || (status === 'CONFIRMED' || req.body.transactionHash)) {
+       channexService.pushBooking(reservation.id).catch(e => {
+         logger.error(`Failed to background push to Channex: ${e.message}`);
+       });
     }
 
     res.status(201).json({

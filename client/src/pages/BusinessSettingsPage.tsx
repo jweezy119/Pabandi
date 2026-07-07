@@ -435,6 +435,53 @@ export default function BusinessSettingsPage() {
                 ))}
               </div>
             </div>
+
+            {(businessData.category === 'HOTEL' || businessData.category === 'PROPERTY_RENTAL') && (
+              <div className="p-5 rounded-2xl bg-[#1a1a1a] border border-[#ffffff15] mt-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-bold text-[#e8e8e8]">Channel Manager (Airbnb, Booking.com)</h4>
+                    <p className="text-xs text-[#757575] mt-1">
+                      Powered by Channex. Sync your Pabandi availability automatically with major OTAs.
+                    </p>
+                  </div>
+                  {bizRes?.channexPropertyId ? (
+                    <span className="px-3 py-1 bg-[#10b98125] text-[#10b981] text-xs font-bold rounded-full flex items-center gap-1">
+                      <CheckCircleIcon className="h-4 w-4" /> Connected
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 bg-slate-800 text-slate-400 text-xs font-bold rounded-full">Not Connected</span>
+                  )}
+                </div>
+
+                {!bizRes?.channexPropertyId && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        setSaveStatus('saving');
+                        await apiClient.post(`/businesses/${bizRes?.id}/channex-connect`);
+                        qc.invalidateQueries('my-business-settings');
+                        setSaveStatus('saved');
+                        setTimeout(() => setSaveStatus('idle'), 2500);
+                      } catch (err) {
+                        setSaveStatus('error');
+                      }
+                    }}
+                    disabled={saveStatus === 'saving'}
+                    className="w-full py-3 bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-opacity"
+                  >
+                    Connect to Airbnb
+                  </button>
+                )}
+                {bizRes?.channexPropertyId && (
+                  <div className="p-3 bg-[#181818] rounded-xl border border-[#ffffff15]">
+                    <p className="text-xs text-[#9e9e9e] uppercase tracking-wider font-bold mb-1">Channex Property ID</p>
+                    <p className="text-sm font-mono text-[#e8e8e8]">{bizRes.channexPropertyId}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <SaveButton onClick={handleSaveWebhook} label="Save Webhook" />
           </div>
         );

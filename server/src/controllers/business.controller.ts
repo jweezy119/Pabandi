@@ -5,6 +5,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
 import { osintService } from '../services/osint.service';
+import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
 
 export const createBusiness = async (
@@ -1069,6 +1070,31 @@ export const deleteBusinessService = async (req: AuthRequest, res: Response, nex
       where: { id: serviceId }
     });
     res.json({ success: true, message: 'Service deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const connectChannex = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const business = await prisma.business.findUnique({ where: { id } });
+
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    if (business.category !== 'HOTEL' && business.category !== 'PROPERTY_RENTAL') {
+      return res.status(400).json({ success: false, message: 'Only hotels and property rentals can connect to Channex.' });
+    }
+
+    if (business.channexPropertyId) {
+       return res.status(400).json({ success: false, message: 'Property is already connected to Channex.' });
+    }
+
+    const channexPropertyId = await channexService.provisionProperty(business.id);
+
+    res.json({ success: true, message: 'Successfully provisioned on Channex', data: { channexPropertyId } });
   } catch (error) {
     next(error);
   }

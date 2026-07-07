@@ -106,6 +106,7 @@ model Business {
   externalDetails    Json?
   checkInTime        String?
   checkOutTime       String?
+  channexPropertyId  String?           @unique
   owner              User?             @relation(fields: [ownerId], references: [id])
   businessHours      BusinessHours[]
   settings           BusinessSettings?
@@ -182,6 +183,7 @@ model Reservation {
   updatedAt           DateTime          @updatedAt
   cancelledAt         DateTime?
   cryptoDepositTxHash String?
+  channexBookingId    String?           @unique
   rewardEarned        Float?            @default(0)
   googleReviewId      String?
   depositStatus       DepositStatus     @default(NOT_REQUIRED)

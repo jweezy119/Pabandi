@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
@@ -232,5 +232,70 @@ export const getUsage = async (
   } catch (error) {
     logger.error('[External API] getUsage error:', error);
     next(error);
+  }
+};
+
+// ─── Channex Webhook ─────────────────────────────────────────────────────────
+
+export const channexWebhook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const payload = req.body;
+    
+    // We only care about new bookings from Airbnb/Channex to block Pabandi
+    if (payload.event === 'booking.created') {
+      const channexBooking = payload.data;
+      const propertyId = channexBooking.property_id;
+
+      const business = await prisma.business.findUnique({
+        where: { channexPropertyId: propertyId }
+      });
+
+      if (business) {
+        logger.info(`Incoming Airbnb booking for business ${business.id}, blocking Pabandi calendar...`);
+        
+        // Find or create a user for this external booking
+        const guestEmail = channexBooking.customer?.mail || `guest_${channexBooking.id}@channex.pabandi.com`;
+        let user = await prisma.user.findUnique({ where: { email: guestEmail } });
+        
+        if (!user) {
+           user = await prisma.user.create({
+             data: {
+               email: guestEmail,
+               firstName: channexBooking.customer?.name || 'Airbnb',
+               lastName: channexBooking.customer?.surname || 'Guest',
+               phone: channexBooking.customer?.phone || null,
+               passwordHash: 'dummy_hash_for_external_guest',
+             }
+           });
+        }
+
+        // Block dates on Pabandi
+        await prisma.reservation.create({
+          data: {
+            businessId: business.id,
+            customerId: user.id,
+            reservationDate: new Date(channexBooking.arrival_date),
+            checkOutDate: new Date(channexBooking.departure_date),
+            reservationTime: '15:00', // Default check-in time placeholder
+            numberOfGuests: channexBooking.occupancy?.adults || 2,
+            customerName: `${channexBooking.customer?.name} ${channexBooking.customer?.surname} (via Airbnb)`,
+            customerPhone: '0000000000',
+            status: 'CONFIRMED',
+            depositStatus: 'NOT_REQUIRED',
+            channexBookingId: channexBooking.id,
+          }
+        });
+      }
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    logger.error('[Channex Webhook] Error:', error);
+    // Always return 200 to webhooks to prevent retries unless it's a critical error
+    return res.status(200).send('Webhook received with errors');
   }
 };

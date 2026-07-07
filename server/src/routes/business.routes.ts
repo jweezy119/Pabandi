@@ -13,7 +13,8 @@ import {
   getBusinessServices,
   createBusinessService,
   updateBusinessService,
-  deleteBusinessService
+  deleteBusinessService,
+  connectChannex
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimiter';
@@ -370,6 +371,7 @@ router.get('/:id/reservations', getBusinessReservations);
 router.get('/:id/analytics', getBusinessAnalytics);
 router.get('/:id/customers', getBusinessCustomers);
 router.post('/:id/generate-link', generateBookingLink);
+router.post('/:id/channex-connect', authorize('BUSINESS_OWNER', 'ADMIN'), connectChannex);
 
 // Business Services Management
 router.post('/:id/services', authorize('BUSINESS_OWNER', 'ADMIN'), createBusinessService);

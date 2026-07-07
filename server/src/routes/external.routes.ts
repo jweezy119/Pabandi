@@ -5,6 +5,7 @@ import {
   getPartnerTrustBadge,
   reportTransactionOutcome,
   getUsage,
+  channexWebhook,
 } from '../controllers/external.controller';
 import rateLimit from 'express-rate-limit';
 
@@ -19,8 +20,16 @@ const externalRateLimiter = rateLimit({
   message: { success: false, error: 'Too many requests — slow down' },
 });
 
-// Apply API key auth + usage logging to all external routes
 router.use(externalRateLimiter);
+
+// ─── Webhooks (No API Key Required) ──────────────────────────────────────────
+/**
+ * POST /external/v1/webhooks/channex
+ * Receives ARI and Booking updates from Channex (Airbnb, etc.)
+ */
+router.post('/webhooks/channex', channexWebhook);
+
+// Apply API key auth + usage logging to all external routes
 router.use(apiKeyAuth);
 router.use(logApiUsage);
 
