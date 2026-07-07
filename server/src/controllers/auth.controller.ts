@@ -562,12 +562,12 @@ export const updateProfile = async (
 export const getNonce = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { walletAddress } = req.body;
-    if (!walletAddress) {
-      throw new CustomError('Wallet address is required', 400);
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      throw new CustomError('Invalid wallet address', 400);
     }
 
-    const nonce = crypto.randomBytes(32).toString('hex');
-    let user = await prisma.user.findUnique({ where: { walletAddress } });
+    const nonce = Date.now() + '_' + crypto.randomBytes(32).toString('hex');
+    let user = await prisma.user.findUnique({ where: { walletAddress: walletAddress.toLowerCase() } });
 
     if (!user) {
       // Create stub user
@@ -598,8 +598,12 @@ export const getNonce = async (req: Request, res: Response, next: NextFunction) 
 export const verifyWallet = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { walletAddress, signature } = req.body;
-    if (!walletAddress || !signature) {
-      throw new CustomError('Wallet address and signature are required', 400);
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      throw new CustomError('Invalid wallet address', 400);
+    }
+    
+    if (!signature || !/^0x[a-fA-F0-9]{130}$/.test(signature)) {
+      throw new CustomError('Invalid signature format', 400);
     }
 
     const user = await prisma.user.findUnique({ 
@@ -609,6 +613,13 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
     
     if (!user || !user.nonce) {
       throw new CustomError('Nonce not found. Please request a new nonce.', 400);
+    }
+
+    // Check expiration (5 minutes)
+    const [timestampStr] = user.nonce.split('_');
+    const timestamp = parseInt(timestampStr, 10);
+    if (isNaN(timestamp) || Date.now() - timestamp > 5 * 60 * 1000) {
+      throw new CustomError('Nonce expired. Please request a new one.', 400);
     }
 
     const { ethers } = await import('ethers');

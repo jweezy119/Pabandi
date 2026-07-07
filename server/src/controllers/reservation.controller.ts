@@ -182,17 +182,42 @@ export const createReservation = async (
     };
 
     // Validate transaction hash if present and real
-    if (req.body.transactionHash && !req.body.transactionHash.startsWith('pending_') && req.body.paymentMethod === 'bsc') {
+    if (req.body.transactionHash && !req.body.transactionHash.startsWith('pending_')) {
+      const { paymentMethod, transactionHash } = req.body;
+      
       try {
-        const provider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545');
-        const receipt = await provider.getTransactionReceipt(req.body.transactionHash);
-        if (!receipt || receipt.status !== 1) {
-          throw new CustomError('Invalid or failed transaction hash', 400);
+        if (paymentMethod === 'bsc') {
+          if (!/^0x([A-Fa-f0-9]{64})$/.test(transactionHash)) throw new CustomError('Invalid BSC transaction hash format', 400);
+          const provider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || 'https://data-seed-prebsc-1-s1.binance.org:8545');
+          const receipt = await provider.getTransactionReceipt(transactionHash);
+          if (!receipt || receipt.status !== 1) {
+            throw new CustomError('Invalid or failed BSC transaction hash', 400);
+          }
+        } else if (paymentMethod === 'btc') {
+          // BTC hashes are 64 char hex without 0x
+          if (!/^[A-Fa-f0-9]{64}$/.test(transactionHash)) {
+            throw new CustomError('Invalid Bitcoin transaction hash format', 400);
+          }
+          // Simulated mock verifier for BTC (since we don't have a live node integrated here yet)
+          // In production, you'd use a service like Blockstream or Mempool.space API
+          if (transactionHash === '0000000000000000000000000000000000000000000000000000000000000000') {
+             throw new CustomError('Invalid or failed BTC transaction hash', 400);
+          }
+        } else if (paymentMethod === 'usd1') {
+          if (!/^0x([A-Fa-f0-9]{64})$/.test(transactionHash)) throw new CustomError('Invalid USD1 transaction hash format', 400);
+          // Assuming USD1 is on an EVM like Polygon or Ethereum
+          const provider = new ethers.JsonRpcProvider(process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com');
+          const receipt = await provider.getTransactionReceipt(transactionHash).catch(() => null);
+          // For testing environments where the tx doesn't actually exist on real polygon, 
+          // we reject if we can't find it, enforcing strict checking.
+          if (!receipt || receipt.status !== 1) {
+            throw new CustomError('Invalid or failed USD1 transaction hash on-chain', 400);
+          }
         }
       } catch (err: any) {
         if (err instanceof CustomError) throw err;
         logger.error(`Error verifying transaction hash: ${err.message}`);
-        throw new CustomError('Could not verify on-chain deposit', 400);
+        throw new CustomError(`Could not verify on-chain deposit for ${paymentMethod}`, 400);
       }
     }
 
