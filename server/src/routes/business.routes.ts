@@ -30,8 +30,9 @@ router.get('/', rateLimiter, async (req, res, next) => {
     const { googlePlaceId, category, search, latitude, longitude } = req.query;
 
     let osmResults: any[] = [];
+    let locationIqPOIs: any[] = []; // Direct POI results from LocationIQ
     
-    // HARDENED: Sanitize search string to prevent malformed Nominatim queries
+    // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
 
     let lat = latitude ? parseFloat(String(latitude)) : null;
@@ -39,9 +40,9 @@ router.get('/', rateLimiter, async (req, res, next) => {
     let extractedCity = '';
     let searchKeyword = cleanSearch;
 
-    if (!lat && !lng && cleanSearch) {
+    // === STEP 1: LocationIQ Search (finds both places AND businesses/POIs) ===
+    if (cleanSearch) {
       try {
-        // LocationIQ Geocoding
         const locationIqKey = process.env.LOCATIONIQ_API_KEY;
         if (locationIqKey) {
           const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
@@ -50,57 +51,75 @@ router.get('/', rateLimiter, async (req, res, next) => {
               q: cleanSearch,
               format: 'json',
               addressdetails: 1,
-              limit: 1
-            }
+              limit: 10 // Get multiple results to capture POIs
+            },
+            timeout: 5000
           });
           
           if (geoRes.data && geoRes.data.length > 0) {
-            const bestMatch = geoRes.data[0];
-            lat = parseFloat(bestMatch.lat);
-            lng = parseFloat(bestMatch.lon);
-            
-            const address = bestMatch.address || {};
-            extractedCity = address.city || address.town || address.village || address.county || '';
-            
-            if (extractedCity) {
-              const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
-              searchKeyword = cleanSearch.replace(regex, '').trim();
+            // Use the first result for coordinates if we don't have any
+            if (!lat && !lng) {
+              const bestMatch = geoRes.data[0];
+              lat = parseFloat(bestMatch.lat);
+              lng = parseFloat(bestMatch.lon);
+              
+              const address = bestMatch.address || {};
+              extractedCity = address.city || address.town || address.village || address.county || '';
+              
+              if (extractedCity) {
+                const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
+                searchKeyword = cleanSearch.replace(regex, '').trim();
+              }
+            }
+
+            // Collect all POI-type results (businesses, shops, amenities) from LocationIQ
+            for (const result of geoRes.data) {
+              const rClass = result.class || '';
+              const rType = result.type || '';
+              // Include amenity, shop, leisure, tourism, and specific place types
+              const isPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
+                            ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage', 
+                             'clinic', 'hospital', 'gym', 'fitness_centre', 'spa', 'bakery', 'ice_cream',
+                             'food_court', 'pub', 'nightclub', 'dentist', 'doctor'].includes(rType);
+              if (isPOI && result.display_name) {
+                locationIqPOIs.push(result);
+              }
             }
           }
         }
       } catch (err: any) {
-        console.warn('LocationIQ Geocode failed during search:', err.message);
+        console.warn('LocationIQ search failed:', err.message);
       }
     }
 
-    // HARDENED: Generate a unique cache key based on search parameters
+    // === STEP 2: Overpass API search (OSM data around coordinates) ===
     const cacheKey = `osm_search:${cleanSearch}:${lat || 'null'}:${lng || 'null'}:${category || 'ALL'}`;
     const cachedOsmResults = cacheService.get(cacheKey);
 
     if (cachedOsmResults) {
       osmResults = cachedOsmResults;
     } else {
-      // 1. Build Overpass Query
       let overpassQuery = '';
       if (lat && lng) {
         
         if (searchKeyword && searchKeyword.length > 2) {
-          // Remove generic terms for category search so "massage parlor" becomes "massage"
           const cleanCategoryKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop|parlor|store|center|centre|studio|bar|grill|spa|salon)\b/gi, '').trim() || searchKeyword;
 
-          // Search by name around user location (50km radius) AND also by category tags
+          // Make name regex tolerant of apostrophes/special chars: "giordanos" -> "giordano.?s"
+          const flexibleNameRegex = searchKeyword.split('').join('.?');
+
           overpassQuery = `
             [out:json][timeout:10];
             (
-              node["name"~"${searchKeyword}",i]["amenity"](around:50000,${lat},${lng});
-              node["name"~"${searchKeyword}",i]["shop"](around:50000,${lat},${lng});
-              node["name"~"${searchKeyword}",i]["leisure"](around:50000,${lat},${lng});
+              node["name"~"${flexibleNameRegex}",i]["amenity"](around:50000,${lat},${lng});
+              node["name"~"${flexibleNameRegex}",i]["shop"](around:50000,${lat},${lng});
+              node["name"~"${flexibleNameRegex}",i]["leisure"](around:50000,${lat},${lng});
               node["cuisine"~"${cleanCategoryKeyword}",i]["amenity"](around:50000,${lat},${lng});
               node["shop"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
               node["amenity"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
               node["leisure"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
             );
-            out center 15;
+            out center 20;
           `;
         } else if (!searchKeyword) {
           // Nearby search without specific name, using category
@@ -119,10 +138,6 @@ router.get('/', rateLimiter, async (req, res, next) => {
             out center 25;
           `;
         }
-      } else {
-        // If we don't have a specific location, we skip Overpass to avoid global timeouts
-        // The local Prisma database will handle the global text search
-        overpassQuery = '';
       }
 
       if (overpassQuery) {
@@ -133,7 +148,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
               'Content-Type': 'application/x-www-form-urlencoded',
               'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
             },
-            timeout: 10000 // 10-second timeout for Overpass
+            timeout: 10000
           });
           const places = overpassRes.data?.elements || [];
           osmResults = osmResults.concat(places);
@@ -142,13 +157,12 @@ router.get('/', rateLimiter, async (req, res, next) => {
         }
       }
 
-      // HARDENED: Save successful API results to memory cache
       if (osmResults.length > 0) {
         cacheService.set(cacheKey, osmResults);
       }
     }
     
-    // 1.5 If googlePlaceId (osmId) is provided and does not exist in local DB, attempt dynamic Details import
+    // === STEP 2.5: Dynamic import for specific OSM ID ===
     if (googlePlaceId) {
       const existing = await prisma.business.findFirst({
         where: { googlePlaceId: String(googlePlaceId) }
@@ -165,7 +179,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
               'Content-Type': 'application/x-www-form-urlencoded',
               'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
             },
-            timeout: 5000 // HARDENED: 5-second timeout
+            timeout: 5000
           });
           
           if (overpassRes.data?.elements && overpassRes.data.elements.length > 0) {
@@ -219,7 +233,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
       }
     }
 
-    // Fetch local business listings (which now include newly imported ones)
+    // === STEP 3: Prisma DB search (use ORIGINAL cleanSearch, not just searchKeyword) ===
     const where: any = { isActive: true };
     if (googlePlaceId) {
       where.googlePlaceId = String(googlePlaceId);
@@ -227,30 +241,23 @@ router.get('/', rateLimiter, async (req, res, next) => {
     if (category && category !== 'ALL') {
       where.category = String(category);
     }
-    if (searchKeyword) {
-      const searchTerms = String(searchKeyword)
+    // Use cleanSearch for DB query so "giordanos" still matches even after city extraction
+    const dbSearchTerm = cleanSearch || searchKeyword;
+    if (dbSearchTerm) {
+      const searchTerms = String(dbSearchTerm)
         .trim()
         .split(/\s+/)
         .filter(term => term.length > 0);
         
       if (searchTerms.length > 0) {
-        where.AND = searchTerms.map(term => ({
+        where.OR = searchTerms.map(term => ({
           OR: [
             { name: { contains: term, mode: 'insensitive' } },
             { description: { contains: term, mode: 'insensitive' } },
             { address: { contains: term, mode: 'insensitive' } },
-            ...(extractedCity ? [] : [{ city: { contains: term, mode: 'insensitive' } }])
+            { city: { contains: term, mode: 'insensitive' } }
           ]
         }));
-      }
-    }
-
-    if (extractedCity) {
-      // If we extracted a city from the query, explicitly require it
-      if (where.AND) {
-        where.AND.push({ city: { contains: extractedCity, mode: 'insensitive' } });
-      } else {
-        where.AND = [{ city: { contains: extractedCity, mode: 'insensitive' } }];
       }
     }
     
@@ -263,13 +270,65 @@ router.get('/', rateLimiter, async (req, res, next) => {
     });
 
     const mergedBusinesses = [...dbBusinesses];
+    const seenIds = new Set(mergedBusinesses.map(b => b.googlePlaceId));
 
+    // === STEP 4: Merge LocationIQ POI results ===
+    for (const poi of locationIqPOIs) {
+      const poiId = `liq-${poi.place_id}`;
+      if (seenIds.has(poiId)) continue;
+      seenIds.add(poiId);
+
+      const addr = poi.address || {};
+      const rType = poi.type || '';
+      let mappedCat: any = 'RESTAURANT';
+      if (['beauty', 'hairdresser'].includes(rType)) mappedCat = 'SALON';
+      else if (['massage'].includes(rType)) mappedCat = 'SPA';
+      else if (['clinic', 'hospital', 'doctor', 'dentist'].includes(rType)) mappedCat = 'CLINIC';
+      else if (['gym', 'fitness_centre', 'sports_centre'].includes(rType)) mappedCat = 'FITNESS_CENTER';
+
+      if (category && category !== 'ALL' && mappedCat !== String(category)) continue;
+
+      const city = addr.city || addr.town || addr.village || extractedCity || 'Unknown City';
+      const displayName = poi.display_name || '';
+      const nameParts = displayName.split(',');
+      const name = nameParts[0]?.trim() || 'Unknown Business';
+      const address = nameParts.slice(1, 3).join(',').trim() || displayName;
+
+      let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+      if (mappedCat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'SPA') coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'FITNESS_CENTER') coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+      if (mappedCat === 'CLINIC') coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+
+      mergedBusinesses.push({
+        id: poiId,
+        googlePlaceId: poiId,
+        name,
+        description: `Found via Pabandi search. Claim this profile to set up Web3 bookings.`,
+        category: mappedCat,
+        address,
+        city,
+        phone: '+92 300 0000000',
+        email: 'contact@pabandi.com',
+        website: null,
+        coverImageUrl,
+        rating: 4.5,
+        reviewCount: 0,
+        isVerified: false,
+        isClaimed: false,
+        isActive: true,
+        latitude: parseFloat(poi.lat) || 0,
+        longitude: parseFloat(poi.lon) || 0,
+        googleReviews: []
+      } as any);
+    }
+
+    // === STEP 5: Merge Overpass/OSM results ===
     for (const el of osmResults) {
       const osmId = `osm-${el.id}`;
       if (!el.id) continue;
-
-      const alreadyIncluded = mergedBusinesses.some(b => b.googlePlaceId === osmId);
-      if (alreadyIncluded) continue;
+      if (seenIds.has(osmId)) continue;
+      seenIds.add(osmId);
 
       const tags = el.tags || {};
       let mappedCat: any = 'RESTAURANT';
@@ -286,7 +345,6 @@ router.get('/', rateLimiter, async (req, res, next) => {
       const addressLower = address.toLowerCase();
       let city = extractedCity || 'Unknown City';
       if (!extractedCity && addressLower) {
-        // Fallback parsing if we couldn't get the city from geocoding
         if (addressLower.includes('lahore')) city = 'Lahore';
         else if (addressLower.includes('islamabad')) city = 'Islamabad';
         else if (addressLower.includes('rawalpindi')) city = 'Rawalpindi';
