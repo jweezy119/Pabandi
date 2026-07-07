@@ -34,6 +34,7 @@ export const createReservation = async (
       specialRequests,
       serviceIds,
       customServiceNames,
+      checkOutDate,
     } = req.body;
 
     // Verify business exists and is active (check both id and googlePlaceId)
@@ -273,6 +274,7 @@ export const createReservation = async (
         customerId: req.user!.id,
         tableId,
         reservationDate: dateTime.toDate(),
+        checkOutDate: checkOutDate ? moment.tz(checkOutDate, 'YYYY-MM-DD', tz).toDate() : null,
         reservationTime,
         numberOfGuests,
         status,

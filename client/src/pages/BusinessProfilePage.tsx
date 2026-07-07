@@ -29,6 +29,7 @@ export default function BusinessProfilePage() {
   // Booking Form State
   const [formData, setFormData] = useState({
     reservationDate: '',
+    checkOutDate: '',
     reservationTime: '',
     numberOfGuests: 2,
     customerName: '',
@@ -36,6 +37,8 @@ export default function BusinessProfilePage() {
     specialRequests: '',
     paymentMethod: 'safepay',
   });
+  
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Hero Demo: Interactive AI Score Slider
   const [demoScore, setDemoScore] = useState(
@@ -246,7 +249,7 @@ export default function BusinessProfilePage() {
           )}
 
           <div className="flex gap-3 justify-center">
-            <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
+            <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', checkOutDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
               className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface font-headline">
               Go Back
             </button>
@@ -794,7 +797,9 @@ export default function BusinessProfilePage() {
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Date *</label>
+                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">
+                      {business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL' ? 'Check-In Date *' : 'Date *'}
+                    </label>
                     <input 
                       type="date" 
                       name="reservationDate" 
@@ -805,17 +810,32 @@ export default function BusinessProfilePage() {
                       className="input-field" 
                     />
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
-                    <input 
-                      type="time" 
-                      name="reservationTime" 
-                      required 
-                      value={formData.reservationTime} 
-                      onChange={handleBookingChange} 
-                      className="input-field" 
-                    />
-                  </div>
+                  {(business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL') ? (
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Check-Out Date *</label>
+                      <input 
+                        type="date" 
+                        name="checkOutDate" 
+                        required 
+                        min={formData.reservationDate || format(new Date(), 'yyyy-MM-dd')} 
+                        value={formData.checkOutDate} 
+                        onChange={handleBookingChange} 
+                        className="input-field" 
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
+                      <input 
+                        type="time" 
+                        name="reservationTime" 
+                        required 
+                        value={formData.reservationTime} 
+                        onChange={handleBookingChange} 
+                        className="input-field" 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -955,10 +975,29 @@ export default function BusinessProfilePage() {
                   </div>
                 )}
 
+                {(business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL' || business.settings?.houseRules) && (
+                  <label className="flex items-start gap-2 bg-surface-container-low p-3 rounded-lg border border-outline-variant/30 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      required 
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4" 
+                    />
+                    <span className="text-xs font-body text-on-surface-variant leading-tight">
+                      I have read and agree to the <strong className="text-on-surface">House Rules</strong> and understand the <strong className="text-on-surface">Crypto Security Deposit Policy</strong>.
+                    </span>
+                  </label>
+                )}
+
                 <button 
                   type="submit" 
-                  disabled={bookingMutation.isLoading}
-                  className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
+                  disabled={bookingMutation.isLoading || ((business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL') && !termsAccepted)}
+                  className={`w-full font-headline text-sm font-black tracking-wide py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                    (!termsAccepted && (business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL')) 
+                    ? 'bg-surface-container-high text-on-surface-variant/50 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary hover:shadow-[0_0_20px_rgba(20,241,149,0.3)]'
+                  }`}
                 >
                   {bookingMutation.isLoading ? 'Processing...' : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly')}
                 </button>

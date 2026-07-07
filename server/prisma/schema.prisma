@@ -102,8 +102,10 @@ model Business {
   externalBookingUrl String?
   slug               String?           @unique
   verifiedAt         DateTime?
-  deviceFingerprint String?
+  deviceFingerprint  String?
   externalDetails    Json?
+  checkInTime        String?
+  checkOutTime       String?
   owner              User?             @relation(fields: [ownerId], references: [id])
   businessHours      BusinessHours[]
   settings           BusinessSettings?
@@ -157,6 +159,7 @@ model Reservation {
   customerId          String
   tableId             String?
   reservationDate     DateTime
+  checkOutDate        DateTime?
   reservationTime     String
   numberOfGuests      Int
   status              ReservationStatus @default(PENDING)
@@ -246,6 +249,8 @@ model BusinessSettings {
   requestFeedbackAfterBooking Boolean  @default(true)
   isE2eeEnabled               Boolean  @default(false)
   e2eePublicKey               String?
+  houseRules                  String?  @db.Text
+  cancellationPolicy          String?  @db.Text
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
   business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
@@ -476,6 +481,8 @@ enum BusinessCategory {
   CLINIC
   FITNESS_CENTER
   EVENT_VENUE
+  HOTEL
+  PROPERTY_RENTAL
   OTHER
   HOSPITAL
   FREELANCE
