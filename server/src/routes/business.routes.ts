@@ -41,24 +41,35 @@ router.get('/', rateLimiter, async (req, res, next) => {
 
     if (!lat && !lng && cleanSearch) {
       try {
-        const googleMapKey = process.env.GOOGLE_MAPS_API_KEY;
-        if (googleMapKey) {
-          const geoRes = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanSearch)}&key=${googleMapKey}`);
-          if (geoRes.data.status === 'OK' && geoRes.data.results.length > 0) {
-            const bestMatch = geoRes.data.results[0];
-            lat = bestMatch.geometry.location.lat;
-            lng = bestMatch.geometry.location.lng;
+        // LocationIQ Geocoding
+        const locationIqKey = process.env.LOCATIONIQ_API_KEY;
+        if (locationIqKey) {
+          const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
+            params: {
+              key: locationIqKey,
+              q: cleanSearch,
+              format: 'json',
+              addressdetails: 1,
+              limit: 1
+            }
+          });
+          
+          if (geoRes.data && geoRes.data.length > 0) {
+            const bestMatch = geoRes.data[0];
+            lat = parseFloat(bestMatch.lat);
+            lng = parseFloat(bestMatch.lon);
             
-            const localityObj = bestMatch.address_components.find((c: any) => c.types.includes('locality'));
-            if (localityObj) {
-              extractedCity = localityObj.long_name;
+            const address = bestMatch.address || {};
+            extractedCity = address.city || address.town || address.village || address.county || '';
+            
+            if (extractedCity) {
               const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
               searchKeyword = cleanSearch.replace(regex, '').trim();
             }
           }
         }
       } catch (err: any) {
-        console.warn('Google Geocode failed during search:', err.message);
+        console.warn('LocationIQ Geocode failed during search:', err.message);
       }
     }
 
