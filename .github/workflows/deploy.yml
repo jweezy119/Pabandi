@@ -57,6 +57,7 @@ jobs:
           GOOGLE_CLIENT_ID: "${{ secrets.GOOGLE_CLIENT_ID }}"
           GOOGLE_CLIENT_SECRET: "${{ secrets.GOOGLE_CLIENT_SECRET }}"
           GOOGLE_MAPS_API_KEY: "${{ secrets.GOOGLE_MAPS_API_KEY }}"
+          LOCATIONIQ_API_KEY: "${{ secrets.LOCATIONIQ_API_KEY }}"
           SMTP_USER: "${{ secrets.SMTP_USER }}"
           SMTP_PASS: "${{ secrets.SMTP_PASS }}"
           LOG_LEVEL: info
