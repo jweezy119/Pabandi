@@ -30,32 +30,31 @@ router.get('/', rateLimiter, async (req, res, next) => {
     // HARDENED: Sanitize search string to prevent malformed Nominatim queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
 
-    const PAK_CITIES: Record<string, { lat: number, lng: number }> = {
-      'karachi': { lat: 24.8607, lng: 67.0011 },
-      'lahore': { lat: 31.5204, lng: 74.3587 },
-      'islamabad': { lat: 33.6844, lng: 73.0479 },
-      'rawalpindi': { lat: 33.5973, lng: 73.0479 },
-      'faisalabad': { lat: 31.4504, lng: 73.1350 },
-      'multan': { lat: 30.1575, lng: 71.5249 },
-      'peshawar': { lat: 34.0151, lng: 71.5249 },
-      'quetta': { lat: 30.1798, lng: 66.9750 },
-    };
-
     let lat = latitude ? parseFloat(String(latitude)) : null;
     let lng = longitude ? parseFloat(String(longitude)) : null;
     let extractedCity = '';
-    
     let searchKeyword = cleanSearch;
-    if (cleanSearch) {
-      for (const [city, coords] of Object.entries(PAK_CITIES)) {
-        const regex = new RegExp(`\\b${city}\\b`, 'i');
-        if (regex.test(cleanSearch)) {
-          lat = coords.lat;
-          lng = coords.lng;
-          extractedCity = city;
-          searchKeyword = cleanSearch.replace(regex, '').trim();
-          break;
+
+    if (!lat && !lng && cleanSearch) {
+      try {
+        const googleMapKey = process.env.GOOGLE_MAPS_API_KEY;
+        if (googleMapKey) {
+          const geoRes = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cleanSearch)}&key=${googleMapKey}`);
+          if (geoRes.data.status === 'OK' && geoRes.data.results.length > 0) {
+            const bestMatch = geoRes.data.results[0];
+            lat = bestMatch.geometry.location.lat;
+            lng = bestMatch.geometry.location.lng;
+            
+            const localityObj = bestMatch.address_components.find((c: any) => c.types.includes('locality'));
+            if (localityObj) {
+              extractedCity = localityObj.long_name;
+              const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
+              searchKeyword = cleanSearch.replace(regex, '').trim();
+            }
+          }
         }
+      } catch (err: any) {
+        console.warn('Google Geocode failed during search:', err.message);
       }
     }
 
@@ -102,19 +101,10 @@ router.get('/', rateLimiter, async (req, res, next) => {
             out center 25;
           `;
         }
-      } else if (searchKeyword && searchKeyword.length > 2) {
-        const cuisineKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop)\b/gi, '').trim() || searchKeyword;
-        // Global or country-wide search if no location (Fallback bounding box for Pakistan approx)
-        overpassQuery = `
-          [out:json][timeout:10];
-          (
-            node["name"~"${searchKeyword}",i]["amenity"](23.6,60.8,37.1,77.8);
-            node["name"~"${searchKeyword}",i]["shop"](23.6,60.8,37.1,77.8);
-            node["name"~"${searchKeyword}",i]["leisure"](23.6,60.8,37.1,77.8);
-            node["cuisine"~"${cuisineKeyword}",i]["amenity"](23.6,60.8,37.1,77.8);
-          );
-          out center 15;
-        `;
+      } else {
+        // If we don't have a specific location, we skip Overpass to avoid global timeouts
+        // The local Prisma database will handle the global text search
+        overpassQuery = '';
       }
 
       if (overpassQuery) {
@@ -276,14 +266,21 @@ router.get('/', rateLimiter, async (req, res, next) => {
 
       const address = tags['addr:full'] || tags['addr:street'] || tags.display_name || '';
       const addressLower = address.toLowerCase();
-      let city = 'Karachi';
-      if (addressLower.includes('lahore')) city = 'Lahore';
-      else if (addressLower.includes('islamabad')) city = 'Islamabad';
-      else if (addressLower.includes('rawalpindi')) city = 'Rawalpindi';
-      else if (addressLower.includes('faisalabad')) city = 'Faisalabad';
-      else if (addressLower.includes('multan')) city = 'Multan';
-      else if (addressLower.includes('peshawar')) city = 'Peshawar';
-      else if (addressLower.includes('quetta')) city = 'Quetta';
+      let city = extractedCity || 'Unknown City';
+      if (!extractedCity && addressLower) {
+        // Fallback parsing if we couldn't get the city from geocoding
+        if (addressLower.includes('lahore')) city = 'Lahore';
+        else if (addressLower.includes('islamabad')) city = 'Islamabad';
+        else if (addressLower.includes('rawalpindi')) city = 'Rawalpindi';
+        else if (addressLower.includes('faisalabad')) city = 'Faisalabad';
+        else if (addressLower.includes('multan')) city = 'Multan';
+        else if (addressLower.includes('peshawar')) city = 'Peshawar';
+        else if (addressLower.includes('quetta')) city = 'Quetta';
+        else if (addressLower.includes('karachi')) city = 'Karachi';
+        else if (addressLower.includes('chicago')) city = 'Chicago';
+        else if (addressLower.includes('new york')) city = 'New York';
+        else if (addressLower.includes('london')) city = 'London';
+      }
 
       let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
       if (mappedCat === 'SALON') coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
