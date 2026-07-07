@@ -1,5 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import PageTransition from './PageTransition';
+import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
@@ -158,6 +159,7 @@ export default function Layout() {
         <PageTransition>
           <Outlet />
         </PageTransition>
+        <GlobalAIConciergeWidget />
       </main>
 
       {!isAuthPage && !isDetailScreen && (
