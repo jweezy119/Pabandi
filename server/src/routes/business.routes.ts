@@ -72,16 +72,26 @@ router.get('/', rateLimiter, async (req, res, next) => {
               }
             }
 
-            // Collect all POI-type results (businesses, shops, amenities) from LocationIQ
+            // Collect POI results from LocationIQ
+            // LocationIQ often returns null for class/type, so we match by display_name instead
+            const searchLower = cleanSearch.toLowerCase();
+            const searchWords = searchLower.split(/\s+/).filter(w => w.length > 2);
             for (const result of geoRes.data) {
+              if (!result.display_name) continue;
+              const displayLower = result.display_name.toLowerCase();
+              // Include result if its name contains any meaningful search word (not city names)
+              const nameMatchesSearch = searchWords.some(word => {
+                // Skip words that are just city/location names we already extracted
+                if (extractedCity && word.toLowerCase() === extractedCity.toLowerCase()) return false;
+                return displayLower.includes(word);
+              });
+              // Also include if it's a known POI type
               const rClass = result.class || '';
               const rType = result.type || '';
-              // Include amenity, shop, leisure, tourism, and specific place types
-              const isPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
-                            ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage', 
-                             'clinic', 'hospital', 'gym', 'fitness_centre', 'spa', 'bakery', 'ice_cream',
-                             'food_court', 'pub', 'nightclub', 'dentist', 'doctor'].includes(rType);
-              if (isPOI && result.display_name) {
+              const isKnownPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
+                                ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage', 
+                                 'clinic', 'hospital', 'gym', 'fitness_centre', 'spa'].includes(rType);
+              if (nameMatchesSearch || isKnownPOI) {
                 locationIqPOIs.push(result);
               }
             }
@@ -250,7 +260,8 @@ router.get('/', rateLimiter, async (req, res, next) => {
         .filter(term => term.length > 0);
         
       if (searchTerms.length > 0) {
-        where.OR = searchTerms.map(term => ({
+        // Use AND: ALL search terms must match (each term can match any field)
+        where.AND = searchTerms.map(term => ({
           OR: [
             { name: { contains: term, mode: 'insensitive' } },
             { description: { contains: term, mode: 'insensitive' } },
