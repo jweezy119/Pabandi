@@ -85,17 +85,20 @@ router.get('/', rateLimiter, async (req, res, next) => {
       if (lat && lng) {
         
         if (searchKeyword && searchKeyword.length > 2) {
-          // Remove generic terms for cuisine search so "mexican food" becomes "mexican"
-          const cuisineKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop)\b/gi, '').trim() || searchKeyword;
-          
-          // Search by name around user location (50km radius)
+          // Remove generic terms for category search so "massage parlor" becomes "massage"
+          const cleanCategoryKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop|parlor|store|center|centre|studio|bar|grill|spa|salon)\b/gi, '').trim() || searchKeyword;
+
+          // Search by name around user location (50km radius) AND also by category tags
           overpassQuery = `
             [out:json][timeout:10];
             (
               node["name"~"${searchKeyword}",i]["amenity"](around:50000,${lat},${lng});
               node["name"~"${searchKeyword}",i]["shop"](around:50000,${lat},${lng});
               node["name"~"${searchKeyword}",i]["leisure"](around:50000,${lat},${lng});
-              node["cuisine"~"${cuisineKeyword}",i]["amenity"](around:50000,${lat},${lng});
+              node["cuisine"~"${cleanCategoryKeyword}",i]["amenity"](around:50000,${lat},${lng});
+              node["shop"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+              node["amenity"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+              node["leisure"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
             );
             out center 15;
           `;
