@@ -45,7 +45,7 @@ export class DashscopeService {
       if (apiKey && apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
         try {
           logger.info(`[DashScope] Calling Alibaba Cloud API for user: ${userId}`);
-          const response = await axios.post('https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+          const response = await axios.post('https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
             model: 'qwen-turbo',
             input: {
               messages: [
@@ -106,7 +106,7 @@ export class DashscopeService {
       throw new Error('DASHSCOPE_API_KEY is not configured');
     }
 
-    const response = await axios.post('https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+    const response = await axios.post('https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
       model: 'qwen-turbo',
       input: {
         messages: [

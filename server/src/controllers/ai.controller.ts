@@ -67,7 +67,7 @@ If you don't know the exact business ID, leave it empty or make a best guess fro
     };
 
     const response = await axios.post(
-      'https://ws-zjb69iy6ysvy9j7z.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', 
+      'https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', 
       payload, 
       {
         headers: {
