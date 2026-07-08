@@ -4,7 +4,13 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files and install dependencies
+# Copy package files and install dependencies
 COPY package*.json ./
+# Configure npm to be more resilient to network blips and IPv6 routing issues
+RUN npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retries 5 && \
+    npm config set registry https://registry.npmjs.org/
 RUN npm ci
 
 # Copy source code and build
