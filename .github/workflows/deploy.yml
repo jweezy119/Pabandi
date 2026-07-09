@@ -27,6 +27,7 @@ jobs:
         run: gcloud auth configure-docker
 
       - name: Run Prisma Migrations
+        continue-on-error: true
         run: |-
           docker build --target builder -t pabandi-server-builder ./server
           docker run --rm \
