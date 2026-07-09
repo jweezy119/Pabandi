@@ -288,6 +288,14 @@ export default function HomePage() {
                 View Plans →
               </Link>
             </div>
+
+            {/* About Me */}
+            <div className="mt-8 p-6 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm text-white stagger-item">
+              <h3 className="font-headline font-bold text-lg mb-2">About Me</h3>
+              <p className="text-sm text-white/80 leading-relaxed">
+                Built for people who value commitment. Pabandi turns bookings into trusted relationships, with AI-guided recommendations and verifiable reliability.
+              </p>
+            </div>
           </div>
 
           {/* Right Col - The Interactive Map */}
