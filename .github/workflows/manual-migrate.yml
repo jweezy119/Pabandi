@@ -1,0 +1,39 @@
+name: Manual Prisma Migration to Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "run migration" to confirm'
+        required: true
+        default: ''
+
+jobs:
+  migrate:
+    name: Run Prisma Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Prisma Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          cd server
+          npx prisma migrate deploy

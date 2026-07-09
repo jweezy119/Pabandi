@@ -26,15 +26,7 @@ jobs:
       - name: Authorize Docker
         run: gcloud auth configure-docker
 
-      - name: Run Prisma Migrations
-        continue-on-error: true
-        run: |-
-          docker build --target builder -t pabandi-server-builder ./server
-          docker run --rm \
-            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            -e DIRECT_URL="${{ secrets.DIRECT_URL }}" \
-            pabandi-server-builder \
-            sh -lc "npx prisma migrate deploy"
+      # Database migrations removed from CI to avoid Supabase pooler allow-list / GitHub egress failures.
 
       - name: Build and Push Production Image
         run: |-
