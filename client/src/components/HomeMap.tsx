@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -9,6 +9,19 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+function ErrorFallback() {
+  const [failed, setFailed] = useState(false);
+  const map = useMap();
+  useEffect(() => {
+    const onErr = () => setFailed(true);
+    const tiles = map.getPane('tilePane')?.querySelectorAll('img') || [];
+    tiles.forEach((img) => img.addEventListener('error', onErr));
+    return () => tiles.forEach((img) => img.removeEventListener('error', onErr));
+  }, [map]);
+  if (!failed) return null;
+  return null;
+}
 
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -40,9 +53,10 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
     <div className="w-full h-full relative rounded-3xl overflow-hidden bg-slate-900">
       <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
         <MapUpdater center={[center.lat, center.lng]} />
+        <ErrorFallback />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {hasSelection && selectedPlace && (
           <Marker position={[selectedPlace.lat, selectedPlace.lng]}>
@@ -107,7 +121,9 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
             </div>
             <button
               type="button"
-              onClick={() => {}}
+              onClick={() => {
+                onPlaceSelect?.(selectedPlace);
+              }}
               aria-label="Center map"
               className="shrink-0 w-9 h-9 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center"
             >

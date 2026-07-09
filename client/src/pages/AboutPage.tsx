@@ -74,22 +74,19 @@ export default function AboutPage() {
             </h2>
             <div className="space-y-6 text-slate-300 text-lg leading-relaxed font-light">
               <p>
-                I didn't pick this idea from a pitch competition. I picked it from a salon chair in Karachi, on the day I was getting ready for my own wedding.
+                I didn't pick this idea from a pitch competition. I picked it from real conversations with local business owners who were quietly losing revenue every single day to no-shows. While supporting clients through IT work, I watched salons, clinics, and studios miss their targets by choosing the wrong reservation and payment solutions. Their existing tools were too expensive, often non-existent, and didn't understand the reliability problem at the center of every booking.
               </p>
               <p>
-                Karachi is a city where beauty parlours and salons sit on every corner. That's not an exaggeration — approximately 560 weddings happen there in a single day. The demand is relentless. Yet when I spoke to business owners, they told me they'd stopped taking reservations. Why? <strong className="text-rose-400 font-medium">Because no-shows were bleeding them dry.</strong> A bride's party books five slots, only two show up. Chairs sit empty. Stylists stand idle. And the reliable customers get zero recognition — just the same wait, the same generic reminder, the same feeling that their time doesn't matter.
+                I'm an IT specialist with 8+ years of experience solving real problems for real people — one desk, one ticket, one frustrated user at a time. I've managed Microsoft 365 environments, automated workflows, and supported everything from small checkout systems to corporate networks. In lean operations, I'm the person who turns a messy process into a reliable system. That's exactly why Pabandi was born.
               </p>
               <p>
-                I'm customer-obsessed. I've spent 8+ years in tech support — I know what it feels like when someone's time is wasted because a system failed them. So I asked: what if we could protect the business with a fair, risk-based deposit, and reward the customer for simply being reliable? A deposit that says <span className="italic">"we need assurance,"</span> paired with a reward that says <span className="italic">"we see you, and thank you."</span> That single idea — deposit for the business, reward for the customer — became Pabandi.
-              </p>
-              <p>
-                From there, the vision expanded. If trust can be quantified and rewarded in a Karachi salon, why not in a Lahore clinic, an Islamabad freelancer's meeting, a Dubai restaurant, a London hotel? I realized this wasn't just a booking fix. <strong className="text-emerald-400 font-medium">It was a universal trust layer</strong> — a way to make every appointment, reservation, and handshake seamless and efficient because reliability finally had a score and a reward attached to it.
+                So I built something to fix it: a trust layer that protects business time, guarantees deposits when plans change, and rewards customers when they follow through. Reliability is real and measurable, and with today's infrastructure, it can be made transparent and equitable. This problem is repeatable from a downtown clinic to a salon, restaurant, or apartment complex.
               </p>
               <p className="text-xl font-medium text-white italic border-l-4 border-emerald-500 pl-4 py-2 my-8">
-                "I picked this idea because I saw it ruin people's days and businesses."
+                "I stayed because I had the technical skills to build the solution, and the customer obsession to make it actually useful."
               </p>
               <p>
-                I stayed with it because I had the technical skills to build the AI and Web3 infrastructure to fix it. And I'm obsessed with it because every check-in, every PAB token minted, every salon chair that stays filled is proof that promises deserve to be kept — and rewarded.
+                Pabandi is what happens when an IT-first builder meets a universal service-economy problem. Every check-in, every protected deposit, and every earned reward is part of a simpler truth: keeping your word should be worth something.
               </p>
             </div>
           </div>
