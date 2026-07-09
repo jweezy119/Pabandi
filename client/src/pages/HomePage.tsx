@@ -76,23 +76,7 @@ export default function HomePage() {
 
   let businesses = data || [];
 
-  if (userLoc) {
-    businesses = [...businesses].sort((a, b) => {
-      const distA = getDistance(
-        userLoc.lat,
-        userLoc.lng,
-        a.latitude || INITIAL_CENTER.lat,
-        a.longitude || INITIAL_CENTER.lng,
-      );
-      const distB = getDistance(
-        userLoc.lat,
-        userLoc.lng,
-        b.latitude || INITIAL_CENTER.lat,
-        b.longitude || INITIAL_CENTER.lng,
-      );
-      return distA - distB;
-    });
-  }
+  businesses = rankBusinesses([...businesses], userLoc);
 
   const handleGetLocation = () => {
     setLocLoading(true);
@@ -178,6 +162,32 @@ export default function HomePage() {
     { name: "Dubai", lat: 25.2048, lng: 55.2708 },
     { name: "Singapore", lat: 1.3521, lng: 103.8198 },
   ];
+  function rankBusinesses(items: any[], userLoc: { lat: number; lng: number } | null) {
+    if (!items.length) return items;
+    if (!userLoc) return items;
+    const scored = items.map((item) => {
+      const lat = item.latitude ?? INITIAL_CENTER.lat;
+      const lng = item.longitude ?? INITIAL_CENTER.lng;
+      const distKm = getDistance(userLoc.lat, userLoc.lng, lat, lng);
+      const distScore = Math.max(0, 100 - distKm * 2);
+      const rating = Number(item.rating || 0);
+      const ratingScore = Math.min(100, rating * 20);
+      const reliability = Number(item.reliabilityScore || 0);
+      const reliabilityScore = Math.min(100, reliability / 10);
+      const score = distScore * 0.5 + ratingScore * 0.25 + reliabilityScore * 0.25;
+      return { ...item, __score: score, __distanceKm: Number(distKm.toFixed(2)) };
+    });
+    return scored.sort((a, b) => b.__score - a.__score);
+  }
+
+  function getBusinessMatchLabel(biz: any) {
+    const dist = biz.__distanceKm;
+    if (dist < 1) return 'Few blocks away';
+    if (dist < 5) return `${dist.toFixed(1)} km away`;
+    if (dist < 20) return `${dist.toFixed(1)} km away`;
+    return biz.city || 'Nearby';
+  }
+
   const getCategoryLabel = (c: string) => {
     if (c === "ALL") return "All Categories";
     if (c === "ECOMMERCE") return "E-Commerce";
@@ -289,12 +299,15 @@ export default function HomePage() {
               center={mapCenter}
               selectedPlace={selectedMapPlace}
               userLocation={userLoc}
-              places={businesses.map((b: any) => ({
-                lat: b.latitude ?? mapCenter.lat,
-                lng: b.longitude ?? mapCenter.lng,
-                name: b.name,
-                subtitle: b.description || b.city,
-              }))}
+              places={businesses.slice(0, 8).map((b: any) => {
+                const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || "");
+                return {
+                  lat: b.latitude ?? mapCenter.lat,
+                  lng: b.longitude ?? mapCenter.lng,
+                  name: b.name,
+                  subtitle: [cityText, b.description, b.category].filter(Boolean).join(" · "),
+                };
+              })}
               onPlaceSelect={(place) =>
                 handlePlaceSelect({
                   name: place.name || place.subtitle || 'Location',
@@ -361,6 +374,34 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* Search result chips */}
+        {search.trim().length > 0 && (
+          <div className="flex flex-wrap gap-2 reveal">
+            {businesses.slice(0, 6).map((biz: any) => (
+              <button
+                key={biz.id}
+                onClick={() =>
+                  handlePlaceSelect({
+                    name: biz.name,
+                    address: biz.address || biz.city,
+                    lat: biz.latitude ?? mapCenter.lat,
+                    lng: biz.longitude ?? mapCenter.lng,
+                  })
+                }
+                className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/10 text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors"
+              >
+                {biz.name.replace(new RegExp(`(${search.trim()})`, 'gi'), '$1')}
+                {biz.__distanceKm != null && (
+                  <span className="ml-1 text-[10px] font-medium text-on-surface-variant">
+                    · {biz.__distanceKm.toFixed(1)} km
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
 
         {/* Featured Businesses */}
         <section ref={revealRef2} className="space-y-6 reveal">
