@@ -725,7 +725,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-surface">
         <div className="text-center">
-          <p className="text-on-surface-variant mb-4 font-body">{t("Please sign in to view your profile.", "Apni profile dekhne ke liye baraye meherbani sign in karein.")}</p>
+          <p className="text-on-surface-variant mb-4 font-body">{t("Please sign in to view your profile.", "Please sign in to view your profile.")}</p>
           <Link to="/login" className="bg-primary text-on-primary px-6 py-2.5 rounded-md font-body text-sm font-medium hover:opacity-90 transition-opacity">{t("Sign In", "Log In")}</Link>
         </div>
       </div>
