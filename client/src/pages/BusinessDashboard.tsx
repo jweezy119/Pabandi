@@ -176,7 +176,7 @@ function AccioGrowthWidget({ businessId }: { businessId: string }) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Est. Cost</p>
-                  <p className="font-headline text-sm font-bold">${trend.estimatedCostPKR.toLocaleString()}</p>
+                  <p className="font-headline text-sm font-bold">$ {(trend.estimatedCostPKR ? Number(trend.estimatedCostPKR).toLocaleString() : 0)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Service Price</p>

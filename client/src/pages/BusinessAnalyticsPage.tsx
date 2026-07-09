@@ -250,13 +250,13 @@ export default function BusinessAnalyticsPage() {
             icon={<LockClosedIcon className="h-6 w-6" />}
             label="Deposits Collected"
             value={deposit.totalDepositsCollected || 0}
-            sub={`PKR ${fmt(deposit.totalDepositAmount || 0)} secured`}
+            sub={`$ ${fmt(deposit.totalDepositAmount || 0)} secured`}
             accent="bg-tertiary-fixed text-on-tertiary-fixed"
           />
           <MetricTile
             icon={<ShieldCheckIcon className="h-6 w-6" />}
             label="Revenue Saved"
-            value={`PKR ${fmt(deposit.revenueSavedByDeposits || 0)}`}
+            value={`$ ${fmt(deposit.revenueSavedByDeposits || 0)}`}
             sub="By deposit protection"
             accent="bg-secondary-fixed text-on-secondary-fixed"
           />
@@ -432,7 +432,7 @@ export default function BusinessAnalyticsPage() {
               <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Deposits Locked</p>
             </div>
             <div className="bg-surface-container-lowest rounded-xl p-4 text-center border border-outline-variant/20">
-              <p className="font-headline text-2xl font-bold text-[#06b6d4]">PKR {fmt(deposit.totalDepositAmount || 0)}</p>
+              <p className="font-headline text-2xl font-bold text-[#06b6d4]">$ {fmt(deposit.totalDepositAmount || 0)}</p>
               <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Total Secured</p>
             </div>
             <div className="bg-surface-container-lowest rounded-xl p-4 text-center border border-outline-variant/20">

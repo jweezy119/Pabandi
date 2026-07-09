@@ -111,7 +111,7 @@ export default function AccioDemandSourcingWidget({ businessId }: AccioDemandSou
                     </div>
                     <div>
                       <p className="font-body text-sm font-bold text-on-surface">{item.itemName}</p>
-                      <p className="font-body text-[11px] text-on-surface-variant">Est. ${item.estimatedPricePKR.toLocaleString()} each</p>
+                      <p className="font-body text-[11px] text-on-surface-variant">Est. $ {Number(item.estimatedPricePKR).toLocaleString()} each</p>
                     </div>
                   </div>
                   <a 
@@ -141,7 +141,7 @@ export default function AccioDemandSourcingWidget({ businessId }: AccioDemandSou
                   </p>
                 </div>
                 <span className="font-headline text-sm font-bold text-[#FF6A00]">
-                  ${draftOrder.estimatedCostPKR.toLocaleString()}
+                  {Number(draftOrder.estimatedCostPKR).toLocaleString()}
                 </span>
               </div>
 
@@ -228,7 +228,7 @@ export default function AccioDemandSourcingWidget({ businessId }: AccioDemandSou
                       {new Date(order.createdAt).toLocaleDateString()}
                     </span>
                     <span className="font-bold text-on-surface">
-                      $ {order.estimatedCostPKR.toLocaleString()}
+                      $ {Number(order.estimatedCostPKR).toLocaleString()}
                     </span>
                   </div>
                 </div>
