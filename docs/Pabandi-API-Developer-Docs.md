@@ -1,7 +1,7 @@
 # Pabandi API — Developer Beta
 ## Reliability Score as Portable Identity
 **Version:** 0.1 (Beta)  
-**Base URL:** `https://pabandi-42c5b.web.app/api/v1`  
+**Base URL:** `https://pabandi.com/api/v1`  
 **Auth:** Bearer token (contact team for access)  
 **Docs last updated:** June 2026
 
@@ -9,9 +9,9 @@
 
 # Welcome, Builder
 
-Pabandi is building a portable reliability layer for Pakistan's informal economy.
+Pabandi is building a portable reliability layer for the global service economy.
 
-If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you access to that trust without building it from scratch.
+If you run a platform where trust between strangers matters — live selling, marketplaces, rentals, clinic bookings — this API gives you access to that trust without building it from scratch.
 
 **One score. Every platform. Real behavior, not self-reported claims.**
 
@@ -27,7 +27,7 @@ The Web3 reputation space is crowded. Most projects score wallets, social accoun
 | **Score type** | Reliability — will this person show up and pay? | Credibility — is this account trustworthy? | Reputation — aggregated trust signals | Creditworthiness — loan repayment history | Identity verification — are you who you say you are? |
 | **AI layer** | ✅ Yes — predicts behavior from patterns | ❌ No | ❌ No | ❌ No | ❌ No |
 | **Merchant API** | ✅ Yes — real-time verification for sellers | ❌ No | ❌ No | ❌ No | ❌ No |
-| **Target market** | Pakistan's $15B informal economy | Crypto-native users | Web3 ecosystem | US DeFi borrowers | Enterprise identity |
+| **Target market** | Global informal service economy | Crypto-native users | Web3 ecosystem | US DeFi borrowers | Enterprise identity |
 | **On-chain** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Portable** | ✅ | Partial | ✅ | ✅ | ✅ |
 
@@ -43,8 +43,8 @@ No other project has access to the data layer Pabandi is building. That data is 
 |------|----------|---------|
 | **Live selling** | Verify buyer reliability before accepting pay-on-delivery | Instagram/TikTok live checkout |
 | **Booking platforms** | Flag high-risk appointments before confirmation | Salon, clinic, driver booking apps |
-| **Marketplaces** | Weight offers/bids by seller reliability score | Bazaar, OLX-style local marketplaces |
-| **Freelance tools** | Port reputation from Pabandi into gig platforms | Fiverr-style Pakistan freelance platforms |
+| **Marketplaces** | Weight offers/bids by seller reliability score | Global local marketplaces |
+| **Freelance tools** | Port reputation from Pabandi into gig platforms | Fiverr-style freelance platforms |
 | **Subscription gating** | Require minimum score for premium/vetted access | Community groups, wholesale access |
 
 ---
@@ -57,10 +57,10 @@ No other project has access to the data layer Pabandi is building. That data is 
 
 # 2. Verify a user's reliability score
 curl \
-  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Authorization: Bearer ***" \
   -H "Content-Type: application/json" \
   -d '{"wallet_address":"68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs"}' \
-  https://pabandi-42c5b.web.app/api/v1/verify
+  https://pabandi.com/api/v1/verify
 ```
 
 ---
@@ -150,7 +150,7 @@ Authorization: Bearer YOUR_API_KEY
 {
   "status": "not_found",
   "message": "No Pabandi Passport found for this address.",
-  "onboarding_link": "https://pabandi-42c5b.web.app"
+  "onboarding_link": "https://pabandi.com"
 }
 ```
 
@@ -303,7 +303,7 @@ Authorization: Bearer YOUR_API_KEY
 If a wallet has no Passport yet, send them to Pabandi to build one.
 
 ```http
-GET https://pabandi-42c5b.web.app/onboard?wallet=68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs&return_to=https://yourplatform.com
+GET https://pabandi.com/onboard?wallet=68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs&return_to=https://yourplatform.com
 ```
 
 Returns: onboarding flow where user connects wallet + starts building reliability.
@@ -345,7 +345,7 @@ We're building SDKs for the most common use cases. Let us know which one you nee
 | **Next.js** | ✅ Beta | Frontend "Verify with Pabandi" button |
 | **Python / FastAPI** | 🔄 Roadmap | Backend integration |
 | **React Native** | 🔄 Roadmap | Mobile app redirection |
-| **WordPress / WooCommerce** | 🔄 Roadmap | Pakistani e-commerce stores |
+- **WordPress / WooCommerce** | 🔄 Roadmap | Global e-commerce stores |
 
 ---
 
@@ -363,7 +363,7 @@ app.post('/live-sale/checkout', async (req, res) => {
 
   // Call Pabandi API
   const response = await fetch(
-    'https://pabandi-42c5b.web.app/api/v1/verify',
+    'https://pabandi.com/api/v1/verify',
     {
       headers: {
         'Authorization': `Bearer ${process.env.PABANDI_API_KEY}`,
@@ -437,13 +437,13 @@ This dataset does not exist publicly. Ethos, Orange Protocol, and Fuero cannot a
 
 ## 2. The AI Layer
 
-Our no-show prediction model is not a simple rule engine. It is a behavior-prediction system trained on Pakistan-specific patterns:
+Our no-show prediction model is not a simple rule engine. It is a behavior-prediction system trained on global service patterns:
 - Time-of-day reliability (8 PM bookings vs. 2 PM bookings)
 - Service-type risk (wedding makeup vs. haircut)
 - Client history weighting
 - Seasonal / Ramadan / event spikes
 
-These patterns are specific to Pakistan's service economy and are tuned by continuous feedback from real merchant outcomes.
+These patterns are specific to Global service economy and are tuned by continuous feedback from real merchant outcomes.
 
 **Protection:** Model weights and training data are kept server-side. The API exposes only the Passport output — never the underlying model or feature weights.
 
@@ -469,7 +469,7 @@ Each new merchant makes the Passport more valuable:
 - Better scores → more trust from partners → more merchants want to integrate
 - More users → more transactions → better model
 
-This flywheel is self-reinforcing. Once Pabandi is the standard for reliability verification in Pakistan's informal economy, switching costs for merchants and users become very high.
+This flywheel is self-reinforcing. Once Pabandi is the standard for reliability verification in Global informal economy, switching costs for merchants and users become very high.
 
 ## 6. Defensive IP Strategy
 
@@ -488,11 +488,11 @@ This flywheel is self-reinforcing. Once Pabandi is the standard for reliability 
 
 - **API access:** team@pabandi.com
 - **Twitter:** @PabandiGlobal
-- **Web:** https://pabandi-42c5b.web.app
+- **Web:** https://pabandi.com
 - **Docs repo:** github.com/jweezy119/Pabandi
 
 ---
 
-*Built for Pakistan. Not in Pakistan.*
+*Built for US/global. Not in US/global.*
 
 *Wada pura karo. Inaam pao.*

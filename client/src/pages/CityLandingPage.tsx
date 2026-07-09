@@ -3,29 +3,29 @@ import { Link } from 'react-router-dom';
 import { CheckCircleIcon, ShieldCheckIcon, BuildingStorefrontIcon, ArrowRightIcon, StarIcon } from '@heroicons/react/24/outline';
 
 const CITY_DATA: Record<string, {
-  name: string; nameUrdu: string; tagline: string; businesses: string[];
+  name: string; nameUrud: string; tagline: string; businesses: string[];
   stat1: string; stat2: string; stat3: string; heroColor: string; accentColor: string;
   landmark: string;
 }> = {
-  karachi: {
-    name: 'Karachi',
-    nameUrdu: 'کراچی',
-    tagline: 'The Global Commercial Capital',
-    businesses: ['Live Sellers', 'E-commerce Platforms', 'Restaurants', 'Freelancers', 'Event Venues'],
-    stat1: '15M+', stat2: '85%', stat3: '$0',
+  'chicago': {
+    name: 'Chicago',
+    nameUrud: 'شیکاگو',
+    tagline: 'Global Midwestern Hub',
+    businesses: ['Hotels', 'Restaurants', 'Salons', 'Clinics', 'Short-Term Rentals'],
+    stat1: '2.7M+', stat2: '6%', stat3: '$0',
     heroColor: '#0ea5e9',
     accentColor: '#0284c7',
-    landmark: 'City of Lights',
+    landmark: 'The Windy City',
   },
-  lahore: {
-    name: 'Lahore',
-    nameUrdu: 'لاہور',
-    tagline: 'The Heart of Punjab',
-    businesses: ['Live Sellers', 'Marketplaces', 'E-commerce Platforms', 'Boutique Stays', 'Food Caterers'],
-    stat1: '13M+', stat2: '80%', stat3: '$0',
+  'new-york': {
+    name: 'New York',
+    nameUrud: 'نیویارک',
+    tagline: 'World-Class Hospitality',
+    businesses: ['Hotels', 'Restaurants', 'Fitness Studios', 'Event Venues', 'Boutique Stays'],
+    stat1: '8.4M+', stat2: '7%', stat3: '$0',
     heroColor: '#f59e0b',
     accentColor: '#d97706',
-    landmark: 'City of Gardens',
+    landmark: 'The Big Apple',
   },
 };
 
@@ -38,7 +38,7 @@ const WHY_PABANDI = [
 
 export const CityLandingPage: React.FC = () => {
   const pathCity = window.location.pathname.split('/')[1] || '';
-  const city = pathCity.toLowerCase() === 'karachi' ? 'karachi' : pathCity.toLowerCase() === 'lahore' ? 'lahore' : '';
+  const city = pathCity.toLowerCase() === 'chicago' ? 'chicago' : pathCity.toLowerCase() === 'new-york' ? 'new-york' : '';
   const data = CITY_DATA[city];
 
   const [formData, setFormData] = useState({ name: '', businessName: '', phone: '', type: '', city: data?.name || '' });
@@ -83,8 +83,8 @@ export const CityLandingPage: React.FC = () => {
           Pabandi
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/karachi" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'karachi' ? 'bg-sky-500/20 text-sky-400' : 'text-white/40 hover:text-white'}`}>Karachi</Link>
-          <Link to="/lahore" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'lahore' ? 'bg-amber-500/20 text-amber-400' : 'text-white/40 hover:text-white'}`}>Lahore</Link>
+          <Link to="/chicago" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'chicago' ? 'bg-sky-500/20 text-sky-400' : 'text-white/40 hover:text-white'}`}>Chicago</Link>
+          <Link to="/new-york" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'new-york' ? 'bg-amber-500/20 text-amber-400' : 'text-white/40 hover:text-white'}`}>New York</Link>
         </div>
       </nav>
 
@@ -103,7 +103,7 @@ export const CityLandingPage: React.FC = () => {
                 {data.name}
               </span>
             </h1>
-            <p className="text-base text-white/50 leading-relaxed mb-2">{data.nameUrdu} · {data.landmark}</p>
+            <p className="text-base text-white/50 leading-relaxed mb-2">{data.nameUrud} · {data.landmark}</p>
             <p className="text-lg text-white/60 leading-relaxed mb-8">
               Pabandi is launching exclusively in <strong className="text-white">{data.name}</strong> first. Join the Genesis wave of {data.businesses.slice(0, 3).join(', ')}, and other local businesses who are eliminating no-shows using Halal Web3 technology.
             </p>

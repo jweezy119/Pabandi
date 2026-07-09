@@ -61,11 +61,11 @@ export default function BusinessJoinPage() {
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
       }
     } catch (e) {
       console.error(e);
-      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
     }
     setIsProcessingCheckout(false);
   };

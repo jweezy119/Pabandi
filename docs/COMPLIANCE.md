@@ -1,12 +1,12 @@
 # Compliance & Regulatory Documentation
 
-This document outlines the compliance features and regulatory considerations for the Karachi Booking Platform, specifically designed for operations in Pakistan.
+This document outlines the compliance features and regulatory considerations for Pabandi, based in Chicago, Illinois, with a primary focus on the United States and global hospitality expansion.
 
 ## Data Protection Compliance
 
-### Pakistan's Draft Personal Data Protection Bill 2023
+### US & International Privacy Frameworks
 
-The application is designed with alignment to Pakistan's emerging data protection framework:
+The application is designed with alignment to major global privacy frameworks:
 
 #### Key Features Implemented:
 
@@ -16,12 +16,12 @@ The application is designed with alignment to Pakistan's emerging data protectio
    - Consent withdrawal mechanism
 
 2. **Data Minimization**
-   - Only collect necessary data for reservations
+   - Only collect necessary data for reservations and trust scoring
    - No unnecessary personal information storage
    - Regular data retention policy compliance
 
 3. **Data Security**
-   - Encrypted data transmission (HTTPS)
+   - Encrypted data transmission (HTTPS/TLS)
    - Secure password hashing (bcrypt)
    - JWT token-based authentication
    - Rate limiting for security
@@ -32,18 +32,24 @@ The application is designed with alignment to Pakistan's emerging data protectio
    - Right to deletion
    - Data correction
 
+### Jurisdictions Covered
+
+- **United States:** CCPA/CPRA (California), state privacy laws in Virginia, Colorado, Utah, Connecticut, etc.
+- **EU/UK:** GDPR and UK GDPR where applicable
+- **Global:** Privacy-by-design defaults for all regions
+
 ### Implementation Guidelines
 
-- User data is only stored as necessary for reservation management
-- All sensitive data is encrypted in transit
+- User data is only stored as necessary for reservation management and trust scoring
+- All sensitive data is encrypted in transit and at rest
 - Regular security audits recommended
-- Privacy policy must be displayed to users
+- Privacy policy displayed to users at signup and in-app
 
-## E-Commerce Policy Compliance
+## E-Commerce & Consumer Protection Compliance
 
-### Pakistan's E-Commerce Policy (2020)
+### US and Global Consumer Protection
 
-The platform follows guidelines from Pakistan's E-Commerce Policy:
+The platform follows global e-commerce and consumer protection standards:
 
 1. **Business Verification**
    - Business registration information collected
@@ -51,27 +57,29 @@ The platform follows guidelines from Pakistan's E-Commerce Policy:
    - Business authenticity checks
 
 2. **Payment Security**
-   - PCI-DSS compliant payment processing
+   - PCI-DSS compliant payment processing via Stripe/Safepay
    - Secure transaction handling
-   - Transparent pricing
+   - Transparent pricing and deposit disclosures
 
 3. **Consumer Protection**
    - Clear cancellation policies
    - Refund mechanisms
    - Dispute resolution process
+   - Compliance with applicable state/federal consumer laws
 
-4. **Data Localization**
-   - Option to store data locally in Pakistan
-   - Compliance with data residency requirements
+4. **Data Residency**
+   - Plan for US/EU data residency requirements
+   - Cloud infrastructure capable of regional deployment
+   - Compliance with cross-border data transfer rules
 
 ## Payment Regulations
 
-### State Bank of Pakistan (SBP) Guidelines
+### Supported Payment Methods
 
-- Integration with approved payment gateways
-- Transaction security standards
-- Compliance with digital payment regulations
-- Support for local payment methods (JazzCash, EasyPaisa)
+- Stripe, Safepay, Apple Pay, Google Pay
+- Bank transfers
+- Cryptocurrency rails: Solana, Bitcoin, ERC-4337 smart wallets
+- Compliance with applicable money-transmitter and escrow laws
 
 ## Terms of Service & Privacy Policy
 
@@ -82,6 +90,7 @@ The platform follows guidelines from Pakistan's E-Commerce Policy:
    - Business and customer obligations
    - Cancellation and refund policies
    - Liability limitations
+   - Escrow terms as click-through contract
 
 2. **Privacy Policy**
    - Data collection practices
@@ -94,21 +103,21 @@ The platform follows guidelines from Pakistan's E-Commerce Policy:
 Both Terms of Service and Privacy Policy should be:
 - Accessible from all pages
 - Written in clear, understandable language
-- Available in Urdu and English (recommended)
+- Available in English and other relevant languages
 - Regularly updated
 
-## SMS/Communication Compliance
+## Communication Compliance
 
-### Pakistan Telecommunication Authority (PTA) Guidelines
+### Messaging & Notifications
 
-- SMS opt-in required
+- SMS and in-app notification opt-in required
 - Clear messaging about communication purposes
 - Opt-out mechanisms
-- Compliance with PTA regulations for bulk messaging
+- Compliance with TCPA, CASL, GDPR ePrivacy, and similar regulations
 
 ## Recommendations
 
-1. **Legal Review**: Have legal counsel review all policies
+1. **Legal Review**: Have US-based legal counsel review all policies
 2. **Regular Audits**: Conduct compliance audits periodically
 3. **User Education**: Educate users about their rights
 4. **Documentation**: Maintain records of compliance measures
@@ -120,5 +129,5 @@ For compliance-related inquiries, contact the development team.
 
 ---
 
-**Last Updated**: 2024
-**Jurisdiction**: Pakistan, with focus on Karachi, Sindh
+**Last Updated**: 2026
+**Jurisdiction**: United States, with global expansion roadmap

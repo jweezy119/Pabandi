@@ -63,8 +63,7 @@ function App() {
       <Routes>
         <Route path="/waitlist" element={<WaitlistPage />} />
         <Route path="/airdrop" element={<AirdropPage />} />
-        <Route path="/karachi" element={<CityLandingPage />} />
-        <Route path="/lahore" element={<CityLandingPage />} />
+        <Route path="/city/:slug" element={<CityLandingPage />} />
         <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />

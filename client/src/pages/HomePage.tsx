@@ -29,7 +29,7 @@ const getDistance = (
   return R * c;
 };
 
-const INITIAL_CENTER = { lat: 24.8607, lng: 67.0011 };
+const INITIAL_CENTER = { lat: 41.8781, lng: -87.6298 };
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -168,18 +168,13 @@ export default function HomePage() {
     [navigate],
   );
 
-  const categories = [
-    "ALL",
-    "ECOMMERCE",
-    "MARKETPLACE",
-    "LIVE_SELLER",
-    "RESTAURANT",
-    "SPA",
-    "CLINIC",
-    "HOSPITAL",
-    "FITNESS_CENTER",
-    "SALON",
-    "FREELANCE",
+  const cities = [
+    { name: "Chicago", lat: 41.8781, lng: -87.6298 },
+    { name: "New York", lat: 40.7128, lng: -74.006 },
+    { name: "Los Angeles", lat: 34.0522, lng: -118.2437 },
+    { name: "London", lat: 51.5074, lng: -0.1278 },
+    { name: "Dubai", lat: 25.2048, lng: 55.2708 },
+    { name: "Singapore", lat: 1.3521, lng: 103.8198 },
   ];
   const getCategoryLabel = (c: string) => {
     if (c === "ALL") return "All Categories";
@@ -210,11 +205,7 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
-              Launching first in Pakistan’s informal economy — salons, clinics,
-              and live sellers — with a reliability layer built to scale
-              globally. Earn{" "}
-              <span className="font-bold text-pink-400">$PAB</span> rewards for
-              every appointment you honor.
+              Booking trust for the global service economy. Find venues, reserve with confidence, and earn rewards for showing up.
             </p>
 
             {/* Search */}
@@ -253,19 +244,19 @@ export default function HomePage() {
                   <MapPinIcon className="h-3.5 w-3.5" />{" "}
                   {locLoading ? "Locating..." : "Near Me"}
                 </button>
-                {["Karachi", "Lahore", "Islamabad"].map((city) => (
+                {cities.map((city) => (
                   <button
-                    key={city}
+                    key={city.name}
                     onClick={() =>
                       handlePlaceSelect({
-                        name: city,
-                        lat: 24.8607,
-                        lng: 67.0011,
+                        name: city.name,
+                        lat: city.lat,
+                        lng: city.lng,
                       })
                     }
                     className="text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
                   >
-                    {city}
+                    {city.name}
                   </button>
                 ))}
               </div>
@@ -334,10 +325,10 @@ export default function HomePage() {
 
       {/* Categories & Curated List */}
       <div className="max-w-7xl mx-auto px-6 md:px-8 space-y-12 mt-12">
-        {/* Category Filters */}
+        {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
           <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
-            {categories.map((c) => (
+            {["ALL","LIVE_SELLER","RESTAURANT","SALON","CLINIC","HOSPITAL","SHORT_TERM_RENTAL","FREELANCE","ECOMMERCE","MARKETPLACE","FITNESS_CENTER"].map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}

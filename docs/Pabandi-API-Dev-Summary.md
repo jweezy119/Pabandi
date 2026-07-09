@@ -2,10 +2,10 @@
 
 ## What Is This?
 
-Pabandi exposes a portable reliability score for Pakistan's informal economy.  
+Pabandi exposes a portable reliability score for the global service economy.  
 Use it to reduce fraud on live sales, marketplaces, bookings, and freelance platforms.
 
-**Base URL:** `https://pabandi-42c5b.web.app/api/v1`  
+**Base URL:** `https://pabandi.com/api/v1`  
 **Auth:** Bearer token  
 **Contact:** team@pabandi.com
 
@@ -59,7 +59,7 @@ curl \
   -H "Authorization: Bearer ***" \
   -H "Content-Type: application/json" \
   -d '{"wallet_address":"68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs","required_tier":"Gold"}' \
-  https://pabandi-42c5b.web.app/api/v1/verify
+  https://pabandi.com/api/v1/verify
 ```
 
 ---
@@ -75,6 +75,6 @@ curl \
 
 ## Why Now
 
-Pakistan's informal economy is $15B+ with zero credit-scoring infrastructure. Live selling, wholesale markets, and freelance work all run on "bro trust." Pabandi turns that trust into a verified, portable, on-chain asset.
+The global service economy is $15T+ with fragmented trust infrastructure. Booking platforms, marketplaces, and freelance workflows all run on reputation with no portable verification layer. Pabandi turns that trust into a verified, portable, on-chain asset.
 
-**Wada pura karo. Inaam pao.**
+**Commitment, secured.**

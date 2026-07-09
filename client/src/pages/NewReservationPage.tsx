@@ -108,11 +108,16 @@ export default function NewReservationPage() {
         () => {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
           if (
-            tz.includes("Karachi") ||
-            tz.includes("Asia/Karachi") ||
-            tz.includes("Asia/Kabul")
+            tz.includes("Chicago") ||
+            tz.includes("America/Chicago") ||
+            tz.includes("New_York") ||
+            tz.includes("America/New_York") ||
+            tz.includes("Los_Angeles") ||
+            tz.includes("America/Los_Angeles") ||
+            tz.includes("Denver") ||
+            tz.includes("America/Denver")
           ) {
-            setMapCenter({ lat: 24.8607, lng: 67.0011 });
+            setMapCenter({ lat: 40.7128, lng: -74.006 });
           }
         },
       );
@@ -176,7 +181,7 @@ export default function NewReservationPage() {
     if (!selectedPlace) return "";
     const phone = selectedPlace.phone || "";
     const cleanPhone = phone.replace(/[^0-9]/g, "");
-    const message = `Hi ${selectedPlace.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi-42c5b.web.app/business/${selectedPlace.id}`;
+    const message = `Hi ${selectedPlace.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi.com/business/${selectedPlace.id}`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
 
@@ -449,22 +454,22 @@ export default function NewReservationPage() {
             {[
               {
                 id: "demo_1",
-                name: "Karachi Gymkhana",
-                address: "Club Road, Karachi",
+                name: "Grand Chicago Hall",
+                address: "Michigan Avenue, Chicago",
                 phone: "+92 300 111 2222",
                 rating: 4.8,
               },
               {
                 id: "demo_2",
-                name: "Cafe Flo",
-                address: "Clifton Block 4, Karachi",
+                name: "Skyline Bistro",
+                address: "River North, Chicago",
                 phone: "+92 300 333 4444",
                 rating: 4.9,
               },
               {
                 id: "demo_3",
-                name: "Toni & Guy",
-                address: "DHA Phase 6, Karachi",
+                name: "Cultural Center Lounge",
+                address: "Grant Park, Chicago",
                 phone: "+92 300 555 6666",
                 rating: 4.7,
               },

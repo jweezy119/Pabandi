@@ -180,7 +180,7 @@ export default function ReservationsPage() {
                   <div className="flex flex-wrap gap-2 pl-2">
                      <span className={`font-label text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 bg-surface-container ${deposit.colorClass}`}>
                       <ShieldCheckIcon className="h-3.5 w-3.5" />
-                      {deposit.label} {r.depositAmount ? `(PKR ${r.depositAmount.toLocaleString()})` : ''}
+                      {deposit.label} {r.depositAmount ? `($${r.depositAmount.toLocaleString()})` : ''}
                     </span>
                     {r.riskScore != null && (
                       <span className={`font-label text-[10px] font-bold px-2 py-1 rounded-full bg-surface-container ${r.riskScore >= 50 ? 'text-error' : 'text-secondary'}`}>

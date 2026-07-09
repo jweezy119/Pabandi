@@ -235,7 +235,7 @@
 
 <h2 id="overview">Overview</h2>
 <p>
-Pabandi is building a portable reliability layer for Pakistan's informal economy. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
+Pabandi is building a portable reliability layer for Global informal economy. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
 </p>
 
 <p><strong>The problem today:</strong> every live sale, wholesale order, and booking is secured by "bro trust" or advance payment. The informal economy bleeds 20–30% to no-pays and ghosting because there's no portable trust layer.</p>
@@ -311,7 +311,7 @@ Pabandi is building a portable reliability layer for Pakistan's informal economy
 { <span class="key">"status"</span>: <span class="str">"not_eligible"</span>, <span class="key">"score_tier"</span>: <span class="str">"Silver"</span>, <span class="key">"action_required"</span>: <span class="str">"deposit_required"</span> }
 
 <span class="comment">// 404 — no passport yet</span>
-{ <span class="key">"status"</span>: <span class="str">"not_found"</span>, <span class="key">"onboarding_link"</span>: <span class="str">"https://pabandi-42c5b.web.app"</span> }</code></pre>
+{ <span class="key">"status"</span>: <span class="str">"not_found"</span>, <span class="key">"onboarding_link"</span>: <span class="str">"https://pabandi.com"</span> }</code></pre>
 </details>
 
 <h3><span class="method">POST</span> /api/v1/eligibility</h3>
@@ -350,7 +350,7 @@ app.post(<span class="str">'<span class="key">/live-sale/checkout</span>'</span>
   <span class="kwd">const</span> { <span class="key">buyer_wallet</span> } = req.body;
 
   <span class="kwd">const</span> result = <span class="kwd">await</span> fetch(
-    <span class="str">'https://pabandi-42c5b.web.app/api/v1/verify'</span>,
+    <span class="str">'https://pabandi.com/api/v1/verify'</span>,
     {
       headers: {
         <span class="key">'Authorization'</span>: <span class="str">`Bearer ${process.env.PABANDI_API_KEY}`</span>,
@@ -408,10 +408,10 @@ app.post(<span class="str">'<span class="key">/live-sale/checkout</span>'</span>
     <a href="https://x.com/PabandiGlobal">@PabandiGlobal</a>
   </div>
   <div>
-    <a href="https://pabandi-42c5b.web.app">pabandi-42c5b.web.app</a>
+    <a href="https://pabandi.com">pabandi.com</a>
   </div>
   <div style="margin-left:auto;color:#8a8d91;font-size:12px;">
-    Built for Pakistan. Wada pura karo. Inaam pao.
+    Built for US/global. Wada pura karo. Inaam pao.
   </div>
 </div>
 

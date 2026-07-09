@@ -171,7 +171,7 @@ export default function PropertyConnectWizard({ onClose }: Props) {
                 <input
                   id="property-name-input"
                   type="text"
-                  placeholder="e.g. The Pearl Karachi, Safari Oasis Camp"
+                  placeholder="e.g. River North Loft, West Loop Suites"
                   value={state.propertyName}
                   onChange={(e) => update({ propertyName: e.target.value })}
                   className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary"

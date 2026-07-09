@@ -13,14 +13,14 @@
 **Demo Sequence (90 seconds)**
 1. Customer searches a venue on the map
 2. AI Reliability Score renders visibly: "87% reliable → $0 deposit" vs "42% → $15 deposit"
-3. One-tap Safepay checkout confirms instantly
-4. Owner receives WhatsApp message automatically with booking details
+3. One-tap checkout confirms instantly
+4. Owner receives message automatically with booking details
 
 **Key Outcomes**
 - <15% no-show rate on AI-classified protected bookings
 - Deposit amount adjusted in <500ms based on score
-- Every booking improves the TensorFlow.js model — the network learns
-- Booking confirmations + reminders fire via WhatsApp, SMS, and FCM push
+- Every booking improves the model — the network learns
+- Booking confirmations + reminders fire via WhatsApp, SMS, and push notifications
 
 **Metric-driven build**
 - Predictive accuracy tracked by segment and region
@@ -33,15 +33,15 @@
 *The immediate monetization layer*
 
 **What’s live**
-- Safepay checkout wired to pricing CTAs (Starter / Growth / Enterprise)
+- Checkout wired to pricing CTAs (Starter / Growth / Enterprise)
 - Business dashboard shows upcoming reservations, revenue, and reliability metrics
-- Booking confirmation flow redirects to Safepay with correct order metadata
-- On-booking WhatsApp notification to owner confirms receipt immediately
+- Booking confirmation flow redirects to payment with correct order metadata
+- On-booking notification to owner confirms receipt immediately
 
 **Revenue model**
 - **Escrow commission** 2.5% — 5%
 - **Business subscription** — Starter / Growth / Enterprise tiers
-- **$PAB cashback** shown to user on confirmed checkout
+- **Rewards** shown to user on confirmed checkout
 
 **What judges see**
 A paid transaction completing end-to-end in under 10 seconds with immediate owner notification.
@@ -84,37 +84,37 @@ A paid transaction completing end-to-end in under 10 seconds with immediate owne
 
 ## Slide 1: The Problem
 
-**Visual:** Side-by-side — Karachi seller recounting no-shows + COD trust gap
+**Visual:** Side-by-side — seller recounting no-shows + trust gap
 
 **Headline:** SMB merchants lose billions annually to unreliable bookings and informal-commerce trust failures
 
-**Subhead:** Pakistan’s informal economy is $15B+. Live selling is $1.1T globally by 2026. Neither has a reliability layer.
+**Subhead:** Global service commerce is $1T+ and growing. Neither it nor formal booking software has a reliable reputation layer.
 
 **Bullets**
-- 16–30% of live-sale and COD orders never get paid or collected
+- 16–30% of live-sale and pay-on-delivery orders never get paid or collected
 - Booking apps schedule, but don’t prevent, no-shows
 - No portable trust layer exists between platforms
 - KYC, escrow, and manual vetting all exist — none scale for SMBs
 
 **Speaker note:**
-"Last month a Karachi seller told me out of 50 live-sale orders, 8 people never came. That's not a Pakistan problem — that's an informal-commerce problem in every emerging market. Pabandi fixes it with AI + escrow, not KYC."
+"Last month a seller told me out of 50 live-sale orders, 8 people never came. That's not one country's problem — that's an informal-commerce problem globally. Pabandi fixes it with AI + escrow, not KYC."
 
 ---
 
 ## Slide 2: Market Opportunity
 
-**Visual:** Karachi street commerce scene + Daraz/Alibaba ecosystem context
+**Visual:** diverse global street and service commerce
 
-**Headline:** Pakistan-first laboratory. Alibaba-ready architecture.
+**Headline:** Global-first architecture. Alibaba-ready opportunity.
 
 **Bullets**
-- **Pakistan first lab:** 20M+ freelancers, 500K+ salons/clinics, booming live-sale culture
-- **Global TAM:** $1.1T live-commerce market by 2026; $5T+ informal economy in emerging markets
-- **Why Pakistan:** No incumbent credit scoring; WhatsApp-native commerce; English/Urdu bilingual interface
+- **Use case:** informal and formal commerce trust gap — from live sellers to hospitality
+- **Global TAM:** $1.1T+ live-commerce and informal service transactions; formal travel and booking market is larger
+- **Why this team:** founder is US-based with remote market depth; built for global commerce, not one country
 - **Why now:** AI + on-chain reputation finally makes trust portable without KYC
 
 **Speaker note:**
-"We're Pakistan-first by design — that's where the pain is deepest and incumbents are weakest. But our architecture is platform-agnostic from day one."
+"We're built as a global platform from day one — with integration paths into Alibaba's commerce stack where it counts."
 
 ---
 
@@ -159,34 +159,34 @@ A paid transaction completing end-to-end in under 10 seconds with immediate owne
 
 **Visual:** Comparison table
 
-**Headline:** Nobody else has AI-scored bookings with escrow + on-chain rewards
+**Headline:** Nobody else has AI-scored bookings with escrow + portable rewards
 
 **Bullets**
 - **Ethos / Orange Protocol:** Score social/DeFi activity — not real-world behavior
 - **Fuero:** US-first, credit-bureau data, not informal-economy ready
 - **Cheqd / VCs:** Identity infra, no scoring, no merchant API
-- **Pabandi:** AI-observed reliability + escrow + merchant verification + Web3 loyalty
+- **Pabandi:** AI-observed reliability + escrow + merchant verification + loyalty
 
 **Speaker note:**
 "Every other reputation project is either pure Web2 or pure crypto. Pabandi is the only one connecting real-world behavior to on-chain trust for actual merchants."
 
 ---
 
-## Slide 6: Alibaba Integration Path
+## Slide 6: Partnership Path
 
-**Visual:** Daraz + Pakistan commerce / Alibaba ecosystem context
+**Visual:** Alibaba ecosystem + global commerce context
 
-**Headline:** Pabandi plugs directly into Alibaba's emerging-market commerce stack
+**Headline:** Pabandi plugs directly into commerce platforms that need trust
 
 **Bullets**
-- **Daraz (SEA + Pakistan):** COD rejection losses = perfect Pabandi use case
-- **Alibaba.com B2B:** Supplier reliability scoring for international trade
-- **1688 / AliExpress:** Cross-border buyer/seller trust layer
-- **Temu / emerging-market platforms:** Same COD reliability problem at scale
+- **Regional marketplaces:** COD and returns fraud = pre-built Pabandi use case
+- **B2B commerce:** Supplier reliability scoring for international trade
+- **Cross-border marketplaces:** Buyer/seller trust layer
+- **Emerging-market commerce:** Same trust gap in payments and fulfillment
 
 **Ask sequence**
-1. **Pilot partnership** — 1,000 sellers test Passport-verified COD
-2. **API partnership** — integrate Passport verify into checkout/confirmation flow
+1. **Pilot partnership** — 1,000 merchants test verified transactions
+2. **API partnership** — integrate reliability checks into checkout/confirmation flow
 3. **SDK co-brand** — "Verified by Pabandi" badge on merchant pages
 4. **Enterprise SLA** — dedicated instances for high-volume merchants
 
@@ -217,42 +217,42 @@ A paid transaction completing end-to-end in under 10 seconds with immediate owne
 **Headline:** Founder who shipped it
 
 **Bullets**
-- **Jawad Hussain** — Founder, engineer, US-based with Pakistan-market depth
+- **Jawad Hussain** — Founder, engineer, US-based with global commerce experience
   - GitHub: jweezy119 | Twitter: @PabandiGlobal
-  - Built full-stack: React/TS, Node/Express, Solana, Firebase, Prisma
+  - Built full-stack: React/TS, Node/Express, Firebase, Prisma
   - All current code, docs, and outreach materials built independently
-- **Hiring plan:** Pakistan-based BD lead + merchant onboarding manager
-- **Advisors:** Seeking Alibaba ecosystem connections
+- **Hiring plan:** BD lead + merchant onboarding manager
+- **Advisors:** Seeking ecosystem connections for commerce partnerships
 
 ---
 
 ## Slide 9: Vision
 
-**Visual:** Pakistan → Daraz network → Alibaba ecosystem expansion
+**Visual:** global launch → regional expansion → commerce network
 
-**Headline:** The reliability layer for emerging-market commerce
+**Headline:** The reliability layer for global service commerce
 
 **Bullets**
-- **Phase 1 (now):** Pakistan lab — AI booking + merchant API + Safepay
-- **Phase 2 (6 months):** Daraz pilot + developer SDK expansion
-- **Phase 3 (12 months):** Southeast Asia + MENA
-- **Phase 4 (24 months):** Agent layer for AI commerce — autonomous reliability
+- **Phase 1 (now):** US/global launch — AI booking + merchant API + payment integration
+- **Phase 2 (6 months):** Southeast Asia / MENA pilot + developer SDK expansion
+- **Phase 3 (12 months):** Cross-border commerce integrations
+- **Phase 4 (24 months):** Agent layer for autonomous reliability
 
 **Closing line:**
-"Trust isn't a feature. It's infrastructure. Pabandi is building that infrastructure — starting in Pakistan, scaling through Alibaba."
+"Trust isn't a feature. It's infrastructure. Pabandi is building that infrastructure — for global commerce, at scale."
 
 ---
 
 ## Appendix: Q&A Prep
 
 **Q: Why should Alibaba work with you instead of building this themselves?**  
-A: "Building a behavior-scoring AI model on informal-economy data takes 12+ months and local partnerships we already have. Alibaba has the merchants. We have the trust layer. Faster to partner than build."
+A: "Building a behavior-scoring AI model on informal-commerce data takes 12+ months and local partnerships we already have. Alibaba has the merchants. We have the trust layer. Faster to partner than build."
 
-**Q: Why start in Pakistan?**  
-A: "Informal-economy trust requires behavior data most platforms don't have. We're already collecting ground-truth reliability signals in Pakistan — a market where Daraz has massive scale. Faster to validate the model in the problem market than replicate it from Beijing."
+**Q: Why start globally-ready instead of a single-country lab?**  
+A: "Trust infrastructure has to be portable — merchants and buyers cross borders. Starting with a global architecture lets us plug into region-specific platforms instead of retrofitting later."
 
 **Q: What does success look like in 12 months?**  
-A: "10,000 active users with reliability Passports. 3 platform integrations. Measurable drop in no-show rate and COD fraud on Pabandi-verified bookings. Then regional expansion."
+A: "10,000 active users with reliability Passports. Multiple platform integrations. Measurable drop in no-show rate and fraud on verified bookings. Then regional expansion."
 
 **Q: Are you raising?**  
 A: "We're efficient. With the right partnership and a small pilot budget, we can prove unit economics in 6 months. Then we scale. Not raising to burn — raising to validate."

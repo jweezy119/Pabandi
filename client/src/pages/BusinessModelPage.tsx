@@ -174,11 +174,11 @@ export default function BusinessModelPage() {
             </div>
           </div>
 
-          {/* Karachi Staging SME Promo */}
+          {/* Chicago Staging SME Promo */}
           <div className="mt-8 max-w-3xl mx-auto p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3">
             <GiftIcon className="h-6 w-6 text-primary shrink-0 animate-bounce" />
             <div>
-              <p className="text-xs font-bold text-white uppercase tracking-wider">Karachi SME Launch Campaign</p>
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Chicago SME Launch Campaign</p>
               <p className="text-[11px] text-slate-400 leading-relaxed">
                 Register this week to claim <strong className="text-white">1 Month Free Trial</strong> of the Growth plan, plus <strong className="text-white">0% transaction fees</strong> on all deposit settlements for the first 30 days.
               </p>

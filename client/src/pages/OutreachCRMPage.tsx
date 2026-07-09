@@ -17,9 +17,9 @@ const STATUSES = [
 ];
 
 const WA_TEMPLATES: Record<string, string> = {
-  karachi: `Hello {name}! 🙏\n\nI'm reaching out from Pabandi — the world's first Portable Reliability Layer, launching exclusively in your area this month.\n\nWe're eliminating Cash-on-Delivery (COD) rejections and fake orders using a blockchain escrow system — zero interest, 100% Sharia-compliant.\n\n✅ Free to join\n✅ No credit card required\n✅ Verified trust scores for every buyer\n\nWould you be open to a quick 10-minute WhatsApp call to see how it works for {businessName}?\n\npabandi-42c5b.web.app/karachi`,
-  lahore: `Hello {name}! 🙏\n\nI'm reaching out from Pabandi — the world's first Portable Reliability Layer, launching exclusively in your area this month.\n\nWe're eliminating Cash-on-Delivery (COD) rejections and fake orders using a blockchain escrow system — zero interest, 100% Sharia-compliant.\n\n✅ Free to join\n✅ No credit card required\n✅ Verified trust scores for every buyer\n\nWould you be open to a quick 10-minute WhatsApp call to see how it works for {businessName}?\n\npabandi-42c5b.web.app/lahore`,
-  default: `Hello {name}! 👋\n\nI'm reaching out from Pabandi — a reliability layer that eliminates COD rejections and no-shows using Web3 reputation technology.\n\nFree to join. Would love to show you how it works for {businessName}.\n\npabandi-42c5b.web.app`,
+  'chicago': `Hello {name}! 🚀\n\nPabandi — the reliability layer for US bookings.\nWe eliminate no-shows and fake reservations with escrow-backed trusted bookings for Chicago venues.\n\n✅ Free to join\n✅ Card/PayPal/Apple Pay deposits\n✅ Verified guest history\n\nWant a 10-min walkthrough for {businessName}?\n\npabandi.com`,
+  'new-york': `Hello {name}! 🚀\n\nPabandi — the reliability layer for US bookings.\nWe eliminate no-shows and fake reservations with escrow-backed trusted bookings for New York venues.\n\n✅ Free to join\n✅ Card/PayPal/Apple Pay deposits\n✅ Verified guest history\n\nWant a 10-min walkthrough for {businessName}?\n\npabandi.com`,
+  default: `Hello {name}! 👋\n\nI'm reaching out from Pabandi — a reliability layer that eliminates no-shows and fake reservations using verifiable trust technology.\n\nFree to join. Would love to show you how it works for {businessName}.\n\npabandi.com`,
 };
 
 function buildTemplate(city: string, name: string, businessName: string): string {
@@ -112,7 +112,7 @@ export const OutreachCRMPage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black tracking-tight">B2B Outreach CRM</h1>
-            <p className="text-white/40 text-sm mt-1">Karachi & Lahore Business Onboarding Pipeline</p>
+            <p className="text-white/40 text-sm mt-1">Chicago & Chicago Business Onboarding Pipeline</p>
           </div>
           <button onClick={fetchData} className="flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors px-3 py-2 rounded-lg border border-white/10 hover:border-white/20">
             <ArrowPathIcon className="w-4 h-4" /> Refresh
@@ -155,8 +155,8 @@ export const OutreachCRMPage: React.FC = () => {
           <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-white/30">
             <option value="">All Cities</option>
-            <option value="Karachi">Karachi</option>
-            <option value="Lahore">Lahore</option>
+            <option value="Chicago">Chicago</option>
+            <option value="Chicago">Chicago</option>
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-white/30">
@@ -176,7 +176,7 @@ export const OutreachCRMPage: React.FC = () => {
           ) : leads.length === 0 ? (
             <div className="text-center py-20 text-white/30">
               <BuildingStorefrontIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No leads yet. Share the Karachi & Lahore landing pages to start collecting!</p>
+              <p>No leads yet. Share the Chicago & Chicago landing pages to start collecting!</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

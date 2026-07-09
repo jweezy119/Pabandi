@@ -12,8 +12,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { businessService, reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import BusinessMap from '../components/BusinessMap';
-import { WriteReviewModal } from '../components/WriteReviewModal';
-import { executeBscDeposit, executeSolanaDeposit, executeStablecoinDeposit, executeBitcoinDeposit } from '../utils/web3';
+import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
 
@@ -25,11 +24,12 @@ export default function BusinessProfilePage() {
   const [isLiked, setIsLiked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
 
   // Booking Form State
   const [formData, setFormData] = useState({
     reservationDate: '',
-    checkOutDate: '',
     reservationTime: '',
     numberOfGuests: 2,
     customerName: '',
@@ -37,8 +37,6 @@ export default function BusinessProfilePage() {
     specialRequests: '',
     paymentMethod: 'safepay',
   });
-  
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Hero Demo: Interactive AI Score Slider
   const [demoScore, setDemoScore] = useState(
@@ -76,8 +74,6 @@ export default function BusinessProfilePage() {
   );
 
   const reviews = reviewsData?.data?.data?.reviews || [];
-  const pabandiReviews = reviewsData?.data?.data?.pabandiReviews || [];
-  const allReviewsCount = reviews.length + pabandiReviews.length;
 
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -118,9 +114,8 @@ export default function BusinessProfilePage() {
     let transactionHash = undefined;
 
     try {
-      const reservation = await reservationService.createReservation({ businessId: business.id, ...formData, preview: true });
       if (formData.paymentMethod === 'bsc') {
-        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress", reservation.data.data.id);
+        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress");
         if (!result.success) {
           alert(`BSC Deposit Failed: ${result.error}`);
           return;
@@ -130,20 +125,6 @@ export default function BusinessProfilePage() {
         const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress");
         if (!result.success) {
           alert(`Solana Deposit Failed: ${result.error}`);
-          return;
-        }
-        transactionHash = result.transactionHash;
-      } else if (formData.paymentMethod === 'stablecoin') {
-        const result = await executeStablecoinDeposit("10.00", business.walletAddress);
-        if (!result.success) {
-          alert(`Stablecoin Deposit Failed: ${result.error}`);
-          return;
-        }
-        transactionHash = result.transactionHash;
-      } else if (formData.paymentMethod === 'bitcoin') {
-        const result = await executeBitcoinDeposit("10.00", business.walletAddress);
-        if (!result.success) {
-          alert(`Bitcoin Deposit Failed: ${result.error}`);
           return;
         }
         transactionHash = result.transactionHash;
@@ -204,7 +185,7 @@ export default function BusinessProfilePage() {
   if (isSuccess) {
     const phone = business.phone || '';
     const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const messageText = `Hi ${business.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi-42c5b.web.app/business/${business.id}`;
+    const messageText = `Hi ${business.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi.com/business/${business.id}`;
     const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
     return (
@@ -249,7 +230,7 @@ export default function BusinessProfilePage() {
           )}
 
           <div className="flex gap-3 justify-center">
-            <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', checkOutDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
+            <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
               className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface font-headline">
               Go Back
             </button>
@@ -456,7 +437,7 @@ export default function BusinessProfilePage() {
           {[
             { id: 'overview', label: 'Overview & Booking', icon: <CalendarDaysIcon className="h-4 w-4" /> },
             { id: 'promotions', label: 'Web3 Promotions', icon: <SparklesIcon className="h-4 w-4" /> },
-            { id: 'reviews', label: `Reviews (${allReviewsCount})`, icon: <ChatBubbleLeftRightIcon className="h-4 w-4" /> },
+            { id: 'reviews', label: `Google Reviews (${reviews.length})`, icon: <ChatBubbleLeftRightIcon className="h-4 w-4" /> },
             { id: 'media', label: 'Photos & Socials', icon: <PhotoIcon className="h-4 w-4" /> },
           ].map((tab) => (
             <button
@@ -573,9 +554,9 @@ export default function BusinessProfilePage() {
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-headline text-2xl font-black text-primary">Reviews & Ratings</h3>
+                    <h3 className="font-headline text-2xl font-black text-primary">Google Reviews</h3>
                     <p className="font-body text-sm text-on-surface-variant mt-0.5">
-                      Verified customer feedback backed by cryptographic Proof of Visit and Google Maps.
+                      Verified customer feedback pulled directly from Google Maps reviews.
                     </p>
                   </div>
                   
@@ -597,70 +578,98 @@ export default function BusinessProfilePage() {
                   </div>
                 </div>
 
-                {/* Write a Review */}
-                <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm flex justify-between items-center flex-wrap gap-4">
-                  <div>
-                    <h4 className="font-headline font-bold text-on-surface text-sm">Have you visited {business.name}?</h4>
-                    <p className="font-body text-xs text-on-surface-variant mt-0.5">Leave a cryptographically verified review.</p>
-                  </div>
-                  <button 
-                    onClick={() => setShowReviewForm(true)} 
-                    className="bg-primary/10 text-primary hover:bg-primary/20 px-5 py-2.5 rounded-xl text-xs font-bold font-headline transition-colors flex items-center gap-2"
-                  >
-                    <ShieldCheckIcon className="h-4 w-4" /> Write Verified Review
-                  </button>
-                </div>
+                {/* Write a Review & WhatsApp Communication Channel */}
+                <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm">
+                  {!showReviewForm ? (
+                    <div className="flex justify-between items-center flex-wrap gap-4">
+                      <div>
+                        <h4 className="font-headline font-bold text-on-surface text-sm">Have you visited {business.name}?</h4>
+                        <p className="font-body text-xs text-on-surface-variant mt-0.5">Share your experience directly with the business owner on WhatsApp.</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowReviewForm(true)} 
+                        className="bg-primary/10 text-primary hover:bg-primary/20 px-5 py-2.5 rounded-xl text-xs font-bold font-headline transition-colors"
+                      >
+                        Write a Review
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-headline font-bold text-on-surface text-sm">Write your review</h4>
+                        <button 
+                          onClick={() => { setShowReviewForm(false); setNewComment(''); }} 
+                          className="text-xs text-on-surface-variant hover:text-primary transition-colors font-medium font-body"
+                        >
+                          Cancel
+                        </button>
+                      </div>
 
-                <WriteReviewModal
-                  isOpen={showReviewForm}
-                  onClose={() => setShowReviewForm(false)}
-                  businessId={business.id}
-                  reservationId={business.reservations?.[0]?.id || 'mock-id'} 
-                  onSuccess={() => refetch()}
-                />
+                      {/* Stars input */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-on-surface-variant mr-2 font-body">Rating:</span>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewRating(star)}
+                            className="text-yellow-400 focus:outline-none"
+                          >
+                            {star <= newRating ? (
+                              <StarIconSolid className="h-6 w-6" />
+                            ) : (
+                              <StarIcon className="h-6 w-6" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Comment input */}
+                      <div>
+                        <textarea
+                          rows={3}
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder={`How was your experience at ${business.name}? What did you order/do?`}
+                          className="w-full bg-surface-container border border-outline-variant/20 rounded-xl p-3 outline-none text-xs text-on-surface placeholder-on-surface-variant focus:ring-1 focus:ring-primary font-body"
+                        />
+                      </div>
+
+                      {/* Submit via WhatsApp button */}
+                      <div className="flex justify-end pt-2">
+                        <a
+                          href={`https://wa.me/${(business.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                            `Hi ${business.name}! I just left a ${newRating}-star review for you on Pabandi: "${newComment}".${
+                              !business.isClaimed 
+                                ? ` Please claim your profile to confirm reservations and respond: https://pabandi.com/business/${business.id}` 
+                                : ''
+                            }`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            setShowReviewForm(false);
+                            setNewComment('');
+                          }}
+                          className="bg-[#25D366] text-white hover:bg-[#20ba5a] text-xs font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 transition-all shadow-sm font-headline"
+                        >
+                          💬 Submit & Send to Owner via WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Reviews List */}
                 {reviewsLoading ? (
                   <div className="text-center py-8 text-on-surface-variant">Loading reviews...</div>
-                ) : allReviewsCount === 0 ? (
+                ) : reviews.length === 0 ? (
                   <div className="text-center py-10 bg-surface-container-low rounded-2xl border border-dashed border-outline-variant/30">
                     <ChatBubbleLeftRightIcon className="h-10 w-10 text-on-surface-variant opacity-40 mx-auto mb-2" />
                     <p className="text-sm font-body text-on-surface-variant">No reviews found for this venue.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Pabandi Native Verified Reviews */}
-                    {pabandiReviews.map((review: any) => (
-                      <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-primary/30 shadow-md space-y-3 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-primary text-on-primary text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1 uppercase tracking-wider shadow-sm">
-                          <ShieldCheckIcon className="h-3 w-3" />
-                          Verified on Blockchain
-                        </div>
-                        <div className="flex justify-between items-start gap-4 flex-wrap mt-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary text-sm font-headline uppercase shrink-0">
-                              {(review.customer?.firstName?.[0] || 'A')}
-                            </div>
-                            <div>
-                              <h4 className="font-headline font-bold text-sm text-on-surface leading-none">{review.customer?.firstName} {review.customer?.lastName}</h4>
-                              <span className="text-[10px] text-on-surface-variant font-body mt-1 block">
-                                {format(new Date(review.createdAt), 'MMMM dd, yyyy')}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="flex text-yellow-400">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                i < review.rating ? <StarIconSolid key={i} className="h-3.5 w-3.5" /> : <StarIcon key={i} className="h-3.5 w-3.5" />
-                              ))}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="font-body text-sm text-on-surface-variant leading-relaxed font-medium">
-                          "{review.text}"
-                        </p>
-                      </div>
-                    ))}
                     {reviews.map((review: any) => (
                       <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm space-y-3">
                         <div className="flex justify-between items-start gap-4 flex-wrap">
@@ -797,9 +806,7 @@ export default function BusinessProfilePage() {
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">
-                      {business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL' ? 'Check-In Date *' : 'Date *'}
-                    </label>
+                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Date *</label>
                     <input 
                       type="date" 
                       name="reservationDate" 
@@ -810,32 +817,17 @@ export default function BusinessProfilePage() {
                       className="input-field" 
                     />
                   </div>
-                  {(business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL') ? (
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Check-Out Date *</label>
-                      <input 
-                        type="date" 
-                        name="checkOutDate" 
-                        required 
-                        min={formData.reservationDate || format(new Date(), 'yyyy-MM-dd')} 
-                        value={formData.checkOutDate} 
-                        onChange={handleBookingChange} 
-                        className="input-field" 
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
-                      <input 
-                        type="time" 
-                        name="reservationTime" 
-                        required 
-                        value={formData.reservationTime} 
-                        onChange={handleBookingChange} 
-                        className="input-field" 
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
+                    <input 
+                      type="time" 
+                      name="reservationTime" 
+                      required 
+                      value={formData.reservationTime} 
+                      onChange={handleBookingChange} 
+                      className="input-field" 
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -893,7 +885,7 @@ export default function BusinessProfilePage() {
 
                 <div>
                   <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-2">Check-in Verification Method</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {/* Safepay / Fiat */}
                     <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
                       formData.paymentMethod === 'paypal' 
@@ -902,29 +894,7 @@ export default function BusinessProfilePage() {
                     }`}>
                       <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleBookingChange} className="sr-only" />
                       <span className="font-bold text-xs">Safepay</span>
-                      <span className="text-[9px] opacity-80 mt-0.5">PKR Card</span>
-                    </label>
-
-                    {/* Stablecoin (USD1 / USDC) */}
-                    <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
-                      formData.paymentMethod === 'stablecoin' 
-                        ? 'border-[#2775ca] bg-[#2775ca]/5 text-[#2775ca] ring-1 ring-[#2775ca]' 
-                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
-                    }`}>
-                      <input type="radio" name="paymentMethod" value="stablecoin" checked={formData.paymentMethod === 'stablecoin'} onChange={handleBookingChange} className="sr-only" />
-                      <span className="font-bold text-xs">USD1</span>
-                      <span className="text-[9px] opacity-80 mt-0.5">Stablecoin</span>
-                    </label>
-
-                    {/* Bitcoin (WBTC) */}
-                    <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
-                      formData.paymentMethod === 'bitcoin' 
-                        ? 'border-[#f7931a] bg-[#f7931a]/5 text-[#f7931a] ring-1 ring-[#f7931a]' 
-                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
-                    }`}>
-                      <input type="radio" name="paymentMethod" value="bitcoin" checked={formData.paymentMethod === 'bitcoin'} onChange={handleBookingChange} className="sr-only" />
-                      <span className="font-bold text-xs">Bitcoin</span>
-                      <span className="text-[9px] opacity-80 mt-0.5">Reserve</span>
+                      <span className="text-[9px] opacity-80 mt-0.5">$ Card</span>
                     </label>
 
                     {/* Solana */}
@@ -975,29 +945,10 @@ export default function BusinessProfilePage() {
                   </div>
                 )}
 
-                {(business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL' || business.settings?.houseRules) && (
-                  <label className="flex items-start gap-2 bg-surface-container-low p-3 rounded-lg border border-outline-variant/30 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      required 
-                      checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="mt-0.5 rounded text-primary focus:ring-primary h-4 w-4" 
-                    />
-                    <span className="text-xs font-body text-on-surface-variant leading-tight">
-                      I have read and agree to the <strong className="text-on-surface">House Rules</strong> and understand the <strong className="text-on-surface">Crypto Security Deposit Policy</strong>.
-                    </span>
-                  </label>
-                )}
-
                 <button 
                   type="submit" 
-                  disabled={bookingMutation.isLoading || ((business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL') && !termsAccepted)}
-                  className={`w-full font-headline text-sm font-black tracking-wide py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 ${
-                    (!termsAccepted && (business.category === 'HOTEL' || business.category === 'PROPERTY_RENTAL')) 
-                    ? 'bg-surface-container-high text-on-surface-variant/50 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary hover:shadow-[0_0_20px_rgba(20,241,149,0.3)]'
-                  }`}
+                  disabled={bookingMutation.isLoading}
+                  className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
                 >
                   {bookingMutation.isLoading ? 'Processing...' : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly')}
                 </button>

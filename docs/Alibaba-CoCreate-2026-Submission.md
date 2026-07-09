@@ -2,13 +2,13 @@
 
 **Track:** Agentic Business  
 **Founder:** Jawad Hussain — jweezy119  
-**Live:** https://pabandi-42c5b.web.app
+**Live:** https://pabandi.com
 
 ---
 
 ## Problem
 
-SMB merchants lose billions annually to no-shows and informal-commerce trust failures. Pakistan’s informal economy is $15B+; live-selling is $1.1T globally by 2026. No existing booking tool prevents no-shows. No trust layer works across seller, platform, and buyer.
+SMB merchants lose billions annually to no-shows and informal-commerce trust failures. The global service economy is $1T+; live-selling alone is projected to reach $1.1T globally by 2026. No existing booking tool prevents no-shows. No trust layer works across seller, platform, and buyer.
 
 ## Our Solution
 
@@ -33,7 +33,7 @@ Measured outcomes:
 Safepay checkout is wired to all primary booking CTAs. Pricing tiers (Starter / Growth / Enterprise) with escrow commission 2.5%–5% and recurring subscriptions. Business dashboard shows reservations, revenue, and reliability metrics.
 
 Current state:
-- Safepay checkout URL flow live for PKR and USD payments
+- Safepay checkout URL flow live for USD and global payment methods
 - Pricing page CTAs route to Safepay checkout
 - Owner notification on booking completion via WhatsApp
 
@@ -57,9 +57,9 @@ Focused metric:
 
 ---
 
-## Why Now — Why Pakistan
+### Why Now — Global Service Trust Gap
 
-Pakistan is Alibaba’s largest emerging-market footprint with the deepest COD fraud problem. Daraz merchants already manage order confirmation, delivery risk, and cash recovery. Pabandi’s behavior layer becomes that reliability layer — faster than an internal build.
+Emerging markets and informal service commerce globally face the deepest trust and payment-friction problems. Alibaba’s ecosystem already manages order confirmation, delivery risk, and cash recovery. Pabandi’s behavior layer becomes that reliability layer — faster than an internal build.
 
 ## Moat
 
@@ -90,7 +90,7 @@ No other platform has:
 
 ## Team
 
-**Jawad Hussain** — Founder, full-stack engineer, US-based with Pakistan-market depth
+**Jawad Hussain** — Founder, full-stack engineer, US-based with global commerce experience
 - GitHub: jweezy119
 - Built end-to-end: React/TS frontend, Node/Express backend, Solana integrations, AI/ML model, pitch deck, outreach materials, SDKs
 

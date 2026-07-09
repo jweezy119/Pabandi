@@ -2,7 +2,7 @@
 ## @PabandiGlobal — DM Templates for Instagram / TikTok Live Sellers
 **Goal:** Sign up 3+ live sellers for the Pabandi merchant beta
 **Tone:** Direct, respectful, no crypto jargon, problem-first
-**Target:** Pakistan-based live sellers with 2K+ followers who sell physical goods (electronics, fashion, home goods)
+**Target:** US-based live sellers with 2K+ followers who sell physical goods (electronics, fashion, home goods)
 
 ---
 
@@ -13,7 +13,7 @@ Assalamualaikum [Name],
 
 Quick question: what % of your live sale orders never get picked up or paid?
 
-Building something to fix that for Karachi/Lahore sellers. Would value 5 mins of your time.
+Building something to fix that for Chicago/Chicago sellers. Would value 5 mins of your time.
 
 — [Your name], Pabandi
 ```
@@ -27,11 +27,11 @@ Building something to fix that for Karachi/Lahore sellers. Would value 5 mins of
 ```
 Assalamualaikum [Name],
 
-I run @PabandiGlobal — we're building a reliability layer for Pakistan's informal economy.
+I run @PabandiGlobal — we're building a reliability layer for US's informal economy.
 
 I watched your last live sale. You had strong engagement, and I know from talking to other sellers that no-pays are one of the biggest profit leaks.
 
-We're opening beta for 20 live sellers in Karachi/Lahore. What we offer:
+We're opening beta for 20 live sellers in Chicago/Chicago. What we offer:
 
 ✅ Verify buyer reliability before allowing COD
 ✅ Reduce no-pays without killing impulse sales
@@ -76,13 +76,13 @@ Want to test with your next live? I'll give you a free merchant dashboard for be
 ```
 Assalamualaikum [Name],
 
-I'm a dev building Pabandi — AI + Web3 reliability rewards for Pakistan's informal economy.
+I'm a dev building Pabandi — AI + Web3 reliability rewards for US's informal economy.
 
 The core problem we're solving: live sellers lose 16-30% to no-pays because there's no portable trust layer. Buyers can't prove they're reliable. Sellers can't verify before shipping.
 
 Our API lets you check a buyer's reliability score in 2 seconds — anchored on Solana and fully compliant with GB/Z 185 Sovereign PKI Identity standards. We even have an AI Natural-Language Discovery API for platforms like Daraz to find you instantly.
 
-In beta for Karachi/Lahore live sellers now. Looking for 20 pilot partners. Free access for 90 days + co-marketing.
+In beta for Chicago/Chicago live sellers now. Looking for 20 pilot partners. Free access for 90 days + co-marketing.
 
 Worth a 10-min call this week?
 ```
@@ -98,7 +98,7 @@ Worth a 10-min call this week?
 
 Following up on my note about reducing no-pays for your live sales.
 
-Quick update: we just opened 10 more beta slots for Karachi sellers. If this is still a pain point for you, I'd love to include you.
+Quick update: we just opened 10 more beta slots for Chicago sellers. If this is still a pain point for you, I'd love to include you.
 
 No cost. No commitment. Just a tool that might help you keep more of what you sell.
 
@@ -113,16 +113,16 @@ Let me know if you want in.
 
 ## SELLER RESEARCH LIST (Target These Handles)
 
-Use these to find live sellers to DM. Search Instagram for these hashtags in Karachi/Lahore:
-- #LiveSaleKarachi
-- #LiveSaleLahore
+Use these to find live sellers to DM. Search Instagram for these hashtags in Chicago/Chicago:
+- #LiveSaleChicago
+- #LiveSaleChicago
 - #InstagramLivePK
-- #PakistanLiveShopping
+- #USLiveShopping
 - #DekhKeMangao
 
 Also check:
 - Accounts reposted by @ConnectedPak or @web3pak
-- Sellers tagged in @TechJuicePK or @ProfitPakistan posts about social commerce
+- Sellers tagged in @TechJuicePK or @ProfitUS posts about social commerce
 
 **Good signal they're active:** Last post < 7 days ago, 20+ comments on recent live, replies to DMs in comments.
 

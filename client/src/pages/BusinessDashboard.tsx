@@ -176,11 +176,11 @@ function AccioGrowthWidget({ businessId }: { businessId: string }) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Est. Cost</p>
-                  <p className="font-headline text-sm font-bold">PKR {trend.estimatedCostPKR.toLocaleString()}</p>
+                  <p className="font-headline text-sm font-bold">${trend.estimatedCostPKR.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Service Price</p>
-                  <p className="font-headline text-sm font-bold text-[#059669]">PKR {trend.suggestedServicePrice}</p>
+                  <p className="font-headline text-sm font-bold text-[#059669]">${trend.suggestedServicePrice}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Proj. Bookings</p>
@@ -330,7 +330,7 @@ export default function BusinessDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           <RevenueCard
             label="Protected Revenue"
-            amount={`PKR ${(a.protectedRevenue || 0).toLocaleString()}`}
+            amount={`$${(a.protectedRevenue || 0).toLocaleString()}`}
             sub="Deposit-secured bookings"
             bgClass="bg-primary"
             textClass="text-on-primary"
@@ -338,7 +338,7 @@ export default function BusinessDashboard() {
           />
           <RevenueCard
             label="Total Revenue"
-            amount={`PKR ${(a.revenue || 0).toLocaleString()}`}
+            amount={`$${(a.revenue || 0).toLocaleString()}`}
             sub={`${a.completionRate || 0}% completion rate`}
             bgClass="bg-secondary-container"
             textClass="text-on-secondary-container"
@@ -346,7 +346,7 @@ export default function BusinessDashboard() {
           />
           <RevenueCard
             label="Revenue at Risk"
-            amount={`PKR ${(a.revenueAtRisk || 0).toLocaleString()}`}
+            amount={`$${(a.revenueAtRisk || 0).toLocaleString()}`}
             sub={`${upcomingRisky.length} high-risk upcoming`}
             bgClass="bg-error-container"
             textClass="text-on-error-container"
@@ -359,7 +359,7 @@ export default function BusinessDashboard() {
         {/* ── Stats Grid ── */}
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <StatCard icon={<CalendarIcon className="h-6 w-6" />} label="Total Bookings" value={a.totalReservations || 0} colorClass="bg-primary-fixed" textClass="text-on-primary-fixed" />
-          <StatCard icon={<CurrencyDollarIcon className="h-6 w-6" />} label="Avg. LTV" value={`PKR ${(a.averageLtv || 15400).toLocaleString()}`} colorClass="bg-tertiary-fixed" textClass="text-on-tertiary-fixed" />
+          <StatCard icon={<CurrencyDollarIcon className="h-6 w-6" />} label="Avg. LTV" value={`$${(a.averageLtv || 154).toLocaleString()}`} colorClass="bg-tertiary-fixed" textClass="text-on-tertiary-fixed" />
           <StatCard icon={<ExclamationTriangleIcon className="h-6 w-6" />} label="No-Show Rate" value={`${a.noShowRate || 0}%`} colorClass="bg-error-container" textClass="text-on-error-container" />
           <StatCard icon={<CheckCircleIcon className="h-6 w-6" />} label="Completion" value={`${a.completionRate || 0}%`} colorClass="bg-secondary-fixed" textClass="text-on-secondary-fixed" />
           <StatCard icon={<BoltIcon className="h-6 w-6" />} label="API Usage" value={`${(a.apiCallsThisMonth || 12450).toLocaleString()}`} colorClass="bg-surface-container-high" textClass="text-on-surface" />
@@ -438,7 +438,7 @@ export default function BusinessDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-headline text-sm font-bold text-on-surface">PKR {(r.depositAmount || 1000).toLocaleString()}</p>
+                    <p className="font-headline text-sm font-bold text-on-surface">${(r.depositAmount || 25).toLocaleString()}</p>
                     <p className="font-body text-[10px] text-on-surface-variant">{r.depositRequired ? 'Required' : 'Recommended'}</p>
                   </div>
                 </div>

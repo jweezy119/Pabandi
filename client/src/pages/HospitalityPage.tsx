@@ -115,11 +115,11 @@ export default function HospitalityPage() {
         window.location.href = data.paymentUrl;
       } else {
         // Fallback demo URL if backend isn't running fully
-        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
       }
     } catch (e) {
       console.error(e);
-      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=PKR&environment=sandbox`;
+      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
     }
     setIsProcessingCheckout(false);
   };
@@ -273,7 +273,7 @@ export default function HospitalityPage() {
           <div className="text-center mb-8">
             <h2 className="font-headline text-2xl md:text-3xl font-black text-white">Built for Every Hospitality Type</h2>
             <p className="text-xs text-on-surface-variant mt-2 max-w-lg mx-auto">
-              From a single-room guesthouse in Lahore to a safari camp in East Africa — if you take bookings, Pabandi protects you.
+              From a single-room guesthouse in Chicago to a safari camp in East Africa — if you take bookings, Pabandi protects you.
             </p>
           </div>
 

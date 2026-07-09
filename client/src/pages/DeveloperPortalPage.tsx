@@ -25,7 +25,7 @@ app.post('/live-sale/checkout', async (req, res) => {
   const { buyer_wallet } = req.body;
 
   const result = await fetch(
-    'https://pabandi-42c5b.web.app/api/v1/passport/verify',
+    'https://api.pabandi.com/api/v1/passport/verify',
     {
       headers: {
         'Authorization': \`Bearer \${process.env.PABANDI_API_KEY}\`,
@@ -154,7 +154,7 @@ export default function DeveloperPortalPage() {
       {/* ── Overview & Problem ────────────────────────────────────────────────── */}
       <section style={{ padding: '0 24px 60px', maxWidth: '900px', margin: '0 auto' }}>
         <p style={{ fontSize: '18px', color: '#e2e8f0', lineHeight: 1.8, marginBottom: '24px' }}>
-          Pabandi is building a portable reliability layer for informal commerce, launching first in Pakistan and architected for global scale. If you run a platform where trust between strangers matters — live selling, wholesale markets, freelance gigs, rentals, clinic bookings — this API gives you that trust without building it from scratch.
+          Pabandi is building a portable reliability layer for the global service economy. If you run a platform where trust between strangers matters — live selling, marketplaces, rentals, clinic bookings, hospitality — this API gives you access to that trust without building it from scratch.
         </p>
         <p style={{ fontSize: '16px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '24px', paddingLeft: '20px', borderLeft: '4px solid #334155' }}>
           <strong>The problem today:</strong> Every live sale, wholesale order, and booking is secured by "bro trust" or advance payment. The informal economy bleeds 20–30% to no-pays and ghosting because there's no portable trust layer.
@@ -278,7 +278,7 @@ export default function DeveloperPortalPage() {
               <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px', fontWeight: 600 }}>SHOPIFY CHECKOUT</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '18px' }}>📱</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', color: '#cbd5e1' }}>+92 300 1234567</span>
+                <span style={{ fontSize: '16px', fontFamily: 'monospace', color: '#cbd5e1' }}>+1 (555) 000-0000</span>
               </div>
             </div>
           </div>

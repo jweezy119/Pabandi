@@ -1,6 +1,6 @@
 # Payment Gateway Integration Guide
 
-This document outlines how to integrate payment gateways for the Karachi Booking Platform, with focus on Pakistan-specific payment methods.
+This document outlines how to integrate payment gateways for the Global Booking Platform, with support for USD and international payment methods.
 
 ## Supported Payment Methods
 
@@ -33,49 +33,56 @@ Stripe is recommended for international credit/debit card payments.
    - Handle webhook events
    - Process refunds
 
-### 2. JazzCash (Pakistan)
+### 2. PayPal (Global)
 
-JazzCash is a popular mobile wallet in Pakistan.
+PayPal is a widely accepted payment method for international transactions.
 
 #### Setup Steps:
 
 1. **Merchant Account**
-   - Register at https://jazzcash.com.pk
-   - Get Merchant ID and Password
+   - Register at https://paypal.com
+   - Get API credentials
 
 2. **Integration**
-   - Use JazzCash API for payment processing
-   - Implement redirect to JazzCash payment page
+   - Use PayPal API for payment processing
+   - Implement redirect to PayPal checkout
    - Handle callback URLs
 
 3. **Environment Variables**
    ```env
-   JAZZCASH_MERCHANT_ID=your_merchant_id
-   JAZZCASH_PASSWORD=your_password
-   JAZZCASH_INTEGRITY_SALT=your_salt
+   PAYPAL_CLIENT_ID=your_client_id
+   PAYPAL_CLIENT_SECRET=your_secret
+   PAYPAL_MODE=sandbox
    ```
 
-### 3. EasyPaisa (Pakistan)
+### 3. Safepay (SE Asia / Middle East)
 
-EasyPaisa is another major payment method in Pakistan.
+Safepay supports checkout flows for regional payment methods.
 
 #### Setup Steps:
 
 1. **Merchant Account**
-   - Register at https://easypaisa.com.pk
-   - Get merchant credentials
+   - Register at https://getsafepay.com
+   - Get API credentials
 
 2. **Integration**
-   - Use EasyPaisa API
+   - Use Safepay checkout API
    - Implement payment initiation
    - Handle payment callbacks
 
 3. **Environment Variables**
    ```env
-   EASYPAISA_STORE_ID=your_store_id
-   EASYPAISA_HASH_KEY=your_hash_key
-   EASYPAISA_MERCHANT_ID=your_merchant_id
+   SAFEPAY_API_KEY=your_api_key
+   SAFEPAY_ENVIRONMENT=sandbox
    ```
+
+### 4. Crypto/Stablecoin (Optional)
+
+For Web3-enabled users, Solana USDC is supported via on-chain escrow.
+
+#### Setup Steps:
+   - Connect Phantom wallet
+   - Route USDC payments through smart contract escrow
 
 ## Implementation Structure
 
@@ -97,14 +104,14 @@ export class PaymentService {
     }
   }
 
-  async createPaymentIntent(amount: number, currency: string = 'PKR') {
+  async createPaymentIntent(amount: number, currency: string = 'USD') {
     if (this.stripe) {
       return await this.stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents/paisa
+        amount: Math.round(amount * 100), // Convert to cents
         currency: currency.toLowerCase(),
       });
     }
-    // Implement JazzCash/EasyPaisa logic
+    // Integrate PayPal, Safepay, or crypto/stablecoin payment flows here
   }
 
   async processWebhook(signature: string, payload: any) {
@@ -131,7 +138,7 @@ import { PaymentService } from '../services/payment.service';
 const paymentService = new PaymentService();
 
 // In createPayment function:
-const paymentIntent = await paymentService.createPaymentIntent(amount, 'PKR');
+const paymentIntent = await paymentService.createPaymentIntent(amount, 'USD');
 ```
 
 ## Deposit Handling
