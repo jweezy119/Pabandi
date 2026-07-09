@@ -115,7 +115,7 @@ export default function BusinessProfilePage() {
 
     try {
       if (formData.paymentMethod === 'bsc') {
-        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress");
+        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress", "reservation_profile");
         if (!result.success) {
           alert(`BSC Deposit Failed: ${result.error}`);
           return;

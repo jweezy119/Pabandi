@@ -168,6 +168,8 @@ export default function HomePage() {
     [navigate],
   );
 
+
+
   const cities = [
     { name: "Chicago", lat: 41.8781, lng: -87.6298 },
     { name: "New York", lat: 40.7128, lng: -74.006 },
@@ -285,6 +287,22 @@ export default function HomePage() {
           >
             <HomeMap
               center={mapCenter}
+              selectedPlace={selectedMapPlace}
+              userLocation={userLoc}
+              places={businesses.map((b: any) => ({
+                lat: b.latitude ?? mapCenter.lat,
+                lng: b.longitude ?? mapCenter.lng,
+                name: b.name,
+                subtitle: b.description || b.city,
+              }))}
+              onPlaceSelect={(place) =>
+                handlePlaceSelect({
+                  name: place.name || place.subtitle || 'Location',
+                  address: place.subtitle,
+                  lat: place.lat,
+                  lng: place.lng,
+                })
+              }
             />
 
             {selectedMapPlace && (
