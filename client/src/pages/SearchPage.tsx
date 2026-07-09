@@ -11,6 +11,7 @@ export default function SearchPage() {
   const [searchInput, setSearchInput] = useState(q);
   const [searchType, setSearchType] = useState(typeParam);
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -46,17 +47,39 @@ export default function SearchPage() {
   }, [searchType]);
 
   const { data: businessData, isFetching: isLoadingBusinesses } = useQuery(
-    ['search-businesses', q, userLoc],
+    ['search-businesses', q || 'all', userLoc],
     async () => {
-      const params: any = { search: q };
+      const params: any = {};
+      if (q.trim()) {
+        params.search = q.trim();
+      }
       if (userLoc) {
         params.latitude = userLoc.lat;
         params.longitude = userLoc.lng;
       }
       const res = await businessService.getPublicBusinesses(params);
-      return res.data?.data?.businesses || [];
+      let items = res.data?.data?.businesses || [];
+      const term = (q || '').trim().toLowerCase();
+      if (term && items.length) {
+        items = items
+          .map((item: any) => {
+            const name = (item.name || '').toLowerCase();
+            const city = (item.city || '').toLowerCase();
+            const desc = (item.description || '').toLowerCase();
+            const cat = (item.category || '').toLowerCase();
+            const bp = name.startsWith(term) ? 100 : name.includes(term) ? 80 : cat.includes(term) ? 50 : desc.includes(term) ? 30 : city.includes(term) ? 20 : 0;
+            const lat = item.latitude;
+            const lng = item.longitude;
+            const dist = userLoc && lat != null && lng != null
+              ? Number(((Math.abs(lat - userLoc.lat) * Math.cos((userLoc.lat * Math.PI) / 180) * 111.32) + Math.abs(lng - userLoc.lng) * 111.32).toFixed(1))
+              : null;
+            return { ...item, __score: bp + (dist != null ? Math.max(0, 50 - dist) : 0), __distanceKm: dist };
+          })
+          .sort((a: any, b: any) => b.__score - a.__score);
+      }
+      return items;
     },
-    { enabled: !!q && searchType === 'businesses' }
+    { enabled: searchType === 'businesses' }
   );
 
   const { data: userData, isFetching: isLoadingUsers } = useQuery(
@@ -88,6 +111,23 @@ export default function SearchPage() {
   const isLoading = searchType === 'businesses' ? isLoadingBusinesses : isLoadingUsers;
   const results = searchType === 'businesses' ? businesses : users;
 
+  const suggestions = (() => {
+    const term = searchInput.trim().toLowerCase();
+    if (!term) return [] as any[];
+    const out = new Map<string, any>();
+    for (const b of businesses.slice(0, 8)) {
+      out.set(b.name, b);
+    }
+    for (const b of relatedBusinesses.slice(0, 8)) {
+      out.set(b.name, b);
+    }
+    const cities = ['Chicago','New York','Los Angeles','London','Dubai','Singapore'];
+    for (const city of cities) {
+      if (city.toLowerCase().includes(term)) out.set(city, { name: city, isCitySuggestion: true });
+    }
+    return Array.from(out.values()).slice(0, 6);
+  })();
+
   return (
     <div className="w-full min-h-screen bg-surface font-body pb-20">
       <div className="bg-surface-bright border-b border-outline-variant/20 pt-8 pb-6 px-6">
@@ -104,9 +144,33 @@ export default function SearchPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 placeholder={searchType === 'businesses' ? "Search businesses, cities, or categories..." : "Search users by name..."}
                 className="block w-full pl-10 pr-3 py-3 border border-outline-variant/50 rounded-xl bg-surface-container-low text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
               />
+              {showSuggestions && searchType === 'businesses' && suggestions.length > 0 && (
+                <div className="absolute z-20 mt-2 w-full bg-surface border border-outline-variant/20 rounded-xl shadow-lg overflow-hidden">
+                  {suggestions.map((s: any) => (
+                    <button
+                      key={s.name + (s.isCitySuggestion ? 'city' : 'biz')}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setSearchInput(s.name);
+                        setShowSuggestions(false);
+                        setSearchParams({ q: s.name, type: searchType });
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-surface-container-high flex items-center justify-between"
+                    >
+                      <span className="font-medium text-on-surface">{s.name}</span>
+                      <span className="text-xs text-on-surface-variant">
+                        {s.isCitySuggestion ? 'City' : (s.__distanceKm != null ? `${s.__distanceKm.toFixed(1)} km` : 'Recommendation')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="submit"
@@ -147,8 +211,30 @@ export default function SearchPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-on-surface-variant">
-            {isLoading ? 'Searching...' : `Found ${results.length} result${results.length === 1 ? '' : 's'} for "${q}"`}
+            {isLoading ? 'Searching...' : q ? `Found ${results.length} result${results.length === 1 ? '' : 's'} for "${q}"` : (userLoc ? 'Near you' : 'Start typing to search')}
           </h2>
+          {!q && searchType === 'businesses' && relatedBusinesses.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-bold text-on-surface mb-3">Near Me</h3>
+              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                {relatedBusinesses.slice(0, 10).map((biz: any) => (
+                  <button
+                    key={biz.id}
+                    onClick={() => setSearchParams({ q: biz.name, type: searchType })}
+                    className="flex-shrink-0 w-44 bg-surface-container-low border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-md transition-all"
+                  >
+                    <div className="h-24 w-full bg-slate-200">
+                      <img src={biz.coverImageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=400'} alt={biz.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm font-bold text-on-surface truncate">{biz.name}</p>
+                      <p className="text-xs text-on-surface-variant truncate">{biz.city || biz.category}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {isLoading ? (
