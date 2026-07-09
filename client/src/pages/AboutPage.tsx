@@ -48,7 +48,7 @@ export default function AboutPage() {
                 My career has been built on three things: <strong className="text-white font-medium">deep technical troubleshooting, automation, and customer obsession.</strong> I've managed Microsoft 365 environments, automated workflows with PowerShell and REST APIs, handled identity and access management, and supported everything from dusty desktops to hybrid cloud infrastructure. In lean teams, I'm the person who bridges the gap between a user's pain and a working solution. That's exactly the muscle Pabandi needs.
               </p>
               <p>
-                When I visited Karachi and saw family businesses losing revenue to no-shows — when I spoke to salon owners while preparing for my own wedding and learned that 560 weddings happen in a single day, yet they'd stopped taking reservations because of trust breakdowns — I didn't see an abstract market. I saw a queue of frustrated users. And my IT brain kicked in: <span className="text-emerald-400 font-medium">this is a process problem that automation and data can fix.</span>
+                I kept running into the same problem: service providers losing trust, revenue, and repeat customers to no-shows and unenforced commitments. It's not just a local issue; it's a global reliability gap. That's when the IT side of my brain recognized the pattern: <span className="text-emerald-400 font-medium">this is a process problem that automation and trust mechanics can fix.</span>
               </p>
               <p>
                 So I taught myself what I didn't know. I learned about ensemble ML models, Solana smart contracts, and token economics. I used AI coding agents (Gemini, DeepSeek, Hermes) to accelerate development. I built a working web app, designed the escrow architecture, and ran a pilot that cut no-shows by 67%. 
@@ -118,7 +118,7 @@ export default function AboutPage() {
                 But our vision extends even further into <strong className="text-white font-medium">hotel and apartment rentals</strong>. No-shows and last-minute cancellations are just as devastating to property managers and hosts. By applying Pabandi's trust layer to the hospitality sector, guests can secure premium stays using their on-chain reliability score, while hosts are protected by automated smart-contract deposits.
               </p>
               <p>
-                This bridges the gap between digital discovery and physical fulfillment. Whether you are booking a haircut in Karachi, buying artisanal goods via a live stream, or renting an apartment in Dubai or London, Pabandi is building a <strong className="text-white font-medium">truly global product</strong>. By combining Web3 trust mechanics with modern commerce and hospitality, Pabandi is becoming the ultimate operating system for the service and rental economy worldwide.
+                This bridges the gap between digital discovery and physical fulfillment. Whether you're booking a venue, buying services, or renting anywhere in the world, Pabandi is building a <strong className="text-white font-medium">truly global product</strong>. By combining Web3 trust mechanics with modern commerce and hospitality, Pabandi is becoming the ultimate operating system for the service and rental economy worldwide.
               </p>
             </div>
           </div>
