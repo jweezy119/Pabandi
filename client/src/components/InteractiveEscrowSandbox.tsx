@@ -6,7 +6,9 @@ import {
   CurrencyDollarIcon, 
   ShieldCheckIcon, 
   UserIcon, 
-  BuildingStorefrontIcon 
+  BuildingStorefrontIcon,
+  SparklesIcon,
+  TicketIcon
 } from "@heroicons/react/24/outline";
 
 type SandboxState = "IDLE" | "LOCKING" | "LOCKED" | "VERIFYING" | "SUCCESS" | "SLASHED";
@@ -41,7 +43,7 @@ export default function InteractiveEscrowSandbox() {
     setState("VERIFYING");
     setTimeout(() => {
       setEscrow(0);
-      setBalance((b) => b + 100 + 10); // Refund + Reward
+      setBalance((b) => b + 10); // Reward only, 100 goes to business
       setReliabilityScore((s) => Math.min(100, s + 5));
       setState("SUCCESS");
     }, 1500);
@@ -82,49 +84,78 @@ export default function InteractiveEscrowSandbox() {
         
         {/* Connection Lines (Background) */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none hidden md:flex">
-          {/* Line: User to Escrow */}
+          {/* Line: User to Escrow (Forward payment) */}
           <div className="absolute left-[16.66%] w-[33.33%] h-1 bg-outline-variant/30 rounded-full overflow-hidden">
              <div className={`h-full transition-all duration-1000 ${
                (state === 'LOCKING' || state === 'LOCKED' || state === 'VERIFYING') ? 'bg-primary w-full origin-left' :
-               state === 'SUCCESS' ? 'bg-green-500 w-full origin-right' : 
-               state === 'SLASHED' ? 'bg-outline-variant/30 w-full' : 'w-0'
+               'w-0'
              }`} />
           </div>
-          {/* Line: Escrow to Business */}
+          {/* Line: Escrow to User (Reward & NFT) */}
+          <div className="absolute left-[16.66%] w-[33.33%] h-1 -mt-8 bg-outline-variant/30 rounded-full overflow-hidden">
+             <div className={`h-full transition-all duration-1000 ${
+               state === 'SUCCESS' ? 'bg-purple-500 w-full float-right origin-right' : 
+               'w-0'
+             }`} />
+          </div>
+          {/* Line: Escrow to Business (Payment or Penalty) */}
           <div className="absolute right-[16.66%] w-[33.33%] h-1 bg-outline-variant/30 rounded-full overflow-hidden">
-             <div className={`h-full transition-all duration-1000 origin-left ${state === 'SLASHED' ? 'bg-red-500 w-full' : 'w-0'}`} />
+             <div className={`h-full transition-all duration-1000 origin-left ${
+                state === 'SLASHED' ? 'bg-red-500 w-full' : 
+                state === 'SUCCESS' ? 'bg-green-500 w-full' : 'w-0'
+             }`} />
           </div>
         </div>
 
-        {/* The Moving Token (Desktop only) */}
+        {/* Moving Tokens (Desktop only) */}
+        
+        {/* Token 1: User -> Escrow -> Business */}
         <div className={`hidden md:flex absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full z-20 items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.2)] transition-all duration-1000 ease-in-out ${
           state === 'IDLE' ? 'left-[16.66%] -translate-x-1/2 opacity-0 scale-50 bg-primary' :
           state === 'LOCKING' ? 'left-1/2 -translate-x-1/2 opacity-100 scale-100 bg-amber-500' :
           state === 'LOCKED' || state === 'VERIFYING' ? 'left-1/2 -translate-x-1/2 opacity-0 scale-50 bg-blue-500' :
-          state === 'SUCCESS' ? 'left-[16.66%] -translate-x-1/2 opacity-100 scale-100 bg-green-500' :
+          state === 'SUCCESS' ? 'left-[83.33%] -translate-x-1/2 opacity-100 scale-100 bg-green-500' :
           state === 'SLASHED' ? 'left-[83.33%] -translate-x-1/2 opacity-100 scale-100 bg-red-500' : ''
         }`}>
           <CurrencyDollarIcon className="w-5 h-5 text-white" />
         </div>
 
+        {/* Token 2: Escrow -> User (NFT Review Mint & Reward) */}
+        <div className={`hidden md:flex absolute top-1/2 -mt-4 -translate-y-1/2 w-8 h-8 rounded-full z-20 items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.2)] transition-all duration-1000 ease-in-out ${
+          state === 'SUCCESS' ? 'left-[16.66%] -translate-x-1/2 opacity-100 scale-100 bg-purple-500' : 'left-1/2 -translate-x-1/2 opacity-0 scale-50 bg-purple-500'
+        }`}>
+          <TicketIcon className="w-5 h-5 text-white" />
+        </div>
+
         {/* User Node */}
         <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto relative group">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SUCCESS' ? 'border-green-500 shadow-green-500/20' : 'border-primary'}`}>
-            <UserIcon className={`w-8 h-8 ${state === 'SUCCESS' ? 'text-green-500' : 'text-primary'}`} />
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SUCCESS' ? 'border-purple-500 shadow-purple-500/20' : 'border-primary'}`}>
+            <UserIcon className={`w-8 h-8 ${state === 'SUCCESS' ? 'text-purple-500' : 'text-primary'}`} />
           </div>
-          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-48">
+          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-56 relative">
+            
+            {/* NFT Minted Badge Alert */}
+            <div className={`absolute -top-10 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg transition-all duration-500 whitespace-nowrap ${state === 'SUCCESS' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+              <SparklesIcon className="w-3 h-3" />
+              Review NFT Minted!
+            </div>
+
             <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Your Wallet</p>
             <p className="font-black text-on-surface text-2xl">{balance} <span className="text-sm text-primary">$PAB</span></p>
             <div className="mt-2 pt-2 border-t border-outline-variant/10">
               <p className="text-[11px] font-bold text-on-surface-variant">Trust Score: <span className={reliabilityScore > 80 ? 'text-green-500' : reliabilityScore < 50 ? 'text-red-500' : 'text-amber-500'}>{reliabilityScore}/100</span></p>
             </div>
+            
+            {state === 'SUCCESS' && (
+               <p className="text-[10px] font-bold text-purple-500 mt-1 animate-pulse">+10 $PAB Reward</p>
+            )}
           </div>
         </div>
 
         {/* Escrow Node */}
-        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-12 md:mt-0 relative">
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-16 md:mt-0 relative">
           {/* Mobile connecting line */}
-          <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 w-1 h-12 bg-outline-variant/30" />
+          <div className="md:hidden absolute -top-16 left-1/2 -translate-x-1/2 w-1 h-16 bg-outline-variant/30" />
           
           <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-2xl relative z-10 ${
             state === 'IDLE' ? 'bg-surface border-outline-variant/30 opacity-60 scale-90' : 
@@ -149,32 +180,46 @@ export default function InteractiveEscrowSandbox() {
             )}
           </div>
           
-          <div className="mt-4 text-center w-48">
+          <div className="mt-4 text-center w-56">
             <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Smart Contract</p>
             <p className="text-[12px] font-bold h-4">
               {state === 'IDLE' && <span className="text-on-surface-variant">Waiting...</span>}
               {state === 'LOCKING' && <span className="text-amber-500">Locking funds...</span>}
               {state === 'LOCKED' && <span className="text-blue-500">Funds Secured</span>}
               {state === 'VERIFYING' && <span className="text-primary">Validating...</span>}
-              {state === 'SUCCESS' && <span className="text-green-500">Returning + Reward!</span>}
-              {state === 'SLASHED' && <span className="text-red-500">Penalty applied!</span>}
+              {state === 'SUCCESS' && <span className="text-green-500">Paying & Minting NFT...</span>}
+              {state === 'SLASHED' && <span className="text-red-500">Slashing for Penalty!</span>}
             </p>
           </div>
         </div>
 
         {/* Business Node */}
-        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-12 md:mt-0 relative">
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-16 md:mt-0 relative">
           {/* Mobile connecting line */}
-          <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 w-1 h-12 bg-outline-variant/30" />
+          <div className="md:hidden absolute -top-16 left-1/2 -translate-x-1/2 w-1 h-16 bg-outline-variant/30" />
 
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SLASHED' ? 'border-red-500 shadow-red-500/20' : 'border-outline-variant/30'}`}>
-            <BuildingStorefrontIcon className={`w-8 h-8 ${state === 'SLASHED' ? 'text-red-500' : 'text-on-surface-variant'}`} />
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${
+            state === 'SLASHED' ? 'border-red-500 shadow-red-500/20 bg-red-500/10' : 
+            state === 'SUCCESS' ? 'border-green-500 shadow-green-500/20 bg-green-500/10' :
+            'border-outline-variant/30'
+          }`}>
+            <BuildingStorefrontIcon className={`w-8 h-8 ${
+              state === 'SLASHED' ? 'text-red-500' : 
+              state === 'SUCCESS' ? 'text-green-500' :
+              'text-on-surface-variant'
+            }`} />
           </div>
-          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-48">
+          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-48 relative">
             <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Business</p>
-            <p className="font-black text-on-surface text-2xl">{state === 'SLASHED' ? '+100' : '0'} <span className="text-sm text-primary">$PAB</span></p>
-            <div className="mt-2 pt-2 border-t border-outline-variant/10">
-              <p className="text-[11px] font-bold text-on-surface-variant">Compensation</p>
+            <p className="font-black text-on-surface text-2xl">{(state === 'SLASHED' || state === 'SUCCESS') ? '+100' : '0'} <span className="text-sm text-primary">$PAB</span></p>
+            <div className="mt-2 pt-2 border-t border-outline-variant/10 h-8 flex items-center justify-center">
+              {state === 'SUCCESS' ? (
+                <p className="text-[11px] font-bold text-green-500">Service Payment</p>
+              ) : state === 'SLASHED' ? (
+                <p className="text-[11px] font-bold text-red-500">No-Show Penalty</p>
+              ) : (
+                <p className="text-[11px] font-bold text-on-surface-variant">Awaiting Funds</p>
+              )}
             </div>
           </div>
         </div>
