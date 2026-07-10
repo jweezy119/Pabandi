@@ -284,7 +284,7 @@ const [showSuggestions, setShowSuggestions] = useState(false);
                     <Link
                       key={biz.id}
                       to={`/business/${biz.id}`}
-                      className="group flex flex-col bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 glowing-border tile-hover"
+                      className="group flex flex-col border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 glowing-border tile-hover glass-panel"
                     >
                       <div className="relative h-48 w-full overflow-hidden">
                         <img
@@ -344,7 +344,7 @@ const [showSuggestions, setShowSuggestions] = useState(false);
               <Link
                 key={biz.id}
                 to={`/business/${biz.id}`}
-                className="group flex flex-col bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 glowing-border tile-hover"
+                className="group flex flex-col border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 glowing-border tile-hover glass-panel"
               >
                 <div className="relative h-48 w-full overflow-hidden">
                   <img

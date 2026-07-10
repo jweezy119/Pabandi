@@ -487,9 +487,10 @@ export default function HomePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   to={`/business/${businesses[0].id}`}
-                  className="md:col-span-8 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] group relative h-80 block tile-hover border border-outline-variant/10 glowing-border"
+                  className="md:col-span-8 rounded-xl overflow-hidden group relative h-80 block tile-hover border border-outline-variant/10 glowing-border glass-panel"
                 >
-                  <img
+                  <div className="absolute inset-0">
+                    <img
                     alt={businesses[0].name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     src={
@@ -497,6 +498,7 @@ export default function HomePage() {
                       "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200"
                     }
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" /></div>
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-6 w-full z-10">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -541,7 +543,7 @@ export default function HomePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     to={`/business/${businesses[1].id}`}
-                    className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_20px_40px_rgba(1,29,53,0.06)] flex-1 relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border"
+                    className="rounded-xl overflow-hidden relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border glass-panel"
                   >
                     <img
                       alt={businesses[1].name}
