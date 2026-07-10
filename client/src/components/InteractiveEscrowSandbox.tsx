@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { CheckCircleIcon, XCircleIcon, ArrowPathIcon, CurrencyDollarIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ArrowPathIcon, 
+  CurrencyDollarIcon, 
+  ShieldCheckIcon, 
+  UserIcon, 
+  BuildingStorefrontIcon 
+} from "@heroicons/react/24/outline";
 
 type SandboxState = "IDLE" | "LOCKING" | "LOCKED" | "VERIFYING" | "SUCCESS" | "SLASHED";
 
@@ -18,10 +26,7 @@ export default function InteractiveEscrowSandbox() {
         setState("LOCKED");
       }, 1500);
     } else if (state === "VERIFYING") {
-      timeout = setTimeout(() => {
-        // Decide randomly if success or slashed for demo?
-        // No, we give the user buttons to trigger it!
-      }, 1500);
+      // Just waiting for the button action to resolve
     }
     return () => clearTimeout(timeout);
   }, [state]);
@@ -57,134 +62,152 @@ export default function InteractiveEscrowSandbox() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 md:p-8 bg-surface-container-low rounded-3xl border border-outline-variant/20 shadow-xl font-body relative overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto p-6 md:p-10 bg-surface-container-low rounded-3xl border border-outline-variant/20 shadow-xl font-body relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/20 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
-        {/* Left Side - Info */}
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldCheckIcon className="w-6 h-6 text-primary" />
-            <h2 className="font-headline text-2xl font-bold text-on-surface">Web3 Reliability Engine</h2>
+      <div className="text-center mb-10 relative z-10">
+        <h2 className="font-headline text-2xl md:text-3xl font-bold text-on-surface flex items-center justify-center gap-2 mb-3">
+          <ShieldCheckIcon className="w-8 h-8 text-primary" />
+          Smart Contract Movement
+        </h2>
+        <p className="text-on-surface-variant text-sm max-w-2xl mx-auto">
+          Watch how funds move through the Pabandi protocol. Lock a deposit, and see the outcome when you honor or miss your appointment.
+        </p>
+      </div>
+
+      {/* Animated Diagram Area */}
+      <div className="relative w-full py-12 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 shadow-inner flex flex-col md:flex-row items-center mb-10 z-10">
+        
+        {/* Connection Lines (Background) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none hidden md:flex">
+          {/* Line: User to Escrow */}
+          <div className="absolute left-[16.66%] w-[33.33%] h-1 bg-outline-variant/30 rounded-full overflow-hidden">
+             <div className={`h-full transition-all duration-1000 ${
+               (state === 'LOCKING' || state === 'LOCKED' || state === 'VERIFYING') ? 'bg-primary w-full origin-left' :
+               state === 'SUCCESS' ? 'bg-green-500 w-full origin-right' : 
+               state === 'SLASHED' ? 'bg-outline-variant/30 w-full' : 'w-0'
+             }`} />
           </div>
-          <p className="text-on-surface-variant text-sm leading-relaxed">
-            Pabandi uses Solana smart contracts to lock a tiny deposit in escrow when you book. Show up, and you get it back plus $PAB rewards. No-show, and it compensates the business. Try the live simulation below!
-          </p>
+          {/* Line: Escrow to Business */}
+          <div className="absolute right-[16.66%] w-[33.33%] h-1 bg-outline-variant/30 rounded-full overflow-hidden">
+             <div className={`h-full transition-all duration-1000 origin-left ${state === 'SLASHED' ? 'bg-red-500 w-full' : 'w-0'}`} />
+          </div>
+        </div>
 
-          <div className="flex gap-4 pt-4">
-            <div className="bg-surface-container p-4 rounded-xl flex-1 border border-outline-variant/10 text-center">
-              <p className="text-xs text-on-surface-variant font-bold uppercase mb-1">Your Wallet</p>
-              <p className="font-headline text-xl font-black text-on-surface">{balance} <span className="text-sm text-primary">$PAB</span></p>
-            </div>
-            <div className="bg-surface-container p-4 rounded-xl flex-1 border border-outline-variant/10 text-center">
-              <p className="text-xs text-on-surface-variant font-bold uppercase mb-1">Trust Score</p>
-              <p className="font-headline text-xl font-black text-on-surface">{reliabilityScore}/100</p>
-            </div>
-            <div className="bg-surface-container p-4 rounded-xl flex-1 border border-outline-variant/10 text-center">
-              <p className="text-xs text-on-surface-variant font-bold uppercase mb-1">In Escrow</p>
-              <p className="font-headline text-xl font-black text-blue-400">{escrow} <span className="text-sm text-blue-400/70">$PAB</span></p>
+        {/* The Moving Token (Desktop only) */}
+        <div className={`hidden md:flex absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full z-20 items-center justify-center shadow-[0_0_15px_rgba(0,0,0,0.2)] transition-all duration-1000 ease-in-out ${
+          state === 'IDLE' ? 'left-[16.66%] -translate-x-1/2 opacity-0 scale-50 bg-primary' :
+          state === 'LOCKING' ? 'left-1/2 -translate-x-1/2 opacity-100 scale-100 bg-amber-500' :
+          state === 'LOCKED' || state === 'VERIFYING' ? 'left-1/2 -translate-x-1/2 opacity-0 scale-50 bg-blue-500' :
+          state === 'SUCCESS' ? 'left-[16.66%] -translate-x-1/2 opacity-100 scale-100 bg-green-500' :
+          state === 'SLASHED' ? 'left-[83.33%] -translate-x-1/2 opacity-100 scale-100 bg-red-500' : ''
+        }`}>
+          <CurrencyDollarIcon className="w-5 h-5 text-white" />
+        </div>
+
+        {/* User Node */}
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto relative group">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SUCCESS' ? 'border-green-500 shadow-green-500/20' : 'border-primary'}`}>
+            <UserIcon className={`w-8 h-8 ${state === 'SUCCESS' ? 'text-green-500' : 'text-primary'}`} />
+          </div>
+          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-48">
+            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Your Wallet</p>
+            <p className="font-black text-on-surface text-2xl">{balance} <span className="text-sm text-primary">$PAB</span></p>
+            <div className="mt-2 pt-2 border-t border-outline-variant/10">
+              <p className="text-[11px] font-bold text-on-surface-variant">Trust Score: <span className={reliabilityScore > 80 ? 'text-green-500' : reliabilityScore < 50 ? 'text-red-500' : 'text-amber-500'}>{reliabilityScore}/100</span></p>
             </div>
           </div>
         </div>
 
-        {/* Right Side - Interactive Demo */}
-        <div className="flex-1 w-full bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/10 shadow-inner relative">
+        {/* Escrow Node */}
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-12 md:mt-0 relative">
+          {/* Mobile connecting line */}
+          <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 w-1 h-12 bg-outline-variant/30" />
           
-          {/* Status Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-on-surface text-sm">Booking Simulator</h3>
-            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
-              state === 'IDLE' ? 'bg-surface-container-highest text-on-surface' :
-              state === 'LOCKING' ? 'bg-amber-500/20 text-amber-500 animate-pulse' :
-              state === 'LOCKED' ? 'bg-blue-500/20 text-blue-500' :
-              state === 'VERIFYING' ? 'bg-primary/20 text-primary animate-pulse' :
-              state === 'SUCCESS' ? 'bg-green-500/20 text-green-500' :
-              'bg-red-500/20 text-red-500'
-            }`}>
-              {state === 'IDLE' ? 'Ready' : state}
-            </span>
-          </div>
-
-          {/* Central Escrow Visual */}
-          <div className="flex flex-col items-center justify-center py-6 border-y border-outline-variant/10 mb-6 min-h-[160px]">
-            {state === 'IDLE' && (
-              <div className="text-center">
-                <CurrencyDollarIcon className="w-12 h-12 text-on-surface-variant mx-auto mb-2 opacity-50" />
-                <p className="text-sm text-on-surface-variant font-medium">Click "Book Appointment" to start.</p>
-              </div>
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 transition-all duration-500 shadow-2xl relative z-10 ${
+            state === 'IDLE' ? 'bg-surface border-outline-variant/30 opacity-60 scale-90' : 
+            state === 'LOCKING' ? 'bg-amber-500/10 border-amber-500 scale-110' :
+            state === 'VERIFYING' ? 'bg-primary/20 border-primary animate-pulse scale-105' :
+            (state === 'LOCKED' || state === 'SUCCESS' || state === 'SLASHED') ? 'bg-blue-500/10 border-blue-500 scale-100' : ''
+          }`}>
+            {state === 'VERIFYING' ? (
+              <ArrowPathIcon className="w-12 h-12 text-primary animate-spin" />
+            ) : (
+              <ShieldCheckIcon className={`w-12 h-12 ${state === 'IDLE' ? 'text-outline-variant' : 'text-blue-500'}`} />
             )}
             
-            {state === 'LOCKING' && (
-              <div className="text-center flex flex-col items-center">
-                <ArrowPathIcon className="w-10 h-10 text-amber-500 animate-spin mb-3" />
-                <p className="text-sm font-bold text-amber-500">Locking 100 $PAB into Escrow...</p>
-                <p className="text-xs text-on-surface-variant mt-1">Executing Solana Smart Contract</p>
-              </div>
-            )}
-
-            {state === 'LOCKED' && (
-              <div className="text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center border-2 border-blue-500/30 mb-3 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-                  <span className="font-black text-blue-500 text-lg">100</span>
-                </div>
-                <p className="text-sm font-bold text-blue-500">Funds Secured in Escrow</p>
-                <p className="text-xs text-on-surface-variant mt-1">Waiting for appointment time...</p>
-              </div>
-            )}
-
-            {state === 'VERIFYING' && (
-              <div className="text-center flex flex-col items-center">
-                <ArrowPathIcon className="w-10 h-10 text-primary animate-spin mb-3" />
-                <p className="text-sm font-bold text-primary">Verifying Attendance via Oracle...</p>
-              </div>
-            )}
-
-            {state === 'SUCCESS' && (
-              <div className="text-center flex flex-col items-center">
-                <CheckCircleIcon className="w-12 h-12 text-green-500 mb-2" />
-                <p className="text-sm font-bold text-green-500">Attendance Verified!</p>
-                <p className="text-xs font-bold text-green-400 mt-1">+100 $PAB Refunded</p>
-                <p className="text-xs font-bold text-primary mt-0.5">+10 $PAB Reward Earned</p>
-              </div>
-            )}
-
-            {state === 'SLASHED' && (
-              <div className="text-center flex flex-col items-center">
-                <XCircleIcon className="w-12 h-12 text-red-500 mb-2" />
-                <p className="text-sm font-bold text-red-500">No-Show Detected</p>
-                <p className="text-xs font-bold text-red-400 mt-1">-100 $PAB Sent to Business</p>
-                <p className="text-xs font-bold text-red-400 mt-0.5">-15 Trust Score Penalty</p>
+            {/* The trapped funds inside Escrow */}
+            {(state === 'LOCKED' || state === 'VERIFYING') && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                 <div className="w-12 h-12 bg-blue-500 text-white font-black text-sm rounded-full flex flex-col items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                   {escrow}
+                   <span className="text-[8px] font-medium opacity-80 leading-none">$PAB</span>
+                 </div>
               </div>
             )}
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 justify-center">
-            {state === 'IDLE' && (
-              <button onClick={handleBook} className="w-full py-3 rounded-xl bg-primary text-on-primary font-bold text-sm shadow-md hover:opacity-90 transition-opacity">
-                Book Appointment (Locks 100 $PAB)
-              </button>
-            )}
-            
-            {state === 'LOCKED' && (
-              <>
-                <button onClick={handleShowUp} className="flex-1 py-3 rounded-xl bg-green-500/20 text-green-500 font-bold text-sm hover:bg-green-500/30 transition-colors border border-green-500/30">
-                  Simulate Show Up
-                </button>
-                <button onClick={handleNoShow} className="flex-1 py-3 rounded-xl bg-red-500/20 text-red-500 font-bold text-sm hover:bg-red-500/30 transition-colors border border-red-500/30">
-                  Simulate No-Show
-                </button>
-              </>
-            )}
-
-            {(state === 'SUCCESS' || state === 'SLASHED') && (
-              <button onClick={handleReset} className="w-full py-3 rounded-xl bg-surface-container text-on-surface font-bold text-sm hover:bg-surface-container-high transition-colors">
-                Reset Simulator
-              </button>
-            )}
+          
+          <div className="mt-4 text-center w-48">
+            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Smart Contract</p>
+            <p className="text-[12px] font-bold h-4">
+              {state === 'IDLE' && <span className="text-on-surface-variant">Waiting...</span>}
+              {state === 'LOCKING' && <span className="text-amber-500">Locking funds...</span>}
+              {state === 'LOCKED' && <span className="text-blue-500">Funds Secured</span>}
+              {state === 'VERIFYING' && <span className="text-primary">Validating...</span>}
+              {state === 'SUCCESS' && <span className="text-green-500">Returning + Reward!</span>}
+              {state === 'SLASHED' && <span className="text-red-500">Penalty applied!</span>}
+            </p>
           </div>
         </div>
+
+        {/* Business Node */}
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-12 md:mt-0 relative">
+          {/* Mobile connecting line */}
+          <div className="md:hidden absolute -top-12 left-1/2 -translate-x-1/2 w-1 h-12 bg-outline-variant/30" />
+
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SLASHED' ? 'border-red-500 shadow-red-500/20' : 'border-outline-variant/30'}`}>
+            <BuildingStorefrontIcon className={`w-8 h-8 ${state === 'SLASHED' ? 'text-red-500' : 'text-on-surface-variant'}`} />
+          </div>
+          <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-48">
+            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Business</p>
+            <p className="font-black text-on-surface text-2xl">{state === 'SLASHED' ? '+100' : '0'} <span className="text-sm text-primary">$PAB</span></p>
+            <div className="mt-2 pt-2 border-t border-outline-variant/10">
+              <p className="text-[11px] font-bold text-on-surface-variant">Compensation</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col md:flex-row gap-4 justify-center relative z-10 max-w-2xl mx-auto">
+        {state === 'IDLE' && (
+          <button onClick={handleBook} className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold shadow-[0_8px_20px_rgba(6,182,212,0.2)] hover:shadow-[0_8px_25px_rgba(6,182,212,0.3)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+            <CheckCircleIcon className="w-6 h-6" />
+            Book Appointment (Lock 100 $PAB)
+          </button>
+        )}
+        
+        {state === 'LOCKED' && (
+          <>
+            <button onClick={handleShowUp} className="flex-1 py-4 rounded-xl bg-green-500 text-white font-bold shadow-[0_8px_20px_rgba(34,197,94,0.2)] hover:shadow-[0_8px_25px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+              <CheckCircleIcon className="w-6 h-6" />
+              Simulate Show Up
+            </button>
+            <button onClick={handleNoShow} className="flex-1 py-4 rounded-xl bg-red-500 text-white font-bold shadow-[0_8px_20px_rgba(239,68,68,0.2)] hover:shadow-[0_8px_25px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+              <XCircleIcon className="w-6 h-6" />
+              Simulate No-Show
+            </button>
+          </>
+        )}
+
+        {(state === 'SUCCESS' || state === 'SLASHED') && (
+          <button onClick={handleReset} className="w-full px-8 py-4 rounded-xl bg-surface-container-highest text-on-surface font-bold shadow-sm hover:bg-outline-variant/20 transition-all flex items-center justify-center gap-2">
+            <ArrowPathIcon className="w-6 h-6" />
+            Reset Simulator
+          </button>
+        )}
       </div>
     </div>
   );
