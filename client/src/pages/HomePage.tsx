@@ -208,8 +208,8 @@ export default function HomePage() {
       {/* IMMERSIVE HERO WITH MAP */}
       <section className="relative w-full bg-[#0f172a] text-white py-16 md:py-24 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob" />
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob animation-delay-2000" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-[120px] opacity-25 animate-blob animate-float-slow" />
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob animation-delay-2000 animate-float-delayed" />
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col xl:flex-row gap-12">
@@ -230,7 +230,7 @@ export default function HomePage() {
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
                 Find & Book Anywhere
               </p>
-              <div className="bg-surface-container-low rounded-lg flex items-center px-4 py-3 shadow-sm w-full border border-outline-variant/20">
+              <div className="glass-input rounded-lg flex items-center px-4 py-3 shadow-sm w-full gap-2">
                 <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
                 <input
                   ref={searchInputRef}
@@ -295,7 +295,7 @@ export default function HomePage() {
             </div>
 
             {/* About Me */}
-            <div className="mt-8 p-6 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-sm text-white stagger-item">
+            <div className="mt-8 p-6 rounded-2xl glass-panel text-white stagger-item delay-3">
               <h3 className="font-headline font-bold text-lg mb-2">About Me</h3>
               <p className="text-sm text-white/80 leading-relaxed">
                 Built for people who value commitment. Pabandi turns bookings into trusted relationships, with AI-guided recommendations and verifiable reliability.
@@ -332,7 +332,7 @@ export default function HomePage() {
             />
 
             {selectedMapPlace && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 bg-surface/95 backdrop-blur-2xl p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 glass-panel p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40">
                 <div className="flex justify-between items-start mb-2">
                   <div className="min-w-0 pr-4">
                     <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">
