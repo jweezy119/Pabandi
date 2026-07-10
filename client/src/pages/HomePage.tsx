@@ -8,6 +8,7 @@ import {
   BuildingStorefrontIcon,
 } from "@heroicons/react/24/outline";
 import HomeMap from "../components/HomeMap";
+import InteractiveEscrowSandbox from "../components/InteractiveEscrowSandbox";
 
 // Haversine distance calculation (in km)
 const getDistance = (
@@ -656,6 +657,19 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Interactive Escrow Sandbox Demo */}
+        <section className="reveal">
+          <div className="text-center mb-8">
+            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+              See the Escrow in Action
+            </h3>
+            <p className="font-body text-on-surface-variant text-sm mt-2">
+              Experience how Pabandi protects businesses and rewards customers using smart contracts.
+            </p>
+          </div>
+          <InteractiveEscrowSandbox />
         </section>
 
         {/* Social proof */}
