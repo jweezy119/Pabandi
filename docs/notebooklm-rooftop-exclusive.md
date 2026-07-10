@@ -7,7 +7,7 @@ Use this as a companion or follow-up source document. It continues the same even
 - **Fiza:** Mixed English and Urdu. Impressed, playful, becoming a believer.
 
 ## Scene
-End of the night. Jawad and Fiza walk toward a rooftop event. The door staff would normally turn people away, but Jawad uses his PabPoints-backed access. Fiza sees the reward model in action and wants to build her own score.
+End of the night. Jawad and Fiza walk toward a rooftop event. The door staff would normally turn people away, but Jawad uses his $PAB-backed access. Fiza sees the reward model in action and wants to build her own score.
 
 ## Narration
 
@@ -15,7 +15,7 @@ Jawad: We made it. The rooftop is just ahead.
 
 Fiza: I still can’t believe we actually have access.
 
-Jawad: That’s what PabPoints change. They turn loyalty into entry.
+Jawad: That’s what $PAB does. It turns loyalty into entry.
 
 Fiza: Normally a night like this is impossible without connections.
 

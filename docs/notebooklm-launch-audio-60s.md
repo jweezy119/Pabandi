@@ -12,9 +12,9 @@ Jawad: Pabandi just went live in Chicago.
 
 Fiza: And I already booked three experiences tonight.
 
-Jawad: Every booking earns PabPoints.
+Jawad: Every booking earns $PAB.
 
-Fiza: Real points? For real behavior?
+Fiza: $PAB? For real behavior?
 
 Jawad: Show up, pay on time, build your Trust Score.
 
