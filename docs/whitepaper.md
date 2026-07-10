@@ -1,6 +1,6 @@
 # Pabandi Whitepaper
 ## Trust, Portable. Deposits, Automated.
-### v4.0 — The Founder-to-Founder, Customer-Obsessed, Global Blueprint
+### v5.0 — The Founder-to-Founder, Customer-Obsessed, Global Blueprint
 *Last updated: July 2026*
 
 ---
@@ -16,7 +16,7 @@
 8. [Privacy — Explained Simply, in Full](#8-privacy--explained-simply-in-full)
 9. [Trust Score — How It Works, Plain English](#9-trust-score--how-it-works-plain-english)
 10. [API for Developers — Complete Guide](#10-api-for-developers--complete-guide)
-11. [What You Earn — Pabandi Points](#11-what-you-earn--pabandi-points)
+11. [What You Earn — $PAB Tokens](#11-what-you-earn--pabandi-points)
 12. [Halal Staking — Mudarabah Profit-Sharing](#12-halal-staking--mudarabah-profit-sharing)
 13. [How We Make Money](#13-how-we-make-money)
 14. [Security — Lock-by-Lock Explanation](#14-security--lock-by-lock-explanation)
@@ -109,7 +109,7 @@ Ground level truth: across service economies, hospitality, and informal commerce
 ### Real Numbers
 
 **Hospitality / Service Economy**
-- Hotel no-shows cost the US hospitality industry ~$10B annually
+- Hotel no-shows cost the global hospitality industry ~$10B annually
 - 20–30% no-show rates are standard for beauty and hospitality services worldwide
 - Deposit-heavy systems reduce first-time bookings by up to 40%
 - Chargeback fraud and fake payment disputes drain merchant margins on every continent
@@ -153,10 +153,10 @@ Ground level truth: across service economies, hospitality, and informal commerce
 - Score is **yours** — you can export it and take it with you
 
 **Piece 4: The Rewards Engine**
-- Guests earn **30 PabPoints per night** for every completed stay
-- Hosts set custom property-branded perks tied to PabPoints
-- PabPoints are Sharia-compliant **Hibah** (gifts), not interest-based staking
-- Guests can redeem PabPoints for future bookings, partner perks, or convert via PabPoints → Solana → bank payment
+- Guests earn **30 $PAB tokens per night** for every completed stay
+- Hosts set custom property-branded perks tied to $PAB tokens
+- $PAB tokens are Sharia-compliant **Hibah** (gifts), not interest-based staking
+- Guests can redeem $PAB tokens for future bookings, partner perks, or convert via $PAB tokens → Solana → bank payment
 
 ### The Deposit Logic, Made Simple
 
@@ -631,17 +631,17 @@ Send booking events to our webhook URL. We process and return the assessment aut
 
 ---
 
-## 11. What You Earn — Pabandi Points
+## 11. What You Earn — $PAB Tokens
 
 We do not use crypto tokens as the primary user-facing rewards layer. We use **Pabandi Points** — simple, compliant, and instantly usable. Every point is a proof that you showed up, kept your word, and made the service economy a little more honest.
 
-**Important distinction:** PabPoints are a Sharia-compliant **Hibah** (gift/reward), not a cryptocurrency. No wallet is required to earn or spend them. No crypto knowledge needed.
+**Important distinction:** $PAB tokens are a Sharia-compliant **Hibah** (gift/reward), not a cryptocurrency. No wallet is required to earn or spend them. No crypto knowledge needed.
 
 ### 11.1 How to Earn Points
 
 | Action | Points Earned |
 |--------|--------------|
-| Complete a night at a hospitality partner | 30 PabPoints per night |
+| Complete a night at a hospitality partner | 30 $PAB tokens per night |
 | Show up to a salon/restaurant/live commerce booking | 50–200 points (depends on merchant) |
 | Refer a friend who signs up and completes first booking | 500 points each |
 | First pilot signup bonus | 1,000 points |
@@ -653,7 +653,7 @@ We do not use crypto tokens as the primary user-facing rewards layer. We use **P
 
 - **Pay at merchants:** Spend points directly — no conversion needed
 - **Redeem for perks:** Swap points for deposit waivers, priority booking, free add-ons, or exclusive offers set by the host
-- **Cash out via crypto to bank:** Redeem PabPoints → Solana (SOL/USDC) → partner payment provider → local bank account
+- **Cash out via crypto to bank:** Redeem $PAB tokens → Solana (SOL/USDC) → partner payment provider → local bank account
 - **Transfer to friends:** Send points to other Pabandi users
 - **Build your Pabandi Passport reputation:** Points contribute to your overall trust footprint
 
@@ -664,23 +664,23 @@ Pabandi Points are issued as **Hibah** (gifts), not as interest-based returns or
 - **No Ribā:** Points are not interest on deposits. They are rewards for completed bookings and good behavior.
 - **No Gharar:** Point value is fixed in merchant programs or clear conversion paths. No gambling, no speculation.
 - **No Maysir:** Every point traces to a real completed transaction, not to trading, staking pools, or zero-sum mechanisms.
-- **Host-controlled value:** Each property sets its own PabPoints redemption rate and perks. Your brand, your rules.
+- **Host-controlled value:** Each property sets its own $PAB tokens redemption rate and perks. Your brand, your rules.
 
 ### 11.4 Property-Branded Perks
 
-Hotels, salons, and hosts set their own custom rewards tied to PabPoints:
+Hotels, salons, and hosts set their own custom rewards tied to $PAB tokens:
 
-- "Stay 5 nights = free breakfast + 150 PabPoints"
-- "Refer a friend = 50 PabPoints + free late checkout"
-- "Show up 3x this month = 100 PabPoints + 20% off next visit"
+- "Stay 5 nights = free breakfast + 150 $PAB tokens"
+- "Refer a friend = 50 $PAB tokens + free late checkout"
+- "Show up 3x this month = 100 $PAB tokens + 20% off next visit"
 
 Pabandi powers the backend. You control the brand experience.
 
 ### 11.5 Real Cash-Out Path
 
-Guests who prefer cash over points can redeem PabPoints through the PabPoints → Solana → bank payment path:
+Guests who prefer cash over points can redeem $PAB tokens through the $PAB tokens → Solana → bank payment path:
 
-1. Convert PabPoints to PabPoints credits on-chain
+1. Convert $PAB tokens to $PAB tokens credits on-chain
 2. Credits convert to SOL or USDC on Solana
 3. Withdraw to connected bank account via Stripe, Safepay, or local payment partner
 
@@ -839,14 +839,14 @@ Through our **Channex.io integration**, property managers can:
 
 **For Guests:**
 - Secure bookings with escrow deposits held until check-in
-- Earn **30 PabPoints per night** for every completed stay
+- Earn **30 $PAB tokens per night** for every completed stay
 - Build a portable Trust Score that follows them to every Pabandi-enabled property worldwide
-- Redeem PabPoints for future stays, partner perks, or cash out via Solana
+- Redeem $PAB tokens for future stays, partner perks, or cash out via Solana
 - Verified guest identity reduces fake bookings and scam risk
 
 **For Hosts and Hotel Chains:**
 - Automated no-show protection through escrow deposits
-- Property-branded perks tied to PabPoints — "Your brand, your rules, our backend"
+- Property-branded perks tied to $PAB tokens — "Your brand, your rules, our backend"
 - Direct booking growth without losing OTA reach
 - Verified guest history — no more anonymous bookings or fake reviews
 - API access for enterprise chains with multiple properties
@@ -854,7 +854,7 @@ Through our **Channex.io integration**, property managers can:
 **For OTA Platforms and Property Managers:**
 - Zero-knowledge fraud prevention without exposing guest privacy
 - 3D Secure + address verification + risk scoring on every transaction
-- Real-time dashboard for booking status, deposit flow, and PabPoints issuance
+- Real-time dashboard for booking status, deposit flow, and $PAB tokens issuance
 - Export to existing PMS/CRM systems
 
 ### 16.3 Why Hospitality Needs Pabandi
@@ -888,7 +888,7 @@ Pehle payment. Phir baat.
 |------|-------------|
 | **July 2026** | Pabandi Points system live. Seller dashboard v1. Global launch. Bitcoin wallet sign-in. Channex.io integration. |
 | **August 2026** | Referral program. Seller dashboard v2 with business scoring. Passport Trust Score 0–1000 rollout. |
-| **September 2026** | iOS + Android native apps. Hospitality module v1: hotels, rentals, 30 PabPoints/night. Property-branded perks engine. |
+| **September 2026** | iOS + Android native apps. Hospitality module v1: hotels, rentals, 30 $PAB tokens/night. Property-branded perks engine. |
 | **October 2026** | Public API launch. Node.js, Python, PHP SDKs. Developer portal. Stripe + Safepay + Solana Web3 payments. |
 | **November 2026** | EMEA expansion. Live commerce beta. AI no-show prevention. WhatsApp automation via Meta Cloud API. |
 | **December 2026** | Enterprise contract-ready security + SOC 2 Type I. First hotel chain pilot. |
@@ -936,7 +936,7 @@ Let's build the trust layer the world needs.
 A: No. Works as a web app on any phone browser. Native apps coming September 2026.
 
 **Q: Are Pabandi Points cryptocurrency?**
-A: No. PabPoints are a Sharia-compliant Hibah (gift/reward), not a cryptocurrency. You can earn and spend them without any wallet or crypto knowledge. If you prefer cash, you can redeem points via Solana to your bank — but that is an optional cash-out feature, not the default.
+A: No. $PAB tokens are a Sharia-compliant Hibah (gift/reward), not a cryptocurrency. You can earn and spend them without any wallet or crypto knowledge. If you prefer cash, you can redeem points via Solana to your bank — but that is an optional cash-out feature, not the default.
 
 **Q: Can I sign in with a crypto wallet?**
 A: Yes. We support Bitcoin wallet sign-in for users who prefer Web3-native login. We also support Google, Facebook, and phone number sign-in. If you sign in with Bitcoin, we can create a gasless smart wallet in the background using Account Abstraction — so you never need to buy gas or manage private keys manually.
@@ -968,7 +968,7 @@ A: Yes. Every business on Pabandi gets a Dynamic Business Score based on verifie
 **Q: What about Halal staking?**
 A: Pabandi staking is fully Sharia-compliant. Zero interest, transparent profit pools, and capital protection — structured on AAOIFI Standard No. 13 (Mudarabah) and Standard No. 17 (Investment Sukuk).
 
-**Q: Is Pabandi available outside Pakistan?**
+**Q: Is Pabandi available globally?**
 A: Yes. The web app works globally for any verified user. We are expanding hospitality coverage through Channex.io/Airbnb integrations, and global expansion is in active development.
 
 **Q: What is the Pabandi Passport?**
@@ -981,9 +981,9 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 || Term | Simple Meaning |
 |--------|---------------|
 || Trust Score | A number 0–1000 across tiers predicting how likely you are to show up |
-|| Pabandi Points | Hibah reward points for showing up; spend like cash or redeem to bank |
+|| $PAB token | Hibah reward token for showing up; spend like cash or redeem to bank |
 || Pabandi Passport | Your portable, blockchain-verified trust credential |
-|| Hibah | Sharia-compliant gift/reward system for PabPoints |
+|| Hibah | Sharia-compliant gift/reward system for $PAB tokens |
 || Channex | Hospitality integration layer for syncing Airbnb/Booking.com inventory |
 || Bitcoin wallet sign-in | Web3-native login using Bitcoin wallet instead of password |
 || Account Abstraction | ERC-4337 smart wallets that let users log in with Google and avoid gas fees |
@@ -1024,7 +1024,7 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 || On-chain | Recorded on a public blockchain like Solana — transparent and immutable |
 || Off-chain | Data kept off public blockchains for privacy, with signed attestations instead |
 || KYC | Know Your Customer — identity verification (we do NOT use this for scoring) |
-|| Property-branded perks | Host-defined rewards linked to PabPoints: breakfast, checkout, discounts, etc. |
+|| Property-branded perks | Host-defined rewards linked to $PAB tokens: breakfast, checkout, discounts, etc. |
 || Smart Contract Wallet | A programmable crypto wallet created by smart contract, not a seed phrase |
 || Paymaster | A service that sponsors gas fees so users don't have to pay for blockchain transactions |
 
@@ -1042,7 +1042,7 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 
 *Pabandi by Digital Ownership Technologies.*
 
-*Built in Chicago. For the global service economy.*
+*US-founded. Built for the global service economy.*
 
 *"One desk, one ticket, one frustrated user at a time." — Jawad H.*
 
