@@ -128,18 +128,18 @@ export default function InteractiveEscrowSandbox() {
         </div>
 
         {/* User Node */}
-        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto relative group">
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto relative group pt-10">
+          
+          {/* NFT Minted Badge Alert (Moved outside text box so it floats above the circle) */}
+          <div className={`absolute top-0 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg transition-all duration-500 whitespace-nowrap ${state === 'SUCCESS' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+            <SparklesIcon className="w-3 h-3" />
+            Review NFT Minted!
+          </div>
+
           <div className={`w-20 h-20 rounded-full flex items-center justify-center border-4 transition-colors duration-500 bg-surface shadow-md relative z-10 ${state === 'SUCCESS' ? 'border-purple-500 shadow-purple-500/20' : 'border-primary'}`}>
             <UserIcon className={`w-8 h-8 ${state === 'SUCCESS' ? 'text-purple-500' : 'text-primary'}`} />
           </div>
           <div className="mt-4 text-center bg-surface-container px-6 py-3 rounded-2xl border border-outline-variant/10 shadow-sm w-56 relative">
-            
-            {/* NFT Minted Badge Alert */}
-            <div className={`absolute -top-10 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-lg transition-all duration-500 whitespace-nowrap ${state === 'SUCCESS' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
-              <SparklesIcon className="w-3 h-3" />
-              Review NFT Minted!
-            </div>
-
             <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider mb-1">Your Wallet</p>
             <p className="font-black text-on-surface text-2xl">{balance} <span className="text-sm text-primary">$PAB</span></p>
             <div className="mt-2 pt-2 border-t border-outline-variant/10">
@@ -194,7 +194,7 @@ export default function InteractiveEscrowSandbox() {
         </div>
 
         {/* Business Node */}
-        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-16 md:mt-0 relative">
+        <div className="flex-1 flex flex-col items-center z-10 w-full md:w-auto mt-16 md:mt-0 relative pt-10">
           {/* Mobile connecting line */}
           <div className="md:hidden absolute -top-16 left-1/2 -translate-x-1/2 w-1 h-16 bg-outline-variant/30" />
 
