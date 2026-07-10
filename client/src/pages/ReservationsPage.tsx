@@ -136,7 +136,7 @@ export default function ReservationsPage() {
               const status = STATUS_CONFIG[r.status] || STATUS_CONFIG.PENDING;
               const deposit = DEPOSIT_STATUS_LABELS[r.depositStatus] || DEPOSIT_STATUS_LABELS.NOT_REQUIRED;
               return (
-                <div key={r.id} className="bg-surface-container-lowest rounded-xl p-6 flex flex-col gap-5 relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
+                <div key={r.id} className="rounded-xl p-6 flex flex-col gap-5 relative overflow-hidden group shadow-sm hover:shadow-md transition-shadow glass-panel">
                   
                   {/* Status Bar Accent */}
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.accent} rounded-l-xl`}></div>

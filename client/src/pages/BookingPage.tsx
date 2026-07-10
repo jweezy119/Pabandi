@@ -181,12 +181,12 @@ export default function BookingPage() {
     return (
       <div className="min-h-screen bg-surface p-4 md:p-8 flex flex-col max-w-7xl mx-auto gap-8 mt-16 animate-pulse">
         {/* Skeleton Hero */}
-        <div className="w-full h-[353px] md:h-[442px] bg-surface-container-low rounded-xl"></div>
+        <div className="w-full h-[353px] md:h-[442px] rounded-xl glass-surface"></div>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 space-y-8">
-            <div className="bg-surface-container-lowest h-48 rounded-xl shadow-sm border border-outline-variant/20"></div>
-            <div className="bg-surface-container-lowest h-48 rounded-xl shadow-sm border border-outline-variant/20"></div>
+            <div className="rounded-xl shadow-sm border border-outline-variant/20 glass-surface"></div>
+            <div className="rounded-xl shadow-sm border border-outline-variant/20 glass-surface"></div>
           </div>
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-surface-container-lowest h-24 rounded-xl shadow-sm border border-outline-variant/20"></div>
@@ -523,7 +523,7 @@ export default function BookingPage() {
                       Our autonomous agent has analyzed your booking request to secure this reservation.
                     </p>
 
-                    <div className="bg-surface-container-low rounded-xl p-6 mb-8 border border-outline-variant/30">
+                    <div className="rounded-xl glass-surface p-6 mb-8 border border-outline-variant/30">
                       <div className="flex justify-between items-center mb-6 pb-6 border-b border-outline-variant/20">
                         <div>
                           <p className="text-sm font-medium text-on-surface-variant mb-1">No-Show Risk Score</p>

@@ -780,7 +780,7 @@ export default function BusinessProfilePage() {
 
           {/* Right Column (Booking Widget Box) */}
           <div className="lg:col-span-5">
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-md border border-outline-variant/20 sticky top-28 glowing-border">
+            <div className="rounded-2xl p-6 shadow-md border border-outline-variant/20 sticky top-28 glowing-border glass-panel">
               <div className="flex justify-between items-center mb-6 border-b border-outline-variant/10 pb-4">
                 <div>
                   <h3 className="font-headline text-xl font-bold text-primary">Book Table</h3>
