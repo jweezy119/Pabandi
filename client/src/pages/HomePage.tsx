@@ -56,7 +56,7 @@ export default function HomePage() {
   const revealRef4 = useScrollReveal<HTMLDivElement>();
 
   const { data, isLoading } = useQuery(
-    ["businesses", category, userLoc],
+    ["businesses", category, userLoc, search],
     async () => {
       const params: any = {
         category: category !== "ALL" ? category : undefined,
@@ -372,7 +372,7 @@ export default function HomePage() {
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
           <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
-            {["ALL","LIVE_SELLER","RESTAURANT","SALON","CLINIC","HOSPITAL","SHORT_TERM_RENTAL","FREELANCE","ECOMMERCE","MARKETPLACE","FITNESS_CENTER"].map((c) => (
+            {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","SHORT_TERM_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
@@ -380,9 +380,9 @@ export default function HomePage() {
                   category === c
                     ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]"
                     : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
-                } px-5 py-2.5 rounded-lg font-label text-sm font-medium whitespace-nowrap transition-colors`}
+                } px-4 py-2 rounded-lg font-label text-sm font-medium whitespace-nowrap transition-colors`}
               >
-                {getCategoryLabel(c)}
+                {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
               </button>
             ))}
           </div>
@@ -415,6 +415,35 @@ export default function HomePage() {
           </div>
         )}
 
+
+        {/* Live Seller / Freelance connection prompts */}
+        {category === "LIVE_SELLER" && (
+          <section className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your live selling accounts</h3>
+            <p className="text-sm text-on-surface-variant mb-4">Link your livestream storefronts so Pabandi can track reliability across platforms.</p>
+            <div className="flex flex-wrap gap-3">
+              {['TikTok Live Seller','Instagram Live','YouTube Shopping','Shopify Live'].map((platform) => (
+                <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                  {platform} ↗
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {category === "FREELANCE" && (
+          <section className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your freelance profiles</h3>
+            <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
+            <div className="flex flex-wrap gap-3">
+              {['Upwork','Fiverr','TaskRabbit','Freelancer.com'].map((platform) => (
+                <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                  {platform} ↗
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Featured Businesses */}
         <section ref={revealRef2} className="space-y-6 reveal">
