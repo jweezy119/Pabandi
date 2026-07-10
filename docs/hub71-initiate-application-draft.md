@@ -38,7 +38,7 @@ Non-AI Focus — with targeted AI augmentation for identity verification and ris
 ## Team Positioning
 **200-word limit**
 
-The founding team combines Chicago-based startup operating experience with Web3 product architecture and hospitality sector domain knowledge. The CEO has publicly led technical and blockchain-oriented delivery; the co-founder brings hospitality operations and customer-obsession execution. The team’s advantage is dual fluency: understanding how service businesses actually miss revenue and how on-chain instruments can solve it without friction. The team is distributed, operationally lean, and selective in scope.
+The founding team is a husband-wife pair combining technical blockchain delivery with hospitality operations and customer-obsession execution. The CEO has publicly led technical Web3 product work and startup delivery; the co-founder brings frontline hospitality experience and user empathy. The team’s advantage is dual fluency: understanding how service businesses actually miss revenue and how on-chain instruments can solve it without friction. The couple is operationally lean, distributed, and prepared to relocate to Abu Dhabi to anchor MENA growth personally.
 
 **Editorial note:** Replace the generic advantage sentence with whatever is actually true for the team.
 
@@ -47,18 +47,15 @@ The founding team combines Chicago-based startup operating experience with Web3 
 ## Product Build Responsibility
 **200-word limit**
 
-Product and engineering are built in-house by the founding team and a contracted React/Node.js shop under direct architectural oversight. Smart-contract escrow and on-chain score logic are owned internally. No offshore black-box readiness; all core trust mechanics remain in-house for audit and iteration speed.
+Product and engineering are built primarily by the CEO/founder with direct oversight and selective contracted React/Node.js support for specific frontend work. Smart-contract escrow and on-chain score logic are designed and owned internally. The founder maintains full architectural control to keep trust mechanics auditable, iterable, and aligned with the product vision without depending on an offshore black box.
 
 ---
 
 ## Co-Founder Details
 **Required**
 
-Fill in with current names, roles, nationalities, and LinkedIn URLs.
-
-Suggested seed:
-- Syed Jawad Hussain — Founder/CEO — [Nationality] — LinkedIn: [URL]
-- [Co-founder 2] — [Role] — [Nationality] — LinkedIn: [URL]
+- Syed Jawad Hussain — Founder/CEO — [Nationality] — LinkedIn: https://www.linkedin.com/in/jawad-h11923/
+- [Wife's full name] — Co-founder — [Nationality] — LinkedIn: [URL if applicable]
 
 ---
 
@@ -70,14 +67,15 @@ Consumers and service providers have both reached breaking point with cancellati
 ---
 
 ## Current Product Stage
-Generating Revenue
+Building MVP
 
-**Or, if pre-revenue:** Building MVP
+**Or, if generating revenue:** Generating Revenue
 
 ---
 
 ## MVP Launch & Monetization Start Date
 [MM/YYYY]
+[If pre-launch, write “Not yet launched.”]
 
 ---
 
@@ -97,19 +95,20 @@ Generating Revenue
 ---
 
 ## Total Revenue (Past 12 Months)
-[USD numbers only]
+0
 
 ## Total Revenue (Last Month)
-[USD numbers only]
+0
 
 ## Remaining Runway
 [0–6 months / 7–12 months / More than a year]
+[Indicate actual runway if self-funded; otherwise leave as-is]
 
 ## Total Raised to Date
 [USD numbers only]
 
 ## Notable Investors
-[List institution names only; if bootstrapped, write “Bootstrapped — no institutional investors on cap table.”]
+Bootstrapped — no institutional investors on cap table.
 
 ---
 
@@ -143,15 +142,16 @@ Month 7–12: expand MENA onboarding, integrate preferred local payment rails, a
 ## HQ Country
 United States
 
+**Note:** Founders plan to relocate to Abu Dhabi during the program.
+
 ## Co-Founder Relocation to Abu Dhabi
-Yes / No
-[Choose based on actual intent.]
+Yes
 
 ## Primary Contact Name
 Syed Jawad Hussain
 
 ## Primary Contact Email
-[use team@pabandi.com or official company email]
+team@pabandi.com
 
 ## Primary Contact Number
 +1 [number]
