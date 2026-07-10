@@ -48,7 +48,6 @@ export default function HomePage() {
   } | null>(null);
   const [search, setSearch] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
-
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const revealRef1 = useScrollReveal<HTMLDivElement>();
@@ -76,6 +75,10 @@ export default function HomePage() {
   const revealRef2 = useScrollReveal<HTMLDivElement>();
   const revealRef3 = useScrollReveal<HTMLDivElement>();
   const revealRef4 = useScrollReveal<HTMLDivElement>();
+  const revealRef5 = useScrollReveal<HTMLDivElement>();
+  const revealRef6 = useScrollReveal<HTMLDivElement>();
+  const revealRef7 = useScrollReveal<HTMLDivElement>();
+  const revealRef8 = useScrollReveal<HTMLDivElement>();
 
   const { data, isLoading } = useQuery(
     ["businesses", category, userLoc, search],
@@ -437,7 +440,7 @@ export default function HomePage() {
 
         {/* Search result chips */}
         {search.trim().length > 0 && (
-          <div className="flex flex-wrap gap-2 reveal">
+          <div ref={revealRef5} className="flex flex-wrap gap-2 reveal">
             {businesses.slice(0, 6).map((biz: any) => (
               <button
                 key={biz.id}
@@ -465,7 +468,7 @@ export default function HomePage() {
 
         {/* Live Seller / Freelance connection prompts */}
         {category === "LIVE_SELLER" && (
-          <section className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+          <section ref={revealRef6} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
             <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your live selling accounts</h3>
             <p className="text-sm text-on-surface-variant mb-4">Link your livestream storefronts so Pabandi can track reliability across platforms.</p>
             <div className="flex flex-wrap gap-3">
@@ -479,7 +482,7 @@ export default function HomePage() {
         )}
 
         {category === "FREELANCE" && (
-          <section className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+          <section ref={revealRef7} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
             <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your freelance profiles</h3>
             <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
             <div className="flex flex-wrap gap-3">
@@ -706,7 +709,7 @@ export default function HomePage() {
         </section>
 
         {/* Interactive Escrow Sandbox Demo */}
-        <section className="reveal">
+        <section ref={revealRef8} className="reveal">
           <div className="text-center mb-8">
             <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
               See the Escrow in Action
