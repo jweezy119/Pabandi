@@ -248,7 +248,7 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-const parsedPort = parseInt(process.env.PORT || '5000', 10);
+const parsedPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
 httpServer.listen(parsedPort, '0.0.0.0', () => {
   logger.info(`🚀 Server running on port ${parsedPort}`);
   logger.info(`📚 API available at http://localhost:${parsedPort}/api/${API_VERSION}`);
