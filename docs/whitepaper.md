@@ -1048,4 +1048,4 @@ A: It is your portable, verifiable trust credential. It lets you prove your reli
 
 ---
 
-*End of Whitepaper v4.0*
+*End of Whitepaper v5.0*
