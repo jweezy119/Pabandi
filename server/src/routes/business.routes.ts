@@ -317,7 +317,7 @@ router.get('/', rateLimiter, async (req, res, next) => {
         category: mappedCat,
         address: address,
         city: city,
-        phone: tags.phone || '+92 300 0000000',
+        phone: tags.phone || 'Contact via app',
         email: 'contact@pabandi.com',
         website: tags.website || null,
         coverImageUrl: coverImageUrl,
@@ -326,10 +326,31 @@ router.get('/', rateLimiter, async (req, res, next) => {
         isVerified: false,
         isClaimed: false,
         isActive: true,
-        latitude: el.lat || 24.8607,
-        longitude: el.lon || 67.0011,
+        latitude: el.lat || null,
+        longitude: el.lon || null,
         googleReviews: []
       } as any);
+    }
+
+    // If user location was provided, sort by proximity
+    if (lat != null && lng != null) {
+      const toRad = (v: number) => (v * Math.PI) / 180;
+      const R = 6371;
+      mergedBusinesses.sort((a: any, b: any) => {
+        const aLat = Number(a.latitude);
+        const aLng = Number(a.longitude);
+        const bLat = Number(b.latitude);
+        const bLng = Number(b.longitude);
+        if (aLat == null || aLng == null) return 1;
+        if (bLat == null || bLng == null) return -1;
+        const dLat = toRad(bLat - aLat);
+        const dLng = toRad(bLng - aLng);
+        const x = Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) *
+          Math.sin(dLng / 2) ** 2;
+        const d = 2 * R * Math.asin(Math.sqrt(x));
+        return d;
+      });
     }
 
     res.json({ success: true, data: { businesses: mergedBusinesses } });

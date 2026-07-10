@@ -164,19 +164,24 @@ export default function HomePage() {
   ];
   function rankBusinesses(items: any[], userLoc: { lat: number; lng: number } | null) {
     if (!items.length) return items;
-    if (!userLoc) return items;
-    const scored = items.map((item) => {
-      const lat = item.latitude ?? INITIAL_CENTER.lat;
-      const lng = item.longitude ?? INITIAL_CENTER.lng;
-      const distKm = getDistance(userLoc.lat, userLoc.lng, lat, lng);
-      const distScore = Math.max(0, 100 - distKm * 2);
-      const rating = Number(item.rating || 0);
-      const ratingScore = Math.min(100, rating * 20);
-      const reliability = Number(item.reliabilityScore || 0);
-      const reliabilityScore = Math.min(100, reliability / 10);
-      const score = distScore * 0.5 + ratingScore * 0.25 + reliabilityScore * 0.25;
-      return { ...item, __score: score, __distanceKm: Number(distKm.toFixed(2)) };
-    });
+    if (!userLoc) {
+      // Drop items with no usable coordinates rather than pretending they are in Chicago
+      return items.filter((it) => Number.isFinite(it.latitude) && Number.isFinite(it.longitude));
+    }
+    const scored = items
+      .filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude))
+      .map((item) => {
+        const lat = Number(item.latitude);
+        const lng = Number(item.longitude);
+        const distKm = getDistance(userLoc.lat, userLoc.lng, lat, lng);
+        const distScore = Math.max(0, 100 - distKm * 2);
+        const rating = Number(item.rating || 0);
+        const ratingScore = Math.min(100, rating * 20);
+        const reliability = Number(item.reliabilityScore || 0);
+        const reliabilityScore = Math.min(100, reliability / 10);
+        const score = distScore * 0.5 + ratingScore * 0.25 + reliabilityScore * 0.25;
+        return { ...item, __score: score, __distanceKm: Number(distKm.toFixed(2)) };
+      });
     return scored.sort((a, b) => b.__score - a.__score);
   }
 

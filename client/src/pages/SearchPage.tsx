@@ -113,19 +113,23 @@ const [showSuggestions, setShowSuggestions] = useState(false);
 
   const suggestions = (() => {
     const term = searchInput.trim().toLowerCase();
-    if (!term) return [] as any[];
+    const pool = term ? businesses : relatedBusinesses;
+    const items = pool.slice(0, 10);
     const out = new Map<string, any>();
-    for (const b of businesses.slice(0, 8)) {
+    for (const b of items) {
       out.set(b.name, b);
     }
-    for (const b of relatedBusinesses.slice(0, 8)) {
-      out.set(b.name, b);
+    if (!term) {
+      const popular = ['restaurants', 'salons', 'spas', 'clinics'];
+      for (const p of popular) {
+        if (!out.has(p)) out.set(p, { name: p, isSuggestion: true });
+      }
     }
     const cities = ['Chicago','New York','Los Angeles','London','Dubai','Singapore'];
     for (const city of cities) {
-      if (city.toLowerCase().includes(term)) out.set(city, { name: city, isCitySuggestion: true });
+      if (!term || city.toLowerCase().includes(term)) out.set(city, { name: city, isCitySuggestion: true });
     }
-    return Array.from(out.values()).slice(0, 6);
+    return Array.from(out.values()).slice(0, 8);
   })();
 
   return (
