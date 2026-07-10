@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { useQuery } from "react-query";
@@ -52,6 +52,27 @@ export default function HomePage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const revealRef1 = useScrollReveal<HTMLDivElement>();
+
+
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    const dismissed = sessionStorage.getItem('pabandi_location_onboarding_dismissed');
+    if (!dismissed) {
+      const timer = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleOnboardingLocation = () => {
+    setShowOnboarding(false);
+    sessionStorage.setItem('pabandi_location_onboarding_dismissed', '1');
+    handleGetLocation();
+  };
+
+  const handleOnboardingDismiss = () => {
+    setShowOnboarding(false);
+    sessionStorage.setItem('pabandi_location_onboarding_dismissed', '1');
+  };
   const revealRef2 = useScrollReveal<HTMLDivElement>();
   const revealRef3 = useScrollReveal<HTMLDivElement>();
   const revealRef4 = useScrollReveal<HTMLDivElement>();
@@ -206,6 +227,31 @@ export default function HomePage() {
 
   return (
     <div className="w-full pb-28 md:pb-10 font-body">
+
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="max-w-md w-full rounded-3xl border border-white/15 bg-[#0f172a]/90 p-8 text-center shadow-2xl">
+            <h2 className="font-headline text-3xl font-black text-white mb-3">See what’s already nearby</h2>
+            <p className="text-slate-300 text-sm leading-relaxed mb-6">
+              Turn on location and we’ll show real nearby businesses inside your map — no searching required.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleOnboardingLocation}
+                className="w-full py-3.5 rounded-xl bg-primary text-on-primary font-bold shadow-lg"
+              >
+                Use my location
+              </button>
+              <button
+                onClick={handleOnboardingDismiss}
+                className="w-full py-3 rounded-xl text-slate-300 font-semibold hover:text-white"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* IMMERSIVE HERO WITH MAP */}
       <section className="relative w-full bg-[#0f172a] text-white py-16 md:py-24 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
