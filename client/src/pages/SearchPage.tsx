@@ -100,7 +100,23 @@ const [showSuggestions, setShowSuggestions] = useState(false);
         params.longitude = userLoc.lng;
       }
       const res = await businessService.getPublicBusinesses(params);
-      return res.data?.data?.businesses || [];
+      let items = res.data?.data?.businesses || [];
+      if (userLoc) {
+        const toRad = (v: number) => (v * Math.PI) / 180;
+        const R = 6371;
+        items = items
+          .filter((b: any) => Number.isFinite(b.latitude) && Number.isFinite(b.longitude))
+          .sort((a: any, b: any) => {
+            const d = (la: number, lo: number, lb: number, lo2: number) => {
+              const dLat = toRad(lb - la);
+              const dLon = toRad(lo2 - lo);
+              const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(la)) * Math.cos(toRad(lb)) * Math.sin(dLon / 2) ** 2;
+              return 2 * R * Math.asin(Math.sqrt(x));
+            };
+            return d(userLoc.lat, userLoc.lng, Number(b.latitude), Number(b.longitude)) - d(userLoc.lat, userLoc.lng, Number(a.latitude), Number(a.longitude));
+          });
+      }
+      return items;
     },
     { enabled: searchType === 'businesses' }
   );
