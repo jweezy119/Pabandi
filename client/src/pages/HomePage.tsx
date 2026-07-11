@@ -497,31 +497,30 @@ export default function HomePage() {
 
 
         {/* Live Seller / Freelance connection prompts */}
-        {category === "LIVE_SELLER" && (
-          <section ref={revealRef6} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
-            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your live accounts</h3>
-            <p className="text-sm text-on-surface-variant mb-4">Link TikTok Live, YouTube Shopping, or Shopify Live so Pabandi can track reliability across platforms.</p>
-            <div className="flex flex-wrap gap-3">
-              {['TikTok Live Seller','YouTube Shopping','Shopify Live'].map((platform) => (
-                <button key={platform} type="button" onClick={() => window.location.href = `/api/v1/integrations/livesell/connect/${platform.toLowerCase().replace(/ /g,'-')}`} className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
-                  {platform} ↗
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {category === "FREELANCE" && (
-          <section ref={revealRef7} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
-            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your freelance profiles</h3>
-            <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
-            <div className="flex flex-wrap gap-3">
-              {['Upwork','Fiverr','TaskRabbit','Freelancer.com'].map((platform) => (
-                <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
-                  {platform} ↗
-                </button>
-              ))}
-            </div>
+        {(category === "LIVE_SELLER" || category === "FREELANCE") && (
+          <section ref={category === "LIVE_SELLER" ? revealRef6 : revealRef7} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+            {category === "LIVE_SELLER" ? (
+              <>
+                <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Live selling on Pabandi</h3>
+                <p className="text-sm text-on-surface-variant mb-4">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/live-sell" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm">Browse live shows</Link>
+                  <Link to="/s/demo" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">Try seller checkout · /s/:id</Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Freelance on Pabandi</h3>
+                <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
+                <div className="flex flex-wrap gap-3">
+                  {['Upwork','Fiverr','TaskRabbit','Freelancer.com'].map((platform) => (
+                    <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                      {platform} ↗
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         )}
 
