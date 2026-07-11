@@ -192,6 +192,7 @@ export default function Layout() {
               <Link to="/join" className="hover:text-primary transition-colors">For Businesses</Link>
               <Link to="/developer" className="hover:text-primary transition-colors font-semibold" style={{ color: '#818cf8' }}>API Docs</Link>
               <Link to="/trust" className="hover:text-primary transition-colors font-semibold" style={{ color: '#1DBF73' }}>Trust Layer</Link>
+            <Link to="/live-sell" className="hover:text-primary transition-colors font-semibold" style={{ color: '#10b981' }}>🔴 Live Selling</Link>
               <Link to="/profile#loyalty" className="hover:text-primary transition-colors font-semibold" style={{ color: '#D97706' }}>🏆 Loyalty</Link>
               <Link to="/terms" className="hover:text-primary transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
