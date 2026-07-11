@@ -27,6 +27,11 @@ function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
     map.setView(center);
+    // Fix Leaflet container size caching bug in flex/stagger layouts
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
+    return () => clearTimeout(timer);
   }, [center, map]);
   return null;
 }
