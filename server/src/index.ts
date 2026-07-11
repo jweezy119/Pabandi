@@ -174,7 +174,9 @@ app.use(`/api/${API_VERSION}/users`, userRoutes);
 
 // ── Omni-Channel Integrations API (TikTok Shop Webhooks, etc) ────────────────
 import integrationsRoutes from './routes/integrations.routes';
+import liveSellRoutes from './routes/livesell.routes';
 app.use(`/api/${API_VERSION}/integrations`, integrationsRoutes);
+app.use(`/api/${API_VERSION}/integrations/livesell`, liveSellRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

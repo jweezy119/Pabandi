@@ -118,6 +118,7 @@ model Business {
   webhookEndpoints   WebhookEndpoint[]
   pabandiReviews     PabandiReview[]
   services           BusinessService[]
+  liveSellerIntegrations LiveSellerIntegration[]
 
   @@index([ownerId])
   @@index([city])
@@ -395,6 +396,28 @@ model SocialIdentity {
   @@index([userId])
 }
 
+model LiveSellerIntegration {
+  id           String            @id @default(cuid())
+  businessId   String
+  platform     LiveSellerPlatform
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  scope        String?
+  shopId       String?
+  streamKey    String?
+  webhookUrl   String?
+  isActive     Boolean           @default(true)
+  lastSyncAt   DateTime?
+  metadata     Json?
+  connectedAt  DateTime          @default(now())
+  revokedAt    DateTime?
+  business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, platform])
+  @@index([businessId])
+}
+
 model SourcingOrder {
   id               String              @id @default(cuid())
   businessId       String
@@ -493,6 +516,12 @@ enum BusinessCategory {
   LIVE_SELLER
 }
 
+enum LiveSellerPlatform {
+  TIKTOK_LIVE
+  YOUTUBE_SHOPPING
+  SHOPIFY_LIVE
+}
+
 enum ApiTier {
   STARTER
   GROWTH
@@ -514,12 +543,9 @@ enum SocialPlatform {
   X_TWITTER
   WHATSAPP
   TIKTOK
-  INSTAGRAM
   FACEBOOK
   FIVERR
   UPWORK
-  INSTAGRAM_SHOP
-  SHOPIFY
 }
 
 enum SourcingOrderStatus {
