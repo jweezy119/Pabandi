@@ -99,7 +99,14 @@ export default function HomePage() {
     { keepPreviousData: true },
   );
 
-  let businesses = data || [];
+  const fallbackContext = useQuery(['businesses_fallback', 'ALL', null, ''], async () => {
+    const res = await businessService.getPublicBusinesses({ category: 'ALL' });
+    return res.data?.data?.businesses || [];
+  }, { enabled: !!(!data || data.length === 0) });
+
+  const source = (fallbackContext.data && fallbackContext.data.length > 0) ? fallbackContext.data : (data || []);
+
+  let businesses = source || [];
 
   businesses = rankBusinesses([...businesses], userLoc);
 

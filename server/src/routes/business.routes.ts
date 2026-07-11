@@ -30,16 +30,50 @@ router.get('/', rateLimiter, async (req, res, next) => {
     const { prisma } = await import('../utils/database');
     const { googlePlaceId, category, search, latitude, longitude } = req.query;
 
-    let osmResults: any[] = [];
-    let locationIqPOIs: any[] = []; // Direct POI results from LocationIQ
-    
     // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
+
+    let osmResults: any[] = [];
+    let locationIqPOIs: any[] = []; // Primary live-site source
+
+    // Public search fallback: when no explicit query/coords/category are provided,
+    // prefer returning live nearby sites from LocationIQ first so map/search never looks empty.
+    const hasQuery = cleanSearch || latitude || longitude || (category && category !== 'ALL');
+    const liveSiteQuery = cleanSearch || 'restaurants,cafes,hotels,salons,clinics,gyms,nightclubs,bars';
+    if (!hasQuery) {
+      try {
+        const locationIqKey = process.env.LOCATIONIQ_API_KEY;
+        if (locationIqKey) {
+          const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
+            params: {
+              key: locationIqKey,
+              q: liveSiteQuery,
+              format: 'json',
+              addressdetails: 1,
+              limit: 50
+            },
+            timeout: 5000
+          });
+          if (geoRes.data && geoRes.data.length > 0) {
+            locationIqPOIs = geoRes.data;
+          }
+        }
+      } catch (err: any) {
+        console.warn('Live-site LocationIQ fallback failed:', err.message);
+      }
+    }
 
     let lat = latitude ? parseFloat(String(latitude)) : null;
     let lng = longitude ? parseFloat(String(longitude)) : null;
     let extractedCity = '';
     let searchKeyword = cleanSearch;
+
+    // Seed coordinates from live-site result if still missing
+    if ((lat == null || lng == null) && locationIqPOIs.length > 0) {
+      const bestMatch = locationIqPOIs[0];
+      lat = parseFloat(bestMatch.lat) || lat;
+      lng = parseFloat(bestMatch.lon) || lng;
+    }
 
     // === STEP 1: LocationIQ Search (finds both places AND businesses/POIs) ===
     if (cleanSearch) {
