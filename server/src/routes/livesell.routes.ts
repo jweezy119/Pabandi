@@ -41,6 +41,45 @@ router.get('', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+router.get('/:platform/state', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    const state = await liveSellerService.getShowState(biz.id, platform);
+    res.json({ success: true, data: state });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to load show state' });
+  }
+});
+
+router.patch('/:platform/state', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    const state = await liveSellerService.upsertShowState(biz.id, platform, req.body || {});
+    res.json({ success: true, data: state });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to update show state' });
+  }
+});
+
+router.post('/:platform/orders', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    const order = await liveSellerService.addOrder(biz.id, platform, req.body || {});
+    res.status(201).json({ success: true, data: order });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to add order' });
+  }
+});
+
 router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const platform = req.params.platform;

@@ -187,4 +187,13 @@ export const userService = {
   getPublicProfile: (id: string) => apiClient.get(`/users/${id}/public`),
 };
 
+export const liveSellerService = {
+  list: () => apiClient.get('/integrations/livesell'),
+  connect: (platform: string) => apiClient.get(`/integrations/livesell/connect/${platform}`),
+  disconnect: (platform: string) => apiClient.delete(`/integrations/livesell/${platform}`),
+  getShowState: (platform: string) => apiClient.get(`/integrations/livesell/${platform}/state`),
+  patchShowState: (platform: string, data: any) => apiClient.patch(`/integrations/livesell/${platform}/state`, data),
+  addOrder: (platform: string, order: any) => apiClient.post(`/integrations/livesell/${platform}/orders`, order),
+};
+
 export default apiClient;

@@ -27,6 +27,7 @@ import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
 import HospitalityPage from './pages/HospitalityPage';
@@ -84,6 +85,7 @@ function App() {
         <Route path="b/:slug" element={<ShortLinkBookingPage />} />
         <Route path="business/:id/book" element={<BookingPage />} />
         <Route path="auth/callback" element={<AuthCallbackPage />} />
+        <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
         {/* Business partner landing page — public */}
         <Route path="join" element={<BusinessJoinPage />} />
         <Route path="business/join" element={<BusinessJoinPage />} />

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { useQuery } from "react-query";
-import { businessService } from "../services/api";
+import { businessService, liveSellerService } from "../services/api";
 import {
   MapPinIcon,
   BuildingStorefrontIcon,
@@ -79,6 +79,29 @@ export default function HomePage() {
   const revealRef6 = useScrollReveal<HTMLDivElement>();
   const revealRef7 = useScrollReveal<HTMLDivElement>();
   const revealRef8 = useScrollReveal<HTMLDivElement>();
+
+  const { data: liveData } = useQuery(
+    'live-sellers-home',
+    () =>
+      Promise.all([
+        liveSellerService.getShowState('tiktok-live'),
+        liveSellerService.getShowState('youtube-shopping'),
+        liveSellerService.getShowState('shopify-live'),
+      ]),
+    { enabled: true, refetchInterval: 15000, retry: false },
+  );
+  const liveStates: Record<string, any> = {
+    'tiktok-live': liveData?.[0]?.data?.data || {},
+    'youtube-shopping': liveData?.[1]?.data?.data || {},
+    'shopify-live': liveData?.[2]?.data?.data || {},
+  };
+  const activeLiveCount = Object.values(liveStates).filter((s) => s?.isLive).length;
+
+  const getBusinessLiveState = (biz: any) => {
+    if (!biz?.id) return null;
+    const state = liveStates[biz.id];
+    return state?.isLive ? state : null;
+  };
 
   const { data, isLoading } = useQuery(
     ["businesses", category, userLoc, search],
@@ -476,11 +499,11 @@ export default function HomePage() {
         {/* Live Seller / Freelance connection prompts */}
         {category === "LIVE_SELLER" && (
           <section ref={revealRef6} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
-            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your live selling accounts</h3>
-            <p className="text-sm text-on-surface-variant mb-4">Link your livestream storefronts so Pabandi can track reliability across platforms.</p>
+            <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Connect your live accounts</h3>
+            <p className="text-sm text-on-surface-variant mb-4">Link TikTok Live, YouTube Shopping, or Shopify Live so Pabandi can track reliability across platforms.</p>
             <div className="flex flex-wrap gap-3">
-              {['TikTok Live Seller','Instagram Live','YouTube Shopping','Shopify Live'].map((platform) => (
-                <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+              {['TikTok Live Seller','YouTube Shopping','Shopify Live'].map((platform) => (
+                <button key={platform} type="button" onClick={() => window.location.href = `/api/v1/integrations/livesell/connect/${platform.toLowerCase().replace(/ /g,'-')}`} className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
                   {platform} ↗
                 </button>
               ))}
@@ -517,6 +540,18 @@ export default function HomePage() {
               {locLoading ? "Locating..." : "Near Me"}
             </button>
           </div>
+
+          {activeLiveCount > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff0050] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff0050]" />
+              </span>
+              <span className="font-label text-[11px] font-bold text-on-surface">
+                Live now: {activeLiveCount} show{activeLiveCount > 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
 
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -571,12 +606,17 @@ export default function HomePage() {
                         </span>
                         {businesses[0].rating?.toFixed(1) || "4.9"}
                       </span>
-                      {businesses[0].isClaimed ? (
+                      {(businesses[0].isClaimed || getBusinessLiveState(businesses[0])) && (
                         <span className="bg-[#14F195]/20 text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#14F195]/30">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" />
+                          {getBusinessLiveState(businesses[0]) && (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live ·{' '}
+                            </>
+                          )}
                           Solana Protected
                         </span>
-                      ) : (
+                      )}
+                      {!businesses[0].isClaimed && !getBusinessLiveState(businesses[0]) && (
                         <span className="bg-amber-500/20 text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#f59e0b]/30">
                           Unclaimed Listing
                         </span>
@@ -612,11 +652,18 @@ export default function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent" />
                     <div className="absolute top-4 right-4 z-10">
-                      {businesses[1].isClaimed ? (
+                      {(businesses[1].isClaimed || getBusinessLiveState(businesses[1])) && (
                         <span className="bg-[#14F195]/30 backdrop-blur-md text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-[#14F195]/40">
+                          {getBusinessLiveState(businesses[1]) && (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live
+                            </>
+                          )}
+                          {getBusinessLiveState(businesses[1]) && ' · '}
                           Solana
                         </span>
-                      ) : (
+                      )}
+                      {!businesses[1].isClaimed && !getBusinessLiveState(businesses[1]) && (
                         <span className="bg-amber-500/30 backdrop-blur-md text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-[#f59e0b]/40">
                           Unclaimed
                         </span>
@@ -644,11 +691,17 @@ export default function HomePage() {
                       <h4 className="font-headline text-lg font-bold text-on-surface">
                         {businesses[2].name}
                       </h4>
-                      {businesses[2].isClaimed ? (
+                      {(businesses[2].isClaimed || getBusinessLiveState(businesses[2])) && (
                         <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#14F195]/30">
+                          {getBusinessLiveState(businesses[2]) && (
+                            <>
+                              <span className="inline-flex w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse align-middle mr-1" /> Live ·{' '}
+                            </>
+                          )}
                           Solana
                         </span>
-                      ) : (
+                      )}
+                      {!businesses[2].isClaimed && !getBusinessLiveState(businesses[2]) && (
                         <span className="bg-amber-500/20 text-[#d97706] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#f59e0b]/30">
                           Unclaimed
                         </span>

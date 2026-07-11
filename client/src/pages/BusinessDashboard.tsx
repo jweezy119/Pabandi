@@ -25,6 +25,7 @@ import ReviewCarousel from '../components/ReviewCarousel';
 import BusinessPabRewards from '../components/BusinessPabRewards';
 import AccioDemandSourcingWidget from '../components/AccioDemandSourcingWidget';
 import AlibabaQwenConsultantWidget from '../components/AlibabaQwenConsultantWidget';
+import LiveSellerPanel from '../components/LiveSellerPanel';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -465,6 +466,12 @@ export default function BusinessDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Live Selling ── */}
+        <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-6">
+          <SectionHeader title="Live Selling" action={<span className="font-label text-[10px] font-bold px-2 py-1 rounded-full bg-secondary-container text-on-secondary-container uppercase tracking-widest">Connected channels earn while you serve</span>} />
+          <LiveSellerPanel businessId={businessId} user={user} />
+        </div>
 
         {/* ── Accio Demand Sourcing Widget ── */}
         {businessId && <AccioDemandSourcingWidget businessId={businessId} />}
