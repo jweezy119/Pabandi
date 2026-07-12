@@ -452,7 +452,7 @@ export default function HomePage() {
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
           <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
-            {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","SHORT_TERM_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
+            {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","PROPERTY_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
               <button
                 key={c}
                 onClick={() => {

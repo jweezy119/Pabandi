@@ -104,6 +104,8 @@ model Business {
   verifiedAt         DateTime?
   deviceFingerprint  String?
   externalDetails    Json?
+  source             String?
+  externalId         String?
   checkInTime        String?
   checkOutTime       String?
   channexPropertyId  String?           @unique
