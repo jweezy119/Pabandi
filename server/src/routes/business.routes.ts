@@ -33,221 +33,215 @@ router.get('/', rateLimiter, async (req, res, next) => {
     // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
 
+    let locationIqPOIs: any[] = []; // Supplemental live-site source
     let osmResults: any[] = [];
-    let locationIqPOIs: any[] = []; // Primary live-site source
+    const mergedBusinesses: any[] = [];
+    const seenIds = new Set<string>();
 
-    // Public search fallback: when no explicit query/coords/category are provided,
-    // prefer returning live nearby sites from LocationIQ first so map/search never looks empty.
-    const hasQuery = cleanSearch || latitude || longitude || (category && category !== 'ALL');
-    const liveSiteQuery = cleanSearch || 'restaurants,cafes,hotels,salons,clinics,gyms,nightclubs,bars';
-    if (!hasQuery) {
-      try {
-        const locationIqKey = process.env.LOCATIONIQ_API_KEY;
-        if (locationIqKey) {
-          const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
-            params: {
-              key: locationIqKey,
-              q: liveSiteQuery,
-              format: 'json',
-              addressdetails: 1,
-              limit: 50
-            },
-            timeout: 5000
-          });
-          if (geoRes.data && geoRes.data.length > 0) {
-            locationIqPOIs = geoRes.data;
-          }
+    // === STEP 1: Seeded DB fallback-first search (claimed + OSM imports) ===
+    // We query local DB first so search/map never looks empty, even if live APIs fail.
+    {
+      const dbWhere: any = { isActive: true };
+      if (category && category !== 'ALL') {
+        dbWhere.category = String(category);
+      }
+      if (cleanSearch) {
+        const searchTerms = String(cleanSearch)
+          .trim()
+          .split(/\s+/)
+          .filter((t) => t.length > 0);
+        if (searchTerms.length > 0) {
+          dbWhere.AND = searchTerms.map((term) => ({
+            OR: [
+              { name: { contains: term, mode: 'insensitive' } },
+              { description: { contains: term, mode: 'insensitive' } },
+              { address: { contains: term, mode: 'insensitive' } },
+              { city: { contains: term, mode: 'insensitive' } },
+            ],
+          }));
         }
-      } catch (err: any) {
-        console.warn('Live-site LocationIQ fallback failed:', err.message);
+      }
+
+      const seeded = await prisma.business.findMany({
+        where: dbWhere,
+        include: { googleReviews: true, settings: true },
+        orderBy: { createdAt: 'desc' },
+        take: 60,
+      });
+
+      for (const b of seeded) {
+        const key = b.externalId || b.googlePlaceId || b.id;
+        if (seenIds.has(key)) continue;
+        seenIds.add(key);
+        mergedBusinesses.push(b);
       }
     }
+
+    const shouldSkipLiveLookups = mergedBusinesses.length >= 12 && (!cleanSearch || cleanSearch.length <= 2);
 
     let lat = latitude ? parseFloat(String(latitude)) : null;
     let lng = longitude ? parseFloat(String(longitude)) : null;
     let extractedCity = '';
     let searchKeyword = cleanSearch;
 
-    // Seed coordinates from live-site result if still missing
-    if ((lat == null || lng == null) && locationIqPOIs.length > 0) {
-      const bestMatch = locationIqPOIs[0];
-      lat = parseFloat(bestMatch.lat) || lat;
-      lng = parseFloat(bestMatch.lon) || lng;
-    }
+    // If DB didn't satisfy the request, use live APIs to augment results.
+    if (!shouldSkipLiveLookups) {
+      // Public search fallback: when no explicit query/coords/category are provided,
+      // prefer returning nearby sites from LocationIQ so map/search never looks empty.
+      const hasQuery = cleanSearch || latitude || longitude || (category && category !== 'ALL');
+      const liveSiteQuery = cleanSearch || 'restaurants,cafes,hotels,salons,clinics,gyms,nightclubs,bars';
 
-    // === STEP 1: LocationIQ Search (finds both places AND businesses/POIs) ===
-    if (cleanSearch) {
-      try {
-        const locationIqKey = process.env.LOCATIONIQ_API_KEY;
-        if (locationIqKey) {
-          const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
-            params: {
-              key: locationIqKey,
-              q: cleanSearch,
-              format: 'json',
-              addressdetails: 1,
-              limit: 10 // Get multiple results to capture POIs
-            },
-            timeout: 5000
-          });
-          
-          if (geoRes.data && geoRes.data.length > 0) {
-            // Use the first result for coordinates if we don't have any
-            if (!lat && !lng) {
-              const bestMatch = geoRes.data[0];
-              lat = parseFloat(bestMatch.lat);
-              lng = parseFloat(bestMatch.lon);
-              
-              const address = bestMatch.address || {};
-              extractedCity = address.city || address.town || address.village || address.county || '';
-              
-              if (extractedCity) {
-                const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
-                searchKeyword = cleanSearch.replace(regex, '').trim();
-              }
+      if (!hasQuery) {
+        try {
+          const locationIqKey = process.env.LOCATIONIQ_API_KEY;
+          if (locationIqKey) {
+            const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
+              params: {
+                key: locationIqKey,
+                q: liveSiteQuery,
+                format: 'json',
+                addressdetails: 1,
+                limit: 50
+              },
+              timeout: 5000
+            });
+            if (geoRes.data && geoRes.data.length > 0) {
+              locationIqPOIs = geoRes.data;
             }
+          }
+        } catch (err: any) {
+          console.warn('Live-site LocationIQ fallback failed:', err.message);
+        }
+      }
 
-            // Collect POI results from LocationIQ
-            // LocationIQ often returns null for class/type, so we match by display_name instead
-            const searchLower = cleanSearch.toLowerCase();
-            const searchWords = searchLower.split(/\s+/).filter(w => w.length > 2);
-            for (const result of geoRes.data) {
-              if (!result.display_name) continue;
-              const displayLower = result.display_name.toLowerCase();
-              // Include result if its name contains any meaningful search word (not city names)
-              const nameMatchesSearch = searchWords.some(word => {
-                // Skip words that are just city/location names we already extracted
-                if (extractedCity && word.toLowerCase() === extractedCity.toLowerCase()) return false;
-                return displayLower.includes(word);
-              });
-              // Also include if it's a known POI type
-              const rClass = result.class || '';
-              const rType = result.type || '';
-              const isKnownPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
-                                ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage', 
-                                 'clinic', 'hospital', 'gym', 'fitness_centre', 'spa'].includes(rType);
-              if (nameMatchesSearch || isKnownPOI) {
-                locationIqPOIs.push(result);
+      // Seed coordinates from live-site result if still missing
+      if ((lat == null || lng == null) && locationIqPOIs.length > 0) {
+        const bestMatch = locationIqPOIs[0];
+        lat = parseFloat(bestMatch.lat) || lat;
+        lng = parseFloat(bestMatch.lon) || lng;
+      }
+
+      // === STEP 2: LocationIQ Search ===
+      if (cleanSearch) {
+        try {
+          const locationIqKey = process.env.LOCATIONIQ_API_KEY;
+          if (locationIqKey) {
+            const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
+              params: {
+                key: locationIqKey,
+                q: cleanSearch,
+                format: 'json',
+                addressdetails: 1,
+                limit: 10
+              },
+              timeout: 5000
+            });
+
+            if (geoRes.data && geoRes.data.length > 0) {
+              if (!lat && !lng) {
+                const bestMatch = geoRes.data[0];
+                lat = parseFloat(bestMatch.lat);
+                lng = parseFloat(bestMatch.lon);
+
+                const address = bestMatch.address || {};
+                extractedCity = address.city || address.town || address.village || address.county || '';
+
+                if (extractedCity) {
+                  const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
+                  searchKeyword = cleanSearch.replace(regex, '').trim();
+                }
+              }
+
+              const searchLower = cleanSearch.toLowerCase();
+              const searchWords = searchLower.split(/\s+/).filter(w => w.length > 2);
+              for (const result of geoRes.data) {
+                if (!result.display_name) continue;
+                const displayLower = result.display_name.toLowerCase();
+                const nameMatchesSearch = searchWords.some(word => {
+                  if (extractedCity && word.toLowerCase() === extractedCity.toLowerCase()) return false;
+                  return displayLower.includes(word);
+                });
+                const rClass = result.class || '';
+                const rType = result.type || '';
+                const isKnownPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
+                                  ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage',
+                                   'clinic', 'hospital', 'gym', 'fitness_centre', 'spa'].includes(rType);
+                if (nameMatchesSearch || isKnownPOI) {
+                  locationIqPOIs.push(result);
+                }
               }
             }
           }
-        }
-      } catch (err: any) {
-        console.warn('LocationIQ search failed:', err.message);
-      }
-    }
-
-    // === STEP 2: Overpass API search (OSM data around coordinates) ===
-    const cacheKey = `osm_search:${cleanSearch}:${lat || 'null'}:${lng || 'null'}:${category || 'ALL'}`;
-    const cachedOsmResults = cacheService.get(cacheKey);
-
-    if (cachedOsmResults) {
-      osmResults = cachedOsmResults;
-    } else {
-      let overpassQuery = '';
-      if (lat && lng) {
-        
-        if (searchKeyword && searchKeyword.length > 2) {
-          const cleanCategoryKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop|parlor|store|center|centre|studio|bar|grill|spa|salon)\b/gi, '').trim() || searchKeyword;
-
-          // Make name regex tolerant of apostrophes/special chars: "giordanos" -> "giordano.?s"
-          const flexibleNameRegex = searchKeyword.split('').join('.?');
-
-          overpassQuery = `
-            [out:json][timeout:10];
-            (
-              node["name"~"${flexibleNameRegex}",i]["amenity"](around:50000,${lat},${lng});
-              node["name"~"${flexibleNameRegex}",i]["shop"](around:50000,${lat},${lng});
-              node["name"~"${flexibleNameRegex}",i]["leisure"](around:50000,${lat},${lng});
-              node["cuisine"~"${cleanCategoryKeyword}",i]["amenity"](around:50000,${lat},${lng});
-              node["shop"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
-              node["amenity"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
-              node["leisure"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
-            );
-            out center 20;
-          `;
-        } else if (!searchKeyword) {
-          // Nearby search without specific name, using category
-          let typeFilter = 'node["amenity"~"restaurant|cafe|clinic|hospital|fast_food|food_court|bar"]';
-          if (category === 'SALON') typeFilter = 'node["shop"~"beauty|hairdresser"]';
-          else if (category === 'SPA') typeFilter = 'node["shop"~"massage|beauty|wellness"]';
-          else if (category === 'CLINIC') typeFilter = 'node["amenity"~"clinic|hospital|doctor|dentist"]';
-          else if (category === 'FITNESS_CENTER') typeFilter = 'node["leisure"~"fitness_centre|sports_centre"]';
-          else if (category === 'RESTAURANT') typeFilter = 'node["amenity"~"restaurant|cafe|fast_food|food_court"]';
-          
-          overpassQuery = `
-            [out:json][timeout:10];
-            (
-              ${typeFilter}(around:10000,${lat},${lng});
-            );
-            out center 25;
-          `;
-        }
-      }
-
-      if (overpassQuery) {
-        try {
-          const overpassUrl = 'https://overpass-api.de/api/interpreter';
-          const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
-            headers: { 
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
-            },
-            timeout: 10000
-          });
-          const places = overpassRes.data?.elements || [];
-          osmResults = osmResults.concat(places);
         } catch (err: any) {
-          console.warn('Overpass search failed (Fallback to local DB):', err.message);
+          console.warn('LocationIQ search failed:', err.message);
         }
       }
 
-      if (osmResults.length > 0) {
-        cacheService.set(cacheKey, osmResults);
+      // === STEP 3: Overpass API search ===
+      const cacheKey = `osm_search:${cleanSearch}:${lat || 'null'}:${lng || 'null'}:${category || 'ALL'}`;
+      const cachedOsmResults = cacheService.get(cacheKey);
+
+      if (cachedOsmResults) {
+        osmResults = cachedOsmResults;
+      } else {
+        let overpassQuery = '';
+        if (lat && lng) {
+          if (searchKeyword && searchKeyword.length > 2) {
+            const cleanCategoryKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop|parlor|store|center|centre|studio|bar|grill|spa|salon)\b/gi, '').trim() || searchKeyword;
+            const flexibleNameRegex = searchKeyword.split('').join('.?');
+
+            overpassQuery = `
+              [out:json][timeout:10];
+              (
+                node["name"~"${flexibleNameRegex}",i]["amenity"](around:50000,${lat},${lng});
+                node["name"~"${flexibleNameRegex}",i]["shop"](around:50000,${lat},${lng});
+                node["name"~"${flexibleNameRegex}",i]["leisure"](around:50000,${lat},${lng});
+                node["cuisine"~"${cleanCategoryKeyword}",i]["amenity"](around:50000,${lat},${lng});
+                node["shop"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+                node["amenity"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+                node["leisure"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+              );
+              out center 20;
+            `;
+          } else if (!searchKeyword) {
+            let typeFilter = 'node["amenity"~"restaurant|cafe|clinic|hospital|fast_food|food_court|bar"]';
+            if (category === 'SALON') typeFilter = 'node["shop"~"beauty|hairdresser"]';
+            else if (category === 'SPA') typeFilter = 'node["shop"~"massage|beauty|wellness"]';
+            else if (category === 'CLINIC') typeFilter = 'node["amenity"~"clinic|hospital|doctor|dentist"]';
+            else if (category === 'FITNESS_CENTER') typeFilter = 'node["leisure"~"fitness_centre|sports_centre"]';
+            else if (category === 'RESTAURANT') typeFilter = 'node["amenity"~"restaurant|cafe|fast_food|food_court"]';
+
+            overpassQuery = `
+              [out:json][timeout:10];
+              (
+                ${typeFilter}(around:10000,${lat},${lng});
+              );
+              out center 25;
+            `;
+          }
+        }
+
+        if (overpassQuery) {
+          try {
+            const overpassUrl = 'https://overpass-api.de/api/interpreter';
+            const overpassRes = await axios.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
+              },
+              timeout: 10000
+            });
+            osmResults = (overpassRes.data?.elements || []).filter((el: any) => !!el.id);
+          } catch (err: any) {
+            console.warn('Overpass search failed (Fallback to local DB):', err.message);
+          }
+        }
+
+        if (osmResults.length > 0) {
+          cacheService.set(cacheKey, osmResults);
+        }
       }
     }
-    
-
-
-    // === STEP 3: Prisma DB search (use ORIGINAL cleanSearch, not just searchKeyword) ===
-    const where: any = { isActive: true };
-    if (googlePlaceId) {
-      where.googlePlaceId = String(googlePlaceId);
-    }
-    if (category && category !== 'ALL') {
-      where.category = String(category);
-    }
-    // Use cleanSearch for DB query so "giordanos" still matches even after city extraction
-    const dbSearchTerm = cleanSearch || searchKeyword;
-    if (dbSearchTerm) {
-      const searchTerms = String(dbSearchTerm)
-        .trim()
-        .split(/\s+/)
-        .filter(term => term.length > 0);
-        
-      if (searchTerms.length > 0) {
-        // Use AND: ALL search terms must match (each term can match any field)
-        where.AND = searchTerms.map(term => ({
-          OR: [
-            { name: { contains: term, mode: 'insensitive' } },
-            { description: { contains: term, mode: 'insensitive' } },
-            { address: { contains: term, mode: 'insensitive' } },
-            { city: { contains: term, mode: 'insensitive' } }
-          ]
-        }));
-      }
-    }
-    
-    const dbBusinesses = await prisma.business.findMany({ 
-      where,
-      include: {
-        googleReviews: true,
-        settings: true
-      }
-    });
-
-    const mergedBusinesses = [...dbBusinesses];
-    const seenIds = new Set(mergedBusinesses.map(b => b.googlePlaceId));
 
     // === STEP 4: Merge LocationIQ POI results ===
     for (const poi of locationIqPOIs) {
