@@ -455,7 +455,17 @@ export default function HomePage() {
             {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","SHORT_TERM_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
               <button
                 key={c}
-                onClick={() => setCategory(c)}
+                onClick={() => {
+                  if (c === "LIVE_SELLER") {
+                    navigate("/live-sell");
+                    return;
+                  }
+                  if (c === "FREELANCE") {
+                    navigate("/search?type=businesses&category=FREELANCE");
+                    return;
+                  }
+                  setCategory(c);
+                }}
                 className={`${
                   category === c
                     ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]"
