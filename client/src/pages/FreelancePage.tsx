@@ -34,7 +34,7 @@ export default function LiveSellCustomerPage() {
           <h2 className="font-headline text-xl font-bold mb-4">Available now</h2>
           {liveShows.length === 0 ? (
             <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-8 text-center">
-              <p className="text-on-surface-variant">No live services right now. Check back later.</p>
+              <p className="text-on-surface-variant">No services are live right now. Browse catalogs below, or check back later.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -60,7 +60,7 @@ export default function LiveSellCustomerPage() {
         <section>
           <h2 className="font-headline text-xl font-bold mb-4">Seller catalog</h2>
           {products.length === 0 ? (
-            <p className="text-on-surface-variant text-sm">No catalog items yet. Sellers can add products in their dashboard.</p>
+            <p className="text-on-surface-variant text-sm">Freelancers haven’t published service catalogs yet. Use the seller checkout link to book directly: /s/:id</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {products.map((item: any, idx: number) => (
