@@ -1,203 +1,361 @@
-import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { businessService } from '../services/api';
-import { MapPinIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-
-type Slot = { date: string; time: string; label: string };
+import { useState, useEffect } from 'react';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery } from 'react-query';
+import { ArrowLeftIcon, UserIcon, CheckCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { businessService, reservationService, liveSellerService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function UniversalCheckoutPage() {
-  const { sellerId } = useParams();
+  const { sellerId } = useParams<{ sellerId: string }>();
   const [searchParams] = useSearchParams();
-  const queryClient = useQueryClient();
-  const mode = searchParams.get('mode') === 'instant' ? 'instant' : 'reserve';
-  const session = searchParams.get('session');
-  const title = searchParams.get('item') || '';
-  const priceRaw = searchParams.get('price') || '';
-  const price = Number(priceRaw.replace(/[^0-9.]/g, '')) || 0;
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuthStore();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [date, _setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [submitted, setSubmitted] = useState<string | null>(null);
-  const [method, setMethod] = useState<'pab'|'card'>('pab');
+  const [step, setStep] = useState<'details' | 'confirm'>('details');
+  const [copied, setCopied] = useState(false);
+  const [form, setForm] = useState({
+    customerName: '',
+    customerPhone: '',
+    customerEmail: '',
+    reservationDate: '',
+    reservationTime: '',
+    notes: '',
+    paymentMethod: 'safepay' as const,
+    itemTitle: searchParams.get('item') || '',
+    priceCents: searchParams.get('price') ? Number(searchParams.get('price')) * 100 : 0,
+    session: searchParams.get('session') || '',
+    mode: (searchParams.get('mode') as 'instant' | 'booking') || 'instant',
+  });
 
-  const { data, isLoading, error } = useQuery(
-    ['universal-seller', sellerId],
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setForm(prev => ({
+        ...prev,
+        customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || prev.customerName,
+        customerEmail: user.email || prev.customerEmail,
+        customerPhone: user.phone || prev.customerPhone,
+      }));
+    }
+  }, [isAuthenticated, user]);
+
+  const { data: sellerBiz } = useQuery(
+    ['business', sellerId],
+    () => businessService.getBusiness(sellerId!),
+    { enabled: !!sellerId }
+  );
+  const seller = sellerBiz?.data?.data?.business;
+
+  const { data: liveStateData } = useQuery(
+    ['live-seller-state', sellerId],
     async () => {
-      const res = await businessService.getBusiness(sellerId!);
-      return res.data?.data as any;
+      const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+      const results = await Promise.allSettled(
+        platforms.map(p => liveSellerService.getShowState(p).catch(() => ({ businessId: '', isLive: false })))
+      );
+      const fulfilled = results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled');
+      const match = fulfilled.find(r => r.value.data?.data?.businessId === sellerId);
+      return match ? match.value.data.data : null;
     },
     { enabled: !!sellerId }
   );
 
-  const depositAmount = method === 'pab' ? Math.max(1, Math.round((price * 0.2) * 100) / 100) : 0;
+  const liveState = liveStateData?.isLive ? liveStateData : null;
+  const depositAmount = liveState?.depositCents || form.priceCents;
+  const pabReward = liveState?.rewardPab || Math.round(form.priceCents / 100);
 
-  const bookingMutation = useMutation(
-    async (_payload: any) => {
-      // route to existing reservation creation path; if node expects body, send normalized fields
-      const res = await fetch('/api/v1/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessSlugOrId: data?.slug || data?.id || sellerId,
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
-          date: date || new Date().toISOString().slice(0, 10),
-          time: time || 'ASAP',
-          partySize: 1,
-          notes: session ? `pabandi-universal|title=${title}|session=${session}|mode=${mode}` : `pabandi-universal|title=${title}|mode=${mode}`,
-          platform: 'UNIVERSAL_LINK',
-          price,
-          mode,
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to create reservation');
-      const json = await res.json();
-      return json.data || json;
-    },
-    {
-      onSuccess: () => {
-        setSubmitted(priceRaw || 'Booked');
-        queryClient.invalidateQueries(['reservation', sellerId]);
-      },
-      onError: (e: any) => {
-        setNameError('Please check your details');
-        setPhoneError(e?.message || 'Booking failed');
-      },
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep('confirm');
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
     }
-  );
 
-  const slots: Slot[] = [];
-  if (data?.businessHours) {
-    // Simplified slot generation from saved hours if present
-    // Keep robust if missing
-    slots.push({ date: 'Today', time: 'ASAP', label: 'As soon as possible' });
-  } else {
-    slots.push({ date: 'Today', time: 'ASAP', label: 'As soon as possible' });
-  }
+    try {
+      const payload: any = {
+        businessId: sellerId,
+        reservationDate: form.reservationDate,
+        reservationTime: form.reservationTime,
+        numberOfGuests: 1,
+        customerName: form.customerName,
+        customerPhone: form.customerPhone,
+        specialRequests: form.notes,
+      };
 
-  useEffect(() => {
-    if (data) {
-      if (data.name) sessionStorage.setItem('pabandi_last_seen_seller', data.name);
+      if (form.session) {
+        payload.metadata = {
+          source: 'live-show',
+          sessionId: form.session,
+          itemTitle: form.itemTitle,
+          priceCents: form.priceCents,
+          mode: form.mode,
+        };
+      }
+
+      const res = await reservationService.createReservation(payload);
+      const checkoutUrl = res?.data?.data?.checkoutUrl;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      } else {
+        navigate('/reservations?success=1');
+      }
+    } catch (err) {
+      console.error('Booking failed', err);
+      alert('Booking failed. Please try again.');
     }
-  }, [data]);
+  };
 
-  if (isLoading) {
-    return <div className="min-h-[60vh] flex items-center justify-center text-on-surface-variant">Loading booking...</div>;
-  }
-  if (error || !data) {
-    return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-on-surface-variant">
-      <p>Seller not found.</p>
-      <a href="/" className="text-primary font-bold underline underline-offset-4">Back to Pabandi</a>
-    </div>;
+  const copySellerLink = () => {
+    navigator.clipboard.writeText(`https://pabandi.com/s/${sellerId}?item=${encodeURIComponent(form.itemTitle)}&price=${(form.priceCents / 100).toFixed(2)}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!seller && !liveState) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface font-body">
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <VideoCameraIcon className="h-12 w-12 text-outline mx-auto mb-4" />
+          <h1 className="font-headline text-2xl font-bold mb-2">Seller not found</h1>
+          <p className="text-on-surface-variant mb-6">This seller page may not be active yet.</p>
+          <Link to="/" className="px-6 py-2 bg-primary text-on-primary rounded-xl font-bold">Back to home</Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
-        <div className="mb-6 p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-low">
-          <h1 className="font-headline text-2xl md:text-3xl font-bold mb-2">
-            {title || data.name}
-          </h1>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-on-surface-variant">
-            <span className="inline-flex items-center gap-1.5 font-medium"><MapPinIcon className="h-4 w-4" />{data.city || 'Nearby'}</span>
-            {price > 0 && <span className="inline-flex items-center gap-1.5 font-medium"><CurrencyDollarIcon className="h-4 w-4" />${price.toFixed(2)}</span>}
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#14F195] animate-pulse" /> Active seller
-            </span>
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="flex items-center gap-3 mb-8">
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-surface-container-high rounded-xl transition-colors">
+            <ArrowLeftIcon className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="font-headline text-2xl font-black">{liveState ? 'Live Show Checkout' : 'Checkout'}</h1>
+            {seller && <p className="text-sm text-on-surface-variant">{seller.name}</p>}
+            {liveState && <p className="text-xs text-green-600 font-bold">● Live now · {liveState.platform}</p>}
           </div>
         </div>
 
-        {submitted && (
-          <div className="mb-6 p-4 rounded-2xl bg-[#14F195]/10 border border-[#14F195]/30 text-on-surface flex items-start gap-3">
-            <CheckCircleIcon className="h-6 w-6 text-[#14F195]" />
-            <div>
-              <h3 className="font-headline font-bold">Booking received</h3>
-              <p className="text-sm mt-1">Your {mode === 'instant' ? 'instant purchase' : 'reservation'} is protected by Pabandi Trust.</p>
-              <p className="text-xs mt-2 font-mono text-on-surface-variant">Seller: {data.name} • {price > 0 && <>Price: ${price.toFixed(2)} • </>}Deposit: {depositAmount > 0 ? `$${depositAmount.toFixed(2)}` : '$0'}</p>
+        <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 mb-6">
+          {(seller?.coverImageUrl || liveState?.thumbnailUrl) && (
+            <img
+              src={seller?.coverImageUrl || liveState?.thumbnailUrl || ''}
+              alt={seller?.name || 'Seller'}
+              className="w-full h-48 object-cover rounded-xl mb-4"
+            />
+          )}
+
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            {seller?.category && (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-surface-container-high px-2 py-0.5 rounded">
+                {seller.category}
+              </span>
+            )}
+            {liveState && (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-green-500/20 text-green-700 px-2 py-0.5 rounded border border-green-500/30">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse mr-1" />
+                {liveState.platform}
+              </span>
+            )}
+            <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded">
+              Deposit required
+            </span>
+          </div>
+
+          {form.itemTitle && (
+            <h2 className="font-headline text-xl font-bold mb-1">{form.itemTitle}</h2>
+          )}
+
+          {seller?.description && (
+            <p className="text-sm text-on-surface-variant line-clamp-2">{seller.description}</p>
+          )}
+        </div>
+
+        {step === 'details' && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 space-y-4">
+              <h3 className="font-headline font-bold text-lg flex items-center gap-2">
+                <UserIcon className="h-5 w-5 text-primary" /> Your details
+              </h3>
+
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Full name</label>
+                <input
+                  required
+                  value={form.customerName}
+                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+                  placeholder="Your full name"
+                  className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone</label>
+                  <input
+                    required
+                    value={form.customerPhone}
+                    onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
+                    placeholder="+1 (555) 000-0000"
+                    className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Email</label>
+                  <input
+                    required
+                    type="email"
+                    value={form.customerEmail}
+                    onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
+                    placeholder="you@example.com"
+                    className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {form.mode === 'booking' && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Date</label>
+                      <input
+                        required
+                        type="date"
+                        value={form.reservationDate}
+                        onChange={(e) => setForm({ ...form, reservationDate: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Time</label>
+                      <input
+                        required
+                        type="time"
+                        value={form.reservationTime}
+                        onChange={(e) => setForm({ ...form, reservationTime: e.target.value })}
+                        className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Notes</label>
+                    <textarea
+                      value={form.notes}
+                      onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                      rows={3}
+                      placeholder="Special requests..."
+                      className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+              <h3 className="font-headline font-bold text-lg mb-4">Summary</h3>
+
+              {form.itemTitle && (
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-on-surface-variant">Item</span>
+                  <span className="text-sm font-bold">{form.itemTitle}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-on-surface-variant">Price</span>
+                <span className="text-sm font-bold">${(form.priceCents / 100).toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-on-surface-variant">Pabandi deposit</span>
+                <span className="text-sm font-bold text-primary">${(depositAmount / 100).toFixed(2)}</span>
+              </div>
+
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-on-surface-variant">You&apos;ll earn</span>
+                <span className="text-sm font-bold text-orange-500">{pabReward} $PAB</span>
+              </div>
+
+              <div className="border-t border-outline-variant/20 my-3" />
+
+              <div className="flex items-start gap-2">
+                <CheckCircleIcon className="h-5 w-5 text-green-600 mt-0.5" />
+                <p className="text-xs text-on-surface-variant">
+                  Pabandi holds your deposit until the seller confirms. No-shows are covered by AI risk protection. Honored appointments release deposits and mint $PAB rewards.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!isAuthenticated}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-lg shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {isAuthenticated ? 'Continue to confirm' : 'Log in to book'}
+            </button>
+
+            {!isAuthenticated && (
+              <p className="text-xs text-on-surface-variant text-center">
+                Log in or create an account to protect your booking with deposit escrow.
+              </p>
+            )}
+          </form>
+        )}
+
+        {step === 'confirm' && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6">
+              <h3 className="font-headline font-bold text-lg text-green-700 mb-2">Review your booking</h3>
+              <div className="space-y-2 text-sm">
+                {form.itemTitle && <p><strong>Item:</strong> {form.itemTitle}</p>}
+                <p><strong>Contact:</strong> {form.customerName} · {form.customerEmail} · {form.customerPhone}</p>
+                {form.mode === 'booking' && (
+                  <>
+                    <p><strong>Date:</strong> {form.reservationDate} · {form.reservationTime}</p>
+                    {form.notes && <p><strong>Notes:</strong> {form.notes}</p>}
+                  </>
+                )}
+                <p><strong>Deposit:</strong> ${(depositAmount / 100).toFixed(2)}</p>
+                <p><strong>Reward:</strong> {pabReward} $PAB after honored appointment</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('details')}
+                className="flex-1 py-3 rounded-xl border border-outline-variant/20 font-bold hover:bg-surface-container-high transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleConfirmBooking}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-[#06b6d4] text-black font-headline font-bold shadow-sm hover:opacity-90 transition-opacity"
+              >
+                Confirm booking
+              </button>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <form className="md:col-span-3 p-5 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest" onSubmit={(e) => {
-            e.preventDefault();
-            let ok = true;
-            setNameError('');
-            setPhoneError('');
-            if (!name.trim() || name.trim().length < 2) { setNameError('Enter your full name'); ok = false; }
-            if (!phone.trim() || phone.trim().length < 7) { setPhoneError('Enter a valid phone'); ok = false; }
-            if (!ok) return;
-            bookingMutation.mutate({ name, email, phone, date, time });
-          }}>
-            <div className="space-y-4">
+        {sellerId && (
+          <div className="mt-8 rounded-2xl border border-outline-variant/10 bg-surface-container-low p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Full name</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full rounded-xl border border-outline-variant/30 bg-surface-bright px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
-                {nameError && <p className="text-xs text-error mt-1">{nameError}</p>}
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Share seller checkout link</p>
+                <p className="text-sm text-on-surface truncate max-w-[260px]">pabandi.com/s/{sellerId}{form.itemTitle ? `?item=${encodeURIComponent(form.itemTitle)}&price=${(form.priceCents / 100).toFixed(2)}` : ''}</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@email.com" className="w-full rounded-xl border border-outline-variant/30 bg-surface-bright px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Phone</label>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 000 0000" className="w-full rounded-xl border border-outline-variant/30 bg-surface-bright px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
-                {phoneError && <p className="text-xs text-error mt-1">{phoneError}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Preferred time</label>
-                <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full rounded-xl border border-outline-variant/30 bg-surface-bright px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60">
-                  {slots.map((s) => (
-                    <option key={`${s.time}-${s.date}`} value={s.time}>{s.label || `${s.time}`}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Pay deposit with</label>
-                <div className="flex gap-3">
-                  <button type="button" onClick={() => setMethod('pab')} className={`flex-1 rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${method === 'pab' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant/30 text-on-surface-variant'}`}>$PAB / Crypto</button>
-                  <button type="button" onClick={() => setMethod('card')} className={`flex-1 rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${method === 'card' ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant/30 text-on-surface-variant'}`}>Card</button>
-                </div>
-                <p className="mt-2 text-xs text-on-surface-variant">
-                  {method === 'pab' && <>Deposit: <span className="font-bold text-on-surface">${depositAmount.toFixed(2)}</span> • $PAB rewards may apply</>}
-                  {method === 'card' && <>No-crypto option coming soon.</>}
-                </p>
-              </div>
-              <button disabled={bookingMutation.isLoading} className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-base shadow-lg disabled:opacity-60">
-                {bookingMutation.isLoading ? 'Protecting booking...' : mode === 'instant' ? `Buy Now • ${price > 0 ? '$'+price.toFixed(2) : 'Confirm'}` : `Reserve Now • ${depositAmount > 0 ? '$'+depositAmount.toFixed(2) : 'Free'}`}
+              <button onClick={copySellerLink} className="px-3 py-2 rounded-xl bg-surface border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high transition-colors">
+                {copied ? 'Copied' : 'Copy'}
               </button>
-              <p className="text-[11px] text-center text-on-surface-variant">Secured by Pabandi Trust • Cancel/No-show protection applies</p>
             </div>
-          </form>
-
-          <aside className="md:col-span-2 space-y-4">
-            <div className="p-4 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest">
-              <h4 className="font-headline font-bold mb-2">Seller info</h4>
-              <p className="text-sm text-on-surface-variant mb-2">{data.description || data.name}</p>
-              <div className="text-xs text-on-surface-variant space-y-1">
-                <p>Category: {data.category}</p>
-                <p>Location: {data.address || data.city}</p>
-                <p>Phone: {data.phone}</p>
-              </div>
-            </div>
-            <div className="p-4 rounded-2xl border border-outline-variant/20 bg-surface-container-lowest">
-              <h4 className="font-headline font-bold mb-2">Pabandi Trust</h4>
-              <ul className="text-sm text-on-surface-variant space-y-2">
-                <li>• Protected booking with escrow deposit</li>
-                <li>• AI no-show risk reduction</li>
-                <li>• $PAB rewards after showing up</li>
-                <li>• Dispute resolution if seller doesn’t honor</li>
-              </ul>
-            </div>
-          </aside>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
