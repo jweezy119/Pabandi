@@ -57,7 +57,7 @@ export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const initialQ = searchParams.get('q') || '';
   const initialCategory = (searchParams.get('category') || 'ALL') as string;
-  
+
 
   const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState(initialCategory);
@@ -133,21 +133,20 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h1 className="font-headline text-xl font-bold">{pageTitle}</h1>
-          {isLoading && <span className="text-xs text-on-surface-variant">Searching…</span>}
-          {!isLoading && results.length === 0 && (
-            <span className="text-xs text-on-surface-variant ml-2">Showing fallback results.</span>
-          )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
+          <h1 className="font-headline text-xl sm:text-2xl font-bold">{pageTitle}</h1>
+          <span className="text-xs sm:text-sm text-on-surface-variant">
+            {isLoading ? 'Searching…' : results.length ? `${results.length} result${results.length === 1 ? '' : 's'}` : 'Showing fallback results.'}
+          </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search services, businesses..."
-            className="flex-1 min-w-[260px] p-3 rounded-xl bg-surface border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="flex-1 p-3 sm:p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
           />
           <button
             type="button"
@@ -156,7 +155,7 @@ export default function SearchPage() {
                 setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
               )
             }
-            className="px-3 py-2 rounded-xl bg-surface border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high transition-colors"
+            className="px-4 py-3 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-sm font-bold hover:bg-surface-container-high transition-colors"
           >
             Near Me
           </button>
@@ -168,8 +167,8 @@ export default function SearchPage() {
               key={c}
               type="button"
               onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider whitespace-nowrap ${
-                category === c ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+              className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
+                category === c ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
               }`}
             >
               {CATEGORY_LABELS[c] || c}
@@ -177,15 +176,22 @@ export default function SearchPage() {
           ))}
         </div>
 
+        {results.length === 0 && !isLoading && (
+          <div className="rounded-3xl border border-outline-variant/10 bg-surface-container-low p-8 text-center">
+            <p className="text-sm text-on-surface-variant">No exact hits yet. We’re still loading nearby options.</p>
+            <button onClick={() => setCategory('ALL')} className="mt-3 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {results.map((biz: any) => (
             <Link
               key={biz.id || `${biz.name}-${biz.address}`}
               to={`/business/${biz.id}${biz.slug ? `-${biz.slug}` : ''}`}
-              className="block rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-colors"
+              className="block rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all"
             >
               <div
-                className="h-36 bg-surface-variant/30 rounded-t-2xl"
+                className="h-36 sm:h-40 rounded-t-3xl"
                 style={{
                   backgroundImage: biz.coverImageUrl ? `url(${biz.coverImageUrl})` : undefined,
                   backgroundSize: 'cover',
@@ -194,9 +200,9 @@ export default function SearchPage() {
               />
               <div className="p-4">
                 <div className="flex justify-between items-start gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-headline font-bold text-sm leading-snug">{biz.name}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5 truncate">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-1 rounded">{biz.category}</p>

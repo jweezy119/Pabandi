@@ -25,7 +25,7 @@ const FAQ = [
   },
   {
     q: 'How do I sell without building an app, website, or widget?',
-    a: 'Use the seller panel to publish catalog items, then paste the same `pabandi.com/s/:sellerId` link into TikTok, Instagram, YouTube, WhatsApp, or SMS. That’s it.'
+    a: 'Use the seller panel to publish catalog items, then paste the same `pabandi.com/s/:sellerId` link into TikTok, YouTube, WhatsApp, or SMS. That’s it.'
   },
   {
     q: 'What does the buyer side actually look like?',
@@ -57,62 +57,65 @@ export default function LiveSellCustomerPage() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 py-10 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10 sm:space-y-12">
 
         {/* ── HERO ───────────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
-          <div className="flex items-center gap-3 mb-4">
-            <VideoCameraIcon className="h-6 w-6 text-primary" />
-            <h1 className="font-headline text-3xl md:text-4xl font-black">Live Selling Hub</h1>
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
+          <div className="flex items-center gap-3 mb-3">
+            <VideoCameraIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-black leading-[1.05]">Live Selling Hub</h1>
           </div>
-          <p className="text-on-surface-variant max-w-2xl text-base md:text-lg leading-relaxed">
-            Pabandi turns live streaming into trusted, instant commerce. Sellers go live on TikTok, YouTube, and Shopify. Buyers book or buy with escrow-backed checkout, without leaving the seller’s Pabandi profile.
+          <p className="text-on-surface-variant max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed">
+            Stream smart, not hard. Pabandi turns live streaming into trusted, instant commerce across TikTok, YouTube, and Shopify. Buyers book with escrow-backed checkout without leaving the seller’s profile.
           </p>
-          <div className="flex flex-wrap gap-3 mt-6">
-            <Link to="/search?category=LIVE_SELLER" className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-headline font-bold">Find live sellers</Link>
-            <Link to="/s/demo" className="px-4 py-2.5 rounded-xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors font-headline font-bold">Try demo checkout</Link>
+          <div className="flex flex-wrap gap-2 mt-5">
+            <Link to="/search?category=LIVE_SELLER" className="px-4 py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base">Find live sellers</Link>
+            <Link to="/s/demo" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Try demo checkout</Link>
           </div>
         </section>
 
         {/* ── HOW IT WORKS ────────────────────────────────────────────── */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
             <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">01</div>
             <h3 className="font-headline font-bold text-base mt-2">Seller publishes items once</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Publish catalog items in Pabandi. The same link works across TikTok, YouTube, Shopify, Instagram, and WhatsApp.</p>
+            <p className="text-xs text-on-surface-variant mt-1">One catalog in Pabandi. The same link works across TikTok, YouTube, Shopify, and WhatsApp.</p>
           </div>
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
             <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">02</div>
             <h3 className="font-headline font-bold text-base mt-2">Buyer books from any live show</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Open `pabandi.com/s/:sellerId` from the chat, bio, or live link. Buyer enters details and confirms instantly.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Open `pabandi.com/s/:sellerId` from chat, bio, or live link. Buyer enters details and confirms instantly.</p>
           </div>
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
             <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">03</div>
             <h3 className="font-headline font-bold text-base mt-2">Escrow-backed trust + rewards</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Commitment is secured through escrow behavior. Buyers earn $PAB rewards for reliable bookings. Sellers eliminate no-shows.</p>
+            <p className="text-xs text-on-surface-variant mt-1">Commitment secured through escrow behavior. Buyers earn $PAB rewards for reliable bookings. Sellers eliminate no-shows.</p>
           </div>
         </section>
 
         {/* ── LIVE NOW ─────────────────────────────────────────────── */}
         <section>
-          <h2 className="font-headline text-xl font-bold mb-4">Live now</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="font-headline text-xl sm:text-2xl font-bold">Live now</h2>
+            {liveShows.length > 0 && <span className="text-[10px] font-black uppercase tracking-wider text-[#10b981] bg-[#10b981]/10 px-2 py-1 rounded-full">{liveShows.length} live</span>}
+          </div>
           {liveShows.length === 0 ? (
             <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-8 text-center">
-              <p className="text-on-surface-variant">No shows are live right now. Browse seller catalogs below, or check back during peak hours.</p>
+              <p className="text-on-surface-variant text-sm">No shows are live right now. Browse seller catalogs below, or check back during peak hours.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {liveShows.map((show: any) => (
-                <Link key={`${show.platform}-${show.businessId}`} to={`/s/${show.businessId}?session=${show.sessionId || ''}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high transition-colors">
+                <Link key={`${show.platform}-${show.businessId}`} to={`/s/${show.businessId}?session=${show.sessionId || ''}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
                   <div className="relative h-44 bg-surface-variant/30 rounded-t-2xl flex items-center justify-center">
-                    <PlayCircleIcon className="h-12 w-12 text-primary" />
+                    <PlayCircleIcon className="h-10 w-10 text-primary" />
                     <span className="absolute top-3 left-3 bg-[#14F195]/20 border border-[#14F195]/30 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Live</span>
                     <span className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
                   </div>
                   <div className="p-4">
-                    <p className="font-headline font-bold text-base">{show.businessName || 'Seller'}</p>
+                    <p className="font-headline font-bold text-base leading-snug">{show.businessName || 'Seller'}</p>
                     <p className="text-xs text-on-surface-variant mt-1">{show.title || 'Live selling session'}</p>
-                    <span className="mt-3 inline-flex px-3 py-2 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm">Join Live Show</span>
+                    <span className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-lg shadow-primary/20">Join Live Show</span>
                   </div>
                 </Link>
               ))}
@@ -122,20 +125,23 @@ export default function LiveSellCustomerPage() {
 
         {/* ── CATALOG ──────────────────────────────────────────────── */}
         <section>
-          <h2 className="font-headline text-xl font-bold mb-4">Seller catalog</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="font-headline text-xl sm:text-2xl font-bold">Seller catalog</h2>
+            {products.length > 0 && <span className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-full">{products.length} items</span>}
+          </div>
           {products.length === 0 ? (
             <p className="text-on-surface-variant text-sm">Sellers haven’t published catalog items yet. Use the seller checkout link to book directly: <code className="bg-surface-container-high px-1 py-0.5 rounded text-xs">/s/:id</code></p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {products.map((item: any, idx: number) => (
-                <Link key={`${item.platform}-${item.id || idx}`} to={`/s/${item.businessId}?item=${encodeURIComponent(item.title || item.name || '')}&price=${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high transition-colors">
+                <Link key={`${item.platform}-${item.id || idx}`} to={`/s/${item.businessId}?item=${encodeURIComponent(item.title || item.name || '')}&price=${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
                   <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-headline font-bold text-base leading-snug">{item.title || item.name || 'Item'}</p>
                         <p className="text-xs text-on-surface-variant mt-1">{item.businessName} • {item.platform}</p>
                       </div>
-                      <span className="text-xs font-black text-primary bg-primary-container/70 px-2 py-1 rounded-lg">${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}</span>
+                      <span className="text-xs font-black text-primary bg-primary-container/70 px-2 py-1 rounded-lg shrink-0">${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}</span>
                     </div>
                     {item.description && <p className="text-xs text-on-surface-variant line-clamp-2">{item.description}</p>}
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary"><TagIcon className="h-3.5 w-3.5" /> Buy now</span>
@@ -147,30 +153,30 @@ export default function LiveSellCustomerPage() {
         </section>
 
         {/* ── WHY BUYERS CHOOSE PABANDI ───────────────────────────── */}
-        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
-          <h2 className="font-headline text-2xl font-black mb-4">Why buy through Pabandi</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div>
-              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CheckCircleIcon className="h-5 w-5" /> Trusted seller identity</span>
-              <p className="text-xs text-on-surface-variant mt-2">Every seller profile is a portable Pabandi Passport with verifiable trust behavior, not throwaway social proof.</p>
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
+          <h2 className="font-headline text-xl sm:text-2xl md:text-3xl font-black mb-4">Why buyers choose Pabandi</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="rounded-2xl bg-surface/60 p-5">
+              <div className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CheckCircleIcon className="h-5 w-5" /> Trusted seller identity</div>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">Every seller profile is a portable Pabandi Passport with verifiable trust behavior, not throwaway social proof.</p>
             </div>
-            <div>
-              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><ShieldCheckIcon className="h-5 w-5" /> Escrow-backed checkout</span>
-              <p className="text-xs text-on-surface-variant mt-2">Buyers and sellers align on commitment through escrow-backed deposit logic, reducing chargebacks and fake show-ups.</p>
+            <div className="rounded-2xl bg-surface/60 p-5">
+              <div className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><ShieldCheckIcon className="h-5 w-5" /> Escrow-backed checkout</div>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">Buyers and sellers align on commitment through escrow-backed deposit logic, reducing chargebacks and fake show-ups.</p>
             </div>
-            <div>
-              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CurrencyDollarIcon className="h-5 w-5" /> $PAB rewards</span>
-              <p className="text-xs text-on-surface-variant mt-2">Loyal buyers earn $PAB rewards for reliable bookings. Sellers earn verified credibility with every fulfilled show.</p>
+            <div className="rounded-2xl bg-surface/60 p-5">
+              <div className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CurrencyDollarIcon className="h-5 w-5" /> $PAB rewards</div>
+              <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">Loyal buyers earn $PAB rewards for reliable bookings. Sellers earn verified credibility with every fulfilled show.</p>
             </div>
           </div>
         </section>
 
         {/* ── FAQ ──────────────────────────────────────────────────── */}
-        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
-          <h2 className="font-headline text-2xl font-black mb-4">Live Selling FAQ</h2>
-          <div className="space-y-4">
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
+          <h2 className="font-headline text-xl sm:text-2xl md:text-3xl font-black mb-4">Live Selling FAQ</h2>
+          <div className="space-y-3">
             {FAQ.map((item, idx) => (
-              <div key={idx} className="border border-outline-variant/20 rounded-2xl p-4">
+              <div key={idx} className="rounded-2xl border border-outline-variant/20 bg-surface/60 p-4">
                 <p className="font-headline font-bold text-sm mb-1">{item.q}</p>
                 <p className="text-xs text-on-surface-variant leading-relaxed">{item.a}</p>
               </div>
