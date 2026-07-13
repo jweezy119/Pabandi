@@ -156,7 +156,7 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-bold animate-in slide-in-from-right-4 fade-in duration-300 ${
+          className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg border text-sm font-bold animate-in slide-in-from-right-4 fade-in duration-300 ${
             t.type === 'success' ? 'bg-tertiary-fixed text-on-tertiary-fixed border-tertiary/20' :
             t.type === 'error'   ? 'bg-error-container text-on-error-container border-error/20' :
                                    'bg-primary-container text-on-primary-container border-primary/20'
@@ -204,8 +204,8 @@ function AchievementBadge({ icon, label, description, earned, colorClass, bgClas
   icon: React.ReactNode; label: string; description: string; earned: boolean; colorClass: string; bgClass: string;
 }) {
   return (
-    <div className={`flex flex-col items-center gap-2 p-4 rounded-xl text-center transition-all ${earned ? `${bgClass} border border-outline-variant/30` : 'bg-surface-container-lowest border border-outline-variant/10 opacity-50 cursor-not-allowed'}`}>
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${earned ? `${colorClass} ${bgClass} border border-outline-variant/10 shadow-sm` : 'bg-surface-container-low text-outline'}`}>
+    <div className={`flex flex-col items-center gap-2 p-4 rounded-2xl text-center transition-all ${earned ? `${bgClass} border border-outline-variant/30` : 'bg-surface-container-lowest border border-outline-variant/10 opacity-50 cursor-not-allowed'}`}>
+      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${earned ? `${colorClass} ${bgClass} border border-outline-variant/10 shadow-sm` : 'bg-surface-container-low text-outline'}`}>
         {icon}
       </div>
       <div>
@@ -318,7 +318,7 @@ function LoyaltyTab({
             </div>
           </div>
           {current.pabBonus > 0 && (
-            <div className="text-center bg-surface-container-lowest rounded-xl px-4 py-2.5 border border-outline-variant/20 shadow-sm">
+            <div className="text-center bg-surface-container-lowest rounded-2xl px-4 py-2.5 border border-outline-variant/20 shadow-sm">
               <p className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider">Bonus per booking</p>
               <p className="text-xl font-black font-headline" style={{ color: current.color }}>+{current.pabBonus}</p>
               <p className="text-[9px] text-on-surface-variant">PAB tokens</p>
@@ -363,7 +363,7 @@ function LoyaltyTab({
       )}
 
       {/* Tier Ladder */}
-      <div className="p-6">
+      <div className="p-5 sm:p-6">
         <h3 className="text-sm font-black text-on-surface font-headline mb-4">All Loyalty Tiers</h3>
         <div className="space-y-3">
           {LOYALTY_TIERS.map((tier, idx) => {
@@ -373,7 +373,7 @@ function LoyaltyTab({
             return (
               <div
                 key={tier.id}
-                className="rounded-xl border transition-all duration-200"
+                className="rounded-2xl border transition-all duration-200"
                 style={{
                   background: isCurrent ? `${tier.color}10` : isEarned ? `${tier.color}06` : undefined,
                   borderColor: isCurrent ? `${tier.color}40` : isEarned ? `${tier.color}25` : undefined,
@@ -381,7 +381,7 @@ function LoyaltyTab({
                 }}
               >
                 {/* Tier header — always visible */}
-                <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex items-center gap-3 px-4 py-3.5">
                   <span className="text-2xl" style={{ filter: isEarned ? 'none' : 'grayscale(100%) opacity(0.4)' }}>
                     {tier.emoji}
                   </span>
@@ -430,7 +430,7 @@ function LoyaltyTab({
         </div>
 
         {/* How to earn */}
-        <div className="mt-6 p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low">
+        <div className="mt-6 p-4 rounded-2xl border border-outline-variant/15 bg-surface-container-low">
           <div className="flex items-center gap-2 mb-3">
             <SparklesIcon className="h-4 w-4 text-secondary" />
             <p className="text-sm font-black text-on-surface font-headline">How to Earn PAB</p>
@@ -893,7 +893,7 @@ export default function ProfilePage() {
           <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide snap-x">
             {(['history', 'loyalty', 'badges', 'connections', 'security'] as const).map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`snap-start whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                className={`snap-start whitespace-nowrap px-4 py-2 rounded-2xl text-sm font-bold transition-all border ${
                   activeTab === tab
                     ? 'bg-surface-container-lowest text-primary border-primary/30 shadow-sm'
                     : 'bg-transparent text-on-surface-variant border-transparent hover:bg-surface-container-low hover:text-on-surface'
@@ -909,7 +909,7 @@ export default function ProfilePage() {
 
           {/* ── History & Receipts Tab ── */}
           {activeTab === 'history' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg font-black text-on-surface font-headline">Recent Bookings</h2>
@@ -922,7 +922,7 @@ export default function ProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
+                  <div className="text-center py-10 sm:py-12">
                     <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-outline" />
                     <p className="text-sm font-semibold mb-1 text-on-surface">No bookings yet</p>
                     <p className="text-xs text-on-surface-variant mb-5">Your booking history will appear here</p>
@@ -957,12 +957,12 @@ export default function ProfilePage() {
                   {achievements.filter(a => a.earned).length} / {achievements.length} unlocked
                 </p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {achievements.map(a => (
                   <AchievementBadge key={a.label} {...a} />
                 ))}
               </div>
-              <div className="mt-6 p-4 bg-secondary/5 rounded-xl border border-secondary/10 flex items-start gap-3">
+              <div className="mt-6 p-4 bg-secondary/5 rounded-2xl border border-secondary/10 flex items-start gap-3">
                 <GiftIcon className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-on-surface mb-0.5">Mint as Soulbound NFTs</p>
@@ -997,10 +997,10 @@ export default function ProfilePage() {
               </div>
 
               {/* Meta ecosystem */}
-              <div className={`rounded-xl p-5 border-2 transition-all mb-5 ${metaConnected ? 'border-[#0081FB]/30 bg-[#0081FB]/5' : 'border-outline-variant/20 bg-surface-container-low/50'}`}>
+              <div className={`rounded-2xl p-5 border-2 transition-all mb-5 ${metaConnected ? 'border-[#0081FB]/30 bg-[#0081FB]/5' : 'border-outline-variant/20 bg-surface-container-low/50'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0081FB] to-[#00C6FF] flex items-center justify-center text-white text-lg font-black shadow-sm">M</div>
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0081FB] to-[#00C6FF] flex items-center justify-center text-white text-lg font-black shadow-sm">M</div>
                     <div>
                       <p className="font-bold text-sm text-on-surface">Meta Platforms</p>
                       <p className="text-[10px] text-on-surface-variant">
@@ -1057,11 +1057,11 @@ export default function ProfilePage() {
               </div>
 
               {/* Individual platform cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                 {SOCIAL_PLATFORMS.map(platform => (
                   <div
                     key={platform.id}
-                    className="rounded-xl p-4 border transition-all"
+                    className="rounded-2xl p-4 border transition-all"
                     style={{
                       background: connected[platform.id] ? `${platform.color}08` : undefined,
                       borderColor: connected[platform.id] ? `${platform.color}30` : undefined,
@@ -1114,7 +1114,7 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-start gap-3">
+              <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
                 <span className="text-lg mt-0.5">🔒</span>
                 <div>
                   <p className="text-sm font-bold text-on-surface mb-0.5">Privacy First</p>
@@ -1136,7 +1136,7 @@ export default function ProfilePage() {
                   <h2 className="text-xl font-black text-on-surface font-headline tracking-tight">Security Settings</h2>
                 </div>
                 
-                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4">
                   <div>
                     <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant">Current Password</label>
                     <input 
