@@ -1,7 +1,41 @@
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { liveSellerService } from '../services/api';
-import { VideoCameraIcon, PlayCircleIcon, TagIcon } from '@heroicons/react/24/outline';
+import {
+  VideoCameraIcon,
+  PlayCircleIcon,
+  TagIcon,
+  CheckCircleIcon,
+  ShieldCheckIcon,
+  CurrencyDollarIcon,
+} from '@heroicons/react/24/outline';
+
+const FAQ = [
+  {
+    q: 'Do I need to download an app to buy from a live show?',
+    a: 'No. Buyers can join directly from Pabandi using the seller’s universal booking link. No app install, no signup wall, no account creation.'
+  },
+  {
+    q: 'Can one seller go live across TikTok, YouTube, and Shopify at once?',
+    a: 'Pabandi treats the seller’s catalog as the source of truth. Viewers can book from any linked show through the same Pabandi checkout, so inventory stays in sync.'
+  },
+  {
+    q: 'Is there a trust layer for live commerce, or is it just impulse buying?',
+    a: 'Every seller has a Pabandi Passport profile with trust signals and verified behavior. Buyers book with escrow-backed commitment, so both sides are protected.'
+  },
+  {
+    q: 'How do I sell without building an app, website, or widget?',
+    a: 'Use the seller panel to publish catalog items, then paste the same `pabandi.com/s/:sellerId` link into TikTok, Instagram, YouTube, WhatsApp, or SMS. That’s it.'
+  },
+  {
+    q: 'What does the buyer side actually look like?',
+    a: 'Buyer sees the seller profile + item, books in seconds, pays through escrow, and earns $PAB rewards for showing up. It works like instant checkout.'
+  },
+  {
+    q: 'Does the seller get customer support for live selling?',
+    a: 'Yes. WhatsApp Business is already integrated. If a buyer messages from the show, the seller gets an official WhatsApp alert. Zero extra setup required.'
+  },
+];
 
 export default function LiveSellCustomerPage() {
   const { data: showsData } = useQuery('live-sellers-customer-shows', async () => {
@@ -23,13 +57,43 @@ export default function LiveSellCustomerPage() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 py-10 space-y-10">
-        <div className="flex items-center gap-3">
-          <VideoCameraIcon className="h-6 w-6 text-primary" />
-          <h1 className="font-headline text-3xl font-black">Live Selling</h1>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 py-10 space-y-12">
 
-        {/* Live Now */}
+        {/* ── HERO ───────────────────────────────────────────────────── */}
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
+          <div className="flex items-center gap-3 mb-4">
+            <VideoCameraIcon className="h-6 w-6 text-primary" />
+            <h1 className="font-headline text-3xl md:text-4xl font-black">Live Selling Hub</h1>
+          </div>
+          <p className="text-on-surface-variant max-w-2xl text-base md:text-lg leading-relaxed">
+            Pabandi turns live streaming into trusted, instant commerce. Sellers go live on TikTok, YouTube, and Shopify. Buyers book or buy with escrow-backed checkout, without leaving the seller’s Pabandi profile.
+          </p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Link to="/search?category=LIVE_SELLER" className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-headline font-bold">Find live sellers</Link>
+            <Link to="/s/demo" className="px-4 py-2.5 rounded-xl border border-outline-variant/20 hover:bg-surface-container-high transition-colors font-headline font-bold">Try demo checkout</Link>
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS ────────────────────────────────────────────── */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">01</div>
+            <h3 className="font-headline font-bold text-base mt-2">Seller publishes items once</h3>
+            <p className="text-xs text-on-surface-variant mt-1">Publish catalog items in Pabandi. The same link works across TikTok, YouTube, Shopify, Instagram, and WhatsApp.</p>
+          </div>
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">02</div>
+            <h3 className="font-headline font-bold text-base mt-2">Buyer books from any live show</h3>
+            <p className="text-xs text-on-surface-variant mt-1">Open `pabandi.com/s/:sellerId` from the chat, bio, or live link. Buyer enters details and confirms instantly.</p>
+          </div>
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">03</div>
+            <h3 className="font-headline font-bold text-base mt-2">Escrow-backed trust + rewards</h3>
+            <p className="text-xs text-on-surface-variant mt-1">Commitment is secured through escrow behavior. Buyers earn $PAB rewards for reliable bookings. Sellers eliminate no-shows.</p>
+          </div>
+        </section>
+
+        {/* ── LIVE NOW ─────────────────────────────────────────────── */}
         <section>
           <h2 className="font-headline text-xl font-bold mb-4">Live now</h2>
           {liveShows.length === 0 ? (
@@ -56,11 +120,11 @@ export default function LiveSellCustomerPage() {
           )}
         </section>
 
-        {/* Catalog */}
+        {/* ── CATALOG ──────────────────────────────────────────────── */}
         <section>
           <h2 className="font-headline text-xl font-bold mb-4">Seller catalog</h2>
           {products.length === 0 ? (
-            <p className="text-on-surface-variant text-sm">Sellers haven’t published catalog items yet. Use the seller checkout link to book directly: /s/:id</p>
+            <p className="text-on-surface-variant text-sm">Sellers haven’t published catalog items yet. Use the seller checkout link to book directly: <code className="bg-surface-container-high px-1 py-0.5 rounded text-xs">/s/:id</code></p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {products.map((item: any, idx: number) => (
@@ -81,6 +145,39 @@ export default function LiveSellCustomerPage() {
             </div>
           )}
         </section>
+
+        {/* ── WHY BUYERS CHOOSE PABANDI ───────────────────────────── */}
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
+          <h2 className="font-headline text-2xl font-black mb-4">Why buy through Pabandi</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CheckCircleIcon className="h-5 w-5" /> Trusted seller identity</span>
+              <p className="text-xs text-on-surface-variant mt-2">Every seller profile is a portable Pabandi Passport with verifiable trust behavior, not throwaway social proof.</p>
+            </div>
+            <div>
+              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><ShieldCheckIcon className="h-5 w-5" /> Escrow-backed checkout</span>
+              <p className="text-xs text-on-surface-variant mt-2">Buyers and sellers align on commitment through escrow-backed deposit logic, reducing chargebacks and fake show-ups.</p>
+            </div>
+            <div>
+              <span className="flex items-center gap-2 text-primary font-headline font-bold text-sm"><CurrencyDollarIcon className="h-5 w-5" /> $PAB rewards</span>
+              <p className="text-xs text-on-surface-variant mt-2">Loyal buyers earn $PAB rewards for reliable bookings. Sellers earn verified credibility with every fulfilled show.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ──────────────────────────────────────────────────── */}
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-8 md:p-12">
+          <h2 className="font-headline text-2xl font-black mb-4">Live Selling FAQ</h2>
+          <div className="space-y-4">
+            {FAQ.map((item, idx) => (
+              <div key={idx} className="border border-outline-variant/20 rounded-2xl p-4">
+                <p className="font-headline font-bold text-sm mb-1">{item.q}</p>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </div>
     </div>
   );
