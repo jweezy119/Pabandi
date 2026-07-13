@@ -259,7 +259,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="w-full pb-28 md:pb-10 font-body">
+    <div className="w-full pb-24 md:pb-10 font-body">
 
       {showOnboarding && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -286,31 +286,31 @@ export default function HomePage() {
         </div>
       )}
       {/* IMMERSIVE HERO WITH MAP */}
-      <section className="relative w-full bg-[#0f172a] text-white py-16 md:py-24 border-b border-slate-800">
+      <section className="relative w-full bg-[#0f172a] text-white py-12 md:py-24 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-[120px] opacity-25 animate-blob animate-float-slow" />
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob animation-delay-2000 animate-float-delayed" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10 flex flex-col xl:flex-row gap-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col xl:flex-row gap-8 md:gap-12">
           {/* Left Col - Copy */}
-          <div className="flex-1 space-y-8 max-w-2xl mx-auto xl:mx-0 pt-8">
-            <h1 className="font-headline text-5xl md:text-7xl font-black tracking-tight leading-[1.1] stagger-item">
+          <div className="w-full xl:w-auto xl:min-w-[320px] space-y-6 max-w-2xl mx-auto xl:mx-0 pt-6">
+            <h1 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.1] stagger-item">
               Your Reliability <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">
                 Finally Pays.
               </span>
             </h1>
-            <p className="font-body text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
+            <p className="font-body text-base sm:text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
               Booking trust for the global service economy. Find venues, reserve with confidence, and earn rewards for showing up.
             </p>
 
             {/* Search */}
-            <div className="pt-4 relative z-50 stagger-item">
+            <div className="pt-4 relative z-50 stagger-item px-1">
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
                 Find & Book Anywhere
               </p>
-              <div className="glass-input rounded-lg flex items-center px-4 py-3 shadow-sm w-full gap-2">
+              <div className="glass-input rounded-2xl flex items-center px-3 py-3 sm:px-4 sm:py-3 shadow-sm w-full gap-2">
                 <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
                 <input
                   ref={searchInputRef}
@@ -320,8 +320,8 @@ export default function HomePage() {
                     if (e.key === "Enter") handleSearch();
                   }}
                   type="text"
-                  placeholder="Search a city, venue or address..."
-                  className="bg-transparent border-none focus:ring-0 w-full font-body text-sm text-on-surface placeholder-outline font-medium focus:outline-none"
+                  placeholder="Where to?"
+                  className="bg-transparent border-none focus:ring-0 w-full font-body text-sm sm:text-base text-on-surface placeholder-outline font-medium focus:outline-none"
                 />
                 <button
                   onClick={handleSearch}
@@ -359,7 +359,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 pt-6 text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
+            <div className="flex flex-wrap gap-3 sm:gap-4 pt-6 text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
               <span className="flex items-center gap-1">
                 <span className="text-[#14F195]">✓</span> Global
               </span>
@@ -448,7 +448,7 @@ export default function HomePage() {
       </section>
 
       {/* Categories & Curated List */}
-      <div className="max-w-7xl mx-auto px-6 md:px-8 space-y-12 mt-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 space-y-10 sm:space-y-12 mt-8 sm:mt-12">
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
           <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
