@@ -129,15 +129,15 @@ export default function UniversalCheckoutPage() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <div className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-surface-container-high rounded-xl transition-colors">
+          <button onClick={() => navigate(-1)} className="p-2 sm:p-3 hover:bg-surface-container-high rounded-2xl transition-colors">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="font-headline text-2xl font-black">{liveState ? 'Live Show Checkout' : 'Checkout'}</h1>
-            {seller && <p className="text-sm text-on-surface-variant">{seller.name}</p>}
-            {liveState && <p className="text-xs text-green-600 font-bold">● Live now · {liveState.platform}</p>}
+            <h1 className="font-headline text-xl sm:text-2xl font-black">{liveState ? 'Live Show Checkout' : 'Checkout'}</h1>
+            {seller && <p className="text-xs sm:text-sm text-on-surface-variant">{seller.name}</p>}
+            {liveState && <p className="text-[10px] sm:text-xs text-green-600 font-bold">● Live now · {liveState.platform}</p>}
           </div>
         </div>
 
@@ -178,25 +178,25 @@ export default function UniversalCheckoutPage() {
 
         {step === 'details' && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 space-y-4">
+            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 sm:p-6 space-y-4">
               <h3 className="font-headline font-bold text-lg flex items-center gap-2">
                 <UserIcon className="h-5 w-5 text-primary" /> Your details
               </h3>
 
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Full name</label>
+                <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Full name</label>
                 <input
                   required
                   value={form.customerName}
                   onChange={(e) => setForm({ ...form, customerName: e.target.value })}
                   placeholder="Your full name"
-                  className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full p-3 sm:p-3.5 rounded-2xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone</label>
+                  <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone</label>
                   <input
                     required
                     value={form.customerPhone}
@@ -206,7 +206,7 @@ export default function UniversalCheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Email</label>
+                  <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Email</label>
                   <input
                     required
                     type="email"
@@ -222,7 +222,7 @@ export default function UniversalCheckoutPage() {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Date</label>
+                      <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Date</label>
                       <input
                         required
                         type="date"
@@ -232,7 +232,7 @@ export default function UniversalCheckoutPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Time</label>
+                      <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Time</label>
                       <input
                         required
                         type="time"
@@ -244,7 +244,7 @@ export default function UniversalCheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Notes</label>
+                    <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Notes</label>
                     <textarea
                       value={form.notes}
                       onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -257,28 +257,28 @@ export default function UniversalCheckoutPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6">
+            <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 sm:p-6">
               <h3 className="font-headline font-bold text-lg mb-4">Summary</h3>
 
               {form.itemTitle && (
                 <div className="flex justify-between mb-2">
-                  <span className="text-sm text-on-surface-variant">Item</span>
-                  <span className="text-sm font-bold">{form.itemTitle}</span>
+                  <span className="text-xs sm:text-sm text-on-surface-variant">Item</span>
+                  <span className="text-xs sm:text-sm font-bold">{form.itemTitle}</span>
                 </div>
               )}
 
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-on-surface-variant">Price</span>
-                <span className="text-sm font-bold">${(form.priceCents / 100).toFixed(2)}</span>
+                <span className="text-xs sm:text-sm text-on-surface-variant">Price</span>
+                <span className="text-xs sm:text-sm font-bold">${(form.priceCents / 100).toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-on-surface-variant">Pabandi deposit</span>
+                <span className="text-xs sm:text-sm text-on-surface-variant">Pabandi deposit</span>
                 <span className="text-sm font-bold text-primary">${(depositAmount / 100).toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-on-surface-variant">You&apos;ll earn</span>
+                <span className="text-xs sm:text-sm text-on-surface-variant">You&apos;ll earn</span>
                 <span className="text-sm font-bold text-orange-500">{pabReward} $PAB</span>
               </div>
 
@@ -295,13 +295,13 @@ export default function UniversalCheckoutPage() {
             <button
               type="submit"
               disabled={!isAuthenticated}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-lg shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-base sm:text-lg shadow-sm hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all"
             >
               {isAuthenticated ? 'Continue to confirm' : 'Log in to book'}
             </button>
 
             {!isAuthenticated && (
-              <p className="text-xs text-on-surface-variant text-center">
+              <p className="text-[10px] sm:text-xs text-on-surface-variant text-center">
                 Log in or create an account to protect your booking with deposit escrow.
               </p>
             )}
@@ -310,7 +310,7 @@ export default function UniversalCheckoutPage() {
 
         {step === 'confirm' && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-6">
+            <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-5 sm:p-6">
               <h3 className="font-headline font-bold text-lg text-green-700 mb-2">Review your booking</h3>
               <div className="space-y-2 text-sm">
                 {form.itemTitle && <p><strong>Item:</strong> {form.itemTitle}</p>}
@@ -329,13 +329,13 @@ export default function UniversalCheckoutPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setStep('details')}
-                className="flex-1 py-3 rounded-xl border border-outline-variant/20 font-bold hover:bg-surface-container-high transition-colors"
+                className="flex-1 py-3 sm:py-3.5 rounded-2xl border border-outline-variant/20 font-bold hover:bg-surface-container-high transition-colors"
               >
                 Edit
               </button>
               <button
                 onClick={handleConfirmBooking}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-[#06b6d4] text-black font-headline font-bold shadow-sm hover:opacity-90 transition-opacity"
+                className="flex-1 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-[#06b6d4] text-black font-headline font-bold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 Confirm booking
               </button>
@@ -344,7 +344,7 @@ export default function UniversalCheckoutPage() {
         )}
 
         {sellerId && (
-          <div className="mt-8 rounded-2xl border border-outline-variant/10 bg-surface-container-low p-4">
+          <div className="mt-8 rounded-2xl border border-outline-variant/10 bg-surface-container-low p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Share seller checkout link</p>
