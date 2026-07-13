@@ -382,7 +382,7 @@ export default function NewReservationPage() {
           )}
 
           {!selectedPlace?.isClaimed && user?.role === 'BUSINESS_OWNER' && (
-            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
+            <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left space-y-3 font-body">
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your
                 booking is processed immediately, please invite the owner to
@@ -430,7 +430,7 @@ export default function NewReservationPage() {
 
   return (
     <div className="bg-surface min-h-screen text-on-surface pb-24 md:pb-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-on-surface-variant hover:text-primary"
@@ -515,7 +515,7 @@ export default function NewReservationPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
             {/* Left Column - Form */}
             <div className="space-y-6">
-              <div className="rounded-xl p-6 sm:p-8 bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+              <div className="rounded-2xl p-5 sm:p-8 bg-surface-container-lowest shadow-sm border border-outline-variant/20">
                 <h3 className="font-headline text-lg font-bold text-primary mb-4">
                   Reservation Details
                 </h3>

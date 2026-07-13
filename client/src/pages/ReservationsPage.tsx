@@ -77,7 +77,7 @@ export default function ReservationsPage() {
 
   return (
     <div className="bg-surface min-h-screen text-on-surface flex flex-col">
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-24 md:mb-8 flex flex-col gap-10">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 mb-24 md:mb-8 flex flex-col gap-8 sm:gap-10">
         
         {/* Page Header */}
         <div className="flex flex-col gap-2">
@@ -244,7 +244,7 @@ export default function ReservationsPage() {
 
                   {/* PabPoints Cashback Receipt for Completed Bookings */}
                   {r.status === 'COMPLETED' && !isBusinessOwner && (
-                    <div className="bg-gradient-to-br from-[#14F195]/10 to-[#06b6d4]/10 border border-[#14F195]/30 p-4 rounded-xl flex flex-col gap-2 mt-2 glowing-border">
+                    <div className="rounded-2xl p-4 sm:p-5 flex flex-col gap-2 sm:gap-3 mt-2 glowing-border">
                       <div className="flex items-center justify-between text-xs font-bold text-[#10b981]">
                         <span className="flex items-center gap-1.5 uppercase tracking-wider">
                           <SparklesIcon className="h-4 w-4" />

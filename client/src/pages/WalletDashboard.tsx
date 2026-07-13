@@ -464,7 +464,7 @@ export default function WalletDashboard() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface pb-20 md:pb-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
 
         {/* ── Header ── */}
         <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
