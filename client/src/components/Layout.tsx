@@ -118,6 +118,7 @@ export default function Layout() {
 
           <div className="hidden md:flex items-center gap-5 font-headline text-sm">
               <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
+              <DesktopNavLink to="/live-sell" current={location.pathname === '/live-sell'}>Live Selling</DesktopNavLink>
               <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>
               <DesktopNavLink to="/pricing" current={location.pathname === '/pricing'}>Plans</DesktopNavLink>
               <Dropdown label="Products" current={['/technology','/web3','/hospitality'].includes(location.pathname)}>
@@ -166,6 +167,7 @@ export default function Layout() {
         <>
           <nav className="bg-white/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-2xl shadow-[0_-10px_30px_rgba(1,29,53,0.06)] transition-all duration-300 ease-out flex justify-around items-center px-2 pb-5 pt-3 md:hidden mobile-bottom-nav">
             <MobileTab to="/" icon="explore" label="Explore" current={location.pathname === '/'} />
+            <MobileTab to="/live-sell" icon="videocam" label="Live Sell" current={location.pathname === '/live-sell'} />
             <MobileTab 
               to={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? '/dashboard' : '/reservations'} 
               icon={user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN' ? 'dashboard' : 'calendar_month'} 
