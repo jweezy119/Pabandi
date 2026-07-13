@@ -77,7 +77,7 @@ export const CityLandingPage: React.FC = () => {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-[140px] opacity-[0.06] pointer-events-none" />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-5xl mx-auto border-b border-white/5">
+      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-5 max-w-5xl mx-auto border-b border-white/5">
         <Link to="/" className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
           <img src="/logo-company.jpg" alt="Pabandi" className="w-8 h-8 rounded-full object-cover" />
           Pabandi
@@ -88,40 +88,40 @@ export const CityLandingPage: React.FC = () => {
         </div>
       </nav>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-14 pb-24">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-14 pb-20 sm:pb-24">
 
         {/* Hero Split */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 sm:p-12 items-center mb-20">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest mb-6 border"
               style={{ background: `${data.heroColor}10`, color: data.heroColor, borderColor: `${data.heroColor}30` }}>
               Now Onboarding · {data.name}
             </div>
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
+            <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
               Stop Losing Money<br />to COD Rejections &<br />No-Shows in<br />
               <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, #10b981)` }}>
                 {data.name}
               </span>
             </h1>
             <p className="text-base text-white/50 leading-relaxed mb-2">{data.nameUrud} · {data.landmark}</p>
-            <p className="text-lg text-white/60 leading-relaxed mb-8">
+            <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8">
               Pabandi is launching exclusively in <strong className="text-white">{data.name}</strong> first. Join the Genesis wave of {data.businesses.slice(0, 3).join(', ')}, and other local businesses who are eliminating no-shows using Halal Web3 technology.
             </p>
 
             {/* Stats */}
-            <div className="flex gap-6 mb-8">
+            <div className="flex gap-4 sm:gap-6 mb-8">
               <div>
-                <div className="text-3xl font-black text-white">{data.stat1}</div>
+                <div className="text-2xl sm:text-3xl font-black text-white">{data.stat1}</div>
                 <div className="text-xs text-white/40">{data.name} residents</div>
               </div>
               <div className="w-px bg-white/10" />
               <div>
-                <div className="text-3xl font-black" style={{ color: data.heroColor }}>{data.stat2}</div>
+                <div className="text-2xl sm:text-3xl font-black" style={{ color: data.heroColor }}>{data.stat2}</div>
                 <div className="text-xs text-white/40">no-show rate in F&B</div>
               </div>
               <div className="w-px bg-white/10" />
               <div>
-                <div className="text-3xl font-black text-emerald-400">{data.stat3}</div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{data.stat3}</div>
                 <div className="text-xs text-white/40">monthly fee forever</div>
               </div>
             </div>
@@ -140,7 +140,7 @@ export const CityLandingPage: React.FC = () => {
                 <CheckCircleIcon className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
                 <h2 className="text-2xl font-black text-white mb-2">You're on the List! 🎉</h2>
                 <p className="text-white/50 text-sm mb-6">We'll reach out within 48 hours to complete your onboarding as a <strong style={{ color: data.heroColor }}>Genesis Partner in {data.name}</strong>.</p>
-                <Link to="/join" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-black transition-colors"
+                <Link to="/join" className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl text-sm font-bold text-black transition-colors"
                   style={{ background: data.heroColor }}>
                   Complete Full Registration <ArrowRightIcon className="w-4 h-4" />
                 </Link>
@@ -178,8 +178,8 @@ export const CityLandingPage: React.FC = () => {
 
         {/* Why Pabandi */}
         <div className="mb-16">
-          <h2 className="text-3xl font-black text-white text-center mb-10">Why {data.name}'s Best Businesses Choose Pabandi</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <h2 className="text-2xl sm:text-3xl font-black text-white text-center mb-10">Why {data.name}'s Best Businesses Choose Pabandi</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {WHY_PABANDI.map(w => (
               <div key={w.title} className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-colors">
                 <div className="w-10 h-10 rounded-xl mb-4 flex items-center justify-center text-emerald-400" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
@@ -193,7 +193,7 @@ export const CityLandingPage: React.FC = () => {
         </div>
 
         {/* Alibaba / Credibility Banner */}
-        <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-3xl p-8 text-center">
+        <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-3xl p-5 sm:p-8 text-center">
           <p className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-2">Backed by Global Innovation Programs</p>
           <h3 className="text-2xl font-black text-white mb-3">Pabandi × Alibaba Co-Create 2026 Finalist</h3>
           <p className="text-white/50 text-sm max-w-lg mx-auto">

@@ -35,7 +35,7 @@ export default function BusinessModelPage() {
   const premiumPrice = billingInterval === 'yearly' ? Math.round(premiumBasePrice * 0.8) : premiumBasePrice;
 
   return (
-    <div style={{ background: '#0a0f1a', color: '#e8edf2' }} className="min-h-screen pb-24 md:pb-16 font-body">
+    <div style={{ background: '#0a0f1a', color: '#e8edf2' }} className="min-h-screen pb-20 sm:pb-24 md:pb-16 font-body">
       {/* Hero Banner */}
       <section 
         className="relative overflow-hidden py-20 px-4 text-center border-b border-white/10"
@@ -47,7 +47,7 @@ export default function BusinessModelPage() {
           <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
             Enterprise Grade · Web3 Ecosystem
           </span>
-          <h1 className="font-headline text-4xl md:text-5xl font-black mt-4 tracking-tight leading-tight text-white">
+          <h1 className="font-headline text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black mt-4 tracking-tight leading-tight text-white">
             Pabandi Business Model & Pricing
           </h1>
           <p className="text-sm md:text-base text-slate-400 mt-4 max-w-2xl mx-auto leading-relaxed">
@@ -57,12 +57,12 @@ export default function BusinessModelPage() {
       </section>
 
       {/* Tab/Toggle Selection Area */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-4 sm:px-6 lg:px-8 mt-12">
         
         {/* SECTION 1: MERCHANT APP SUBSCRIPTIONS */}
         <div className="mb-16">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">1. Merchant Application Suite</h2>
+            <h2 className="font-headline text-2xl md:text-2xl sm:text-3xl font-black text-white">1. Merchant Application Suite</h2>
             <p className="text-xs text-slate-400 mt-1.5 max-w-lg mx-auto">
               SaaS dashboard and scheduling engine for local service providers, clinics, and salons.
             </p>
@@ -92,14 +92,14 @@ export default function BusinessModelPage() {
           </div>
 
           {/* Pricing Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {/* Starter Plan */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-colors shadow-sm">
               <div>
-                <h3 className="font-headline text-lg font-bold text-white">Starter</h3>
+                <h3 className="font-headline text-base sm:text-lg font-bold text-white">Starter</h3>
                 <p className="text-xs text-slate-400 mt-1">For independent professionals testing the waters.</p>
                 <div className="my-6">
-                  <span className="font-headline text-3xl font-black text-white">$ {starterPrice}</span>
+                  <span className="font-headline text-2xl sm:text-3xl font-black text-white">$ {starterPrice}</span>
                   <span className="text-xs text-slate-400 ml-1">/ month</span>
                 </div>
                 <hr className="border-white/10 my-4" />
@@ -127,13 +127,13 @@ export default function BusinessModelPage() {
                 Most Popular
               </div>
               <div>
-                <h3 className="font-headline text-lg font-bold text-white flex items-center gap-1.5">
+                <h3 className="font-headline text-base sm:text-lg font-bold text-white flex items-center gap-1.5">
                   Growth 
                   <SparklesIcon className="h-4.5 w-4.5 text-[#f0b429]" />
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">Optimize turnover & prevent no-shows.</p>
                 <div className="my-6">
-                  <span className="font-headline text-3xl font-black text-white">$ {growthPrice}</span>
+                  <span className="font-headline text-2xl sm:text-3xl font-black text-white">$ {growthPrice}</span>
                   <span className="text-xs text-slate-400 ml-1">/ month</span>
                 </div>
                 <hr className="border-white/10 my-4" />
@@ -153,10 +153,10 @@ export default function BusinessModelPage() {
             {/* Premium Plan */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between hover:border-white/20 transition-colors shadow-sm">
               <div>
-                <h3 className="font-headline text-lg font-bold text-white">Premium</h3>
+                <h3 className="font-headline text-base sm:text-lg font-bold text-white">Premium</h3>
                 <p className="text-xs text-slate-400 mt-1">Complete autonomous operations & analytics.</p>
                 <div className="my-6">
-                  <span className="font-headline text-3xl font-black text-white">$ {premiumPrice}</span>
+                  <span className="font-headline text-2xl sm:text-3xl font-black text-white">$ {premiumPrice}</span>
                   <span className="text-xs text-slate-400 ml-1">/ month</span>
                 </div>
                 <hr className="border-white/10 my-4" />
@@ -189,13 +189,13 @@ export default function BusinessModelPage() {
         {/* SECTION 2: INTELLIGENCE API / SDK */}
         <div className="mb-16">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">2. B2B Reliability Intelligence API & SDK</h2>
+            <h2 className="font-headline text-2xl md:text-2xl sm:text-3xl font-black text-white">2. B2B Reliability Intelligence API & SDK</h2>
             <p className="text-xs text-slate-400 mt-1.5 max-w-lg mx-auto">
               Expose tabular + graph machine learning scores to external systems like aggregators, CRM, and calendar apps.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:p-8 items-stretch max-w-5xl mx-auto">
             {/* API Pricing Description */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between">
               <div>
@@ -275,11 +275,11 @@ export default function BusinessModelPage() {
                   <div className="grid grid-cols-2 gap-4 text-center mt-2 border-t border-white/10 pt-4">
                     <div>
                       <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Applied Discount</p>
-                      <p className="font-headline text-lg font-bold text-emerald-500">{(discountPercent * 100).toFixed(1)}%</p>
+                      <p className="font-headline text-base sm:text-lg font-bold text-emerald-500">{(discountPercent * 100).toFixed(1)}%</p>
                     </div>
                     <div>
                       <p className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Discounted Cost</p>
-                      <p className="font-headline text-lg font-bold text-white">${customCost.toFixed(3)}</p>
+                      <p className="font-headline text-base sm:text-lg font-bold text-white">${customCost.toFixed(3)}</p>
                     </div>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function BusinessModelPage() {
 
         {/* SECTION 3: WEB3 TOKENOMICS & DEFI CASHFLOWS */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 max-w-5xl mx-auto">
-          <h2 className="font-headline text-lg font-bold text-white mb-2 flex items-center gap-2">
+          <h2 className="font-headline text-base sm:text-lg font-bold text-white mb-2 flex items-center gap-2">
             <CurrencyDollarIcon className="h-5 w-5 text-tertiary" />
             3. On-chain Escrow & Deflationary Cashflows
           </h2>
@@ -307,7 +307,7 @@ export default function BusinessModelPage() {
             Pabandi's smart contract infrastructure on Solana supports sustainable utility loops:
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <div className="p-4 bg-white/10 rounded-xl border border-white/10">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">Escrow Commission</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -345,7 +345,7 @@ export default function BusinessModelPage() {
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Sharia-Certified · Halal Finance</span>
               <StarIcon className="h-3.5 w-3.5 text-emerald-400" />
             </div>
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">
+            <h2 className="font-headline text-2xl md:text-2xl sm:text-3xl font-black text-white">
               4. Halal Staking — Mudarabah Profit-Sharing
             </h2>
             <p className="text-xs text-slate-400 mt-2 max-w-2xl mx-auto leading-relaxed">
@@ -425,7 +425,7 @@ export default function BusinessModelPage() {
               borderColor: 'rgba(34, 197, 94, 0.25)',
             }}
           >
-            <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
               <div className="flex-1">
                 <h3 className="font-headline text-base font-bold text-white mb-3 flex items-center gap-2">
                   <ShieldCheckIcon className="h-5 w-5 text-emerald-400" />
@@ -515,7 +515,7 @@ export default function BusinessModelPage() {
               <p className="text-[11px] text-slate-400 mt-1 mb-4">
                 Earn proportional profit-share from Pabandi's booking platform revenue. Sharia-compliant.
               </p>
-              <Link to="/wallet" className="inline-block px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+              <Link to="/wallet" className="inline-block px-4 sm:px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 Start Halal Staking →
               </Link>
             </div>

@@ -94,7 +94,7 @@ export const AirdropPage: React.FC = () => {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-violet-600 rounded-full blur-[150px] opacity-[0.05] pointer-events-none" />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-5xl mx-auto border-b border-white/5">
+      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-5 max-w-5xl mx-auto border-b border-white/5">
         <Link to="/" className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
           <img src="/logo-company.jpg" alt="Pabandi" className="w-8 h-8 rounded-full object-cover" />
           Pabandi
@@ -105,7 +105,7 @@ export const AirdropPage: React.FC = () => {
         }
       </nav>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-6 pt-14 pb-24">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-14 pb-20 sm:pb-24">
 
         {/* Hero */}
         <div className="text-center mb-14">
@@ -113,23 +113,23 @@ export const AirdropPage: React.FC = () => {
             <GiftIcon className="w-4 h-4" />
             Merit-Based Genesis Airdrop · 100M $PAB Budget
           </div>
-          <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-5 leading-[1.05]">
+          <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl font-black tracking-tight mb-5 leading-[1.05]">
             Your Trust Score =<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
               Your $PAB Airdrop
             </span>
           </h1>
-          <p className="text-lg text-white/55 max-w-xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-white/55 max-w-xl mx-auto leading-relaxed">
             No fixed cap on participants. <strong className="text-white">Everyone can join.</strong> The more you prove your reliability — verified accounts, Web3 wallet age, bookings, reviews — the more $PAB you earn. Up to <strong className="text-emerald-400">{MAX_PAB.toLocaleString()} $PAB</strong> per user.
           </p>
           <p className="mt-4 text-xs text-white/30">{totalClaimed.toLocaleString()} wallets have already claimed · 100M $PAB total pool</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:p-8 items-start">
 
           {/* ── Left: Criteria List ── */}
           <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <h2 className="font-bold text-white mb-1 text-lg">How Your Score Is Calculated</h2>
+            <h2 className="font-bold text-white mb-1 text-base sm:text-lg">How Your Score Is Calculated</h2>
             <p className="text-white/40 text-sm mb-6">Complete actions to increase your $PAB allocation. Each criterion is checked automatically.</p>
             <div className="space-y-3">
               {CRITERIA.map(c => {
@@ -153,13 +153,13 @@ export const AirdropPage: React.FC = () => {
           </div>
 
           {/* ── Right: Your Score & Claim ── */}
-          <div className="space-y-6 sticky top-8">
+          <div className="space-y-6 sticky top-5 sm:p-8">
 
             {/* Score Card */}
             <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
               <p className="text-white/40 text-xs uppercase font-bold tracking-widest mb-3">Your Current Allocation</p>
               <div className="flex items-end gap-2 mb-2">
-                <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                <span className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
                   {fetching ? '...' : earnedPab.toLocaleString()}
                 </span>
                 <span className="text-emerald-400 font-bold text-xl mb-1">$PAB</span>
@@ -198,7 +198,7 @@ export const AirdropPage: React.FC = () => {
                 <h2 className="text-xl font-black text-white mb-1">Airdrop Claimed! 🎉</h2>
                 <p className="text-white/50 text-sm mb-4"><strong className="text-emerald-400">{earnedPab.toLocaleString()} $PAB</strong> credited to your Vault.</p>
                 <p className="text-white/30 text-xs mb-5">You can increase your score at any time — we'll top up your allocation if you complete more actions before the pool closes.</p>
-                <Link to="/wallet" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors">
+                <Link to="/wallet" className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors">
                   View My Wallet <ArrowRightIcon className="w-4 h-4" />
                 </Link>
               </div>
@@ -207,7 +207,7 @@ export const AirdropPage: React.FC = () => {
                 <CheckCircleIcon className="w-12 h-12 text-amber-400 mx-auto mb-3" />
                 <h2 className="text-xl font-black text-white mb-1">Already Claimed ✅</h2>
                 <p className="text-white/50 text-sm mb-4">You've already claimed your Genesis Airdrop. Keep completing Trust actions to earn a top-up before the pool closes.</p>
-                <Link to="/wallet" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-colors">
+                <Link to="/wallet" className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-colors">
                   Go to Wallet <ArrowRightIcon className="w-4 h-4" />
                 </Link>
               </div>

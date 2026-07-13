@@ -66,12 +66,12 @@ export const WaitlistPage: React.FC = () => {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
-        <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl text-center">
+        <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-5 sm:p-8 rounded-3xl shadow-2xl text-center">
           <CheckCircleIcon className="w-20 h-20 text-green-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">
             Welcome to Pabandi!
           </h2>
-          <p className="text-gray-300 mb-8 text-lg">
+          <p className="text-gray-300 mb-8 text-base sm:text-lg">
             Your spot on the waitlist is secured. 🎉
           </p>
           
@@ -92,7 +92,7 @@ export const WaitlistPage: React.FC = () => {
               />
               <button 
                 type="submit"
-                className="w-full py-3 px-6 rounded-xl font-bold text-[#0f172a] bg-gradient-to-r from-[#14F195] to-[#06b6d4] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-[#14F195] transition-all shadow-[0_0_15px_rgba(20,241,149,0.3)]"
+                className="w-full py-3 px-4 sm:px-6 rounded-xl font-bold text-[#0f172a] bg-gradient-to-r from-[#14F195] to-[#06b6d4] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-[#14F195] transition-all shadow-[0_0_15px_rgba(20,241,149,0.3)]"
               >
                 Notify Me! 💌
               </button>
@@ -117,7 +117,7 @@ export const WaitlistPage: React.FC = () => {
         </Link>
 
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] via-emerald-400 to-[#06b6d4] drop-shadow-sm">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] via-emerald-400 to-[#06b6d4] drop-shadow-sm">
             Promise, earn rewards 🌍
           </h1>
           <p className="text-xl text-gray-300 max-w-xl mx-auto leading-relaxed">
@@ -126,7 +126,7 @@ export const WaitlistPage: React.FC = () => {
         </div>
 
         {/* Counters */}
-        <div className="flex justify-center gap-6 mb-12">
+        <div className="flex justify-center gap-4 sm:gap-6 mb-12">
           <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 text-center shadow-xl flex-1 max-w-[200px]">
             <div className="text-4xl font-bold text-white mb-1">{count.toLocaleString()}</div>
             <div className="text-sm text-gray-400 uppercase tracking-wider">
@@ -142,12 +142,12 @@ export const WaitlistPage: React.FC = () => {
         </div>
 
         {/* Waitlist Form */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 sm:p-8 shadow-2xl relative overflow-hidden">
           {/* Subtle inner glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-3xl"></div>
           
           <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                   Full Name
@@ -239,7 +239,7 @@ export const WaitlistPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-4 px-6 rounded-xl text-lg font-bold text-[#0f172a] bg-gradient-to-r from-[#14F195] via-emerald-400 to-[#06b6d4] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-[#14F195] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(20,241,149,0.4)] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-4 px-4 sm:px-6 rounded-xl text-base sm:text-lg font-bold text-[#0f172a] bg-gradient-to-r from-[#14F195] via-emerald-400 to-[#06b6d4] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-[#14F195] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(20,241,149,0.4)] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? "Securing Spot..." : "Join the Founding 10,000 →"}
             </button>

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function TechnologyPage() {
   return (
-    <div className="max-w-6xl mx-auto px-6 md:px-8 py-12 md:py-20 space-y-24">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-12 md:py-20 space-y-6 sm:space-y-8 sm:space-y-12 sm:space-y-16 sm:space-y-24">
       
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto space-y-6">
@@ -24,10 +24,10 @@ export default function TechnologyPage() {
           <div className="w-16 h-16 rounded-2xl bg-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-sm">
             <span className="material-symbols-outlined text-4xl text-primary">psychology</span>
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
+          <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
             Breakthrough AI Risk Engine
           </h2>
-          <p className="font-body text-lg text-on-surface-variant">
+          <p className="font-body text-base sm:text-lg text-on-surface-variant">
             Our machine learning models analyze dozens of behavioral signals in real-time to predict the exact probability of a reservation no-show. 
           </p>
           <ul className="space-y-4 pt-4">
@@ -47,7 +47,7 @@ export default function TechnologyPage() {
             </li>
           </ul>
         </div>
-        <div className="bg-surface-container-low rounded-3xl p-8 relative overflow-hidden shadow-lg border border-outline-variant/10">
+        <div className="bg-surface-container-low rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-lg border border-outline-variant/10">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
           <div className="relative space-y-6">
             {/* Visual Representation of AI Analysis */}
@@ -86,21 +86,21 @@ export default function TechnologyPage() {
       </section>
 
       {/* The Trust Matrix Engine */}
-      <section className="bg-surface-container-lowest rounded-3xl p-8 md:p-12 border border-outline-variant/30 shadow-sm">
+      <section className="bg-surface-container-lowest rounded-3xl p-5 sm:p-8 md:p-6 sm:p-12 border border-outline-variant/30 shadow-sm">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label text-sm mb-4">
             <span className="material-symbols-outlined text-[16px]">grid_view</span>
             The 4 Data Layers
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface mb-4">
+          <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-on-surface mb-4">
             The Trust Matrix Engine
           </h2>
-          <p className="font-body text-lg text-on-surface-variant">
+          <p className="font-body text-base sm:text-lg text-on-surface-variant">
             Pabandi doesn't just look at a single metric. Our engine fuses four verifiable data layers into a singular, cryptographic Trust Standard.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Pillar 1 */}
           <div className="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 relative overflow-hidden group hover:border-primary/50 transition-colors">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors"></div>
@@ -156,42 +156,42 @@ export default function TechnologyPage() {
 
       {/* Enterprise API & Reliability */}
       <section className="py-8">
-        <div className="bg-[#0f172a] rounded-3xl p-8 md:p-12 border border-outline-variant/20 shadow-xl relative overflow-hidden">
+        <div className="bg-[#0f172a] rounded-3xl p-5 sm:p-8 md:p-6 sm:p-12 border border-outline-variant/20 shadow-xl relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="relative z-10 space-y-8">
+          <div className="relative z-10 space-y-6 sm:space-y-8">
             <div className="text-center max-w-3xl mx-auto mb-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label text-sm mb-4">
                 <span className="material-symbols-outlined text-[16px]">api</span>
                 Developer First
               </div>
-              <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">
+              <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">
                 Enterprise-Grade API & SDKs
               </h2>
-              <p className="font-body text-lg text-slate-300">
+              <p className="font-body text-base sm:text-lg text-slate-300">
                 Integrate Pabandi's Trust Matrix and Solana Escrow directly into your existing infrastructure with our robust developer tools.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
                 <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined">bolt</span>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">99.99% Uptime SLA</h3>
+                <h3 className="text-white font-bold text-base sm:text-lg mb-2">99.99% Uptime SLA</h3>
                 <p className="text-slate-400 text-sm">Our globally distributed infrastructure ensures your booking flow never goes down, no matter the traffic.</p>
               </div>
               <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
                 <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined">code</span>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">TypeScript SDK</h3>
+                <h3 className="text-white font-bold text-base sm:text-lg mb-2">TypeScript SDK</h3>
                 <p className="text-slate-400 text-sm">Drop-in our @pabandi/sdk into your Node.js or browser apps to instantly access risk scoring and Web3 payments.</p>
               </div>
               <div className="bg-white/5 border border-white/10 p-6 rounded-2xl backdrop-blur-sm">
                 <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined">payments</span>
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">Pay-As-You-Go Pricing</h3>
+                <h3 className="text-white font-bold text-base sm:text-lg mb-2">Pay-As-You-Go Pricing</h3>
                 <p className="text-slate-400 text-sm">Only pay for the exact API calls you make. Integrated natively with Fiat and $PAB crypto payments.</p>
               </div>
             </div>
@@ -206,10 +206,10 @@ export default function TechnologyPage() {
           <div className="w-16 h-16 rounded-2xl bg-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-sm">
             <span className="material-symbols-outlined text-[#ff6a00] text-4xl">cloud</span>
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
+          <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
             Powered by Alibaba Cloud & AI
           </h2>
-          <p className="font-body text-lg text-on-surface-variant">
+          <p className="font-body text-base sm:text-lg text-on-surface-variant">
             To achieve global scale and sub-millisecond predictive latency, Pabandi's risk infrastructure is deeply integrated with Alibaba Cloud and Alibaba's Qwen AI models.
           </p>
           <ul className="space-y-4 pt-4">
@@ -229,7 +229,7 @@ export default function TechnologyPage() {
             </li>
           </ul>
         </div>
-        <div className="bg-[#1a1a1a] rounded-3xl p-8 relative overflow-hidden shadow-lg border border-white/5">
+        <div className="bg-[#1a1a1a] rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-lg border border-white/5">
           <div className="absolute top-0 left-0 w-64 h-64 bg-[#ff6a00]/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3"></div>
           <div className="relative space-y-6 z-10">
             <div className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-white/10">
@@ -242,7 +242,7 @@ export default function TechnologyPage() {
             </div>
             <div className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-white/10">
               <span className="text-slate-300 text-sm">Real-time Data Sync</span>
-              <span className="text-[#ff6a00] font-bold text-lg">&lt; 12ms</span>
+              <span className="text-[#ff6a00] font-bold text-base sm:text-lg">&lt; 12ms</span>
             </div>
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function TechnologyPage() {
 
       {/* The Web3 Crypto Ecosystem */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-        <div className="order-2 md:order-1 bg-[#031f38] rounded-3xl p-8 relative overflow-hidden shadow-lg border border-primary-container">
+        <div className="order-2 md:order-1 bg-[#031f38] rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-lg border border-primary-container">
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#9945FF]/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
           <div className="relative space-y-6">
             <div className="flex items-center gap-4 p-4 bg-white/10 rounded-xl border border-white/10 backdrop-blur-sm">
@@ -286,10 +286,10 @@ export default function TechnologyPage() {
           <div className="w-16 h-16 rounded-2xl bg-surface-container-highest flex items-center justify-center border border-outline-variant/20 shadow-sm">
             <img src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=029" alt="Solana" className="w-8 h-8" />
           </div>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
+          <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-on-surface">
             Powered by Solana Web3
           </h2>
-          <p className="font-body text-lg text-on-surface-variant">
+          <p className="font-body text-base sm:text-lg text-on-surface-variant">
             Pabandi leverages the high-speed, low-cost Solana blockchain to manage the $PAB reward token and execute trustless escrow smart contracts.
           </p>
           <ul className="space-y-4 pt-4">
@@ -312,29 +312,29 @@ export default function TechnologyPage() {
       </section>
 
       {/* The Pabandi Score */}
-      <section className="text-center max-w-3xl mx-auto space-y-8 bg-surface-container-low rounded-3xl p-10 md:p-16 border border-outline-variant/20 shadow-lg">
+      <section className="text-center max-w-3xl mx-auto space-y-6 sm:space-y-8 bg-surface-container-low rounded-3xl p-10 md:p-16 border border-outline-variant/20 shadow-lg">
         <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-[#f59e0b] to-[#fcd34d] flex items-center justify-center shadow-lg shadow-amber-500/20">
           <span className="material-symbols-outlined text-white text-4xl">workspace_premium</span>
         </div>
         <div>
-          <h2 className="font-headline text-3xl md:text-4xl font-bold tracking-tight text-on-surface mb-4">
+          <h2 className="font-headline text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold tracking-tight text-on-surface mb-4">
             The Pabandi Score
           </h2>
-          <p className="font-body text-lg text-on-surface-variant leading-relaxed">
+          <p className="font-body text-base sm:text-lg text-on-surface-variant leading-relaxed">
             Your ultimate trust metric. The Pabandi Score is a real-time reputation score derived from your reservation history. High scores unlock zero-deposit bookings, priority waitlists, and VIP tiers at exclusive venues.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-6">
           <div className="p-6 bg-surface-container-highest rounded-xl text-center">
-            <div className="text-3xl font-bold text-on-surface mb-2">900+</div>
+            <div className="text-2xl sm:text-3xl font-bold text-on-surface mb-2">900+</div>
             <div className="text-sm font-label uppercase text-primary tracking-wider">Elite</div>
           </div>
           <div className="p-6 bg-surface-container-highest rounded-xl text-center">
-            <div className="text-3xl font-bold text-on-surface mb-2">700-899</div>
+            <div className="text-2xl sm:text-3xl font-bold text-on-surface mb-2">700-899</div>
             <div className="text-sm font-label uppercase text-on-surface-variant tracking-wider">Reliable</div>
           </div>
           <div className="p-6 bg-surface-container-highest rounded-xl text-center opacity-70">
-            <div className="text-3xl font-bold text-on-surface mb-2">&lt; 700</div>
+            <div className="text-2xl sm:text-3xl font-bold text-on-surface mb-2">&lt; 700</div>
             <div className="text-sm font-label uppercase text-error tracking-wider">High Risk</div>
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function TechnologyPage() {
 
       {/* CTA */}
       <section className="text-center pb-12">
-        <h2 className="font-headline text-3xl font-bold text-on-surface mb-6">Ready to experience the future of booking?</h2>
+        <h2 className="font-headline text-2xl sm:text-3xl font-bold text-on-surface mb-6">Ready to experience the future of booking?</h2>
         <div className="flex justify-center gap-4">
           <Link to="/" className="bg-primary text-on-primary px-8 py-3 rounded-full font-semibold hover:bg-primary/90 transition-all shadow-md">
             Explore Venues

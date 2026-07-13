@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function ContactPage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 md:px-8 py-12 md:py-20 space-y-16">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-12 md:py-20 space-y-6 sm:space-y-8 sm:space-y-12 sm:space-y-16">
       
       {/* Header */}
       <section className="text-center max-w-3xl mx-auto space-y-6">
@@ -19,10 +19,10 @@ export default function ContactPage() {
       </section>
 
       {/* Contact Channels Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:p-8">
         
         {/* Customer Support */}
-        <div className="bg-surface-container-low rounded-3xl p-8 md:p-10 border border-outline-variant/20 shadow-sm flex flex-col items-start gap-6 hover:shadow-md transition-shadow">
+        <div className="bg-surface-container-low rounded-3xl p-5 sm:p-8 md:p-10 border border-outline-variant/20 shadow-sm flex flex-col items-start gap-4 sm:gap-6 hover:shadow-md transition-shadow">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
             <span className="material-symbols-outlined text-primary text-2xl">person</span>
           </div>
@@ -45,7 +45,7 @@ export default function ContactPage() {
         </div>
 
         {/* Business Support */}
-        <div className="bg-[#14F195]/5 rounded-3xl p-8 md:p-10 border border-[#14F195]/20 shadow-sm flex flex-col items-start gap-6 hover:shadow-md transition-shadow relative overflow-hidden">
+        <div className="bg-[#14F195]/5 rounded-3xl p-5 sm:p-8 md:p-10 border border-[#14F195]/20 shadow-sm flex flex-col items-start gap-4 sm:gap-6 hover:shadow-md transition-shadow relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[#14F195]/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="w-14 h-14 rounded-full bg-[#14F195]/20 flex items-center justify-center border border-[#14F195]/30">
             <span className="material-symbols-outlined text-[#10b981] text-2xl">storefront</span>
@@ -74,7 +74,7 @@ export default function ContactPage() {
       </section>
 
       {/* General Inquiries */}
-      <section className="bg-surface-container-highest rounded-3xl p-8 text-center max-w-2xl mx-auto border border-outline-variant/10">
+      <section className="bg-surface-container-highest rounded-3xl p-5 sm:p-8 text-center max-w-2xl mx-auto border border-outline-variant/10">
         <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Press & General Inquiries</h3>
         <p className="font-body text-on-surface-variant text-sm mb-4">
           For media inquiries, brand partnerships, or investment opportunities, please contact our corporate team.

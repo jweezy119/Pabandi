@@ -119,8 +119,8 @@ export default function BusinessJoinPage() {
         className="flex items-center justify-center p-6 bg-[#080e17] text-[#edf1f5] min-h-screen"
       >
         <div className="text-center max-w-md">
-          <div className="text-6xl mb-6">🎉</div>
-          <h2 className="text-3xl font-black mb-3 text-[#e8e8e8]">Application Received!</h2>
+          <div className="text-5xl sm:text-6xl mb-6">🎉</div>
+          <h2 className="text-2xl sm:text-3xl font-black mb-3 text-[#e8e8e8]">Application Received!</h2>
           <p className="text-base mb-2 text-[#757575]">
             Welcome to the Global Network, <span style={{ fontWeight: 700 }}>{form.businessName}</span>!
           </p>
@@ -150,7 +150,7 @@ export default function BusinessJoinPage() {
       
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#080e17]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 text-sm font-bold hover:opacity-80 transition-opacity">
             <span className="text-slate-400">← Back</span>
           </Link>
@@ -162,7 +162,7 @@ export default function BusinessJoinPage() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-20 pb-24 px-6">
+      <section className="relative overflow-hidden pt-20 pb-20 sm:pb-24 px-4 sm:px-6">
         <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -172,34 +172,34 @@ export default function BusinessJoinPage() {
               🏢 For Businesses
             </div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-white font-headline tracking-tight">
+            <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-white font-headline tracking-tight">
               Hire an <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">AI Agent</span><br />to secure your revenue.
             </h1>
 
-            <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-xl">
+            <p className="text-base sm:text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-xl">
               Pabandi's Agentic AI analyses customer history, weather, local events, and 40+ data points autonomously. High-risk? The agent negotiates and captures a deposit automatically — before they even leave your page.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
-              <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-lg px-8 py-4 rounded-xl font-bold hover:bg-slate-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-base sm:text-lg px-8 py-4 rounded-xl font-bold hover:bg-slate-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
                 Register Your Business →
               </a>
-              <a href="#how-it-works" className="w-full sm:w-auto text-center text-lg px-8 py-4 rounded-xl font-bold text-white border border-white/10 hover:bg-white/5 transition-all">
+              <a href="#how-it-works" className="w-full sm:w-auto text-center text-base sm:text-lg px-8 py-4 rounded-xl font-bold text-white border border-white/10 hover:bg-white/5 transition-all">
                 See How It Works
               </a>
             </div>
 
             <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-semibold text-slate-300">
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Built for Global SMEs</span>
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Agentic Business</span>
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-lg">✓</span> Solana Web3</span>
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Built for Global SMEs</span>
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Agentic Business</span>
+              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Solana Web3</span>
             </div>
           </div>
 
           {/* ── Mock Dashboard UI ──────────────────────────────── */}
-          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl relative">
+          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-5 sm:p-8 shadow-2xl relative">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-lg text-white">Pabandi Business Dashboard</h3>
+              <h3 className="font-bold text-base sm:text-lg text-white">Pabandi Business Dashboard</h3>
               <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
                 <span className="material-symbols-outlined text-sm">notifications</span>
               </div>
@@ -208,11 +208,11 @@ export default function BusinessJoinPage() {
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-white/5 rounded-2xl p-4">
                 <div className="text-slate-400 text-xs mb-1">Today's Bookings</div>
-                <div className="text-3xl font-black text-white">24</div>
+                <div className="text-2xl sm:text-3xl font-black text-white">24</div>
               </div>
               <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20">
                 <div className="text-emerald-400 text-xs mb-1">Revenue Protected</div>
-                <div className="text-3xl font-black text-emerald-400">$48K</div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">$48K</div>
               </div>
             </div>
 
@@ -264,7 +264,7 @@ export default function BusinessJoinPage() {
 
       {/* ── Mini Stats Bar ──────────────────────────────────────── */}
       <section className="border-y border-white/5 bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-5 sm:p-8 divide-x divide-white/5">
           <div className="text-center px-4">
             <div className="text-4xl font-black text-white mb-2">82%</div>
             <div className="text-sm text-slate-400">Reduction in no-shows</div>
@@ -285,41 +285,41 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Features ───────────────────────────────────────────── */}
-      <section className="py-32 px-6">
+      <section className="py-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20">
             <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Features</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Everything your business<br />needs to win.</h2>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Everything your business<br />needs to win.</h2>
             <p className="text-xl text-slate-400 max-w-2xl">From automated deposits to webhook integrations with your existing CRM — Pabandi slots in, not over.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 sm:p-8">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">🤖</div>
               <h3 className="text-xl font-bold text-white mb-3">Agentic Risk Scoring</h3>
               <p className="text-slate-400 text-sm leading-relaxed">Your AI agent scores each booking autonomously using customer history, weather, and time-of-day patterns. Strategy updates as conditions change.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">💳</div>
               <h3 className="text-xl font-bold text-white mb-3">Dynamic Deposit Capture</h3>
               <p className="text-slate-400 text-sm leading-relaxed">High-risk bookings trigger automatic deposit requests. Accepts PayPal, Alibaba Pay, Binance Pay, and Solana (USDC). Funds settle directly to your account in USD.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">📊</div>
               <h3 className="text-xl font-bold text-white mb-3">Real-Time Analytics</h3>
               <p className="text-slate-400 text-sm leading-relaxed">Track booking patterns, no-show rates, revenue protected, and table turnover in a clean dashboard. Export to CSV or connect via webhook.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">🔔</div>
               <h3 className="text-xl font-bold text-white mb-3">Automated Reminders</h3>
               <p className="text-slate-400 text-sm leading-relaxed">SMS via Twilio and email via SendGrid reminders go out automatically at 24h, 2h, and 30 minutes before every reservation.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">🔗</div>
               <h3 className="text-xl font-bold text-white mb-3">Webhooks & CRM Integration</h3>
               <p className="text-slate-400 text-sm leading-relaxed">Push booking events to your POS, CRM, or any system via outbound webhooks. Full REST API available for custom integrations.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
               <div className="text-4xl mb-6">🌐</div>
               <h3 className="text-xl font-bold text-white mb-3">Global Compliance</h3>
               <p className="text-slate-400 text-sm leading-relaxed">PCI-DSS compliant data handling. Accepts PayPal, Alibaba Pay, Binance Pay & Solana globally. Multi-lingual support built for international scale.</p>
@@ -329,15 +329,15 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── How It Works ────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-32 px-6 bg-white/[0.02] border-y border-white/5">
+      <section id="how-it-works" className="py-32 px-4 sm:px-6 bg-white/[0.02] border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20 text-center">
             <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ How It Works</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Up and running in minutes.</h2>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Up and running in minutes.</h2>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-12 relative">
-            <div className="hidden md:block absolute top-8 left-12 right-12 h-[2px] bg-white/10"></div>
+          <div className="grid md:grid-cols-4 gap-4 sm:gap-6 sm:p-12 relative">
+            <div className="hidden md:block absolute top-5 sm:p-8 left-12 right-12 h-[2px] bg-white/10"></div>
             
             <div className="relative">
               <div className="w-16 h-16 bg-[#0f172a] border-2 border-blue-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">01</div>
@@ -364,13 +364,13 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── $PAB for Business ───────────────────────────────────── */}
-      <section className="py-32 px-6">
+      <section className="py-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
           <div>
             <div className="text-[#14F195] font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">token</span> $PAB for Business
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">Get paid in tokens,<br />not just dollars.</h2>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6 leading-tight">Get paid in tokens,<br />not just dollars.</h2>
             <p className="text-xl text-slate-400 mb-10 leading-relaxed">
               Pabandi rewards venues that honor bookings and fight no-shows — automatically credited to your business wallet, cashable on Solana.
             </p>
@@ -407,7 +407,7 @@ export default function BusinessJoinPage() {
             </div>
           </div>
 
-          <div className="bg-[#14F195]/5 border border-[#14F195]/20 rounded-3xl p-8 relative overflow-hidden">
+          <div className="bg-[#14F195]/5 border border-[#14F195]/20 rounded-3xl p-5 sm:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#14F195]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             
             <h3 className="text-2xl font-bold text-white mb-2 relative z-10">Payout to Phantom on Solana</h3>
@@ -423,7 +423,7 @@ export default function BusinessJoinPage() {
                 </div>
                 <div className="text-xs font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">Not connected</div>
               </div>
-              <div className="text-5xl font-black text-white mb-2 flex items-center gap-3">
+              <div className="text-4xl sm:text-5xl font-black text-white mb-2 flex items-center gap-3">
                 840 <span className="text-xl text-[#14F195]">$PAB</span>
               </div>
               <div className="text-xs text-slate-400 mb-6 flex items-center gap-2">
@@ -450,19 +450,19 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Pricing ─────────────────────────────────────────────── */}
-      <section className="py-32 px-6 bg-[#0f172a] border-y border-white/5">
+      <section className="py-32 px-4 sm:px-6 bg-[#0f172a] border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Pricing</div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">Simple, transparent pricing.</h2>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-4">Simple, transparent pricing.</h2>
             <p className="text-xl text-slate-400">No setup fees. No contracts. Cancel any time.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-5 sm:p-8">
             {/* Starter */}
-            <div className="bg-[#080e17] rounded-3xl p-8 border border-white/10 flex flex-col">
+            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col">
               <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
-              <div className="text-3xl font-black text-white mb-4">Free <span className="text-lg text-slate-500 font-normal">/ forever</span></div>
+              <div className="text-2xl sm:text-3xl font-black text-white mb-4">Free <span className="text-base sm:text-lg text-slate-500 font-normal">/ forever</span></div>
               <p className="text-sm text-slate-400 mb-8 h-10">Perfect for single-location businesses just getting started.</p>
               <ul className="space-y-4 mb-10 flex-1">
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Up to 50 bookings / month</li>
@@ -474,10 +474,10 @@ export default function BusinessJoinPage() {
             </div>
 
             {/* Growth */}
-            <div className="bg-gradient-to-b from-[#0f172a] to-[#080e17] rounded-3xl p-8 border border-blue-500 flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
+            <div className="bg-gradient-to-b from-[#0f172a] to-[#080e17] rounded-3xl p-5 sm:p-8 border border-blue-500 flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Most Popular</div>
               <h3 className="text-2xl font-bold text-white mb-2">Growth</h3>
-              <div className="text-3xl font-black text-white mb-4">$29 <span className="text-lg text-slate-500 font-normal">/ month</span></div>
+              <div className="text-2xl sm:text-3xl font-black text-white mb-4">$29 <span className="text-base sm:text-lg text-slate-500 font-normal">/ month</span></div>
               <p className="text-sm text-slate-400 mb-8 h-10">For active venues that need full protection and automation.</p>
               <ul className="space-y-4 mb-10 flex-1">
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Unlimited bookings</li>
@@ -492,9 +492,9 @@ export default function BusinessJoinPage() {
             </div>
 
             {/* Enterprise */}
-            <div className="bg-[#080e17] rounded-3xl p-8 border border-white/10 flex flex-col">
+            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col">
               <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
-              <div className="text-3xl font-black text-white mb-4">Custom</div>
+              <div className="text-2xl sm:text-3xl font-black text-white mb-4">Custom</div>
               <p className="text-sm text-slate-400 mb-8 h-10">Multi-location chains, hotels, and high-volume venues.</p>
               <ul className="space-y-4 mb-10 flex-1">
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Multi-location management</li>
@@ -510,14 +510,14 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Registration Form ───────────────────────────────────── */}
-      <section id="join-form" className="py-32 px-6">
+      <section id="join-form" className="py-32 px-4 sm:px-6">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">Ready to protect your revenue?</h2>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Ready to protect your revenue?</h2>
             <p className="text-xl text-slate-400">Join hundreds of businesses globally using Pabandi to eliminate no-shows and run tighter operations.</p>
           </div>
 
-          <div className="bg-[#0f172a] rounded-3xl p-8 md:p-10 border border-white/10 shadow-2xl relative overflow-hidden">
+          <div className="bg-[#0f172a] rounded-3xl p-5 sm:p-8 md:p-10 border border-white/10 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             
             {error && (
@@ -541,7 +541,7 @@ export default function BusinessJoinPage() {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Phone Number</label>
                   <input name="phone" value={form.phone} onChange={handleChange}
@@ -556,7 +556,7 @@ export default function BusinessJoinPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Category</label>
                   <select name="category" value={form.category} onChange={handleChange}
@@ -577,7 +577,7 @@ export default function BusinessJoinPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Password</label>
                   <div className="relative">
@@ -611,7 +611,7 @@ export default function BusinessJoinPage() {
               </div>
 
               <button type="submit" disabled={loading}
-                className="w-full py-4 rounded-xl text-lg font-bold bg-white text-black hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4">
+                className="w-full py-4 rounded-xl text-base sm:text-lg font-bold bg-white text-black hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4">
                 {loading ? 'Processing...' : 'Register Your Business →'}
               </button>
               
@@ -624,8 +624,8 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-12 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="border-t border-white/5 py-12 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-5 sm:p-8 mb-12">
           <div>
             <h4 className="font-bold text-white mb-4">Pabandi</h4>
             <p className="text-slate-400 text-sm leading-relaxed">AI-powered reservations with smart no-show prevention and Web3 loyalty rewards. Built for global scale.</p>
