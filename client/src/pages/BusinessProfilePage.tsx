@@ -13,6 +13,7 @@ import { businessService, reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import BusinessMap from '../components/BusinessMap';
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
+import { LocalBusinessJsonLd } from '../components/LocalBusinessJsonLd';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
 
@@ -325,7 +326,8 @@ export default function BusinessProfilePage() {
 
   return (
     <div className="bg-surface min-h-screen text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
-      
+      <LocalBusinessJsonLd business={business || {}} />
+
       {/* Cover Hero Banner */}
       <section className="relative w-full h-80 md:h-[400px] overflow-hidden">
         <img 
