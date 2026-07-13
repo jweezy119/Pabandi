@@ -41,6 +41,7 @@ import AboutPage from './pages/AboutPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { LanguageProvider } from './context/LanguageContext';
+import { HelmetProvider } from 'react-helmet-async';
 
 import { useEffect } from 'react';
 
@@ -62,8 +63,9 @@ function App() {
   };
 
   return (
-    <LanguageProvider>
-      <Routes>
+    <HelmetProvider>
+      <LanguageProvider>
+        <Routes>
         <Route path="/waitlist" element={<WaitlistPage />} />
         <Route path="/airdrop" element={<AirdropPage />} />
         <Route path="/city/:slug" element={<CityLandingPage />} />
@@ -157,6 +159,7 @@ function App() {
         </Route>
       </Routes>
     </LanguageProvider>
+    </HelmetProvider>
   );
 }
 
