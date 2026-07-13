@@ -324,7 +324,7 @@ export default function BusinessProfilePage() {
   };
 
   return (
-    <div className="bg-surface min-h-screen pb-28 text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+    <div className="bg-surface min-h-screen text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
       
       {/* Cover Hero Banner */}
       <section className="relative w-full h-80 md:h-[400px] overflow-hidden">
@@ -353,7 +353,7 @@ export default function BusinessProfilePage() {
 
         {/* Brand Information overlay */}
         <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 text-white z-10">
-          <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider font-headline">
@@ -412,7 +412,7 @@ export default function BusinessProfilePage() {
       </section>
 
       {/* Main Layout Area */}
-      <main className="max-w-5xl mx-auto px-4 md:px-8 mt-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 mt-6 sm:mt-8">
         
         {/* Unclaimed Notice Banner */}
         {!business.isClaimed && (
@@ -433,7 +433,7 @@ export default function BusinessProfilePage() {
         )}
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-outline-variant/30 gap-6 mb-8 overflow-x-auto no-scrollbar">
+        <div className="flex border-b border-outline-variant/30 gap-4 sm:gap-6 mb-6 sm:mb-8 overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'Overview & Booking', icon: <CalendarDaysIcon className="h-4 w-4" /> },
             { id: 'promotions', label: 'Web3 Promotions', icon: <SparklesIcon className="h-4 w-4" /> },
@@ -456,15 +456,15 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* Tab Content Areas */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
           
           {/* Left Column (Main Tab Content) */}
           <div className="lg:col-span-7 space-y-8">
             
             {/* TAB: OVERVIEW */}
             {activeTab === 'overview' && (
-              <div className="space-y-8 animate-in fade-in duration-300">
-                <div className="space-y-4">
+              <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+                <div className="space-y-3 sm:space-y-4">
                   <h3 className="font-headline text-2xl font-black text-primary">About Venue</h3>
                   <p className="font-body text-base text-on-surface-variant leading-relaxed">
                     {business.description || `${business.name} is a premier ${getCategoryLabel(business.category).toLowerCase()} destination located in ${business.city}. Discover premium quality and service with Pabandi reliability.`}
@@ -473,7 +473,7 @@ export default function BusinessProfilePage() {
 
                 <div className="border-t border-outline-variant/20 pt-6 space-y-4">
                   <h4 className="font-headline text-lg font-bold text-on-surface">Details & Contact</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="flex items-center gap-3">
                       <ClockIcon className="h-5 w-5 text-primary shrink-0" />
                       <span className="text-sm font-body text-on-surface-variant">Mon - Sun: 12:00 PM - 11:30 PM</span>
@@ -530,7 +530,7 @@ export default function BusinessProfilePage() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {getPromotions().map((promo) => (
                     <div key={promo.id} className={`p-6 rounded-2xl bg-gradient-to-br ${promo.color} border ${promo.borderColor} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm glowing-border`}>
                       <div className="space-y-2">
@@ -594,7 +594,7 @@ export default function BusinessProfilePage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="flex justify-between items-center">
                         <h4 className="font-headline font-bold text-on-surface text-sm">Write your review</h4>
                         <button 
@@ -669,7 +669,7 @@ export default function BusinessProfilePage() {
                     <p className="text-sm font-body text-on-surface-variant">No reviews found for this venue.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {reviews.map((review: any) => (
                       <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm space-y-3">
                         <div className="flex justify-between items-start gap-4 flex-wrap">
@@ -713,7 +713,7 @@ export default function BusinessProfilePage() {
 
             {/* TAB: MEDIA & SOCIALS */}
             {activeTab === 'media' && (
-              <div className="space-y-8 animate-in fade-in duration-300">
+              <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
                 <div className="space-y-2">
                   <h3 className="font-headline text-2xl font-black text-primary">Media Gallery</h3>
                   <p className="font-body text-sm text-on-surface-variant">
