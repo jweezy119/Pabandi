@@ -103,7 +103,15 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
           {['Chicago', 'Live Selling', 'Freelance', 'Hospitality'].map((chip) => (
             <button
               key={chip}
-              onClick={() => { setQ(chip); go(); }}
+              onClick={() => {
+                if (chip === 'Live Selling') {
+                  navigate('/live-selling');
+                  onClose?.();
+                  return;
+                }
+                setQ(chip);
+                go();
+              }}
               className="shrink-0 px-3 py-2 rounded-xl bg-surface-container-high text-xs font-bold text-on-surface hover:bg-surface-container-highest transition-colors"
             >
               {chip}
@@ -155,7 +163,7 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-6 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <DesktopNavLink to="/live-sell" current={location.pathname === '/live-sell'}>Live Selling</DesktopNavLink>
+            <DesktopNavLink to="/live-selling" current={location.pathname === '/live-selling'}>Live Selling</DesktopNavLink>
             <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
             <DesktopNavLink to="/freelance" current={location.pathname === '/freelance'}>Freelance</DesktopNavLink>
             <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>

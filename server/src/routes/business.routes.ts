@@ -210,6 +210,8 @@ router.get('/', rateLimiter, async (req, res, next) => {
             else if (category === 'CLINIC') typeFilter = 'node["amenity"~"clinic|hospital|doctor|dentist"]';
             else if (category === 'FITNESS_CENTER') typeFilter = 'node["leisure"~"fitness_centre|sports_centre"]';
             else if (category === 'RESTAURANT') typeFilter = 'node["amenity"~"restaurant|cafe|fast_food|food_court"]';
+            else if (category === 'LIVE_SELLER') typeFilter = 'node["shop"~"electronics|clothes|fashion|general"]';
+            else if (category === 'FREELANCE') typeFilter = 'node["amenity"]["office"]["shop"]';
 
             overpassQuery = `
               [out:json][timeout:10];
