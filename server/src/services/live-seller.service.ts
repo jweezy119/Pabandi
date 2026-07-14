@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import { LiveSellerPlatform } from '@prisma/client';
 
+export type StreamScheduleItem = {
+  id?: string;
+  title?: string;
+  startsAt?: string;
+  endsAt?: string;
+  recurrence?: 'once' | 'weekly';
+  note?: string;
+};
+
 export type LiveSellerIntegrationInput = {
   platform: LiveSellerPlatform;
   accessToken: string;
@@ -10,6 +19,7 @@ export type LiveSellerIntegrationInput = {
   shopId?: string;
   streamKey?: string;
   webhookUrl?: string;
+  schedule?: StreamScheduleItem[];
   metadata?: any;
 };
 
@@ -175,6 +185,51 @@ export class LiveSellerService {
     });
 
     return nextOrder;
+  }
+
+  async getSchedule(businessId: string, platform: LiveSellerPlatform) {
+    const integration = await this.prisma.liveSellerIntegration.findFirst({
+      where: { businessId, platform, isActive: true },
+      select: { metadata: true, id: true, lastSyncAt: true },
+    });
+
+    if (!integration) return [];
+    const metadata = (integration.metadata as any) || {};
+    return Array.isArray(metadata.schedule) ? metadata.schedule : [];
+  }
+
+  async setSchedule(businessId: string, platform: LiveSellerPlatform, schedule: StreamScheduleItem[]) {
+    const integration = await this.prisma.liveSellerIntegration.findFirst({
+      where: { businessId, platform, isActive: true },
+      select: { id: true, metadata: true },
+    });
+
+    if (!integration) {
+      throw new Error('Live selling integration not connected');
+    }
+
+    const normalized = schedule.map((item, idx) => ({
+      id: item.id || `sch_${Date.now()}_${idx}`,
+      title: item.title || 'Untitled stream',
+      startsAt: item.startsAt || new Date(Date.now() + idx * 3600 * 1000).toISOString(),
+      endsAt: item.endsAt || new Date(Date.now() + idx * 3600 * 1000 + 60 * 60 * 1000).toISOString(),
+      recurrence: item.recurrence || 'once',
+      note: item.note || '',
+    }));
+
+    const metadata = (integration.metadata as any) || {};
+    await this.prisma.liveSellerIntegration.update({
+      where: { id: integration.id },
+      data: {
+        metadata: {
+          ...metadata,
+          schedule: normalized,
+          lastScheduleAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    return normalized;
   }
 }
 

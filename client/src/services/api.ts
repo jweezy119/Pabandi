@@ -195,6 +195,8 @@ export const liveSellerService = {
   patchShowState: (platform: string, data: any) => apiClient.patch(`/integrations/livesell/${platform}/state`, data),
   addOrder: (platform: string, order: any) => apiClient.post(`/integrations/livesell/${platform}/orders`, order),
   getShowCatalog: (platform: string) => apiClient.get(`/integrations/livesell/${platform}/catalog`),
+  getSchedule: (platform: string) => apiClient.get(`/integrations/livesell/${platform}/schedule`),
+  setSchedule: (platform: string, schedule: any[]) => apiClient.post(`/integrations/livesell/${platform}/schedule`, { schedule }),
 };
 
 export default apiClient;

@@ -457,7 +457,7 @@ export default function HomePage() {
                 key={c}
                 onClick={() => {
                   if (c === "LIVE_SELLER") {
-                    navigate("/live-sell");
+                    navigate("/live-selling");
                     return;
                   }
                   if (c === "FREELANCE") {
@@ -514,8 +514,8 @@ export default function HomePage() {
                 <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Live selling on Pabandi</h3>
                 <p className="text-sm text-on-surface-variant mb-4">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/live-sell" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm">Browse live shows</Link>
-                  <Link to="/s/demo" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">Try seller checkout · /s/:id</Link>
+                  <Link to="/live-selling" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm">Open Live Selling</Link>
+                  <Link to="/live-sell" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">Browse public hub</Link>
                 </div>
               </>
             ) : (
@@ -523,10 +523,10 @@ export default function HomePage() {
                 <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Freelance on Pabandi</h3>
                 <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
                 <div className="flex flex-wrap gap-3">
-                  {['Upwork','Fiverr','TaskRabbit','Freelancer.com'].map((platform) => (
-                    <button key={platform} type="button" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                  {['TikTok Live','YouTube Shopping','Shopify Live'].map((platform) => (
+                    <Link key={platform} to="/live-selling" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
                       {platform} ↗
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </>

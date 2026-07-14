@@ -34,6 +34,7 @@ import HospitalityPage from './pages/HospitalityPage';
 import AirdropPage from './pages/AirdropPage';
 import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
+import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
@@ -99,6 +100,7 @@ function App() {
             <Route path="web3" element={<Web3Page />} />
             <Route path="hospitality" element={<HospitalityPage />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
+            <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />

@@ -80,6 +80,32 @@ router.post('/:platform/orders', authenticate, async (req: AuthRequest, res) => 
   }
 });
 
+router.get('/:platform/schedule', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    const schedule = await liveSellerService.getSchedule(biz.id, platform);
+    res.json({ success: true, data: schedule });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to load schedule' });
+  }
+});
+
+router.post('/:platform/schedule', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    const schedule = await liveSellerService.setSchedule(biz.id, platform, req.body?.schedule || []);
+    res.json({ success: true, data: schedule });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to save schedule' });
+  }
+});
+
 router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const platform = req.params.platform;
@@ -152,6 +178,7 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
       accessToken: profile?.accessToken || req.accessToken || '',
       refreshToken: profile?.refreshToken || req.refreshToken || '',
       expiresAt: profile?.expiresAt ? new Date(profile.expiresAt) : undefined,
+      scope: profile?.scope || null,
       shopId: profile?.shop || profile?.shopDomain || null,
       metadata: { rawProfile: profile },
     });
