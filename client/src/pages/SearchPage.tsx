@@ -122,7 +122,7 @@ export default function SearchPage() {
     if (category === 'LIVE_SELLER') return 'Live Selling';
     if (category === 'FREELANCE') return 'Freelance';
     if (category === 'PROPERTY_RENTAL') return 'Short-term rentals';
-    if (q.trim()) return `“${q.trim()}”`;
+    if (q.trim()) return `Results for “${q.trim()}”`;
     if (category !== 'ALL') return CATEGORY_LABELS[category] || category;
     return 'Search';
   }, [q, category]);

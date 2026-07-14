@@ -103,7 +103,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
           {['Chicago', 'Live Selling', 'Freelance', 'Hospitality'].map((chip) => (
             <button
               key={chip}
-              onClick={() => { setQ(chip); }}
+              onClick={() => { setQ(chip); go(); }}
               className="shrink-0 px-3 py-2 rounded-xl bg-surface-container-high text-xs font-bold text-on-surface hover:bg-surface-container-highest transition-colors"
             >
               {chip}

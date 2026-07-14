@@ -1,0 +1,7 @@
+file '/home/peesee/Pabandi/assets/audio/voicebox/01_intro.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/02_stage1.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/03_stage2.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/04_stage3.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/05_stage4.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/06_stage5.wav'
+file '/home/peesee/Pabandi/assets/audio/voicebox/08_cta_jawad.wav'
