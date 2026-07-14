@@ -8,7 +8,7 @@ const CATEGORIES = [
   'ALL',
   'RESTAURANT',
   'HOTEL',
-  'SHORT_TERM_RENTAL',
+  'PROPERTY_RENTAL',
   'EVENT_VENUE',
   'OTHER',
 ];
@@ -17,7 +17,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   ALL: 'All stays',
   RESTAURANT: 'Restaurants',
   HOTEL: 'Hotels',
-  SHORT_TERM_RENTAL: 'Short-term rental',
+  PROPERTY_RENTAL: 'Short-term rental',
   EVENT_VENUE: 'Event venues',
   OTHER: 'Other',
 };
@@ -52,7 +52,7 @@ export default function HospitalityPage() {
   const { data, isLoading } = useQuery(
     ['hospitality', q, category, userLoc],
     async () => {
-      const params: Record<string, string> = { q: q || 'hospitality', category };
+      const params: Record<string, string> = { search: q || 'hospitality', category };
       if (userLoc) {
         params.latitude = String(userLoc.lat);
         params.longitude = String(userLoc.lng);
@@ -113,7 +113,7 @@ export default function HospitalityPage() {
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
             <Link to="/search?category=HOTEL" className="px-4 py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base">Explore hotels</Link>
-            <Link to="/search?category=SHORT_TERM_RENTAL" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Short-term rentals</Link>
+            <Link to="/search?category=PROPERTY_RENTAL" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Short-term rentals</Link>
           </div>
         </section>
 
@@ -144,7 +144,7 @@ export default function HospitalityPage() {
           {results.map((biz: any) => (
             <Link
               key={biz.id || `${biz.name}-${biz.address}`}
-              to={`/business/${biz.id}${biz.slug ? `-${biz.slug}` : ''}`}
+              to={`/business/${biz.id}`}
               className="block rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all"
             >
               <div

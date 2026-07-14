@@ -81,7 +81,7 @@ export default function SearchPage() {
   const { data, isLoading } = useQuery(
     ['search', q, category, userLoc],
     async () => {
-      const params: Record<string, string> = { q: q || 'local businesses near me', category };
+      const params: Record<string, string> = { search: q || 'local businesses near me', category };
       if (userLoc) {
         params.latitude = String(userLoc.lat);
         params.longitude = String(userLoc.lng);
@@ -187,7 +187,7 @@ export default function SearchPage() {
           {results.map((biz: any) => (
             <Link
               key={biz.id || `${biz.name}-${biz.address}`}
-              to={`/business/${biz.id}${biz.slug ? `-${biz.slug}` : ''}`}
+              to={`/business/${biz.id}`}
               className="block rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all"
             >
               <div
