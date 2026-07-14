@@ -42,11 +42,11 @@ function categoryFromTags(tags: Record<string, string>): string {
   if (tags.shop === 'massage') return 'SPA';
   if (tags.amenity === 'clinic' || tags.amenity === 'hospital' || tags.amenity === 'doctor' || tags.amenity === 'dentist') return 'CLINIC';
   if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym') return 'FITNESS_CENTER';
-  if (tags.tourism === 'hotel' || tags.tourism === 'motel' || tags.tourism === 'guest_house') return 'SHORT_TERM_RENTAL';
+  if (tags.tourism === 'hotel' || tags.tourism === 'motel' || tags.tourism === 'guest_house') return 'PROPERTY_RENTAL';
   if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.amenity === 'fast_food' || tags.amenity === 'food_court' || tags.amenity === 'bar') return 'RESTAURANT';
-  if (tags.shop) return 'SERVICE';
+  if (tags.shop) return 'OTHER';
   if (tags.office) return 'FREELANCE';
-  return 'SERVICE';
+  return 'OTHER';
 }
 
 function cityFromAddress(address: string, fallback: string): string {
@@ -92,34 +92,30 @@ async function fetchOverpassWithRetry(query: string): Promise<any[]> {
   return [];
 }
 
-const FALLBACK_NAMES = [
-  ['Prairie Ave Plumbing','plumber'],
-  ['Lakeview Dental Studio','dentist'],
-  ['Naperville Auto Care','car_repair'],
-  ['Chicago River Kayak Rental','kayak_rental'],
-  ['Evanston Artisan Salon','beauty_salon'],
-  ['Schaumburg Fit Studio','gym'],
-  ['Chicago Loop Coffee House','cafe'],
-  ['Aurora Family Clinic','clinic'],
-  ['Naperville Thai Kitchen','restaurant'],
-  ['Evanston Bookshop','bookshop'],
-  ['Chicago Neon Bar','bar'],
-  ['Schaumburg Massage Co','spa'],
-  ['Aurora Dry Cleaners','laundry'],
-  ['Evanston Skate Park','skate_park'],
-  ['Chicago Yoga Loft','yoga_studio'],
-];
-
 function fallbackPoisForCity(city: { name: string; lat: number; lng: number }) {
-  const ts = Date.now();
+  const FALLBACK_NAMES = [
+    ['Prairie Ave Plumbing','plumber'],
+    ['Lakeview Dental Studio','dentist'],
+    ['Naperville Auto Care','car_repair'],
+    ['Chicago River Kayak Rental','kayak_rental'],
+    ['Evanston Artisan Salon','beauty_salon'],
+    ['Schaumburg Fit Studio','gym'],
+    ['Chicago Loop Coffee House','cafe'],
+    ['Aurora Family Clinic','clinic'],
+    ['Naperville Thai Kitchen','restaurant'],
+    ['Evanston Bookshop','bookshop'],
+    ['Chicago Neon Bar','bar'],
+    ['Schaumburg Massage Co','spa'],
+    ['Aurora Dry Cleaners','laundry'],
+    ['Evanston Skate Park','skate_park'],
+    ['Chicago Yoga Loft','yoga_studio'],
+  ];
   return FALLBACK_NAMES.map((n, idx) => ({
     type: 'node',
-    id: Math.floor(ts % 1_000_000_000) * 100 + idx,
-    lat: city.lat + (Math.random() - 0.5) * 0.08,
-    lon: city.lng + (Math.random() - 0.5) * 0.08,
+    id: -(idx + 1),
+    lat: city.lat + (idx % 5) * 0.01,
+    lon: city.lng + (idx % 5) * 0.01,
     tags: { name: `${city.name} ${n[0]}`, amenity: n[1], addr_full: `${100 + idx} Main St, ${city.name}` },
-    _seedTs: ts,
-    _seedIdx: idx,
   }));
 }
 
@@ -145,7 +141,7 @@ async function fetchOsmNodesForCity(city: { name: string; lat: number; lng: numb
     const address = tags['addr:full'] || [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']].filter(Boolean).join(' ') || name;
     nodes.push({
       osmType: (el as any).type,
-      osmId: (el as any).id,
+      osmId: Math.abs((el as any).id || 0),
       name,
       category: categoryFromTags(tags),
       address,
@@ -164,14 +160,13 @@ async function fetchOsmNodesForCity(city: { name: string; lat: number; lng: numb
 async function upsertBusinesses(pois: OSMPoi[]) {
   let created = 0;
   let skipped = 0;
+  let errors = 0;
   for (const poi of pois) {
     try {
-      const seedTag = (poi as any)._seedTs ? `${(poi as any)._seedTs}-${(poi as any)._seedIdx}` : `${poi.osmId}`;
-      const slug = `${poi.name.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-${poi.city.toLowerCase().replace(/\s+/g, '-')}-${seedTag}`;
-      const id = `osm-${poi.osmType}-${poi.osmId}-${seedTag}`;
+      const id = `osm-${poi.osmType}-${poi.osmId}-${poi.osmId}`;
+      const slug = `${poi.name.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}-${poi.city.toLowerCase().replace(/\s+/g, '-')}-${poi.osmId}`;
       const existing = await prisma.business.findFirst({ where: { OR: [{ source: 'osm', externalId: id }, { slug }] } });
       if (existing) {
-        console.log('skip existing:', id, slug, '->', existing.id, existing.externalId);
         skipped++;
         continue;
       }
@@ -181,13 +176,13 @@ async function upsertBusinesses(pois: OSMPoi[]) {
           source: 'osm',
           externalId: id,
           name: poi.name,
-          description: `Imported from OpenStreetMap. Claim this profile to enable trust-first bookings.`,
+          description: 'Imported from OpenStreetMap. Claim this profile to enable trust-first bookings.',
           category: poi.category as any,
-          address: poi.address,
+          address: poi.address || `${poi.name}, ${poi.city}`,
           city: poi.city,
           phone: poi.phone || 'Contact via app',
           email: 'contact@pabandi.com',
-          website: poi.website,
+          website: poi.website || null,
           logoUrl: '',
           coverImageUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200',
           rating: 4.5,
@@ -211,27 +206,31 @@ async function upsertBusinesses(pois: OSMPoi[]) {
         },
       });
       created++;
+      console.log('created:', id, poi.name);
     } catch (err: any) {
-      skipped++;
+      errors++;
+      console.error('create error:', poi.name, err.code, err.message);
     }
   }
-  return { created, skipped };
+  return { created, skipped, errors };
 }
 
 async function main() {
   console.log('Starting OSM seed import for US Midwest...');
   let totalCreated = 0;
   let totalSkipped = 0;
+  let totalErrors = 0;
   for (const city of CITIES) {
     console.log(`Seeding ${city.name}...`);
     const pois = await fetchOsmNodesForCity(city);
     const result = await upsertBusinesses(pois);
-    console.log(`${city.name}: candidates=${pois.length}, created=${result.created}, skipped=${result.skipped}`);
+    console.log(`${city.name}: candidates=${pois.length}, created=${result.created}, skipped=${result.skipped}, errors=${result.errors}`);
     totalCreated += result.created;
     totalSkipped += result.skipped;
+    totalErrors += result.errors;
   }
   const count = await prisma.business.count({ where: { source: 'osm' } });
-  console.log(`Seed complete. created=${totalCreated}, skipped=${totalSkipped}, osm rows=${count}`);
+  console.log(`Seed complete. created=${totalCreated}, skipped=${totalSkipped}, errors=${totalErrors}, osm rows=${count}`);
 }
 
 main()
