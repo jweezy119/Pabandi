@@ -242,20 +242,20 @@ export default function ReservationsPage() {
                     </div>
                   )}
 
-                  {/* PabPoints Cashback Receipt for Completed Bookings */}
+                  {/* $PAB Cashback Receipt for Completed Bookings */}
                   {r.status === 'COMPLETED' && !isBusinessOwner && (
                     <div className="rounded-2xl p-4 sm:p-5 flex flex-col gap-2 sm:gap-3 mt-2 glowing-border">
                       <div className="flex items-center justify-between text-xs font-bold text-[#10b981]">
                         <span className="flex items-center gap-1.5 uppercase tracking-wider">
                           <SparklesIcon className="h-4 w-4" />
-                          PabPoints Cashback Receipt
+                          $PAB Cashback Receipt
                         </span>
                         <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded font-mono">
-                          +{r.cashbackAmount || 50} PTS
+                          +{r.cashbackAmount || 50} $PAB
                         </span>
                       </div>
                       <p className="text-[10px] text-on-surface-variant font-body leading-relaxed">
-                        Your reliability score increased! The deposit escrow has been released, and your PabPoints rewards were automatically minted to your wallet.
+                        Your reliability score increased! The deposit escrow has been released, and your $PAB rewards were automatically minted to your wallet.
                       </p>
                       <div className="flex justify-between items-center text-[9px] text-on-surface-variant font-mono pt-2 border-t border-[#14F195]/20 mt-1">
                         <span>TX: {r.cryptoDepositTxHash || 'SOL_0x9A...F8E2'}</span>

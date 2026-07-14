@@ -40,6 +40,7 @@ import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
+import { PublicPassportPage } from './pages/PublicPassportPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
@@ -158,6 +159,7 @@ function App() {
               path="passport"
               element={isAuthenticated ? <DietaryPassportPage /> : <Navigate to="/login" />}
             />
+            <Route path="passport/:sellerId" element={<PublicPassportPage />} />
           </Route>
         </Routes>
       </LanguageProvider>
