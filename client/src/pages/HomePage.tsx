@@ -461,7 +461,7 @@ export default function HomePage() {
                     return;
                   }
                   if (c === "FREELANCE") {
-                    navigate("/search?type=businesses&category=FREELANCE");
+                    navigate("/search?category=FREELANCE");
                     return;
                   }
                   setCategory(c);
