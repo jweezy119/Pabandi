@@ -11,10 +11,11 @@ import {
   ExclamationTriangleIcon,
   ShieldCheckIcon,
   BellIcon,
+  VideoCameraIcon,
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
 
-type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai';
+type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'live-selling';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 type TapLinkGeneratorProps = {
@@ -564,6 +565,55 @@ export default function BusinessSettingsPage() {
             <SaveButton onClick={handleSaveAI} label="Save AI Settings" />
           </div>
         );
+
+      case 'live-selling':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-bold text-[#e8e8e8]">Live Selling</h3>
+                <p className="text-sm text-[#757575]">Connect your show platform, publish a schedule, and share your universal seller link.</p>
+              </div>
+              <VideoCameraIcon className="w-7 h-7 text-[#0ea5e9]" />
+            </div>
+
+            <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#181818] space-y-3">
+              <p className="text-xs text-[#9e9e9e]">Category check</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-[#e8e8e8]">
+                  Business category: {CATEGORIES.find(c => c.value === businessData.category)?.label || businessData.category}
+                </p>
+                {businessData.category !== 'LIVE_SELLER' ? (
+                  <button type="button" onClick={() => setActiveTab('profile')} className="text-xs font-semibold text-[#0ea5e9]">Update in Profile</button>
+                ) : (
+                  <span className="text-xs font-semibold text-emerald-400">Live-seller ready</span>
+                )}
+              </div>
+              <p className="text-xs text-[#757575]">Set category to <span className="font-mono text-[#e8e8e8]">LIVE_SELLER</span> in Business Profile so buyers find you from the live-selling vertical.</p>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#181818]">
+              <h4 className="font-bold text-[#e8e8e8] mb-3">Connect platforms</h4>
+              <p className="text-xs text-[#757575] mb-4">Connect TikTok Live, YouTube Shopping, or Shopify Live. One catalog syncs across shows.</p>
+              <div className="flex flex-wrap gap-2">
+                <a href="/integrations/livesell/connect/tiktok-live" className="px-4 py-2.5 rounded-xl bg-[#ff0050] text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect TikTok</a>
+                <a href="/integrations/livesell/connect/youtube-shopping" className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect YouTube</a>
+                <a href="/integrations/livesell/connect/shopify-live" className="px-4 py-2.5 rounded-xl bg-[#95BF47] text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Shopify</a>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#181818]">
+              <h4 className="font-bold text-[#e8e8e8] mb-1">Your seller link</h4>
+              <p className="text-xs text-[#757575] mb-3">Share this universal booking link anywhere: TikTok bio, YouTube description, WhatsApp, or SMS.</p>
+              <div className="flex gap-2">
+                <input readOnly className="input-field bg-[#1a1a1a] opacity-90" value={`${window.location.origin}/s/${bizRes?.id || ''}`} />
+                <button type="button" className="px-4 py-2 bg-[#181818] border border-[#ffffff25] rounded-xl text-sm font-semibold text-[#e8e8e8]">Copy</button>
+              </div>
+            </div>
+
+            <SaveButton onClick={() => setSaveStatus('saved')} label="Save Live Selling Status" />
+          </div>
+        );
     }
   };
 
@@ -599,6 +649,10 @@ export default function BusinessSettingsPage() {
             <button onClick={() => setActiveTab('ai')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'ai' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
               <CpuChipIcon className="w-5 h-5" /> AI Configuration
+            </button>
+            <button onClick={() => setActiveTab('live-selling')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'live-selling' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
+              <VideoCameraIcon className="w-5 h-5" /> Live Selling
             </button>
           </div>
 

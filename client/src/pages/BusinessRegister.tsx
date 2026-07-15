@@ -20,6 +20,14 @@ export default function BusinessRegister() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const navigateAfterRegister = () => {
+    if (formData.category === 'LIVE_SELLER') {
+      navigate('/business/settings?tab=live-selling');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -48,7 +56,7 @@ export default function BusinessRegister() {
       } else {
         queryClient.invalidateQueries('my-business');
       }
-      navigate('/dashboard');
+      navigateAfterRegister();
     } catch (err: any) {
       if (err.response?.status === 409 || err.response?.data?.message?.includes('already has a business')) {
         const currentUser = useAuthStore.getState().user;
@@ -56,7 +64,7 @@ export default function BusinessRegister() {
           useAuthStore.getState().setUser({ ...currentUser, role: 'BUSINESS_OWNER' });
         }
         queryClient.invalidateQueries('my-business');
-        navigate('/dashboard');
+        navigateAfterRegister();
         return;
       }
       const rawErrorMsg = err.response?.data?.message;
