@@ -156,6 +156,7 @@ app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
+app.use('/', tapRoutes);
 
 app.use(`/api/${API_VERSION}/hospitality`, hospitalityRoutes);
 app.use('/api/hospitality', hospitalityRoutes); // Short alias for PMS webhooks
