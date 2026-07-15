@@ -17,6 +17,44 @@ import { LocalBusinessJsonLd } from '../components/LocalBusinessJsonLd';
 
 type Tab = 'overview' | 'promotions' | 'reviews' | 'media';
 
+type TapProfileButtonProps = {
+  business: {
+    id: string;
+    name: string;
+    category?: string;
+  };
+};
+
+const TapProfileButton = ({ business }: TapProfileButtonProps) => {
+  const [copiedTap, setCopiedTap] = useState(false);
+  const checkoutUrl = `${window.location.origin}/t/pay/${business.id}`;
+  const tapUrl = `https://tap.pabandi.com/s/${business.id}`;
+
+  const copyTap = async () => {
+    await navigator.clipboard.writeText(tapUrl);
+    setCopiedTap(true);
+    setTimeout(() => setCopiedTap(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <a
+        href={checkoutUrl}
+        className="inline-flex items-center gap-2 bg-white text-black font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-white/90 transition-colors shadow-sm"
+      >
+        Pay with Tap
+      </a>
+      <button
+        onClick={copyTap}
+        className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-white/15 transition-colors"
+      >
+        {copiedTap ? 'Copied' : 'Copy seller link'}
+      </button>
+      <span className="text-[10px] text-white/60 font-body">{tapUrl}</span>
+    </div>
+  );
+};
+
 export default function BusinessProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -408,6 +446,11 @@ export default function BusinessProfilePage() {
               <button onClick={handleClaim} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" /> Claim Listing
               </button>
+            )}
+
+            {/* Tap checkout shortcut */}
+            {business.id && (
+              <TapProfileButton business={business} />
             )}
           </div>
         </div>

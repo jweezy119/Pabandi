@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { tapService } from '../services/api';
+import QRCodeLib from 'qrcode';
 
 type PaymentStatus = 'idle' | 'processing' | 'verified' | 'error';
+
+const SOLANA_USDC_LINK = (recipient: string, amount: string | number, memo = '') =>
+  `solana:${recipient}?amount=${amount}${memo ? `&memo=${encodeURIComponent(memo)}` : ''}`;
 
 export default function TapPayPage() {
   const { sellerId } = useParams<{ sellerId: string }>();
@@ -17,6 +21,8 @@ export default function TapPayPage() {
   const [signature, setSignature] = useState('');
   const [verifyResult, setVerifyResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [blinkJson, setBlinkJson] = useState<any>(null);
 
   useEffect(() => {
     if (!sellerId || !amount || amount <= 0) {
@@ -24,6 +30,21 @@ export default function TapPayPage() {
       setStatus('error');
     }
   }, [sellerId, amount]);
+
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    let active = true;
+    QRCodeLib.toDataURL(currentUrl, { width: 512, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } })
+      .then((url: string) => { if (active) setQrDataUrl(url); })
+      .catch(() => { if (active) setQrDataUrl(''); });
+
+    fetch(`/.well-known/blinks.json?sellerId=${encodeURIComponent(sellerId || '')}`, { headers: { Accept: 'application/json' } })
+      .then(res => res.ok ? res.json() : Promise.resolve(null))
+      .then(data => { if (active) setBlinkJson(data); })
+      .catch(() => { if (active) setBlinkJson(null); });
+
+    return () => { active = false; };
+  }, [sellerId, amount, intentId]);
 
   const handleCreateIntent = async () => {
     if (!sellerId || !amount) return;
@@ -64,18 +85,59 @@ export default function TapPayPage() {
     }
   };
 
+  const openWalletDeepLink = () => {
+    if (!sellerId || !amount) return;
+    const link = SOLANA_USDC_LINK(sellerId, amount.toFixed(currency === 'SOL' ? 4 : 2), `Tap payment to ${sellerId}`);
+    window.open(link, '_blank', 'noopener,noreferrer');
+  };
+
   const isReady = sellerId && amount > 0;
 
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="text-3xl font-black text-[#e8e8e8] mb-2">Tap Checkout</h1>
-        <p className="text-sm text-[#757575] mb-6">
-          Public merchant link:{' '}
-          <span className="font-mono text-[#0ea5e9]">
-            /t/pay/{sellerId || ':sellerId'}
+        <p className="text-sm text-[#757575] mb-1">
+          Merchant:{' '}
+          <span className="font-mono text-[#0ea5e9] break-all">
+            {sellerId || ':sellerId'}
           </span>
         </p>
+        <p className="text-sm text-[#757575] mb-6">
+          Seller link:{' '}
+          <span className="font-mono text-[#0ea5e9] break-all">
+            https://tap.pabandi.com/s/{sellerId || ':sellerId'}
+          </span>
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-[#181818] rounded-2xl p-5 shadow-sm border border-[#ffffff15]">
+            <h3 className="text-xs font-bold text-[#9e9e9e] uppercase tracking-wide mb-3">Tap QR</h3>
+            {qrDataUrl ? (
+              <img src={qrDataUrl} alt="Tap payment QR" className="w-full rounded-xl bg-white" />
+            ) : (
+              <div className="w-full aspect-square rounded-xl bg-[#252525] border border-[#ffffff15] flex items-center justify-center text-xs text-[#757575]">
+                Generating QR…
+              </div>
+            )}
+            <p className="text-[10px] text-[#757575] mt-2">Scan to open this checkout link in any wallet.</p>
+          </div>
+
+          <div className="bg-[#181818] rounded-2xl p-5 shadow-sm border border-[#ffffff15]">
+            <h3 className="text-xs font-bold text-[#9e9e9e] uppercase tracking-wide mb-3">Solana Action</h3>
+            {blinkJson ? (
+              <pre className="text-[11px] text-[#9e9e9e] font-mono whitespace-pre-wrap break-all">{JSON.stringify(blinkJson, null, 2)}</pre>
+            ) : (
+              <p className="text-xs text-[#757575]">No Action metadata found for this seller.</p>
+            )}
+            <a
+              href={`/actions/tap-pay/${sellerId || ':sellerId'}?amount=${amount}&currency=${currency}`}
+              className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#0ea5e9] hover:text-sky-300"
+            >
+              Open Action JSON ↗
+            </a>
+          </div>
+        </div>
 
         <div className="bg-[#181818] rounded-2xl p-6 shadow-sm border border-[#ffffff15] space-y-5">
           <div>
@@ -122,6 +184,13 @@ export default function TapPayPage() {
               className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
               Pay with Phantom
+            </button>
+            <button
+              onClick={openWalletDeepLink}
+              disabled={!isReady}
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors border border-white/20"
+            >
+              Open Wallet
             </button>
           </div>
 
