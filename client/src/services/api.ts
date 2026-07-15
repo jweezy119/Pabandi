@@ -192,6 +192,8 @@ export const tapService = {
     apiClient.post('/tap/intents', data),
   verifyPayment: (data: { signature: string; sellerId: string; expectedAmount: number; mint?: string }) =>
     apiClient.post('/tap/verify', data),
+  getMerchant: (sellerId: string) =>
+    apiClient.get(`/tap/merchant/${encodeURIComponent(sellerId)}`),
 };
 
 export const liveSellerService = {

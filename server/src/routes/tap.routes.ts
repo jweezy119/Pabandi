@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import bs58 from 'bs58';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
 const connection = new Connection(SOLANA_RPC, 'confirmed');
@@ -48,19 +50,33 @@ router.get('/.well-known/tap/:sellerId', (req, res) => {
   });
 });
 
-router.get('/.well-known/blinks.json', (req, res) => {
+router.get('/.well-known/blinks.json', async (req, res) => {
   const sellerId = String(req.query.sellerId || '').trim();
+  let merchantName = sellerId ? `${sellerId}` : 'Merchant';
+  let merchantUrl = `${process.env.FRONTEND_URL || 'https://pabandi.com'}/t/pay/${sellerId || ':sellerId'}`;
+  try {
+    if (sellerId) {
+      const business = await prisma.business.findUnique({ where: { id: sellerId }, select: { id: true, name: true } });
+      if (business?.name) {
+        merchantName = business.name;
+        merchantUrl = `${process.env.FRONTEND_URL || 'https://pabandi.com'}/business/${sellerId}`;
+      }
+    }
+  } catch {
+    // keep defaults if DB lookup fails
+  }
+
   res.type('application/json');
   return res.json({
     '$schema': 'https://github.com/solana-labs/blinks/blob/main/blinks.schema.json',
     blinks: [
       {
         id: `tap:${sellerId || ':sellerId'}`,
-        name: `Tap Pay ${sellerId || ''}`,
+        name: `Tap Pay ${merchantName}`,
         description: 'Payment Link',
         icon: 'https://pabandi.com/icon-192.png',
-        url: `${process.env.FRONTEND_URL || 'https://pabandi.com'}/t/pay/${sellerId || ':sellerId'}`,
-        metadata: { sellerId },
+        url: merchantUrl,
+        metadata: { sellerId, merchantName },
         actions: [
           {
             type: 'solana-action',
@@ -82,21 +98,29 @@ router.get('/.well-known/blinks.json', (req, res) => {
   });
 });
 
-router.get('/actions/tap-pay/:sellerId', (req, res) => {
+router.get('/actions/tap-pay/:sellerId', async (req, res) => {
   const sellerId = req.params.sellerId;
   const amount = String(req.query.amount || '0');
   const currency = String(req.query.currency || 'USDC').toUpperCase();
+
+  let merchantName = `${sellerId}`;
+  try {
+    const business = await prisma.business.findUnique({ where: { id: sellerId }, select: { id: true, name: true } });
+    if (business?.name) merchantName = business.name;
+  } catch {
+    // keep default
+  }
 
   res.type('application/json');
   return res.json({
     '@context': ['https://schema.org', 'https://solana.com/schema'],
     type: 'Actions',
-    name: `Tap Pay ${sellerId}`,
+    name: `Tap Pay ${merchantName}`,
     description: 'Send payment to seller using Tap on Pabandi.',
     icon: 'https://pabandi.com/icon-192.png',
     data: {
       merchantId: sellerId,
-      name: 'Tap Pay',
+      name: merchantName,
       description: 'Tap payment for merchant',
       amount: amount,
       currency: currency,
@@ -114,6 +138,20 @@ router.get('/actions/tap-pay/:sellerId', (req, res) => {
       }
     }
   });
+});
+
+router.get('/merchant/:sellerId', async (req, res) => {
+  const sellerId = req.params.sellerId;
+  try {
+    const business = await prisma.business.findUnique({
+      where: { id: sellerId },
+      select: { id: true, name: true, category: true, phone: true, address: true, city: true, isClaimed: true },
+    });
+    if (!business) return res.status(404).json({ success: false, message: 'Merchant not found' });
+    return res.json({ success: true, data: business });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: (err as Error).message });
+  }
 });
 
 router.post('/verify', async (req, res) => {

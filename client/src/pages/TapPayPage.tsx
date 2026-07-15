@@ -23,6 +23,19 @@ export default function TapPayPage() {
   const [error, setError] = useState('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [blinkJson, setBlinkJson] = useState<any>(null);
+  const [merchant, setMerchant] = useState<{ id: string; name: string; category?: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!sellerId) return;
+    let active = true;
+    tapService.getMerchant(sellerId)
+      .then(res => {
+        const data = (res.data?.data || res.data) as any;
+        if (active && data?.success && data?.data?.id) setMerchant(data.data);
+      })
+      .catch(() => { if (active) setMerchant(null); });
+    return () => { active = false; };
+  }, [sellerId]);
 
   useEffect(() => {
     if (!sellerId || !amount || amount <= 0) {
@@ -100,7 +113,7 @@ export default function TapPayPage() {
         <p className="text-sm text-[#757575] mb-1">
           Merchant:{' '}
           <span className="font-mono text-[#0ea5e9] break-all">
-            {sellerId || ':sellerId'}
+            {merchant?.name || sellerId || ':sellerId'}
           </span>
         </p>
         <p className="text-sm text-[#757575] mb-6">
