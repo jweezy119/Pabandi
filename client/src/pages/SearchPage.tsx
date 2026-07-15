@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { businessService } from '../services/api';
+import { businessService, textSearchService } from '../services/api';
 
 type Business = {
   id: string;
@@ -43,7 +43,76 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-function haversineKm(a: { lat: number; lng: number }, b: { lat?: number | null; lng?: number | null }) {
+const QUICK_PROMPTS = [
+  {
+    key: 'live',
+    label: 'Live Selling',
+    href: '/live-sell',
+    sub: 'TikTok · YouTube · Shopify',
+    icon: '🎥',
+  },
+  {
+    key: 'freelance',
+    label: 'Freelance',
+    href: '/search?category=FREELANCE',
+    sub: 'Designers · Coders · Creators',
+    icon: '🧑‍💻',
+  },
+];
+
+function buildSearchSuggestions(rawQuery: string) {
+  const query = rawQuery.trim();
+  if (!query) return [];
+  const map: Record<string, string> = {
+    food: 'RESTAURANT',
+    restaurant: 'RESTAURANT',
+    eat: 'RESTAURANT',
+    cafe: 'RESTAURANT',
+    coffee: 'RESTAURANT',
+    salon: 'SALON',
+    hair: 'SALON',
+    barber: 'SALON',
+    clinic: 'CLINIC',
+    doctor: 'CLINIC',
+    spa: 'SPA',
+    massage: 'SPA',
+    gym: 'FITNESS_CENTER',
+    fitness: 'FITNESS_CENTER',
+    yoga: 'FITNESS_CENTER',
+    live: 'LIVE_SELLER',
+    stream: 'LIVE_SELLER',
+    shopify: 'LIVE_SELLER',
+    tiktok: 'LIVE_SELLER',
+    freelance: 'FREELANCE',
+    freelancer: 'FREELANCE',
+    designer: 'FREELANCE',
+    developer: 'FREELANCE',
+    photographer: 'FREELANCE',
+    tutor: 'FREELANCE',
+    rental: 'PROPERTY_RENTAL',
+    airbnb: 'PROPERTY_RENTAL',
+    stay: 'PROPERTY_RENTAL',
+  };
+  const seen = new Set<string>();
+  const out: { label: string; value: string }[] = [];
+  const lower = query.toLowerCase();
+  const add = (label: string, value: string) => {
+    if (!seen.has(label + value)) {
+      seen.add(label + value);
+      out.push({ label, value });
+    }
+  };
+  for (const k of Object.keys(map)) {
+    if (lower.includes(k)) add(CATEGORY_LABELS[map[k]] || map[k], map[k]);
+  }
+  add('Search all', 'ALL');
+  return out.slice(0, 5);
+}
+
+function haversineKm(
+  a: { lat: number; lng: number },
+  b: { lat?: number | null; lng?: number | null }
+) {
   if (typeof a.lat !== 'number' || typeof a.lng !== 'number' || typeof b.lat !== 'number' || typeof b.lng !== 'number') return Infinity;
   const toRad = (v: number) => (v * Math.PI) / 180;
   const R = 6371;
@@ -54,14 +123,15 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat?: number | null; 
 }
 
 export default function SearchPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialQ = searchParams.get('q') || '';
   const initialCategory = (searchParams.get('category') || 'ALL') as string;
-
 
   const [q, setQ] = useState(initialQ);
   const [category, setCategory] = useState(initialCategory);
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [queryDraft, setQueryDraft] = useState(initialQ);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     const p = searchParams.get('category');
@@ -101,6 +171,20 @@ export default function SearchPage() {
     { keepPreviousData: true }
   );
 
+  const qwenSource = useQuery(['text-search-suggestions', q], async () => {
+    const query = String(q || '');
+    if (!query || query.length < 2) return [];
+    const res = await textSearchService.getSuggestions(query);
+    return ((res?.data?.data?.suggestions as string[]) || []).slice(0, 6);
+  }, { enabled: q.trim().length >= 2 });
+
+  const recommendations = useMemo(() => buildSearchSuggestions(q), [q]);
+  const currentSuggestions = useMemo(() => {
+    const fromWen = qwenSource.data || [];
+    if (fromWen.length) return fromWen;
+    return recommendations.map((r) => r.label);
+  }, [qwenSource.data, recommendations]);
+
   const results = useMemo(() => {
     const base = data || [];
     if (!userLoc) return base;
@@ -122,7 +206,7 @@ export default function SearchPage() {
     if (category === 'LIVE_SELLER') return 'Live Selling';
     if (category === 'FREELANCE') return 'Freelance';
     if (category === 'PROPERTY_RENTAL') return 'Short-term rentals';
-    if (q.trim()) return `Results for “${q.trim()}”`;
+    if (q.trim()) return `Results for "${q.trim()}"`;
     if (category !== 'ALL') return CATEGORY_LABELS[category] || category;
     return 'Search';
   }, [q, category]);
@@ -131,55 +215,137 @@ export default function SearchPage() {
     document.title = `${pageTitle} · Pabandi`;
   }, [pageTitle]);
 
+  const applyQuery = (next: string) => {
+    setQ(next);
+    setQueryDraft(next);
+    setShowDropdown(false);
+    setSearchParams({ q: next, category }, { replace: true });
+    setShowDropdown(false);
+  };
+
+  const applyCategory = (next: string) => {
+    setCategory(next);
+    setSearchParams({ q: q || '', category: next }, { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
-          <h1 className="font-headline text-xl sm:text-2xl font-bold">{pageTitle}</h1>
-          <span className="text-xs sm:text-sm text-on-surface-variant">
-            {isLoading ? 'Searching…' : results.length ? `${results.length} result${results.length === 1 ? '' : 's'}` : 'Showing fallback results.'}
-          </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-headline text-2xl sm:text-3xl font-black">Find trusted services near you</h1>
+          <p className="text-sm text-on-surface-variant">
+            Start broad, then filter by category. Tap a suggestion or press enter to search.
+          </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {QUICK_PROMPTS.map((prompt) => (
+            <Link
+              key={prompt.key}
+              to={prompt.href}
+              className="flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 hover:bg-surface-container-high active:scale-[0.99] transition-all"
+            >
+              <span className="text-2xl leading-none">{prompt.icon}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-headline font-bold">{prompt.label}</span>
+                <span className="block text-[11px] text-on-surface-variant truncate">{prompt.sub}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="relative">
           <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={queryDraft}
+            onChange={(e) => {
+              setQueryDraft(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => {
+              if (q.trim().length || queryDraft.trim().length) setShowDropdown(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => setShowDropdown(false), 150);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                applyQuery(queryDraft);
+              }
+            }}
             placeholder="Search services, businesses..."
-            className="flex-1 p-3 sm:p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full p-3 sm:p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
           />
+          {showDropdown && currentSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-outline-variant/20 bg-surface shadow-xl shadow-black/40 z-30 overflow-hidden">
+              {currentSuggestions.map((suggestion, idx) => (
+                <button
+                  key={`${suggestion}-${idx}`}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const match = recommendations.find((r) => r.label === suggestion);
+                    applyQuery(match?.value === 'ALL' ? '' : match?.label || suggestion);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high"
+                >
+                  <span className="text-primary mr-2">🔎</span>
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => applyCategory(c)}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
+                  category === c ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                }`}
+              >
+                {CATEGORY_LABELS[c] || c}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
-            onClick={() =>
-              navigator.geolocation.getCurrentPosition((pos) =>
-                setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-              )
-            }
-            className="px-4 py-3 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-sm font-bold hover:bg-surface-container-high transition-colors"
+            onClick={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                  () => {}
+                );
+              }
+            }}
+            className="px-4 py-2 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high"
           >
             Near Me
           </button>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6">
-          {CATEGORIES.map((c) => (
+        <div className="flex items-center gap-2">
+          <span className="text-xs sm:text-sm text-on-surface-variant">
+            {isLoading ? 'Searching…' : results.length ? `${results.length} result${results.length === 1 ? '' : 's'}` : 'Showing fallback results.'}
+          </span>
+          {q.trim() && (
             <button
-              key={c}
               type="button"
-              onClick={() => setCategory(c)}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                category === c ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
-              }`}
+              onClick={() => applyQuery('')}
+              className="text-xs font-bold text-primary"
             >
-              {CATEGORY_LABELS[c] || c}
+              Clear search
             </button>
-          ))}
+          )}
         </div>
 
         {results.length === 0 && !isLoading && (
           <div className="rounded-3xl border border-outline-variant/10 bg-surface-container-low p-8 text-center">
             <p className="text-sm text-on-surface-variant">No exact hits yet. We’re still loading nearby options.</p>
-            <button onClick={() => setCategory('ALL')} className="mt-3 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
+            <button onClick={() => applyCategory('ALL')} className="mt-3 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
           </div>
         )}
 

@@ -169,6 +169,9 @@ app.use('/external/v1', externalRoutes);
 import publicPassportRoutes from './routes/publicPassport.routes';
 app.use(`/api/${API_VERSION}/passport/public`, publicPassportRoutes);
 
+import textSearchRoutes from './routes/textSearch.routes';
+app.use(`/api/${API_VERSION}/text-search`, textSearchRoutes);
+
 // ── Pabandi Reliability Passport API (Public, API-key gated) ─────────────────
 import passportRoutes from './routes/passport.routes';
 app.use(`/api/${API_VERSION}/passport`, passportRoutes);

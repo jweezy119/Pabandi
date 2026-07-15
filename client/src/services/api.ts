@@ -194,6 +194,13 @@ export const passportService = {
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}/reviews`),
 };
 
+export const textSearchService = {
+  getSuggestions: (query: string) =>
+    apiClient.get(`/text-search/suggestions`, { params: { q: query } }),
+  getCategories: (query: string) =>
+    apiClient.get(`/text-search/categories`, { params: { q: query } }),
+};
+
 export const tapService = {
   createIntent: (data: { sellerId: string; amount: number; currency?: string; memo?: string; reference?: string }) =>
     apiClient.post('/tap/intents', data),
