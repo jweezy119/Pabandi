@@ -40,10 +40,20 @@ router.get('/public/:sellerId', async (req: any, res: Response): Promise<any> =>
       return res.status(404).json({ success: false, error: 'Seller not found.' });
     }
 
+    const trust = Number(business.trustScore ?? 0);
+    const reliability = Number(business.reliabilityScore ?? 0);
+
+    const endorsements = [
+      trust >= 80 ? { title: 'Top Trust', detail: `${trust}% trust score` } : null,
+      reliability >= 80 ? { title: 'High Reliability', detail: `${reliability} reliability` } : null,
+      (business.reviewCount ?? 0) >= 20 ? { title: 'Proven', detail: `${business.reviewCount} reviews` } : null,
+    ].filter(Boolean) as { title: string; detail: string }[];
+
     return res.status(200).json({
       success: true,
       data: {
         business,
+        endorsements,
         passportUrl: `${req.protocol}://${req.get('host')}/passport/${business.id}`,
         tapUrl: `${req.protocol}://${req.get('host')}/t/pay/${business.id}`,
       },

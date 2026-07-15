@@ -45,6 +45,9 @@ export const PublicPassportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [endorsements, setEndorsements] = useState<
+    { title: string; detail: string }[]
+  >([]);
 
   useEffect(() => {
     let active = true;
@@ -54,7 +57,13 @@ export const PublicPassportPage: React.FC = () => {
         try {
           const res = await passportService.getPublicSummary(sellerId);
           const next = (res.data?.data?.business as Business | undefined) ?? null;
-          if (active) setSeller(next);
+          const rawEndorsements = (res.data?.data?.endorsements as
+            | { title: string; detail: string }[]
+            | undefined) ?? [];
+          if (active) {
+            setSeller(next);
+            setEndorsements(rawEndorsements);
+          }
         } catch {
           const res = await businessService.getBusiness(sellerId);
           const next = (res.data?.data?.business as Business | undefined) ?? null;
@@ -182,6 +191,14 @@ export const PublicPassportPage: React.FC = () => {
                 <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Reviews</p>
                 <p className="text-sm font-bold text-on-surface mt-1">{reviewCount ? reviewCount.toLocaleString() : '—'}</p>
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {endorsements.map((item) => (
+                <span key={item.title} className="px-3 py-1 rounded-full bg-[#111111] text-[#f4f4f5] text-[10px] font-bold">
+                  {item.title}: {item.detail}
+                </span>
+              ))}
             </div>
 
             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
