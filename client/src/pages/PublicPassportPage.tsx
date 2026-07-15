@@ -18,19 +18,6 @@ type Business = {
   owner?: { isPhoneVerified?: boolean; isEmailVerified?: boolean };
 };
 
-type RewardRule = {
-  label: string;
-  amount: number;
-  highlight?: boolean;
-};
-
-const REWARD_RULES: RewardRule[] = [
-  { label: 'Honored booking', amount: 25 },
-  { label: 'No-show deposit protected', amount: 50, highlight: true },
-  { label: 'Low no-show month bonus', amount: 100 },
-  { label: 'Refer another business', amount: 75 },
-];
-
 const normalizeScore = (value?: number | null | string | any) => {
   if (value == null) return null;
   const num = typeof value === 'number' ? value : Number(value);
@@ -48,6 +35,8 @@ export const PublicPassportPage: React.FC = () => {
   const [endorsements, setEndorsements] = useState<
     { title: string; detail: string }[]
   >([]);
+  const [reviews, setReviews] = useState<{ authorName: string; rating: number; text?: string; time: string; source: string }[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -69,8 +58,27 @@ export const PublicPassportPage: React.FC = () => {
           const next = (res.data?.data?.business as Business | undefined) ?? null;
           if (active) setSeller(next);
         }
+
+        try {
+          const list = await passportService.getPublicReviews(sellerId);
+          const nextReviews = ((list.data?.data?.reviews as any[]) ?? []).map((review) => ({
+            authorName: review.authorName || 'Customer',
+            rating: Number(review.rating ?? 0),
+            text: review.text || '',
+            time: review.time || new Date().toISOString(),
+            source: review.source || 'pabandi',
+          }));
+          if (active) setReviews(nextReviews);
+        } catch {
+          if (active) setReviews([]);
+        } finally {
+          if (active) setReviewsLoading(false);
+        }
       } catch {
-        if (active) setSeller(null);
+        if (active) {
+          setSeller(null);
+          setReviews([]);
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -230,16 +238,30 @@ export const PublicPassportPage: React.FC = () => {
                   </Link>
                 </div>
 
-                <div className="mt-4">
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-2">$PAB reward preview</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {REWARD_RULES.map((rule) => (
-                      <div key={rule.label} className={`p-3 rounded-xl border ${rule.highlight ? 'border-[#f0b429]/30' : 'border-outline-variant/20'}`} style={{ background: rule.highlight ? 'rgba(240,180,41,0.08)' : 'rgba(255,255,255,0.6)' }}>
-                        <p className="text-xs font-black" style={{ color: '#f0b429' }}>+{rule.amount} $PAB</p>
-                        <p className="text-[11px] text-on-surface-variant mt-1">{rule.label}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="bg-surface-container-low rounded-2xl p-4">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-3">Recent reviews</p>
+                  {reviewsLoading ? (
+                    <div className="animate-pulse space-y-2">
+                      <div className="h-3 w-full bg-surface-container rounded" />
+                      <div className="h-3 w-5/6 bg-surface-container rounded" />
+                      <div className="h-3 w-4/6 bg-surface-container rounded" />
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <p className="text-xs text-on-surface-variant">No public reviews yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reviews.slice(0, 8).map((review, idx) => (
+                        <div key={idx} className="p-3 rounded-2xl border border-outline-variant/20 bg-white/60">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[11px] text-on-surface-variant font-bold">{review.authorName}</p>
+                            <span className="text-[10px] text-on-surface-variant">{review.time ? new Date(review.time).toLocaleDateString() : ''}</span>
+                          </div>
+                          <p className="text-[11px] text-on-surface mt-1">{'⭐'.repeat(review.rating)}</p>
+                          {review.text && <p className="text-xs text-on-surface mt-1 leading-relaxed">{review.text}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

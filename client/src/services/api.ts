@@ -190,6 +190,8 @@ export const userService = {
 export const passportService = {
   getPublicSummary: (sellerId: string) =>
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}`),
+  getPublicReviews: (sellerId: string) =>
+    apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}/reviews`),
 };
 
 export const tapService = {
