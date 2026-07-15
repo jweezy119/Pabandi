@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { liveSellerService } from '../services/api';
 import {
   VideoCameraIcon,
+  PlayCircleIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 
@@ -37,13 +39,13 @@ export default function LiveSellingPage() {
       );
       return results
         .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-        .map(r => r.value.data?.data || {});
+        .map(r => (r.value as any)?.data || {});
     },
     { enabled: isAuthenticated, refetchInterval: 15000 }
   );
 
   const connected = integrations || [];
-  const liveNow = (liveStatus || []).filter(s => s?.isLive).length;
+  const liveNow = (liveStatus || []).filter((s: any) => s?.isLive).length;
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
@@ -51,16 +53,16 @@ export default function LiveSellingPage() {
         <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
           <div className="flex items-center gap-3 mb-3">
             <VideoCameraIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-black leading-[1.05]">Live Selling</h1>
+            <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-black leading-[1.05]">Sell Live</h1>
           </div>
           <p className="text-on-surface-variant max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed">
-            Trust-first live commerce. Connect your shows, sync your catalog, and let buyers book with escrow-backed commitment—no app install required.
+            One catalog. One link. Escrow-backed instant checkout from TikTok, YouTube, or Shopify.
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
             {isAuthenticated ? (
               <>
-                <Link to="/business/settings?tab=live-selling" className="px-4 py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base">Open Live Seller Dashboard</Link>
-                <Link to="/live-sell" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Browse Public Hub</Link>
+                <Link to="/business/settings?tab=live-selling" className="px-4 py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base">Open Dashboard</Link>
+                <Link to="/live-sell" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Public Buyer Hub</Link>
               </>
             ) : (
               <>
@@ -89,28 +91,30 @@ export default function LiveSellingPage() {
         )}
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
-            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">01</div>
-            <h3 className="font-headline font-bold text-base mt-2">Connect your platform</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Link TikTok, YouTube, or Shopify in seconds from your dashboard.</p>
-          </div>
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
-            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">02</div>
-            <h3 className="font-headline font-bold text-base mt-2">Publish catalog + schedule</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Add items, set show times, and share one booking link.</p>
-          </div>
-          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
-            <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">03</div>
-            <h3 className="font-headline font-bold text-base mt-2">Sell with escrow trust</h3>
-            <p className="text-xs text-on-surface-variant mt-1">Buyers book instantly with escrow protection and earn $PAB rewards.</p>
-          </div>
+          {[
+            { label: '01', title: 'Connect your platform', text: 'Link TikTok, YouTube, or Shopify in seconds from your dashboard.', href: '/business/settings?tab=live-selling', cta: isAuthenticated ? 'Connect now' : 'Create account' },
+            { label: '02', title: 'Publish catalog + schedule', text: 'Add items, set show times, and share one booking link.', href: '/live-sell', cta: 'Browse buyers' },
+            { label: '03', title: 'Sell with escrow trust', text: 'Buyers book instantly with $PAB rewards and escrow protection.', href: '/live-sell', cta: 'See how' },
+          ].map((item) => (
+            <div key={item.label} className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
+              <div className="flex items-center gap-2 text-primary font-headline font-black text-sm">{item.label}</div>
+              <h3 className="font-headline font-bold text-base mt-2">{item.title}</h3>
+              <p className="text-xs text-on-surface-variant mt-1">{item.text}</p>
+              <Link to={item.href} className="inline-flex items-center gap-1 mt-4 text-xs font-black uppercase tracking-widest text-primary">
+                {item.cta} <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+            </div>
+          ))}
         </section>
 
         {isAuthenticated && (
           <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8">
             <h2 className="font-headline text-xl sm:text-2xl font-bold mb-4">Connected Platforms</h2>
             {connected.length === 0 ? (
-              <p className="text-xs text-on-surface-variant">No platforms connected yet. Add your first integration in the dashboard.</p>
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-on-surface-variant">No platforms connected yet. Add your first integration in the dashboard.</p>
+                <Link to="/business/settings?tab=live-selling" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">Go to Live Seller Settings</Link>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {connected.map((c: any) => {
@@ -126,6 +130,11 @@ export default function LiveSellingPage() {
             )}
           </section>
         )}
+
+        <section>
+          <h2 className="font-headline text-xl sm:text-2xl font-bold mb-3">Current live shows</h2>
+          <LiveNowList />
+        </section>
 
         <section>
           <h2 className="font-headline text-xl sm:text-2xl font-bold mb-3">FAQ</h2>
@@ -146,6 +155,42 @@ export default function LiveSellingPage() {
           </p>
         </section>
       </div>
+    </div>
+  );
+}
+
+function LiveNowList() {
+  const { data } = useQuery('ls-customer-status', async () => {
+    const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+    const results = await Promise.allSettled(platforms.map(p => liveSellerService.getShowState(p).catch(() => ({ data: { data: {} } }))));
+    return results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').map(r => r.value.data?.data || {});
+  });
+
+  const shows = (data || []).filter((s: any) => s?.isLive);
+  if (!shows.length) {
+    return (
+      <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-8 text-center">
+        <p className="text-on-surface-variant text-sm">No shows are live right now. Browse seller catalogs on the public hub.</p>
+        <Link to="/live-sell" className="mt-3 inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-primary">Open Live Hub</Link>
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      {shows.map((show: any) => (
+        <Link key={`${show.platform}-${show.businessId}`} to={`/s/${show.businessId}?session=${show.sessionId || ''}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
+          <div className="relative h-40 bg-surface-variant/30 rounded-t-2xl flex items-center justify-center">
+            <PlayCircleIcon className="h-10 w-10 text-primary" />
+            <span className="absolute top-3 left-3 bg-[#14F195]/20 border border-[#14F195]/30 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Live</span>
+            <span className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
+          </div>
+          <div className="p-4">
+            <p className="font-headline font-bold text-base leading-snug">{show.businessName || 'Seller'}</p>
+            <p className="text-xs text-on-surface-variant mt-1">{show.title || 'Live selling session'}</p>
+            <span className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-lg shadow-primary/20">Join Live Show</span>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
