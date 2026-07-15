@@ -187,6 +187,13 @@ export const userService = {
   getPublicProfile: (id: string) => apiClient.get(`/users/${id}/public`),
 };
 
+export const tapService = {
+  createIntent: (data: { sellerId: string; amount: number; currency?: string; memo?: string; reference?: string }) =>
+    apiClient.post('/tap/intents', data),
+  verifyPayment: (data: { signature: string; sellerId: string; expectedAmount: number; mint?: string }) =>
+    apiClient.post('/tap/verify', data),
+};
+
 export const liveSellerService = {
   list: () => apiClient.get('/integrations/livesell'),
   connect: (platform: string) => apiClient.get(`/integrations/livesell/connect/${platform}`),

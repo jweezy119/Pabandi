@@ -27,6 +27,7 @@ import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
@@ -92,6 +93,7 @@ function App() {
             <Route path="business/:id/book" element={<BookingPage />} />
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
+            <Route path="t/pay/:sellerId" element={<TapPayPage />} />
             {/* Business partner landing page — public */}
             <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />

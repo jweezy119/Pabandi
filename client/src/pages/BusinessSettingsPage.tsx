@@ -17,6 +17,58 @@ import apiClient from '../services/api';
 type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
+type TapLinkGeneratorProps = {
+  sellerId?: string;
+};
+
+const TapLinkGenerator = ({ sellerId }: TapLinkGeneratorProps) => {
+  const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('USDC');
+
+  const publicLink = sellerId
+    ? `${window.location.origin}/t/pay/${sellerId}?amount=${encodeURIComponent(amount || '0')}&currency=${currency}`
+    : '';
+
+  const copyLink = async () => {
+    if (!publicLink) return;
+    await navigator.clipboard.writeText(publicLink);
+  };
+
+  return (
+    <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#181818] space-y-4">
+      <div>
+        <h4 className="font-bold text-[#e8e8e8]">Merchant Tap Link</h4>
+        <p className="text-xs text-[#757575] mt-1">Generate a shareable checkout link customers can use to pay directly on Pabandi through this business.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-xs font-semibold text-[#9e9e9e] mb-1.5">Amount</label>
+          <input type="number" className="input-field" min="0" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[#9e9e9e] mb-1.5">Currency</label>
+          <input type="text" className="input-field" value={currency} onChange={e => setCurrency(e.target.value)} />
+        </div>
+        <div className="flex items-end">
+          <button onClick={copyLink} disabled={!sellerId} className="px-5 py-2.5 bg-[#181818] border border-[#ffffff25] rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-slate-50 text-[#e8e8e8]">
+            Copy Public Link
+          </button>
+        </div>
+      </div>
+
+      {publicLink ? (
+        <div className="p-4 rounded-xl border border-[#ffffff15] bg-[#141414] space-y-1">
+          <p className="text-xs font-bold text-[#9e9e9e]">Public checkout link</p>
+          <p className="text-xs text-[#e8e8e8] break-all font-mono">{publicLink}</p>
+        </div>
+      ) : (
+        <p className="text-xs text-[#757575]">Add and save a business record to enable your merchant Tap link.</p>
+      )}
+    </div>
+  );
+};
+
 const CATEGORIES = [
   { value: 'ECOMMERCE', label: '🛍️ E-Commerce Platform' },
   { value: 'MARKETPLACE', label: '🤝 Online Marketplace' },
@@ -373,6 +425,8 @@ export default function BusinessSettingsPage() {
                 Connect Phantom Wallet →
               </a>
             </div>
+
+            <TapLinkGenerator sellerId={bizRes?.id} />
 
             {/* Deposit credit notice */}
             <div className="flex gap-3 p-4 bg-[#10b98115] text-emerald-800 rounded-xl border border-[#10b98133]">
