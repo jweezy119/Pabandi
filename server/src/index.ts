@@ -165,6 +165,10 @@ app.use('/api/hospitality', hospitalityRoutes); // Short alias for PMS webhooks
 // Separate from /api/v1/ so it can be independently rate-limited and versioned
 app.use('/external/v1', externalRoutes);
 
+// ── Public Passport summary (no auth) ─────────────────────────────────────
+import publicPassportRoutes from './routes/publicPassport.routes';
+app.use(`/api/${API_VERSION}/passport/public`, publicPassportRoutes);
+
 // ── Pabandi Reliability Passport API (Public, API-key gated) ─────────────────
 import passportRoutes from './routes/passport.routes';
 app.use(`/api/${API_VERSION}/passport`, passportRoutes);

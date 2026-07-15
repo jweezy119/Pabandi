@@ -187,6 +187,11 @@ export const userService = {
   getPublicProfile: (id: string) => apiClient.get(`/users/${id}/public`),
 };
 
+export const passportService = {
+  getPublicSummary: (sellerId: string) =>
+    apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}`),
+};
+
 export const tapService = {
   createIntent: (data: { sellerId: string; amount: number; currency?: string; memo?: string; reference?: string }) =>
     apiClient.post('/tap/intents', data),

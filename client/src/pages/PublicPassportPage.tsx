@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { businessService } from '../services/api';
+import { businessService, passportService } from '../services/api';
 import QRCodeLib from 'qrcode';
 
 type Business = {
@@ -51,9 +51,15 @@ export const PublicPassportPage: React.FC = () => {
     const run = async () => {
       try {
         if (!sellerId) return;
-        const res = await businessService.getBusiness(sellerId);
-        const next = (res.data?.data?.business as Business | undefined) ?? null;
-        if (active) setSeller(next);
+        try {
+          const res = await passportService.getPublicSummary(sellerId);
+          const next = (res.data?.data?.business as Business | undefined) ?? null;
+          if (active) setSeller(next);
+        } catch {
+          const res = await businessService.getBusiness(sellerId);
+          const next = (res.data?.data?.business as Business | undefined) ?? null;
+          if (active) setSeller(next);
+        }
       } catch {
         if (active) setSeller(null);
       } finally {
