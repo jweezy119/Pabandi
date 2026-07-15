@@ -16,10 +16,24 @@ type Business = {
   coverImageUrl?: string | null;
 };
 
+type RewardRule = {
+  label: string;
+  amount: number;
+  highlight?: boolean;
+};
+
+const REWARD_RULES: RewardRule[] = [
+  { label: 'Honored booking', amount: 25 },
+  { label: 'No-show deposit protected', amount: 50, highlight: true },
+  { label: 'Low no-show month bonus', amount: 100 },
+  { label: 'Refer another business', amount: 75 },
+];
+
 export const PublicPassportPage: React.FC = () => {
   const { sellerId } = useParams<{ sellerId: string }>();
   const [seller, setSeller] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -35,6 +49,15 @@ export const PublicPassportPage: React.FC = () => {
     };
     run();
   }, [sellerId]);
+
+  const passportUrl = sellerId ? `${window.location.origin}/passport/${sellerId}` : '';
+  const tapLink = sellerId ? `${window.location.origin}/t/pay/${sellerId}` : '';
+
+  const copyLink = async (url: string) => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   return (
     <div className="min-h-screen bg-surface pt-24 pb-12 px-4">
@@ -90,6 +113,34 @@ export const PublicPassportPage: React.FC = () => {
               <Link to={`/business/${seller.id}`} className="px-4 py-2 rounded-xl border border-outline-variant/20 text-xs font-bold text-on-surface">
                 Visit business profile
               </Link>
+              {passportUrl && (
+                <button onClick={() => copyLink(passportUrl)} className="px-3 py-2 rounded-xl border border-outline-variant/20 text-xs font-bold text-on-surface">
+                  {copied ? 'Copied' : 'Copy Passport'}
+                </button>
+              )}
+              {tapLink && (
+                <button onClick={() => copyLink(tapLink)} className="px-3 py-2 rounded-xl border border-outline-variant/20 text-xs font-bold text-on-surface">
+                  Copy Tap link
+                </button>
+              )}
+            </div>
+
+            {REWARD_RULES.length > 0 && (
+              <div className="mt-6">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-2">$PAB reward preview</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {REWARD_RULES.map(rule => (
+                    <div key={rule.label} className={`p-3 rounded-xl border ${rule.highlight ? 'border-[#f0b429]/30' : 'border-outline-variant/20'}`} style={{ background: rule.highlight ? 'rgba(240,180,41,0.08)' : 'rgba(255,255,255,0.6)' }}>
+                      <p className="text-xs font-black" style={{ color: '#f0b429' }}>+{rule.amount} $PAB</p>
+                      <p className="text-[11px] text-on-surface-variant mt-1">{rule.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 text-[11px] text-on-surface-variant leading-relaxed">
+              This Passport is a shareable trust snapshot for {seller.name}. For full details, bookings, and verified reviews, visit the business profile or contact the seller directly.
             </div>
           </div>
         )}
