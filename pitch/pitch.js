@@ -1,9 +1,13 @@
 'use strict';
 const pptxgen = require('pptxgenjs');
+const path = require('path');
+const os = require('os');
 const pres = new pptxgen();
 pres.layout = 'LAYOUT_16x9';
 pres.title = 'Pabandi — Alibaba CoCreate 2026';
 pres.author = 'Pabandi';
+
+const repoDir = path.dirname(path.resolve(__dirname));
 
 const W = 10, H = 5.625;
 const BG = '08080c';
@@ -256,4 +260,5 @@ p11.addShape(pres.shapes.RECTANGLE,{x:0.38,y:5.08,w:9.24,h:0.3,fill:{color:ACCEN
 p11.addText('Ask: Alibaba pilot · SDK co-brand · API partnership · investment partner',{x:0.52,y:5.12,w:8.96,h:0.24,fontSize:13,color:WHITE,bold:true,margin:0});
 p11.addShape(pres.shapes.RECTANGLE,{x:0,y:5.4,w:W,h:0.12,fill:{color:PINK}});
 
-pres.writeFile({fileName:'/home/peesee/pabandi/pitch/Pabandi-Alibaba-CoCreate-2026.pptx'}).then(()=>console.log('WROTE /home/peesee/pabandi/pitch/Pabandi-Alibaba-CoCreate-2026.pptx')).catch(e=>{console.error('ERR',e);process.exit(1)});
+const outPath = path.join(repoDir, 'Pabandi-Alibaba-CoCreate-2026.pptx');
+pres.writeFile({fileName: outPath}).then(()=>console.log(`WROTE ${outPath}`)).catch(e=>{console.error('ERR',e);process.exit(1)});

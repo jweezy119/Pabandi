@@ -240,17 +240,17 @@ export default function SearchPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {QUICK_PROMPTS.map((prompt) => (
-            <Link
-              key={prompt.key}
-              to={prompt.href}
-              className="flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 hover:bg-surface-container-high active:scale-[0.99] transition-all"
-            >
-              <span className="text-2xl leading-none">{prompt.icon}</span>
-              <span className="min-w-0">
-                <span className="block text-sm font-headline font-bold">{prompt.label}</span>
-                <span className="block text-[11px] text-on-surface-variant truncate">{prompt.sub}</span>
-              </span>
-            </Link>
+          <Link
+            key={prompt.key}
+            to={prompt.href}
+            className="flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-3 sm:p-4 active:scale-[0.99] transition-all"
+          >
+            <span className="text-xl sm:text-2xl leading-none">{prompt.icon}</span>
+            <span className="min-w-0">
+              <span className="block text-sm sm:text-base font-headline font-bold">{prompt.label}</span>
+              <span className="block text-[10px] sm:text-xs text-on-surface-variant truncate">{prompt.sub}</span>
+            </span>
+          </Link>
           ))}
         </div>
 

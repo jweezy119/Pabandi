@@ -273,16 +273,16 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Panel */}
-        <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20">
+        <div className="bg-surface-container-lowest rounded-2xl p-5 sm:p-8 shadow-md border border-outline-variant/20">
 
           {/* Mode tabs */}
-          <div className="flex gap-2 mb-6 bg-surface-container-low p-1 rounded-xl">
+          <div className="flex gap-2 mb-4 sm:mb-6 bg-surface-container-low p-1 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+              className={`flex-1 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all active:scale-[0.98] ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Sign In
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+              className={`flex-1 py-2.5 sm:py-2 rounded-lg text-sm font-bold transition-all active:scale-[0.98] ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Create Account
             </button>
           </div>
@@ -391,16 +391,16 @@ export default function AuthPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-
             {/* Signup-only fields */}
             {isSignup && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="firstName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">First Name</label>
                     <input id="firstName" name="firstName" type="text" required
                       value={formData.firstName} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.firstName ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.firstName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Ali" />
                     {fieldErrors.firstName && <FieldError msg={fieldErrors.firstName} />}
                   </div>
@@ -408,7 +408,7 @@ export default function AuthPage() {
                     <label htmlFor="lastName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Last Name</label>
                     <input id="lastName" name="lastName" type="text" required
                       value={formData.lastName} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.lastName ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.lastName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Khan" />
                     {fieldErrors.lastName && <FieldError msg={fieldErrors.lastName} />}
                   </div>
@@ -420,7 +420,7 @@ export default function AuthPage() {
                       <label htmlFor="businessName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Business Name</label>
                       <input id="businessName" name="businessName" type="text" required
                         value={formData.businessName} onChange={handleChange}
-                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="e.g. Saleem's Barbershop" />
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm" placeholder="e.g. Saleem's Barbershop" />
                     </div>
                     <div>
                       <label htmlFor="googlePlaceId" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">
@@ -429,7 +429,7 @@ export default function AuthPage() {
                       </label>
                       <input id="googlePlaceId" name="googlePlaceId" type="text"
                         value={formData.googlePlaceId} onChange={handleChange}
-                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="ChIJ..." />
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm" placeholder="ChIJ..." />
                       <p className="mt-1.5 text-xs text-on-surface-variant">
                         Find your Place ID at{' '}
                         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id"
@@ -448,17 +448,17 @@ export default function AuthPage() {
                   </label>
                   <input id="phone" name="phone" type="tel"
                     value={formData.phone} onChange={handleChange}
-                    className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
+                    className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
                     placeholder="+1 312 489 6967 or +92 300 1234567" />
                   {fieldErrors.phone && <FieldError msg={fieldErrors.phone} />}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="fiverrUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Fiverr URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
                     <input id="fiverrUrl" name="fiverrUrl" type="url"
                       value={formData.fiverrUrl} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.fiverrUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.fiverrUrl ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="https://fiverr.com/..." />
                     {fieldErrors.fiverrUrl && <FieldError msg={fieldErrors.fiverrUrl} />}
                   </div>
@@ -466,7 +466,7 @@ export default function AuthPage() {
                     <label htmlFor="upworkUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Upwork URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
                     <input id="upworkUrl" name="upworkUrl" type="url"
                       value={formData.upworkUrl} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.upworkUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.upworkUrl ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="https://upwork.com/..." />
                     {fieldErrors.upworkUrl && <FieldError msg={fieldErrors.upworkUrl} />}
                   </div>
@@ -479,7 +479,7 @@ export default function AuthPage() {
               <label htmlFor="email" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Email</label>
               <input id="email" name="email" type="email" autoComplete="email" required
                 value={formData.email} onChange={handleChange}
-                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.email ? 'border-error ring-1 ring-error' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.email ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="you@gmail.com" />
               {fieldErrors.email && <FieldError msg={fieldErrors.email} />}
             </div>
@@ -498,7 +498,7 @@ export default function AuthPage() {
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
                 required
                 value={formData.password} onChange={handleChange}
-                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.password ? 'border-error ring-1 ring-error' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.password ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="Min. 8 characters" />
               {isSignup && !fieldErrors.password && (
                 <p className="mt-1.5 text-[11px] text-on-surface-variant">At least 8 characters</p>
@@ -513,14 +513,14 @@ export default function AuthPage() {
                 <input id="confirmPassword" name="confirmPassword" type="password"
                   autoComplete="new-password" required
                   value={formData.confirmPassword} onChange={handleChange}
-                  className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.confirmPassword ? 'border-error ring-1 ring-error' : ''}`}
+                  className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2.5 outline-none font-body text-sm ${fieldErrors.confirmPassword ? 'border-error ring-1 ring-error' : ''}`}
                   placeholder="••••••••" />
                 {fieldErrors.confirmPassword && <FieldError msg={fieldErrors.confirmPassword} />}
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              className={`w-full py-3 rounded-lg text-sm font-bold shadow-sm transition-opacity ${isBusiness && isSignup ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'} hover:opacity-90 disabled:opacity-70 mt-2`}>
+              className={`w-full py-3.5 rounded-xl text-base font-bold shadow-sm transition-opacity active:scale-[0.98] ${isBusiness && isSignup ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'} hover:opacity-90 disabled:opacity-70 mt-2`}>
               {loading
                 ? (isSignup ? 'Creating account…' : 'Signing in…')
                 : (isSignup

@@ -415,7 +415,7 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 space-y-10 sm:space-y-12 mt-8 sm:mt-12">
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
-          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
+          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4 scroll-smooth">
             {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","PROPERTY_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
               <button
                 key={c}
@@ -432,13 +432,18 @@ export default function HomePage() {
                 }}
                 className={`${
                   category === c
-                    ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]"
-                    : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
-                } px-4 py-2 rounded-lg font-label text-sm font-medium whitespace-nowrap transition-colors`}
+                    ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)] scale-[1.02]"
+                    : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest active:scale-[0.98]"
+                } px-4 py-3 rounded-xl font-label text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.98]`}
               >
                 {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
               </button>
             ))}
+          </div>
+          {/* Scroll hint on mobile */}
+          <div className="flex sm:hidden items-center justify-center gap-1.5 mt-1 mb-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+            <span className="material-symbols-outlined text-[14px]">swipe</span>
+            Swipe to explore
           </div>
         </section>
 
