@@ -1,38 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://pabandi-42c5b.web.app/</loc>
-    <lastmod>2026-06-21</lastmod>
+    <loc>https://pabandi.com/</loc>
+    <lastmod>2026-07-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://pabandi-42c5b.web.app/auth</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://pabandi-42c5b.web.app/dashboard</loc>
-    <changefreq>weekly</changefreq>
+    <loc>https://pabandi.com/search</loc>
+    <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://pabandi-42c5b.web.app/wallet</loc>
+    <loc>https://pabandi.com/hospitality</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/live-sell</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/freelance</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/trust</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://pabandi-42c5b.web.app/business</loc>
-    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://pabandi-42c5b.web.app/hospitality</loc>
-    <changefreq>monthly</changefreq>
+    <loc>https://pabandi.com/join</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://pabandi-42c5b.web.app/llms.txt</loc>
+    <loc>https://pabandi.com/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/privacy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/developer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://pabandi.com/llms.txt</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

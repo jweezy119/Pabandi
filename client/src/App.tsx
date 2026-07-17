@@ -40,6 +40,7 @@ import FreelancePage from './pages/FreelancePage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
+import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
@@ -76,6 +77,7 @@ function App() {
             <Route index element={<PublicSEO seo={{ title: 'Pabandi | Commitment, Secured.', description: 'Find trusted local hospitality, live sellers, freelancers, and gig workers near you. Book with escrow-backed deposits and earn $PAB rewards on Pabandi.' }}><HomePage /></PublicSEO>} />
             <Route path="search" element={<SearchPage />} />
             <Route path="about" element={<AboutPage />} />
+            <Route path="sharia-compliance" element={<ShariaCompliancePage />} />
 
             {/* Unified auth page for both login & register */}
             <Route

@@ -166,10 +166,12 @@ export default function Layout() {
             <DesktopNavLink to="/live-selling" current={location.pathname === '/live-selling'}>Live Selling</DesktopNavLink>
             <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
             <DesktopNavLink to="/freelance" current={location.pathname === '/freelance'}>Freelance</DesktopNavLink>
+            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
+            <DesktopNavLink to="/sharia-compliance" current={location.pathname === '/sharia-compliance'}>Sharia Compliance</DesktopNavLink>
             <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>
-            <Dropdown label="More" current={['/technology','/web3'].includes(location.pathname)}>
+            <Dropdown label="More" current={['/technology'].includes(location.pathname)}>
               <DropdownItem to="/technology">Technology</DropdownItem>
-              <DropdownItem to="/web3">Web3</DropdownItem>
+
               <DropdownItem to="/join">List Business</DropdownItem>
               <DropdownItem to="/developer">API Docs</DropdownItem>
               <DropdownItem to="/trust">Trust Layer</DropdownItem>
