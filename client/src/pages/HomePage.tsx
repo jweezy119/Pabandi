@@ -279,8 +279,8 @@ export default function HomePage() {
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
                 Find & Book Anywhere
               </p>
-              <div className="glass-input rounded-2xl flex items-center px-3 py-3 sm:px-4 sm:py-3 shadow-sm w-full gap-2">
-                <BuildingStorefrontIcon className="h-5 w-5 text-outline mr-3" />
+              <div className="glass-input rounded-2xl flex items-center px-4 py-4 sm:px-4 sm:py-3 shadow-sm w-full gap-3 sm:gap-2">
+                <BuildingStorefrontIcon className="h-6 w-6 sm:h-5 sm:w-5 text-outline shrink-0" />
                 <input
                   ref={searchInputRef}
                   value={search}
@@ -290,23 +290,23 @@ export default function HomePage() {
                   }}
                   type="text"
                   placeholder="Where to?"
-                  className="bg-transparent border-none focus:ring-0 w-full font-body text-sm sm:text-base text-on-surface placeholder-outline font-medium focus:outline-none"
+                  className="bg-transparent border-none focus:ring-0 w-full font-body text-base sm:text-sm text-on-surface placeholder-outline font-medium focus:outline-none touch-target"
                 />
                 <button
                   onClick={handleSearch}
-                  className="ml-2 px-3 py-1.5 rounded-md bg-primary text-on-primary text-xs font-bold"
+                  className="px-4 py-2 sm:px-3 sm:py-1.5 rounded-lg bg-primary text-on-primary text-sm sm:text-xs font-bold shrink-0 touch-target"
                 >
                   Search
                 </button>
               </div>
 
-              <div className="mt-3 flex gap-2 flex-wrap">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 <button
                   onClick={handleGetLocation}
                   disabled={locLoading}
-                  className="flex items-center gap-1.5 text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-surface-container border border-outline-variant/10 rounded-full px-4 py-2.5 sm:px-3 sm:py-1.5 hover:bg-surface-container-high touch-target"
                 >
-                  <MapPinIcon className="h-3.5 w-3.5" />{" "}
+                  <MapPinIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />{" "}
                   {locLoading ? "Locating..." : "Near Me"}
                 </button>
                 {cities.map((city) => (
@@ -315,7 +315,7 @@ export default function HomePage() {
                     onClick={() =>
                       navigate(`/search?q=${encodeURIComponent(city.name)}`)
                     }
-                    className="text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
+                    className="text-xs sm:text-sm font-bold bg-surface-container border border-outline-variant/10 rounded-full px-4 py-2.5 sm:px-3 sm:py-1.5 hover:bg-surface-container-high touch-target"
                   >
                     {city.name}
                   </button>
@@ -349,7 +349,7 @@ export default function HomePage() {
 
           {/* Right Col - The Interactive Map */}
           <div
-            className="flex-1 relative w-full h-[500px] xl:h-[600px] rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)] stagger-item"
+            className="flex-1 relative w-full h-[400px] sm:h-[500px] xl:h-[600px] rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)] stagger-item"
             style={{ animationDelay: "240ms" }}
           >
             <HomeMap
@@ -434,7 +434,7 @@ export default function HomePage() {
                   category === c
                     ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]"
                     : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
-                } px-4 py-2 rounded-lg font-label text-sm font-medium whitespace-nowrap transition-colors`}
+                } px-5 py-3 sm:px-4 sm:py-2 rounded-xl sm:rounded-lg font-label text-sm font-bold sm:font-medium whitespace-nowrap transition-colors touch-target shrink-0`}
               >
                 {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
               </button>
@@ -456,7 +456,7 @@ export default function HomePage() {
                     lng: biz.longitude ?? mapCenter.lng,
                   })
                 }
-                className="px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/10 text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors"
+                className="px-4 py-2.5 sm:px-3 sm:py-2 rounded-xl bg-surface-container-low border border-outline-variant/10 text-sm sm:text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors touch-target"
               >
                 {biz.name.replace(new RegExp(`(${search.trim()})`, 'gi'), '$1')}
                 {biz.__distanceKm != null && (
@@ -486,9 +486,9 @@ export default function HomePage() {
               <>
                 <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Freelance on Pabandi</h3>
                 <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                   {['TikTok Live','YouTube Shopping','Shopify Live'].map((platform) => (
-                    <Link key={platform} to="/live-selling" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">
+                    <Link key={platform} to="/live-selling" className="px-4 py-3 sm:py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors touch-target text-center">
                       {platform} ↗
                     </Link>
                   ))}

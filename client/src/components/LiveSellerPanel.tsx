@@ -40,13 +40,13 @@ export default function LiveSellerPanel({ businessId, user }: { businessId?: str
         <p className="text-xs text-on-surface-variant">Register a business first.</p>
       ) : (
         <>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             {PLATFORMS.map((p) => (
-              <div key={p.id} className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => { window.location.href = `/api/v1/integrations/livesell/connect/${p.id}`; }} className={`px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${p.brand}`}>
+              <div key={p.id} className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <button type="button" onClick={() => { window.location.href = `/api/v1/integrations/livesell/connect/${p.id}`; }} className={`px-4 py-3 sm:py-2 rounded-xl border text-sm font-bold transition-colors touch-target w-full sm:w-auto text-center ${p.brand}`}>
                   {p.label} ↗
                 </button>
-                <button type="button" onClick={() => { if (confirm(`Disconnect ${p.label}?`)) disconnectMutation.mutate(p.id); }} className="px-4 py-2 rounded-xl border border-outline-variant/20 text-sm font-bold text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors">
+                <button type="button" onClick={() => { if (confirm(`Disconnect ${p.label}?`)) disconnectMutation.mutate(p.id); }} className="px-4 py-3 sm:py-2 rounded-xl border border-outline-variant/20 text-sm font-bold text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors touch-target w-full sm:w-auto text-center">
                   Disconnect
                 </button>
               </div>
@@ -85,20 +85,19 @@ export default function LiveSellerPanel({ businessId, user }: { businessId?: str
                       Complete OAuth setup to start shows. Missing platform credentials will show an error during connect.
                     </p>
                   )}
-
-                  <div className="flex gap-2">
-                    <button disabled={!platformConnected} onClick={() => toggleMutation.mutate({ platform: p.id, patch: { isLive: true, startedAt: new Date().toISOString() } })} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button disabled={!platformConnected} onClick={() => toggleMutation.mutate({ platform: p.id, patch: { isLive: true, startedAt: new Date().toISOString() } })} className="inline-flex items-center justify-center gap-2 px-3 py-3 sm:py-2 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50 touch-target w-full sm:w-auto">
                       <PlayIcon className="h-4 w-4" /> Start Show
                     </button>
-                    <button disabled={!platformConnected || !isLive} onClick={() => toggleMutation.mutate({ platform: p.id, patch: { isLive: false, viewerCount: 0 } })} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-on-surface disabled:opacity-50">
+                    <button disabled={!platformConnected || !isLive} onClick={() => toggleMutation.mutate({ platform: p.id, patch: { isLive: false, viewerCount: 0 } })} className="inline-flex items-center justify-center gap-2 px-3 py-3 sm:py-2 rounded-xl border border-outline-variant/30 text-xs font-bold text-on-surface disabled:opacity-50 touch-target w-full sm:w-auto">
                       <StopIcon className="h-4 w-4" /> End Show
                     </button>
                   </div>
 
-                  <form onSubmit={(e) => { e.preventDefault(); const name = (e.target as any).itemName?.value; const price = (e.target as any).itemPrice?.value; if (!name || !price) return; addOrderMutation.mutate({ platform: p.id, order: { buyerName: 'Live buyer', itemName: name, quantity: 1, amount: Number(price), currency: 'USD', status: 'pending', createdAt: new Date().toISOString() } }); (e.target as any).reset(); }} className="mt-3 flex flex-col md:flex-row gap-2">
-                    <input name="itemName" placeholder="Buyer / item" className="input-field flex-1 bg-surface border border-outline-variant/30 rounded-xl px-3 py-2 text-xs" />
-                    <input name="itemPrice" placeholder="$" className="input-field w-20 bg-surface border border-outline-variant/30 rounded-xl px-3 py-2 text-xs" />
-                    <button type="submit" disabled={!platformConnected} className="px-3 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50">Log Order</button>
+                  <form onSubmit={(e) => { e.preventDefault(); const name = (e.target as any).itemName?.value; const price = (e.target as any).itemPrice?.value; if (!name || !price) return; addOrderMutation.mutate({ platform: p.id, order: { buyerName: 'Live buyer', itemName: name, quantity: 1, amount: Number(price), currency: 'USD', status: 'pending', createdAt: new Date().toISOString() } }); (e.target as any).reset(); }} className="mt-3 flex flex-col sm:flex-row gap-2">
+                    <input name="itemName" placeholder="Buyer / item" className="input-field flex-1 bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 sm:px-3 sm:py-2 text-xs touch-target w-full" />
+                    <input name="itemPrice" placeholder="$" className="input-field w-full sm:w-20 bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 sm:px-3 sm:py-2 text-xs touch-target" />
+                    <button type="submit" className="px-3 py-3 sm:py-2 rounded-xl bg-surface-container-highest text-on-surface text-xs font-bold w-full sm:w-auto touch-target">Add</button>
                   </form>
 
                   <div className="mt-4">

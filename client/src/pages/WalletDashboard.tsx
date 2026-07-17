@@ -467,18 +467,18 @@ export default function WalletDashboard() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
 
         {/* ── Header ── */}
-        <div className="animate-fade-up flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
-          <div>
-            <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-               <img src="/logo-coin-neon.jpg" alt="PAB" className="inline-block h-8 w-8 rounded-full border border-primary/30 mr-1 align-sub" /> PAB Wallet
+        <div className="animate-fade-up flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-10">
+          <div className="w-full md:w-auto">
+            <h1 className="font-headline text-3xl sm:text-4xl font-black text-on-surface tracking-tight flex items-center">
+               <img src="/logo-coin-neon.jpg" alt="PAB" className="h-8 w-8 rounded-full border border-primary/30 mr-2" /> PAB Wallet
             </h1>
-            <p className="font-body text-sm text-on-surface-variant mt-1.5">
+            <p className="font-body text-sm text-on-surface-variant mt-1.5 leading-relaxed">
               Earn Pabandi Reliability Tokens — Available on Solana, BNB Chain, and Stellar.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-2 w-full md:w-auto">
             <button onClick={() => { setShowSBT(!showSBT); }}
-              className="font-body font-bold text-xs flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all"
+              className="font-body font-bold text-xs sm:text-sm flex justify-center items-center gap-1.5 px-4 py-3 sm:py-2.5 rounded-xl transition-all touch-target w-full sm:w-auto"
               style={{
                 background: showSBT ? 'var(--color-tertiary-container)' : 'var(--color-surface-container-low)',
                 color: showSBT ? 'var(--color-on-tertiary-container)' : 'var(--color-on-surface-variant)',
@@ -487,18 +487,18 @@ export default function WalletDashboard() {
               🪙 NFT Badges
             </button>
             {connected ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-primary-container text-on-primary-container border border-primary/20">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center justify-center flex-1 sm:flex-none gap-2 px-3.5 py-3 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-primary-container text-on-primary-container border border-primary/20 touch-target">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] inline-block" />
                   {connected.type === 'phantom' ? '👻' : connected.type === 'freighter' ? '🚢' : '🦊'} {shortAddr(connected.address)} · {connected.chainName}
                 </div>
-                <button onClick={disconnect} className="p-2.5 rounded-xl cursor-pointer bg-error-container text-on-error-container border border-error/20 hover:opacity-80 transition-opacity">
-                  <XMarkIcon className="h-4 w-4" />
+                <button onClick={disconnect} className="p-3 sm:p-2.5 rounded-xl cursor-pointer bg-error-container text-on-error-container border border-error/20 hover:opacity-80 transition-opacity touch-target shrink-0">
+                  <XMarkIcon className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
               </div>
             ) : (
-              <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="bg-primary text-on-primary px-4 py-2.5 rounded-xl font-body text-sm font-semibold hover:opacity-90 transition-opacity flex items-center shadow-sm">
-                <LinkIcon className="h-4 w-4 inline mr-2" />Connect Wallet
+              <button id="btn-connect-wallet" onClick={() => { setShowModal(true); setError(''); }} className="bg-primary text-on-primary px-4 py-3 sm:py-2.5 rounded-xl font-body text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center shadow-sm w-full sm:w-auto touch-target">
+                <LinkIcon className="h-4 w-4 sm:h-5 sm:w-5 inline mr-2" />Connect Wallet
               </button>
             )}
           </div>
@@ -560,14 +560,14 @@ export default function WalletDashboard() {
                 <div className="text-right">
                   {connected && offChainBalance > 0 && !transferSuccess && (
                     <button type="button" onClick={() => transferMutation.mutate()} disabled={transferMutation.isLoading}
-                      className="font-body text-xs font-bold px-4 py-2.5 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5 shadow-sm">
+                      className="font-body text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl bg-white/20 text-white border border-white/30 hover:bg-white/30 transition-colors flex items-center gap-1.5 shadow-sm touch-target mt-3 sm:mt-0">
                       {transferMutation.isLoading ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Sending…</> : <>↗ Withdraw to Web3</>}
                     </button>
                   )}
                   {!connected && (
                     <button onClick={() => { setShowModal(true); setError(''); }}
-                      className="font-body text-xs text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2">
-                      <LinkIcon className="h-4 w-4" /> Connect Web3 wallet to withdraw
+                      className="font-body text-xs sm:text-sm text-white/80 hover:text-white transition-colors flex items-center gap-1.5 underline underline-offset-2 touch-target mt-3 sm:mt-0 p-1">
+                      <LinkIcon className="h-4 w-4" /> Connect Web3 wallet
                     </button>
                   )}
                 </div>
@@ -619,24 +619,24 @@ export default function WalletDashboard() {
                 </div>
                 
                 {connected && (
-                  <div className="text-right flex flex-col items-end gap-2">
-                    <button onClick={disconnect} className="font-body text-[10px] text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1">
-                      <XMarkIcon className="h-3 w-3" /> Disconnect
+                  <div className="text-right flex flex-col items-end gap-2 mt-4 sm:mt-0">
+                    <button onClick={disconnect} className="font-body text-[11px] sm:text-[10px] text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1 p-1 touch-target">
+                      <XMarkIcon className="h-4 w-4 sm:h-3 sm:w-3" /> Disconnect
                     </button>
                     <span className="font-body text-xs font-bold text-on-surface-variant">◎ {shortAddr(connected.address)}</span>
                     {connected.type === 'phantom' ? (
                       <a href={`https://solscan.io/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
-                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        className="font-body text-[11px] sm:text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1 p-1 touch-target">
                         View Account <ArrowUpRightIcon className="h-3 w-3" />
                       </a>
                     ) : connected.type === 'freighter' ? (
                       <a href={`https://stellar.expert/explorer/testnet/account/${connected.address}`} target="_blank" rel="noopener noreferrer" 
-                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        className="font-body text-[11px] sm:text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1 p-1 touch-target">
                         View Account <ArrowUpRightIcon className="h-3 w-3" />
                       </a>
                     ) : (
                       <a href={`https://testnet.bscscan.com/address/${connected.address}`} target="_blank" rel="noopener noreferrer" 
-                        className="font-body text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1">
+                        className="font-body text-[11px] sm:text-[10px] text-primary hover:underline underline-offset-2 flex items-center gap-1 p-1 touch-target">
                         View Account <ArrowUpRightIcon className="h-3 w-3" />
                       </a>
                     )}
@@ -661,18 +661,18 @@ export default function WalletDashboard() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                 <div className="flex-1 relative">
                   <input 
                     type="number" 
                     value={stakeAmount || ''} 
                     onChange={(e) => setStakeAmount(Number(e.target.value))}
                     placeholder={`Stake PAB (Max: ${offChainBalance})`}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-2.5 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 touch-target"
                   />
                   <button 
                     onClick={() => setStakeAmount(offChainBalance)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 uppercase"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 uppercase p-2 touch-target"
                   >
                     Max
                   </button>
@@ -680,7 +680,7 @@ export default function WalletDashboard() {
                 <button 
                   onClick={() => stakeMutation.mutate(stakeAmount)}
                   disabled={stakeMutation.isLoading || !stakeAmount || stakeAmount <= 0 || stakeAmount > offChainBalance}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                 >
                   {stakeMutation.isLoading ? 'Staking...' : 'Stake PAB'}
                 </button>
@@ -727,28 +727,28 @@ export default function WalletDashboard() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                   <input 
                     type="number" 
                     value={stellarPabAmount || ''} 
                     onChange={(e) => setStellarPabAmount(Number(e.target.value))}
                     placeholder="PAB Amount"
-                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                    className="w-full sm:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-2.5 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 touch-target"
                   />
                   <input 
                     type="number" 
                     value={stellarOtherAmount || ''} 
                     onChange={(e) => setStellarOtherAmount(Number(e.target.value))}
                     placeholder="BENJI Amount"
-                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                    className="w-full sm:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-2.5 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 touch-target"
                   />
                 </div>
                 <button 
                   onClick={handleStellarLpDeposit}
                   disabled={isStellarLoading || !stellarPabAmount || !stellarOtherAmount}
-                  className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-blue-500 hover:bg-blue-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                 >
-                  {isStellarLoading ? 'Depositing to Stellar...' : 'Provide Liquidity on Stellar'}
+                  {isStellarLoading ? 'Depositing...' : 'Provide Liquidity on Stellar'}
                 </button>
               </div>
             </div>
@@ -769,28 +769,28 @@ export default function WalletDashboard() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                   <input 
                     type="number" 
                     value={solanaPabAmount || ''} 
                     onChange={(e) => setSolanaPabAmount(Number(e.target.value))}
                     placeholder="PAB Amount"
-                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
+                    className="w-full sm:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-2.5 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 touch-target"
                   />
                   <input 
                     type="number" 
                     value={solanaOtherAmount || ''} 
                     onChange={(e) => setSolanaOtherAmount(Number(e.target.value))}
                     placeholder="SOL Amount"
-                    className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50"
+                    className="w-full sm:w-1/2 bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-2.5 text-sm sm:text-base text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 touch-target"
                   />
                 </div>
                 <button 
                   onClick={handleSolanaLpDeposit}
                   disabled={isSolanaLoading || !solanaPabAmount || !solanaOtherAmount}
-                  className="w-full px-6 py-2.5 rounded-xl text-xs font-bold bg-purple-500 hover:bg-purple-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-purple-500 hover:bg-purple-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                 >
-                  {isSolanaLoading ? 'Depositing to Solana...' : 'Provide Liquidity on Raydium'}
+                  {isSolanaLoading ? 'Depositing...' : 'Provide Liquidity on Raydium'}
                 </button>
               </div>
             </div>

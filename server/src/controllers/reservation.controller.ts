@@ -349,6 +349,9 @@ export const createReservation = async (
     } else {
       if (business.phone) {
         logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
+        const outreachMessage = `Hi ${business.name}! 👋\n\nA customer just tried to book a reservation for ${numberOfGuests} guests on ${dateTime.format('MMMM Do YYYY')} at ${reservationTime} via Pabandi. \n\nClaim your business profile for free to accept this booking, manage your schedule, and set up automated escrow deposits:\nhttps://pabandi.com/business/${business.id}`;
+        
+        await sendWhatsAppMessage(business.phone, outreachMessage);
       }
       conciergeService.processReservation(reservation.id);
     }

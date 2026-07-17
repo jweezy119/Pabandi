@@ -276,23 +276,23 @@ export default function AuthPage() {
         <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20">
 
           {/* Mode tabs */}
-          <div className="flex gap-2 mb-6 bg-surface-container-low p-1 rounded-xl">
+          <div className="flex gap-2 mb-6 bg-surface-container-low p-1.5 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+              className={`flex-1 py-3 sm:py-2 rounded-lg text-sm font-bold transition-all touch-target ${mode === 'login' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Sign In
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+              className={`flex-1 py-3 sm:py-2 rounded-lg text-sm font-bold transition-all touch-target ${mode === 'signup' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
               Create Account
             </button>
           </div>
 
           {/* Role selector (signup only) */}
           {isSignup && (
-            <div className="flex gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <button
                 onClick={() => setRole('customer')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 touch-target ${
                   role === 'customer'
                     ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary/20'
                     : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
@@ -302,7 +302,7 @@ export default function AuthPage() {
               </button>
               <button
                 onClick={() => setRole('business')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-3 sm:py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 touch-target ${
                   role === 'business'
                     ? 'border-tertiary bg-tertiary-fixed/20 text-tertiary ring-1 ring-tertiary/20'
                     : 'border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low'
@@ -331,7 +331,7 @@ export default function AuthPage() {
 
           <div className="flex flex-col gap-3">
             <button onClick={handleWalletAuth} type="button"
-              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-[#E17726]/30 bg-[#E17726]/5 hover:bg-[#E17726]/10 text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full py-3.5 sm:py-2.5 rounded-xl border border-[#E17726]/30 bg-[#E17726]/5 hover:bg-[#E17726]/10 text-sm font-semibold text-on-surface transition-colors shadow-sm touch-target"
               disabled={!!oauthLoading}>
               {oauthLoading === 'wallet' ? (
                 <div className="w-5 h-5 border-2 border-[#E17726]/30 border-t-[#E17726] rounded-full animate-spin" />
@@ -341,7 +341,7 @@ export default function AuthPage() {
               )}
             </button>
             <button onClick={handleGoogleAuth} type="button"
-              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full py-3.5 sm:py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm touch-target"
               disabled={!!oauthLoading}>
               {oauthLoading === 'google' ? (
                 <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -351,7 +351,7 @@ export default function AuthPage() {
               )}
             </button>
             <button onClick={handleFacebookAuth}
-              className="flex items-center justify-center gap-3 w-full py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm"
+              className="flex items-center justify-center gap-3 w-full py-3.5 sm:py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-sm font-semibold text-on-surface transition-colors shadow-sm touch-target"
               disabled={!!oauthLoading}>
               {oauthLoading === 'facebook' ? (
                 <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -362,15 +362,15 @@ export default function AuthPage() {
             </button>
             <div className="grid grid-cols-3 gap-3 mt-1">
               <button onClick={handleTwitterAuth} title="Continue with X"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                className="flex items-center justify-center gap-2 py-3.5 sm:py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm touch-target" disabled={!!oauthLoading}>
                 {oauthLoading === 'twitter' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <XIcon />}
               </button>
               <button onClick={handleLinkedInAuth} title="Continue with LinkedIn"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                className="flex items-center justify-center gap-2 py-3.5 sm:py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm touch-target" disabled={!!oauthLoading}>
                 {oauthLoading === 'linkedin' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <LinkedInIcon />}
               </button>
               <button onClick={handleTikTokAuth} title="Continue with TikTok"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm" disabled={!!oauthLoading}>
+                className="flex items-center justify-center gap-2 py-3.5 sm:py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface transition-colors shadow-sm touch-target" disabled={!!oauthLoading}>
                 {oauthLoading === 'tiktok' ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <TikTokIcon />}
               </button>
             </div>
@@ -395,12 +395,12 @@ export default function AuthPage() {
             {/* Signup-only fields */}
             {isSignup && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3">
                   <div>
                     <label htmlFor="firstName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">First Name</label>
                     <input id="firstName" name="firstName" type="text" required
                       value={formData.firstName} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.firstName ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.firstName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Ali" />
                     {fieldErrors.firstName && <FieldError msg={fieldErrors.firstName} />}
                   </div>
@@ -408,7 +408,7 @@ export default function AuthPage() {
                     <label htmlFor="lastName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Last Name</label>
                     <input id="lastName" name="lastName" type="text" required
                       value={formData.lastName} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.lastName ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.lastName ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="Khan" />
                     {fieldErrors.lastName && <FieldError msg={fieldErrors.lastName} />}
                   </div>
@@ -420,7 +420,7 @@ export default function AuthPage() {
                       <label htmlFor="businessName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Business Name</label>
                       <input id="businessName" name="businessName" type="text" required
                         value={formData.businessName} onChange={handleChange}
-                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="e.g. Saleem's Barbershop" />
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target" placeholder="e.g. Saleem's Barbershop" />
                     </div>
                     <div>
                       <label htmlFor="googlePlaceId" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">
@@ -429,7 +429,7 @@ export default function AuthPage() {
                       </label>
                       <input id="googlePlaceId" name="googlePlaceId" type="text"
                         value={formData.googlePlaceId} onChange={handleChange}
-                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="ChIJ..." />
+                        className="w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target" placeholder="ChIJ..." />
                       <p className="mt-1.5 text-xs text-on-surface-variant">
                         Find your Place ID at{' '}
                         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id"
@@ -448,17 +448,17 @@ export default function AuthPage() {
                   </label>
                   <input id="phone" name="phone" type="tel"
                     value={formData.phone} onChange={handleChange}
-                    className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
+                    className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.phone ? 'border-error ring-1 ring-error' : ''}`}
                     placeholder="+1 312 489 6967 or +92 300 1234567" />
                   {fieldErrors.phone && <FieldError msg={fieldErrors.phone} />}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="fiverrUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Fiverr URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
                     <input id="fiverrUrl" name="fiverrUrl" type="url"
                       value={formData.fiverrUrl} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.fiverrUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.fiverrUrl ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="https://fiverr.com/..." />
                     {fieldErrors.fiverrUrl && <FieldError msg={fieldErrors.fiverrUrl} />}
                   </div>
@@ -466,7 +466,7 @@ export default function AuthPage() {
                     <label htmlFor="upworkUrl" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Upwork URL <span className="normal-case font-medium text-on-surface-variant/70">(Opt)</span></label>
                     <input id="upworkUrl" name="upworkUrl" type="url"
                       value={formData.upworkUrl} onChange={handleChange}
-                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.upworkUrl ? 'border-error ring-1 ring-error' : ''}`}
+                      className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.upworkUrl ? 'border-error ring-1 ring-error' : ''}`}
                       placeholder="https://upwork.com/..." />
                     {fieldErrors.upworkUrl && <FieldError msg={fieldErrors.upworkUrl} />}
                   </div>
@@ -479,7 +479,7 @@ export default function AuthPage() {
               <label htmlFor="email" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Email</label>
               <input id="email" name="email" type="email" autoComplete="email" required
                 value={formData.email} onChange={handleChange}
-                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.email ? 'border-error ring-1 ring-error' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.email ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="you@gmail.com" />
               {fieldErrors.email && <FieldError msg={fieldErrors.email} />}
             </div>
@@ -489,7 +489,7 @@ export default function AuthPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-wide text-on-surface-variant">Password</label>
                 {!isSignup && (
-                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold text-primary hover:underline">
+                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold text-primary hover:underline touch-target flex items-center">
                     Forgot password?
                   </Link>
                 )}
@@ -498,7 +498,7 @@ export default function AuthPage() {
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
                 required
                 value={formData.password} onChange={handleChange}
-                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.password ? 'border-error ring-1 ring-error' : ''}`}
+                className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.password ? 'border-error ring-1 ring-error' : ''}`}
                 placeholder="Min. 8 characters" />
               {isSignup && !fieldErrors.password && (
                 <p className="mt-1.5 text-[11px] text-on-surface-variant">At least 8 characters</p>
@@ -513,14 +513,14 @@ export default function AuthPage() {
                 <input id="confirmPassword" name="confirmPassword" type="password"
                   autoComplete="new-password" required
                   value={formData.confirmPassword} onChange={handleChange}
-                  className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm ${fieldErrors.confirmPassword ? 'border-error ring-1 ring-error' : ''}`}
+                  className={`w-full bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 sm:px-3 sm:py-2 outline-none font-body text-sm touch-target ${fieldErrors.confirmPassword ? 'border-error ring-1 ring-error' : ''}`}
                   placeholder="••••••••" />
                 {fieldErrors.confirmPassword && <FieldError msg={fieldErrors.confirmPassword} />}
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              className={`w-full py-3 rounded-lg text-sm font-bold shadow-sm transition-opacity ${isBusiness && isSignup ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'} hover:opacity-90 disabled:opacity-70 mt-2`}>
+              className={`w-full py-4 sm:py-3 rounded-xl sm:rounded-lg text-sm sm:text-base font-bold shadow-sm transition-opacity touch-target ${isBusiness && isSignup ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'} hover:opacity-90 disabled:opacity-70 mt-2`}>
               {loading
                 ? (isSignup ? 'Creating account…' : 'Signing in…')
                 : (isSignup

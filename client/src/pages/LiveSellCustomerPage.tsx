@@ -56,8 +56,8 @@ export default function LiveSellCustomerPage() {
   const products = (catalog || []).filter((it: any) => it.active !== false);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10 sm:space-y-12">
+    <div className="min-h-screen bg-surface text-on-surface font-body mobile-safe-bottom">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-12">
 
         {/* ── HERO ───────────────────────────────────────────────────── */}
         <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
@@ -68,9 +68,9 @@ export default function LiveSellCustomerPage() {
           <p className="text-on-surface-variant max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed">
             Stream smart, not hard. Pabandi turns live streaming into trusted, instant commerce across TikTok, YouTube, and Shopify. Buyers book with escrow-backed checkout without leaving the seller’s profile.
           </p>
-          <div className="flex flex-wrap gap-2 mt-5">
-            <Link to="/search?category=LIVE_SELLER" className="px-4 py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base">Find live sellers</Link>
-            <Link to="/s/demo" className="px-4 py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base">Try demo checkout</Link>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
+            <Link to="/search?category=LIVE_SELLER" className="px-5 py-4 sm:py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base touch-target text-center w-full sm:w-auto">Find live sellers</Link>
+            <Link to="/s/demo" className="px-5 py-4 sm:py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base touch-target text-center w-full sm:w-auto">Try demo checkout</Link>
           </div>
         </section>
 
@@ -112,10 +112,10 @@ export default function LiveSellCustomerPage() {
                     <span className="absolute top-3 left-3 bg-[#14F195]/20 border border-[#14F195]/30 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Live</span>
                     <span className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
                   </div>
-                  <div className="p-4">
-                    <p className="font-headline font-bold text-base leading-snug">{show.businessName || 'Seller'}</p>
-                    <p className="text-xs text-on-surface-variant mt-1">{show.title || 'Live selling session'}</p>
-                    <span className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-lg shadow-primary/20">Join Live Show</span>
+                  <div className="p-5 sm:p-4">
+                    <p className="font-headline font-bold text-lg sm:text-base leading-snug">{show.businessName || 'Seller'}</p>
+                    <p className="text-sm sm:text-xs text-on-surface-variant mt-1">{show.title || 'Live selling session'}</p>
+                    <span className="mt-4 flex items-center justify-center gap-2 w-full px-4 py-3.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-lg shadow-primary/20 touch-target">Join Live Show</span>
                   </div>
                 </Link>
               ))}
@@ -135,16 +135,18 @@ export default function LiveSellCustomerPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {products.map((item: any, idx: number) => (
                 <Link key={`${item.platform}-${item.id || idx}`} to={`/s/${item.businessId}?item=${encodeURIComponent(item.title || item.name || '')}&price=${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}&mode=instant`} className="block rounded-2xl border border-outline-variant/20 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
-                  <div className="p-4 space-y-3">
+                  <div className="p-5 sm:p-4 space-y-4 sm:space-y-3 flex flex-col h-full">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-headline font-bold text-base leading-snug">{item.title || item.name || 'Item'}</p>
-                        <p className="text-xs text-on-surface-variant mt-1">{item.businessName} • {item.platform}</p>
+                        <p className="font-headline font-bold text-lg sm:text-base leading-snug">{item.title || item.name || 'Item'}</p>
+                        <p className="text-sm sm:text-xs text-on-surface-variant mt-1">{item.businessName} • {item.platform}</p>
                       </div>
-                      <span className="text-xs font-black text-primary bg-primary-container/70 px-2 py-1 rounded-lg shrink-0">${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}</span>
+                      <span className="text-sm sm:text-xs font-black text-primary bg-primary-container/70 px-2 py-1 rounded-lg shrink-0">${item.priceCents ? (item.priceCents/100).toFixed(2) : '0'}</span>
                     </div>
-                    {item.description && <p className="text-xs text-on-surface-variant line-clamp-2">{item.description}</p>}
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary"><TagIcon className="h-3.5 w-3.5" /> Buy now</span>
+                    {item.description && <p className="text-sm sm:text-xs text-on-surface-variant line-clamp-2">{item.description}</p>}
+                    <div className="mt-auto pt-2">
+                      <span className="flex items-center justify-center gap-1.5 w-full text-sm sm:text-xs font-bold text-primary bg-primary/10 px-4 py-3 sm:py-2 rounded-xl touch-target"><TagIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" /> Buy now</span>
+                    </div>
                   </div>
                 </Link>
               ))}

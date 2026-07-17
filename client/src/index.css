@@ -171,9 +171,39 @@
   /* ── Mobile bottom nav ─────────────────────────────────────────────────── */
 @media (max-width: 767px) {
   .mobile-bottom-nav {
-    padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 8px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 64px); /* Extra padding for bottom nav height */
   }
 }
+
+  /* ── Mobile Touch Targets & Helpers ────────────────────────────────────── */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0;
+  }
+  
+  .touch-target-btn {
+    @apply min-h-[48px] sm:min-h-0;
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  }
+
+  /* Responsive typography helpers for mobile legibility */
+  .text-mobile-xs {
+    @apply text-[11px] sm:text-[10px];
+  }
+  
+  .text-mobile-sm {
+    @apply text-xs sm:text-[11px];
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 
 /* ── Page Transition ────────────────────────────────────────────────────── */
   .page-enter {

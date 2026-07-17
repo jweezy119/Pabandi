@@ -87,10 +87,10 @@ export default function ReservationsPage() {
 
         {/* Filter/Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="bg-surface-container-low p-1.5 rounded-lg flex inline-flex w-full md:w-auto self-start">
+          <div className="bg-surface-container-low p-1.5 rounded-xl sm:rounded-lg flex overflow-x-auto no-scrollbar w-full sm:w-auto">
             {FILTER_TABS.map(f => (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
-                className={`flex-1 md:flex-none px-6 py-2.5 rounded-md font-body text-sm font-medium transition-all ${
+                className={`flex-1 sm:flex-none px-6 py-3 sm:py-2.5 rounded-lg sm:rounded-md font-body text-sm font-bold transition-all whitespace-nowrap touch-target ${
                   statusFilter === f.value 
                   ? 'bg-surface-container-lowest text-primary shadow-sm shadow-primary/5' 
                   : 'text-on-surface-variant hover:text-primary'
@@ -100,7 +100,7 @@ export default function ReservationsPage() {
             ))}
           </div>
 
-          <Link to="/reservations/new" className="bg-primary text-on-primary font-body text-sm font-medium px-5 py-2.5 rounded-md flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm self-start sm:self-auto w-full sm:w-auto justify-center">
+          <Link to="/reservations/new" className="bg-primary text-on-primary font-body text-sm font-bold px-5 py-3.5 sm:py-2.5 rounded-xl sm:rounded-md flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm w-full sm:w-auto justify-center touch-target">
             <PlusIcon className="h-4 w-4" /> New Booking
           </Link>
         </div>
@@ -275,11 +275,11 @@ export default function ReservationsPage() {
                              cancelMutation.mutate(r.id);
                            }
                          }}
-                         className="flex-1 bg-transparent border border-outline-variant/40 text-error font-body text-sm font-medium py-2.5 rounded-md hover:bg-error-container transition-colors disabled:opacity-50 text-center">
+                         className="flex-1 bg-transparent border border-outline-variant/40 text-error font-body text-sm font-bold py-3.5 sm:py-2.5 rounded-xl sm:rounded-md hover:bg-error-container transition-colors disabled:opacity-50 text-center touch-target">
                          {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel Booking'}
                        </button>
-                     ) : (
-                       <Link to={`/business/${r.businessId}`} className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-2.5 rounded-md hover:opacity-90 transition-opacity text-center block">
+                     ) : !isBusinessOwner && (
+                       <Link to={`/business/${r.businessId}`} className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-bold py-3.5 sm:py-2.5 rounded-xl sm:rounded-md hover:opacity-90 transition-opacity text-center block touch-target">
                          Book Again
                        </Link>
                      )}
@@ -292,7 +292,7 @@ export default function ReservationsPage() {
                              onClick={() => {
                                if (confirm('Mark this reservation as completed?')) completeMutation.mutate(r.id);
                              }}
-                             className="w-10 h-10 border border-outline-variant/30 text-tertiary rounded-md flex items-center justify-center hover:bg-tertiary-container transition-colors" title="Complete Booking">
+                             className="w-12 h-12 sm:w-10 sm:h-10 border border-outline-variant/30 text-tertiary rounded-xl sm:rounded-md flex items-center justify-center hover:bg-tertiary-container transition-colors touch-target" title="Complete Booking">
                              <CheckCircleIcon className="h-5 w-5" />
                            </button>
                            <button 
@@ -300,20 +300,10 @@ export default function ReservationsPage() {
                              onClick={() => {
                                if (confirm('Mark as no-show? The deposit will be captured.')) noShowMutation.mutate(r.id);
                              }}
-                             className="w-10 h-10 border border-outline-variant/30 text-error rounded-md flex items-center justify-center hover:bg-error-container transition-colors" title="Mark No-Show">
+                             className="w-12 h-12 sm:w-10 sm:h-10 border border-outline-variant/30 text-error rounded-xl sm:rounded-md flex items-center justify-center hover:bg-error-container transition-colors touch-target" title="Mark No-Show">
                              <XCircleIcon className="h-5 w-5" />
                            </button>
                         </div>
-                     )}
-                     
-                     {/* Past actions for customer reservations */}
-                     {!isBusinessOwner && (
-                       <Link
-                         to={`/business/${r.businessId}`}
-                         className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium py-2.5 rounded-md hover:opacity-90 transition-opacity text-center block"
-                       >
-                         Book Again
-                       </Link>
                      )}
                   </div>
                 </div>

@@ -128,10 +128,10 @@ export default function UniversalCheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        <div className="flex items-center gap-3 mb-8">
-          <button onClick={() => navigate(-1)} className="p-2 sm:p-3 hover:bg-surface-container-high rounded-2xl transition-colors">
+    <div className="min-h-screen bg-surface text-on-surface font-body mobile-safe-bottom">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <button onClick={() => navigate(-1)} className="p-3 sm:p-3 bg-surface-container-low hover:bg-surface-container-high rounded-2xl transition-colors touch-target">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           <div>
@@ -190,11 +190,11 @@ export default function UniversalCheckoutPage() {
                   value={form.customerName}
                   onChange={(e) => setForm({ ...form, customerName: e.target.value })}
                   placeholder="Your full name"
-                  className="w-full p-3 sm:p-3.5 rounded-2xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full p-3.5 sm:p-3.5 rounded-2xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
                 <div>
                   <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone</label>
                   <input
@@ -202,7 +202,7 @@ export default function UniversalCheckoutPage() {
                     value={form.customerPhone}
                     onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
                     placeholder="+1 (555) 000-0000"
-                    className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full p-3.5 sm:p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                   />
                 </div>
                 <div>
@@ -213,14 +213,14 @@ export default function UniversalCheckoutPage() {
                     value={form.customerEmail}
                     onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
                     placeholder="you@example.com"
-                    className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full p-3.5 sm:p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                   />
                 </div>
               </div>
 
               {form.mode === 'booking' && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-3">
                     <div>
                       <label className="block text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Date</label>
                       <input
@@ -228,7 +228,7 @@ export default function UniversalCheckoutPage() {
                         type="date"
                         value={form.reservationDate}
                         onChange={(e) => setForm({ ...form, reservationDate: e.target.value })}
-                        className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full p-3.5 sm:p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                       />
                     </div>
                     <div>
@@ -238,7 +238,7 @@ export default function UniversalCheckoutPage() {
                         type="time"
                         value={form.reservationTime}
                         onChange={(e) => setForm({ ...form, reservationTime: e.target.value })}
-                        className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="w-full p-3.5 sm:p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                       />
                     </div>
                   </div>
@@ -250,7 +250,7 @@ export default function UniversalCheckoutPage() {
                       onChange={(e) => setForm({ ...form, notes: e.target.value })}
                       rows={3}
                       placeholder="Special requests..."
-                      className="w-full p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full p-3.5 sm:p-3 rounded-xl bg-surface border border-outline-variant/30 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent touch-target"
                     />
                   </div>
                 </>
@@ -295,7 +295,7 @@ export default function UniversalCheckoutPage() {
             <button
               type="submit"
               disabled={!isAuthenticated}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-base sm:text-lg shadow-sm hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-base sm:text-lg shadow-sm hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all touch-target mt-4"
             >
               {isAuthenticated ? 'Continue to confirm' : 'Log in to book'}
             </button>

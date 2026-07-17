@@ -292,8 +292,8 @@ export default function BusinessDashboard() {
   }
 
   return (
-    <div className="bg-surface min-h-screen text-on-surface pb-24 md:pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="bg-surface min-h-screen text-on-surface pb-24 md:pb-12 mobile-safe-bottom">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
 
         {/* ── Header ── */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -314,14 +314,14 @@ export default function BusinessDashboard() {
               Welcome back, <span className="font-semibold text-primary">{user?.firstName}</span> · {business.name}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link to="/business/analytics" className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+            <Link to="/business/analytics" className="flex items-center justify-center gap-2 text-sm font-bold px-4 py-3 sm:py-2 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant touch-target flex-1 sm:flex-auto">
               <ChartBarIcon className="h-4 w-4" /> Analytics
             </Link>
-            <Link to="/business/settings" className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant">
+            <Link to="/business/settings" className="flex items-center justify-center gap-2 text-sm font-bold px-4 py-3 sm:py-2 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant touch-target flex-1 sm:flex-auto">
               <Cog6ToothIcon className="h-4 w-4" /> Settings
             </Link>
-            <Link to="/reservations/new" className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-opacity shadow-sm">
+            <Link to="/reservations/new" className="flex items-center justify-center gap-2 text-sm font-bold px-4 py-3 sm:py-2 rounded-xl bg-primary text-on-primary hover:opacity-90 transition-opacity shadow-sm touch-target w-full sm:w-auto">
               <PlusIcon className="h-4 w-4" /> Create Booking
             </Link>
           </div>
@@ -358,7 +358,7 @@ export default function BusinessDashboard() {
         <BusinessPabRewards />
 
         {/* ── Stats Grid ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <StatCard icon={<CalendarIcon className="h-6 w-6" />} label="Total Bookings" value={a.totalReservations || 0} colorClass="bg-primary-fixed" textClass="text-on-primary-fixed" />
           <StatCard icon={<CurrencyDollarIcon className="h-6 w-6" />} label="Avg. LTV" value={`$${(a.averageLtv || 154).toLocaleString()}`} colorClass="bg-tertiary-fixed" textClass="text-on-tertiary-fixed" />
           <StatCard icon={<ExclamationTriangleIcon className="h-6 w-6" />} label="No-Show Rate" value={`${a.noShowRate || 0}%`} colorClass="bg-error-container" textClass="text-on-error-container" />
@@ -389,11 +389,11 @@ export default function BusinessDashboard() {
               </div>
             </div>
             {(a.topRiskFactors || []).length > 0 && (
-              <div className="mt-2">
+              <div className="mt-2 w-full overflow-hidden">
                 <p className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Top Risk Factors</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-nowrap overflow-x-auto gap-2 pb-2 no-scrollbar scroll-smooth">
                   {(a.topRiskFactors || []).slice(0, 4).map((f: any, i: number) => (
-                    <span key={i} className="font-label text-[9px] font-bold px-2 py-1 rounded-full bg-secondary-container text-on-secondary-container border border-secondary-container/50">
+                    <span key={i} className="whitespace-nowrap font-label text-[9px] font-bold px-2.5 py-1.5 rounded-full bg-secondary-container text-on-secondary-container border border-secondary-container/50">
                       {f.factor.replace(/([A-Z])/g, ' $1').trim()} ({f.count})
                     </span>
                   ))}
@@ -405,7 +405,7 @@ export default function BusinessDashboard() {
           {/* No-Show Heatmap */}
           <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6">
             <SectionHeader title="No-Show Heatmap" subtitle="By day of week · % no-show rate" />
-            <div className="flex items-end justify-between gap-2 mt-6">
+            <div className="flex flex-nowrap overflow-x-auto items-end justify-start sm:justify-between gap-3 sm:gap-2 mt-6 pb-2 no-scrollbar">
               {noShowByDay.length > 0 ? noShowByDay.map((d: any) => (
                 <HeatCell key={d.day} rate={d.rate} label={DAY_NAMES[d.day]} />
               )) : DAY_NAMES.map((name, i) => (
@@ -452,13 +452,13 @@ export default function BusinessDashboard() {
         {a.overbookingAdvice && (
           <div className="bg-secondary-container rounded-xl p-6 mb-6">
             <SectionHeader title="Overbooking Advisor" action={<span className="font-label text-[9px] font-bold text-on-secondary-container uppercase tracking-widest">Event Venue</span>} />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { label: 'Predicted No-Show', value: `${a.overbookingAdvice.predictedNoShowPercent}%`, colorClass: 'text-error' },
                 { label: 'Safe Overbook Margin', value: `${a.overbookingAdvice.safeOverbookMargin}%`, colorClass: 'text-primary' },
                 { label: 'Sell per 100 Capacity', value: Math.round(100 * (1 + a.overbookingAdvice.safeOverbookMargin / 100)), colorClass: 'text-tertiary' },
               ].map(s => (
-                <div key={s.label} className="text-center p-3 rounded-lg bg-surface-container-lowest">
+                <div key={s.label} className="text-center p-4 sm:p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/10">
                   <p className={`font-headline text-2xl font-bold ${s.colorClass}`}>{s.value}</p>
                   <p className="font-body text-[10px] text-on-surface-variant mt-1">{s.label}</p>
                 </div>
@@ -523,39 +523,39 @@ export default function BusinessDashboard() {
               {reservations.map((r: any) => {
                 const sc = STATUS_CONFIG[r.status] || STATUS_CONFIG.PENDING;
                 return (
-                  <div key={r.id} className="flex flex-col p-3 rounded-lg bg-surface hover:bg-surface-container-low border border-outline-variant/30 transition-colors">
-                    <div className="flex items-center justify-between w-full">
+                  <div key={r.id} className="flex flex-col p-4 sm:p-3 rounded-xl sm:rounded-lg bg-surface hover:bg-surface-container-low border border-outline-variant/30 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4 sm:gap-2">
                     <div className="flex items-center gap-4">
                       {/* Avatar */}
-                      <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center font-headline text-xs font-bold bg-primary-container text-on-primary-container">
+                      <div className="w-10 h-10 sm:w-9 sm:h-9 rounded-full shrink-0 flex items-center justify-center font-headline text-sm sm:text-xs font-bold bg-primary-container text-on-primary-container">
                         {(r.customerName || r.customer?.firstName || '?')[0]?.toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-body text-sm font-bold text-on-surface">{r.customerName || `${r.customer?.firstName || ''} ${r.customer?.lastName || ''}`}</p>
-                        <p className="font-body text-[11px] text-on-surface-variant">{new Date(r.reservationDate).toLocaleDateString()} · {r.reservationTime} · {r.numberOfGuests} guests</p>
+                        <p className="font-body text-base sm:text-sm font-bold text-on-surface">{r.customerName || `${r.customer?.firstName || ''} ${r.customer?.lastName || ''}`}</p>
+                        <p className="font-body text-xs sm:text-[11px] text-on-surface-variant">{new Date(r.reservationDate).toLocaleDateString()} · {r.reservationTime} · {r.numberOfGuests} guests</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                       {r.riskScore != null && <RiskBadge score={r.riskScore} />}
                       
                       {r.depositStatus === 'PAID' && r.cryptoDepositTxHash?.startsWith('STAKED_') && (
-                        <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container uppercase tracking-widest">
+                        <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container uppercase tracking-widest">
                           <ShieldCheckIcon className="h-3.5 w-3.5" />
                           {r.cryptoDepositTxHash.split('_')[1]} PAB Staked
                         </span>
                       )}
 
-                      <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest" style={{ background: sc.bg, color: sc.color }}>
+                      <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest" style={{ background: sc.bg, color: sc.color }}>
                         {sc.icon} {sc.label}
                       </span>
                       {(r.status === 'CONFIRMED' || r.status === 'PENDING') && (
-                        <div className="flex gap-1 ml-1">
+                        <div className="flex flex-wrap gap-2 sm:gap-1 w-full sm:w-auto mt-2 sm:mt-0 sm:ml-1">
                           <button onClick={() => { if (confirm('Mark as completed?')) completeMutation.mutate(r.id); }}
-                            className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-tertiary-container text-on-tertiary-container hover:opacity-80 transition-opacity">
+                            className="flex-1 sm:flex-auto flex items-center justify-center font-label text-xs sm:text-[9px] font-bold px-3 py-2.5 sm:px-2 sm:py-0.5 rounded-xl sm:rounded-full bg-tertiary-container text-on-tertiary-container hover:opacity-80 transition-opacity touch-target">
                             ✓ Done
                           </button>
                           <button onClick={() => { if (confirm('Mark as no-show? We will automatically handle any deposit or staked funds.')) noShowMutation.mutate(r.id); }}
-                            className="font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-error-container text-on-error-container hover:opacity-80 transition-opacity">
+                            className="flex-1 sm:flex-auto flex items-center justify-center font-label text-xs sm:text-[9px] font-bold px-3 py-2.5 sm:px-2 sm:py-0.5 rounded-xl sm:rounded-full bg-error-container text-on-error-container hover:opacity-80 transition-opacity touch-target">
                             ✕ {r.cryptoDepositTxHash?.startsWith('STAKED_') ? 'Process No-Show' : 'No-Show'}
                           </button>
                         </div>

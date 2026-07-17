@@ -738,14 +738,14 @@ export default function ProfilePage() {
 
       {/* ── Profile Banner ── */}
       <div className="relative overflow-hidden">
-        <div className="h-[200px] bg-gradient-to-r from-primary-container to-secondary-container relative">
+        <div className="h-[140px] md:h-[200px] bg-gradient-to-r from-primary-container to-secondary-container relative">
           <div className="absolute w-[300px] h-[300px] -top-24 left-[30%] rounded-full bg-primary/20 blur-3xl pointer-events-none mix-blend-multiply" />
           <div className="absolute w-[200px] h-[200px] -top-12 right-[20%] rounded-full bg-secondary/20 blur-2xl pointer-events-none mix-blend-multiply delay-700" />
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(rgba(0,0,0,0.05)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 relative">
-          <div className="flex items-end gap-5 -mt-12 pb-6">
+          <div className="flex items-end gap-5 -mt-10 md:-mt-12 pb-6">
             <div className="relative shrink-0">
               {user.profilePictureUrl ? (
                 <img src={user.profilePictureUrl} alt={`${user.firstName}'s avatar`} className="w-24 h-24 rounded-full border-4 border-surface shadow-lg object-cover" />
@@ -785,15 +785,19 @@ export default function ProfilePage() {
                   </p>
                 </>
               ) : (
-                <div className="flex gap-2 items-center">
-                  <input value={editName.firstName} onChange={e => setEditName(n => ({ ...n, firstName: e.target.value }))}
-                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="First name" disabled={isSaving} />
-                  <input value={editName.lastName} onChange={e => setEditName(n => ({ ...n, lastName: e.target.value }))}
-                    className="w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-1.5 outline-none font-body text-sm" placeholder="Last name" disabled={isSaving} />
-                  <button onClick={handleSaveProfile} disabled={isSaving} className="bg-primary text-on-primary px-4 py-1.5 rounded-md font-body text-xs font-medium hover:opacity-90 disabled:opacity-50">
-                    {isSaving ? 'Saving...' : 'Save'}
-                  </button>
-                  <button onClick={() => setEditing(false)} disabled={isSaving} className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-medium disabled:opacity-50">Cancel</button>
+                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full mt-2 sm:mt-0">
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <input value={editName.firstName} onChange={e => setEditName(n => ({ ...n, firstName: e.target.value }))}
+                      className="flex-1 sm:w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="First name" disabled={isSaving} />
+                    <input value={editName.lastName} onChange={e => setEditName(n => ({ ...n, lastName: e.target.value }))}
+                      className="flex-1 sm:w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="Last name" disabled={isSaving} />
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    <button onClick={handleSaveProfile} disabled={isSaving} className="flex-1 sm:flex-none bg-primary text-on-primary px-4 py-2 sm:py-1.5 rounded-md font-body text-sm sm:text-xs font-bold hover:opacity-90 disabled:opacity-50 touch-target">
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button onClick={() => setEditing(false)} disabled={isSaving} className="flex-1 sm:flex-none text-sm sm:text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-bold disabled:opacity-50 touch-target bg-surface-container-low sm:bg-transparent rounded-md">Cancel</button>
+                  </div>
                 </div>
               )}
             </div>
@@ -802,9 +806,9 @@ export default function ProfilePage() {
                 setEditName({ firstName: user.firstName || '', lastName: user.lastName || '' });
                 setEditing(true);
               }}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm"
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold px-4 py-2.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm touch-target"
               >
-                <PencilIcon className="h-3.5 w-3.5" /> {t("Edit Profile", "Profile Edit Karein")}
+                <PencilIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Edit Profile", "Profile Edit Karein")}</span><span className="sm:hidden">Edit</span>
               </button>
             )}
           </div>
@@ -815,17 +819,17 @@ export default function ProfilePage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16 mt-4">
 
         {/* ── Stats Row ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {[
             { label: t('Total Bookings', 'Kul Bookings'), value: reservations.length, colorClass: 'text-primary' },
             { label: t('Completed', 'Mukammal'), value: completed, colorClass: 'text-tertiary' },
             { label: t('PAB Tokens', 'PAB Tokens'), value: pabBalance.toLocaleString(), colorClass: 'text-secondary' },
             { label: t('Loyalty Tier', 'Loyalty Tier'), value: loyaltyTier.emoji, colorClass: 'text-on-surface', sub: loyaltyTier.name },
           ].map(s => (
-            <div key={s.label} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-5 text-center shadow-sm hover:shadow-md transition-shadow">
-              <p className={`text-2xl md:text-3xl font-black font-headline ${s.colorClass}`}>{s.value}</p>
-              {s.sub && <p className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: loyaltyTier.color }}>{s.sub}</p>}
-              <p className="text-[10px] text-on-surface-variant mt-1 uppercase tracking-widest font-semibold">{s.label}</p>
+            <div key={s.label} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 sm:p-5 text-center shadow-sm hover:shadow-md transition-shadow">
+              <p className={`text-3xl md:text-3xl font-black font-headline ${s.colorClass}`}>{s.value}</p>
+              {s.sub && <p className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: loyaltyTier.color }}>{s.sub}</p>}
+              <p className="text-[11px] sm:text-[10px] text-on-surface-variant mt-1 uppercase tracking-widest font-semibold">{s.label}</p>
             </div>
           ))}
         </div>
@@ -890,10 +894,10 @@ export default function ProfilePage() {
 
         {/* ── Tabs ── */}
         <div>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide snap-x">
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide snap-x relative -mx-4 px-4 sm:mx-0 sm:px-0">
             {(['history', 'loyalty', 'badges', 'connections', 'security'] as const).map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`snap-start whitespace-nowrap px-4 py-2 rounded-2xl text-sm font-bold transition-all border ${
+                className={`snap-start whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold transition-all border shrink-0 touch-target ${
                   activeTab === tab
                     ? 'bg-surface-container-lowest text-primary border-primary/30 shadow-sm'
                     : 'bg-transparent text-on-surface-variant border-transparent hover:bg-surface-container-low hover:text-on-surface'

@@ -62,16 +62,16 @@ function MobileTab({ to, icon, label, current }: { to: string; icon: string; lab
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all ${
+      className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${
         current
           ? 'text-primary bg-primary-container/30 scale-[1.05]'
           : 'text-on-surface-variant hover:text-primary active:scale-95'
       }`}
     >
-      <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
+      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
         {icon}
       </span>
-      <span className="font-body text-[10px] font-semibold tracking-wide">{label}</span>
+      <span className="font-body text-[11px] font-semibold tracking-wide">{label}</span>
     </Link>
   );
 }
@@ -112,7 +112,7 @@ function SearchSheet({ onClose }: { onClose: () => void }) {
                 setQ(chip);
                 go();
               }}
-              className="shrink-0 px-3 py-2 rounded-xl bg-surface-container-high text-xs font-bold text-on-surface hover:bg-surface-container-highest transition-colors"
+              className="shrink-0 px-4 py-2.5 rounded-xl bg-surface-container-high text-xs font-bold text-on-surface hover:bg-surface-container-highest transition-colors touch-target"
             >
               {chip}
             </button>
@@ -148,11 +148,11 @@ export default function Layout() {
         <header className="bg-surface-bright/70 backdrop-blur-md flex justify-between items-center w-full px-4 md:px-6 h-16 fixed top-0 z-40 border-b border-outline-variant/10 transition-all duration-300">
           <div className="flex items-center gap-2 md:gap-3">
             {isAuthenticated ? (
-              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0">
+              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0 touch-target">
                 {initials}
               </Link>
             ) : (
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 touch-target">
                 <span className="material-symbols-outlined">person</span>
               </div>
             )}
@@ -179,7 +179,7 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => setSearchOpen(true)} className="md:hidden w-9 h-9 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center">
+            <button onClick={() => setSearchOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center touch-target">
               <span className="material-symbols-outlined text-[20px]">search</span>
             </button>
             {isAuthenticated ? (
@@ -199,7 +199,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-grow">
+      <main className="flex-grow mobile-safe-bottom">
         <PageTransition>
           <Outlet />
         </PageTransition>
@@ -211,9 +211,9 @@ export default function Layout() {
           <div className="flex justify-around items-center px-2 py-2 safe-area-bottom">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/live-sell" icon="videocam" label="Live" current={location.pathname === '/live-sell'} />
-            <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
-              <span className="material-symbols-outlined text-[22px]">search</span>
-              <span className="font-body text-[10px] font-semibold tracking-wide">Search</span>
+            <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
+              <span className="material-symbols-outlined text-[24px]">search</span>
+              <span className="font-body text-[11px] font-semibold tracking-wide">Search</span>
             </button>
             <MobileTab
               to={isOwnerOrAdmin ? '/dashboard' : '/reservations'}
