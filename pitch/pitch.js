@@ -135,7 +135,7 @@ brandHeadline(p5,'Validated in Pakistan\'s informal economy — ready for Alibab
 });
 [{t:'Live infra',b:'Cloud Run hardened · Firebase Auth + Prisma',x:0.4,a:CYAN},
  {t:'Web3',b:'Solana mainnet token · Escrow + Soulbound',x:3.52,a:PINK},
- {t:'Integrations',b:'Daraz scoped · Shopify ready · WhatsApp live',x:6.64,a:CYAN},
+ {t:'Integrations',b:'Daraz scoped · Shopify ready · OpenWA WhatsApp',x:6.64,a:CYAN},
  {t:'Content engine',b:'90-day calendar · launch threads · outreach playbooks',x:0.4,a:PINK},
  {t:'Docs + SDKs',b:'Developer portal · API reference · 1-pagers',x:3.52,a:CYAN},
  {t:'Business CRM',b:'Odoo JSON-RPC · Cal.com webhooks',x:6.64,a:PINK}

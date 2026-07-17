@@ -14,6 +14,8 @@ import { notificationService } from '../services/notification.service';
 import { conciergeService } from '../services/conciergeService';
 import { trustSignalService } from '../services/trustSignal.service';
 import { sendWhatsAppMessage } from '../services/ai.service';
+import { buildOutreachMessageFromCatalog } from '../services/openwa.plugins.service';
+import { openwaChatFlowService } from '../services/openwa.chat-flow.service';
 import { channexService } from '../services/channex.service';
 import moment from 'moment-timezone';
 
@@ -351,6 +353,49 @@ export const createReservation = async (
         logger.info(`[WhatsApp] Sending automated join invitation request to business at phone: ${business.phone}`);
       }
       conciergeService.processReservation(reservation.id);
+
+      // Advanced unclaimed outreach via OpenWA WhatsApp, plugin-aware when available
+      if (business.phone) {
+        try {
+          const cleanPhone = business.phone.replace(/\+/g, '');
+          const dateText = dateTime.format('MMMM Do YYYY');
+          const baseMessage = [
+            `You're missing bookings on Pabandi.`,
+            ``,
+            `A customer just tried to reserve ${numberOfGuests} seat${numberOfGuests === 1 ? '' : 's'} at *${business.name}* on *${dateText}* at *${reservationTime}*.`,
+            ``,
+            `Activate AI-backed escrow deposits, Web3 reliability scoring, and Solana $PAB rewards.`,
+            ``,
+            `Claim your profile free:`,
+            `https://pabandi.com/business/${business.id}?claim=1`,
+          ].join('\n');
+
+          const outreachMsg = buildOutreachMessageFromCatalog({
+            baseMessage,
+            businessName: business.name,
+            reservationDate: dateText,
+            reservationTime,
+            guests: numberOfGuests,
+            claimUrl: `https://pabandi.com/business/${business.id}?claim=1`,
+          });
+
+          await sendWhatsAppMessage(cleanPhone, outreachMsg);
+          logger.info(`[Outreach] Sent unclaimed business outreach to ${business.id} via WhatsApp`);
+
+          try {
+            const flowResult = await openwaChatFlowService.sendOutreachFlow(cleanPhone, {
+              businessName: business.name,
+              claimUrl: `https://pabandi.com/business/${business.id}?claim=1`,
+            });
+
+            logger.info(`[ChatFlow] Outreach flow status for ${business.id}: ${flowResult.status}`);
+          } catch (flowErr) {
+            logger.error(`[ChatFlow] Outreach flow failed for ${business.id}: ${(flowErr as any)?.message || flowErr}`);
+          }
+        } catch (outreachErr) {
+          logger.error(`[Outreach] Failed to send WhatsApp outreach: ${(outreachErr as any)?.message || outreachErr}`);
+        }
+      }
     }
 
     // Attempt to push to Channex (non-blocking)

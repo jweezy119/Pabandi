@@ -16,7 +16,7 @@ By combining a localized consumer booking app with a global B2B API, Pabandi has
 - **The Dual-Engine Flywheel**: 
   1. **The Data Engine (Consumer App)**: A booking platform for salons, clinics, and live sellers in Pakistan. It generates proprietary, on-chain reliability behavior data in real-time.
   2. **The Global Layer (Zero-Knowledge API)**: A scalable, monetizable B2B infrastructure that integrates with Daraz, Shopify, and TikTok Shop to block COD fraud globally.
-- **WhatsApp Automation**: Complete integration with Meta Cloud API for automated booking confirmations, 24-hour reminders, owner alerts, and post-booking review requests.
+- **WhatsApp Experience (Customer-Obsessed)**: Pabandi sends WhatsApp through OpenWA’s local gateway with plugin-aware outbound outreach and customer-first reply behavior. The system picks the most helpful response path for the moment: `after-hours` away messaging when businesses are closed, `faq-bot` instant answers for frequent questions, and `chat-flow` interactive menus for bookings, claims, and escrow/$PAB guidance. Businesses can manage plugin enablement from the admin panel, so the messaging layer stays adaptable without code changes.
 - **Seamless Maps Integration**: Integrated Google Maps embedded directly into the marketing site and reservation dashboards to discover and visualize real-time local business data.
 - **Business Management**: Real-time escrow releases, business dashboards showing Lifetime Value (LTV) and API Key Usage metrics, plus native CRM synchronization (Odoo JSON-RPC and Cal.com webhooks).
 - **Enterprise API & SDK**: Full Pay-As-You-Go developer API with OpenAPI / Swagger specifications available at `/api/docs`.
