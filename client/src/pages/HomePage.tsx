@@ -47,7 +47,6 @@ export default function HomePage() {
     lng: number;
   } | null>(null);
   const [search, setSearch] = useState("");
-  const [searchLoading, setSearchLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const revealRef1 = useScrollReveal<HTMLDivElement>();
@@ -147,43 +146,13 @@ export default function HomePage() {
     );
   };
 
-  const geocodeAddress = useCallback(async (query: string) => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
-      );
-      const json = await res.json();
-      if (json[0]) {
-        const lat = parseFloat(json[0].lat);
-        const lng = parseFloat(json[0].lon);
-        const name = json[0].display_name.split(",")[0];
-        return { lat, lng, name, address: json[0].display_name };
-      }
-    } catch (e) {
-      console.error("Geocode failed", e);
-    }
-    return null;
-  }, []);
+
 
   const handleSearch = useCallback(async () => {
     const q = search.trim();
     if (!q) return;
-    setSearchLoading(true);
-    setSelectedMapPlace(null);
-    const hit = await geocodeAddress(q);
-    if (hit) {
-      setMapCenter({ lat: hit.lat, lng: hit.lng });
-      setSelectedMapPlace({
-        name: hit.name || q,
-        address: hit.address,
-        lat: hit.lat,
-        lng: hit.lng,
-      });
-    } else {
-      navigate(`/search?q=${encodeURIComponent(q)}`);
-    }
-    setSearchLoading(false);
-  }, [search, geocodeAddress, navigate]);
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  }, [search, navigate]);
 
   const handlePlaceSelect = useCallback(
     (place: { name: string; address?: string; lat: number; lng: number }) => {
@@ -325,10 +294,9 @@ export default function HomePage() {
                 />
                 <button
                   onClick={handleSearch}
-                  disabled={searchLoading}
                   className="ml-2 px-3 py-1.5 rounded-md bg-primary text-on-primary text-xs font-bold"
                 >
-                  {searchLoading ? "..." : "Search"}
+                  Search
                 </button>
               </div>
 
@@ -345,11 +313,7 @@ export default function HomePage() {
                   <button
                     key={city.name}
                     onClick={() =>
-                      handlePlaceSelect({
-                        name: city.name,
-                        lat: city.lat,
-                        lng: city.lng,
-                      })
+                      navigate(`/search?q=${encodeURIComponent(city.name)}`)
                     }
                     className="text-xs font-bold bg-surface-container border border-outline-variant/10 rounded-full px-3 py-1.5 hover:bg-surface-container-high"
                   >

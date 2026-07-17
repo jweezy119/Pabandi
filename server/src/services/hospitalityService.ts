@@ -381,6 +381,83 @@ class HospitalityService {
     };
   }
 
+  /**
+   * Process a generic webhook for Lodgify, Manual, or any other PMS provider.
+   * Uses X-Pabandi-Signature (HMAC-SHA256) for authentication.
+   */
+  async processGenericWebhook(
+    rawBody: string,
+    signature: string,
+    propertyId: string,
+    expectedProvider: PmsProvider
+  ): Promise<{ action: string; booking: HospitalityBooking } | null> {
+    const property = connectedProperties.get(propertyId);
+    if (!property || property.provider !== expectedProvider) {
+      logger.warn(`[Hospitality] ${expectedProvider} webhook: property ${propertyId} not found or provider mismatch`);
+      return null;
+    }
+
+    // Verify HMAC-SHA256 signature
+    const expected = crypto
+      .createHmac('sha256', property.signingSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    if (signature && !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+      logger.warn(`[Hospitality] ${expectedProvider} webhook: invalid signature for property ${propertyId}`);
+      return null;
+    }
+
+    const parsed = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    return this.normalizeGenericEvent(parsed, property);
+  }
+
+  private normalizeGenericEvent(
+    raw: any,
+    property: ConnectedProperty
+  ): { action: string; booking: HospitalityBooking } | null {
+    // Generic webhook body — accepts common field names
+    const data = raw?.booking || raw?.data || raw;
+    if (!data) return null;
+
+    const checkIn = data.checkIn || data.checkInDate || data.startDate || data.arrivalDate || data.arrival;
+    const checkOut = data.checkOut || data.checkOutDate || data.endDate || data.departureDate || data.departure;
+    const nights = this.calcNights(checkIn, checkOut);
+
+    // Map status from various possible field names
+    const rawStatus = (data.status || raw?.type || raw?.event || '').toLowerCase();
+    let status: HospitalityBookingStatus = 'CONFIRMED';
+    if (rawStatus.includes('cancel')) status = 'CANCELLED';
+    else if (rawStatus.includes('checkout') || rawStatus.includes('checked_out') || rawStatus.includes('checked-out')) status = 'CHECKED_OUT';
+    else if (rawStatus.includes('noshow') || rawStatus.includes('no_show') || rawStatus.includes('no-show')) status = 'NO_SHOW';
+    else if (rawStatus.includes('checkin') || rawStatus.includes('checked_in')) status = 'CHECKED_IN';
+    else if (rawStatus.includes('modif')) status = 'MODIFIED';
+
+    const guestName = data.guestName
+      || `${data.firstName || data.guestFirstName || ''} ${data.lastName || data.guestLastName || ''}`.trim()
+      || 'Guest';
+
+    return {
+      action: rawStatus || 'created',
+      booking: {
+        pmsReservationId: String(data.reservationId || data.bookingId || data.id || `GEN-${Date.now()}`),
+        propertyId: property.id,
+        provider: property.provider,
+        guestName,
+        guestEmail: data.email || data.guestEmail,
+        guestPhone: data.phone || data.guestPhone,
+        checkIn,
+        checkOut,
+        nights,
+        depositAmount: parseFloat(data.depositAmount || data.deposit || '0'),
+        currency: data.currency || 'USD',
+        totalAmount: parseFloat(data.totalAmount || data.total || data.price || '0'),
+        status,
+        rawEvent: raw,
+      },
+    };
+  }
+
   // ─── Utilities ────────────────────────────────────────────────────────────
 
   private calcNights(checkIn: string, checkOut: string): number {

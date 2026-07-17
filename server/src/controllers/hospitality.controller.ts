@@ -62,6 +62,66 @@ export async function cloudbedsWebhook(req: Request, res: Response) {
   }
 }
 
+/**
+ * POST /api/hospitality/lodgify/webhook?propertyId=hp_xxx
+ * Receives Lodgify REST API booking events.
+ * Auth: X-Pabandi-Signature (HMAC-SHA256 of raw body using signing secret).
+ */
+export async function lodgifyWebhook(req: Request, res: Response) {
+  try {
+    const propertyId = req.query.propertyId as string;
+    const signature = req.headers['x-pabandi-signature'] as string || '';
+    const rawBody = JSON.stringify(req.body);
+
+    const result = await hospitalityService.processGenericWebhook(rawBody, signature, propertyId, 'lodgify');
+
+    if (!result) {
+      return res.status(401).json({ error: 'Invalid signature or unknown property' });
+    }
+
+    const property = await hospitalityService.getPropertyById(result.booking.propertyId);
+    if (property) {
+      res.status(200).json({ received: true });
+      await hospitalityService.handleBookingEvent(result.booking, property);
+    } else {
+      res.status(200).json({ received: true });
+    }
+  } catch (err: any) {
+    logger.error('[Hospitality] Lodgify webhook error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+/**
+ * POST /api/hospitality/manual/webhook?propertyId=hp_xxx
+ * Receives generic/custom PMS booking events.
+ * Auth: X-Pabandi-Signature (HMAC-SHA256 of raw body using signing secret).
+ */
+export async function manualWebhook(req: Request, res: Response) {
+  try {
+    const propertyId = req.query.propertyId as string;
+    const signature = req.headers['x-pabandi-signature'] as string || '';
+    const rawBody = JSON.stringify(req.body);
+
+    const result = await hospitalityService.processGenericWebhook(rawBody, signature, propertyId, 'manual');
+
+    if (!result) {
+      return res.status(401).json({ error: 'Invalid signature or unknown property' });
+    }
+
+    const property = await hospitalityService.getPropertyById(result.booking.propertyId);
+    if (property) {
+      res.status(200).json({ received: true });
+      await hospitalityService.handleBookingEvent(result.booking, property);
+    } else {
+      res.status(200).json({ received: true });
+    }
+  } catch (err: any) {
+    logger.error('[Hospitality] Manual webhook error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+}
+
 // ─── Property Management ──────────────────────────────────────────────────────
 
 /**

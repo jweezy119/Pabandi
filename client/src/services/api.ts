@@ -222,4 +222,22 @@ export const liveSellerService = {
   setSchedule: (platform: string, schedule: any[]) => apiClient.post(`/integrations/livesell/${platform}/schedule`, { schedule }),
 };
 
+export const hospitalityService = {
+  /** Connect a property's PMS to Pabandi escrow */
+  connectProperty: (data: {
+    provider: string;
+    pmsPropertyId: string;
+    apiKey: string;
+    propertyName: string;
+    propertyType: string;
+    country?: string;
+  }) => apiClient.post('/hospitality/connect', data),
+  /** List all connected properties for the current business */
+  getProperties: () => apiClient.get('/hospitality/properties'),
+  /** Get a single connected property */
+  getProperty: (id: string) => apiClient.get(`/hospitality/property/${id}`),
+  /** Simulate a test booking event for a connected property */
+  testBooking: (propertyId: string) => apiClient.post('/hospitality/test-booking', { propertyId }),
+};
+
 export default apiClient;

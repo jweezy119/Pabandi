@@ -26,7 +26,7 @@ import BusinessPabRewards from '../components/BusinessPabRewards';
 import AccioDemandSourcingWidget from '../components/AccioDemandSourcingWidget';
 import AlibabaQwenConsultantWidget from '../components/AlibabaQwenConsultantWidget';
 import LiveSellerPanel from '../components/LiveSellerPanel';
-
+import HospitalityPropertiesPanel from '../components/HospitalityPropertiesPanel';
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const RISK_COLORS: Record<string, { bg: string; text: string; }> = {
@@ -475,6 +475,10 @@ export default function BusinessDashboard() {
 
         {/* ── Accio Demand Sourcing Widget ── */}
         {businessId && <AccioDemandSourcingWidget businessId={businessId} />}
+
+        {businessId && <LiveSellerPanel businessId={businessId} />}
+
+        {businessId && <HospitalityPropertiesPanel />}
 
         {/* ── Accio Work Growth & Chat Grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

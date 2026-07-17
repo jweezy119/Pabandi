@@ -2,6 +2,8 @@ import { Router } from 'express';
 import {
   beds24Webhook,
   cloudbedsWebhook,
+  lodgifyWebhook,
+  manualWebhook,
   connectProperty,
   listProperties,
   getProperty,
@@ -26,6 +28,20 @@ router.post('/beds24/webhook', beds24Webhook);
  * Auth via X-Cloudbeds-Webhook-Signature (HMAC-SHA256).
  */
 router.post('/cloudbeds/webhook', cloudbedsWebhook);
+
+/**
+ * POST /api/hospitality/lodgify/webhook
+ * Lodgify REST API booking event receiver.
+ * Auth via X-Pabandi-Signature (HMAC-SHA256).
+ */
+router.post('/lodgify/webhook', lodgifyWebhook);
+
+/**
+ * POST /api/hospitality/manual/webhook
+ * Generic/custom booking event receiver for any PMS.
+ * Auth via X-Pabandi-Signature (HMAC-SHA256).
+ */
+router.post('/manual/webhook', manualWebhook);
 
 // ─── Property Management (authenticated) ─────────────────────────────────────
 
@@ -54,3 +70,4 @@ router.get('/property/:id', getProperty);
 router.post('/test-booking', simulateBooking);
 
 export default router;
+
