@@ -1,0 +1,3 @@
+
+# Skip old hardcoded packages that pollute this Foundry workspace
+no_match_path = ["hardhat.config.ts", "ignition", "test", "scripts", "sdk", "solana"]

@@ -1,37 +1,7 @@
 {
-  "name": "pabandi",
+  "name": "pabandi-escrow-contract",
   "version": "1.0.0",
-  "description": "Pabandi – Agentic AI booking ecosystem for Alibaba CoCreate 2026",
-  "main": "server/index.js",
-  "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "build": "npm run build:server && npm run build:client",
-    "build:server": "cd server && npm run build",
-    "build:client": "cd client && npm run build",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "migrate": "cd server && npm run migrate",
-    "seed": "cd server && npm run seed",
-    "site": "npx --yes serve site -l 5500",
-    "site:verify": "node site/verify.mjs",
-    "build:app": "cd client && npm run build",
-    "build:hosting": "npm run build:app && node scripts/copy-app-to-site.mjs",
-    "deploy:hosting": "npx -y firebase-tools@latest deploy --only hosting --project pabandi-42c5b",
-    "deploy": "npm run build:hosting && npm run deploy:hosting"
-  },
-  "keywords": [
-    "booking",
-    "reservation",
-    "ai",
-    "agentic-ai",
-    "alibaba-cocreate",
-    "b2b",
-    "no-show-prediction"
-  ],
-  "author": "Lead Developer",
+  "description": "PabandiEscrow.sol — Solidity escrow for booking reservations on Monad testnet",
   "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
+  "keywords": ["monad", "escrew", "solana", "booking", "pabandi"]
 }
