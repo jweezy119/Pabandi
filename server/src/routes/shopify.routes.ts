@@ -4,7 +4,7 @@ import {
   shopifyAuthCallback,
   shopifyWebhooks,
 } from '../controllers/shopify.controller';
-import { requireAuth } from '../middleware/auth';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 

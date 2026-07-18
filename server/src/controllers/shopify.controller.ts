@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
-import '@shopify/shopify-api/adapters/node';
+import '@shopify/shopify-api/dist/cjs/adapters/node/index.js';
 import { shopifyApi, ApiVersion } from '@shopify/shopify-api';
 
 const shopify = shopifyApi({
