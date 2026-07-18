@@ -415,6 +415,17 @@ export default function AuthPage() {
 
                 {isBusiness && (
                   <>
+                    <div className="mb-4 p-4 rounded-xl bg-primary/10 border border-primary/20">
+                      <p className="text-sm font-bold text-on-surface mb-2 text-primary">Specialized Solutions:</p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Link to="/live-selling" className="text-xs font-semibold px-3 py-2 bg-surface-container text-on-surface hover:text-primary rounded-lg border border-outline-variant/30 transition-colors flex items-center justify-between">
+                          🎥 Live Sellers & Drops <span>→</span>
+                        </Link>
+                        <Link to="/freelance" className="text-xs font-semibold px-3 py-2 bg-surface-container text-on-surface hover:text-primary rounded-lg border border-outline-variant/30 transition-colors flex items-center justify-between">
+                          💻 Freelancers & Gig Work <span>→</span>
+                        </Link>
+                      </div>
+                    </div>
                     <div>
                       <label htmlFor="businessName" className="block text-[11px] font-bold mb-1.5 uppercase tracking-wide text-on-surface-variant">Business Name</label>
                       <input id="businessName" name="businessName" type="text" required

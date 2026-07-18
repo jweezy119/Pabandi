@@ -185,13 +185,25 @@ export default function BusinessJoinPage() {
               Pabandi's Agentic AI analyses customer history, weather, local events, and 40+ data points autonomously. High-risk? The agent negotiates and captures a deposit automatically — before they even leave your page.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
               <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-base sm:text-lg px-8 py-4 rounded-xl font-bold hover:bg-slate-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
                 Register Your Business →
               </a>
               <a href="#how-it-works" className="w-full sm:w-auto text-center text-base sm:text-lg px-8 py-4 rounded-xl font-bold text-white border border-white/10 hover:bg-white/5 transition-all">
                 See How It Works
               </a>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-10 inline-block w-full">
+              <p className="text-sm text-slate-400 font-medium mb-3">Looking for specific solutions?</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link to="/live-selling" className="flex items-center gap-2 text-sm font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-4 py-2.5 rounded-xl border border-amber-500/20 transition-colors w-full justify-center sm:justify-start">
+                  <span>🎥</span> Live Sellers & Drops
+                </Link>
+                <Link to="/freelance" className="flex items-center gap-2 text-sm font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 px-4 py-2.5 rounded-xl border border-blue-500/20 transition-colors w-full justify-center sm:justify-start">
+                  <span>💻</span> Freelancers & Gig Work
+                </Link>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-semibold text-slate-300">
