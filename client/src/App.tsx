@@ -45,6 +45,7 @@ import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
+import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { PublicSEO } from './components/PublicSEO';
@@ -90,6 +91,10 @@ function App() {
               element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
             />
 
+            <Route path="/waitlist" element={<WaitlistPage />} />
+            <Route path="/shopify-app" element={<ShopifyAppBridge />} />
+            
+            <Route path="/u/:slug" element={<PublicCustomerProfilePage />} />
             <Route path="business/:id" element={<BusinessProfilePage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="b/:slug" element={<ShortLinkBookingPage />} />

@@ -505,7 +505,7 @@ export default function DeveloperPortalPage() {
           </div>
           <div style={{ marginBottom: '24px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f1f5f9', marginBottom: '8px' }}>How do I get an API key?</h3>
-            <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>Email <a href="mailto:team@pabandi.com" style={{ color: '#818cf8', textDecoration: 'none' }}>team@pabandi.com</a> with your platform name, expected volume, and use case. We are onboarding 10 beta partners for June 2026.</p>
+            <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>Email <a href="mailto:sales@pabandi.com" style={{ color: '#818cf8', textDecoration: 'none' }}>sales@pabandi.com</a> with your platform name, expected volume, and use case. We are onboarding 10 beta partners for June 2026.</p>
           </div>
         </div>
 

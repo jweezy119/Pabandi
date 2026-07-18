@@ -130,6 +130,14 @@ export default function AboutPage() {
           
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             <a 
+              href="mailto:jay@pabandi.com" 
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-full text-indigo-400 hover:text-white transition-all duration-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span className="font-medium">jay@pabandi.com</span>
+            </a>
+
+            <a 
               href="https://www.linkedin.com/company/pabandi/" 
               target="_blank" 
               rel="noreferrer"

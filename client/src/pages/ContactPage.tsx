@@ -56,9 +56,9 @@ export default function ContactPage() {
               For our business partners. Need help setting up your profile, understanding analytics, or managing escrow payouts? Reach your dedicated account manager.
             </p>
             <div className="space-y-4">
-              <a href="mailto:partners@pabandi.com" className="flex items-center gap-3 text-on-surface hover:text-[#10b981] transition-colors font-semibold">
+              <a href="mailto:sales@pabandi.com" className="flex items-center gap-3 text-on-surface hover:text-[#10b981] transition-colors font-semibold">
                 <span className="material-symbols-outlined text-on-surface-variant">mail</span>
-                partners@pabandi.com
+                sales@pabandi.com
               </a>
               <a href="tel:+18007222634" className="flex items-center gap-3 text-on-surface hover:text-[#10b981] transition-colors font-semibold">
                 <span className="material-symbols-outlined text-on-surface-variant">call</span>
