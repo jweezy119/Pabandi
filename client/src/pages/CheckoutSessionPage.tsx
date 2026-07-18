@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ShieldCheck, AlertTriangle, Fingerprint, Lock, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { useParams } from 'react-router-dom';
+import { ShieldCheckIcon, ExclamationTriangleIcon, FingerPrintIcon, LockClosedIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useAuthStore } from '../store/authStore';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 interface CheckoutSession {
@@ -28,7 +28,7 @@ export const CheckoutSessionPage = () => {
   const [session, setSession] = useState<CheckoutSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -66,7 +66,7 @@ export const CheckoutSessionPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#95BF47] animate-spin" />
+        <ArrowPathIcon className="w-8 h-8 text-[#95BF47] animate-spin" />
       </div>
     );
   }
@@ -74,7 +74,7 @@ export const CheckoutSessionPage = () => {
   if (!session || session.status !== 'PENDING') {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-        <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+        <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-white mb-2">Invalid or Expired Session</h1>
         <p className="text-zinc-400 text-center max-w-md">
           This checkout session is no longer active. Please contact the seller for a new link.
@@ -100,7 +100,7 @@ export const CheckoutSessionPage = () => {
           </div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             {session.business.name}
-            {session.business.isVerified && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
+            {session.business.isVerified && <CheckCircleIcon className="w-5 h-5 text-blue-500" />}
           </h1>
           <p className="text-zinc-400">Secure Escrow Checkout</p>
         </div>
@@ -116,14 +116,14 @@ export const CheckoutSessionPage = () => {
         {/* Risk Oracle (Buyer Side) */}
         <div className="bg-[#181818] rounded-2xl p-4 border border-zinc-800 mb-6">
           <h3 className="text-sm font-bold text-zinc-300 mb-3 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[#95BF47]" />
+            <ShieldCheckIcon className="w-4 h-4 text-[#95BF47]" />
             Pabandi Risk Oracle
           </h3>
           <div className="flex items-start gap-3">
             {user ? (
               <>
                 <div className="p-2 bg-[#95BF47]/10 rounded-full shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-[#95BF47]" />
+                  <ShieldCheckIcon className="w-5 h-5 text-[#95BF47]" />
                 </div>
                 <div>
                   <p className="font-semibold text-white text-sm">Passport Verified</p>
@@ -133,7 +133,7 @@ export const CheckoutSessionPage = () => {
             ) : (
               <>
                 <div className="p-2 bg-orange-500/10 rounded-full shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                  <ExclamationTriangleIcon className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
                   <p className="font-semibold text-white text-sm">Guest Checkout</p>
@@ -147,7 +147,7 @@ export const CheckoutSessionPage = () => {
         {/* Auto-fill Notice */}
         {user && (
           <div className="flex items-center gap-2 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 mb-8">
-            <Fingerprint className="w-4 h-4 text-blue-400" />
+            <FingerPrintIcon className="w-4 h-4 text-blue-400" />
             <p className="text-xs text-zinc-300">Using Passport to autofill shipping & secure payment details.</p>
           </div>
         )}
@@ -159,10 +159,10 @@ export const CheckoutSessionPage = () => {
           className="w-full py-4 rounded-xl bg-[#95BF47] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {paying ? (
-            <Loader2 className="w-6 h-6 animate-spin" />
+            <ArrowPathIcon className="w-6 h-6 animate-spin" />
           ) : (
             <>
-              <Lock className="w-5 h-5" />
+              <LockClosedIcon className="w-5 h-5" />
               Pay & Secure Funds
             </>
           )}

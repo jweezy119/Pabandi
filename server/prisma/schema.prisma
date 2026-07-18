@@ -553,6 +553,11 @@ enum SocialPlatform {
   FACEBOOK
   FIVERR
   UPWORK
+  INSTAGRAM
+  INSTAGRAM_SHOP
+  SHOPIFY
+  WEB3_EVM
+  WEB3_SOLANA
 }
 
 enum SourcingOrderStatus {
