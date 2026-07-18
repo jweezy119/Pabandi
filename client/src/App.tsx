@@ -43,6 +43,7 @@ import AboutPage from './pages/AboutPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
+import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
@@ -96,6 +97,7 @@ function App() {
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
+            <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
             {/* Business partner landing page — public */}
             <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />

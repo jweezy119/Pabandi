@@ -594,11 +594,22 @@ export default function BusinessSettingsPage() {
 
             <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#181818]">
               <h4 className="font-bold text-[#e8e8e8] mb-3">Connect platforms</h4>
-              <p className="text-xs text-[#757575] mb-4">Connect TikTok Live, YouTube Shopping, or Shopify Live. One catalog syncs across shows.</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <a href="/integrations/livesell/connect/tiktok-live" className="px-4 py-2.5 rounded-xl bg-[#ff0050] text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect TikTok</a>
                 <a href="/integrations/livesell/connect/youtube-shopping" className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect YouTube</a>
                 <a href="/integrations/livesell/connect/shopify-live" className="px-4 py-2.5 rounded-xl bg-[#95BF47] text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Shopify</a>
+                <a href="/integrations/livesell/connect/instagram-live" className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect Instagram</a>
+                <a href="/integrations/livesell/connect/amazon-live" className="px-4 py-2.5 rounded-xl bg-[#ff9900] text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Amazon</a>
+                <a href="/integrations/livesell/connect/custom-web" className="px-4 py-2.5 rounded-xl bg-slate-700 text-white text-sm font-bold hover:opacity-90 transition-opacity">Custom Web</a>
+              </div>
+              <div className="p-4 bg-[#0064d2]/10 border border-[#0064d2]/20 rounded-xl">
+                <h5 className="font-bold text-[#e8e8e8] mb-1 flex items-center gap-2">
+                  <span className="text-[#0064d2]">eBay</span> Integration
+                </h5>
+                <p className="text-xs text-[#9e9e9e] mb-3 leading-relaxed">
+                  eBay restricts off-platform checkout in buyer-seller messaging. Treat eBay as a traffic source. Add this to your listings: <strong>"Escrow-backed checkout available — message 'PABANDI' for link"</strong>. When buyers DM you, send your Pabandi checkout link.
+                </p>
+                <button type="button" onClick={() => {}} className="px-4 py-2 bg-[#0064d2] text-white text-sm font-bold rounded-lg hover:opacity-90 transition-opacity">Enable eBay Mode</button>
               </div>
             </div>
 

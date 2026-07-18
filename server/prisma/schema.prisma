@@ -121,6 +121,7 @@ model Business {
   pabandiReviews     PabandiReview[]
   services           BusinessService[]
   liveSellerIntegrations LiveSellerIntegration[]
+  checkoutSessions   CheckoutSession[]
 
   @@index([ownerId])
   @@index([city])
@@ -522,6 +523,10 @@ enum LiveSellerPlatform {
   TIKTOK_LIVE
   YOUTUBE_SHOPPING
   SHOPIFY_LIVE
+  EBAY_LIVE
+  AMAZON_LIVE
+  INSTAGRAM_LIVE
+  CUSTOM_WEB
 }
 
 enum ApiTier {
@@ -785,5 +790,32 @@ model ReservationService {
   service       BusinessService @relation(fields: [serviceId], references: [id])
 
   @@unique([reservationId, serviceId])
+}
+
+model CheckoutSession {
+  id            String   @id @default(cuid())
+  businessId    String
+  amount        Float
+  currency      String   @default("USD")
+  escrowTerms   Json?
+  metadata      Json?
+  successUrl    String
+  cancelUrl     String
+  status        CheckoutStatus @default(PENDING)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
+}
+
+enum CheckoutStatus {
+  PENDING
+  PAID
+  EXPIRED
+  CANCELLED
 }
 
