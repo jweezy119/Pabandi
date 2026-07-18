@@ -9,7 +9,7 @@ What we are:
 - trust-and-commitment layer for informal economy bookings
 - portable Passport reputation for sellers, live sellers, and hosts
 - answer engine for local trust discovery and reliable booking
-- WhatsApp Business enabled with Meta Cloud API
+- customer-obsessed WhatsApp automation through OpenWA with plugin-aware messaging: after-hours replies, instant FAQ answers, and interactive chat-flow menus for bookings, claims, and escrow guidance
 
 Public pages:
 - https://pabandi.com

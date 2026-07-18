@@ -415,7 +415,7 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 space-y-10 sm:space-y-12 mt-8 sm:mt-12">
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
-          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4">
+          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4 scroll-smooth">
             {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","PROPERTY_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
               <button
                 key={c}
@@ -439,6 +439,11 @@ export default function HomePage() {
                 {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
               </button>
             ))}
+          </div>
+          {/* Scroll hint on mobile */}
+          <div className="flex sm:hidden items-center justify-center gap-1.5 mt-1 mb-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+            <span className="material-symbols-outlined text-[14px]">swipe</span>
+            Swipe to explore
           </div>
         </section>
 

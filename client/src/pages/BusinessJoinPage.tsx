@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 
 // ── Icons ──────────────────────────────────────────────────────────────
@@ -25,8 +25,13 @@ const CATEGORIES = [
 ];
 
 export default function BusinessJoinPage() {
+  const [query] = useSearchParams();
+  const navigate = useNavigate();
+  const fromClaim = query.get('fromClaim') === '1';
+  const claimBizId = query.get('id') || '';
+
   const [form, setForm] = useState({
-    businessName: '', ownerName: '', phone: '', email: '', category: '', city: '',
+    businessName: claimBizId ? `Claiming ${claimBizId}` : '', ownerName: '', phone: '', email: '', category: 'RESTAURANT', city: '',
     country: 'United States',
     password: '', confirmPassword: '',
   });
@@ -495,174 +500,170 @@ export default function BusinessJoinPage() {
             <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col">
               <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
               <div className="text-2xl sm:text-3xl font-black text-white mb-4">Custom</div>
-              <p className="text-sm text-slate-400 mb-8 h-10">Multi-location chains, hotels, and high-volume venues.</p>
+              <p className="text-sm text-slate-400 mb-8 h-10">For chains and multi-location operators.</p>
               <ul className="space-y-4 mb-10 flex-1">
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Multi-location management</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Custom AI model training</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Unlimited locations & seats</li>
                 <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Dedicated account manager</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> SLA + uptime guarantee</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> White-label option</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Custom integrations</li>
+                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> IP whitelisting & SSO</li>
               </ul>
-              <a href="mailto:sales@pabandi.com" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Contact Sales →</a>
+              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Contact Sales →</a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Registration Form ───────────────────────────────────── */}
-      <section id="join-form" className="py-32 px-4 sm:px-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Ready to protect your revenue?</h2>
-            <p className="text-xl text-slate-400">Join hundreds of businesses globally using Pabandi to eliminate no-shows and run tighter operations.</p>
+      {/* ── Join Form ───────────────────────────────────────────── */}
+      <section id="join-form" className="py-32 px-4 sm:px-6 border-t border-white/5">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Join</div>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-4">Register your business</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">Start with free tier access. Upgrade anytime.</p>
+            {fromClaim ? (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold">
+                <span className="material-symbols-outlined text-sm">verified</span> Claim-oriented onboarding
+              </div>
+            ) : null}
           </div>
 
-          <div className="bg-[#0f172a] rounded-3xl p-5 sm:p-8 md:p-10 border border-white/10 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-            
+          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-10 shadow-2xl">
             {error && (
-              <div className="mb-6 px-4 py-3 rounded-xl text-sm font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400 relative z-10">
+              <div className="bg-error-container text-on-error-container border border-error/20 px-4 py-3 rounded-lg mb-6 text-sm font-medium">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Business Name</label>
-                <input name="businessName" value={form.businessName} onChange={handleChange}
-                  placeholder="e.g. The Corner Cafe"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                <label htmlFor="businessName" className="block text-sm font-medium text-on-surface-variant mb-1">Business Name *</label>
+                <input
+                  id="businessName"
+                  name="businessName"
+                  type="text"
+                  required
+                  value={form.businessName}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Your Business / Platform Name"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Your Full Name</label>
-                <input name="ownerName" value={form.ownerName} onChange={handleChange}
-                  placeholder="Jane Doe"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                <label htmlFor="category" className="block text-sm font-medium text-on-surface-variant mb-1">Category *</label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  value={form.category}
+                  onChange={handleChange}
+                  className="input-field"
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Phone Number</label>
-                  <input name="phone" value={form.phone} onChange={handleChange}
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Email Address</label>
-                  <input name="email" type="email" value={form.email} onChange={handleChange}
-                    placeholder="you@business.com"
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
-                </div>
+              <div>
+                <label htmlFor="ownerName" className="block text-sm font-medium text-on-surface-variant mb-1">Owner Name *</label>
+                <input
+                  id="ownerName"
+                  name="ownerName"
+                  type="text"
+                  required
+                  value={form.ownerName}
+                  onChange={handleChange}
+                  className="input-field"
+                  placeholder="Your full name"
+                />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Category</label>
-                  <select name="category" value={form.category} onChange={handleChange}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors appearance-none">
-                    <option value="" disabled>Select...</option>
-                    {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Region</label>
-                  <select name="country" value={form.country} onChange={handleChange}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors appearance-none">
-                    <option value="United States">🇺🇸 North America</option>
-                    <option value="Europe">🇪🇺 Europe</option>
-                    <option value="Asia">🌏 Asia Pacific</option>
-                    <option value="Global">🌍 Global / Multiple</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Password</label>
-                  <div className="relative">
-                    <input
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="Min. 8 characters"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors pr-16"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(p => !p)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-white transition-colors">
-                      {showPassword ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">Confirm Password</label>
+                  <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-1">Email *</label>
                   <input
-                    name="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.confirmPassword}
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={form.email}
                     onChange={handleChange}
-                    placeholder="Repeat password"
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="input-field"
+                    placeholder="business@example.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-on-surface-variant mb-1">Phone *</label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="input-field"
+                    placeholder="+1 (555) 000-0000"
                   />
                 </div>
               </div>
 
-              <button type="submit" disabled={loading}
-                className="w-full py-4 rounded-xl text-base sm:text-lg font-bold bg-white text-black hover:bg-slate-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)] mt-4">
-                {loading ? 'Processing...' : 'Register Your Business →'}
-              </button>
-              
-              <div className="text-center mt-4">
-                 <span className="text-slate-500 text-sm">Need a custom enterprise plan? <a href="mailto:sales@pabandi.com" className="text-white font-bold hover:underline">Request a Demo</a></span>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-on-surface-variant mb-1">City *</label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  value={form.city}
+                  onChange={handleChange}
+                  className="input-field"
+                />
               </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-on-surface-variant mb-1">Password *</label>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={form.password}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-on-surface-variant mb-1">Confirm Password *</label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  className="input-field"
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+                  Show password
+                </label>
+                <button type="button" onClick={() => navigate('/login')} className="text-sm text-slate-400 hover:text-white transition-colors">
+                  Already have an account?
+                </button>
+              </div>
+
+              <button type="submit" disabled={loading} className="w-full bg-white text-black font-headline text-sm font-bold py-3.5 rounded-xl hover:bg-slate-200 transition-colors shadow-sm disabled:opacity-60">
+                {loading ? 'Creating account...' : 'Create Account'}
+              </button>
             </form>
           </div>
         </div>
       </section>
-
-      {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 py-12 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-5 sm:p-8 mb-12">
-          <div>
-            <h4 className="font-bold text-white mb-4">Pabandi</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">AI-powered reservations with smart no-show prevention and Web3 loyalty rewards. Built for global scale.</p>
-          </div>
-          <div>
-            <h4 className="font-bold text-white mb-4">Business</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link to="/business/join" className="hover:text-white transition-colors">Overview</Link></li>
-              <li><Link to="/business/join" className="hover:text-white transition-colors">Features</Link></li>
-              <li><Link to="/business/join" className="hover:text-white transition-colors">$PAB Rewards</Link></li>
-              <li><Link to="/business/join" className="hover:text-white transition-colors">Pricing</Link></li>
-              <li><a href="mailto:sales@pabandi.com" className="hover:text-white transition-colors">Request Demo</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-white mb-4">Customer</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link to="/" className="hover:text-white transition-colors">Overview</Link></li>
-              <li><Link to="/web3" className="hover:text-white transition-colors">PAB Tokens</Link></li>
-              <li><Link to="/login" className="hover:text-white transition-colors">Sign Up</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-white mb-4">Company</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-          <p>© 2026 Pabandi Technologies. All rights reserved.</p>
-          <p>Built for Global SMEs 🌍</p>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import { sendWhatsAppMessage } from './ai.service';
+import { openwaAfterHoursService } from './openwa.after-hours.service';
 
 // Use globally initialized admin from utils/firebase.ts
 const isFirebaseInitialized = () => admin.apps.length > 0;
@@ -180,8 +181,22 @@ export class NotificationService {
 
       // Send WhatsApp confirmation
       if (reservation.business.settings?.sendWhatsAppReminders && reservation.customerPhone) {
-        const msg = `Hi ${reservation.customerName}! Your reservation at *${reservation.business.name}* is CONFIRMED for ${new Date(reservation.reservationDate).toLocaleDateString()} at ${reservation.reservationTime}. We look forward to seeing you!`;
-        await sendWhatsAppMessage(reservation.customerPhone, msg);
+        const afterHours = openwaAfterHoursService.isAfterHoursNow({
+          id: reservation.business.id,
+          timezone: reservation.business.timezone,
+          settings: reservation.business.settings || null,
+        });
+
+        if (afterHours) {
+          await sendWhatsAppMessage(reservation.customerPhone, openwaAfterHoursService.getAwayMessage({
+            id: reservation.business.id,
+            timezone: reservation.business.timezone,
+            settings: reservation.business.settings || null,
+          }));
+        } else {
+          const msg = `Hi ${reservation.customerName}! Your reservation at *${reservation.business.name}* is CONFIRMED for ${new Date(reservation.reservationDate).toLocaleDateString()} at ${reservation.reservationTime}. We look forward to seeing you!`;
+          await sendWhatsAppMessage(reservation.customerPhone, msg);
+        }
       }
 
       // Log notification
@@ -261,8 +276,22 @@ export class NotificationService {
 
         // Send WhatsApp Reminder
         if (settings?.sendWhatsAppReminders && reservation.customerPhone) {
-          const msg = `Reminder: Hi ${reservation.customerName}, your reservation at *${reservation.business.name}* is coming up on ${reservationDate.toLocaleDateString()} at ${reservation.reservationTime}.`;
-          await sendWhatsAppMessage(reservation.customerPhone, msg);
+          const afterHours = openwaAfterHoursService.isAfterHoursNow({
+            id: reservation.business.id,
+            timezone: reservation.business.timezone,
+            settings: reservation.business.settings || null,
+          });
+
+          if (afterHours) {
+            await sendWhatsAppMessage(reservation.customerPhone, openwaAfterHoursService.getAwayMessage({
+              id: reservation.business.id,
+              timezone: reservation.business.timezone,
+              settings: reservation.business.settings || null,
+            }));
+          } else {
+            const msg = `Reminder: Hi ${reservation.customerName}, your reservation at *${reservation.business.name}* is coming up on ${reservationDate.toLocaleDateString()} at ${reservation.reservationTime}.`;
+            await sendWhatsAppMessage(reservation.customerPhone, msg);
+          }
         }
 
         await prisma.reservation.update({

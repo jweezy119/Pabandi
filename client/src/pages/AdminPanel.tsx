@@ -3,13 +3,17 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import {
-  UsersIcon, BuildingStorefrontIcon, CalendarIcon,
-  ChartBarIcon, ArrowRightOnRectangleIcon,
+  UsersIcon,
+  BuildingStorefrontIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ArrowRightOnRectangleIcon,
   CheckBadgeIcon,
+  CogIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 
-type Tab = 'overview' | 'users' | 'reservations' | 'businesses';
+type Tab = 'overview' | 'users' | 'reservations' | 'businesses' | 'plugins';
 
 // Updated for light theme design system
 const STATUS_COLORS: Record<string, string> = {
@@ -77,6 +81,18 @@ export default function AdminPanel() {
     { enabled: tab === 'businesses' }
   );
 
+  const { data: pluginsData } = useQuery(
+    'admin-openwa-plugins',
+    () => apiClient.get('/admin/openwa/plugins').then(r => r.data.data),
+    { enabled: tab === 'plugins' }
+  );
+
+  const pluginToggle = useMutation(
+    ({ id, enabled }: { id: string; enabled: boolean }) =>
+      apiClient.patch(`/admin/openwa/plugins/${id}`, { enabled }),
+    { onSuccess: () => qc.invalidateQueries('admin-openwa-plugins') }
+  );
+
   const verifyMutation = useMutation(
     (id: string) => apiClient.patch(`/admin/businesses/${id}/verify`),
     { onSuccess: () => qc.invalidateQueries('admin-businesses') }
@@ -92,6 +108,7 @@ export default function AdminPanel() {
     { id: 'users',        label: 'Users',         icon: UsersIcon },
     { id: 'reservations', label: 'Reservations',  icon: CalendarIcon },
     { id: 'businesses',   label: 'Businesses',    icon: BuildingStorefrontIcon },
+    { id: 'plugins',      label: 'Plugins',       icon: CogIcon },
   ] as const;
 
   return (
@@ -339,6 +356,62 @@ export default function AdminPanel() {
                   <BuildingStorefrontIcon className="h-10 w-10 mx-auto text-outline opacity-50 mb-3" />
                   <p className="text-sm text-on-surface font-bold mb-1">No businesses yet</p>
                   <p className="text-xs text-on-surface-variant font-medium">Businesses registered on Pabandi will appear here.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── PLUGINS ───────────────────────────────────────────── */}
+        {tab === 'plugins' && (
+          <div className="space-y-6 animate-fade-up">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-on-surface font-headline">OpenWA Plugins</h2>
+                <p className="text-sm text-on-surface-variant font-medium">Manage plugin enablement and config for customer-facing WhatsApp flows.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {(pluginsData?.plugins || []).map((plugin: any) => (
+                <div key={plugin.id} className="rounded-2xl p-5 bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-black text-lg text-on-surface font-headline tracking-tight">{plugin.name}</p>
+                        {plugin.version && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-surface-container-low text-on-surface-variant border border-outline-variant/20">
+                            {plugin.version}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-on-surface-variant mb-2">{plugin.description}</p>
+                      <div className="flex flex-wrap gap-2 text-[11px] text-on-surface-variant font-medium">
+                        {plugin.homepage && <a href={plugin.homepage} target="_blank" rel="noreferrer" className="text-primary hover:underline">Homepage</a>}
+                        {plugin.repoPath && <span>Repo: {plugin.repoPath}</span>}
+                        <span className={`px-2 py-0.5 rounded-md border ${plugin.enabled ? 'bg-tertiary-fixed text-tertiary border-tertiary/10' : 'bg-error-container text-error border-error/10'}`}>
+                          {plugin.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => pluginToggle.mutate({ id: plugin.id, enabled: !plugin.enabled })}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        plugin.enabled
+                          ? 'bg-error-container text-error border-error/10 hover:opacity-90'
+                          : 'bg-tertiary-fixed text-tertiary border-tertiary/10 hover:opacity-90'
+                      }`}
+                    >
+                      {plugin.enabled ? 'Disable' : 'Enable'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {!pluginsData?.plugins?.length && (
+                <div className="text-center py-12 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl">
+                  <p className="text-sm text-on-surface font-bold mb-1">No plugins detected</p>
+                  <p className="text-xs text-on-surface-variant font-medium">Plugins from the bundled OpenWA catalog will appear here.</p>
                 </div>
               )}
             </div>

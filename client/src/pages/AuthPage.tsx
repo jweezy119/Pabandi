@@ -273,7 +273,7 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Panel */}
-        <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-md border border-outline-variant/20">
+        <div className="bg-surface-container-lowest rounded-2xl p-5 sm:p-8 shadow-md border border-outline-variant/20">
 
           {/* Mode tabs */}
           <div className="flex gap-2 mb-6 bg-surface-container-low p-1.5 rounded-xl">
@@ -391,7 +391,6 @@ export default function AuthPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-
             {/* Signup-only fields */}
             {isSignup && (
               <>

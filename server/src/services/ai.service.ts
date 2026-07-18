@@ -1,15 +1,15 @@
 import { prisma } from '../utils/database';
 import axios from 'axios';
 import { cryptoService } from './cryptoService';
+import { openwaAfterHoursService } from './openwa.after-hours.service';
+import { openwaFaqBotService } from './openwa.faq-bot.service';
+import { openwaChatFlowService } from './openwa.chat-flow.service';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || 'pabandi';
 
-/**
- * Send a WhatsApp message to a user using Meta Cloud API
- */
 export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
   if (!OPENWA_API_KEY) {
     console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
@@ -38,14 +38,23 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
   } catch (error: any) {
     console.error(`[WhatsApp] Error sending message to ${toPhone} via OpenWA:`, error.response?.data || error.message);
   }
+
+  console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
 };
 
-/**
- * AI function to process inbound WhatsApp messages
- */
+async function findBusinessByPublicPhone(phoneNumber: string) {
+  const clean = String(phoneNumber).replace(/[^\d]/g, '');
+  if (!clean) return null;
+
+  return prisma.business.findFirst({
+    where: { phone: { contains: clean } },
+    include: { settings: true },
+  });
+}
+
 export const processWhatsAppMessage = async (phoneNumber: string, message: string, user: any | null) => {
   console.log(`[AI] Processing message from ${phoneNumber}: ${message}`);
-  
+
   const lowerMsg = message.trim().toLowerCase();
 
   if (user) {
@@ -55,6 +64,36 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
     }
   }
 
+  try {
+    const business = await findBusinessByPublicPhone(phoneNumber);
+    if (business) {
+      const rawSettings = (business as any)?.settings;
+      const settings =
+        rawSettings && typeof rawSettings === 'object'
+          ? { afterHoursJson: (rawSettings as any)?.afterHoursJson || null }
+          : { afterHoursJson: null };
+
+      const afterHours = openwaAfterHoursService.isAfterHoursNow({
+        id: business.id,
+        timezone: business.timezone,
+        settings,
+      });
+      if (afterHours) {
+        const away = openwaAfterHoursService.getAwayMessage(business);
+        await sendWhatsAppMessage(phoneNumber, away);
+        return;
+      }
+
+      const faqReply = openwaFaqBotService.evaluateMessage(message, Array.isArray((rawSettings as any)?.faqRules) ? (rawSettings as any).faqRules : undefined);
+      if (faqReply) {
+        await sendWhatsAppMessage(phoneNumber, faqReply);
+        return;
+      }
+    }
+  } catch (pluginErr) {
+    console.error('[Plugin] Pre-AI plugin handling failed:', pluginErr);
+  }
+
   if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
     console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
     await sendWhatsAppMessage(phoneNumber, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
@@ -62,9 +101,8 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
   }
 
   try {
-    // Determine the role and context for the AI
     let context = 'You are the Pabandi AI Assistant. Pabandi is a reliability and trust layer launching first in Pakistan, built for informal commerce worldwide.\n';
-    
+
     if (user) {
       context += `The person you are talking to is ${user.firstName} ${user.lastName}, a registered ${user.role} on Pabandi.\n`;
       if (user.role === 'BUSINESS_OWNER') {
@@ -96,11 +134,11 @@ Do not generate markdown or long lists.
     };
 
     const response = await axios.post(
-      'https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation', 
-      payload, 
+      'https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+      payload,
       {
         headers: {
-          'Authorization': `Bearer ${DASHSCOPE_API_KEY}`,
+          Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
           'Content-Type': 'application/json'
         }
       }
@@ -110,20 +148,16 @@ Do not generate markdown or long lists.
     if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
       aiResponse = response.data.output.choices[0].message.content.trim();
     }
-    
+
     await sendWhatsAppMessage(phoneNumber, aiResponse);
   } catch (error: any) {
     console.error('[AI] Error generating AI response from DashScope:', error.response?.data || error.message);
-    await sendWhatsAppMessage(phoneNumber, 'Sorry, I am having trouble understanding right now. Please try again later!');
+    await sendWhatsAppMessage(phoneNumber, 'Sorry, I am having trouble understanding right now. Please try again or use the app.');
   }
 };
 
-/**
- * Handle automatic cancellation triggered via WhatsApp
- */
 async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
   try {
-    // Find most recent active reservation
     const reservation = await prisma.reservation.findFirst({
       where: {
         customerId: user.id,
@@ -138,23 +172,19 @@ async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
       return;
     }
 
-    // Process the cancellation
     await prisma.reservation.update({
       where: { id: reservation.id },
       data: { status: 'CANCELLED' }
     });
 
-    // Handle refund if deposit was paid
     if (reservation.depositPaid) {
       if (reservation.cryptoDepositTxHash && !reservation.cryptoDepositTxHash.startsWith('pending_')) {
-        // Crypto refund
         try {
           await cryptoService.refundEscrowToCustomer(reservation.id);
         } catch (e) {
           console.error('[WhatsApp Cancel] Failed to trigger crypto refund', e);
         }
       } else {
-        // Fiat/Safepay refund
         const payment = await prisma.payment.findFirst({
           where: { reservationId: reservation.id, status: 'COMPLETED' }
         });
@@ -165,8 +195,7 @@ async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
           });
         }
       }
-      
-      // Mark deposit as unpaid since it is refunded
+
       await prisma.reservation.update({
         where: { id: reservation.id },
         data: { depositPaid: false }

@@ -65,8 +65,6 @@ export default function BusinessProfilePage() {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
-
-  // Booking Form State
   const [formData, setFormData] = useState({
     reservationDate: '',
     reservationTime: '',
@@ -174,23 +172,6 @@ export default function BusinessProfilePage() {
     }
 
     bookingMutation.mutate({ businessId: business.id, ...formData, transactionHash });
-  };
-
-  const handleClaim = async () => {
-    if (!isAuthenticated) {
-      navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
-      return;
-    }
-    if (confirm('Are you sure you want to claim this business listing on Pabandi?')) {
-      try {
-        await businessService.claimBusiness(business.id);
-        alert('Listing claimed successfully! Welcome to Pabandi.');
-        refetch();
-        navigate('/dashboard');
-      } catch (e: any) {
-        alert(e.response?.data?.message || 'Failed to claim business');
-      }
-    }
   };
 
   const handleShare = () => {
@@ -443,7 +424,7 @@ export default function BusinessProfilePage() {
             
             {/* Direct Booking Shortcut Button */}
             {!business.isClaimed && (
-              <button onClick={handleClaim} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
+              <button onClick={() => navigate(`/business/join-claim?fromClaim=1&id=${business.id}`)} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" /> Claim Listing
               </button>
             )}
@@ -471,7 +452,7 @@ export default function BusinessProfilePage() {
                 </p>
               </div>
             </div>
-            <button onClick={handleClaim} className="bg-amber-500 text-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm hover:bg-amber-400 transition-colors shrink-0">
+            <button onClick={() => navigate(`/business/join-claim?fromClaim=1&id=${business.id}`)} className="bg-amber-500 text-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm hover:bg-amber-400 transition-colors shrink-0">
               Claim Profile
             </button>
           </div>

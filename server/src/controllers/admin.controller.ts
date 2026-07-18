@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
 
 // ─── GET /admin/stats ───────────────────────────────────────────────
 export const getAdminStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -171,6 +172,39 @@ export const updateUserRole = async (req: AuthRequest, res: Response, next: Next
       select: { id: true, email: true, role: true },
     });
     res.json({ success: true, data: { user } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── GET /admin/openwa/plugins ─────────────────────────────────────
+export const getOpenwaPlugins = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const plugins = listAdminPlugins();
+    res.json({ success: true, data: { plugins, source: 'openwa_catalog' } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── GET /admin/openwa/plugins/:id ─────────────────────────────────
+export const getOpenwaPlugin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const plugin = getAdminPlugin(req.params.id);
+    if (!plugin) {
+      return res.status(404).json({ success: false, message: 'Plugin not found' });
+    }
+    res.json({ success: true, data: { plugin } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── PATCH /admin/openwa/plugins/:id ───────────────────────────────
+export const updateOpenwaPlugin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const plugin = updateAdminPlugin(req.params.id, req.body || {});
+    res.json({ success: true, data: { plugin } });
   } catch (error) {
     next(error);
   }

@@ -145,8 +145,8 @@ export default function Layout() {
   return (
     <div className="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col">
       {!isAuthPage && (
-        <header className="bg-surface-bright/70 backdrop-blur-md flex justify-between items-center w-full px-4 md:px-6 h-16 fixed top-0 z-40 border-b border-outline-variant/10 transition-all duration-300">
-          <div className="flex items-center gap-2 md:gap-3">
+        <header className="bg-surface-bright/70 backdrop-blur-md flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b border-outline-variant/10 transition-all duration-300">
+          <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0 touch-target">
                 {initials}
@@ -157,7 +157,7 @@ export default function Layout() {
               </div>
             )}
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo-company.jpg" alt="Pabandi" className="h-7 md:h-8 w-auto" />
+              <img src="/logo-company.jpg" alt="Pabandi" className="h-6 sm:h-8 w-auto" />
             </Link>
           </div>
 
