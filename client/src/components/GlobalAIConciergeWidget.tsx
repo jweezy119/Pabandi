@@ -47,9 +47,9 @@ export default function GlobalAIConciergeWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+80px)] md:bottom-6 right-4 md:right-6 z-50">
       {isOpen ? (
-        <div className="bg-white shadow-2xl rounded-2xl w-80 md:w-96 flex flex-col h-[500px] border border-gray-100 overflow-hidden">
+        <div className="bg-white shadow-2xl rounded-2xl w-[calc(100vw-2rem)] sm:w-80 md:w-96 flex flex-col h-[500px] max-h-[calc(100vh-120px)] border border-gray-100 overflow-hidden">
           <div className="bg-indigo-600 p-4 flex justify-between items-center">
             <h3 className="text-white font-bold flex items-center gap-2">
               <span className="text-xl">✨</span> Pabandi AI Concierge

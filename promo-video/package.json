@@ -1,10 +1,12 @@
 {
-  "name": "promo-video",
+  "name": "promo-video-hackathon",
   "version": "1.0.0",
-  "description": "My Remotion video",
-  "repository": {},
-  "license": "UNLICENSED",
+  "description": "Pabandi promo Reel for BuildAnything hackathon",
   "private": true,
+  "scripts": {
+    "render": "remotion render",
+    "build": "remotion bundle"
+  },
   "dependencies": {
     "@remotion/cli": "4.0.481",
     "@remotion/tailwind-v4": "4.0.481",
@@ -13,23 +15,6 @@
     "remotion": "4.0.481"
   },
   "devDependencies": {
-    "@remotion/eslint-config-flat": "4.0.481",
-    "@types/react": "19.2.7",
-    "@types/web": "0.0.166",
-    "autoprefixer": "^10.5.0",
-    "eslint": "9.19.0",
-    "postcss": "^8.5.15",
-    "prettier": "3.8.1",
-    "tailwindcss": "^4.3.1",
-    "typescript": "5.9.3"
-  },
-  "scripts": {
-    "dev": "remotion studio",
-    "build": "remotion bundle",
-    "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
-  },
-  "sideEffects": [
-    "*.css"
-  ]
+    "typescript": "5.4.5"
+  }
 }

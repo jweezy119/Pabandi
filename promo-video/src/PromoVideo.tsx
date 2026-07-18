@@ -3,7 +3,7 @@ import React from 'react';
 
 // You can copy the logo from the client assets later, or import it.
 // We'll use a placeholder URL for now if it's missing, but we'll point it to your token logo
-const LOGO_URL = 'file:///home/jay/.gemini/antigravity-ide/brain/b67af29a-0270-4a07-86e6-fb8c2573efda/pab_token_logo_1781995807447.png'; 
+const LOGO_URL = './pab-logo.png'; 
 
 // Scenes
 import { Scene1Hook } from './scenes/Scene1Hook';
