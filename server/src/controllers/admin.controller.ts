@@ -209,3 +209,58 @@ export const updateOpenwaPlugin = async (req: AuthRequest, res: Response, next: 
     next(error);
   }
 };
+
+// ─── GET /admin/profile-requests ─────────────────────────────────────
+export const getProfileRequests = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const requests = await prisma.profileChangeRequest.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { email: true, firstName: true, lastName: true, role: true } }
+      }
+    });
+    res.json({ success: true, data: { requests } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── PUT /admin/profile-requests/:id/approve ─────────────────────────
+export const approveProfileRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const request = await prisma.profileChangeRequest.findUnique({ where: { id: req.params.id } });
+    if (!request || request.status !== 'PENDING') {
+      return res.status(404).json({ success: false, message: 'Pending request not found' });
+    }
+
+    const changes = request.requestedChanges as Record<string, any>;
+    const updateData: any = {};
+    if (changes.firstName) updateData.firstName = changes.firstName;
+    if (changes.lastName) updateData.lastName = changes.lastName;
+    if (changes.profilePictureUrl) updateData.profilePictureUrl = changes.profilePictureUrl;
+
+    // Run in transaction: update user and mark request APPROVED
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: request.userId }, data: updateData }),
+      prisma.profileChangeRequest.update({ where: { id: request.id }, data: { status: 'APPROVED' } })
+    ]);
+
+    res.json({ success: true, message: 'Profile change approved' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── PUT /admin/profile-requests/:id/reject ──────────────────────────
+export const rejectProfileRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const request = await prisma.profileChangeRequest.update({
+      where: { id: req.params.id },
+      data: { status: 'REJECTED' }
+    });
+    res.json({ success: true, message: 'Profile change rejected' });
+  } catch (error) {
+    next(error);
+  }
+};

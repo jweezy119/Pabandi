@@ -119,7 +119,7 @@ router.post('/:platform/schedule', authenticate, async (req: AuthRequest, res) =
 router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const platform = req.params.platform;
-    if (!['tiktok-live', 'youtube-shopping', 'shopify-live', 'ebay-live'].includes(platform)) {
+    if (!['tiktok-live', 'youtube-shopping', 'shopify-live', 'ebay-live', 'amazon-live', 'instagram-live', 'custom-web'].includes(platform)) {
       return res.status(400).json({ success: false, error: 'Unsupported platform' });
     }
     const biz = await requireBusiness(req, res);
@@ -135,9 +135,9 @@ router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, nex
     if (platform === 'shopify-live') {
       return res.status(400).json({ success: false, error: 'Shopify connect needs a Shopify OAuth strategy.' });
     }
-    if (platform === 'ebay-live') {
-      // Mock OAuth redirect for eBay Live
-      return res.redirect(`/api/v1/livesell/callback/ebay?state=${token}`);
+    if (['ebay-live', 'amazon-live', 'instagram-live', 'custom-web'].includes(platform)) {
+      // Mock OAuth redirect for mock platforms
+      return res.redirect(`/api/v1/livesell/callback/mock?platform=${platform}&state=${token}`);
     }
   } catch (e) {
     next(e);
@@ -203,19 +203,21 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
   }
 });
 
-router.get('/callback/ebay', async (req: any, res) => {
+router.get('/callback/mock', async (req: any, res) => {
   try {
     const state = decodeState(req.query.state as string);
+    const platformParam = req.query.platform as string;
+    const platform = platformParam.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     await liveSellerService.connect(state.businessId, {
-      platform: 'EBAY_LIVE',
-      accessToken: 'mock_ebay_access_token_' + Date.now(),
-      refreshToken: 'mock_ebay_refresh_token_' + Date.now(),
-      scope: 'https://api.ebay.com/oauth/api_scope',
+      platform,
+      accessToken: `mock_${platformParam}_access_token_${Date.now()}`,
+      refreshToken: `mock_${platformParam}_refresh_token_${Date.now()}`,
+      scope: 'mock_scope',
       metadata: { mockConnected: true },
     });
-    res.redirect(`${FRONTEND_URL}/business?livesell_success=ebay-live`);
+    res.redirect(`${FRONTEND_URL}/business?livesell_success=${platformParam}`);
   } catch (e) {
-    console.error('eBay callback error', e);
+    console.error('Mock callback error', e);
     res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
   }
 });

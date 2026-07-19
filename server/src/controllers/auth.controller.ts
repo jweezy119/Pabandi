@@ -695,3 +695,45 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
+
+export const requestProfileChange = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { firstName, lastName, profilePictureUrl } = req.body;
+    
+    // Create a pending request
+    const request = await prisma.profileChangeRequest.create({
+      data: {
+        userId: req.user!.id,
+        requestedChanges: { firstName, lastName, profilePictureUrl },
+        status: 'PENDING',
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Profile change request submitted for admin approval',
+      data: { request },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProfileChangeStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const requests = await prisma.profileChangeRequest.findMany({
+      where: { userId: req.user!.id, status: 'PENDING' },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: { 
+        hasPendingRequest: requests.length > 0,
+        requests 
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -8,6 +8,9 @@ import {
   getAllBusinesses,
   verifyBusiness,
   updateUserRole,
+  getProfileRequests,
+  approveProfileRequest,
+  rejectProfileRequest,
 } from '../controllers/admin.controller';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { Response, NextFunction } from 'express';
@@ -31,6 +34,10 @@ router.patch('/users/:id/role', updateUserRole);
 router.get('/reservations', getAllReservations);
 router.get('/businesses', getAllBusinesses);
 router.patch('/businesses/:id/verify', verifyBusiness);
+
+router.get('/profile-requests', getProfileRequests);
+router.put('/profile-requests/:id/approve', approveProfileRequest);
+router.put('/profile-requests/:id/reject', rejectProfileRequest);
 
 router.get('/openwa/plugins', (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

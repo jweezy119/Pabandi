@@ -461,7 +461,7 @@ function LoyaltyTab({
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { user, updateProfile } = useAuthStore();
+  const { user } = useAuthStore();
   const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -471,6 +471,13 @@ export default function ProfilePage() {
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [socialErrors, setSocialErrors] = useState<Record<string, string>>({});
+
+  const { data: changeStatusData, refetch: refetchChangeStatus } = useQuery(
+    'profile-change-status',
+    () => authService.getProfileChangeStatus(),
+    { enabled: !!user }
+  );
+  const hasPendingRequest = changeStatusData?.data?.data?.hasPendingRequest || false;
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -490,23 +497,13 @@ export default function ProfilePage() {
     
     setIsSaving(true);
     try {
-      const res = await authService.updateProfile({
+      await authService.requestProfileChange({
         firstName: editName.firstName.trim(),
         lastName: editName.lastName.trim()
       });
-      const payload = res.data?.data ?? res.data;
-      const updatedUser = payload?.user;
-      if (updatedUser) {
-        updateProfile(updatedUser);
-      } else {
-        // Fallback if backend doesn't return the user correctly
-        updateProfile({
-          firstName: editName.firstName.trim(),
-          lastName: editName.lastName.trim()
-        });
-      }
       setEditing(false);
-      addToast('Profile updated successfully', 'success');
+      await refetchChangeStatus();
+      addToast('Profile change request submitted for admin approval', 'success');
     } catch (err: any) {
       const fullUrl = `${err?.config?.baseURL || ''}${err?.config?.url || ''}`;
       const msg = err?.response?.data?.error || err?.message || 'Failed to update profile';
@@ -735,6 +732,13 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8">
       <ToastContainer toasts={toasts} />
+
+      {hasPendingRequest && (
+        <div className="bg-tertiary-fixed text-on-tertiary-fixed px-4 py-3 text-center text-sm font-bold flex items-center justify-center gap-2">
+          <ShieldCheckIcon className="h-5 w-5" />
+          Your profile update is currently pending administrator approval.
+        </div>
+      )}
 
       {/* ── Profile Banner ── */}
       <div className="relative overflow-hidden">
