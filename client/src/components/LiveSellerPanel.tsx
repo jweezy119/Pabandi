@@ -122,6 +122,31 @@ export default function LiveSellerPanel({ businessId, user }: { businessId?: str
                       ))}
                     </div>
                   </div>
+
+                  {p.id === 'shopify-live' && (
+                    <div className="mt-6 pt-6 border-t border-outline-variant/20">
+                      <p className="font-label text-[10px] font-bold text-[#95BF47] uppercase tracking-widest mb-2">Zero-Config Shopify Embed</p>
+                      <p className="text-[11px] text-on-surface-variant mb-3">
+                        Skip the App Store review. Paste this HTML into any Shopify product description to add an Escrow checkout button.
+                      </p>
+                      <div className="relative">
+                        <textarea
+                          readOnly
+                          className="w-full h-24 bg-black/50 border border-outline-variant/30 rounded-xl p-3 text-[10px] text-zinc-300 font-mono resize-none"
+                          value={`<a href="https://pabandi.com/s/${businessId}?mode=instant" style="display:inline-block;padding:12px 24px;background:#14F195;color:#000;font-weight:bold;text-decoration:none;border-radius:8px;text-align:center;width:100%;max-width:300px;font-family:sans-serif;">Book with escrow — powered by Pabandi</a>`}
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`<a href="https://pabandi.com/s/${businessId}?mode=instant" style="display:inline-block;padding:12px 24px;background:#14F195;color:#000;font-weight:bold;text-decoration:none;border-radius:8px;text-align:center;width:100%;max-width:300px;font-family:sans-serif;">Book with escrow — powered by Pabandi</a>`);
+                            alert('Copied to clipboard!');
+                          }}
+                          className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-surface-container-high border border-outline-variant/50 text-[10px] font-bold text-on-surface hover:bg-surface-container-highest transition-colors"
+                        >
+                          Copy HTML
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
