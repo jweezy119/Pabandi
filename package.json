@@ -1,7 +1,7 @@
 {
   "name": "pabandi-escrow-contract",
   "version": "1.0.0",
-  "description": "PabandiEscrow.sol — Solidity escrow for booking reservations on Monad testnet",
-  "license": "MIT",
-  "keywords": ["monad", "escrew", "solana", "booking", "pabandi"]
+  "description": "PabandiEscrow.sol — Solidity escrow for booking reservations on multi-chain",
+  "main": "index.js",
+  "keywords": ["multi-chain", "escrew", "solana", "btc", "bnb", "eth", "stellar", "booking", "pabandi"]
 }
