@@ -44,7 +44,7 @@ Pabandi isn't just an app; it's a B2B integration.
 ## 🌐 Live Demo
 
 - **Main Platform:** [https://pabandi-42c5b.web.app](https://pabandi-42c5b.web.app)
-- **Backend API Docs:** `[Deployed on Google Cloud Run]`
+- **Backend API Docs:** `https://pabandi-backend-97129395003.asia-south1.run.app`
 
 ---
 
