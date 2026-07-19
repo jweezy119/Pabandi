@@ -66,6 +66,10 @@ export const authService = {
     apiClient.post('/auth/refresh', { refreshToken }),
   updateProfile: (data: { firstName: string; lastName: string }) =>
     apiClient.put('/auth/profile', data),
+  requestProfileChange: (data: { firstName?: string; lastName?: string; profilePictureUrl?: string }) =>
+    apiClient.post('/auth/request-change', data),
+  getProfileChangeStatus: () =>
+    apiClient.get('/auth/change-status'),
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.put('/auth/update-password', data),
   getWalletNonce: (walletAddress: string) =>
@@ -249,6 +253,12 @@ export const hospitalityService = {
   getProperty: (id: string) => apiClient.get(`/hospitality/property/${id}`),
   /** Simulate a test booking event for a connected property */
   testBooking: (propertyId: string) => apiClient.post('/hospitality/test-booking', { propertyId }),
+};
+
+export const adminService = {
+  getProfileRequests: () => apiClient.get('/admin/profile-requests'),
+  approveProfileRequest: (id: string) => apiClient.put(`/admin/profile-requests/${id}/approve`),
+  rejectProfileRequest: (id: string) => apiClient.put(`/admin/profile-requests/${id}/reject`),
 };
 
 export default apiClient;

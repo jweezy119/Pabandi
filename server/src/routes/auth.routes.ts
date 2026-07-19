@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile, updatePassword, getNonce, verifyWallet } from '../controllers/auth.controller';
+import { register, login, refreshToken, verifyEmail, verifyPhone, forgotPassword, resetPassword, getTrustAttestation, updateProfile, updatePassword, getNonce, verifyWallet, requestProfileChange, getProfileChangeStatus } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -68,6 +68,20 @@ router.put(
   validateRequest,
   updateProfile
 );
+
+router.post(
+  '/request-change',
+  authenticate,
+  [
+    body('firstName').optional().isString(),
+    body('lastName').optional().isString(),
+    body('profilePictureUrl').optional().isString(),
+  ],
+  validateRequest,
+  requestProfileChange
+);
+
+router.get('/change-status', authenticate, getProfileChangeStatus);
 
 router.put(
   '/update-password',

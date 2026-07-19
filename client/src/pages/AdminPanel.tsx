@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../services/api';
+import apiClient, { adminService } from '../services/api';
 import {
   UsersIcon,
   BuildingStorefrontIcon,
@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 
-type Tab = 'overview' | 'users' | 'reservations' | 'businesses' | 'plugins';
+type Tab = 'overview' | 'users' | 'reservations' | 'businesses' | 'plugins' | 'approvals';
 
 // Updated for light theme design system
 const STATUS_COLORS: Record<string, string> = {
@@ -98,6 +98,22 @@ export default function AdminPanel() {
     { onSuccess: () => qc.invalidateQueries('admin-businesses') }
   );
 
+  const { data: profileRequestsData } = useQuery(
+    'admin-profile-requests',
+    () => adminService.getProfileRequests().then((r: any) => r.data.data),
+    { enabled: tab === 'approvals' }
+  );
+
+  const approveProfileMutation = useMutation(
+    (id: string) => adminService.approveProfileRequest(id),
+    { onSuccess: () => qc.invalidateQueries('admin-profile-requests') }
+  );
+
+  const rejectProfileMutation = useMutation(
+    (id: string) => adminService.rejectProfileRequest(id),
+    { onSuccess: () => qc.invalidateQueries('admin-profile-requests') }
+  );
+
   const stats = statsData?.funnel;
   const users = usersData?.users || [];
   const reservations = reservationsData?.reservations || [];
@@ -109,6 +125,7 @@ export default function AdminPanel() {
     { id: 'reservations', label: 'Reservations',  icon: CalendarIcon },
     { id: 'businesses',   label: 'Businesses',    icon: BuildingStorefrontIcon },
     { id: 'plugins',      label: 'Plugins',       icon: CogIcon },
+    { id: 'approvals',    label: 'Approvals',     icon: CheckBadgeIcon },
   ] as const;
 
   return (
@@ -412,6 +429,59 @@ export default function AdminPanel() {
                 <div className="text-center py-12 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl">
                   <p className="text-sm text-on-surface font-bold mb-1">No plugins detected</p>
                   <p className="text-xs text-on-surface-variant font-medium">Plugins from the bundled OpenWA catalog will appear here.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── APPROVALS ───────────────────────────────────────────── */}
+        {tab === 'approvals' && (
+          <div className="space-y-6 animate-fade-up">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-on-surface font-headline">Profile Approvals</h2>
+                <p className="text-sm text-on-surface-variant font-medium">Review and approve changes to user profiles.</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {(profileRequestsData?.requests || []).map((req: any) => (
+                <div key={req.id} className="rounded-2xl p-5 bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
+                  <div className="min-w-0">
+                    <p className="font-bold text-lg text-on-surface mb-1">
+                      {req.user?.firstName} {req.user?.lastName} ({req.user?.email})
+                    </p>
+                    <div className="text-sm text-on-surface-variant space-y-1">
+                      {req.requestedChanges?.firstName && <p>New First Name: <strong>{req.requestedChanges.firstName}</strong></p>}
+                      {req.requestedChanges?.lastName && <p>New Last Name: <strong>{req.requestedChanges.lastName}</strong></p>}
+                      {req.requestedChanges?.profilePictureUrl && <p>New Photo URL: <strong>{req.requestedChanges.profilePictureUrl}</strong></p>}
+                    </div>
+                    <p className="text-xs mt-2 text-on-surface-variant font-medium">
+                      Requested on {new Date(req.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => approveProfileMutation.mutate(req.id)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-on-primary shadow-sm hover:opacity-90"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => rejectProfileMutation.mutate(req.id)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-error text-on-error shadow-sm hover:opacity-90"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {!(profileRequestsData?.requests?.length) && (
+                <div className="text-center py-12 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl">
+                  <p className="text-sm text-on-surface font-bold mb-1">No pending requests</p>
+                  <p className="text-xs text-on-surface-variant font-medium">When users request profile changes, they will appear here.</p>
                 </div>
               )}
             </div>
