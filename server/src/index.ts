@@ -132,7 +132,6 @@ app.use(`/api/${API_VERSION}/loans`, loanRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
-app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/shopify-integration`, shopifyIntegrationRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/checkout`, checkoutRoutes);
