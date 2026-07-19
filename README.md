@@ -13,7 +13,7 @@ From deep Shopify integrations to Live Selling widgets and WhatsApp AI concierge
 ## 🌟 The Pabandi Vision & Architecture
 
 Pabandi operates on three core pillars:
-1. **The Escrow Engine**: Securing funds via Monad Testnet smart contracts until fulfillment conditions are met.
+1. **The Escrow Engine**: Securing funds via Multi-chain (BTC, Solana, BNB, ETH, Stellar) smart contracts until fulfillment conditions are met.
 2. **The Trust Protocol (Passport)**: A dynamic, vertical-specific reputation system that rewards good actors and severely penalizes bad ones.
 3. **The Omni-Channel Wedge**: Delivering Pabandi’s functionality directly to where transactions happen (Shopify, WhatsApp, TikTok Live, custom hotel websites) via frictionless SDKs and embeddable widgets.
 
@@ -21,8 +21,8 @@ Pabandi operates on three core pillars:
 
 ## 🚀 Core Features
 
-### 1. Escrow Smart Contract (Monad Testnet)
-The core of Pabandi is a lightning-fast, gas-efficient escrow mechanism built on the Monad blockchain. When a customer books a service or buys a product, their funds are locked securely in an un-upgradable smart contract. Funds are released automatically only upon successful mutual fulfillment. This instantly eliminates no-shows for service providers and eliminates product fraud for e-commerce buyers.
+### 1. Escrow Smart Contract (Multi-chain)
+The core of Pabandi is a lightning-fast, gas-efficient escrow mechanism built on multi-chain infrastructure (BTC, Solana, BNB, ETH, Stellar). When a customer books a service or buys a product, their funds are locked securely in an un-upgradable smart contract. Funds are released automatically only upon successful mutual fulfillment. This instantly eliminates no-shows for service providers and eliminates product fraud for e-commerce buyers.
 
 ### 2. Multi-Vertical Trust Protocol (Passport V2)
 Pabandi assigns every user and business a dynamic Trust Score (Pabandi Passport) based on their historical behavior across the network.
@@ -72,7 +72,7 @@ Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
 
 - **Frontend Ecosystem:** React 18, Vite, TailwindCSS, TypeScript, Zustand, React Query
 - **Backend Infrastructure:** Node.js, Express, Prisma ORM, PostgreSQL
-- **Blockchain & Web3:** Solidity ^0.8.20 (Monad Testnet), Ethers.js, Solana Web3.js
+- **Blockchain & Web3:** Multi-chain (BTC, Solana, BNB, ETH, Stellar), Ethers.js, Solana Web3.js
 - **Integrations:** Shopify Admin API, Twilio/WhatsApp API, Google Maps, Firebase Authentication
 - **Cloud & Deployment:** Google Cloud Run (Backend API), Firebase Hosting (Frontend SPA)
 
