@@ -30,6 +30,12 @@ Pabandi isn't just an app; it's a B2B integration.
 - **Storefront Widget SDK:** A native Javascript SDK (`shopify-widget.js`) allows merchants to inject the Pabandi Trust Badge onto their product pages, instantly boosting buyer confidence.
 - **Order Intercept:** Pabandi intercepts Shopify Carts, handles the Escrow, and uses Webhooks to officially push the Paid Order back into the merchant's Shopify dashboard.
 
+### 6. Live Selling Hub & Conversational Commerce
+Pabandi transforms live streaming and chat into instant, trusted commerce.
+- **Universal Escrow Checkout:** A single link (`/s/:id?mode=instant`) that sellers can drop in TikTok, YouTube, Shopify, and eBay Live streams.
+- **eBay Live Ready:** Direct OAuth mapping for eBay Live sellers to manage inventory and capture trusted sales through Pabandi Escrow.
+- **WhatsApp AI Agent:** Integrated DashScope LLMs power a conversational agent that detects purchase intent (e.g. "I want the red shirt") and automatically generates secure Escrow checkout links for customers directly over WhatsApp.
+
 ---
 
 ## 🛠️ Tech Stack
