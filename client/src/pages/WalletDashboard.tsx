@@ -433,6 +433,10 @@ export default function WalletDashboard() {
   }, { retry: false, refetchOnWindowFocus: false });
 
   const reliabilityScore = badgeData?.reliabilityScore || 100;
+  const commerceScore = badgeData?.commerceScore || 100;
+  const hospitalityScore = badgeData?.hospitalityScore || 100;
+  const appointmentScore = badgeData?.appointmentScore || 100;
+  const freelanceScore = badgeData?.freelanceScore || 100;
   const socialTrustBoost = badgeData?.socialTrustBoost || 0;
   const graphTrustBoost = badgeData?.graphTrustBoost || 0;
   const isKycVerified = userData?.isEmailVerified && userData?.isPhoneVerified;
@@ -925,6 +929,63 @@ export default function WalletDashboard() {
           </div>
         </div>
 
+        {/* ── Vertical Trust Scores ── */}
+        <div className="animate-fade-up-delay-2 mb-10">
+          <div className="mb-5">
+            <h2 className="font-headline text-xl font-black text-on-surface">Industry-Specific Trust</h2>
+            <p className="font-body text-sm text-on-surface-variant mt-1">
+              Your reliability rating customized for different business sectors based on resource scarcity and risk.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'E-Commerce', score: commerceScore, icon: '🛍️', color: '#0ea5e9' },
+              { label: 'Hospitality', score: hospitalityScore, icon: '🏨', color: '#f59e0b' },
+              { label: 'Appointments', score: appointmentScore, icon: '📅', color: '#ec4899' },
+              { label: 'Freelance', score: freelanceScore, icon: '💻', color: '#8b5cf6' },
+            ].map(v => (
+              <div key={v.label} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex flex-col items-center text-center relative overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-md">
+                <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, ${v.color}10 0%, transparent 100%)` }} />
+                <div className="text-3xl mb-2 z-10" style={{ filter: `drop-shadow(0 0 8px ${v.color}40)` }}>{v.icon}</div>
+                <h4 className="font-headline text-sm font-bold text-on-surface z-10">{v.label}</h4>
+                <div className="flex items-baseline gap-1 mt-2 z-10">
+                  <span className="font-headline text-3xl font-black" style={{ color: v.color }}>{v.score}</span>
+                  <span className="font-headline text-xs font-bold text-on-surface-variant">/100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Peer Jury Duty (For Highly Trusted Users) ── */}
+        {(reliabilityScore ?? 0) >= 90 && (
+          <div className="animate-fade-up-delay-2 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6 shadow-sm mt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <TrophyIcon className="h-6 w-6 text-primary" />
+                  <h2 className="font-headline text-xl font-black text-primary">Decentralized Peer Jury</h2>
+                </div>
+                <p className="font-body text-sm text-on-surface-variant max-w-2xl mt-2">
+                  Your Trust Score is Elite (&gt;90). You have been granted access to the Decentralized Peer Jury. Review disputes between users and businesses. You will earn PAB tokens for resolving disputes accurately.
+                </p>
+              </div>
+              <button className="px-6 py-2 bg-primary text-on-primary rounded-xl font-headline font-bold text-sm shadow hover:bg-primary/90 transition-colors shrink-0">
+                View Active Cases
+              </button>
+            </div>
+            
+            <div className="mt-4 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/30 flex items-center justify-between">
+               <div>
+                 <p className="font-headline text-sm font-bold">Case #DIS-9812: Filer vs Hotel California</p>
+                 <p className="text-xs text-on-surface-variant mt-1">Status: <span className="text-secondary font-bold">VOTING</span> • 2/3 Votes needed</p>
+               </div>
+               <button className="px-4 py-1.5 text-xs font-bold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors">
+                 Review Evidence & Vote
+               </button>
+            </div>
+          </div>
+        )}
         {/* ── Rewards History ── */}
         <div className="animate-fade-up-delay-2 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm">
           <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">

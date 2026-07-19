@@ -12,10 +12,11 @@ import {
   ShieldCheckIcon,
   BellIcon,
   VideoCameraIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
 
-type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'live-selling';
+type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'live-selling' | 'api-keys';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
 
 type TapLinkGeneratorProps = {
@@ -106,12 +107,12 @@ export default function BusinessSettingsPage() {
   });
 
   const [aiSettings, setAiSettings] = useState({
-    aiStrictness: 75,
-    depositStrategy: 'AI_DYNAMIC' as DepositStrategy,
-    flatDeposit$: 1000,
-    depositPercentage: 25,
+    aiStrictness: 70,
+    depositStrategy: 'PERCENTAGE' as DepositStrategy,
+    flatDeposit$: 0,
+    depositPercentage: 30,
     trustedCustomerThreshold: 80,
-    autoRequireDeposit: true,
+    autoRequireDeposit: false,
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -120,6 +121,47 @@ export default function BusinessSettingsPage() {
     whatsappNumber: '',
     requestFeedbackAfterBooking: true,
   });
+
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [keyError, setKeyError] = useState<string | null>(null);
+
+  const fetchApiKeys = async () => {
+    if (!bizRes?.id) return;
+    try {
+      const res = await apiClient.get(`/business/${bizRes.id}/api-keys`);
+      if (res.data.success) {
+        setApiKeys(res.data.data.apiKeys);
+      }
+    } catch (err) {
+      console.error('Failed to fetch API keys', err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'api-keys' && bizRes?.id) {
+      fetchApiKeys();
+    }
+  }, [activeTab, bizRes?.id]);
+
+  const handleGenerateKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setKeyError(null);
+    setGeneratedKey(null);
+    if (!newKeyName.trim() || !bizRes?.id) return;
+
+    try {
+      const res = await apiClient.post(`/business/${bizRes.id}/api-keys`, { name: newKeyName });
+      if (res.data.success) {
+        setGeneratedKey(res.data.data.apiKey);
+        setNewKeyName('');
+        fetchApiKeys();
+      }
+    } catch (err: any) {
+      setKeyError(err.response?.data?.message || 'Failed to generate key');
+    }
+  };
 
   const [webhook, setWebhook] = useState({
     targetUrl: '',
@@ -625,11 +667,102 @@ export default function BusinessSettingsPage() {
             <SaveButton onClick={() => setSaveStatus('saved')} label="Save Live Selling Status" />
           </div>
         );
+      case 'api-keys':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-[#e8e8e8]">Developer API Keys</h3>
+              <p className="text-sm text-[#757575] mt-1">Generate API keys to interact with the Pabandi Trust & Escrow infrastructure programmatically.</p>
+            </div>
+
+            {/* Generate Key Form */}
+            <div className="p-5 rounded-2xl border border-[#ffffff15] bg-[#1a1a1a] space-y-4">
+              <h4 className="font-semibold text-white">Create New Key</h4>
+              <form onSubmit={handleGenerateKey} className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-[#9e9e9e] mb-1.5">Key Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="input-field"
+                    placeholder="e.g. Production Live Seller Backend"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!newKeyName.trim()}
+                  className="px-5 py-2.5 bg-[#4f46e5] text-white font-semibold rounded-xl hover:bg-[#4338ca] disabled:opacity-50 transition-colors"
+                >
+                  Generate
+                </button>
+              </form>
+
+              {keyError && (
+                <div className="mt-3 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2">
+                  <ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0" />
+                  {keyError}
+                </div>
+              )}
+
+              {generatedKey && (
+                <div className="mt-4 p-4 bg-green-900/20 border border-green-500/30 rounded-xl space-y-3">
+                  <div className="flex gap-2 items-start text-green-400">
+                    <CheckCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h5 className="font-semibold text-sm">Key Generated Successfully</h5>
+                      <p className="text-xs mt-1 text-green-300">Please copy this key now. You will not be able to see it again.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 items-center bg-[#00000040] p-3 rounded-lg border border-green-500/20">
+                    <code className="text-green-300 text-sm font-mono flex-1 overflow-hidden text-ellipsis">{generatedKey}</code>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(generatedKey)}
+                      className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded text-xs font-bold transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* List Existing Keys */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-white">Active Keys</h4>
+              {apiKeys.length === 0 ? (
+                <div className="p-6 text-center text-[#757575] bg-[#1a1a1a] rounded-2xl border border-[#ffffff15]">
+                  No API keys generated yet.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {apiKeys.map((k) => (
+                    <div key={k.id} className="flex justify-between items-center p-4 bg-[#1a1a1a] rounded-xl border border-[#ffffff15]">
+                      <div>
+                        <div className="font-semibold text-[#e8e8e8] flex items-center gap-2">
+                          {k.name}
+                          {!k.isActive && <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-[10px] uppercase rounded-full tracking-wider font-bold">Revoked</span>}
+                        </div>
+                        <div className="text-xs text-[#757575] mt-1 font-mono">
+                          Tier: {k.tier} • Usage: {k.callsUsed}/{k.callsLimit} • Created: {new Date(k.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+    <div className="min-h-screen bg-[#0a0a0a] pb-24 font-['Inter',system-ui,sans-serif]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         <div className="mb-8">
@@ -664,6 +797,10 @@ export default function BusinessSettingsPage() {
             <button onClick={() => setActiveTab('live-selling')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'live-selling' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
               <VideoCameraIcon className="w-5 h-5" /> Live Selling
+            </button>
+            <button onClick={() => setActiveTab('api-keys')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'api-keys' ? 'bg-[#181818] shadow-sm text-[#0ea5e9] border border-[#ffffff15]' : 'text-[#757575] hover:bg-slate-100 hover:text-slate-900'}`}>
+              <CommandLineIcon className="w-5 h-5" /> Developer API Keys
             </button>
           </div>
 

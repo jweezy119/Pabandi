@@ -186,6 +186,7 @@ export default function Layout() {
               <Dropdown label={initials} current={false}>
                 <DropdownItem to="/dashboard">Dashboard</DropdownItem>
                 <DropdownItem to="/wallet">Wallet</DropdownItem>
+                <DropdownItem to="/loans">Halal DeFi</DropdownItem>
                 <DropdownItem to="/profile">Profile</DropdownItem>
                 <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-error-container/20 transition-colors">Log Out</button>
               </Dropdown>

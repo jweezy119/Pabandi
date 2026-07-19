@@ -14,7 +14,9 @@ import {
   createBusinessService,
   updateBusinessService,
   deleteBusinessService,
-  connectChannex
+  connectChannex,
+  generateApiKey,
+  getApiKeys
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimiter';
@@ -428,5 +430,9 @@ router.post('/:id/channex-connect', authorize('BUSINESS_OWNER', 'ADMIN'), connec
 router.post('/:id/services', authorize('BUSINESS_OWNER', 'ADMIN'), createBusinessService);
 router.put('/:id/services/:serviceId', authorize('BUSINESS_OWNER', 'ADMIN'), updateBusinessService);
 router.delete('/:id/services/:serviceId', authorize('BUSINESS_OWNER', 'ADMIN'), deleteBusinessService);
+
+// Developer API Keys Management
+router.get('/:id/api-keys', authorize('BUSINESS_OWNER', 'ADMIN'), getApiKeys);
+router.post('/:id/api-keys', authorize('BUSINESS_OWNER', 'ADMIN'), generateApiKey);
 
 export default router;

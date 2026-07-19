@@ -2,17 +2,42 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
+import { Helmet } from 'react-helmet-async';
 
 export default function ShopifyAppBridge() {
   const [searchParams] = useSearchParams();
   const shop = searchParams.get('shop');
-  const { user, isAuthenticated } = useAuthStore();
-  const [isConfiguring, setIsConfiguring] = useState(false);
+  const { user, isAuthenticated, token } = useAuthStore();
+  const [isLinked, setIsLinked] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
 
   useEffect(() => {
-    // Check if we have App Bridge initialized (future step)
-    // and if the merchant has a Pabandi Business account
-  }, []);
+    // If authenticated and shop is present, link the store
+    const linkStore = async () => {
+      if (isAuthenticated && shop && token && !isLinked && !isLinking) {
+        setIsLinking(true);
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/shopify/connect`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ shop })
+          });
+          if (response.ok) {
+            setIsLinked(true);
+          }
+        } catch (error) {
+          console.error("Failed to link store", error);
+        } finally {
+          setIsLinking(false);
+        }
+      }
+    };
+    
+    linkStore();
+  }, [isAuthenticated, shop, token, isLinked]);
 
   if (!shop) {
     return (
@@ -29,6 +54,10 @@ export default function ShopifyAppBridge() {
 
   return (
     <div className="min-h-screen bg-surface-container-lowest p-6 font-body">
+      <Helmet>
+        <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+        <meta name="shopify-api-key" content={import.meta.env.VITE_SHOPIFY_API_KEY || "022dcfed1c002a1f6a9ce6a655aefab4"} />
+      </Helmet>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-outline-variant/30">
           <div>
@@ -48,16 +77,23 @@ export default function ShopifyAppBridge() {
             <p className="text-sm text-on-surface-variant mb-6">
               To process escrow payments on your store, link your Pabandi Business account.
             </p>
-            <button className="px-6 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:opacity-90 transition-opacity">
+            <button 
+              onClick={() => window.open('/', '_blank')}
+              className="px-6 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:opacity-90 transition-opacity mb-4"
+            >
               Log in to Pabandi
             </button>
+            <p className="text-xs text-on-surface-variant">After logging in, refresh this page.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-surface border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
               <h3 className="text-base font-bold text-on-surface flex items-center gap-2 mb-4">
-                <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                Account Linked
+                {isLinked ? (
+                  <><CheckCircleIcon className="w-5 h-5 text-green-500" /> Account Linked</>
+                ) : (
+                  <span className="text-yellow-600">Linking Account...</span>
+                )}
               </h3>
               <p className="text-sm text-on-surface-variant mb-1">
                 Business Name: <span className="font-bold text-on-surface">{user?.firstName} {user?.lastName}</span>

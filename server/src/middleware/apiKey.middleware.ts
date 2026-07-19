@@ -11,6 +11,7 @@ export interface ApiKeyRequest extends Request {
     tier: string;
     callsUsed: number;
     callsLimit: number;
+    businessId: string | null;
   };
   requestStartTime?: number;
 }
@@ -56,6 +57,7 @@ export const apiKeyAuth = async (
         callsUsed: true,
         callsLimit: true,
         isActive: true,
+        businessId: true,
       },
     });
 
@@ -85,6 +87,7 @@ export const apiKeyAuth = async (
       tier: client.tier,
       callsUsed: client.callsUsed,
       callsLimit: client.callsLimit,
+      businessId: client.businessId,
     };
 
     next();

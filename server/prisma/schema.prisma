@@ -21,7 +21,12 @@ model User {
   reliabilityScore  Float            @default(750)
   trustScore        Float            @default(50.0)
   verificationTier  String           @default("BASIC")
+  commerceScore     Float            @default(50.0)
+  hospitalityScore  Float            @default(50.0)
+  freelanceScore    Float            @default(50.0)
+  appointmentScore  Float            @default(50.0)
   osintLastChecked  DateTime?
+  firstOffenseGraceUsed DateTime?
   gracePeriodUntil  DateTime?
   fcmToken          String?
   createdAt         DateTime         @default(now())
@@ -47,6 +52,7 @@ model User {
   wallet            Wallet?
   stakeTransactions StakeTransaction[]
   stakingPositions  StakingPosition[]
+  loans             Loan[]
   disputesAgainst   Dispute[]        @relation("DisputesAgainst")
   disputesFiled     Dispute[]        @relation("DisputesFiled")
   flags             UserFlag[]
@@ -123,6 +129,7 @@ model Business {
   liveSellerIntegrations LiveSellerIntegration[]
   checkoutSessions   CheckoutSession[]
   shopifyStores      ShopifyStore[]
+  apiClients         ApiClient[]
 
   @@index([ownerId])
   @@index([city])
@@ -201,6 +208,8 @@ model Reservation {
   customer            User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
   table               Table?            @relation(fields: [tableId], references: [id])
   services            ReservationService[]
+  solanaAttestationId String?           @unique
+  dispute             Dispute?
 
   @@index([businessId])
   @@index([customerId])
@@ -289,6 +298,8 @@ model Wallet {
   encryptedSecret   String?   // Base64 encoded encrypted Solana Secret Key
   balance           Float     @default(0)
   totalStaked       Float     @default(0)
+  lockedPab         Float     @default(0)
+  usdcBalance       Float     @default(0)
   currency          String    @default("PAB")
   airdropClaimed    Boolean   @default(false)
   airdropAmount     Float?
@@ -357,13 +368,17 @@ model ApiClient {
   paymentMethod     String?
   transactionHash   String?       @unique
   walletAddress     String?
+  businessId        String?
   billingMode       BillingMode   @default(PAY_AS_YOU_GO)
   preferredCurrency CurrencyType  @default(PAB)
   usageLogs         ApiUsageLog[]
   disputes          Dispute[]
 
+  business          Business?     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
   @@index([apiKey])
   @@index([email])
+  @@index([businessId])
 }
 
 model ApiUsageLog {
@@ -613,10 +628,15 @@ model Dispute {
   resolvedAt       DateTime?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+  stakedAmount     Float           @default(0)
+  reservationId    String?         @unique
+  evidenceUrls     String[]
   user             User?           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
   hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
   reporter         User?           @relation("DisputesFiled", fields: [reportedById], references: [id])
   apiClient        ApiClient?      @relation(fields: [apiClientId], references: [id])
+  reservation      Reservation?    @relation(fields: [reservationId], references: [id])
+  votes            JuryVote[]
 
   @@index([userId])
   @@index([hashedIdentityId])
@@ -658,6 +678,7 @@ enum DisputeType {
 
 enum DisputeOutcome {
   PENDING
+  VOTING
   UPHELD
   DISMISSED
   RESOLVED
@@ -826,16 +847,54 @@ enum CheckoutStatus {
   CANCELLED
 }
 
+enum LoanStatus {
+  ACTIVE
+  REPAID
+  LIQUIDATED
+  DEFAULTED
+}
+
+model Loan {
+  id              String      @id @default(cuid())
+  userId          String
+  principalUsdc   Float
+  collateralPab   Float
+  flatFeeUsdc     Float
+  status          LoanStatus  @default(ACTIVE)
+  dueDate         DateTime
+  txHash          String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
 model ShopifyStore {
   id              String   @id @default(cuid())
-  businessId      String
+  businessId      String?
   shopUrl         String   @unique
   accessToken     String
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
+}
+
+model JuryVote {
+  id              String   @id @default(cuid())
+  disputeId       String
+  jurorId         String
+  voteForId       String   // The ID of the user they voted in favor of
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  dispute         Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+
+  @@unique([disputeId, jurorId])
+  @@index([jurorId])
 }

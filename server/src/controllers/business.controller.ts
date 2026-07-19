@@ -7,6 +7,7 @@ import { BusinessCategory, UserRole } from '@prisma/client';
 import { osintService } from '../services/osint.service';
 import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
+import crypto from 'crypto';
 
 export const createBusiness = async (
   req: AuthRequest,
@@ -1095,6 +1096,95 @@ export const connectChannex = async (req: AuthRequest, res: Response, next: Next
     const channexPropertyId = await channexService.provisionProperty(business.id);
 
     res.json({ success: true, message: 'Successfully provisioned on Channex', data: { channexPropertyId } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const generateApiKey = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify ownership
+    const business = await prisma.business.findUnique({ where: { id } });
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Key name is required' });
+    }
+
+    const rawKey = crypto.randomBytes(32).toString('hex');
+    const apiKey = `pk_live_${rawKey}`;
+    
+    const client = await prisma.apiClient.create({
+      data: {
+        name,
+        email: business.email || `api-${business.id}@pabandi.local`, // Fallback
+        apiKey,
+        businessId: business.id,
+        tier: 'STARTER',
+        callsLimit: 1000
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'API Key generated successfully. Please copy it now as it will not be shown again.',
+      data: {
+        id: client.id,
+        name: client.name,
+        apiKey: client.apiKey,
+        createdAt: client.createdAt
+      }
+    });
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      return res.status(409).json({ success: false, message: 'A key with this name/email already exists for your business' });
+    }
+    next(error);
+  }
+};
+
+export const getApiKeys = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify ownership
+    const business = await prisma.business.findUnique({ where: { id } });
+    if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const keys = await prisma.apiClient.findMany({
+      where: { businessId: id },
+      select: {
+        id: true,
+        name: true,
+        tier: true,
+        isActive: true,
+        callsUsed: true,
+        callsLimit: true,
+        createdAt: true,
+        // specifically NOT selecting apiKey here so it's masked
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: { apiKeys: keys }
+    });
   } catch (error) {
     next(error);
   }

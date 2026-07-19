@@ -11,6 +11,12 @@ interface User {
   role: string;
   profilePictureUrl?: string;
   reliabilityScore?: number;
+  trustScore?: number;
+  verificationTier?: string;
+  commerceScore?: number;
+  hospitalityScore?: number;
+  appointmentScore?: number;
+  freelanceScore?: number;
   encryptedDietaryData?: string;
   walletAddress?: string;
 }

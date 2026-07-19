@@ -174,6 +174,17 @@ export const stakingService = {
   unstakeYield: (positionId: string) => apiClient.post('/staking/pool/unstake', { positionId }),
 };
 
+export const disputeService = {
+  fileDispute: (data: { reservationId: string; againstId: string; reason: string; stakedAmount: number; evidenceUrls?: string[] }) => apiClient.post('/disputes', data).then(res => res.data),
+  vote: (disputeId: string, data: { voteForId: string; reason?: string }) => apiClient.post(`/disputes/${disputeId}/vote`, data).then(res => res.data),
+};
+
+export const loanService = {
+  getPower: () => apiClient.get('/loans/power').then(res => res.data),
+  requestLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/request', data).then(res => res.data),
+  repayLoan: (loanId: string) => apiClient.post(`/loans/${loanId}/repay`).then(res => res.data),
+};
+
 export const sourcingService = {
   analyzeDemand: () => apiClient.get('/sourcing/analyze'),
   confirmOrder: (orderId: string) => apiClient.post(`/sourcing/order/${orderId}/confirm`),

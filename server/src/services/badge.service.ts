@@ -20,6 +20,10 @@ export interface BadgePayload {
   pseudonymousId: string;
   tier: 'EXCELLENT' | 'AVERAGE' | 'RISKY';
   reliabilityScore: number;
+  commerceScore: number;
+  hospitalityScore: number;
+  appointmentScore: number;
+  freelanceScore: number;
   attendanceRate: number;
   totalBookings: number;
   completedBookings: number;
@@ -130,6 +134,10 @@ export class BadgeService {
         where: { id: userId },
         select: { 
           reliabilityScore: true,
+          commerceScore: true,
+          hospitalityScore: true,
+          appointmentScore: true,
+          freelanceScore: true,
           referredBy: {
             select: { id: true, reliabilityScore: true }
           }
@@ -208,6 +216,10 @@ export class BadgeService {
       pseudonymousId,
       tier,
       reliabilityScore: effectiveScore,
+      commerceScore: user.commerceScore,
+      hospitalityScore: user.hospitalityScore,
+      appointmentScore: user.appointmentScore,
+      freelanceScore: user.freelanceScore,
       attendanceRate,
       totalBookings,
       completedBookings: completed,

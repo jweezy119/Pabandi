@@ -42,7 +42,7 @@ export const shopifyAuthCallback = async (req: Request, res: Response) => {
 
     const session = callback.session;
     
-    // Check if store already exists or create new placeholder
+    // Check if store already exists
     let store = await prisma.shopifyStore.findUnique({
       where: { shopUrl: session.shop }
     });
@@ -53,17 +53,13 @@ export const shopifyAuthCallback = async (req: Request, res: Response) => {
         data: { accessToken: session.accessToken }
       });
     } else {
-      // Find business ID to associate (mocking this temporarily, usually passed via state)
-      const mockBusinessId = process.env.MOCK_BUSINESS_ID; 
-      if (mockBusinessId) {
-        await prisma.shopifyStore.create({
-          data: {
-            businessId: mockBusinessId,
-            shopUrl: session.shop,
-            accessToken: session.accessToken || '',
-          }
-        });
-      }
+      // Create new disconnected store placeholder
+      await prisma.shopifyStore.create({
+        data: {
+          shopUrl: session.shop,
+          accessToken: session.accessToken || '',
+        }
+      });
     }
 
     // Redirect to the embedded app UI
@@ -71,6 +67,35 @@ export const shopifyAuthCallback = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Shopify Auth Callback Error:', error);
     res.status(500).json({ error: 'Failed to complete OAuth.' });
+  }
+};
+
+export const connectShopifyStore = async (req: Request, res: Response) => {
+  try {
+    const businessId = (req as any).user?.businessId;
+    const { shop } = req.body;
+
+    if (!businessId || !shop) {
+      return res.status(400).json({ error: 'Missing businessId or shop' });
+    }
+
+    const store = await prisma.shopifyStore.findUnique({
+      where: { shopUrl: shop }
+    });
+
+    if (!store) {
+      return res.status(404).json({ error: 'Store not found. Please reinstall the app.' });
+    }
+
+    await prisma.shopifyStore.update({
+      where: { shopUrl: shop },
+      data: { businessId }
+    });
+
+    res.status(200).json({ success: true, message: 'Store connected successfully' });
+  } catch (error) {
+    console.error('Connect Shopify Store Error:', error);
+    res.status(500).json({ error: 'Failed to connect store' });
   }
 };
 

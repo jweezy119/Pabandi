@@ -7,6 +7,12 @@ export interface TrustInputs {
   osint: { breachCount: number; domainAgeDays: number; voipLikelihood: number };
   social: { witnessCount: number; vouchScore: number };
   behavior: { avgResponseMinutes: number; prepayCompliance: number };
+  verticals?: {
+    commerce: { completed: number; noShows: number };
+    hospitality: { completed: number; noShows: number };
+    freelance: { completed: number; noShows: number };
+    appointment: { completed: number; noShows: number };
+  }
 }
 
 export class TrustScoreService {
@@ -14,7 +20,7 @@ export class TrustScoreService {
    * Adaptive Bayesian-inspired scoring logic.
    * Gets smarter and shifts weights based on the density of positive/negative outcomes.
    */
-  public calculateCompositeScore(inputs: TrustInputs): { score: number, weights: any } {
+  public calculateCompositeScore(inputs: TrustInputs): { score: number, weights: any, verticalScores?: any } {
     // 1. Adaptive Weights based on data density
     const reliabilityWeight = inputs.reliability.completed > 10 ? 0.40 : 0.25;
     const osintWeight = 0.25;
@@ -59,9 +65,35 @@ export class TrustScoreService {
     
     // Clamp between 0 and 100
     composite = Math.max(0, Math.min(100, composite));
+
+    // 4. Vertical-Specific Scores (Encompassing)
+    // A user might have a great global score but a terrible track record in one vertical.
+    const verticalScores = {
+      commerceScore: composite,
+      hospitalityScore: composite,
+      freelanceScore: composite,
+      appointmentScore: composite
+    };
+
+    if (inputs.verticals) {
+      const calculateVerticalScore = (v: {completed: number, noShows: number}, baseScore: number) => {
+        if (v.completed === 0 && v.noShows === 0) return baseScore;
+        const total = v.completed + v.noShows;
+        const rate = v.completed / total;
+        let vScore = (rate * 100) * 0.7 + (baseScore * 0.3); // 70% vertical history, 30% global base
+        if (v.noShows > 0) vScore -= (v.noShows * 20); // Heavy localized penalty
+        return Math.max(0, Math.min(100, vScore));
+      };
+
+      verticalScores.commerceScore = calculateVerticalScore(inputs.verticals.commerce, composite);
+      verticalScores.hospitalityScore = calculateVerticalScore(inputs.verticals.hospitality, composite);
+      verticalScores.freelanceScore = calculateVerticalScore(inputs.verticals.freelance, composite);
+      verticalScores.appointmentScore = calculateVerticalScore(inputs.verticals.appointment, composite);
+    }
     
     return {
       score: Math.round(composite * 10) / 10,
+      verticalScores,
       weights: { reliabilityWeight, osintWeight, socialWeight, behaviorWeight }
     };
   }
@@ -116,7 +148,9 @@ export class TrustScoreService {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        reservations: true,
+        reservations: {
+          include: { business: true }
+        },
       }
     });
 
@@ -127,6 +161,25 @@ export class TrustScoreService {
     const noShows = user.reservations.filter(r => r.status === 'NO_SHOW').length;
     const cancellations = user.reservations.filter(r => r.status === 'CANCELLED').length;
 
+    // Vertical breakdown
+    const verticals = {
+      commerce: { completed: 0, noShows: 0 },
+      hospitality: { completed: 0, noShows: 0 },
+      freelance: { completed: 0, noShows: 0 },
+      appointment: { completed: 0, noShows: 0 },
+    };
+
+    user.reservations.forEach(r => {
+      let bucket = 'commerce';
+      const cat = r.business?.category;
+      if (cat === 'RESTAURANT' || cat === 'HOTEL') bucket = 'hospitality';
+      else if (cat === 'CLINIC' || cat === 'SALON' || cat === 'SPA') bucket = 'appointment';
+      else if (cat === 'FREELANCE') bucket = 'freelance';
+
+      if (r.status === 'COMPLETED') (verticals as any)[bucket].completed++;
+      if (r.status === 'NO_SHOW') (verticals as any)[bucket].noShows++;
+    });
+
     // Mocking other inputs based on event.osintData for the demo
     const breachCount = event.osintData?.breachCount || 0;
     const domainAgeDays = event.osintData?.domainAgeDays || 365;
@@ -136,12 +189,13 @@ export class TrustScoreService {
       reliability: { completed, noShows, cancellations },
       osint: { breachCount, domainAgeDays, voipLikelihood },
       social: { witnessCount: 0, vouchScore: 0 },
-      behavior: { avgResponseMinutes: 120, prepayCompliance: 1.0 }
+      behavior: { avgResponseMinutes: 120, prepayCompliance: 1.0 },
+      verticals
     };
 
     // 2. Calculate New Score
     const previousScore = user.trustScore;
-    const { score: newScore, weights } = this.calculateCompositeScore(inputs);
+    const { score: newScore, verticalScores, weights } = this.calculateCompositeScore(inputs);
 
     // If score didn't change and it's not a severe event, we might skip logging to save space,
     // but for the demo we log it so the user sees the timeline.
@@ -170,7 +224,11 @@ export class TrustScoreService {
       where: { id: userId },
       data: {
         trustScore: newScore,
-        verificationTier: newTier
+        verificationTier: newTier,
+        commerceScore: verticalScores.commerceScore,
+        hospitalityScore: verticalScores.hospitalityScore,
+        freelanceScore: verticalScores.freelanceScore,
+        appointmentScore: verticalScores.appointmentScore,
       }
     });
 

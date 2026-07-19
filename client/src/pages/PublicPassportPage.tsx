@@ -188,8 +188,24 @@ export const PublicPassportPage: React.FC = () => {
                 <p className="text-sm font-bold text-on-surface mt-1">{trustScore !== null ? `${trustScore}%` : '—'}</p>
               </div>
               <div className="bg-surface-container-low p-4 rounded-2xl">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Reliability</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Global Reliability</p>
                 <p className="text-sm font-bold text-on-surface mt-1">{reliabilityScore !== null ? reliabilityScore.toLocaleString() : '—'}</p>
+              </div>
+              <div className="bg-surface-container-low p-4 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#0ea5e9]">Commerce Score</p>
+                <p className="text-sm font-bold text-on-surface mt-1">{normalizeScore((seller as any)?.commerceScore) ?? '—'}</p>
+              </div>
+              <div className="bg-surface-container-low p-4 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#f59e0b]">Hospitality Score</p>
+                <p className="text-sm font-bold text-on-surface mt-1">{normalizeScore((seller as any)?.hospitalityScore) ?? '—'}</p>
+              </div>
+              <div className="bg-surface-container-low p-4 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#ec4899]">Appt. Score</p>
+                <p className="text-sm font-bold text-on-surface mt-1">{normalizeScore((seller as any)?.appointmentScore) ?? '—'}</p>
+              </div>
+              <div className="bg-surface-container-low p-4 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#8b5cf6]">Freelance Score</p>
+                <p className="text-sm font-bold text-on-surface mt-1">{normalizeScore((seller as any)?.freelanceScore) ?? '—'}</p>
               </div>
               <div className="bg-surface-container-low p-4 rounded-2xl">
                 <p className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Rating</p>

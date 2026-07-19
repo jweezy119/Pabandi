@@ -25,6 +25,10 @@ export const getPublicUserProfile = async (
         isPhoneVerified: true,
         reliabilityScore: true,
         trustScore: true,
+        commerceScore: true,
+        hospitalityScore: true,
+        appointmentScore: true,
+        freelanceScore: true,
         verificationTier: true,
         createdAt: true,
         // We do NOT return email, phone, passwordHash, fcmToken, etc.

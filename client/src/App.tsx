@@ -46,6 +46,7 @@ import { PublicPassportPage } from './pages/PublicPassportPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
+import LoanDashboard from './pages/LoanDashboard';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { PublicSEO } from './components/PublicSEO';
@@ -91,6 +92,10 @@ function App() {
               element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
             />
 
+            <Route path="/wallet" element={<WalletDashboard />} />
+            <Route path="/loans" element={<LoanDashboard />} />
+            <Route path="/social-graph" element={<div className="p-8">Social Graph Content Here</div>} />
+
             <Route path="/waitlist" element={<WaitlistPage />} />
             <Route path="/shopify-app" element={<ShopifyAppBridge />} />
             
@@ -126,6 +131,9 @@ function App() {
             <Route path="privacy" element={<PublicSEO seo={{ title: 'Privacy Policy', description: 'Pabandi privacy policy: data usage, escrow records, review visibility, and seller/customer rights.' }}><PrivacyPolicyPage /></PublicSEO>} />
             {/* Terms of Service */}
             <Route path="terms" element={<PublicSEO seo={{ title: 'Terms of Service', description: 'Pabandi terms of service governing escrow bookings, $PAB rewards, live selling, and platform rules.' }}><TermsOfServicePage /></PublicSEO>} />
+
+            {/* Shopify Embedded App Route */}
+            <Route path="shopify/app" element={<ShopifyAppBridge />} />
 
             <Route
               path="dashboard"

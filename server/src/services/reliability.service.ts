@@ -1,5 +1,6 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { blockchainService } from './blockchain.service';
 
 export interface ScoreChangeReceipt {
   previousScore: number;
@@ -22,17 +23,19 @@ export class ReliabilityService {
   private readonly K_FACTOR = 25;
 
   /**
-   * Determine the Context Weight (C) based on the business category
+   * Determine the Context Weight (C) based on the business category (Scarcity Multiplier)
    */
   private getContextWeight(category?: string): number {
     switch (category) {
       case 'CLINIC':
-        return 2.0; // High stakes medical
+        return 3.0; // High stakes medical, scarce time slots
       case 'EVENT_VENUE':
-        return 1.2; // Slightly higher stakes
+        return 2.0; // High stakes
       case 'RESTAURANT':
+        return 1.5; // Restaurants have scarce tables during peak hours
       case 'SALON':
       case 'SPA':
+        return 1.2; 
       case 'FITNESS_CENTER':
       default:
         return 1.0; // Standard context
@@ -54,12 +57,20 @@ export class ReliabilityService {
   }
 
   /**
-   * Determine the Actual Outcome (A) based on the event status
+   * Determine the Actual Outcome (A) based on the event status and cancel reason
    */
-  private getActualOutcome(status: string, isLateCancel: boolean): number {
+  private getActualOutcome(status: string, isLateCancel: boolean, cancelReason?: string): number {
     if (status === 'COMPLETED') return 1.0;
     if (status === 'CANCELLED') {
-      return isLateCancel ? 0.4 : 0.8; // Early cancel is fine, late cancel is heavily penalized but better than ghosting
+      if (!isLateCancel) return 0.8; // Early cancel is fine
+      
+      // Contextual Forgiveness Analysis
+      const reasonLower = (cancelReason || '').toLowerCase();
+      const emergencyKeywords = ['emergency', 'hospital', 'accident', 'sick', 'medical', 'car broke'];
+      const isEmergency = emergencyKeywords.some(kw => reasonLower.includes(kw));
+
+      if (isEmergency) return 0.7; // Forgiven late cancel due to emergency
+      return 0.4; // Late cancel heavily penalized
     }
     return 0.0; // NO_SHOW
   }
@@ -72,12 +83,13 @@ export class ReliabilityService {
     status: 'COMPLETED' | 'NO_SHOW' | 'CANCELLED',
     isLateCancel: boolean = false,
     reservationId?: string,
-    reservationValue?: number
+    reservationValue?: number,
+    cancelReason?: string
   ): Promise<{ newScore: number, receipt: ScoreChangeReceipt } | null> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, reliabilityScore: true }
+        select: { id: true, reliabilityScore: true, firstOffenseGraceUsed: true }
       });
 
       if (!user) {
@@ -119,11 +131,17 @@ export class ReliabilityService {
       // Elo Math
       const S = user.reliabilityScore;
       const E = S / 100.0;
-      const A = this.getActualOutcome(status, isLateCancel);
+      const A = this.getActualOutcome(status, isLateCancel, cancelReason);
       
+      // Asymmetric K-Factor (Easier to lose trust than gain it back if score is high)
+      let dynamicK = this.K_FACTOR;
+      if (A < E && S > 80) dynamicK = this.K_FACTOR * 1.5; // High tier users punished harder for ghosting
+      if (A > E && S < 50) dynamicK = this.K_FACTOR * 0.8; // Low tier users climb slower
+
       // New Score = S + (K * C * V) * (A - E)
-      const mathSwing = (this.K_FACTOR * contextWeight * valueMultiplier) * (A - E);
+      const mathSwing = (dynamicK * contextWeight * valueMultiplier) * (A - E);
       let totalChange = mathSwing + streakBonus;
+      let usedGracePeriod = false;
 
       // Determine reasoning for receipt
       let reasoning = '';
@@ -133,9 +151,22 @@ export class ReliabilityService {
       } else if (status === 'NO_SHOW') {
         reasoning = `Ghosting a ${contextWeight > 1.0 ? 'high-stakes ' : ''}reservation severely drops your score.`;
       } else if (status === 'CANCELLED') {
-        reasoning = isLateCancel 
-          ? 'Late cancellation penalized, but better than ghosting.' 
-          : 'Early cancellation acknowledged. Minor impact.';
+        if (isLateCancel) {
+          // Check for First-Offense Grace (6 month rolling window)
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+          if (!user.firstOffenseGraceUsed || user.firstOffenseGraceUsed < sixMonthsAgo) {
+            totalChange = 0; // Forgive completely
+            usedGracePeriod = true;
+            reasoning = 'First late cancellation in 6 months. Forgiven under the Grace Period policy.';
+          } else if (A === 0.7) {
+            reasoning = 'Late cancellation penalty reduced due to valid emergency reason.';
+          } else {
+            reasoning = 'Late cancellation penalized, but better than ghosting.';
+          }
+        } else {
+          reasoning = 'Early cancellation acknowledged. Minor impact.';
+        }
       }
 
       // Cap boundaries
@@ -147,7 +178,7 @@ export class ReliabilityService {
       const receipt: ScoreChangeReceipt = {
         previousScore: S,
         newScore: Number(newScore.toFixed(1)),
-        basePoints: this.K_FACTOR,
+        basePoints: dynamicK,
         contextWeight,
         valueMultiplier,
         expectedProbability: E,
@@ -157,12 +188,29 @@ export class ReliabilityService {
         reasoning
       };
 
+      const updateData: any = { reliabilityScore: receipt.newScore };
+      if (usedGracePeriod) {
+        updateData.firstOffenseGraceUsed = new Date();
+      }
+
       await prisma.user.update({
         where: { id: userId },
-        data: { reliabilityScore: receipt.newScore }
+        data: updateData
       });
 
       logger.info(`Global Trust Update | User ${userId} | ${S} -> ${receipt.newScore} | Outcome: ${A}`);
+      
+      // Log cryptographic attestation on Solana (EAS Equivalent)
+      let action: any = status === 'COMPLETED' ? 'COMPLETED_BOOKING' : (status === 'NO_SHOW' ? 'NO_SHOW' : 'LATE_CANCELLATION');
+      if (reservationId) {
+        const attestation = await blockchainService.logTrustAttestationOnSolana(userId, reservationId, action, { totalChange: receipt.totalChange });
+        if (attestation.txHash) {
+          await prisma.reservation.update({
+            where: { id: reservationId },
+            data: { solanaAttestationId: attestation.txHash }
+          });
+        }
+      }
       
       return { newScore: receipt.newScore, receipt };
     } catch (error) {
@@ -260,11 +308,14 @@ export class ReliabilityService {
 
       let updatedCount = 0;
       for (const user of usersToDecay) {
-        // Decay by 1 point towards 50
+        // Asymmetric Decay: Bad scores recover slowly (forgiveness), good scores drift faster (reversion)
         const S = user.reliabilityScore;
         let newScore = S;
-        if (S > 50) newScore -= 1;
-        else if (S < 50) newScore += 1;
+        
+        if (S > 80) newScore -= 2.0; // High tier decays faster if inactive
+        else if (S > 50) newScore -= 1.0;
+        else if (S < 30) newScore += 0.5; // Very bad scores slowly inch back to neutral
+        else if (S < 50) newScore += 1.0;
 
         await prisma.user.update({
           where: { id: user.id },

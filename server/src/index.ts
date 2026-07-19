@@ -41,6 +41,8 @@ import waitlistRoutes from './routes/waitlist.routes';
 import hospitalityRoutes from './routes/hospitality.routes';
 import trustRoutes from './routes/trust.routes';
 import pabandiReviewRoutes from './routes/pabandiReview.routes';
+import disputeRoutes from './routes/dispute.routes';
+import loanRoutes from './routes/loan.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -68,12 +70,13 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https:"],
-      frameAncestors: ["'none'"],
+      frameAncestors: ["'self'", "https://*.myshopify.com", "https://admin.shopify.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,
+  frameguard: false, // Must be disabled so we don't send X-Frame-Options: SAMEORIGIN
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 app.use(compression());
@@ -123,6 +126,8 @@ app.get('/healthz', (req, res) => {
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/businesses`, businessRoutes);
 app.use(`/api/${API_VERSION}/reservations`, reservationRoutes);
+app.use(`/api/${API_VERSION}/disputes`, disputeRoutes);
+app.use(`/api/${API_VERSION}/loans`, loanRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
@@ -137,6 +142,9 @@ app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
 import aiRoutes from './routes/ai.routes';
 app.use(`/api/${API_VERSION}/ai`, aiRoutes);
+
+import apiPublicRoutes from './routes/api-public.routes';
+app.use(`/api/${API_VERSION}/public`, apiPublicRoutes);
 
 import apiSubscriptionRoutes from './routes/api-subscription.routes';
 app.use(`/api/${API_VERSION}/api-subscription`, apiSubscriptionRoutes);
@@ -244,6 +252,14 @@ app.get(`/api/${API_VERSION}/docs`, (req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
+  // If request comes from Shopify Admin (has shop and host), redirect to frontend embedded app
+  if (req.query.shop && req.query.host) {
+    // We explicitly route to the production frontend because the Shopify Admin 
+    // is accessing this from the merchant's browser over the internet.
+    const frontendUrl = 'https://pabandi-42c5b.web.app';
+    return res.redirect(`${frontendUrl}/shopify/app?shop=${req.query.shop}&host=${req.query.host}`);
+  }
+
   res.status(200).json({
     success: true,
     message: 'Welcome to the Pabandi Backend API',
