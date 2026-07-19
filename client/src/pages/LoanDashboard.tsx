@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { loanService } from '../services/api';
 import { CurrencyDollarIcon, BanknotesIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import { useAuthStore } from '../store/authStore';
 
 export default function LoanDashboard() {
   const [usdcAmount, setUsdcAmount] = useState<number | ''>('');
