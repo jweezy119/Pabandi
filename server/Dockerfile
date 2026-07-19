@@ -1,60 +1,25 @@
-# Use Debian-based Node image so Prisma engine/OpenSSL work reliably
-FROM node:18-slim AS builder
+FROM node:20-slim
+
+# Install OpenSSL for Prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install build tools and OpenSSL libraries required by Prisma
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    ca-certificates \
-    python3 \
-    make \
-    g++ \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
+
+# Install all dependencies (including devDependencies like typescript and prisma)
+RUN npm install
+
+# Copy Prisma schema and generate client
 COPY prisma ./prisma/
-
-# Configure npm to be more resilient to network blips and IPv6 routing issues
-RUN npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retries 5 && \
-    npm config set registry https://registry.npmjs.org/
-
-# Install dependencies
-RUN npm ci
+RUN npx prisma generate
 
 # Copy the rest of the source code
 COPY . .
 
-# Generate Prisma Client and build TypeScript
-RUN npx prisma generate
+# Build TypeScript
 RUN npm run build
 
-# --- Production Image ---
-FROM node:18-slim
-
-WORKDIR /app
-
-# Runtime dependencies for Prisma engine
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy built artifacts and dependencies
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-
-# Expose the API port
-EXPOSE 8080
-
-# Set production environment
-ENV NODE_ENV=production
-
 # Start the server
-CMD ["node", "dist/src/index.js"]
+CMD ["npm", "start"]

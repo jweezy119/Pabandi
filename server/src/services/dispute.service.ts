@@ -1,4 +1,4 @@
-import { PrismaClient, DisputeStatus } from '@prisma/client';
+import { PrismaClient, DisputeOutcome, DisputeType } from '@prisma/client';
 import { ReliabilityService } from './reliability.service';
 import { TrustScoreService } from './trustScore.service';
 import { blockchainService } from './blockchain.service';
@@ -12,7 +12,7 @@ export class DisputeService {
    * File a new dispute. Requires the filer to stake a certain amount of PAB.
    * For MVP, we simulate the staking by just recording the amount.
    */
-  public async createDispute(reservationId: string, filedById: string, againstId: string, reason: string, evidenceUrls: string[], stakedAmount: number = 10) {
+  public async createDispute(reservationId: string, reportedById: string, userId: string, description: string, evidenceUrls: string[], stakedAmount: number = 10) {
     const existingDispute = await prisma.dispute.findUnique({
       where: { reservationId }
     });
@@ -27,11 +27,12 @@ export class DisputeService {
     const dispute = await prisma.dispute.create({
       data: {
         reservationId,
-        filedById,
-        againstId,
-        reason,
+        reportedById,
+        userId,
+        type: DisputeType.QUALITY_ISSUE, // default type for now
+        description,
         evidenceUrls,
-        status: DisputeStatus.VOTING,
+        outcome: DisputeOutcome.PENDING,
         stakedAmount
       }
     });
@@ -51,11 +52,11 @@ export class DisputeService {
     }
 
     const dispute = await prisma.dispute.findUnique({ where: { id: disputeId } });
-    if (!dispute || dispute.status !== DisputeStatus.VOTING) {
+    if (!dispute || dispute.outcome !== DisputeOutcome.PENDING) {
       throw new Error('Dispute is not open for voting.');
     }
 
-    if (jurorId === dispute.filedById || jurorId === dispute.againstId) {
+    if (jurorId === dispute.reportedById || jurorId === dispute.userId) {
       throw new Error('You cannot vote on your own dispute.');
     }
 
@@ -86,46 +87,51 @@ export class DisputeService {
     if (!dispute) return;
 
     // Count votes
-    let votesForFiler = 0;
-    let votesForAgainst = 0;
+    let votesForReporter = 0;
+    let votesForUser = 0;
 
     for (const vote of votes) {
-      if (vote.voteForId === dispute.filedById) votesForFiler++;
-      if (vote.voteForId === dispute.againstId) votesForAgainst++;
+      if (vote.voteForId === dispute.reportedById) votesForReporter++;
+      if (vote.voteForId === dispute.userId) votesForUser++;
     }
 
     // Threshold logic: first to 3 votes wins (out of 5 possible jurors)
-    if (votesForFiler >= 3) {
-      await this.resolveDispute(dispute, DisputeStatus.RESOLVED_FAVOR_FILER);
-    } else if (votesForAgainst >= 3) {
-      await this.resolveDispute(dispute, DisputeStatus.RESOLVED_FAVOR_AGAINST);
+    if (votesForReporter >= 3) {
+      await this.resolveDispute(dispute, DisputeOutcome.UPHELD);
+    } else if (votesForUser >= 3) {
+      await this.resolveDispute(dispute, DisputeOutcome.DISMISSED);
     }
   }
 
-  private async resolveDispute(dispute: any, status: DisputeStatus) {
+  private async resolveDispute(dispute: any, outcome: DisputeOutcome) {
     await prisma.dispute.update({
       where: { id: dispute.id },
       data: { 
-        status, 
-        resolvedAt: new Date(),
-        resolution: `Resolved by Peer Jury: ${status}`
+        outcome, 
+        resolvedAt: new Date()
       }
     });
 
     // Apply trust score penalties based on outcome
-    if (status === DisputeStatus.RESOLVED_FAVOR_FILER) {
-      // The filer won. The againstId (e.g. the business) maliciously reported.
+    if (outcome === DisputeOutcome.UPHELD) {
+      // The reporter won. The userId (e.g. the business) maliciously reported/acted.
       // Penalize the business, reward the filer with their stake back + jury reward.
-      await reliabilityService.updateScoreForReservationActivity(dispute.againstId, 'CANCELLATION', 0); // Heavy penalty for lying
-    } else if (status === DisputeStatus.RESOLVED_FAVOR_AGAINST) {
-      // Filer lost. They lied about the dispute. Filer loses their stake and takes a trust hit.
-      await reliabilityService.updateScoreForReservationActivity(dispute.filedById, 'NO_SHOW', 0); // Double penalty
+      if (dispute.userId) {
+        await reliabilityService.updateScoreForReservationActivity(dispute.userId, 'CANCELLED', false); // Heavy penalty
+      }
+    } else if (outcome === DisputeOutcome.DISMISSED) {
+      // Reporter lost. They lied about the dispute. Reporter loses their stake and takes a trust hit.
+      if (dispute.reportedById) {
+        await reliabilityService.updateScoreForReservationActivity(dispute.reportedById, 'NO_SHOW', false); // Double penalty
+      }
     }
     
     // Log on-chain
-    await blockchainService.logTrustAttestationOnSolana(dispute.filedById, dispute.reservationId, 'DISPUTE_FILED', {
-      outcome: status
-    });
+    if (dispute.reportedById) {
+      await blockchainService.logTrustAttestationOnSolana(dispute.reportedById, dispute.reservationId || 'UNKNOWN', 'DISPUTE_FILED', {
+        outcome: outcome
+      });
+    }
 
     // In a full system, we would also reward the winning Jurors with the slashed PAB here.
   }
