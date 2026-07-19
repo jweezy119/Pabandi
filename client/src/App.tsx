@@ -8,6 +8,8 @@ import BusinessDashboard from './pages/BusinessDashboard';
 import BusinessRegister from './pages/BusinessRegister';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
+import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import BookingPage from './pages/BookingPage';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
@@ -43,7 +45,6 @@ import AboutPage from './pages/AboutPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
-import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
@@ -101,6 +102,8 @@ function App() {
             
             <Route path="/u/:slug" element={<PublicCustomerProfilePage />} />
             <Route path="business/:id" element={<BusinessProfilePage />} />
+            <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
+            <Route path="checkout-success" element={<CheckoutSuccessPage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="b/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/:id/book" element={<BookingPage />} />
