@@ -1,6 +1,6 @@
 # Pabandi Whitepaper
 ## Trust, Portable. Deposits, Automated.
-### v5.0 — The Founder-to-Founder, Customer-Obsessed, Global Blueprint
+### v6.0 — The Founder-to-Founder, Customer-Obsessed, Global Blueprint
 *Last updated: July 2026*
 
 ---
@@ -22,10 +22,12 @@
 14. [Security — Lock-by-Lock Explanation](#14-security--lock-by-lock-explanation)
 15. [Your Rights — Data Controls](#15-your-rights--data-controls)
 16. [The Global Evolution: Live Selling & Seamless Rentals](#16-the-global-evolution--live-selling--seamless-rentals)
-17. [Roadmap — What's Next](#17-roadmap--whats-next)
-18. [Conclusion](#18-conclusion)
-19. [FAQ — Quick Answers](#19-faq--quick-answers)
-20. [Glossary](#20-glossary)
+17. [AI Concierge & Voicebox Automation](#17-ai-concierge--voicebox-automation)
+18. [Token Liquidity & Decentralized Exchange (DEX)](#18-token-liquidity--decentralized-exchange-dex)
+19. [Roadmap — What's Next](#19-roadmap--whats-next)
+20. [Conclusion](#20-conclusion)
+21. [FAQ — Quick Answers](#21-faq--quick-answers)
+22. [Glossary](#22-glossary)
 
 ---
 
@@ -67,7 +69,7 @@ Here's the simplest way to think about it:
 
 **For Buyers & Guests:** If you always show up to your bookings, you earn rewards and never have to pay deposits again. Your trust follows you from salon to salon, hotel to hotel, city to city. Sign in with Google, Facebook, or your Bitcoin wallet — no app download required.
 
-**For Property Managers & Hotel Chains:** Embed Pabandi's booking widget on your own website or list on our marketplace. Set your own branded perks, run automated escrow and no-show protection, and give guests real rewards for every night stayed.
+**For Property Managers & Hotel Chains:** Embed Pabandi's booking widget or our AI Concierge on your own website or list on our marketplace. Set your own branded perks, run automated escrow and no-show protection, and give guests real rewards for every night stayed. Integrate seamlessly with Channex, Beds24, Cloudbeds, Lodgify, Hostaway, and Guesty.
 
 **For Developers:** You can plug Pabandi's smart fairness engine into any booking app with one line of code. We expose APIs for scores, escrow, and rewards.
 
@@ -128,9 +130,9 @@ Ground level truth: across service economies, hospitality, and informal commerce
 
 **Piece 1: The Seller / Host**
 - Seller/host signs up free at `pabandi.com`
-- Seller creates a booking link in 2 minutes or syncs existing Airbnb/OTA inventory via **Channex.io**
+- Seller creates a booking link in 2 minutes or syncs existing inventory via **Channex, Beds24, Cloudbeds, Lodgify, Hostaway, or Guesty**.
 - Seller sets deposit ranges, custom perks, and branding
-- Seller shares the link anywhere: Instagram, TikTok, WhatsApp, website, or OTA channel
+- Seller shares the universal booking link anywhere: Instagram, TikTok, YouTube, eBay, Amazon, WhatsApp, website, or OTA channel
 - When someone books, Pabandi automatically collects a deposit before the seller even has to reply
 - Seller sees only the booking and deposit status — never the buyer's raw score
 
@@ -830,7 +832,7 @@ Imagine a salon owner demonstrating a new bridal makeup technique on a live stre
 
 But our vision extends even further into **hotel and apartment rentals and global hospitality**. No-shows and last-minute cancellations are just as devastating to property managers and hosts worldwide.
 
-Through our **Channex.io integration**, property managers can:
+Through our **Universal Hospitality APIs (Channex.io, Beds24, Cloudbeds, Lodgify, Hostaway, Guesty)**, property managers can:
 - Sync entire Airbnb/Booking.com/Vrbo inventory with one click
 - List directly on Pabandi's marketplace or embed the Pabandi booking widget on their own website
 - Maintain full control over rates, branding, and guest communication
@@ -882,7 +884,25 @@ Pehle payment. Phir baat.
 
 ---
 
-## 17. Roadmap — What's Next
+## 17. AI Concierge & Voicebox Automation
+
+Pabandi offers a state-of-the-art **AI Concierge (Voicebox)** widget that businesses can embed directly on their custom websites. It handles inbound inquiries, schedules bookings, and automates customer support 24/7.
+
+- **Multimodal capabilities**: Supports both natural conversational text chat and voice interactions.
+- **Context-aware**: The AI has real-time access to the business's live catalog, inventory, and booking schedule.
+- **Escrow native**: Seamlessly routes customers to the Pabandi universal booking link to lock in escrow deposits immediately.
+
+## 18. Token Liquidity & Decentralized Exchange (DEX)
+
+To provide deep liquidity and seamless cash-out paths for our users, the $PAB token is integrated with the Raydium Decentralized Exchange (DEX) on Solana.
+
+- **Instant Swaps**: Users can instantly swap $PAB for SOL, USDC, or other SPL tokens.
+- **Liquidity Pools**: Community members and partners can provide liquidity to the PAB/SOL or PAB/USDC pools to earn trading fees, bolstering the ecosystem's financial stability.
+- **Transparency**: All token economics and swaps are verifiable on-chain, eliminating opaque centralized exchanges from the process.
+
+---
+
+## 19. Roadmap — What's Next
 
 | Date | What We Ship |
 |------|-------------|
