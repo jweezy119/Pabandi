@@ -877,6 +877,7 @@ model ShopifyStore {
   shopUrl         String   @unique
   accessToken     String
   isActive        Boolean  @default(true)
+  escrowEnabled   Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

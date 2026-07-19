@@ -110,24 +110,31 @@ export default function ShopifyAppBridge() {
             </div>
 
             <div className="bg-surface border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-base font-bold text-on-surface mb-1">Payment Method Status</h3>
+              <h3 className="text-base font-bold text-on-surface mb-1">Storefront Installation</h3>
               <p className="text-sm text-on-surface-variant mb-4">
-                Configure how Pabandi appears at checkout.
+                To enable Pabandi Escrow and display your Trust Badge, paste this code into your Shopify theme (e.g., <code className="bg-surface-container px-1 py-0.5 rounded text-xs text-primary">product.liquid</code>).
               </p>
               
-              <div className="flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl mb-4">
+              <div className="relative group">
+                <pre className="bg-[#1e1e1e] text-gray-300 p-4 rounded-xl text-xs overflow-x-auto border border-outline-variant/20 font-mono">
+{`<div id="pabandi-trust-badge" data-shop="{{ shop.domain }}"></div>
+<script src="https://pabandi.com/shopify-widget.js" defer></script>`}
+                </pre>
+                <button className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider transition-colors" onClick={() => {
+                  navigator.clipboard.writeText(`<div id="pabandi-trust-badge" data-shop="{{ shop.domain }}"></div>\n<script src="https://pabandi.com/shopify-widget.js" defer></script>`);
+                  alert("Copied to clipboard!");
+                }}>Copy</button>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl">
                 <div>
-                  <p className="font-bold text-sm text-on-surface">Escrow Checkout</p>
-                  <p className="text-xs text-on-surface-variant">Active on your storefront</p>
+                  <p className="font-bold text-sm text-on-surface">Escrow Processing</p>
+                  <p className="text-xs text-on-surface-variant">Accept Escrow Payments</p>
                 </div>
-                <div className="w-10 h-6 bg-primary rounded-full relative">
+                <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer hover:opacity-80 transition-opacity">
                   <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 shadow-sm" />
                 </div>
               </div>
-
-              <button className="w-full py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:opacity-90 transition-opacity">
-                Save Settings
-              </button>
             </div>
           </div>
         )}
