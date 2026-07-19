@@ -52,20 +52,20 @@ async function findBusinessByPublicPhone(phoneNumber: string) {
   });
 }
 
-export const processWhatsAppMessage = async (phoneNumber: string, message: string, user: any | null) => {
-  console.log(`[AI] Processing message from ${phoneNumber}: ${message}`);
+export const processWhatsAppMessage = async (customerPhone: string, businessPhone: string, message: string, user: any | null) => {
+  console.log(`[AI] Processing message from ${customerPhone} to ${businessPhone}: ${message}`);
 
   const lowerMsg = message.trim().toLowerCase();
 
   if (user) {
     if (lowerMsg === 'cancel') {
-      await handleWhatsAppCancellation(phoneNumber, user);
+      await handleWhatsAppCancellation(customerPhone, user);
       return;
     }
   }
 
   try {
-    const business = await findBusinessByPublicPhone(phoneNumber);
+    const business = await findBusinessByPublicPhone(businessPhone);
     if (business) {
       const rawSettings = (business as any)?.settings;
       const settings =
@@ -80,13 +80,13 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
       });
       if (afterHours) {
         const away = openwaAfterHoursService.getAwayMessage(business);
-        await sendWhatsAppMessage(phoneNumber, away);
+        await sendWhatsAppMessage(customerPhone, away);
         return;
       }
 
       const faqReply = openwaFaqBotService.evaluateMessage(message, Array.isArray((rawSettings as any)?.faqRules) ? (rawSettings as any).faqRules : undefined);
       if (faqReply) {
-        await sendWhatsAppMessage(phoneNumber, faqReply);
+        await sendWhatsAppMessage(customerPhone, faqReply);
         return;
       }
     }
@@ -96,12 +96,36 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
 
   if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
     console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
-    await sendWhatsAppMessage(phoneNumber, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
+    await sendWhatsAppMessage(customerPhone, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
     return;
   }
 
   try {
     let context = 'You are the Pabandi AI Assistant. Pabandi is a reliability and trust layer launching first in Pakistan, built for informal commerce worldwide.\n';
+    let businessSlug = 'demo';
+    let catalogPrompt = '';
+
+    const business = await findBusinessByPublicPhone(businessPhone);
+    if (business) {
+      context += `\nYou are responding on behalf of the business: ${business.name}.\n`;
+      businessSlug = business.slug || business.id;
+      
+      const catalog = await prisma.businessService.findMany({
+        where: { businessId: business.id, isActive: true },
+        take: 10
+      });
+      
+      if (catalog.length > 0) {
+        catalogPrompt = "The merchant's product catalog is:\n" + catalog.map(item => `- ${item.name}: $${item.price.toFixed(2)}`).join("\n") + "\n";
+        catalogPrompt += `If the customer wants to buy an item or place an order (e.g., "I want the red shirt"), generate an instant checkout link for them using escrow:\n`;
+        catalogPrompt += `"Great! You can securely buy the [Item] here: https://pabandi.com/s/${businessSlug}?item=[Encoded_Item_Name]&price=[Price]&mode=instant"\n`;
+        catalogPrompt += `If they ask what you have for sale, list the items and their prices concisely.`;
+      } else {
+        catalogPrompt = "This merchant currently has no products listed for sale. Inform the customer that there are no items available right now.\n";
+      }
+    } else {
+      catalogPrompt = `If the user wants to buy an item, tell them this account isn't fully set up for sales yet.\n`;
+    }
 
     if (user) {
       context += `The person you are talking to is ${user.firstName} ${user.lastName}, a registered ${user.role} on Pabandi.\n`;
@@ -117,8 +141,7 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
     context += `
 Keep your answers brief, conversational, and helpful. You must respond in English.
 If the user asks to book a table, acknowledge their request and tell them you are checking availability (simulate for now).
-If the user wants to buy an item or place an order (e.g., "I want the red shirt", "can I get the shoes"), generate an instant checkout link for them using escrow:
-"Great! You can securely buy the [Item] here: https://pabandi.com/s/demo?item=[Encoded_Item_Name]&mode=instant"
+${catalogPrompt}
 Do not generate markdown or long lists.
 `;
 
@@ -151,10 +174,10 @@ Do not generate markdown or long lists.
       aiResponse = response.data.output.choices[0].message.content.trim();
     }
 
-    await sendWhatsAppMessage(phoneNumber, aiResponse);
+    await sendWhatsAppMessage(customerPhone, aiResponse);
   } catch (error: any) {
     console.error('[AI] Error generating AI response from DashScope:', error.response?.data || error.message);
-    await sendWhatsAppMessage(phoneNumber, 'Sorry, I am having trouble understanding right now. Please try again or use the app.');
+    await sendWhatsAppMessage(customerPhone, 'Sorry, I am having trouble understanding right now. Please try again or use the app.');
   }
 };
 
