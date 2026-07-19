@@ -41,13 +41,18 @@ export const handleIncomingWhatsApp = async (req: Request, res: Response): Promi
       ) {
         const message = body.entry[0].changes[0].value.messages[0];
         const contacts = body.entry[0].changes[0].value.contacts;
+        const metadata = body.entry[0].changes[0].value.metadata;
         
         // Meta formats phone number without '+' sign, e.g., "923001234567"
-        let phoneNumber = message.from;
+        let customerPhone = message.from;
+        let businessPhone = metadata?.display_phone_number || '';
         
         // Ensure standard formatting if we stored it with '+' in DB
-        if (!phoneNumber.startsWith('+')) {
-          phoneNumber = '+' + phoneNumber;
+        if (!customerPhone.startsWith('+')) {
+          customerPhone = '+' + customerPhone;
+        }
+        if (businessPhone && !businessPhone.startsWith('+')) {
+          businessPhone = '+' + businessPhone;
         }
 
         const msgBody = message.text?.body;
@@ -59,16 +64,16 @@ export const handleIncomingWhatsApp = async (req: Request, res: Response): Promi
           return;
         }
 
-        console.log(`[WhatsApp] Received message from ${phoneNumber} (${profileName}): ${msgBody}`);
+        console.log(`[WhatsApp] Received message from ${customerPhone} to ${businessPhone} (${profileName}): ${msgBody}`);
 
         // Try to find the user in our database based on their phone number
         const user = await prisma.user.findFirst({
-          where: { phone: phoneNumber }
+          where: { phone: customerPhone }
         });
 
         // Process the message through our AI Service
         // We do this asynchronously so we can quickly respond 200 OK to Meta
-        processWhatsAppMessage(phoneNumber, msgBody, user).catch(error => {
+        processWhatsAppMessage(customerPhone, businessPhone, msgBody, user).catch(error => {
           console.error('[WhatsApp] Error processing message:', error);
         });
       }
