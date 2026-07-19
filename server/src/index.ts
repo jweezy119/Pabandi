@@ -83,7 +83,7 @@ app.use(helmet({
 app.use(compression());
 const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/app\/?$/, '');
 app.use(cors({
-  origin: [frontendOrigin, 'http://localhost:3000', 'http://localhost:5500', 'https://pabandi-42c5b.web.app'].filter(
+  origin: [frontendOrigin, 'http://localhost:3000', 'http://localhost:5500', 'https://pabandi-42c5b.web.app', 'https://pabandi.com', 'https://www.pabandi.com'].filter(
     (v, i, a) => v && a.indexOf(v) === i
   ),
   credentials: true,
