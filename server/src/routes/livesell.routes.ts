@@ -67,6 +67,16 @@ router.patch('/:platform/state', authenticate, async (req: AuthRequest, res) => 
   }
 });
 
+router.get('/:platform/catalog', async (req: any, res) => {
+  try {
+    const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
+    res.json({ success: true, data: { platform, items: [] } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'Failed to load catalog' });
+  }
+});
+
 router.post('/:platform/orders', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
@@ -109,7 +119,7 @@ router.post('/:platform/schedule', authenticate, async (req: AuthRequest, res) =
 router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const platform = req.params.platform;
-    if (!['tiktok-live', 'youtube-shopping', 'shopify-live'].includes(platform)) {
+    if (!['tiktok-live', 'youtube-shopping', 'shopify-live', 'ebay-live'].includes(platform)) {
       return res.status(400).json({ success: false, error: 'Unsupported platform' });
     }
     const biz = await requireBusiness(req, res);
@@ -124,6 +134,10 @@ router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, nex
     }
     if (platform === 'shopify-live') {
       return res.status(400).json({ success: false, error: 'Shopify connect needs a Shopify OAuth strategy.' });
+    }
+    if (platform === 'ebay-live') {
+      // Mock OAuth redirect for eBay Live
+      return res.redirect(`/api/v1/livesell/callback/ebay?state=${token}`);
     }
   } catch (e) {
     next(e);
@@ -185,6 +199,23 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
     res.redirect(`${FRONTEND_URL}/business?livesell_success=shopify-live`);
   } catch (e) {
     console.error('Shopify callback error', e);
+    res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
+  }
+});
+
+router.get('/callback/ebay', async (req: any, res) => {
+  try {
+    const state = decodeState(req.query.state as string);
+    await liveSellerService.connect(state.businessId, {
+      platform: 'EBAY_LIVE',
+      accessToken: 'mock_ebay_access_token_' + Date.now(),
+      refreshToken: 'mock_ebay_refresh_token_' + Date.now(),
+      scope: 'https://api.ebay.com/oauth/api_scope',
+      metadata: { mockConnected: true },
+    });
+    res.redirect(`${FRONTEND_URL}/business?livesell_success=ebay-live`);
+  } catch (e) {
+    console.error('eBay callback error', e);
     res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
   }
 });

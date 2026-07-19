@@ -39,13 +39,13 @@ const FAQ = [
 
 export default function LiveSellCustomerPage() {
   const { data: showsData } = useQuery('live-sellers-customer-shows', async () => {
-    const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+    const platforms = ['tiktok-live','youtube-shopping','shopify-live','ebay-live'] as const;
     const results = await Promise.allSettled(platforms.map(p => liveSellerService.getShowState(p)));
     return results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').map(r => r.value);
   });
 
   const { data: catalog } = useQuery('live-sellers-customer-catalog', async () => {
-    const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+    const platforms = ['tiktok-live','youtube-shopping','shopify-live','ebay-live'] as const;
     const results = await Promise.allSettled(platforms.map(p => liveSellerService.getShowCatalog(p).catch(() => ({ items: [] }))));
     const catalogs = results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').map(r => r.value);
     return catalogs.flatMap(c => (c.items || []).map((it: any) => ({ ...it, platform: c.platform, businessId: c.businessId, businessName: c.businessName })));

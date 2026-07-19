@@ -165,7 +165,7 @@ export default function LiveSellingPage() {
 
 function LiveNowList() {
   const { data } = useQuery('ls-customer-status', async () => {
-    const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+    const platforms = ['tiktok-live','youtube-shopping','shopify-live', 'ebay-live'] as const;
     const results = await Promise.allSettled(platforms.map(p => liveSellerService.getShowState(p).catch(() => ({ data: { data: {} } }))));
     return results.filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled').map(r => r.value.data?.data || {});
   });

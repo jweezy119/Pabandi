@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
 import { format } from 'date-fns';
 import { 
@@ -59,6 +59,10 @@ export default function BusinessProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  const itemName = searchParams.get('item');
+  const itemPrice = searchParams.get('price');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isLiked, setIsLiked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -809,8 +813,8 @@ export default function BusinessProfilePage() {
             <div className="rounded-2xl p-6 shadow-md border border-outline-variant/20 sticky top-28 glowing-border glass-panel">
               <div className="flex justify-between items-center mb-6 border-b border-outline-variant/10 pb-4">
                 <div>
-                  <h3 className="font-headline text-xl font-bold text-primary">Book Table</h3>
-                  <p className="font-body text-xs text-on-surface-variant mt-0.5">Secure your spot instantly</p>
+                  <h3 className="font-headline text-xl font-bold text-primary">{mode === 'instant' ? 'Buy Instantly' : 'Book Table'}</h3>
+                  <p className="font-body text-xs text-on-surface-variant mt-0.5">{mode === 'instant' ? (itemName ? `Purchasing ${itemName}` : 'Secure your purchase instantly') : 'Secure your spot instantly'}</p>
                 </div>
                 
                 {/* Reliability SBT check indicators */}
@@ -830,48 +834,52 @@ export default function BusinessProfilePage() {
               )}
 
               <form onSubmit={handleBookingSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Date *</label>
-                    <input 
-                      type="date" 
-                      name="reservationDate" 
-                      required 
-                      min={format(new Date(), 'yyyy-MM-dd')} 
-                      value={formData.reservationDate} 
-                      onChange={handleBookingChange} 
-                      className="input-field" 
-                    />
+                {mode !== 'instant' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Date *</label>
+                      <input 
+                        type="date" 
+                        name="reservationDate" 
+                        required 
+                        min={format(new Date(), 'yyyy-MM-dd')} 
+                        value={formData.reservationDate} 
+                        onChange={handleBookingChange} 
+                        className="input-field" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
+                      <input 
+                        type="time" 
+                        name="reservationTime" 
+                        required 
+                        value={formData.reservationTime} 
+                        onChange={handleBookingChange} 
+                        className="input-field" 
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Time *</label>
-                    <input 
-                      type="time" 
-                      name="reservationTime" 
-                      required 
-                      value={formData.reservationTime} 
-                      onChange={handleBookingChange} 
-                      className="input-field" 
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Guests *</label>
-                    <select 
-                      name="numberOfGuests" 
-                      required 
-                      value={formData.numberOfGuests} 
-                      onChange={handleBookingChange} 
-                      className="input-field"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                        <option key={num} value={num}>{num} {num === 1 ? 'Person' : 'People'}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
+                  {mode !== 'instant' && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Guests *</label>
+                      <select 
+                        name="numberOfGuests" 
+                        required 
+                        value={formData.numberOfGuests} 
+                        onChange={handleBookingChange} 
+                        className="input-field"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                          <option key={num} value={num}>{num} {num === 1 ? 'Person' : 'People'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className={mode === 'instant' ? "col-span-2" : ""}>
                     <label className="block text-[11px] font-bold text-on-surface-variant uppercase mb-1">Your Name *</label>
                     <input 
                       type="text" 
@@ -976,7 +984,7 @@ export default function BusinessProfilePage() {
                   disabled={bookingMutation.isLoading}
                   className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
                 >
-                  {bookingMutation.isLoading ? 'Processing...' : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly')}
+                  {bookingMutation.isLoading ? 'Processing...' : (mode === 'instant' ? (itemPrice && parseFloat(itemPrice) > 0 ? `Pay $${itemPrice} to Buy` : 'Confirm Instant Order') : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly'))}
                 </button>
               </form>
               

@@ -117,6 +117,8 @@ export const processWhatsAppMessage = async (phoneNumber: string, message: strin
     context += `
 Keep your answers brief, conversational, and helpful. You must respond in English.
 If the user asks to book a table, acknowledge their request and tell them you are checking availability (simulate for now).
+If the user wants to buy an item or place an order (e.g., "I want the red shirt", "can I get the shoes"), generate an instant checkout link for them using escrow:
+"Great! You can securely buy the [Item] here: https://pabandi.com/s/demo?item=[Encoded_Item_Name]&mode=instant"
 Do not generate markdown or long lists.
 `;
 
