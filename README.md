@@ -32,9 +32,24 @@ Pabandi isn't just an app; it's a B2B integration.
 
 ### 6. Live Selling Hub & Conversational Commerce
 Pabandi transforms live streaming and chat into instant, trusted commerce.
-- **Universal Escrow Checkout:** A single link (`/s/:id?mode=instant`) that sellers can drop in TikTok, YouTube, Shopify, and eBay Live streams.
-- **eBay Live Ready:** Direct OAuth mapping for eBay Live sellers to manage inventory and capture trusted sales through Pabandi Escrow.
-- **WhatsApp AI Agent:** Integrated DashScope LLMs power a conversational agent that detects purchase intent (e.g. "I want the red shirt") and automatically generates secure Escrow checkout links for customers directly over WhatsApp.
+- **Universal Escrow Checkout:** A single link (`/s/:id?mode=instant`) that sellers can drop in TikTok, YouTube, Shopify, eBay, Amazon, Instagram, and Custom Web live streams.
+- **Platform Ready:** Direct OAuth mapping for all platforms to manage inventory and capture trusted sales through Pabandi Escrow.
+- **WhatsApp AI Agent:** Integrated LLMs power a conversational agent that detects purchase intent and automatically generates secure Escrow checkout links for customers over WhatsApp.
+
+### 7. Universal Hospitality APIs
+Seamless sync for property managers and hotels worldwide.
+- **PMS Sync:** Connects directly with Channex, Beds24, Cloudbeds, Lodgify, Hostaway, and Guesty.
+- **Escrow-Backed Stays:** Replaces standard hotel deposits with smart, verifiable escrow check-ins and check-outs.
+
+### 8. AI Concierge & Voicebox Automation
+A multimodal, context-aware AI widget for custom websites.
+- **Voice & Chat:** Handles inbound inquiries 24/7 with human-like voice or text capabilities.
+- **Direct Booking Routing:** Understands customer needs and routes them to secure escrow links instantly.
+
+### 9. Token Liquidity & DEX
+Deep liquidity and seamless off-ramps for the $PAB reward token.
+- **Raydium Integration:** Instant swaps between $PAB and SOL/USDC on Solana's leading decentralized exchange.
+- **Liquidity Pools:** Transparent, on-chain economics with rewards for community liquidity providers.
 
 ---
 
