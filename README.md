@@ -1,12 +1,10 @@
-# Pabandi Trust Ecosystem — BuildAnything Spark 2025 Hackathon
 
-Pabandi is a dual-engine agentic Trust Protocol and Escrow platform designed to eliminate Cash on Delivery (COD) fraud, no-shows, and high-friction commerce risk globally (with an initial focus on emerging markets like Pakistan).
 
 ---
 
 ## 🚀 Features
 
-### 1. Escrow Smart Contract (Monad Testnet)
+### 1. Escrow Smart Contract 
 The core of Pabandi is a lightning-fast escrow mechanism. When a customer books a service or buys a product, their funds are locked securely in escrow. Funds are released only upon successful fulfillment, instantly solving no-shows and fraud.
 
 ### 2. Multi-Vertical Trust Protocol (V2)
@@ -57,7 +55,7 @@ Deep liquidity and seamless off-ramps for the $PAB reward token.
 
 - **Frontend:** React + Vite, TailwindCSS, TypeScript, Zustand (Live on Firebase Hosting)
 - **Backend:** Node.js, Express, Prisma ORM, PostgreSQL (Deployed to GCP Cloud Run)
-- **Blockchain:** Solidity ^0.8.20 (Monad Testnet)
+- **Blockchain:** Solidity ^0.8.20 
 - **APIs:** Native Shopify Checkout Webhooks & OAuth
 
 ---
