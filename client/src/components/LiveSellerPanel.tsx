@@ -7,6 +7,7 @@ const PLATFORMS = [
   { id: 'tiktok-live', label: 'TikTok Live', brand: 'bg-[#ff0050]/10 text-[#ff0050] border-[#ff0050]/30' },
   { id: 'youtube-shopping', label: 'YouTube Shopping', brand: 'bg-red-600/10 text-red-500 border-red-600/30' },
   { id: 'shopify-live', label: 'Shopify Live', brand: 'bg-[#95BF47]/10 text-[#95BF47] border-[#95BF47]/30' },
+  { id: 'whatnot-live', label: 'Whatnot Live', brand: 'bg-yellow-400/10 text-yellow-500 border-yellow-400/30' },
   { id: 'ebay-live', label: 'eBay Live', brand: 'bg-[#0064d2]/10 text-[#0064d2] border-[#0064d2]/30' },
   { id: 'amazon-live', label: 'Amazon Live', brand: 'bg-[#ff9900]/10 text-[#ff9900] border-[#ff9900]/30' },
   { id: 'instagram-live', label: 'Instagram Live', brand: 'bg-[#e1306c]/10 text-[#e1306c] border-[#e1306c]/30' },

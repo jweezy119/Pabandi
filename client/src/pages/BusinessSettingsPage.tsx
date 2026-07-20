@@ -640,6 +640,7 @@ export default function BusinessSettingsPage() {
                 <a href="/integrations/livesell/connect/tiktok-live" className="px-4 py-2.5 rounded-xl bg-[#ff0050] text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect TikTok</a>
                 <a href="/integrations/livesell/connect/youtube-shopping" className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect YouTube</a>
                 <a href="/integrations/livesell/connect/shopify-live" className="px-4 py-2.5 rounded-xl bg-[#95BF47] text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Shopify</a>
+                <a href="/integrations/livesell/connect/whatnot-live" className="px-4 py-2.5 rounded-xl bg-yellow-400 text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Whatnot</a>
                 <a href="/integrations/livesell/connect/instagram-live" className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white text-sm font-bold hover:opacity-90 transition-opacity">Connect Instagram</a>
                 <a href="/integrations/livesell/connect/amazon-live" className="px-4 py-2.5 rounded-xl bg-[#ff9900] text-black text-sm font-bold hover:opacity-90 transition-opacity">Connect Amazon</a>
                 <a href="/integrations/livesell/connect/custom-web" className="px-4 py-2.5 rounded-xl bg-slate-700 text-white text-sm font-bold hover:opacity-90 transition-opacity">Custom Web</a>
