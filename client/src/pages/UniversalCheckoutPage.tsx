@@ -48,7 +48,7 @@ export default function UniversalCheckoutPage() {
   const { data: liveStateData } = useQuery(
     ['live-seller-state', sellerId],
     async () => {
-      const platforms = ['tiktok-live','youtube-shopping','shopify-live'] as const;
+      const platforms = ['tiktok-live','youtube-shopping','shopify-live', 'whatnot-live'] as const;
       const results = await Promise.allSettled(
         platforms.map(p => liveSellerService.getShowState(p).catch(() => ({ businessId: '', isLive: false })))
       );
