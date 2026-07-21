@@ -222,6 +222,15 @@ export const passportService = {
   dynamicEscrow: (data: { userId: string; category: string; transactionValue: number; currency?: string }) => apiClient.post('/passport/dynamic-escrow', data),
 };
 
+export const popService = {
+  recordIntent: (data: { userId: string; reservationId: string; businessId?: string; meta?: Record<string, any> }) =>
+    apiClient.post('/pop/intent', data),
+  recordArrived: (data: { userId: string; reservationId: string; businessId?: string }) =>
+    apiClient.post('/pop/arrived', data),
+  getReservation: (reservationId: string) =>
+    apiClient.get(`/pop/reservation/${encodeURIComponent(reservationId)}`),
+};
+
 export const textSearchService = {
   getSuggestions: (query: string) =>
     apiClient.get(`/text-search/suggestions`, { params: { q: query } }),

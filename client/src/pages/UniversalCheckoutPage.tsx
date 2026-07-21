@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { ArrowLeftIcon, UserIcon, CheckCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import { businessService, reservationService, liveSellerService, passportService } from '../services/api';
+import { businessService, reservationService, liveSellerService, passportService, popService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+
+function getDraftReservationId(sellerId?: string) {
+  if (!sellerId) return null;
+  const key = `reservationDraft:${sellerId}`;
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = `draft-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
 
 export default function UniversalCheckoutPage() {
   const { sellerId } = useParams<{ sellerId: string }>();
@@ -14,6 +25,8 @@ export default function UniversalCheckoutPage() {
   const [step, setStep] = useState<'details' | 'confirm'>('details');
   const [copied, setCopied] = useState(false);
   const [dae, setDae] = useState<{ suggestedEscrowPercentage: number; trustFrictionScore: number; dAE_reason?: string } | null>(null);
+  const [reservationId] = useState<string | null>(() => getDraftReservationId(sellerId));
+  const [popStatus, setPopStatus] = useState<string | null>(null);
   const [form, setForm] = useState({
     customerName: '',
     customerPhone: '',
@@ -61,6 +74,21 @@ export default function UniversalCheckoutPage() {
       cancelled = true;
     };
   }, [isAuthenticated, user?.id, category, form.priceCents]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await popService.recordIntent({ userId: user?.id || '', reservationId: reservationId || '', businessId: sellerId || '' });
+        if (!cancelled) setPopStatus('intent_recorded');
+      } catch {
+        if (!cancelled) setPopStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reservationId, sellerId, user?.id]);
 
   const { data: sellerBiz } = useQuery(
     ['business', sellerId],
@@ -137,6 +165,12 @@ export default function UniversalCheckoutPage() {
     navigator.clipboard.writeText(`https://pabandi.com/s/${sellerId}?item=${encodeURIComponent(form.itemTitle)}&price=${(form.priceCents / 100).toFixed(2)}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const markArrived = async () => {
+    if (!reservationId) return;
+    await popService.recordArrived({ userId: user?.id || '', reservationId, businessId: sellerId });
+    setPopStatus('arrived');
   };
 
   if (!seller && !liveState) {
@@ -382,6 +416,26 @@ export default function UniversalCheckoutPage() {
             </div>
           </div>
         )}
+
+        <div className="mt-6 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 sm:p-5">
+          <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Proof of presence</p>
+          <div className="flex flex-wrap gap-2">
+            {reservationId ? (
+              <>
+                <button type="button" onClick={() => void popService.recordIntent({ userId: user?.id || '', reservationId, businessId: sellerId })} className="px-3 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold">
+                  I&apos;m on my way
+                </button>
+                <button type="button" onClick={markArrived} className="px-3 py-2 rounded-xl bg-green-500 text-black text-xs font-bold">
+                  Arrived
+                </button>
+              </>
+            ) : (
+              <p className="text-xs text-on-surface-variant">PoP activates after booking draft exists.</p>
+            )}
+          </div>
+          {popStatus && <p className="mt-2 text-[10px] text-on-surface-variant">Status: {popStatus}</p>}
+          {reservationId && <p className="mt-1 text-[10px] text-on-surface-variant">Ref: {reservationId}</p>}
+        </div>
 
         {sellerId && (
           <div className="mt-8 rounded-2xl border border-outline-variant/10 bg-surface-container-low p-4 sm:p-5">
