@@ -230,4 +230,110 @@ router.post('/predict-ecommerce', async (req: ApiKeyRequest, res: Response): Pro
   }
 });
 
+/* ── Risk Engine ────────────────────────────────────────────────────────────── */
+const apiGuard = (req: any, res: Response, next: any) => {
+  if (!req.apiClient) return res.status(500).json({ success: false, error: 'Internal server error.' });
+  return next();
+};
+
+router.use(apiGuard);
+
+router.post('/score', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { userId, category } = req.body;
+    const { computePassportScore } = await import('../services/passport-risk.service');
+    const result = await computePassportScore(userId, category || 'general');
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /score error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.get('/me', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.query.userId as string;
+    const { getMyPassport } = await import('../services/passport-risk.service');
+    const result = await getMyPassport(userId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /me error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.get('/public/:userId', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { getPublicPassport } = await import('../services/passport-risk.service');
+    const result = await getPublicPassport(req.params.userId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /public error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.post('/vouch', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { sourceUserId, targetUserId } = req.body;
+    const { vouchForUser } = await import('../services/passport-risk.service');
+    const result = await vouchForUser(sourceUserId, targetUserId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /vouch error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.post('/signal/whatsapp-channel', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    const { recordWhatsAppChannelSignal } = await import('../services/passport-risk.service');
+    const result = await recordWhatsAppChannelSignal(userId, req.body);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /signal/whatsapp-channel error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.post('/signal/social-graph', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    const { recordSocialGraphSignal } = await import('../services/passport-risk.service');
+    const result = await recordSocialGraphSignal(userId, req.body);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /signal/social-graph error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.post('/web3/stake', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    const { recordWeb3Stake } = await import('../services/passport-risk.service');
+    const result = await recordWeb3Stake(userId, req.body);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /web3/stake error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
+router.get('/export', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.query.userId as string;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId is required.' });
+    }
+    const { exportPassport } = await import('../services/passport-risk.service');
+    const result = await exportPassport(userId);
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /export error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
 export default router;

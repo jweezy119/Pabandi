@@ -358,6 +358,18 @@ export default function BusinessDashboard() {
 
         <BusinessPabRewards />
 
+        {/* ── Passport Dashboard Link ── */}
+        <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Breakthrough Trust</p>
+              <h3 className="font-headline text-lg font-bold text-on-surface">Passport Dashboard</h3>
+              <p className="font-body text-xs text-on-surface-variant mt-1">Review your multi-axis score, vouch strength, and staked proof.</p>
+            </div>
+            <Link to="/passport/dashboard" className="px-3 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold shadow-sm">Open</Link>
+          </div>
+        </div>
+
         {/* ── Stats Grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <StatCard icon={<CalendarIcon className="h-6 w-6" />} label="Total Bookings" value={a.totalReservations || 0} colorClass="bg-primary-fixed" textClass="text-on-primary-fixed" />
