@@ -98,6 +98,21 @@ Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
 - **Live Health**
   - Backend health: `https://pabandi-backend-97129395003.asia-south1.run.app/health`
   - Backend docs: `https://pabandi-backend-97129395003.asia-south1.run.app/api/docs`
+- **Pre-Submission Checklist**
+  - Run locally:
+    - `cd server && npm run build`
+    - `cd client && npm run build`
+  - Live health:
+    - `curl -I https://pabandi-backend-97129395003.asia-south1.run.app/health`
+    - `curl -I https://pabandi-backend-97129395003.asia-south1.run.app/api/docs`
+  - Browser smoke test:
+    - Open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
+    - Confirm profile, claim CTA, and checkout surfaces load
+- **60-Second Judge Verify**
+  - Mobile: open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
+  - Open `/passport/dashboard` while logged in to review the AI risk score dashboard
+  - Tap `Claim Listing` → confirm WhatsApp claim overlay opens
+  - Open `JUDGE.md` and `COCREATE_DEPLOY.md` from repo root
 
 ## 👨‍💻 Quick Start (Local Development)
 
