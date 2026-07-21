@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { passportService } from '../services/api';
+import { TrustKeyring } from '../components/TrustKeyring';
 
 const TIER_COPY: Record<string, { label: string; grade: string }> = {
   gem: { label: 'Gem', grade: 'Top 5%' },
@@ -191,6 +192,10 @@ export const PassportDashboardPage = () => {
               {stakeMutation.isLoading ? 'Recording...' : 'Record Stake'}
             </button>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <TrustKeyring />
         </div>
       </div>
     </div>
