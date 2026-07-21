@@ -1,0 +1,49 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS "PassportScoreSnapshot" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "category" TEXT NOT NULL,
+  "baseScore" DOUBLE PRECISION NOT NULL,
+  "compositeScore" DOUBLE PRECISION NOT NULL,
+  "tier" TEXT NOT NULL,
+  "penalty" DOUBLE PRECISION NOT NULL,
+  "stakeBonus" DOUBLE PRECISION NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "WhatsAppChannelSignal" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "signalCategory" TEXT NOT NULL,
+  "scoreDelta" DOUBLE PRECISION NOT NULL,
+  "newCompositeScore" DOUBLE PRECISION NOT NULL,
+  "tier" TEXT NOT NULL,
+  "meta" JSONB,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "SocialGraphSignal" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "sourceUserId" TEXT,
+  "signalCategory" TEXT NOT NULL,
+  "trustDelta" DOUBLE PRECISION NOT NULL,
+  "scoreDelta" DOUBLE PRECISION NOT NULL,
+  "newCompositeScore" DOUBLE PRECISION NOT NULL,
+  "tier" TEXT NOT NULL,
+  "meta" JSONB,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Web3StakeRecord" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "stakeAmount" DOUBLE PRECISION NOT NULL,
+  "stakeBonus" DOUBLE PRECISION NOT NULL,
+  "stakeTx" TEXT,
+  "chain" TEXT,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMIT;
