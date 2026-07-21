@@ -12,6 +12,8 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { businessService, reservationService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import BusinessMap from '../components/BusinessMap';
+import { ClaimOverlay } from '../components/ClaimOverlay';
+import { PaymentLinkCard } from '../components/PaymentLinkCard';
 import { executeBscDeposit, executeSolanaDeposit } from '../utils/web3';
 import { LocalBusinessJsonLd } from '../components/LocalBusinessJsonLd';
 
@@ -117,6 +119,7 @@ export default function BusinessProfilePage() {
   const reviews = reviewsData?.data?.data?.reviews || [];
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showClaimOverlay, setShowClaimOverlay] = useState(false);
 
   // Create Reservation Mutation
   const bookingMutation = useMutation(
@@ -182,6 +185,14 @@ export default function BusinessProfilePage() {
     navigator.clipboard.writeText(window.location.href);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const openClaim = () => setShowClaimOverlay(true);
+  const submitClaim = (phone: string) => {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const waText = encodeURIComponent(`Hi ${business.name}! I want to claim this Pabandi listing and I’m reachable at ${phone}: ${window.location.href}`);
+    window.open(`https://wa.me/${cleanPhone || ''}?text=${waText}`, '_blank');
+    setShowClaimOverlay(false);
   };
 
   if (isError) {
@@ -252,6 +263,13 @@ export default function BusinessProfilePage() {
               </a>
             </div>
           )}
+          <ClaimOverlay
+            show={showClaimOverlay}
+            businessName={business.name}
+            onClose={() => setShowClaimOverlay(false)}
+            onSubmit={submitClaim}
+          />
+          <PaymentLinkCard businessId={business.id} businessName={business.name} />
 
           <div className="flex gap-3 justify-center">
             <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
@@ -428,7 +446,7 @@ export default function BusinessProfilePage() {
             
             {/* Direct Booking Shortcut Button */}
             {!business.isClaimed && (
-              <button onClick={() => navigate(`/business/join-claim?fromClaim=1&id=${business.id}`)} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
+              <button onClick={openClaim} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" /> Claim Listing
               </button>
             )}
