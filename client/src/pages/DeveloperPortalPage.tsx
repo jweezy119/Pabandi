@@ -489,6 +489,45 @@ export default function DeveloperPortalPage() {
         </div>
       </section>
 
+      {/* ── Breakthrough Passport Risk Engine ────────────────────────────────── */}
+      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '40px' }}>
+          <div style={{ flex: '1 1 420px' }}>
+            <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '16px', letterSpacing: '-0.02em' }}>Breakthrough Risk Engine</h2>
+            <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: 1.7, marginBottom: '24px' }}>The risk engine goes beyond basic identity. It scores users across multiple axes and lets platforms tune behavior in real time.</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', color: '#f1f5f9' }}>Axes</h3>
+            <ul style={{ color: '#cbd5e1', lineHeight: 1.7, paddingLeft: '18px', marginBottom: '24px' }}>
+              <li><strong style={{ color: '#e2e8f0' }}>Transaction provenance</strong> — category-weighted booking history</li>
+              <li><strong style={{ color: '#e2e8f0' }}>Channel reliability</strong> — WhatsApp response time, delivery receipts, number tenure</li>
+              <li><strong style={{ color: '#e2e8f0' }}>Social graph</strong> — trusted vouchers, cluster score</li>
+              <li><strong style={{ color: '#e2e8f0' }}>Web3 skin in the game</strong> — stake amount, bonus, and on-chain behavior</li>
+              <li><strong style={{ color: '#e2e8f0' }}>Dispute penalties</strong> — open/escalated disputes, active flags</li>
+            </ul>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', color: '#f1f5f9' }}>New Endpoints</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { method: 'POST', path: '/api/v1/passport/score', desc: 'Compute multi-axis passport score by category' },
+                { method: 'GET', path: '/api/v1/passport/me', desc: 'Full passport with axes, stake, flags' },
+                { method: 'GET', path: '/api/v1/passport/public/:userId', desc: 'Public passport for a seller or buyer' },
+                { method: 'POST', path: '/api/v1/passport/vouch', desc: 'Vouch for another user to boost trust' },
+                { method: 'POST', path: '/api/v1/passport/signal/whatsapp-channel', desc: 'Ingest WhatsApp reliability signals' },
+                { method: 'POST', path: '/api/v1/passport/signal/social-graph', desc: 'Ingest social graph and cluster signals' },
+                { method: 'POST', path: '/api/v1/passport/web3/stake', desc: 'Record Web3 stake and compute bonus' },
+                { method: 'GET', path: '/api/v1/passport/export', desc: 'Export full passport JSON' },
+              ].map((item) => (
+                <div key={item.path} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '16px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: '6px', background: item.method === 'GET' ? 'rgba(34,197,94,0.18)' : 'rgba(129,140,248,0.18)', color: item.method === 'GET' ? '#4ade80' : '#c4b5fd', fontSize: '12px', fontWeight: 800 }}>{item.method}</span>
+                    <code style={{ color: '#e2e8f0', fontSize: '14px', fontFamily: "'Fira Code', 'JetBrains Mono', monospace" }}>{item.path}</code>
+                  </div>
+                  <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ & Pricing ─────────────────────────────────────────────────────── */}
       <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto', display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
         

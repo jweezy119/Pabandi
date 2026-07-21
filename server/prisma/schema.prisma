@@ -63,6 +63,10 @@ model User {
   pabandiReviews    PabandiReview[]
   encryptedDietaryData String?
   profileChangeRequests ProfileChangeRequest[]
+  passportScoreSnapshots PassportScoreSnapshot[]
+  whatsappSignals WhatsAppChannelSignal[]
+  socialGraphSignals SocialGraphSignal[]
+  web3Stakes Web3StakeRecord[]
 
   @@index([email])
   @@index([phone])
@@ -920,4 +924,70 @@ enum ChangeStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model PassportScoreSnapshot {
+  id               String   @id @default(cuid())
+  userId           String
+  category         String
+  baseScore        Float
+  compositeScore   Float
+  tier             String
+  penalty          Float
+  stakeBonus       Float
+  socialBonus      Float
+  channelBonus     Float
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+model WhatsAppChannelSignal {
+  id               String   @id @default(cuid())
+  userId           String
+  signalCategory   String
+  scoreDelta       Float
+  newCompositeScore Float
+  tier             String
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, signalCategory])
+}
+
+model SocialGraphSignal {
+  id               String   @id @default(cuid())
+  userId           String
+  sourceUserId     String?
+  signalCategory   String
+  scoreDelta       Float
+  newCompositeScore Float
+  tier             String
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, signalCategory])
+}
+
+model Web3StakeRecord {
+  id               String   @id @default(cuid())
+  userId           String
+  stakeAmount      Float
+  stakeBonus       Float
+  newCompositeScore Float
+  tier             String
+  txHash           String?
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

@@ -45,6 +45,7 @@ import AboutPage from './pages/AboutPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
+import { PassportDashboardPage } from './pages/PassportDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
@@ -181,6 +182,10 @@ function App() {
             <Route
               path="passport"
               element={isAuthenticated ? <DietaryPassportPage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="passport/dashboard"
+              element={isAuthenticated ? <PassportDashboardPage /> : <Navigate to="/login" />}
             />
             <Route path="passport/:sellerId" element={<PublicPassportPage />} />
           </Route>

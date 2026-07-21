@@ -207,6 +207,18 @@ export const passportService = {
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}`),
   getPublicReviews: (sellerId: string) =>
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}/reviews`),
+  getMyPassport: () => apiClient.get('/passport/me'),
+  computeScore: (userId: string, category: string = 'general') =>
+    apiClient.post('/passport/score', { userId, category }),
+  vouchForUser: (sourceUserId: string, targetUserId: string) =>
+    apiClient.post('/passport/vouch', { sourceUserId, targetUserId }),
+  recordWhatsAppChannelSignal: (data: unknown) =>
+    apiClient.post('/passport/signal/whatsapp-channel', data),
+  recordSocialGraphSignal: (data: unknown) =>
+    apiClient.post('/passport/signal/social-graph', data),
+  recordWeb3Stake: ({ userId, stakeAmount }: { userId: string; stakeAmount: number }) =>
+    apiClient.post('/passport/web3/stake', { userId, stakeAmount }),
+  exportPassport: () => apiClient.get('/passport/export'),
 };
 
 export const textSearchService = {
