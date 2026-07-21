@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { ArrowLeftIcon, UserIcon, CheckCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import { businessService, reservationService, liveSellerService } from '../services/api';
+import { businessService, reservationService, liveSellerService, passportService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
 export default function UniversalCheckoutPage() {
@@ -13,6 +13,7 @@ export default function UniversalCheckoutPage() {
 
   const [step, setStep] = useState<'details' | 'confirm'>('details');
   const [copied, setCopied] = useState(false);
+  const [dae, setDae] = useState<{ suggestedEscrowPercentage: number; trustFrictionScore: number; dAE_reason?: string } | null>(null);
   const [form, setForm] = useState({
     customerName: '',
     customerPhone: '',
@@ -38,6 +39,29 @@ export default function UniversalCheckoutPage() {
     }
   }, [isAuthenticated, user]);
 
+  const category = searchParams.get('category') || 'general';
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await passportService.dynamicEscrow({
+          userId: user.id,
+          category,
+          transactionValue: Number((form.priceCents / 100).toFixed(2)),
+          currency: 'USD',
+        });
+        if (!cancelled) setDae(res?.data?.data || null);
+      } catch {
+        if (!cancelled) setDae(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.id, category, form.priceCents]);
+
   const { data: sellerBiz } = useQuery(
     ['business', sellerId],
     () => businessService.getBusiness(sellerId!),
@@ -60,7 +84,8 @@ export default function UniversalCheckoutPage() {
   );
 
   const liveState = liveStateData?.isLive ? liveStateData : null;
-  const depositAmount = liveState?.depositCents || form.priceCents;
+  const baseDeposit = liveState?.depositCents || form.priceCents;
+  const depositAmount = dae ? Math.round(baseDeposit * (dae.suggestedEscrowPercentage / 100)) : baseDeposit;
   const pabReward = liveState?.rewardPab || Math.round(form.priceCents / 100);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -162,9 +187,16 @@ export default function UniversalCheckoutPage() {
                 {liveState.platform}
               </span>
             )}
-            <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded">
-              Deposit required
-            </span>
+            {dae && (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20">
+                AI escrow {dae.suggestedEscrowPercentage}%
+              </span>
+            )}
+            {!dae && (
+              <span className="text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded">
+                Deposit required
+              </span>
+            )}
           </div>
 
           {form.itemTitle && (
@@ -277,6 +309,13 @@ export default function UniversalCheckoutPage() {
                 <span className="text-sm font-bold text-primary">${(depositAmount / 100).toFixed(2)}</span>
               </div>
 
+              {dae?.dAE_reason && (
+                <div className="mt-2 rounded-xl bg-primary/5 border border-primary/10 p-3">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">AI escrow reasoning</p>
+                  <p className="text-xs text-on-surface-variant">{dae.dAE_reason}</p>
+                </div>
+              )}
+
               <div className="flex justify-between mb-2">
                 <span className="text-xs sm:text-sm text-on-surface-variant">You&apos;ll earn</span>
                 <span className="text-sm font-bold text-orange-500">{pabReward} $PAB</span>
@@ -323,6 +362,7 @@ export default function UniversalCheckoutPage() {
                 )}
                 <p><strong>Deposit:</strong> ${(depositAmount / 100).toFixed(2)}</p>
                 <p><strong>Reward:</strong> {pabReward} $PAB after honored appointment</p>
+                {dae?.dAE_reason && <p className="text-xs text-on-surface-variant">{dae.dAE_reason}</p>}
               </div>
             </div>
 
