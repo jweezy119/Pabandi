@@ -14,7 +14,7 @@
 ## CI/CD
 - Push to `main` triggers `.github/workflows/deploy.yml`
   - Builds Docker image from `server/Dockerfile`
-  - Deploys backend to Cloud Run (`asia-south1`)
+  - Deploys backend service on Cloud Run (`asia-south1`)
   - Deploys frontend to Firebase Hosting (`pabandi-42c5b`)
 - Requires GitHub secrets for GCP + Firebase + DB
 

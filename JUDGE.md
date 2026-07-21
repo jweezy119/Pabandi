@@ -1,5 +1,9 @@
 # Pabandi — Alibaba CoCreate 2026 Judge Packet
 
+## 0. Demo Screencast
+- Captured screencast: `Screencast from 2026-07-21 09-40-19.webm`
+- Frames extracted: `/home/peesee/Pabandi/.hermes/desktop-attachments/screencast-frames/`
+
 ## 1. What to open
 - Open this exact URL on mobile first:
   - `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
