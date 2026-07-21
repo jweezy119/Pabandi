@@ -86,6 +86,7 @@ Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
 ---
 - **CoCreate 2026 Judge Quick Start**
   - Open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
+  - If that business ID isn’t seeded, open any valid `/business/:id` from admin or search.
   - Use **Claim Listing** → WhatsApp claim overlay
   - Use **Pay with Tap** → hosted checkout
   - Use **Payment Link Card** → copy/share checkout on WhatsApp
@@ -94,6 +95,9 @@ Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
   - README judge summary + quick start + live links
   - Pitch deck + generation scripts in `marketing/`
   - Migration SQL + deploy runbook in `COCREATE_DEPLOY.md`
+- **Live Health**
+  - Backend health: `https://pabandi-backend-97129395003.asia-south1.run.app/health`
+  - Backend docs: `https://pabandi-backend-97129395003.asia-south1.run.app/api/docs`
 
 ## 👨‍💻 Quick Start (Local Development)
 
