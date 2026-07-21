@@ -3,6 +3,12 @@
 
 ---
 
+## 0. Demo Screencast
+- Captured screencast: `Screencast from 2026-07-21 09-40-19.webm`
+- Frames extracted: `/home/peesee/Pabandi/.hermes/desktop-attachments/screencast-frames/`
+
+---
+
 ## 1. Open (first 10 seconds)
 | | |
 |---|---|
