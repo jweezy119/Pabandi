@@ -219,6 +219,7 @@ export const passportService = {
   recordWeb3Stake: ({ userId, stakeAmount }: { userId: string; stakeAmount: number }) =>
     apiClient.post('/passport/web3/stake', { userId, stakeAmount }),
   exportPassport: () => apiClient.get('/passport/export'),
+  dynamicEscrow: (data: { userId: string; category: string; transactionValue: number; currency?: string }) => apiClient.post('/passport/dynamic-escrow', data),
 };
 
 export const textSearchService = {

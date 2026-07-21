@@ -336,4 +336,19 @@ router.get('/export', async (req: ApiKeyRequest, res: Response): Promise<any> =>
   }
 });
 
+router.post('/dynamic-escrow', async (req: ApiKeyRequest, res: Response): Promise<any> => {
+  try {
+    const { userId, category, transactionValue, currency } = req.body || {};
+    if (!userId || !category || !transactionValue) {
+      return res.status(400).json({ success: false, error: 'userId, category, and transactionValue are required.' });
+    }
+    const { calculateDynamicEscrow } = await import('../services/passport-risk.service');
+    const result = await calculateDynamicEscrow({ userId, category, transactionValue, currency });
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    logger.error('[Passport] /dynamic-escrow error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
+
 export default router;

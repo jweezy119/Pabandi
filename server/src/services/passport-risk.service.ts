@@ -325,3 +325,60 @@ export const exportPassport = async (userId: string): Promise<PassportExportResu
     schemaVersion: '2026-07-20-passport-risk-v1',
   };
 };
+
+export interface DynamicEscrowInput {
+  userId: string;
+  category: 'hospitality' | 'live_selling' | 'freelance' | 'gig' | 'general';
+  transactionValue: number;
+  currency?: string;
+}
+
+export interface DynamicEscrowResult {
+  suggestedEscrowPercentage: number;
+  trustFrictionScore: number;
+  reasoning: string;
+}
+
+export async function calculateDynamicEscrow(input: DynamicEscrowInput): Promise<DynamicEscrowResult> {
+  const axis = await computePassportScore(input.userId, input.category);
+  const score = Math.max(0, Math.min(1000, axis.compositeScore));
+  const tier = axis.tier;
+
+  const basePercent = Math.max(0, (1000 - score) / 20);
+  const tierFloor = tier === 'PLATINUM' ? 5 : tier === 'ELITE' || score >= 950 ? 0 : null;
+
+  const [stakeCount, streakRaw] = await Promise.all([
+    prisma.web3StakeRecord.count({ where: { userId: input.userId } }),
+    prisma.passportScoreSnapshot.count({
+      where: {
+        userId: input.userId,
+        category: input.category,
+        compositeScore: { gte: 700 },
+      },
+    }),
+  ]);
+
+  const streakDiscount = Math.min(15, streakRaw * 2);
+  const web3Bonus = stakeCount > 0 ? 10 : 0;
+
+  const categoryMultiplier =
+    input.category === 'live_selling' ? 1.2 : input.category === 'freelance' ? 1.1 : 1;
+
+  let finalPct = Math.max(tierFloor ?? 0, (basePercent * categoryMultiplier) - streakDiscount - web3Bonus);
+  finalPct = Number(finalPct.toFixed(2));
+
+  const friction =
+    score >= 850 ? 0 : score >= 700 ? 15 : score >= 500 ? 40 : 65 + Math.min(20, input.transactionValue / 500);
+
+  const reasons: string[] = [];
+  if (tierFloor !== null && finalPct <= tierFloor) reasons.push(`${tier} floor applied`);
+  if (streakDiscount) reasons.push(`${streakDiscount}% streak discount`);
+  if (web3Bonus) reasons.push(`${web3Bonus}% Web3 bonus`);
+  if (categoryMultiplier > 1) reasons.push(`${input.category} risk multiplier`);
+
+  return {
+    suggestedEscrowPercentage: finalPct,
+    trustFrictionScore: Number(friction.toFixed(2)),
+    reasoning: reasons.length ? reasons.join(', ') : 'Standard escrow curve',
+  };
+}

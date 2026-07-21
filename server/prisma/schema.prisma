@@ -991,3 +991,16 @@ model Web3StakeRecord {
 
   @@index([userId])
 }
+
+model PopEvidencePackage {
+  id               String   @id @default(cuid())
+  reservationId    String
+  evidence         Json
+  buyerIntentAt    DateTime?
+  merchantStartAt DateTime?
+  merchantFulfillAt DateTime?
+  noShowAt         DateTime?
+  createdAt        DateTime @default(now())
+
+  @@index([reservationId])
+}

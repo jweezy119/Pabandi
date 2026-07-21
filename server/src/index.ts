@@ -188,6 +188,10 @@ app.use(`/api/${API_VERSION}/text-search`, textSearchRoutes);
 import passportRoutes from './routes/passport.routes';
 app.use(`/api/${API_VERSION}/passport`, passportRoutes);
 
+// ── Proof-of-Presence API ──────────────────────────────────────────
+import popRoutes from './routes/pop.routes';
+app.use(`/api/${API_VERSION}/pop`, popRoutes);
+
 // ── Zero-Knowledge Network API (Shopify/E-Commerce Plugins) ──────────────────
 import networkRoutes from './routes/network.routes';
 app.use(`/api/${API_VERSION}/network`, networkRoutes);
