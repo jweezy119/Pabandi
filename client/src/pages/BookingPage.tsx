@@ -100,15 +100,17 @@ export default function BookingPage() {
     } else {
       setIsProcessingWeb3(true);
       try {
+        let web3Result: { success: boolean; transactionHash?: string; error?: string } | undefined;
+        
         if (formData.paymentMethod === 'bsc') {
-          const result = await executeBscDeposit(reservation.depositAmount?.toString() || "0.05", business.walletAddress || "0xMockBusinessAddress", reservation.id);
-          if (!result.success) throw new Error(result.error);
+          web3Result = await executeBscDeposit(reservation.depositAmount?.toString() || "0.05", business.walletAddress || "", reservation.id);
+          if (!web3Result.success) throw new Error(web3Result.error || 'BSC deposit failed');
         } else if (formData.paymentMethod === 'solana') {
-          const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress"); // Mocking conversion
-          if (!result.success) throw new Error(result.error);
+          web3Result = await executeSolanaDeposit(0.1, business.walletAddress || "");
+          if (!web3Result.success) throw new Error(web3Result.error || 'Solana deposit failed');
         } else if (formData.paymentMethod === 'stellar-franklin') {
-          const result = await executeStellarFranklinDeposit("10.00", business.walletAddress || "MockBusinessAddress"); // Mocking conversion
-          if (!result.success) throw new Error(result.error);
+          web3Result = await executeStellarFranklinDeposit("10.00", business.walletAddress || "");
+          if (!web3Result.success) throw new Error(web3Result.error || 'Stellar deposit failed');
         } else if (formData.paymentMethod === 'stake') {
           await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
         }
@@ -116,7 +118,7 @@ export default function BookingPage() {
         // Update reservation on backend
         await reservationService.updateReservation(reservation.id, {
            depositStatus: 'PAID',
-           cryptoDepositTxHash: 'WEB3_TX_MOCK', // In real app, pass actual tx hash
+           cryptoDepositTxHash: web3Result?.transactionHash || '',
         });
         navigate('/reservations');
       } catch (err: any) {

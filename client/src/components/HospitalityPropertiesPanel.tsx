@@ -40,20 +40,10 @@ type Reminder = {
   sent: boolean;
 };
 
-function tomorrowDate() {
-  const d = new Date(Date.now() + 86_400_000);
-  return d.toISOString().split('T')[0];
-}
-
-const MOCK_REMINDERS: Reminder[] = [
-  { id: 'r1', propertyName: 'Karachi Boutique Hotel', guestName: 'Ahmad Test Guest', time: tomorrowDate() + ' 15:00', sent: false },
-  { id: 'r2', propertyName: 'Karachi Boutique Hotel', guestName: 'Sara Ali', time: new Date(Date.now() + 2 * 86_400_000).toISOString().split('T')[0] + ' 11:00', sent: false },
-];
-
 export default function HospitalityPropertiesPanel() {
   const qc = useQueryClient();
   const [showWizard, setShowWizard] = useState(false);
-  const [reminders, setReminders] = useState<Reminder[]>(MOCK_REMINDERS);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   const { data, isLoading } = useQuery('hospitality-properties', () => hospitalityService.getProperties());
 
@@ -61,10 +51,10 @@ export default function HospitalityPropertiesPanel() {
     (propertyId: string) => hospitalityService.testBooking(propertyId),
     {
       onSuccess: () => {
-        alert('✅ Simulated booking event sent.');
+        alert('Test event sent to Channex.');
       },
       onError: () => {
-        alert('Simulated booking failed — property may not be connected yet.');
+        alert('Test event failed — check your Channex connection.');
       },
     }
   );

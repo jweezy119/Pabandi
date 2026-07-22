@@ -395,8 +395,8 @@ export default function HospitalityPage() {
         <section className="mb-20">
           <div className="text-center mb-8">
             <h2 className="font-headline text-2xl md:text-3xl font-black text-white">Built for Every Hospitality Type</h2>
-            <p className="text-xs text-on-surface-variant mt-2 max-w-lg mx-auto">
-              From a single-room guesthouse in Chicago to a safari camp in East Africa — if you take bookings, Pabandi protects you.
+            <p className="text-xs text-on-surface-variant">
+              Reserve your slot in the check-in queue for this venue.
             </p>
           </div>
 

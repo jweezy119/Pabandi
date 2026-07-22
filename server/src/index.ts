@@ -67,7 +67,7 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
 if (DEMO_MODE) {
-  logger.warn('DEMO_MODE enabled — mock checkout/payment flows are active');
+  logger.warn('DEMO_MODE enabled');  
 }
 
 // Security and Performance middleware
