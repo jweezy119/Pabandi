@@ -8,7 +8,7 @@ import {
   TrophyIcon, FireIcon, CurrencyDollarIcon,
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import apiClient, { cryptoService, walletService, socialService, stakingService } from '../services/api';
+import apiClient, { cryptoService, walletService, socialService, stakingService, treasuryService } from '../services/api';
 import { executeStellarLiquidityDeposit, executeSolanaLiquidityDeposit } from '../utils/web3';
 import { useAuthStore } from '../store/authStore';
 /* ── Types ── */
@@ -343,6 +343,11 @@ export default function WalletDashboard() {
   const [solanaOtherAmount, setSolanaOtherAmount] = useState<number>(0);
   const [isSolanaLoading, setIsSolanaLoading] = useState<boolean>(false);
 
+  // Treasury / Price Defense State
+  const [totalTreasury, setTotalTreasury] = useState(0);
+  const [treasuryOp, setTreasuryOp] = useState(0);
+  const [treasuryLp, setTreasuryLp] = useState(0);
+
   const handleStellarLpDeposit = async () => {
     if (!stellarPabAmount || !stellarOtherAmount) return;
     setIsStellarLoading(true);
@@ -446,6 +451,26 @@ export default function WalletDashboard() {
   const offChainBalance = Number(balances?.offChainBalance || 0);
   const onChainBalance = Number(balances?.onChainBalance || 0);
   const totalStaked = Number(balances?.totalStaked || 0);
+
+  // Treasury Dynamic Price Defense / held money
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await treasuryService.getSummary();
+        const data = res.data;
+        if (cancelled) return;
+        setTotalTreasury(data?.total || 0);
+        setTreasuryOp(data?.byBucket?.OPERATING || 0);
+        setTreasuryLp((data?.byBucket?.LP_PROVISION || 0) + (data?.byBucket?.YIELD_REINVEST || 0));
+      } catch {
+        // keep defaults
+      }
+    };
+    load();
+    const timer = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
   const balance = offChainBalance + onChainBalance + totalStaked;
   
   
@@ -713,6 +738,29 @@ export default function WalletDashboard() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Treasury / Price Defense Ticker */}
+            <div className="rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-6 mb-6">
+              <p className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Treasury / Price Defense</p>
+              <h3 className="font-headline text-lg font-black text-on-surface">Held Capital & Liquidity Backstop</h3>
+              <p className="font-body text-[11px] text-on-surface-variant mt-1">
+                Treasury draws a small tribute from minted rewards to support LP depth, buybacks, and protocol-level defense. The balance below represents accumulated idle capital working for price resilience and revenue generation.
+              </p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-lg bg-surface p-4">
+                  <p className="font-label text-[10px] font-bold text-on-surface-variant">Total Treasury</p>
+                  <p className="font-headline text-xl font-bold text-on-surface">{totalTreasury.toLocaleString()} PAB</p>
+                </div>
+                <div className="rounded-lg bg-surface p-4">
+                  <p className="font-label text-[10px] font-bold text-on-surface-variant">Operating Reserve</p>
+                  <p className="font-headline text-xl font-bold text-on-surface">{treasuryOp.toLocaleString()} PAB</p>
+                </div>
+                <div className="rounded-lg bg-surface p-4">
+                  <p className="font-label text-[10px] font-bold text-on-surface-variant">LP / Yield Reserve</p>
+                  <p className="font-headline text-xl font-bold text-on-surface">{treasuryLp.toLocaleString()} PAB</p>
+                </div>
+              </div>
             </div>
 
             {/* Stellar RWA Liquidity Pool */}

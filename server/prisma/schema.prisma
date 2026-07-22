@@ -621,6 +621,20 @@ model StakingPosition {
   @@index([userId])
 }
 
+model TreasuryPosition {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bucket    String // OPERATING | TREASURY | LP_PROVISION | YIELD_REINVEST | EMERGENCY
+  amount    Float
+  txHash    String?
+  status    String   @default("PENDING") // PENDING | DEPLOYED | REPATRIATED
+  meta      Json?
+
+  @@index([bucket])
+  @@index([status])
+}
+
 model Dispute {
   id               String          @id @default(cuid())
   userId           String?
