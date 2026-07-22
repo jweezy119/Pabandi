@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
 
-import { reservationService } from '../services/api';
+import { reservationService, popService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import { CalendarIcon, ClockIcon, PlusIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, FlagIcon } from '@heroicons/react/24/outline';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; accent: string; icon: React.ReactNode }> = {
   CONFIRMED:  { label: 'Confirmed',  bg: 'bg-tertiary-fixed', color: 'text-on-tertiary-fixed-variant', accent: 'bg-tertiary-fixed-dim', icon: <CheckCircleIcon className="h-4 w-4" /> },
   PENDING:    { label: 'Pending',    bg: 'bg-secondary-container', color: 'text-on-secondary-fixed-variant', accent: 'bg-secondary-container', icon: <ClockIcon className="h-4 w-4" /> },
   CANCELLED:  { label: 'Cancelled', bg: 'bg-surface-container-highest', color: 'text-on-surface-variant', accent: 'bg-surface-container-high', icon: <XCircleIcon className="h-4 w-4" /> },
-  NO_SHOW:    { label: 'No-Show',   bg: 'bg-error-container',  color: 'text-on-error-container', accent: 'bg-error', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
+  NO_SHOW:    { label: 'No-Show',   bg: 'bg-error-container',  color: 'text-on-error-container',  accent: 'bg-error', icon: <ExclamationTriangleIcon className="h-4 w-4" /> },
   COMPLETED:  { label: 'Completed', bg: 'bg-primary-container', color: 'text-on-primary-container', accent: 'bg-primary', icon: <CheckCircleIcon className="h-4 w-4" /> },
   PENDING_CONCIERGE: { label: 'Concierge Booking', bg: 'bg-amber-500/20', color: 'text-amber-600', accent: 'bg-amber-500', icon: <ClockIcon className="h-4 w-4 animate-pulse" /> },
   FAILED_CONCIERGE: { label: 'Concierge Failed', bg: 'bg-error-container', color: 'text-on-error-container', accent: 'bg-error', icon: <XCircleIcon className="h-4 w-4" /> },
@@ -282,6 +283,25 @@ export default function ReservationsPage() {
                        <Link to={`/business/${r.businessId}`} className="flex-1 bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-bold py-3.5 sm:py-2.5 rounded-xl sm:rounded-md hover:opacity-90 transition-opacity text-center block touch-target">
                          Book Again
                        </Link>
+                     )}
+
+                     {r.status === 'CONFIRMED' && !isBusinessOwner && (
+                       <div className="flex gap-2">
+                        <button
+                          onClick={() => popService.recordIntent({ userId: user?.id || '', reservationId: r.id, businessId: r.businessId })}
+                          className="flex-1 flex items-center justify-center gap-1 rounded-xl border border-outline-variant/30 bg-surface-container-low py-2 text-xs font-bold text-on-surface hover:bg-surface-container-high touch-target"
+                          title="Record intent / on my way"
+                        >
+                          <MapPinIcon className="h-4 w-4" /> On my way
+                        </button>
+                        <button
+                          onClick={() => popService.recordArrived({ userId: user?.id || '', reservationId: r.id, businessId: r.businessId })}
+                          className="flex-1 flex items-center justify-center gap-1 rounded-xl border border-outline-variant/30 bg-surface-container-low py-2 text-xs font-bold text-on-surface hover:bg-surface-container-high touch-target"
+                          title="Mark arrived"
+                        >
+                          <FlagIcon className="h-4 w-4" /> Arrived
+                        </button>
+                      </div>
                      )}
 
                      {/* Business Owner Actions */}
