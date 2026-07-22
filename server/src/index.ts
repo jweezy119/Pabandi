@@ -241,7 +241,7 @@ setupSwagger(app);
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {
   res.json({
-    name: 'Pabandi Zero-Knowledge Fraud Network API & Consumer Booking Engine',
+    name: 'Pabandi Live Commerce API',
     version: API_VERSION,
     description: 'Pabandi live commerce API: escrowed bookings, merchant control plane, hosted checkout webhooks, trust passport, and integrations for buyers and sellers.',
     endpoints: {
@@ -264,7 +264,7 @@ app.get(`/api/${API_VERSION}/docs`, (req, res) => {
       },
     },
     sdkExample: {
-      checkHash: `curl -X POST https://api.pabandi.com/api/v1/network/check-hash -H "Authorization: Bearer <API_KEY>" -d '{"hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'`,
+      checkHash: `curl -X POST https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/network/check-hash -H "Authorization: Bearer ***" -d '{"hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'`,
     }
   });
 });

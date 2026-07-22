@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { isDemoMode } from '../utils/env';
 
 // Create a new checkout session (Hosted Payment Link)
 export const createCheckoutSession = async (req: Request, res: Response) => {
