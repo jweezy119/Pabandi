@@ -469,7 +469,7 @@ class HospitalityService {
   private async registerWebhookWithPms(property: ConnectedProperty): Promise<void> {
     // In production: call PMS API to register our webhook URL
     // e.g., POST https://api.beds24.com/v2/settings/webhooks
-    // with { url: `https://api.pabandi.com/api/hospitality/${property.provider}/webhook`, token: property.signingSecret }
+    // with { url: `${process.env.BACKEND_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app'}/api/v1/hospitality/${property.provider}/webhook`, token: property.signingSecret }
     logger.info(
       `[Hospitality] Webhook registration queued for ${property.provider} property "${property.propertyName}"`
     );
