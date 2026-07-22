@@ -1,4 +1,3 @@
-
 import { Router, Request, Response, NextFunction } from 'express';
 import { openwaService } from '../services/openwa.service';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
@@ -61,3 +60,7 @@ router.post('/send-text', async (req: Request, res: Response, next: NextFunction
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
+  }
+});
+
+export default router;
