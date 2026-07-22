@@ -283,4 +283,17 @@ export const adminService = {
   rejectProfileRequest: (id: string) => apiClient.put(`/admin/profile-requests/${id}/reject`),
 };
 
+export const partnerService = {
+  getDashboard: () => apiClient.get('/partners/dashboard'),
+  createInvite: (data: { code?: string; note?: string }) => apiClient.post('/partners/invite/create', data),
+};
+
+export const openwaService = {
+  getStatus: () => apiClient.get('/openwa/status'),
+};
+
+export const treasuryService = {
+  getSummary: () => apiClient.get('/treasury/summary'),
+};
+
 export default apiClient;
