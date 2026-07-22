@@ -327,7 +327,7 @@ export default function NewReservationPage() {
 
       const checkoutUrl = response?.data?.data?.checkoutUrl;
       if (form.paymentMethod === "safepay" && checkoutUrl) {
-        if (checkoutUrl.includes("getsafepay.com")) {
+        if (checkoutUrl.includes("getsafepay.com") || checkoutUrl.startsWith("http")) {
           window.location.href = checkoutUrl;
           return;
         }

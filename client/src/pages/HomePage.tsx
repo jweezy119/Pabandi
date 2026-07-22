@@ -755,8 +755,8 @@ export default function HomePage() {
             <p className="font-body text-on-surface-variant text-sm mt-2 mb-4">
               Experience how Pabandi protects businesses and rewards customers using smart contracts.
             </p>
-            <Link to="/checkout/session_demo_123" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
-              Try sandbox checkout ↗
+            <Link to="/checkout" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+              Try checkout ↗
             </Link>
           </div>
           <InteractiveEscrowSandbox />

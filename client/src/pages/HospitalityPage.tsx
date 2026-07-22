@@ -163,15 +163,14 @@ export default function HospitalityPage() {
       });
       
       const data = await res.json();
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+      if (data.paymentUrl || data.data?.checkoutUrl) {
+        window.location.href = data.paymentUrl || data.data.checkoutUrl;
       } else {
-        // Fallback demo URL if backend isn't running fully
-        window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
+        alert('Payment checkout unavailable. Please try again.');
       }
     } catch (e) {
       console.error(e);
-      window.location.href = `https://sandbox.api.getsafepay.com/checkout/pay?amount=${price * 278}&currency=USD&environment=sandbox`;
+      alert('Payment checkout failed. Please try again.');
     }
     setIsProcessingCheckout(false);
   };
