@@ -18,6 +18,9 @@ import { buildOutreachMessageFromCatalog } from '../services/openwa.plugins.serv
 import { openwaChatFlowService } from '../services/openwa.chat-flow.service';
 import { channexService } from '../services/channex.service';
 import moment from 'moment-timezone';
+import { ReferralService } from '../services/referral.service';
+
+const referralService = new ReferralService();
 
 export const createReservation = async (
   req: AuthRequest,
@@ -810,6 +813,14 @@ export const completeReservation = async (
 
     // Ask for feedback via WhatsApp
     await notificationService.sendReviewRequest(reservation.id);
+
+    // Trigger Referral Commission & First Booking Bounty
+    try {
+      await referralService.processFirstBookingBounty(reservation.id);
+      await referralService.calculateBookingCommission(reservation.id);
+    } catch (e: any) {
+      logger.error(`[Referral] Failed to calculate commission: ${e.message}`);
+    }
 
     res.json({
       success: true,

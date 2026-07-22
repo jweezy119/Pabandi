@@ -47,6 +47,7 @@ import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import demoRoutes from './routes/demo.routes';
+import accountManagerRoutes from './routes/accountManager.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -174,6 +175,7 @@ app.use(`/api/${API_VERSION}/airdrop`, airdropRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
+app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
 app.use('/', tapRoutes);

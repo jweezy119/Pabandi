@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
+import { ReferralService } from '../services/referral.service';
+
+const referralService = new ReferralService();
 
 // ─── GET /admin/stats ───────────────────────────────────────────────
 export const getAdminStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -156,6 +159,7 @@ export const verifyBusiness = async (req: AuthRequest, res: Response, next: Next
       where: { id: req.params.id },
       data: { isVerified: true },
     });
+
     res.json({ success: true, data: { business } });
   } catch (error) {
     next(error);
