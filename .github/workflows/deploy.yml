@@ -34,12 +34,10 @@ jobs:
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server
 
       - name: Create env.yaml
-        run: |
+        run: |-
           cat <<EOF > env.yaml
           NODE_ENV: production
           API_VERSION: v1
-          DATABASE_URL: "${{ secrets.DATABASE_URL }}"
-          DIRECT_URL: "${{ secrets.DIRECT_URL }}"
           FRONTEND_URL: "${{ secrets.FRONTEND_URL }}"
           BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
           JWT_SECRET: "${{ secrets.JWT_SECRET }}"
@@ -59,6 +57,12 @@ jobs:
       - name: Deploy to Cloud Run
         run: |-
           gcloud run deploy pabandi-server \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
+            --region asia-south1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --env-vars-file env.yaml
+          gcloud run deploy pabandi-backend \
             --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/pabandi-server \
             --region asia-south1 \
             --platform managed \
