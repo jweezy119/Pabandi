@@ -1126,7 +1126,7 @@ export const generateApiKey = async (
     const client = await prisma.apiClient.create({
       data: {
         name,
-        email: business.email || `api-${business.id}@pabandi.local`, // Fallback
+        email: business.email || `api-client-${name}@pabandi.local`, // Fallback
         apiKey,
         businessId: business.id,
         tier: 'STARTER',

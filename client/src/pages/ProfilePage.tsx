@@ -993,7 +993,7 @@ export default function ProfilePage() {
                     Each connection enriches your reliability score with cross-platform trust signals.
                   </p>
                   <p className="text-[10px] text-on-surface-variant mt-1 italic">
-                    Demo mode — social identity stubs are saved to your profile.
+                    Connected accounts add cross-platform trust signals to your Pabandi profile.
                   </p>
                 </div>
                 {connectedCount > 0 && (

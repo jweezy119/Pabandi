@@ -1,5 +1,4 @@
 import { logger } from '../utils/logger';
-import { isDemoMode } from '../utils/env';
 
 // Standard Safepay Environment URLs
 const SAFEPAY_API_URL = process.env.NODE_ENV === 'production'
@@ -18,10 +17,7 @@ export const safepayService = {
   async createCheckoutUrl(amount: number, reservationId: string): Promise<string> {
     if (!SAFEPAY_API_KEY || !SAFEPAY_SECRET_KEY) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      if (isDemoMode()) {
-        logger.warn('Safepay credentials not set — returning demo checkout URL');
-        return `${frontendUrl}/reservations?safepay_mock_success=true&ref=${reservationId}`;
-      }
+      logger.warn('Safepay credentials not set');
       return `${frontendUrl}/reservations?safepay_disabled=true&ref=${reservationId}`;
     }
 
@@ -76,12 +72,9 @@ export const safepayService = {
       return checkoutUrl;
 
     } catch (error) {
-      logger.error('Failed to create Safepay checkout. Keys might not be valid yet. Using MVP Fallback URL.');
+      logger.error('Failed to create Safepay checkout. Keys might not be valid yet.');
       // Fallback for testing frontend logic if true API keys aren't set
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      if (isDemoMode()) {
-        return `${baseUrl}/reservations?safepay_mock_success=true&ref=${reservationId}`;
-      }
       return `${baseUrl}/reservations?safepay_disabled=true&ref=${reservationId}`;
     }
   },
@@ -138,7 +131,7 @@ export const safepayService = {
     } catch (error) {
       logger.error('Failed to create Safepay checkout. Using MVP Fallback URL for Developer portal.');
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return `${baseUrl}/developer?safepay_mock_success=true&ref=${referenceId}`;
+      return `${baseUrl}/developer?safepay_disabled=true&ref=${referenceId}`;
     }
   },
 

@@ -1,5 +1,4 @@
 import { logger } from '../utils/logger';
-import { isDemoMode } from '../utils/env';
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
@@ -59,10 +58,7 @@ export const paypalService = {
       `${frontendUrl}/reservations?paypal_cancel=true&ref=${reservationId}`;
 
     if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-      if (isDemoMode()) {
-        logger.warn('PayPal credentials not set — returning demo checkout URL');
-        return `${frontendUrl}/reservations?paypal_mock_success=true&ref=${reservationId}`;
-      }
+      logger.warn('PayPal credentials not set');
       return `${frontendUrl}/reservations?paypal_disabled=true&ref=${reservationId}`;
     }
 
@@ -121,9 +117,6 @@ export const paypalService = {
       return approveLink;
     } catch (error: any) {
       logger.error('PayPal checkout creation failed', error.message);
-      if (isDemoMode()) {
-        return `${frontendUrl}/reservations?paypal_mock_success=true&ref=${reservationId}`;
-      }
       return `${frontendUrl}/reservations?paypal_disabled=true&ref=${reservationId}`;
     }
   },
