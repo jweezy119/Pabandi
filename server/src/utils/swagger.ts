@@ -6,9 +6,9 @@ const options: swaggerJSDoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Pabandi B2B API',
+      title: 'Pabandi Live Commerce API',
       version: '1.0.0',
-      description: 'API for Pabandi ecosystem integrations (Odoo, Cal.com, etc.)',
+      description: 'Pabandi live commerce API: bookings, checkout, trust passport, integrations, and developer access for buyers and sellers.',
     },
     servers: [
       {
