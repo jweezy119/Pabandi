@@ -39,13 +39,11 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
     const host = process.env.FRONTEND_URL || 'http://localhost:3000';
     const checkoutUrl = `${host}/checkout/${session.id}`;
-    const demoCheckoutUrl = isDemoMode() ? `/checkout/session_demo_123` : checkoutUrl;
-
     return res.status(201).json({
       success: true,
       data: {
         sessionId: session.id,
-        checkoutUrl: demoCheckoutUrl
+        checkoutUrl
       }
     });
   } catch (error) {
@@ -58,29 +56,6 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 export const getCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    if (id === 'session_demo_123' && !isDemoMode()) {
-      return res.status(404).json({ success: false, error: 'Checkout session not found' });
-    }
-
-    if (id === 'session_demo_123') {
-      return res.json({
-        success: true,
-        data: {
-          id: 'session_demo_123',
-          amount: 49.99,
-          currency: 'USD',
-          status: 'PENDING',
-          escrowTerms: { depositPercentage: 100, description: 'Sandbox Escrow Test' },
-          business: {
-            id: 'biz_demo_1',
-            name: 'Pabandi Sandbox Business',
-            trustScore: 98,
-            isVerified: true
-          }
-        }
-      });
-    }
 
     const session = await prisma.checkoutSession.findUnique({
       where: { id },
@@ -120,19 +95,6 @@ export const getCheckoutSession = async (req: Request, res: Response) => {
 export const completeCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
-    if (id === 'session_demo_123' && !isDemoMode()) {
-      return res.status(404).json({ success: false, error: 'Checkout session not found' });
-    }
-
-    if (id === 'session_demo_123') {
-      return res.json({
-        success: true,
-        data: {
-          redirectUrl: '/checkout-success?amount=49.99&business=Pabandi+Sandbox+Business'
-        }
-      });
-    }
 
     const session = await prisma.checkoutSession.findUnique({
       where: { id }

@@ -14,10 +14,6 @@ const options: swaggerJSDoc.Options = {
       {
         url: 'https://pabandi-backend-97129395003.asia-south1.run.app',
         description: 'Production server'
-      },
-      {
-        url: 'http://localhost:8080',
-        description: 'Local development server'
       }
     ],
     components: {
