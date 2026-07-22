@@ -96,13 +96,13 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
 
   if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
     console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
-    await sendWhatsAppMessage(customerPhone, 'Welcome to Pabandi! We are currently upgrading our AI systems. Please check back later or use our website to manage your bookings.');
+    await sendWhatsAppMessage(customerPhone, 'Pabandi AI is disabled in demo mode. Please use the app to manage bookings.');
     return;
   }
 
   try {
     let context = 'You are the Pabandi AI Assistant. Pabandi is a reliability and trust layer launching first in Pakistan, built for informal commerce worldwide.\n';
-    let businessSlug = 'demo';
+    let businessSlug = 'unknown';
     let catalogPrompt = '';
 
     const business = await findBusinessByPublicPhone(businessPhone);

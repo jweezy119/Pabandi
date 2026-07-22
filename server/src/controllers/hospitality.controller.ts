@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
 import { logger } from '../utils/logger';
+import { isDemoMode } from '../utils/env';
 
 // ─── Webhook Receivers ────────────────────────────────────────────────────────
 
@@ -236,6 +237,10 @@ export async function getProperty(req: Request, res: Response) {
  */
 export async function simulateBooking(req: Request, res: Response) {
   try {
+    if (!isDemoMode()) {
+      return res.status(404).json({ error: 'Demo simulator is disabled' });
+    }
+
     const propertyId = req.body.propertyId || req.query.propertyId;
     const property = await hospitalityService.getPropertyById(propertyId as string);
 

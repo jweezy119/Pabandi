@@ -140,7 +140,7 @@ export function configurePassport() {
         },
         async (req: any, _accessToken, _refreshToken, profile, done) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.username}@twitter.oauth.placeholder`;
+            const email = profile.emails?.[0]?.value || `${profile.username}@pabandi.local`;
             const profilePictureUrl = profile.photos?.[0]?.value;
 
             const role: UserRole = req.query?.state === 'business' ? UserRole.BUSINESS_OWNER : UserRole.CUSTOMER;
@@ -162,7 +162,7 @@ export function configurePassport() {
             } else {
               user = await (prisma.user as any).update({
                 where: { email },
-                data: { 
+                data: {
                   twitterId: profile.id,
                   profilePictureUrl: user.profilePictureUrl || profilePictureUrl
                 },
@@ -239,7 +239,7 @@ export function configurePassport() {
         },
         async (req: any, _accessToken: string, _refreshToken: string, profile: any, done: any) => {
           try {
-            const email = profile.emails?.[0]?.value || `${profile.id}@tiktok.oauth.placeholder`;
+          const email = profile.emails?.[0]?.value || `${profile.id}@pabandi.local`;
             const profilePictureUrl = profile.avatar_url;
 
             const role: UserRole = req.query?.state === 'business' ? UserRole.BUSINESS_OWNER : UserRole.CUSTOMER;

@@ -421,18 +421,21 @@ export class BlockchainService {
     if (!web3) return { error: '@solana/web3.js not found' };
 
     try {
-      // In production, this would call a Solana program that implements EAS-like schema registries.
-      // We simulate the delay and the transaction generation.
-      const bs58 = (await import('bs58')).default;
-      
-      // Simulate generating a unique hash for the attestation
-      const rawData = JSON.stringify({ userId, reservationId, action, metadata, timestamp: Date.now() });
-      const crypto = await import('crypto');
-      const hash = crypto.createHash('sha256').update(rawData).digest();
-      const mockTxSignature = bs58.encode(hash);
+      const mockMode = process.env.MOCK_BLOCKCHAIN === 'true';
 
-      logger.info(`[Blockchain] Attestation Logged on Solana: ${action} for User ${userId}. txHash: ${mockTxSignature}`);
-      return { txHash: mockTxSignature };
+      // In production, this would call a Solana program that implements EAS-like schema registries.
+      if (mockMode) {
+        const bs58 = (await import('bs58')).default;
+        const rawData = JSON.stringify({ userId, reservationId, action, metadata, timestamp: Date.now() });
+        const crypto = await import('crypto');
+        const hash = crypto.createHash('sha256').update(rawData).digest();
+        const mockTxSignature = bs58.encode(hash);
+
+        logger.info(`[Blockchain][MOCK] Attestation simulated for ${action}. txHash: ${mockTxSignature}`);
+        return { txHash: mockTxSignature };
+      }
+
+      return { error: 'Production Solana attestation not implemented yet' };
     } catch (err: any) {
       logger.error(`[Blockchain] Solana Attestation failed: ${err.message}`);
       return { error: err.message };

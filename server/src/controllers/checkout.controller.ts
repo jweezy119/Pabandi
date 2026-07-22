@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { isDemoMode } from '../utils/env';
 
 // Create a new checkout session (Hosted Payment Link)
 export const createCheckoutSession = async (req: Request, res: Response) => {
@@ -19,7 +20,6 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Business not found' });
     }
 
-    // Default expiry to 24 hours
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -37,11 +37,15 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
       }
     });
 
+    const host = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const checkoutUrl = `${host}/checkout/${session.id}`;
+    const demoCheckoutUrl = isDemoMode() ? `/checkout/session_demo_123` : checkoutUrl;
+
     return res.status(201).json({
       success: true,
       data: {
         sessionId: session.id,
-        checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}`
+        checkoutUrl: demoCheckoutUrl
       }
     });
   } catch (error) {
@@ -54,6 +58,10 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 export const getCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    if (id === 'session_demo_123' && !isDemoMode()) {
+      return res.status(404).json({ success: false, error: 'Checkout session not found' });
+    }
 
     if (id === 'session_demo_123') {
       return res.json({
@@ -112,6 +120,10 @@ export const getCheckoutSession = async (req: Request, res: Response) => {
 export const completeCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    if (id === 'session_demo_123' && !isDemoMode()) {
+      return res.status(404).json({ success: false, error: 'Checkout session not found' });
+    }
 
     if (id === 'session_demo_123') {
       return res.json({

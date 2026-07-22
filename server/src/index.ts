@@ -46,6 +46,7 @@ import loanRoutes from './routes/loan.routes';
 import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
 import treasuryRoutes from './routes/treasury.routes';
+import demoRoutes from './routes/demo.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +63,11 @@ try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' +
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 5000);
 const API_VERSION = process.env.API_VERSION || 'v1';
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+
+if (DEMO_MODE) {
+  logger.warn('DEMO_MODE enabled — mock checkout/payment flows are active');
+}
 
 // Security and Performance middleware
 app.set('trust proxy', 1); // Essential for rate limiting behind Cloud Run
@@ -210,6 +216,7 @@ app.use(`/api/${API_VERSION}/integrations/livesell`, liveSellRoutes);
 app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
+app.use(`/api/${API_VERSION}/demo`, demoRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

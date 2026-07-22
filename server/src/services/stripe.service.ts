@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { logger } from '../utils/logger';
+import { isDemoMode } from '../utils/env';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_API_URL = 'https://api.stripe.com/v1';
@@ -42,8 +43,11 @@ export const stripeService = {
     const cancel = cancelUrl || `${frontendUrl}/reservations?stripe_cancel=true&ref=${reservationId}`;
 
     if (!STRIPE_SECRET_KEY) {
-      logger.warn('STRIPE_SECRET_KEY not set — returning mock checkout URL');
-      return `${frontendUrl}/reservations?stripe_mock_success=true&ref=${reservationId}`;
+      if (isDemoMode()) {
+        logger.warn('STRIPE_SECRET_KEY not set — returning demo checkout URL');
+        return `${frontendUrl}/reservations?stripe_mock_success=true&ref=${reservationId}`;
+      }
+      return `${frontendUrl}/reservations?stripe_disabled=true&ref=${reservationId}`;
     }
 
     try {
@@ -76,8 +80,10 @@ export const stripeService = {
       return data.url;
     } catch (error: any) {
       logger.error('Stripe checkout session creation failed', error.message);
-      // Fallback mock URL so the frontend flow doesn't break
-      return `${frontendUrl}/reservations?stripe_mock_success=true&ref=${reservationId}`;
+      if (isDemoMode()) {
+        return `${frontendUrl}/reservations?stripe_mock_success=true&ref=${reservationId}`;
+      }
+      return `${frontendUrl}/reservations?stripe_disabled=true&ref=${reservationId}`;
     }
   },
 
