@@ -292,7 +292,9 @@ export const getBusiness = async (
     }
 
     if (!business) {
-      throw new CustomError('Business not found', 404);
+      const notFoundError = new CustomError('Business not found', 404);
+      (notFoundError as any).code = 'BUSINESS_NOT_FOUND';
+      throw notFoundError;
     }
 
     // Check if user has access

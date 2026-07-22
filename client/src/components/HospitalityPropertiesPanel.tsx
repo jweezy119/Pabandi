@@ -103,7 +103,7 @@ export default function HospitalityPropertiesPanel() {
               Hospitality Properties
             </h2>
             <p className="font-body text-xs text-on-surface-variant mt-1">
-              Connect your Airbnb calendar and turn nightly bookings into escrowed commitments.
+              Connect your Airbnb calendar so new bookings block this calendar automatically.
             </p>
           </div>
           <button
