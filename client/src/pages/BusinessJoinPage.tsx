@@ -213,7 +213,7 @@ export default function BusinessJoinPage() {
             </div>
           </div>
 
-          {/* ── Mock Dashboard UI ──────────────────────────────── */}
+          {/* ── Business Dashboard Preview ──────────────────────────── */}
           <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-5 sm:p-8 shadow-2xl relative">
             <div className="flex items-center justify-between mb-8">
               <h3 className="font-bold text-base sm:text-lg text-white">Pabandi Business Dashboard</h3>

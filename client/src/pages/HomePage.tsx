@@ -746,21 +746,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Interactive Escrow Sandbox Demo */}
-        <section ref={revealRef8} className="reveal">
-          <div className="text-center mb-8">
-            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-              See the Escrow in Action
-            </h3>
-            <p className="font-body text-on-surface-variant text-sm mt-2 mb-4">
-              Experience how Pabandi protects businesses and rewards customers using smart contracts.
-            </p>
-            <Link to="/checkout" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
-              Try checkout ↗
-            </Link>
-          </div>
-          <InteractiveEscrowSandbox />
-        </section>
+        {/* Interactive Escrow Preview */}\n        <section ref={revealRef8} className="reveal">\n          <div className="text-center mb-8">\n            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">\n              See the Escrow in Action\n            </h3>\n            <p className="font-body text-on-surface-variant text-sm mt-2 mb-4">\n              Experience how Pabandi protects businesses and rewards customers using smart contracts.
+            </p>\n            <Link to="/checkout" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">\n              Open checkout\n            </Link>\n          </div>\n          <InteractiveEscrowSandbox />\n        </section>
 
         {/* Social proof */}
         <section ref={revealRef4} className="reveal">

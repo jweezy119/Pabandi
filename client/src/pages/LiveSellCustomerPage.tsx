@@ -70,7 +70,7 @@ export default function LiveSellCustomerPage() {
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-3 mt-6">
             <Link to="/search?category=LIVE_SELLER" className="px-5 py-4 sm:py-3 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm sm:text-base touch-target text-center w-full sm:w-auto">Find live sellers</Link>
-            <Link to="/s/demo" className="px-5 py-4 sm:py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base touch-target text-center w-full sm:w-auto">Try demo checkout</Link>
+            <Link to="/s/demo" className="px-5 py-4 sm:py-3 rounded-2xl border border-outline-variant/20 hover:bg-surface-container-high active:scale-[0.99] transition-colors font-headline font-bold text-sm sm:text-base touch-target text-center w-full sm:w-auto">Open live seller checkout</Link>
           </div>
         </section>
 
