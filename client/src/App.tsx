@@ -50,6 +50,7 @@ import { PassportDashboardPage } from './pages/PassportDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
+import AccountManagerDashboard from './pages/AccountManagerDashboard';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { PublicSEO } from './components/PublicSEO';
@@ -190,6 +191,10 @@ function App() {
               element={isAuthenticated ? <PassportDashboardPage /> : <Navigate to="/login" />}
             />
             <Route path="passport/:sellerId" element={<PublicPassportPage />} />
+            <Route
+              path="account-manager"
+              element={isAuthenticated ? <AccountManagerDashboard /> : <Navigate to="/login" />}
+            />
           </Route>
         </Routes>
       </LanguageProvider>

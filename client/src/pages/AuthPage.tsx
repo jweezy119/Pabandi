@@ -237,6 +237,7 @@ export default function AuthPage() {
           }),
           fiverrUrl: formData.fiverrUrl || undefined,
           upworkUrl: formData.upworkUrl || undefined,
+          refCode: searchParams.get('ref') || undefined,
         } as any);
       }
       navigate('/dashboard');
