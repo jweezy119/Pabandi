@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { businessService, textSearchService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
+import { MapPinIcon, CalendarDaysIcon, VideoCameraIcon, StarIcon } from '@heroicons/react/24/outline';
 
 type Business = {
   id: string;
@@ -31,14 +33,14 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_LABELS: Record<string, string> = {
-  ALL: 'All',
+  ALL: 'For you',
   RESTAURANT: 'Restaurants',
   SALON: 'Salons',
   CLINIC: 'Clinics',
   SPA: 'Spas',
   FITNESS_CENTER: 'Fitness',
-  PROPERTY_RENTAL: 'Short-term rental',
-  LIVE_SELLER: 'Live Seller',
+  PROPERTY_RENTAL: 'Stays',
+  LIVE_SELLER: 'Live selling',
   FREELANCE: 'Freelance',
   OTHER: 'Other',
 };
@@ -49,14 +51,24 @@ const QUICK_PROMPTS = [
     label: 'Live Selling',
     href: '/live-sell',
     sub: 'TikTok · YouTube · Shopify',
-    icon: '🎥',
+    icon: VideoCameraIcon,
+    accent: 'from-emerald-500/20 to-green-500/20',
+  },
+  {
+    key: 'stays',
+    label: 'Stays & Hospitality',
+    href: '/hospitality',
+    sub: 'Short-term rentals with escrow',
+    icon: CalendarDaysIcon,
+    accent: 'from-blue-500/20 to-cyan-500/20',
   },
   {
     key: 'freelance',
     label: 'Freelance',
     href: '/search?category=FREELANCE',
     sub: 'Designers · Coders · Creators',
-    icon: '🧑‍💻',
+    icon: StarIcon,
+    accent: 'from-orange-500/20 to-amber-500/20',
   },
 ];
 
@@ -132,6 +144,8 @@ export default function SearchPage() {
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [queryDraft, setQueryDraft] = useState(initialQ);
   const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const p = searchParams.get('category');
@@ -142,7 +156,7 @@ export default function SearchPage() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLoc({ lat: 41.8781, lng: -87.6298 }),
+        () => setUserLoc({ lat: 24.8607, lng: 67.0011 }),
         { timeout: 5000 }
       );
     }
@@ -187,15 +201,15 @@ export default function SearchPage() {
 
   const results = useMemo(() => {
     const base = data || [];
-    if (!userLoc) return base;
+    if (!q.trim() || !userLoc) return base;
     return base
       .map((b) => ({ b, meters: haversineKm(userLoc, { lat: b.latitude ?? null, lng: b.longitude ?? null }) * 1000 }))
       .sort((a, b) => a.meters - b.meters)
       .map((x) => x.b);
-  }, [data, userLoc]);
+  }, [data, userLoc, q]);
 
   const distanceLabel = (b: Business) => {
-    if (!userLoc) return '';
+    if (!userLoc || !q.trim()) return '';
     const m = haversineKm(userLoc, { lat: b.latitude ?? null, lng: b.longitude ?? null }) * 1000;
     if (!Number.isFinite(m)) return '';
     if (m < 1000) return `${Math.round(m)} m`;
@@ -208,7 +222,7 @@ export default function SearchPage() {
     if (category === 'PROPERTY_RENTAL') return 'Short-term rentals';
     if (q.trim()) return `Results for "${q.trim()}"`;
     if (category !== 'ALL') return CATEGORY_LABELS[category] || category;
-    return 'Search';
+    return 'Discover';
   }, [q, category]);
 
   useEffect(() => {
@@ -220,7 +234,6 @@ export default function SearchPage() {
     setQueryDraft(next);
     setShowDropdown(false);
     setSearchParams({ q: next, category }, { replace: true });
-    setShowDropdown(false);
   };
 
   const applyCategory = (next: string) => {
@@ -228,29 +241,37 @@ export default function SearchPage() {
     setSearchParams({ q: q || '', category: next }, { replace: true });
   };
 
+  const handleBookNow = (biz: Business) => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(`/business/${biz.id}/book`)}`);
+      return;
+    }
+    navigate(`/business/${biz.id}/book`);
+  };
+
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="flex flex-col gap-1">
-          <h1 className="font-headline text-2xl sm:text-3xl font-black">Find trusted services near you</h1>
+          <h1 className="font-headline text-2xl sm:text-3xl font-black">What do you want to book?</h1>
           <p className="text-sm text-on-surface-variant">
-            Start broad, then filter by category. Tap a suggestion or press enter to search.
+            Quick actions, smart suggestions, and trusted venues nearby.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {QUICK_PROMPTS.map((prompt) => (
-          <Link
-            key={prompt.key}
-            to={prompt.href}
-            className="flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-3 sm:p-4 active:scale-[0.99] transition-all"
-          >
-            <span className="text-xl sm:text-2xl leading-none">{prompt.icon}</span>
-            <span className="min-w-0">
-              <span className="block text-sm sm:text-base font-headline font-bold">{prompt.label}</span>
-              <span className="block text-[10px] sm:text-xs text-on-surface-variant truncate">{prompt.sub}</span>
-            </span>
-          </Link>
+            <Link
+              key={prompt.key}
+              to={prompt.href}
+              className={`flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-gradient-to-br ${prompt.accent} p-3 sm:p-4 active:scale-[0.99] transition-all`}
+            >
+              <prompt.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-sm sm:text-base font-headline font-bold text-on-surface">{prompt.label}</span>
+                <span className="block text-[10px] sm:text-xs text-on-surface-variant truncate">{prompt.sub}</span>
+              </span>
+            </Link>
           ))}
         </div>
 
@@ -303,7 +324,7 @@ export default function SearchPage() {
                 key={c}
                 type="button"
                 onClick={() => applyCategory(c)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors touch-target ${
                   category === c ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
                 }`}
               >
@@ -321,7 +342,7 @@ export default function SearchPage() {
                 );
               }
             }}
-            className="px-4 py-2 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high"
+            className="px-4 py-2 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high touch-target"
           >
             Near Me
           </button>
@@ -344,43 +365,56 @@ export default function SearchPage() {
 
         {results.length === 0 && !isLoading && (
           <div className="rounded-3xl border border-outline-variant/10 bg-surface-container-low p-8 text-center">
-            <p className="text-sm text-on-surface-variant">No exact hits yet. We’re still loading nearby options.</p>
-            <button onClick={() => applyCategory('ALL')} className="mt-3 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
+            <MapPinIcon className="h-8 w-8 text-outline mx-auto mb-2" />
+            <p className="text-sm text-on-surface-variant font-medium">
+              No exact hits yet in this area.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
+              <button onClick={() => applyCategory('ALL')} className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
+              <Link to="/business/join" className="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-bold text-center">Recommend a business</Link>
+            </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {results.map((biz: any) => (
-            <Link
-              key={biz.id || `${biz.name}-${biz.address}`}
-              to={`/business/${biz.id}`}
-              className="block rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all"
-            >
-              <div
-                className="h-36 sm:h-40 rounded-t-3xl"
-                style={{
-                  backgroundImage: biz.coverImageUrl ? `url(${biz.coverImageUrl})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              />
-              <div className="p-4">
-                <div className="flex justify-between items-start gap-3">
-                  <div className="min-w-0">
-                    <p className="font-headline font-bold text-sm leading-snug">{biz.name}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5 truncate">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
+            <div key={biz.id || `${biz.name}-${biz.address}`} className="rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
+              <Link to={`/business/${biz.id}`} className="block">
+                <div
+                  className="h-36 sm:h-40 rounded-t-3xl"
+                  style={{
+                    backgroundImage: biz.coverImageUrl ? `url(${biz.coverImageUrl})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                />
+                <div className="p-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <p className="font-headline font-bold text-sm leading-snug">{biz.name}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5 truncate">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-1 rounded">{CATEGORY_LABELS[biz.category] || biz.category}</p>
+                      {typeof biz.rating === 'number' && (
+                        <p className="text-[10px] font-bold text-on-surface-variant mt-1">{biz.rating.toFixed(1)} ★ {biz.reviewCount || 0}</p>
+                      )}
+                      {distanceLabel(biz) && <p className="text-[10px] font-bold text-on-surface-variant mt-1">{distanceLabel(biz)}</p>}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-1 rounded">{biz.category}</p>
-                    {typeof biz.rating === 'number' && (
-                      <p className="text-[10px] font-bold text-on-surface-variant mt-1">{biz.rating.toFixed(1)} ★ {biz.reviewCount || 0}</p>
-                    )}
-                    {distanceLabel(biz) && <p className="text-[10px] font-bold text-on-surface-variant mt-1">{distanceLabel(biz)}</p>}
-                  </div>
+                  {biz.description && <p className="text-xs text-on-surface-variant line-clamp-2 mt-2">{biz.description}</p>}
                 </div>
-                {biz.description && <p className="text-xs text-on-surface-variant line-clamp-2 mt-2">{biz.description}</p>}
+              </Link>
+              <div className="px-4 pb-4">
+                <button
+                  type="button"
+                  onClick={() => handleBookNow(biz)}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary text-sm font-bold touch-target"
+                >
+                  {isAuthenticated ? 'Book now' : 'Log in to book'}
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
