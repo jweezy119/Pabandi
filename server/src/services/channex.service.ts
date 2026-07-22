@@ -2,8 +2,8 @@ import axios from 'axios';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
-// Use production endpoint if key is provided, else fallback for dev/testing
-const CHANNEX_API_URL = 'https://app.channex.io/api/v1'; 
+// Use production Channex endpoint for live operations
+const CHANNEX_API_URL = 'https://app.channex.io/api/v1';
 const API_KEY = process.env.CHANNEX_API_KEY;
 
 const channexClient = axios.create({
@@ -11,43 +11,40 @@ const channexClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'user-api-key': API_KEY || '',
-  }
+  },
 });
 
 export const channexService = {
   /**
    * Provision a property on Channex when a Host enables Channel Manager
    */
-  async provisionProperty(businessId: string): Promise<string | null> {
+  async provisionProperty(businessId: string): Promise<string> {
     try {
       const business = await prisma.business.findUnique({ where: { id: businessId } });
       if (!business) throw new Error('Business not found');
 
       if (!API_KEY) {
-        logger.warn('No Channex API Key provided. Returning mock property ID.');
-        const mockId = `chx_mock_${businessId}`;
-        await prisma.business.update({
-          where: { id: businessId },
-          data: { channexPropertyId: mockId }
-        });
-        return mockId;
+        throw new Error('Channel Manager integration is not configured on the server');
       }
 
       // Create Property Payload for Channex
       const payload = {
         property: {
-          title: business.name,
+          title: business.name || 'Untitled Property',
           currency: 'USD',
-          timezone: business.timezone || 'America/New_York',
+          timezone: business.timezone || 'UTC',
           country: business.country || 'US',
           city: business.city || 'Unknown',
           address: business.address || 'Unknown',
           zip_code: business.postalCode || '00000',
-        }
+        },
       };
 
-      const response = await channexClient.post('/properties', payload);
-      const channexPropertyId = response.data.data.id;
+      const propertyResponse = await channexClient.post('/properties', payload);
+      const channexPropertyId = propertyResponse.data.data?.id;
+      if (!channexPropertyId) {
+        throw new Error('Channex did not return a property id');
+      }
 
       // Also create a default Room Type for this property in Channex
       await channexClient.post('/room_types', {
@@ -56,19 +53,20 @@ export const channexService = {
           title: 'Entire Property',
           count_of_rooms: 1,
           occupancy: 2,
-        }
+        },
       });
 
       // Save to our DB
       await prisma.business.update({
         where: { id: businessId },
-        data: { channexPropertyId }
+        data: { channexPropertyId },
       });
 
       return channexPropertyId;
     } catch (error: any) {
-      logger.error(`Channex Provision Error: ${error.response?.data?.errors || error.message}`);
-      throw new Error('Failed to provision property on Channex');
+      const message = error.response?.data?.errors || error.response?.data?.message || error.message;
+      logger.error(`Channex Provision Error: ${message}`);
+      throw new Error(message || 'Failed to provision property on Channex');
     }
   },
 
@@ -79,38 +77,32 @@ export const channexService = {
     try {
       const reservation = await prisma.reservation.findUnique({
         where: { id: reservationId },
-        include: { business: true, customer: true }
+        include: { business: true, customer: true },
       });
-      if (!reservation) return;
-
-      const channexPropId = reservation.business.channexPropertyId;
-      if (!channexPropId) {
-        logger.info(`Business ${reservation.businessId} is not connected to Channex. Skipping push.`);
-        return;
+      if (!reservation) {
+        throw new Error('Reservation not found for Channex sync');
       }
 
-      if (!API_KEY || channexPropId.startsWith('chx_mock')) {
-        logger.info(`Mock pushing booking ${reservationId} to Channex...`);
-        const mockBookingId = `bk_mock_${reservation.id}`;
-        await prisma.reservation.update({
-          where: { id: reservation.id },
-          data: { channexBookingId: mockBookingId }
-        });
-        return;
+      const business = reservation.business;
+      if (!business.channexPropertyId) {
+        throw new Error('Business is not connected to Channex');
+      }
+
+      if (!API_KEY) {
+        throw new Error('Channel Manager integration is not configured on the server');
       }
 
       // We need to fetch the room type ID for this property
-      const roomsResponse = await channexClient.get(`/room_types?filter[property_id]=${channexPropId}`);
+      const roomsResponse = await channexClient.get(`/room_types?filter[property_id]=${business.channexPropertyId}`);
       const roomId = roomsResponse.data.data[0]?.id;
 
       if (!roomId) {
-        logger.error(`No room types found for property ${channexPropId}`);
-        return;
+        throw new Error('No room types found for property');
       }
 
       const payload = {
         booking: {
-          property_id: channexPropId,
+          property_id: business.channexPropertyId,
           room_type_id: roomId,
           arrival_date: reservation.reservationDate.toISOString().split('T')[0],
           departure_date: reservation.checkOutDate ? reservation.checkOutDate.toISOString().split('T')[0] : reservation.reservationDate.toISOString().split('T')[0],
@@ -123,18 +115,22 @@ export const channexService = {
           },
           occupancy: {
             adults: reservation.numberOfGuests,
-          }
-        }
+          },
+        },
       };
 
-      const res = await channexClient.post('/bookings', payload);
-      const channexBookingId = res.data.data.id;
+      const response = await channexClient.post('/bookings', payload);
+      const channexBookingId = response.data.data?.id;
+
+      if (!channexBookingId) {
+        throw new Error('Channex did not return a booking id');
+      }
 
       await prisma.reservation.update({
         where: { id: reservation.id },
-        data: { channexBookingId }
+        data: { channexBookingId },
       });
-      
+
       logger.info(`Successfully pushed booking ${reservation.id} to Channex (${channexBookingId})`);
 
     } catch (error: any) {

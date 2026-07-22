@@ -105,6 +105,9 @@ export const businessService = {
   createService: (id: string, data: any) => apiClient.post(`/businesses/${id}/services`, data),
   updateService: (id: string, serviceId: string, data: any) => apiClient.put(`/businesses/${id}/services/${serviceId}`, data),
   deleteService: (id: string, serviceId: string) => apiClient.delete(`/businesses/${id}/services/${serviceId}`),
+
+  connectChannex: (businessId: string) =>
+    apiClient.post(`/businesses/${businessId}/channex-connect`),
 };
 
 export const reservationService = {
