@@ -1,5 +1,6 @@
 import { prisma } from '../utils/database';
 import { TrustSignals } from '../services/trustSignal.service';
+import { TreasuryBucket } from '../services/treasury.service';
 import { logger } from '../utils/logger';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { getOrCreateAssociatedTokenAccount, transfer } from '@solana/spl-token';
@@ -74,6 +75,19 @@ export class CryptoService {
       update: { balance: { increment: amount } },
       create: { userId, balance: amount, currency: 'PAB' },
     });
+
+    const treasuryBucket = this.getTreasuryBucket(type);
+
+    if (treasuryBucket) {
+      await tx.treasuryPosition.create({
+        data: {
+          bucket: treasuryBucket,
+          amount: Number(amount) * 0.08,
+          status: 'PENDING',
+          meta: { source: 'CRYPTO_SERVICE_TRIBUTE', rewardType: type, reservationId: reservationId || null },
+        },
+      });
+    }
   }
 
   /**
@@ -595,6 +609,35 @@ export class CryptoService {
       logger.error(`[POV] Failed to check Proof of Visit: ${e.message}`);
       return false; // Fail secure
     }
+  }
+
+  private getTreasuryBucket(type: RewardType) {
+    const buckets: Partial<Record<RewardType, TreasuryBucket>> = {
+      RESERVATION_COMPLETION: 'OPERATING',
+      BUSINESS_RESERVATION_HONORED: 'OPERATING',
+      BUSINESS_NO_SHOW_PROTECTED: 'OPERATING',
+      GOOGLE_REVIEW: 'OPERATING',
+      VERIFICATION_BOUNTY: 'TREASURY',
+      BUSINESS_RELIABILITY_BONUS: 'OPERATING',
+      BUSINESS_REFERRAL: 'OPERATING',
+      REFERRAL: 'OPERATING',
+      STREAK_BONUS: 'OPERATING',
+    } as const;
+
+    return buckets[type];
+  }
+
+  private closePoolBucket(rewardType: RewardType): 'LP_PROVISION' | 'YIELD_REINVEST' | undefined {
+    if (rewardType === 'BUSINESS_RESERVATION_HONORED') return 'LP_PROVISION';
+    return 'YIELD_REINVEST';
+  }
+
+  async creditTreasury(amount: number, bucket: 'OPERATING' | 'LP_PROVISION' | 'YIELD_REINVEST' | 'EMERGENCY') {
+    const normalized = Number(amount || 0);
+    if (!normalized || normalized <= 0) return;
+    await prisma.treasuryPosition.create({
+      data: { bucket, amount: normalized, status: 'PENDING', meta: { source: 'CRYPTO_SERVICE_TRIBUTE' } },
+    });
   }
 }
 

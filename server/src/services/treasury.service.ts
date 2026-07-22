@@ -43,22 +43,38 @@ export const recordTribute = async (params: {
 export const getTreasurySummary = async (): Promise<{
   total: number;
   byBucket: Record<string, number>;
+  byStrategy: Record<string, number>;
 }> => {
   const positions = await prisma.treasuryPosition.findMany({
     select: {
       bucket: true,
       amount: true,
+      meta: true,
     },
   });
 
   const byBucket: Record<string, number> = {};
+  const byStrategy: Record<string, number> = {};
   let total = 0;
 
   for (const position of positions) {
     const amount = Number(position.amount || 0);
     byBucket[position.bucket] = (byBucket[position.bucket] || 0) + amount;
     total += amount;
+
+    const meta = (position.meta || {}) as Record<string, any>;
+    const rewardType = meta.rewardType as string | undefined;
+    const explicitStrategy = meta.strategy as string | undefined;
+    const inferredStrategy =
+      explicitStrategy ||
+      (rewardType === 'CONCIERGE_CASHBACK' || rewardType === 'BUSINESS_RESERVATION_HONORED'
+        ? 'LP_PROVISION'
+        : rewardType
+        ? 'YIELD_REINVEST'
+        : 'TREASURY');
+
+    byStrategy[inferredStrategy] = (byStrategy[inferredStrategy] || 0) + amount;
   }
 
-  return { total, byBucket };
+  return { total, byBucket, byStrategy };
 };
