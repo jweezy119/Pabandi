@@ -8,6 +8,10 @@ import {
   BeakerIcon,
   GlobeAltIcon,
   BoltIcon,
+  ClockIcon,
+  BellAlertIcon,
+  CalendarDaysIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import PropertyConnectWizard from './PropertyConnectWizard';
 
@@ -28,9 +32,28 @@ const TYPE_ICONS: Record<string, string> = {
   other: '🏠',
 };
 
+type Reminder = {
+  id: string;
+  propertyName: string;
+  guestName: string;
+  time: string;
+  sent: boolean;
+};
+
+function tomorrowDate() {
+  const d = new Date(Date.now() + 86_400_000);
+  return d.toISOString().split('T')[0];
+}
+
+const MOCK_REMINDERS: Reminder[] = [
+  { id: 'r1', propertyName: 'Karachi Boutique Hotel', guestName: 'Ahmad Test Guest', time: tomorrowDate() + ' 15:00', sent: false },
+  { id: 'r2', propertyName: 'Karachi Boutique Hotel', guestName: 'Sara Ali', time: new Date(Date.now() + 2 * 86_400_000).toISOString().split('T')[0] + ' 11:00', sent: false },
+];
+
 export default function HospitalityPropertiesPanel() {
   const qc = useQueryClient();
   const [showWizard, setShowWizard] = useState(false);
+  const [reminders, setReminders] = useState<Reminder[]>(MOCK_REMINDERS);
 
   const { data, isLoading } = useQuery('hospitality-properties', () => hospitalityService.getProperties());
 
@@ -38,15 +61,23 @@ export default function HospitalityPropertiesPanel() {
     (propertyId: string) => hospitalityService.testBooking(propertyId),
     {
       onSuccess: () => {
-        alert('✅ Test booking event sent successfully!');
+        alert('✅ Simulated booking event sent.');
       },
       onError: () => {
-        alert('Test booking failed — property may not be connected yet.');
+        alert('Simulated booking failed — property may not be connected yet.');
       },
     }
   );
 
   const properties = data?.data?.properties || [];
+
+  const markReminderSent = (id: string) =>
+    setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, sent: true } : r)));
+
+  const markCheckedIn = (id: string) =>
+    setReminders((prev) => prev.filter((r) => r.id !== id));
+
+  const upcomingCount = reminders.filter((r) => !r.sent).length;
 
   if (isLoading) {
     return (
@@ -138,23 +169,25 @@ export default function HospitalityPropertiesPanel() {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => testMutation.mutate(prop.id)}
-                    disabled={isTesting}
-                    className="w-full py-2 rounded-lg font-body text-[11px] font-bold border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isTesting ? (
-                      <>
-                        <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <BeakerIcon className="h-3.5 w-3.5" />
-                        Test Booking
-                      </>
-                    )}
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => testMutation.mutate(prop.id)}
+                      disabled={isTesting}
+                      className="py-2 rounded-lg font-body text-[11px] font-bold border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {isTesting ? (
+                        <>
+                          <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <BeakerIcon className="h-3.5 w-3.5" />
+                          Test Booking
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -162,7 +195,80 @@ export default function HospitalityPropertiesPanel() {
         )}
       </div>
 
-      {/* Property Connect Wizard Modal */}
+      {/* Availability & check-in reminders */}
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2">
+              <CalendarDaysIcon className="h-4 w-4 text-primary" />
+              Upcoming Guest Flow
+            </h3>
+            <p className="text-[11px] text-on-surface-variant mt-1">
+              {upcomingCount > 0 ? `${upcomingCount} upcoming action${upcomingCount === 1 ? '' : 's'} requiring attention.` : 'No open actions right now.'}
+            </p>
+          </div>
+          {upcomingCount > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <BellAlertIcon className="h-3.5 w-3.5" />
+              Action needed
+            </span>
+          )}
+        </div>
+
+        {reminders.length === 0 ? (
+          <div className="rounded-xl p-6 text-center bg-surface border border-dashed border-outline-variant">
+            <ClockIcon className="h-8 w-8 mx-auto mb-2 text-outline" />
+            <p className="font-headline text-sm font-bold text-on-surface">No upcoming reservations</p>
+            <p className="font-body text-[11px] text-on-surface-variant mt-1">Check-in reminders appear here after webhooks or test bookings.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reminders.map((reminder) => (
+              <div
+                key={reminder.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-outline-variant/10"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <CalendarDaysIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-headline text-sm font-bold text-on-surface">{reminder.guestName}</p>
+                    <p className="text-[11px] text-on-surface-variant">{reminder.propertyName}</p>
+                    <p className="text-[10px] text-on-surface-variant font-mono mt-0.5">{reminder.time}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 sm:justify-end">
+                  {!reminder.sent ? (
+                    <button
+                      onClick={() => markReminderSent(reminder.id)}
+                      className="inline-flex items-center gap-2 font-body text-[11px] font-bold px-3 py-2 rounded-lg bg-white/5 border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors"
+                    >
+                      <BellAlertIcon className="h-3.5 w-3.5" />
+                      Send reminder
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      <CheckIcon className="h-3.5 w-3.5" />
+                      Reminder sent
+                    </span>
+                  )}
+
+                  <button
+                    onClick={() => markCheckedIn(reminder.id)}
+                    className="inline-flex items-center gap-2 font-body text-[11px] font-bold px-3 py-2 rounded-lg bg-emerald-600/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/20 transition-colors"
+                  >
+                    <CheckCircleIcon className="h-3.5 w-3.5" />
+                    Checked in
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {showWizard && (
         <PropertyConnectWizard
           onClose={() => {

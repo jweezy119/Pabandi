@@ -51,6 +51,7 @@ export default function BusinessActivationPage({ businessId }: BusinessActivatio
             { label: 'Claim listing', action: () => navigate(`/business/${id}`), cta: 'Open profile' },
             { label: 'Test booking flow', action: () => navigate(`/business/${id}`), cta: 'Book now' },
             ...(isLiveSeller ? [{ label: 'Try live selling', action: () => navigate('/live-selling'), cta: 'Open hub' }] : []),
+            { label: 'Launch WhatsApp outreach', action: () => navigate('/business/dashboard'), cta: 'Open dashboard' },
             { label: 'Check dashboard', action: () => navigate('/business/dashboard'), cta: 'Dashboard' },
           ].map((item) => (
             <button

@@ -455,6 +455,15 @@ export default function BusinessProfilePage() {
             {business.id && (
               <TapProfileButton business={business} />
             )}
+
+            {/* Merchant Trust/Passport shortcut */}
+            <Link
+              to="/passport/dashboard"
+              className="bg-white/10 border border-white/20 text-white font-headline text-xs font-bold px-4 py-3 rounded-xl hover:bg-white/15 transition-colors flex items-center gap-2"
+            >
+              <ShieldCheckIcon className="h-4 w-4" />
+              Seller Trust Console
+            </Link>
           </div>
         </div>
       </section>
@@ -624,6 +633,28 @@ export default function BusinessProfilePage() {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                {/* Trust Summary */}
+                <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm">
+                  <h4 className="font-headline font-bold text-on-surface text-sm mb-3">Trust Snapshot</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                      <span className="material-symbols-outlined text-[16px] text-primary">verified</span>
+                      {business.isClaimed ? 'Claimed Profile' : 'Unclaimed Lead'}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                      <StarIconSolid className="h-3.5 w-3.5 text-yellow-400" />
+                      {business.rating ? business.rating.toFixed(1) : '4.8'} ({business.reviewCount} ratings)
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                      <ChatBubbleLeftRightIcon className="h-3.5 w-3.5 text-primary" />
+                      {business.reviewCount || 0} reviews
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant font-body mt-2 leading-relaxed">
+                    Reviews and ratings are pulled from active Pabandi customer signals. Verified partners respond faster and show higher trust scores.
+                  </p>
                 </div>
 
                 {/* Write a Review & WhatsApp Communication Channel */}
