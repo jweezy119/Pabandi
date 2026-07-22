@@ -27,6 +27,7 @@ interface RegisterBody {
   googlePlaceId?: string;
   fiverrUrl?: string;
   upworkUrl?: string;
+  refCode?: string;
 }
 
 interface LoginBody {
@@ -44,7 +45,7 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName, phone, role } = req.body;
+    const { email, password, firstName, lastName, phone, role, refCode } = req.body;
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -77,6 +78,20 @@ export const register = async (
     // 48-Hour Grace Period
     const gracePeriodUntil = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
+    // Resolve Account Manager Referral
+    let referredByUserId: string | undefined;
+    let accountManagerProfileId: string | undefined;
+
+    if (refCode) {
+      const profile = await prisma.accountManagerProfile.findUnique({
+        where: { referralCode: refCode }
+      });
+      if (profile && profile.status === 'ACTIVE') {
+        referredByUserId = profile.userId;
+        accountManagerProfileId = profile.id;
+      }
+    }
+
     // Frictionless Solana Wallet Generation
     const newWallet = Keypair.generate();
     const solanaAddress = newWallet.publicKey.toBase58();
@@ -95,6 +110,7 @@ export const register = async (
         trustScore: 50.0,
         verificationTier: 'BASIC',
         gracePeriodUntil,
+        ...(referredByUserId ? { referredById: referredByUserId } : {}),
         // Create the frictionless wallet
         wallet: {
           create: {
@@ -114,6 +130,7 @@ export const register = async (
               phone: phone || '',
               email: email,
               googlePlaceId: req.body.googlePlaceId,
+              ...(accountManagerProfileId ? { referredById: accountManagerProfileId } : {})
             }
           }
         }),

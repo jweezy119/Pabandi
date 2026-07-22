@@ -282,7 +282,6 @@ export const adminService = {
   approveProfileRequest: (id: string) => apiClient.put(`/admin/profile-requests/${id}/approve`),
   rejectProfileRequest: (id: string) => apiClient.put(`/admin/profile-requests/${id}/reject`),
 };
-
 export const partnerService = {
   getDashboard: () => apiClient.get('/partners/dashboard'),
   createInvite: (data: { code?: string; note?: string }) => apiClient.post('/partners/invite/create', data),
@@ -294,6 +293,13 @@ export const openwaService = {
 
 export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
+};
+
+export const accountManagerService = {
+  getSummary: () => apiClient.get('/account-manager/summary'),
+  getReferrals: () => apiClient.get('/account-manager/referrals'),
+  getLedger: () => apiClient.get('/account-manager/ledger'),
+  generateCode: () => apiClient.post('/account-manager/generate-code'),
 };
 
 export default apiClient;

@@ -25,6 +25,7 @@ export const createBusiness = async (
       email,
       website,
       timezone,
+      refCode,
     } = req.body;
 
     // Check if user already has a business
@@ -40,6 +41,17 @@ export const createBusiness = async (
     const resolvedCategory: BusinessCategory = (category && (Object.values(BusinessCategory) as string[]).includes(category))
       ? (category as BusinessCategory)
       : BusinessCategory.OTHER;
+
+    // Resolve Account Manager Referral
+    let referredById: string | undefined;
+    if (refCode) {
+      const profile = await prisma.accountManagerProfile.findUnique({
+        where: { referralCode: refCode }
+      });
+      if (profile && profile.status === 'ACTIVE') {
+        referredById = profile.id;
+      }
+    }
 
     // OSINT Checks are now handled asynchronously after business creation
 
@@ -58,6 +70,7 @@ export const createBusiness = async (
         timezone: timezone || 'Asia/Karachi',
         businessTier: 'STANDARD',
         trustScore: 50.0,
+        ...(referredById ? { referredById } : {}),
       },
       include: {
         owner: {

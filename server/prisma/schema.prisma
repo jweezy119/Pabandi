@@ -9,132 +9,138 @@ datasource db {
 }
 
 model User {
-  id                String           @id @default(cuid())
-  email             String           @unique
-  phone             String?          @unique
-  passwordHash      String
-  firstName         String
-  lastName          String
-  role              UserRole         @default(CUSTOMER)
-  isEmailVerified   Boolean          @default(false)
-  isPhoneVerified   Boolean          @default(false)
-  reliabilityScore  Float            @default(750)
-  trustScore        Float            @default(50.0)
-  verificationTier  String           @default("BASIC")
-  commerceScore     Float            @default(50.0)
-  hospitalityScore  Float            @default(50.0)
-  freelanceScore    Float            @default(50.0)
-  appointmentScore  Float            @default(50.0)
-  osintLastChecked  DateTime?
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  phone                 String?                @unique
+  passwordHash          String
+  firstName             String
+  lastName              String
+  role                  UserRole               @default(CUSTOMER)
+  isEmailVerified       Boolean                @default(false)
+  isPhoneVerified       Boolean                @default(false)
+  reliabilityScore      Float                  @default(750)
+  trustScore            Float                  @default(50.0)
+  verificationTier      String                 @default("BASIC")
+  commerceScore         Float                  @default(50.0)
+  hospitalityScore      Float                  @default(50.0)
+  freelanceScore        Float                  @default(50.0)
+  appointmentScore      Float                  @default(50.0)
+  osintLastChecked      DateTime?
   firstOffenseGraceUsed DateTime?
-  gracePeriodUntil  DateTime?
-  fcmToken          String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  googleId          String?          @unique
-  facebookId        String?          @unique
-  resetToken        String?
-  resetTokenExpires DateTime?
-  linkedinId        String?          @unique
-  profilePictureUrl String?
-  tiktokId          String?          @unique
-  twitterId         String?          @unique
-  walletAddress     String?          @unique
-  nonce             String?
-  referredById      String?
-  business          Business?
-  cryptoRewards     CryptoReward[]
-  payments          Payment[]
-  reservations      Reservation[]
-  socialIdentities  SocialIdentity[]
-  referredBy        User?            @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals         User[]           @relation("UserReferrals")
-  wallet            Wallet?
-  stakeTransactions StakeTransaction[]
-  stakingPositions  StakingPosition[]
-  loans             Loan[]
-  disputesAgainst   Dispute[]        @relation("DisputesAgainst")
-  disputesFiled     Dispute[]        @relation("DisputesFiled")
-  flags             UserFlag[]
-  deviceFingerprint String?
-  failedLoginAttempts Int      @default(0)
-  accountLockedUntil DateTime?
-  trustAudits       TrustAuditTrail[]
-  pabandiReviews    PabandiReview[]
-  encryptedDietaryData String?
+  gracePeriodUntil      DateTime?
+  fcmToken              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  googleId              String?                @unique
+  facebookId            String?                @unique
+  resetToken            String?
+  resetTokenExpires     DateTime?
+  linkedinId            String?                @unique
+  profilePictureUrl     String?
+  tiktokId              String?                @unique
+  twitterId             String?                @unique
+  walletAddress         String?                @unique
+  stripeCustomerId      String?
+  bountyPaid            Boolean                @default(false)
+  nonce                 String?
+  referredById          String?
+  business              Business?
+  cryptoRewards         CryptoReward[]
+  payments              Payment[]
+  reservations          Reservation[]
+  socialIdentities      SocialIdentity[]
+  referredBy            User?                  @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals             User[]                 @relation("UserReferrals")
+  wallet                Wallet?
+  stakeTransactions     StakeTransaction[]
+  stakingPositions      StakingPosition[]
+  loans                 Loan[]
+  disputesAgainst       Dispute[]              @relation("DisputesAgainst")
+  disputesFiled         Dispute[]              @relation("DisputesFiled")
+  flags                 UserFlag[]
+  deviceFingerprint     String?
+  failedLoginAttempts   Int                    @default(0)
+  accountLockedUntil    DateTime?
+  trustAudits           TrustAuditTrail[]
+  pabandiReviews        PabandiReview[]
+  encryptedDietaryData  String?
   profileChangeRequests ProfileChangeRequest[]
   passportScoreSnapshots PassportScoreSnapshot[]
   whatsappSignals WhatsAppChannelSignal[]
   socialGraphSignals SocialGraphSignal[]
   web3Stakes Web3StakeRecord[]
+  AccountManagerProfile AccountManagerProfile?
 
   @@index([email])
   @@index([phone])
 }
 
 model Business {
-  id                 String            @id @default(cuid())
-  ownerId            String?           @unique
-  name               String
-  description        String?
-  category           BusinessCategory
-  address            String
-  city               String            @default("")
-  country            String            @default("United States")
-  postalCode         String?
-  phone              String
-  email              String
-  website            String?
-  logoUrl            String?
-  coverImageUrl      String?
-  latitude           Float?
-  longitude          Float?
-  timezone           String            @default("America/New_York")
-  currency           String            @default("USD")
-  bookingAdvanceDays Int               @default(30)
-  cancellationHours  Int               @default(24)
-  requireDeposit     Boolean           @default(false)
-  depositAmount      Float?
-  depositPercentage  Float?
-  isVerified         Boolean           @default(false)
-  isActive           Boolean           @default(true)
-  isPremium          Boolean           @default(false)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  googlePlaceId      String?
-  rating             Float?
-  reviewCount        Int               @default(0)
-  reliabilityScore   Float?
-  karmaScore         Float             @default(50.0)
-  businessTier       String            @default("STANDARD")
-  trustScore         Float             @default(50.0)
-  state              String            @default("")
-  isClaimed          Boolean           @default(true)
-  externalBookingUrl String?
-  slug               String?           @unique
-  verifiedAt         DateTime?
-  deviceFingerprint  String?
-  externalDetails    Json?
-  source             String?
-  externalId         String?
-  checkInTime        String?
-  checkOutTime       String?
-  channexPropertyId  String?           @unique
-  owner              User?             @relation(fields: [ownerId], references: [id])
-  businessHours      BusinessHours[]
-  settings           BusinessSettings?
-  googleReviews      GoogleReview[]
-  reservations       Reservation[]
-  sourcingOrders     SourcingOrder[]
-  tables             Table[]
-  trendSuggestions   TrendSuggestion[]
-  webhookEndpoints   WebhookEndpoint[]
-  pabandiReviews     PabandiReview[]
-  services           BusinessService[]
+  id                     String                  @id @default(cuid())
+  ownerId                String?                 @unique
+  name                   String
+  description            String?
+  category               BusinessCategory
+  address                String
+  city                   String                  @default("")
+  country                String                  @default("United States")
+  postalCode             String?
+  phone                  String
+  email                  String
+  website                String?
+  logoUrl                String?
+  coverImageUrl          String?
+  latitude               Float?
+  longitude              Float?
+  timezone               String                  @default("America/New_York")
+  currency               String                  @default("USD")
+  bookingAdvanceDays     Int                     @default(30)
+  cancellationHours      Int                     @default(24)
+  requireDeposit         Boolean                 @default(false)
+  depositAmount          Float?
+  depositPercentage      Float?
+  isVerified             Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
+  isPremium              Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  googlePlaceId          String?
+  rating                 Float?
+  reviewCount            Int                     @default(0)
+  reliabilityScore       Float?
+  karmaScore             Float                   @default(50.0)
+  businessTier           String                  @default("STANDARD")
+  trustScore             Float                   @default(50.0)
+  state                  String                  @default("")
+  isClaimed              Boolean                 @default(true)
+  externalBookingUrl     String?
+  slug                   String?                 @unique
+  verifiedAt             DateTime?
+  deviceFingerprint      String?
+  externalDetails        Json?
+  source                 String?
+  externalId             String?
+  checkInTime            String?
+  checkOutTime           String?
+  channexPropertyId      String?                 @unique
+  owner                  User?                   @relation(fields: [ownerId], references: [id])
+  businessHours          BusinessHours[]
+  settings               BusinessSettings?
+  googleReviews          GoogleReview[]
+  reservations           Reservation[]
+  sourcingOrders         SourcingOrder[]
+  tables                 Table[]
+  trendSuggestions       TrendSuggestion[]
+  webhookEndpoints       WebhookEndpoint[]
+  pabandiReviews         PabandiReview[]
+  services               BusinessService[]
   liveSellerIntegrations LiveSellerIntegration[]
-  checkoutSessions   CheckoutSession[]
-  shopifyStores      ShopifyStore[]
-  apiClients         ApiClient[]
+  checkoutSessions       CheckoutSession[]
+  shopifyStores          ShopifyStore[]
+  apiClients             ApiClient[]
+  referredById           String?
+  bountyPaid             Boolean                 @default(false)
+  referredBy             AccountManagerProfile?  @relation(fields: [referredById], references: [id])
 
   @@index([ownerId])
   @@index([city])
@@ -172,7 +178,7 @@ model Table {
 }
 
 model Reservation {
-  id                  String            @id @default(cuid())
+  id                  String               @id @default(cuid())
   businessId          String
   customerId          String
   tableId             String?
@@ -180,7 +186,7 @@ model Reservation {
   checkOutDate        DateTime?
   reservationTime     String
   numberOfGuests      Int
-  status              ReservationStatus @default(PENDING)
+  status              ReservationStatus    @default(PENDING)
   customerName        String
   customerPhone       String
   customerEmail       String?
@@ -190,30 +196,30 @@ model Reservation {
   aiFactors           Json?
   reminderSentAt      DateTime?
   confirmationSentAt  DateTime?
-  depositRequired     Boolean           @default(false)
+  depositRequired     Boolean              @default(false)
   depositAmount       Float?
-  depositPaid         Boolean           @default(false)
+  depositPaid         Boolean              @default(false)
   source              String?
   trustSignals        Json?
   notes               String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   cancelledAt         DateTime?
   cryptoDepositTxHash String?
-  channexBookingId    String?           @unique
-  rewardEarned        Float?            @default(0)
+  channexBookingId    String?              @unique
+  rewardEarned        Float?               @default(0)
   googleReviewId      String?
-  depositStatus       DepositStatus     @default(NOT_REQUIRED)
+  depositStatus       DepositStatus        @default(NOT_REQUIRED)
   conciergeDetails    Json?
-  isConcierge         Boolean           @default(false)
+  isConcierge         Boolean              @default(false)
   totalAmount         Float?
   cryptoRewards       CryptoReward[]
   payments            Payment[]
-  business            Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customer            User              @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  table               Table?            @relation(fields: [tableId], references: [id])
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer            User                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  table               Table?               @relation(fields: [tableId], references: [id])
   services            ReservationService[]
-  solanaAttestationId String?           @unique
+  solanaAttestationId String?              @unique
   dispute             Dispute?
 
   @@index([businessId])
@@ -224,24 +230,24 @@ model Reservation {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  reservationId   String?
-  userId          String
-  amount          Float
-  currency        String        @default("USD")
-  status          PaymentStatus @default(PENDING)
-  paymentMethod   String
-  transactionId   String?       @unique
-  gatewayResponse Json?
-  refunded        Boolean   @default(false)
-  refundedAt      DateTime?
-  refundAmount    Float?
+  id                String        @id @default(cuid())
+  reservationId     String?
+  userId            String
+  amount            Float
+  currency          String        @default("USD")
+  status            PaymentStatus @default(PENDING)
+  paymentMethod     String
+  transactionId     String?       @unique
+  gatewayResponse   Json?
+  refunded          Boolean       @default(false)
+  refundedAt        DateTime?
+  refundAmount      Float?
   platformFeeAmount Float?
-  platformFeeStatus String?  @default("NONE")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  reservation     Reservation? @relation(fields: [reservationId], references: [id])
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformFeeStatus String?       @default("NONE")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  reservation       Reservation?  @relation(fields: [reservationId], references: [id])
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([reservationId])
   @@index([userId])
@@ -250,19 +256,19 @@ model Payment {
 }
 
 model BusinessSettings {
-  id                    String   @id @default(cuid())
-  businessId            String   @unique
-  autoConfirm           Boolean  @default(true)
-  requirePhone          Boolean  @default(true)
-  requireEmail          Boolean  @default(false)
-  allowSameDayBooking   Boolean  @default(true)
-  maxAdvanceBookingDays Int      @default(30)
-  minBookingNoticeHours Int      @default(2)
-  aiEnabled             Boolean  @default(true)
-  aiRiskThreshold       Int      @default(70)
-  autoRequireDeposit    Boolean  @default(false)
-  sendEmailReminders    Boolean  @default(true)
-  reminderHoursBefore   Int      @default(24)
+  id                          String   @id @default(cuid())
+  businessId                  String   @unique
+  autoConfirm                 Boolean  @default(true)
+  requirePhone                Boolean  @default(true)
+  requireEmail                Boolean  @default(false)
+  allowSameDayBooking         Boolean  @default(true)
+  maxAdvanceBookingDays       Int      @default(30)
+  minBookingNoticeHours       Int      @default(2)
+  aiEnabled                   Boolean  @default(true)
+  aiRiskThreshold             Int      @default(70)
+  autoRequireDeposit          Boolean  @default(false)
+  sendEmailReminders          Boolean  @default(true)
+  reminderHoursBefore         Int      @default(24)
   sendPushReminders           Boolean  @default(true)
   sendWhatsAppReminders       Boolean  @default(true)
   notifyOwnerOnNewBooking     Boolean  @default(true)
@@ -272,10 +278,10 @@ model BusinessSettings {
   e2eePublicKey               String?
   houseRules                  String?  @db.Text
   cancellationPolicy          String?  @db.Text
-  faqRules            Json?
+  faqRules                    Json?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
-  business              Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business                    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -297,23 +303,22 @@ model NotificationLog {
 }
 
 model Wallet {
-  id                String    @id @default(cuid())
-  userId            String    @unique
-  address           String?
-  encryptedSecret   String?   // Base64 encoded encrypted Solana Secret Key
-  balance           Float     @default(0)
-  totalStaked       Float     @default(0)
-  lockedPab         Float     @default(0)
-  usdcBalance       Float     @default(0)
-  currency          String    @default("PAB")
-  airdropClaimed    Boolean   @default(false)
-  airdropAmount     Float?
-  airdropClaimedAt  DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  address          String?
+  encryptedSecret  String? // Base64 encoded encrypted Solana Secret Key
+  balance          Float     @default(0)
+  totalStaked      Float     @default(0)
+  lockedPab        Float     @default(0)
+  usdcBalance      Float     @default(0)
+  currency         String    @default("PAB")
+  airdropClaimed   Boolean   @default(false)
+  airdropAmount    Float?
+  airdropClaimedAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
 
 model CryptoReward {
   id            String       @id @default(cuid())
@@ -379,7 +384,7 @@ model ApiClient {
   usageLogs         ApiUsageLog[]
   disputes          Dispute[]
 
-  business          Business?     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([apiKey])
   @@index([email])
@@ -422,7 +427,7 @@ model SocialIdentity {
 }
 
 model LiveSellerIntegration {
-  id           String            @id @default(cuid())
+  id           String             @id @default(cuid())
   businessId   String
   platform     LiveSellerPlatform
   accessToken  String
@@ -432,12 +437,12 @@ model LiveSellerIntegration {
   shopId       String?
   streamKey    String?
   webhookUrl   String?
-  isActive     Boolean           @default(true)
+  isActive     Boolean            @default(true)
   lastSyncAt   DateTime?
   metadata     Json?
-  connectedAt  DateTime          @default(now())
+  connectedAt  DateTime           @default(now())
   revokedAt    DateTime?
-  business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, platform])
   @@index([businessId])
@@ -601,7 +606,7 @@ model StakeTransaction {
   id        String   @id @default(cuid())
   userId    String
   amount    Float
-  type      String   // 'STAKE' or 'UNSTAKE'
+  type      String // 'STAKE' or 'UNSTAKE'
   apyAtTime Float?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -612,7 +617,7 @@ model StakeTransaction {
 model StakingPosition {
   id        String   @id @default(cuid())
   userId    String
-  amount    Float    // Amount of PAB staked
+  amount    Float // Amount of PAB staked
   status    String   @default("ACTIVE") // 'ACTIVE', 'WITHDRAWN'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -704,23 +709,23 @@ enum DisputeOutcome {
 }
 
 model IdentityCluster {
-  id              String   @id @default(cuid())
-  deviceHash      String
-  paymentHash     String?
-  ipHash          String?
-  userIds         String[]
-  riskScore       Int
-  detectedAt      DateTime @default(now())
+  id          String   @id @default(cuid())
+  deviceHash  String
+  paymentHash String?
+  ipHash      String?
+  userIds     String[]
+  riskScore   Int
+  detectedAt  DateTime @default(now())
 }
 
 model TrustWitness {
-  id            String    @id @default(cuid())
-  witnessId     String
-  subjectId     String
-  stakeAmount   Float
-  witnessScore  Float
-  outcome       String
-  confirmedAt   DateTime?
+  id           String    @id @default(cuid())
+  witnessId    String
+  subjectId    String
+  stakeAmount  Float
+  witnessScore Float
+  outcome      String
+  confirmedAt  DateTime?
 
   @@unique([witnessId, subjectId])
 }
@@ -753,8 +758,8 @@ model TrustAuditTrail {
   previousScore Float
   newScore      Float
   changeReason  String
-  component     String   // OSINT, KARMA, RELIABILITY, SOCIAL, SYSTEM, MANUAL
-  severity      String   // "positive" | "neutral" | "negative"
+  component     String // OSINT, KARMA, RELIABILITY, SOCIAL, SYSTEM, MANUAL
+  severity      String // "positive" | "neutral" | "negative"
   weightUsed    Float?
   metadata      Json?
   previousHash  String?
@@ -769,14 +774,14 @@ model TrustAuditTrail {
 }
 
 model TrustMethodology {
-  id          String   @id @default(cuid())
-  version     String   @unique
-  description String
-  weights     Json
+  id           String    @id @default(cuid())
+  version      String    @unique
+  description  String
+  weights      Json
   calibrations Json?
-  effectiveAt DateTime
-  retiredAt   DateTime?
-  isActive    Boolean  @default(false)
+  effectiveAt  DateTime
+  retiredAt    DateTime?
+  isActive     Boolean   @default(false)
 }
 
 model PabandiReview {
@@ -786,26 +791,26 @@ model PabandiReview {
   reservationId String   @unique
   rating        Int
   text          String?
-  tokenId       String?  // The POV SBT Token ID
-  txHash        String?  // Transaction hash of the SBT mint
+  tokenId       String? // The POV SBT Token ID
+  txHash        String? // Transaction hash of the SBT mint
   createdAt     DateTime @default(now())
 
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customer      User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([customerId])
 }
 
 model SystemAuditLog {
-  id          String   @id @default(cuid())
-  actorId     String?
-  action      String
-  targetId    String?
-  ipAddress   String?
-  userAgent   String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  targetId  String?
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
 
   @@index([actorId])
   @@index([action])
@@ -813,47 +818,47 @@ model SystemAuditLog {
 }
 
 model BusinessService {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String
-  description String?
-  price       Float
-  duration    Int      // Duration in minutes
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  businessId          String
+  name                String
+  description         String?
+  price               Float
+  duration            Int // Duration in minutes
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   reservationServices ReservationService[]
 
   @@index([businessId])
 }
 
 model ReservationService {
-  id            String          @id @default(cuid())
-  reservationId String
-  serviceId     String
+  id             String          @id @default(cuid())
+  reservationId  String
+  serviceId      String
   priceAtBooking Float
-  reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  service       BusinessService @relation(fields: [serviceId], references: [id])
+  reservation    Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  service        BusinessService @relation(fields: [serviceId], references: [id])
 
   @@unique([reservationId, serviceId])
 }
 
 model CheckoutSession {
-  id            String   @id @default(cuid())
-  businessId    String
-  amount        Float
-  currency      String   @default("USD")
-  escrowTerms   Json?
-  metadata      Json?
-  successUrl    String
-  cancelUrl     String
-  status        CheckoutStatus @default(PENDING)
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id          String         @id @default(cuid())
+  businessId  String
+  amount      Float
+  currency    String         @default("USD")
+  escrowTerms Json?
+  metadata    Json?
+  successUrl  String
+  cancelUrl   String
+  status      CheckoutStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])
@@ -874,62 +879,62 @@ enum LoanStatus {
 }
 
 model Loan {
-  id              String      @id @default(cuid())
-  userId          String
-  principalUsdc   Float
-  collateralPab   Float
-  flatFeeUsdc     Float
-  status          LoanStatus  @default(ACTIVE)
-  dueDate         DateTime
-  txHash          String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String     @id @default(cuid())
+  userId        String
+  principalUsdc Float
+  collateralPab Float
+  flatFeeUsdc   Float
+  status        LoanStatus @default(ACTIVE)
+  dueDate       DateTime
+  txHash        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
 }
 
 model ShopifyStore {
-  id              String   @id @default(cuid())
-  businessId      String?
-  shopUrl         String   @unique
-  accessToken     String
-  isActive        Boolean  @default(true)
-  escrowEnabled   Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  businessId    String?
+  shopUrl       String   @unique
+  accessToken   String
+  isActive      Boolean  @default(true)
+  escrowEnabled Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
 
 model JuryVote {
-  id              String   @id @default(cuid())
-  disputeId       String
-  jurorId         String
-  voteForId       String   // The ID of the user they voted in favor of
-  reason          String?
-  createdAt       DateTime @default(now())
+  id        String   @id @default(cuid())
+  disputeId String
+  jurorId   String
+  voteForId String // The ID of the user they voted in favor of
+  reason    String?
+  createdAt DateTime @default(now())
 
-  dispute         Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  dispute Dispute @relation(fields: [disputeId], references: [id], onDelete: Cascade)
 
   @@unique([disputeId, jurorId])
   @@index([jurorId])
 }
 
 model ProfileChangeRequest {
-  id               String   @id @default(cuid())
+  id               String       @id @default(cuid())
   userId           String
-  requestedChanges Json     
+  requestedChanges Json
   status           ChangeStatus @default(PENDING)
   adminNotes       String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
@@ -939,7 +944,6 @@ enum ChangeStatus {
   APPROVED
   REJECTED
 }
-
 model PassportScoreSnapshot {
   id               String   @id @default(cuid())
   userId           String
@@ -1017,4 +1021,85 @@ model PopEvidencePackage {
   createdAt        DateTime @default(now())
 
   @@index([reservationId])
+}
+enum PartnerStatus {
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+model AccountManagerProfile {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  referralCode String        @unique // The ?ref=code
+  status       PartnerStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessesReferred Business[]
+  ledgers            ReferralLedger[]
+  payouts            ReferralPayout[]
+}
+
+model PartnerProgramConfig {
+  id                 String   @id @default(cuid())
+  active             Boolean  @default(true)
+  signupBountyAmount Float    @default(5.0)
+  globalMonthlyCap   Float    @default(5000.0)
+  merchantMonthlyCap Float    @default(250.0)
+  rateYear1          Float    @default(0.03)
+  rateYear2          Float    @default(0.02)
+  rateYear3Plus      Float    @default(0.01)
+  updatedAt          DateTime @updatedAt
+}
+
+enum LedgerEntryType {
+  SIGNUP_BOUNTY
+  BOOKING_COMMISSION
+}
+
+model ReferralLedger {
+  id               String          @id @default(cuid())
+  profileId        String
+  type             LedgerEntryType
+  amount           Float
+  currency         String          @default("USD")
+  businessId       String?
+  reservationId    String?
+  platformFeeBasis Float?
+  commissionRate   Float?
+  isReversed       Boolean         @default(false)
+  payoutId         String?
+  createdAt        DateTime        @default(now())
+
+  profile AccountManagerProfile @relation(fields: [profileId], references: [id])
+  payout  ReferralPayout?       @relation(fields: [payoutId], references: [id])
+
+  @@unique([reservationId], map: "uniqueReservationLedger")
+  @@index([profileId, createdAt])
+  @@index([reservationId])
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+  FAILED
+  REVERSED
+}
+
+model ReferralPayout {
+  id                String       @id @default(cuid())
+  profileId         String
+  amount            Float
+  status            PayoutStatus @default(PENDING)
+  txHash            String?
+  settlementBatchId String?
+  periodStart       DateTime
+  periodEnd         DateTime
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  profile AccountManagerProfile @relation(fields: [profileId], references: [id])
+  ledgers ReferralLedger[]
 }
