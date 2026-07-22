@@ -8,7 +8,7 @@ const options: swaggerJSDoc.Options = {
     info: {
       title: 'Pabandi Live Commerce API',
       version: '1.0.0',
-      description: 'Pabandi live commerce API: bookings, checkout, trust passport, integrations, and developer access for buyers and sellers.',
+      description: 'Pabandi live commerce API: escrowed bookings, merchant control plane, hosted checkout webhooks, trust passport, and integrations for buyers and sellers.',
     },
     servers: [
       {
