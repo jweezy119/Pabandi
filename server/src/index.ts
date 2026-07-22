@@ -243,7 +243,7 @@ app.get(`/api/${API_VERSION}/docs`, (req, res) => {
   res.json({
     name: 'Pabandi Zero-Knowledge Fraud Network API & Consumer Booking Engine',
     version: API_VERSION,
-    description: 'Pabandi B2B API Documentation for the Alibaba CoCreate 2026 Agentic Business Pitch.',
+    description: 'Pabandi live commerce API: escrowed bookings, merchant control plane, hosted checkout webhooks, trust passport, and integrations for buyers and sellers.',
     endpoints: {
       consumerApp: {
         auth: `POST /api/${API_VERSION}/auth/register`,
