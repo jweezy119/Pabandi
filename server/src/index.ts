@@ -240,33 +240,7 @@ setupSwagger(app);
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (req, res) => {
-  res.json({
-    name: 'Pabandi Live Commerce API',
-    version: API_VERSION,
-    description: 'Pabandi live commerce API: escrowed bookings, merchant control plane, hosted checkout webhooks, trust passport, and integrations for buyers and sellers.',
-    endpoints: {
-      consumerApp: {
-        auth: `POST /api/${API_VERSION}/auth/register`,
-        googleOAuth: `GET /api/${API_VERSION}/auth/google`,
-        business: `GET /api/${API_VERSION}/businesses`,
-        reservations: `GET /api/${API_VERSION}/reservations`,
-      },
-      b2bFraudNetwork: {
-        checkHash: `POST /api/${API_VERSION}/network/check-hash (Zero-Knowledge lookup)`,
-        reportHash: `POST /api/${API_VERSION}/network/report-hash (Report COD rejection/Fraud)`,
-        bloomFilter: `GET /api/${API_VERSION}/network/bloom-filter (Local-first filter)`,
-        publicSalt: `GET /api/${API_VERSION}/network/public-salt (Daily rotating HMAC salt)`,
-      },
-      omnichannelIntegrations: {
-        odooSync: `Auto-sync via Auth Controller (res.partner & crm.lead created on registration)`,
-        calCom: `POST /api/${API_VERSION}/integrations/cal-com`,
-        shopify: `POST /api/${API_VERSION}/integrations/shopify`,
-      },
-    },
-    sdkExample: {
-      checkHash: `curl -X POST https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/network/check-hash -H "Authorization: Bearer ***" -d '{"hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}'`,
-    }
-  });
+  res.redirect('/api/docs');
 });
 
 // Root route
