@@ -1,12 +1,13 @@
 import { logger } from '../utils/logger';
+import { isDemoMode } from '../utils/env';
 
 // Standard Safepay Environment URLs
-const SAFEPAY_API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://api.getsafepay.com' 
+const SAFEPAY_API_URL = process.env.NODE_ENV === 'production'
+  ? 'https://api.getsafepay.com'
   : 'https://sandbox.api.getsafepay.com';
 
-const SAFEPAY_API_KEY = process.env.SAFEPAY_API_KEY || 'sec_f5e815b5-1a30-4203-9603-59c71e861d0a';
-const SAFEPAY_SECRET_KEY = process.env.SAFEPAY_SECRET_KEY || '08089534735d95ade6d3a003007ccd67f88c5af313df777635ef8d3b5934d234';
+const SAFEPAY_API_KEY = process.env.SAFEPAY_API_KEY || null;
+const SAFEPAY_SECRET_KEY = process.env.SAFEPAY_SECRET_KEY || null;
 
 export const safepayService = {
   /**
@@ -15,6 +16,15 @@ export const safepayService = {
    * @param reservationId The underlying reservation ID to track
    */
   async createCheckoutUrl(amount: number, reservationId: string): Promise<string> {
+    if (!SAFEPAY_API_KEY || !SAFEPAY_SECRET_KEY) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      if (isDemoMode()) {
+        logger.warn('Safepay credentials not set — returning demo checkout URL');
+        return `${frontendUrl}/reservations?safepay_mock_success=true&ref=${reservationId}`;
+      }
+      return `${frontendUrl}/reservations?safepay_disabled=true&ref=${reservationId}`;
+    }
+
     try {
       logger.info(`Initiating Safepay checkout for reservation: ${reservationId}`);
       
@@ -69,7 +79,10 @@ export const safepayService = {
       logger.error('Failed to create Safepay checkout. Keys might not be valid yet. Using MVP Fallback URL.');
       // Fallback for testing frontend logic if true API keys aren't set
       const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      return `${baseUrl}/reservations?safepay_mock_success=true&ref=${reservationId}`;
+      if (isDemoMode()) {
+        return `${baseUrl}/reservations?safepay_mock_success=true&ref=${reservationId}`;
+      }
+      return `${baseUrl}/reservations?safepay_disabled=true&ref=${reservationId}`;
     }
   },
 

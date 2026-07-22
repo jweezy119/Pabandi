@@ -588,7 +588,7 @@ export const getNonce = async (req: Request, res: Response, next: NextFunction) 
       const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
       user = await prisma.user.create({
         data: {
-          email: `${walletAddress.toLowerCase()}@web3.pabandi.local`, // placeholder
+          email: `${walletAddress.toLowerCase()}@pabandi.local`, // placeholder
           firstName: 'Web3',
           lastName: 'User',
           passwordHash,

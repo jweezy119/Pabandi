@@ -145,4 +145,6 @@ The application will be available at `http://localhost:5500` or `http://localhos
 
 ## 🤝 Contributing & License
 Pabandi was built with rapid iteration in mind. Contributions are welcome via pull requests. 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See [LICENSE](./LICENSE) for full terms.
+
+Public-good modules: see [docs/PUBLIC_GOOD.md](./docs/PUBLIC_GOOD.md).

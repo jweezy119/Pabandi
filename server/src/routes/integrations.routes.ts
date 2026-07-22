@@ -39,16 +39,19 @@ router.post('/tiktok/webhook', async (req: Request, res: Response): Promise<any>
   try {
     // 1. Verify TikTok Shop Signature
     const signature = req.headers['x-tts-signature'];
-    const appSecret = process.env.TIKTOK_APP_SECRET || 'demo_tiktok_secret';
+    const appSecret = process.env.TIKTOK_APP_SECRET || null;
     
-    // TikTok sends a timestamp and signature. The signature is HMAC-SHA256 of the payload + timestamp.
-    // For this implementation we will validate a basic HMAC of the raw body.
-    const rawBody = JSON.stringify(req.body);
-    const expectedSignature = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
+    if (appSecret) {
+      const rawBody = JSON.stringify(req.body);
+      const expectedSignature = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
 
-    if (signature !== expectedSignature && process.env.NODE_ENV === 'production') {
-      logger.warn('[TikTok Shop] Webhook signature validation failed.');
-      return res.status(401).json({ success: false, error: 'Unauthorized webhook payload' });
+      if (signature !== expectedSignature) {
+        logger.warn('[TikTok Shop] Webhook signature validation failed.');
+        return res.status(401).json({ success: false, error: 'Unauthorized webhook payload' });
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      logger.warn('[TikTok Shop] Missing TIKTOK_APP_SECRET in production.');
+      return res.status(500).json({ success: false, error: 'Webhook secret not configured' });
     }
     
     const { type, data } = req.body;
