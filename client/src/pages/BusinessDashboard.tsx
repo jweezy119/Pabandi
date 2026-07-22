@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { analyticsService, reservationService, businessService, sourcingService } from '../services/api';
+import { analyticsService, reservationService, businessService, sourcingService, openwaService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
   CalendarIcon,
@@ -357,6 +357,9 @@ export default function BusinessDashboard() {
         </div>
 
         <BusinessPabRewards />
+        {/* ── WhatsApp OpenWA Status ── */}        
+        <OpenWAStatusPanel />
+
 
         {/* ── Passport Dashboard Link ── */}
         <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-8">
@@ -648,6 +651,64 @@ export default function BusinessDashboard() {
           )}
         </div>
 
+      </div>
+    </div>
+  );
+}
+
+/* ── OpenWA WhatsApp Status Panel ── */       
+function OpenWAStatusPanel() {
+  const [status, setStatus] = useState<'loading' | 'connected' | 'disconnected'>('loading');
+  const [connectedCount, setConnectedCount] = useState(0);
+  const [bestSessionId, setBestSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await openwaService.getStatus();
+        const data = res.data as any;
+        if (cancelled) return;
+        setStatus(data?.status === 'connected' ? 'connected' : 'disconnected');
+        setConnectedCount(typeof data?.connectedCount === 'number' ? data.connectedCount : 0);
+        setBestSessionId(typeof data?.bestSessionId === 'string' ? data.bestSessionId : null);
+      } catch {
+        if (!cancelled) setStatus('disconnected');
+      }
+    };
+    load();
+    const timer = setInterval(load, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const tone =
+    status === 'connected'
+      ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+      : 'bg-white/5 text-white/80 border-white/10';
+  const label =
+    status === 'connected'
+      ? 'OpenWA Connected'
+      : status === 'loading'
+        ? 'Checking OpenWA...'
+        : 'OpenWA Disconnected';
+
+  return (
+    <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Customer Messaging</p>
+          <h3 className="font-headline text-lg font-bold text-on-surface">WhatsApp Outreach</h3>
+          <p className="font-body text-xs text-on-surface-variant mt-1">
+            {connectedCount > 0 ? `${connectedCount} session${connectedCount === 1 ? '' : 's'} ready` : 'No active WhatsApp sessions'}{bestSessionId ? ` • ${bestSessionId}` : ''}
+          </p>
+        </div>
+        <span className={`inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${tone}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          {label}
+        </span>
       </div>
     </div>
   );
