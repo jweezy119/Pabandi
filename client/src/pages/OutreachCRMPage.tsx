@@ -7,6 +7,9 @@ import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   UserPlusIcon,
+  BoltIcon,
+  PlayIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -23,6 +26,43 @@ const SAMPLE_TEMPLATES = [
   { id: 'intro', title: 'Intro', body: 'Hi {name}, Pabandi helps hospitality owners reduce no-shows with escrow-backed bookings.' },
   { id: 'followup', title: 'Follow-up', body: 'Hi {name}, following up from our last chat. Ready to activate checkout?' },
   { id: 'offer', title: 'Offer', body: 'Hi {name}, quick question: would onboarding support help you go live faster?' },
+];
+
+const PRESET_AUTOMATIONS = [
+  {
+    id: 'new_followup',
+    title: 'New lead follow-up',
+    description: 'After 15 min, send follow-up to new leads if unchanged.',
+    triggerStatus: 'NEW',
+    templateId: 'followup',
+    delayMinutes: 15,
+  },
+  {
+    id: 'onboard_celebration',
+    title: 'Onboard celebration',
+    description: 'When status becomes Onboarded, send a short congrats/next steps note.',
+    triggerStatus: 'ONBOARDED',
+    templateId: 'intro',
+    delayMinutes: 30,
+  },
+  {
+    id: 'nointerest_boost',
+    title: 'Not interested lookback',
+    description: 'After 7 days, re-evaluate not-interested leads with a value message.',
+    triggerStatus: 'NOT_INTERESTED',
+    templateId: 'offer',
+    delayMinutes: 60,
+  },
+];
+
+const QUICK_ACTIONS = [
+  { id: 'book', label: 'Book', color: '#10b981' },
+  { id: 'cancel', label: 'Cancel', color: '#ef4444' },
+  { id: 'reschedule', label: 'Reschedule', color: '#f59e0b' },
+  { id: 'update', label: 'Update', color: '#06b6d4' },
+  { id: 'status', label: 'Status', color: '#6366f1' },
+  { id: 'pay', label: 'Pay', color: '#8b5cf6' },
+  { id: 'human', label: 'Human', color: '#ec4899' },
 ];
 
 interface Lead {
@@ -63,6 +103,11 @@ const OutreachCRMPage: React.FC = () => {
   const [automationOpen, setAutomationOpen] = useState(false);
   const [automations, setAutomations] = useState<{ triggerStatus: string; templateId: string; delayMinutes: number }[]>([]);
   const [savingAutomation, setSavingAutomation] = useState(false);
+  const [pluginsOpen, setPluginsOpen] = useState(false);
+  const [plugins, setPlugins] = useState<any[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [smartResult, setSmartResult] = useState<string | null>(null);
+  const [smartTesting, setSmartTesting] = useState(false);
 
   const authHeaders = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token]);
 
@@ -154,11 +199,35 @@ const OutreachCRMPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const loadPlugins = useCallback(async () => {
+    const res = await fetch(`${API}/api/v1/openwa/plugins`, { headers: authHeaders });
+    const data = await res.json();
+    if (data.success) setPlugins(data.data || []);
+  }, [authHeaders]);
+
   const saveAutomations = async () => {
     setSavingAutomation(true);
-    await fetch(`${API}/api/v1/waitlist/automation`, { method: 'POST', headers: authHeaders, body: JSON.stringify({ automations }) });
+    await fetch(`${API}/api/v1/whatsapp/smart`, { method: 'POST', headers: authHeaders, body: JSON.stringify({ automation: automations }) });
     setSavingAutomation(false);
     alert('Automation rules saved.');
+  };
+
+  const smartAction = async (leadId: string, intent: string) => {
+    setSmartTesting(true);
+    setSmartResult(null);
+    const res = await fetch(`${API}/api/v1/waitlist/lead/${encodeURIComponent(leadId)}/smart-action`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ intent }),
+    });
+    const data = await res.json();
+    setSmartTesting(false);
+    if (!data.success) {
+      setSmartResult(data.error || 'Smart action failed');
+      return;
+    }
+    setSmartResult(data.reply || 'Smart action sent');
+    await updateLead(leadId, { outreachStatus: data.status || 'CONTACTED', incrementAttempt: true });
   };
 
   return (
@@ -168,11 +237,17 @@ const OutreachCRMPage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black tracking-tight">Outreach CRM</h1>
-            <p className="text-white/40 text-sm mt-1">Manage leads, conversations, WhatsApp sends, and simple automation.</p>
+            <p className="text-white/40 text-sm mt-1">Advanced lead management, automation, and WhatsApp smart actions.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setAutomationOpen(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+            <button onClick={() => setAdvancedOpen(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+              <BoltIcon className="w-4 h-4" /> Advanced
+            </button>
+            <button onClick={() => { setAutomationOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
               <Cog6ToothIcon className="w-4 h-4" /> Automation
+            </button>
+            <button onClick={() => { setPluginsOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+              <ClipboardDocumentCheckIcon className="w-4 h-4" /> Plugins
             </button>
             <button onClick={fetchData} className="flex items-center gap-2 text-xs text-white/50 hover:text-white transition-colors px-3 py-2 rounded-xl border border-white/10">
               <ArrowPathIcon className="w-4 h-4" /> Refresh
@@ -243,7 +318,7 @@ const OutreachCRMPage: React.FC = () => {
             <button onClick={bulkSend} disabled={!templateId} className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-40">
               <ChatBubbleLeftRightIcon className="w-4 h-4" /> Send Bulk
             </button>
-            <div className="text-xs text-white/40">or open details to send individually.</div>
+            <div className="text-xs text-white/40">or open details for smart actions.</div>
           </div>
         )}
 
@@ -296,11 +371,16 @@ const OutreachCRMPage: React.FC = () => {
                         </td>
                         <td className="px-5 py-4 text-center text-white/50 text-sm">{lead.outreachAttempts || 0}</td>
                         <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <button onClick={() => { setActiveLead(lead); setNotes(lead.notes || ''); }} className="text-xs px-3 py-1.5 rounded-lg bg-white/5 text-white/50 border border-white/10 hover:border-white/20 transition-colors">Details</button>
                             <button onClick={() => sendTo(lead.phone || '', lead.id)} disabled={!lead.phone} title="Send WhatsApp via OpenWA" className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors disabled:opacity-40">
                               <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" /> WhatsApp
                             </button>
+                            {QUICK_ACTIONS.map(action => (
+                              <button key={action.id} onClick={() => smartAction(lead.id, action.id)} title={`Smart action: ${action.label}`} className="text-xs font-bold px-2.5 py-1.5 rounded-lg border hover:brightness-110 transition-colors" style={{ background: `${action.color}15`, color: action.color, borderColor: `${action.color}35` }}>
+                                {action.label}
+                              </button>
+                            ))}
                           </div>
                         </td>
                       </tr>
@@ -334,10 +414,86 @@ const OutreachCRMPage: React.FC = () => {
                   <p className="text-sm font-bold text-white">{activeLead.outreachAttempts || 0}</p>
                 </div>
               </div>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={6} placeholder="Notes, call outcomes, follow-up reminders…" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 resize-none mb-4" />
+              <label className="text-xs text-white/50 mb-1 block">Smart action</label>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {QUICK_ACTIONS.map(action => (
+                  <button key={action.id} onClick={() => { smartAction(activeLead.id, action.id).then(() => setActiveLead(null)); }} className="text-xs font-bold px-3 py-2 rounded-xl border hover:brightness-110" style={{ background: `${action.color}15`, color: action.color, borderColor: `${action.color}35` }}>
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+              <label className="text-xs text-white/50 mb-1 block">Notes</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5} placeholder="Notes, call outcomes, follow-up reminders…" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 resize-none mb-4" />
               <div className="flex gap-3">
                 <button onClick={async () => { await updateLead(activeLead.id, { notes }); setActiveLead(null); }} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
                 <button onClick={() => setActiveLead(null)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {advancedOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BoltIcon className="w-5 h-5 text-white/70" />
+                  <h3 className="font-black text-white">Advanced</h3>
+                </div>
+                <button onClick={() => { setAdvancedOpen(false); setSmartResult(null); }} className="text-xs text-white/50 hover:text-white">Close</button>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 mb-3">
+                <p className="text-xs text-white/40 mb-2">WhatsApp smart capabilities</p>
+                <p className="text-xs text-white/70 whitespace-pre-wrap">{JSON.stringify({ menu: true, book: true, cancel: true, reschedule: true, update: true, status: true, pay: true, human: true, faq: true, pluginAware: true }, null, 2)}</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 mb-3">
+                <p className="text-xs text-white/40 mb-2">Live smart action</p>
+                <label className="text-xs text-white/60 block mb-1">Lead ID</label>
+                <input id="smartLeadId" placeholder="Paste lead ID" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 mb-2" />
+                <label className="text-xs text-white/60 block mb-1">Intent</label>
+                <select id="smartIntent" className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+                  {QUICK_ACTIONS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
+                </select>
+                <button onClick={async () => {
+                  const leadId = (document.getElementById('smartLeadId') as HTMLInputElement).value.trim();
+                  const intent = (document.getElementById('smartIntent') as HTMLSelectElement).value;
+                  if (!leadId) return;
+                  await smartAction(leadId, intent);
+                }} disabled={smartTesting} className="mt-2 flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-50">
+                  <PlayIcon className="w-4 h-4" /> Run smart action
+                </button>
+                {smartResult && <p className="text-xs text-white/70 mt-2">Result: {smartResult}</p>}
+              </div>
+              <p className="text-xs text-white/40">Advanced actions help move leads through automation, plugin-aware messaging, and fast manual overrides.</p>
+            </div>
+          </div>
+        )}
+
+        {pluginsOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-white/70" />
+                  <h3 className="font-black text-white">Plugin Catalog</h3>
+                </div>
+                <button onClick={() => setPluginsOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
+              </div>
+              {plugins.length === 0 && <p className="text-xs text-white/50">No plugins listed yet.</p>}
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                {plugins.map(plugin => (
+                  <div key={plugin.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-white">{plugin.name}</p>
+                        <p className="text-xs text-white/40">{plugin.id} · {plugin.version}</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-white/10 text-white/60">{plugin.status}</span>
+                    </div>
+                    {plugin.description && <p className="text-xs text-white/60 mt-2">{plugin.description}</p>}
+                    {plugin.keywords?.length > 0 && <p className="text-[11px] text-white/35 mt-1">keywords: {(plugin.keywords as string[]).join(', ')}</p>}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -349,11 +505,19 @@ const OutreachCRMPage: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Cog6ToothIcon className="w-5 h-5 text-white/70" />
-                  <h3 className="font-black text-white">Outreach Automation</h3>
+                  <h3 className="font-black text-white">Automation</h3>
                 </div>
                 <button onClick={() => setAutomationOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
               </div>
-              <p className="text-xs text-white/50 mb-4">Rules react to status changes. Keep them explicit and end-user friendly.</p>
+              <p className="text-xs text-white/50 mb-4">Start with a preset, then edit timing and templates.</p>
+              <div className="grid grid-cols-1 gap-2 mb-4">
+                {PRESET_AUTOMATIONS.map(preset => (
+                  <button key={preset.id} onClick={() => setAutomations([...automations, { triggerStatus: preset.triggerStatus, templateId: preset.templateId, delayMinutes: preset.delayMinutes }])} className="text-left bg-white/[0.03] border border-white/10 rounded-2xl p-3 hover:border-white/20 transition-colors">
+                    <p className="text-sm font-bold text-white">{preset.title}</p>
+                    <p className="text-xs text-white/50">{preset.description}</p>
+                  </button>
+                ))}
+              </div>
               <div className="space-y-3 mb-4">
                 {automations.map((a, idx) => (
                   <div key={idx} className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 flex flex-wrap items-center gap-3">
@@ -374,7 +538,7 @@ const OutreachCRMPage: React.FC = () => {
                 <button onClick={() => setAutomations([...automations, { triggerStatus: 'NEW', templateId: '', delayMinutes: 60 }])} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-white">
                   <UserPlusIcon className="w-4 h-4" /> Add rule
                 </button>
-                <span className="text-xs text-white/40">Saved per workspace.</span>
+                <span className="text-xs text-white/40">Rules are saved per workspace.</span>
               </div>
               <div className="flex gap-3">
                 <button onClick={saveAutomations} disabled={savingAutomation} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors disabled:opacity-50">{savingAutomation ? 'Saving…' : 'Save Automation'}</button>
