@@ -16,13 +16,12 @@ export const PassportDashboardPage = () => {
   const [category, setCategory] = useState('general');
   const [targetId, setTargetId] = useState('');
   const [stakeAmount, setStakeAmount] = useState(0);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
 
   const { data: myData, refetch: refetchMine } = useQuery(['my-passport'], () => passportService.getMyPassport());
 
   const owner = useMemo(() => myData?.data?.owner ?? '', [myData?.data?.owner]);
-  const publicLookup = targetId || (isDemoMode ? 'demo-user' : owner);
+  const publicLookup = targetId || owner;
   const { data: publicData, refetch: refetchPublic } = useQuery({
     queryKey: ['public-passport', publicLookup],
     queryFn: () => passportService.getPublicSummary(publicLookup),
@@ -85,12 +84,6 @@ export const PassportDashboardPage = () => {
     await Promise.all([refetchMine(), refetchPublic()]);
   };
 
-  const scaffoldDemo = () => {
-    setIsDemoMode(true);
-    setTargetId('demo-user');
-    qc.invalidateQueries(['public-passport', 'demo-user']);
-  };
-
   if (!my) {
     return (
       <div className="min-h-screen bg-surface text-on-surface p-6 text-center">
@@ -119,9 +112,6 @@ export const PassportDashboardPage = () => {
             <p className="font-body text-sm text-on-surface-variant mt-1">Multi-axis reliability score, vouches, staked proof, and channel signals.</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={scaffoldDemo} type="button" className="px-3 py-2 rounded-xl bg-surface-container text-sm font-bold text-on-surface-variant border border-outline-variant/30">
-              Load Demo
-            </button>
             <button onClick={() => exportMutation.mutate()} disabled={exportMutation.isLoading} type="button" className="px-3 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold">
               {exportMutation.isLoading ? 'Exporting...' : 'Export JSON'}
             </button>

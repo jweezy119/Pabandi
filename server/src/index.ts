@@ -47,7 +47,6 @@ import loanRoutes from './routes/loan.routes';
 import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
 import treasuryRoutes from './routes/treasury.routes';
-import demoRoutes from './routes/demo.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 
 const app = express();
@@ -223,7 +222,6 @@ app.use(`/api/${API_VERSION}/integrations/livesell`, liveSellRoutes);
 app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
-app.use(`/api/${API_VERSION}/demo`, demoRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
