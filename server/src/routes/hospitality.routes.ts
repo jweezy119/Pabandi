@@ -63,11 +63,10 @@ router.get('/properties', listProperties);
  */
 router.get('/property/:id', getProperty);
 
-/**
- * POST /api/hospitality/test-booking
- * Simulate a test booking event — for onboarding and demos.
- */
-router.post('/test-booking', simulateBooking);
+/** POST /api/hospitality/test-booking — disabled in production */
+router.post('/test-booking', (_req: any, res: any) => {
+  res.status(404).json({ success: false, error: 'Not found' });
+});
 
 export default router;
 

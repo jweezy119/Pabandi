@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
 import { logger } from '../utils/logger';
-import { isDemoMode } from '../utils/env';
 
 // ─── Webhook Receivers ────────────────────────────────────────────────────────
+
+export async function simulateBooking(req: Request, res: Response) {
+  return res.status(404).json({ success: false, error: 'Not found' });
+}
 
 /**
  * POST /api/hospitality/beds24/webhook
@@ -228,54 +231,5 @@ export async function getProperty(req: Request, res: Response) {
   } catch (err: any) {
     logger.error('[Hospitality] getProperty error:', err);
     res.status(500).json({ error: 'Failed to fetch property' });
-  }
-}
-
-/**
- * POST /api/hospitality/test-booking
- * Simulate a test booking event for development/demo purposes.
- */
-export async function simulateBooking(req: Request, res: Response) {
-  try {
-    if (!isDemoMode()) {
-      return res.status(404).json({ error: 'Demo simulator is disabled' });
-    }
-
-    const propertyId = req.body.propertyId || req.query.propertyId;
-    const property = await hospitalityService.getPropertyById(propertyId as string);
-
-    if (!property) {
-      return res.status(404).json({ error: 'Property not found' });
-    }
-
-    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split('T')[0];
-    const dayAfter = new Date(Date.now() + 3 * 86_400_000).toISOString().split('T')[0];
-
-    const testBooking = {
-      pmsReservationId: `TEST-${Date.now()}`,
-      propertyId,
-      provider: property.provider,
-      guestName: 'Ahmad Test Guest',
-      guestEmail: 'test@pabandi.io',
-      guestPhone: '+923001234567',
-      checkIn: tomorrow,
-      checkOut: dayAfter,
-      nights: 2,
-      depositAmount: 50,
-      currency: 'USD',
-      totalAmount: 200,
-      status: 'CONFIRMED' as const,
-    };
-
-    await hospitalityService.handleBookingEvent(testBooking, property);
-
-    return res.json({
-      success: true,
-      message: 'Test booking event processed successfully',
-      booking: testBooking,
-    });
-  } catch (err: any) {
-    logger.error('[Hospitality] simulateBooking error:', err);
-    res.status(500).json({ error: 'Failed to simulate booking' });
   }
 }
