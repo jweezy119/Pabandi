@@ -82,7 +82,7 @@ interface Lead {
 }
 
 interface Summary {
-  total: number; businessLeads: number; conversionRate: string;
+  total: number; businessLeads: number; conversionRate: string; avgScore: string;
   byStatus: Record<string, number>; byCity: Record<string, number>;
 }
 
@@ -267,7 +267,7 @@ const OutreachCRMPage: React.FC = () => {
         )}
 
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
               <p className="text-xs text-white/50 mb-1">Total Leads</p>
               <p className="text-4xl font-black text-white">{summary.total}</p>
@@ -279,6 +279,10 @@ const OutreachCRMPage: React.FC = () => {
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
               <p className="text-xs text-white/50 mb-1">Conversion</p>
               <p className="text-4xl font-black text-amber-400">{summary.conversionRate}%</p>
+            </div>
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+              <p className="text-xs text-white/50 mb-1">Avg Lead Score</p>
+              <p className="text-4xl font-black text-indigo-400">{summary.avgScore || '0.0'}</p>
             </div>
           </div>
         )}
@@ -346,6 +350,7 @@ const OutreachCRMPage: React.FC = () => {
                     <th className="px-5 py-4 font-semibold">City</th>
                     <th className="px-5 py-4 font-semibold">Phone</th>
                     <th className="px-5 py-4 font-semibold">Status</th>
+                    <th className="px-5 py-4 font-semibold">Score</th>
                     <th className="px-5 py-4 font-semibold">Attempts</th>
                     <th className="px-5 py-4 font-semibold">Actions</th>
                   </tr>
