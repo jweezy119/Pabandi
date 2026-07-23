@@ -136,15 +136,46 @@ class HospitalityService {
       return acc;
     }, {});
 
+    const aggregated = properties
+      .map((property) => syncTelemetry.get(property.id))
+      .filter(Boolean);
+
+    const eventCount = aggregated.reduce((sum, item) => sum + (item?.eventCount || 0), 0);
+    const errorCount = aggregated.reduce((sum, item) => sum + (item?.errorCount || 0), 0);
+    const lastSyncAt = aggregated
+      .map((item) => item?.lastSyncAt)
+      .filter(Boolean)
+      .sort()
+      .pop();
+
+    const tested = eventCount > 0;
+
     return {
       hasConnections: properties.length > 0,
       totalProperties: properties.length,
-      activeProperties: properties.filter(property => property.isActive).length,
+      activeProperties: properties.filter((property) => property.isActive).length,
       providers: Object.keys(providers),
-      lastSyncAt: new Date().toISOString(),
-      tested: false,
-      verifiedAt: null,
+      lastSyncAt: lastSyncAt || null,
+      tested,
+      verifiedAt: tested ? lastSyncAt : null,
+      eventCount,
+      errorCount,
     };
+  }
+
+  touchSync(propertyId: string, eventSuccess: boolean) {
+    const current = syncTelemetry.get(propertyId) || {
+      lastSyncAt: undefined,
+      lastEventAt: undefined,
+      eventCount: 0,
+      errorCount: 0,
+    };
+
+    current.lastSyncAt = new Date().toISOString();
+    current.eventCount += 1;
+    if (!eventSuccess) current.errorCount += 1;
+
+    syncTelemetry.set(propertyId, current);
   }
 
   // ─── Webhook Ingest ───────────────────────────────────────────────────────
