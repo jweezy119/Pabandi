@@ -55,6 +55,7 @@ export async function cloudbedsWebhook(req: Request, res: Response) {
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
+      try { hospitalityService.touchSync(property.id, true); } catch {}
       res.status(200).json({ received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
@@ -85,6 +86,7 @@ export async function lodgifyWebhook(req: Request, res: Response) {
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
+      try { hospitalityService.touchSync(property.id, true); } catch {}
       res.status(200).json({ received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
@@ -115,6 +117,7 @@ export async function manualWebhook(req: Request, res: Response) {
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
+      try { hospitalityService.touchSync(property.id, true); } catch {}
       res.status(200).json({ received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
