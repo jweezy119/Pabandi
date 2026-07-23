@@ -156,6 +156,9 @@ app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 import aiRoutes from './routes/ai.routes';
 app.use(`/api/${API_VERSION}/ai`, aiRoutes);
 
+import web3Routes from './routes/web3.routes';
+app.use(`/api/${API_VERSION}/web3`, web3Routes);
+
 import apiPublicRoutes from './routes/api-public.routes';
 app.use(`/api/${API_VERSION}/public`, apiPublicRoutes);
 
