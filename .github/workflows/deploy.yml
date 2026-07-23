@@ -38,6 +38,8 @@ jobs:
           cat <<EOF > env.yaml
           NODE_ENV: production
           API_VERSION: v1
+          DATABASE_URL: "${{ secrets.DATABASE_URL }}"
+          DIRECT_URL: "${{ secrets.DIRECT_URL }}"
           FRONTEND_URL: "${{ secrets.FRONTEND_URL }}"
           BACKEND_URL: "https://pabandi-server-97129395003.asia-south1.run.app"
           JWT_SECRET: "${{ secrets.JWT_SECRET }}"
