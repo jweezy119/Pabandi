@@ -24,7 +24,7 @@ export async function beds24Webhook(req: Request, res: Response) {
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
-      // Handle async — respond immediately to PMS (required within 5s)
+      hospitalityService.touchSync(property.id, true);
       res.status(200).json({ received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
