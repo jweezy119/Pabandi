@@ -16,17 +16,6 @@ const STATUSES = [
   { value: 'NOT_INTERESTED', label: 'Not Interested',  color: '#ef4444', bg: '#ef444415', icon: <XCircleIcon className="w-4 h-4" /> },
 ];
 
-const WA_TEMPLATES: Record<string, string> = {
-  'chicago': `Hello {name}! 🚀\n\nPabandi — the reliability layer for US bookings.\nWe eliminate no-shows and fake reservations with escrow-backed trusted bookings for Chicago venues.\n\n✅ Free to join\n✅ Card/PayPal/Apple Pay deposits\n✅ Verified guest history\n\nWant a 10-min walkthrough for {businessName}?\n\npabandi.com`,
-  'new-york': `Hello {name}! 🚀\n\nPabandi — the reliability layer for US bookings.\nWe eliminate no-shows and fake reservations with escrow-backed trusted bookings for New York venues.\n\n✅ Free to join\n✅ Card/PayPal/Apple Pay deposits\n✅ Verified guest history\n\nWant a 10-min walkthrough for {businessName}?\n\npabandi.com`,
-  default: `Hello {name}! 👋\n\nI'm reaching out from Pabandi — a reliability layer that eliminates no-shows and fake reservations using verifiable trust technology.\n\nFree to join. Would love to show you how it works for {businessName}.\n\npabandi.com`,
-};
-
-function buildTemplate(city: string, name: string, businessName: string): string {
-  const template = WA_TEMPLATES[city?.toLowerCase()] || WA_TEMPLATES.default;
-  return template.replace(/{name}/g, name || 'there').replace(/{businessName}/g, businessName || 'your business');
-}
-
 interface Lead {
   id: string;
   name: string;
@@ -95,11 +84,37 @@ export const OutreachCRMPage: React.FC = () => {
     fetchData();
   };
 
-  const openWhatsApp = (lead: Lead) => {
-    const msg = encodeURIComponent(buildTemplate(lead.city || '', lead.name, lead.businessName || ''));
-    const phone = (lead.phone || '').replace(/[^0-9]/g, '');
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-    updateLead(lead.id, { outreachStatus: 'CONTACTED', incrementAttempt: true });
+  const sendWhatsApp = async (lead: Lead) => {
+    const to = (lead.phone || '').replace(/[^0-9]/g, '');
+    if (!to) {
+      alert('No phone number available for this lead.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/api/v1/waitlist/lead/${encodeURIComponent(lead.id)}/send-whatsapp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ to, sessionId: 'pabandi' }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Send failed');
+        return;
+      }
+
+      await updateLead(lead.id, {
+        outreachStatus: 'CONTACTED',
+        incrementAttempt: true,
+        notes: (notes || '') + '\n\n[OpenWA] Plugin-catalog outreach sent.',
+      });
+      alert('OpenWA outreach sent through the gateway.');
+    } catch (e) {
+      alert('OpenWA send request failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const statusInfo = (val: string) => STATUSES.find(s => s.value === val) || STATUSES[0];
@@ -216,8 +231,8 @@ export const OutreachCRMPage: React.FC = () => {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => openWhatsApp(lead)}
-                              title="Open WhatsApp with pre-filled message"
+                              onClick={() => sendWhatsApp(lead)}
+                              title="Send WhatsApp through the OpenWA gateway"
                               className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors"
                             >
                               <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" /> WhatsApp

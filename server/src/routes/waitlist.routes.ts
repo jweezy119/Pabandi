@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { openwaService } from '../services/openwa.service';
+import { loadPluginCatalog, scorePlugin, selectPlugins, buildPluginSummary } from '../services/openwa.plugins.service';
 
 const router = Router();
 
@@ -140,6 +142,206 @@ router.get('/outreach-summary', authenticate, async (req: AuthRequest, res: Resp
   } catch (error) {
     console.error('Summary error:', error);
     return res.status(500).json({ success: false, error: 'Failed to get summary' });
+  }
+});
+
+// ── GET /waitlist/lead-outreach/:id — ADMIN: scored plugin outreach preview ─────
+router.get('/lead-outreach/:id', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const { id } = req.params;
+    const doc = await getDb().collection('waitlist').doc(id).get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ success: false, error: 'Lead not found' });
+    }
+
+    const lead = doc.data() as Record<string, unknown>;
+
+    const normalizeValue = (input: unknown) => (Array.isArray(input) ? input : [input])
+      .map(value => String(value).trim())
+      .filter(Boolean);
+
+    const keywords = normalizeValue([
+      lead.city,
+      lead.role,
+      lead.businessType,
+      lead.businessName,
+      lead.why,
+    ]);
+
+    const context = {
+      city: String(lead.city ?? ''),
+      businessName: String(lead.businessName ?? ''),
+      role: String(lead.role ?? ''),
+      businessType: String(lead.businessType ?? ''),
+    };
+
+    const plugins = selectPlugins(keywords, context, 3);
+    const summary = buildPluginSummary(plugins);
+
+    const greeting = [
+      `Pabandi outreach for${lead.businessName ? ` *${String(lead.businessName)}*` : ' your business'}.`,
+      '',
+      '1) Claim your profile',
+      '2) View bookings',
+      '3) Enable escrow + Web3 reliability',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const baseMessage = `${greeting}\n\nBookings are easier with verified attendance, escrow protection, and Pabandi Trust scoring.`;
+
+    const outreachBody = summary ? `${baseMessage}\n\n${summary}` : baseMessage;
+
+    return res.json({
+      success: true,
+      data: {
+        id,
+        lead,
+        keywords,
+        plugins,
+        outreachBody,
+      },
+    });
+  } catch (error) {
+    console.error('Plugin outreach preview error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to build outreach preview' });
+  }
+});
+
+// ── POST /waitlist/lead/:id/send-whatsapp — ADMIN: send scored outreach via OpenWA ──
+router.post('/lead/:id/send-whatsapp', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    if (req.user?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+
+    const { id } = req.params;
+    const { to, sessionId } = req.body as { to?: string; sessionId?: string };
+
+    const doc = await getDb().collection('waitlist').doc(id).get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ success: false, error: 'Lead not found' });
+    }
+
+    const lead = doc.data() as Record<string, unknown>;
+
+    const fallbackPhone = String(lead.phone ?? lead.whatsapp ?? '');
+    const destination = (to || fallbackPhone || '').trim();
+
+    if (!destination) {
+      return res.status(400).json({ success: false, error: 'to is required' });
+    }
+
+    const normalizeValue = (input: unknown) => (Array.isArray(input) ? input : [input])
+      .map(value => String(value).trim())
+      .filter(Boolean);
+
+    const keywords = normalizeValue([
+      lead.city,
+      lead.role,
+      lead.businessType,
+      lead.businessName,
+      lead.why,
+    ]);
+
+    const context = {
+      city: String(lead.city ?? ''),
+      businessName: String(lead.businessName ?? ''),
+      role: String(lead.role ?? ''),
+      businessType: String(lead.businessType ?? ''),
+    };
+
+    const plugins = selectPlugins(keywords, context, 3);
+    const summary = buildPluginSummary(plugins);
+
+    const personName = String(lead.name ?? '').trim();
+    const businessName = String(lead.businessName ?? '').trim();
+
+    const greeting =
+      personName || businessName
+        ? `Hi ${personName || businessName}!`
+        : 'Hello!';
+
+    const body = [
+      greeting,
+      '',
+      "You're missing bookings on Pabandi.",
+      '',
+      businessName
+        ? `${businessName} is not yet fully set up for verified bookings, escrow deposits, and Pabandi Trust scoring.`
+        : 'Your location is not yet fully set up for verified bookings, escrow deposits, and Pabandi Trust scoring.',
+      '',
+      'Claim your profile free to accept bookings and eliminate no-shows:',
+      'https://pabandi.com/business/claim',
+      '',
+      summary,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const resolvedSessionId = sessionId || process.env.OPENWA_SESSION_ID || process.env.OPENWA_SESSION || 'default';
+    const openwaUrl = `${(process.env.OPENWA_API_URL || 'http://localhost:2785/api').replace(/\/$/, '')}/sessions/${encodeURIComponent(resolvedSessionId)}/messages/send-text`;
+
+    const response = await fetch(openwaUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.OPENWA_API_KEY ? { 'X-API-Key': process.env.OPENWA_API_KEY } : {}),
+      },
+      body: JSON.stringify({
+        to: destination.replace(/[^0-9]/g, '') + '@c.us',
+        text: body,
+        pluginContext: 'pabandi:plugin-catalog-outreach',
+      }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+      outreachAttempts: Number(lead.outreachAttempts ?? 0) + (response.ok ? 1 : 0),
+      lastContactedAt: response.ok ? new Date().toISOString() : (lead.lastContactedAt ?? null),
+      outreachStatus: ((lead.outreachStatus as string) || 'NEW').toUpperCase(),
+      lastOutreachChannel: 'whatsapp-openwa',
+      lastOutreachBody: body,
+      lastOutreachPlugins: plugins.map(plugin => plugin.id),
+      lastOutreachKeywords: keywords,
+      lastOutreachDestination: destination,
+    };
+
+    if (response.ok) {
+      updates.outreachStatus = 'CONTACTED';
+    }
+
+    await getDb().collection('waitlist').doc(id).update(updates);
+
+    if (!response.ok) {
+      return res.status(502).json({
+        success: false,
+        error: result?.message || 'OpenWA gateway rejected the send request',
+        gateway: result,
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        to: destination,
+        sessionId: resolvedSessionId,
+        outreachBody: body,
+        plugins,
+        gateway: result,
+      },
+    });
+  } catch (error) {
+    console.error('OpenWA outreach send error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to send WhatsApp outreach' });
   }
 });
 
