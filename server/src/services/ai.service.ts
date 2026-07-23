@@ -3,7 +3,6 @@ import axios from 'axios';
 import { cryptoService } from './cryptoService';
 import { openwaAfterHoursService } from './openwa.after-hours.service';
 import { openwaFaqBotService } from './openwa.faq-bot.service';
-import { whatsAppIntentService } from './whatsapp-intent.service';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
@@ -46,10 +45,26 @@ async function findBusinessByPublicPhone(phoneNumber: string) {
   });
 }
 
+import { aiNlpService } from './ai.nlp.service';
+import { openwaDropBotService } from './openwa.drop-bot.service';
+
 export const processWhatsAppMessage = async (customerPhone: string, businessPhone: string, message: string, user: any | null) => {
   console.log(`[AI] Processing message from ${customerPhone} to ${businessPhone}: ${message}`);
 
   const lowerMsg = message.trim().toLowerCase();
+
+  if (openwaDropBotService.isDropCommand(message)) {
+    try {
+      const business = await findBusinessByPublicPhone(businessPhone);
+      if (business) {
+        const reply = await openwaDropBotService.handleDropCommand(business.id, message);
+        await sendWhatsAppMessage(customerPhone, reply);
+        return;
+      }
+    } catch (e) {
+      console.error('[Drop Bot Error]', e);
+    }
+  }
 
   if (user) {
     if (lowerMsg === 'cancel') {
@@ -58,11 +73,16 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
     }
   }
 
-  let business: any = null;
   try {
-    business = await findBusinessByPublicPhone(businessPhone);
+    const business = await findBusinessByPublicPhone(businessPhone);
+    let businessSlug = 'unknown';
+    let businessName = 'Pabandi Merchant';
+
     if (business) {
-      const rawSettings = business.settings;
+      businessSlug = business.slug || business.id;
+      businessName = business.name;
+      
+      const rawSettings = (business as any)?.settings;
       const settings =
         rawSettings && typeof rawSettings === 'object'
           ? { afterHoursJson: rawSettings.afterHoursJson || null }
@@ -88,107 +108,25 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
         return;
       }
     }
+    
+    // Use the new NLP adapter
+    const classification = await aiNlpService.classifyIntentAndLanguage(message);
+    console.log(`[AI NLP] Classification result:`, classification);
+    
+    if (classification.intent === 'booking' || classification.intent === 'sales') {
+      const template = "Great! Let's lock in your reservation/order. Please securely deposit $5 into the Web3 Escrow to confirm: https://pabandi.com/s/{{businessSlug}}?mode=instant";
+      const response = await aiNlpService.generateCopy(template, { businessSlug });
+      await sendWhatsAppMessage(customerPhone, response);
+      return;
+    } else {
+      const template = "I'm the AI assistant for {{businessName}}. I can help you book a table, check our catalog, or answer general questions. How can I help you today?";
+      const response = await aiNlpService.generateCopy(template, { businessName });
+      await sendWhatsAppMessage(customerPhone, response);
+      return;
+    }
+
   } catch (pluginErr) {
     console.error('[Plugin] Pre-AI plugin handling failed:', pluginErr);
-  }
-
-  const intentContext = { businessName: business?.name ?? undefined };
-  const intent = whatsAppIntentService.match(message, intentContext);
-  if (intent) {
-    const reply = [intent.reply, intent.pluginSummary].filter(Boolean).join('\n\n');
-    await sendWhatsAppMessage(customerPhone, reply);
-    return;
-  }
-
-  if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
-    console.warn('[AI] DashScope API Key missing, returning default auto-reply.');
-    await sendWhatsAppMessage(customerPhone, 'Pabandi AI is disabled in demo mode. Please use the app to manage bookings.');
-    return;
-  }
-
-  try {
-    let aiContext = 'You are the Pabandi AI Assistant. Pabandi is a reliability and trust layer launching first in Pakistan, built for informal commerce worldwide.\n';
-    let businessSlug = 'unknown';
-    let catalogPrompt = '';
-
-    const lookupBusiness = business ?? (await findBusinessByPublicPhone(businessPhone));
-    if (lookupBusiness) {
-      aiContext += `\nYou are responding on behalf of the business: ${lookupBusiness.name}.\n`;
-      businessSlug = lookupBusiness.slug || lookupBusiness.id;
-
-      const catalog = await prisma.businessService.findMany({
-        where: { businessId: lookupBusiness.id, isActive: true },
-        take: 10,
-      });
-
-      if (catalog.length > 0) {
-        catalogPrompt =
-          "The merchant's product catalog is:\n" +
-          catalog.map(item => `- ${item.name}: $${item.price.toFixed(2)}`).join('\n') +
-          '\n';
-        catalogPrompt +=
-          'If the customer wants to buy an item or place an order (e.g., "I want the red shirt"), generate an instant checkout link for them using escrow:\n';
-        catalogPrompt +=
-          `"Great! You can securely buy the [Item] here: https://pabandi.com/s/${businessSlug}?item=[Encoded_Item_Name]&price=[Price]&mode=instant"\n`;
-        catalogPrompt += 'If they ask what you have for sale, list the items and their prices concisely.';
-      } else {
-        catalogPrompt =
-          'This merchant currently has no products listed for sale. Inform the customer that there are no items available right now.\n';
-      }
-    } else {
-      catalogPrompt =
-        'If the user wants to buy an item, tell them this account is not fully set up for sales yet.\n';
-    }
-
-    if (user) {
-      aiContext += `The person you are talking to is ${user.firstName} ${user.lastName}, a registered ${user.role} on Pabandi.\n`;
-      if (user.role === 'BUSINESS_OWNER') {
-        aiContext += 'As an enterprise owner, they might ask about their reservations or want to manage their profile.\n';
-      } else {
-        aiContext += 'As a customer, they might want to book a table, check reservations, or ask about No-Show deposits.\n';
-      }
-    } else {
-      aiContext += 'The person you are talking to is an unregistered user. Briefly mention they can sign up on pabandi.com for rewards.\n';
-    }
-
-    aiContext += `
-Keep your answers brief, conversational, and helpful. You must respond in English.
-If the user asks to book a table, acknowledge their request and tell them you are checking availability (simulate for now).
-${catalogPrompt}
-Do not generate markdown or long lists.
-`;
-
-    const payload = {
-      model: 'qwen-turbo',
-      input: {
-        messages: [
-          { role: 'system', content: aiContext },
-          { role: 'user', content: message }
-        ]
-      },
-      parameters: { result_format: 'message' },
-    };
-
-    const response = await axios.post(
-      'https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${DASHSCOPE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    let aiResponse = "I'm sorry, I couldn't process your request.";
-    if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
-      aiResponse = response.data.output.choices[0].message.content.trim();
-    }
-
-    await sendWhatsAppMessage(customerPhone, aiResponse);
-  } catch (error: any) {
-    console.error('[AI] Error generating AI response from DashScope:', error.response?.data || error.message);
-    await sendWhatsAppMessage(customerPhone, 'Sorry, I am having trouble understanding right now. Please try again or use the app.');
   }
 };
 

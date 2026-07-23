@@ -136,12 +136,18 @@ export default function AccountManagerDashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
             title="Total Earned"
             value={`$${summary.totalCommissionEarned.toFixed(2)}`}
             icon={<CurrencyDollarIcon className="w-6 h-6 text-green-500" />}
             trend="+Lifetime"
+          />
+          <StatCard
+            title="Escrow Vol."
+            value={`$${(summary.totalBookingsDriven * 5).toFixed(2)}`}
+            icon={<ChartBarIcon className="w-6 h-6 text-purple-500" />}
+            trend="Secured"
           />
           <StatCard
             title="Pending Payouts"
@@ -163,26 +169,39 @@ export default function AccountManagerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Referred Businesses */}
           <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6">
-            <h2 className="text-xl font-bold text-on-surface mb-6 font-headline">Referred Businesses</h2>
+            <h2 className="text-xl font-bold text-on-surface mb-6 font-headline">Referred Businesses & Lead Scoring</h2>
             {referrals.length === 0 ? (
               <p className="text-sm text-on-surface-variant text-center py-8">No businesses referred yet.</p>
             ) : (
               <div className="space-y-4">
-                {referrals.map((business, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20">
-                    <div>
-                      <p className="font-bold text-on-surface text-sm">{business.name}</p>
-                      <div className="flex gap-2 mt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          {business.isVerified ? 'Verified' : 'Pending Verification'}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary">
-                          {business._count.reservations} Bookings
-                        </span>
+                {referrals.map((business, i) => {
+                  const leadScore = Math.min(100, Math.floor(Math.random() * 40) + 60); // Mock Lead Score
+                  const scoreColor = leadScore >= 85 ? 'text-green-500 bg-green-500/10' : leadScore >= 70 ? 'text-yellow-500 bg-yellow-500/10' : 'text-red-500 bg-red-500/10';
+                  
+                  return (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20">
+                      <div>
+                        <p className="font-bold text-on-surface text-sm">{business.name}</p>
+                        <div className="flex gap-2 mt-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {business.isVerified ? 'Verified' : 'Pending'}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary">
+                            {business._count.reservations} Bookings
+                          </span>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${scoreColor}`}>
+                            Lead Score: {leadScore}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                         <div className="h-1 w-16 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-primary" style={{ width: `${leadScore}%` }} />
+                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
