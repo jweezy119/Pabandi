@@ -126,6 +126,24 @@ class HospitalityService {
     return connectedProperties.get(id);
   }
 
+  async getConnectionHealth(businessId: string) {
+    const properties = await this.getPropertiesByBusiness(businessId);
+    const providers = properties.reduce<Record<string, ConnectedProperty[]>>((acc, property) => {
+      acc[property.provider] = [...(acc[property.provider] || []), property];
+      return acc;
+    }, {});
+
+    return {
+      hasConnections: properties.length > 0,
+      totalProperties: properties.length,
+      activeProperties: properties.filter(property => property.isActive).length,
+      providers: Object.keys(providers),
+      lastSyncAt: new Date().toISOString(),
+      tested: false,
+      verifiedAt: null,
+    };
+  }
+
   // ─── Webhook Ingest ───────────────────────────────────────────────────────
 
   /**

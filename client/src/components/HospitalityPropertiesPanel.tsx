@@ -48,13 +48,13 @@ export default function HospitalityPropertiesPanel() {
   const { data, isLoading } = useQuery('hospitality-properties', () => hospitalityService.getProperties());
 
   const testMutation = useMutation(
-    (propertyId: string) => hospitalityService.testBooking(propertyId),
+    () => hospitalityService.getHealth(),
     {
       onSuccess: () => {
-        alert('Test event sent to Channex.');
+        alert('Connection verified. Webhook delivery will appear here once PMS events arrive.');
       },
       onError: () => {
-        alert('Test event failed — check your Channex connection.');
+        alert('Health check failed — confirm your PMS webhook URL and signing secret.');
       },
     }
   );

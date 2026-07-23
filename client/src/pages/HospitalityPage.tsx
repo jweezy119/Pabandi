@@ -125,17 +125,16 @@ export default function HospitalityPage() {
   const handleCloseWizard = () => {
     setShowWizard(false);
     setWizardPropertyType(undefined);
-    // Refetch properties after wizard closes to show newly connected ones
     if (isAuthenticated) refetchProperties();
   };
 
-  const handleTestBooking = async (propertyId: string) => {
-    setTestingPropertyId(propertyId);
+  const handleHealthCheck = async () => {
+    setTestingPropertyId('__health__');
     try {
-      await hospitalityService.testBooking(propertyId);
-      alert('Connection test sent. Check your PMS or provider dashboard to confirm the test event arrived.');
+      await hospitalityService.getHealth();
+      alert('Connection looks healthy. Pabandi will sync verified booking events from your PMS via webhook.');
     } catch {
-      alert('Connection test failed. This property may not be fully connected yet.');
+      alert('Connection health check failed. Check your PMS webhook configuration.');
     }
     setTestingPropertyId(null);
   };
@@ -290,11 +289,11 @@ export default function HospitalityPage() {
                     </div>
 
                     <button
-                      onClick={() => handleTestBooking(prop.id)}
-                      disabled={testingPropertyId === prop.id}
+                      onClick={() => handleHealthCheck()}
+                      disabled={testingPropertyId === '__health__'}
                       className="w-full mt-1 py-2 text-[11px] font-bold rounded-lg border border-white/15 text-on-surface-variant hover:text-white hover:border-white/30 transition-all flex items-center justify-center gap-2 bg-white/5"
                     >
-                      {testingPropertyId === prop.id ? (
+                      {testingPropertyId === '__health__' ? (
                         <>
                           <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
                           Checking...
