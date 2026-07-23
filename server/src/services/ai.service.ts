@@ -3,7 +3,6 @@ import axios from 'axios';
 import { cryptoService } from './cryptoService';
 import { openwaAfterHoursService } from './openwa.after-hours.service';
 import { openwaFaqBotService } from './openwa.faq-bot.service';
-import { openwaChatFlowService } from './openwa.chat-flow.service';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
