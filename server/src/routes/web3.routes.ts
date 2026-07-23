@@ -4,6 +4,14 @@ import { prisma } from '../utils/database';
 
 const router = Router();
 
+router.get('/status', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    service: 'web3',
+    endpoints: ['/api/v1/web3/status', '/api/v1/web3/escrow/create', '/api/v1/web3/escrow/release', '/api/v1/web3/reputation/:address'],
+  });
+});
+
 // POST /api/v1/web3/escrow/create
 router.post('/escrow/create', async (req: Request, res: Response, next: NextFunction) => {
   try {
