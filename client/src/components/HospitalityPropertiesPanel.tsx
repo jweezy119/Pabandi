@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { hospitalityService } from '../services/api';
 import {
   BuildingOffice2Icon,
@@ -15,12 +15,6 @@ import {
 } from "@heroicons/react/24/outline";
 import PropertyConnectWizard from './PropertyConnectWizard';
 
-const PROVIDER_CONFIG: Record<string, { label: string; color: string; badge: string }> = {
-  beds24: { label: 'Beds24', color: '#10b981', badge: 'OPEN API' },
-  cloudbeds: { label: 'Cloudbeds', color: '#6366f1', badge: 'OAUTH' },
-  lodgify: { label: 'Lodgify', color: '#f59e0b', badge: 'REST API' },
-  manual: { label: 'Custom', color: '#64748b', badge: 'WEBHOOK' },
-};
 
 const TYPE_ICONS: Record<string, string> = {
   hotel: '🏨',
@@ -44,22 +38,19 @@ export default function HospitalityPropertiesPanel() {
   const qc = useQueryClient();
   const [showWizard, setShowWizard] = useState(false);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [verifying, setVerifying] = useState(false);
 
-  const { data, isLoading } = useQuery('hospitality-properties', () => hospitalityService.getProperties());
-
-  const testMutation = useMutation(
+  const { data: propertiesData, isLoading: propertiesLoading } = useQuery(
+    'hospitality-properties',
+    () => hospitalityService.getProperties()
+  );
+  const { data: healthData, refetch: refetchHealth } = useQuery(
+    'hospitality-health',
     () => hospitalityService.getHealth(),
-    {
-      onSuccess: () => {
-        alert('Connection verified. Webhook delivery will appear here once PMS events arrive.');
-      },
-      onError: () => {
-        alert('Health check failed — confirm your PMS webhook URL and signing secret.');
-      },
-    }
   );
 
-  const properties = data?.data?.properties || [];
+  const properties = propertiesData?.data?.properties || [];
+  const health = healthData?.data || null;
 
   const markReminderSent = (id: string) =>
     setReminders((prev) => prev.map((r) => (r.id === id ? { ...r, sent: true } : r)));
@@ -69,7 +60,16 @@ export default function HospitalityPropertiesPanel() {
 
   const upcomingCount = reminders.filter((r) => !r.sent).length;
 
-  if (isLoading) {
+  const handleVerify = async () => {
+    setVerifying(true);
+    try {
+      await refetchHealth();
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  if (propertiesLoading) {
     return (
       <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 mb-6 animate-pulse">
         <div className="h-6 w-56 bg-surface-container-high rounded mb-2"></div>
@@ -121,68 +121,86 @@ export default function HospitalityPropertiesPanel() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {properties.map((prop: any) => {
-              const config = PROVIDER_CONFIG[prop.provider] || PROVIDER_CONFIG.manual;
-              const typeIcon = TYPE_ICONS[prop.propertyType] || TYPE_ICONS.other;
-              const isTesting = testMutation.isLoading && testMutation.variables === prop.id;
+          <div className="rounded-xl border bg-surface overflow-hidden">
+            <div className="grid grid-cols-12 gap-4 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/30">
+              <div className="col-span-6 sm:col-span-5">Property</div>
+              <div className="col-span-3 sm:col-span-3">Status</div>
+              <div className="col-span-3 sm:col-span-4">Connection</div>
+            </div>
+            <div className="divide-y divide-outline-variant/20">
+              {properties.map((prop: any) => {
+                const typeIcon = TYPE_ICONS[prop.propertyType] || TYPE_ICONS.other;
+                const connection = Boolean(health);
+                const verified = Boolean(health);
 
-              return (
-                <div
-                  key={prop.id}
-                  className="rounded-xl p-4 border bg-surface hover:bg-surface-container-low transition-colors"
-                  style={{ borderColor: `${config.color}25` }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{typeIcon}</span>
-                      <div>
-                        <p className="font-body text-sm font-bold text-on-surface leading-tight">{prop.propertyName}</p>
-                        <p className="font-body text-[10px] text-on-surface-variant">{prop.country || 'Global'}</p>
-                      </div>
+                return (
+                  <div key={prop.id} className="grid grid-cols-12 gap-4 px-4 py-3 items-center">
+                    <div className="col-span-6 sm:col-span-5">
+                      <p className="font-body text-sm font-bold text-on-surface leading-tight">{prop.propertyName}</p>
+                      <p className="font-body text-[10px] text-on-surface-variant">{prop.country || 'Global'} · {typeIcon} {(prop.propertyType || 'other').replace('_', ' ')}</p>
                     </div>
-                    <span
-                      className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0"
-                      style={{ background: `${config.color}15`, color: config.color, border: `1px solid ${config.color}30` }}
-                    >
-                      {config.badge}
-                    </span>
+                    <div className="col-span-3 sm:col-span-3">
+                      <span className="inline-flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container">
+                        <CheckCircleIcon className="h-3 w-3" />
+                        {prop.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="col-span-3 sm:col-span-4 flex items-center gap-2 justify-end">
+                      <span className="text-[10px] font-bold text-on-surface-variant">
+                        {connection ? (verified ? 'Verified' : 'Connected') : 'Not connected'}
+                      </span>
+                      {connection && verified && <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">✓</span>}
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center gap-1 font-label text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container">
-                      <CheckCircleIcon className="h-3 w-3" />
-                      {prop.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className="font-label text-[9px] text-on-surface-variant capitalize">
-                      {(prop.propertyType || 'other').replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => testMutation.mutate(prop.id)}
-                      disabled={isTesting}
-                      className="py-2 rounded-lg font-body text-[11px] font-bold border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isTesting ? (
-                        <>
-                          <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <SignalIcon className="h-3.5 w-3.5" />
-                          Verify Connection
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
+      </div>
+
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-5 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="font-headline text-sm font-bold text-on-surface flex items-center gap-2">
+              <SignalIcon className="h-4 w-4 text-primary" />
+              Connection Health
+            </h3>
+            <p className="text-[11px] text-on-surface-variant mt-1">
+              {health ? (
+                <>
+                  <span className="font-semibold">{health.totalProperties}</span> property{health.totalProperties === 1 ? '' : 'ies'} · <span className="font-semibold">{health.totalProperties > 0 ? 'PMS active' : 'waiting for connection'}</span>
+                  <span className="ml-2 text-on-surface-variant">{new Date(health.lastSyncAt).toLocaleString()}</span>
+                </>
+              ) : (
+                'No connection status yet.'
+              )}
+            </p>
+          </div>
+          <button
+            onClick={handleVerify}
+            disabled={verifying}
+            className="rounded-xl text-[11px] font-bold px-3 py-2 border border-outline-variant/30 bg-white/5 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+          >
+            {verifying ? (
+              <>
+                <span className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-current/30 border-t-current" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                <SignalIcon className="h-3.5 w-3.5" />
+                Verify Connection
+              </>
+            )}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-semibold text-on-surface-variant">
+          <div className="rounded-lg bg-surface border border-outline-variant/20 px-3 py-2">Connected: {health?.hasConnections ? 'Yes' : 'No'}</div>
+          <div className="rounded-lg bg-surface border border-outline-variant/20 px-3 py-2">Properties: {String(health?.totalProperties ?? 0)}</div>
+          <div className="rounded-lg bg-surface border border-outline-variant/20 px-3 py-2">Tested: {String(health?.tested ?? false)}</div>
+          <div className="rounded-lg bg-surface border border-outline-variant/20 px-3 py-2">Verified: {health?.verifiedAt ? new Date(health.verifiedAt).toLocaleString() : '—'}</div>
+        </div>
       </div>
 
       {/* Availability & check-in reminders */}
