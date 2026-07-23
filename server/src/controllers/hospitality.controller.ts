@@ -2,12 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
 import { logger } from '../utils/logger';
 
-// ─── Webhook Receivers ────────────────────────────────────────────────────────
-
-export async function simulateBooking(req: Request, res: Response) {
-  return res.status(404).json({ success: false, error: 'Not found' });
-}
-
 /**
  * POST /api/hospitality/beds24/webhook
  * Receives Beds24 v2 booking events (full JSON body).

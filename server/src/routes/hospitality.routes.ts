@@ -8,74 +8,17 @@ import {
   listProperties,
   getProperty,
   getConnectionHealth,
-  simulateBooking,
 } from '../controllers/hospitality.controller';
 
 const router = Router();
 
-// ─── PMS Webhook Receivers ────────────────────────────────────────────────────
-// These endpoints are called directly by PMS platforms — no auth middleware
-
-/**
- * POST /api/hospitality/beds24/webhook
- * Beds24 v2 booking event receiver.
- * Token auth via X-Beds24-Auth header.
- */
 router.post('/beds24/webhook', beds24Webhook);
-
-/**
- * POST /api/hospitality/cloudbeds/webhook
- * Cloudbeds signed booking event receiver.
- * Auth via X-Cloudbeds-Webhook-Signature (HMAC-SHA256).
- */
 router.post('/cloudbeds/webhook', cloudbedsWebhook);
-
-/**
- * POST /api/hospitality/lodgify/webhook
- * Lodgify REST API booking event receiver.
- * Auth via X-Pabandi-Signature (HMAC-SHA256).
- */
 router.post('/lodgify/webhook', lodgifyWebhook);
-
-/**
- * POST /api/hospitality/manual/webhook
- * Generic/custom booking event receiver for any PMS.
- * Auth via X-Pabandi-Signature (HMAC-SHA256).
- */
 router.post('/manual/webhook', manualWebhook);
-
-// ─── Property Management (authenticated) ─────────────────────────────────────
-
-/**
- * POST /api/hospitality/connect
- * Connect a hotel/lodge PMS to Pabandi.
- */
 router.post('/connect', connectProperty);
-
-/**
- * GET /api/hospitality/properties
- * List all connected properties for the authenticated business.
- */
 router.get('/properties', listProperties);
-
-/**
- * GET /api/hospitality/property/:id
- * Get a single connected property.
- */
 router.get('/property/:id', getProperty);
-
-router.get('/property/:id', getProperty);
-
-/**
- * GET /api/hospitality/health
- * Connection health/capability status for the current business.
- */
 router.get('/health', getConnectionHealth);
 
-/** POST /api/hospitality/test-booking — disabled in production */
-router.post('/test-booking', (_req: any, res: any) => {
-  res.status(404).json({ success: false, error: 'Not found' });
-});
-
 export default router;
-
