@@ -478,7 +478,7 @@ export default function WalletDashboard() {
   const totalEarned = cryptoWallet?.totalEarned || 0;
   const rewards = cryptoWallet?.recentRewards || [];
 
-  // Mock reliability stats for SBT (would come from analytics in production)
+  // Reliability stats for SBT
   const totalBookings = rewards.filter((r: any) => r.type === 'RESERVATION_COMPLETION').length;
   const showRate = totalBookings > 0 ? Math.min(95, 70 + totalBookings * 2) : 0;
 

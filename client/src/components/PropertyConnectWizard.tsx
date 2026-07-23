@@ -414,7 +414,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 </p>
               </div>
 
-              {/* Test Booking Button */}
+              {/* Connection test */}
               {connectedPropertyId && (
                 <button
                   onClick={handleTestBooking}
@@ -432,12 +432,12 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                   )}
                   {testResult === 'success' && <CheckIcon className="h-3.5 w-3.5" />}
                   {testResult === 'loading'
-                    ? 'Sending Test Booking...'
+                    ? 'Verifying...'
                     : testResult === 'success'
-                    ? 'Test Booking Sent ✓ — Check your PMS!'
+                    ? 'Connection Verified'
                     : testResult === 'error'
-                    ? 'Test Failed — Try Again'
-                    : '⚡ Send Test Booking'}
+                    ? 'Verification Failed — Try Again'
+                    : 'Verify Connection'}
                 </button>
               )}
 

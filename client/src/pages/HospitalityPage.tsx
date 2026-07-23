@@ -14,7 +14,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   PlusIcon,
-  BeakerIcon,
+  SignalIcon,
 } from '@heroicons/react/24/outline';
 import PropertyConnectWizard from '../components/PropertyConnectWizard';
 import { hospitalityService } from '../services/api';
@@ -133,9 +133,9 @@ export default function HospitalityPage() {
     setTestingPropertyId(propertyId);
     try {
       await hospitalityService.testBooking(propertyId);
-      alert('✅ Test booking event sent successfully! Check your PMS and dashboard.');
+      alert('Connection test sent. Check your PMS or provider dashboard to confirm the test event arrived.');
     } catch {
-      alert('Test booking failed. The property might not be fully connected yet.');
+      alert('Connection test failed. This property may not be fully connected yet.');
     }
     setTestingPropertyId(null);
   };
@@ -297,12 +297,12 @@ export default function HospitalityPage() {
                       {testingPropertyId === prop.id ? (
                         <>
                           <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
-                          Testing...
+                          Checking...
                         </>
                       ) : (
                         <>
-                          <BeakerIcon className="h-3.5 w-3.5" />
-                          Send Test Booking
+                          <SignalIcon className="h-3.5 w-3.5" />
+                          Verify Connection
                         </>
                       )}
                     </button>

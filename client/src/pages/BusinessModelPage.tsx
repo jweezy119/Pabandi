@@ -218,7 +218,7 @@ export default function BusinessModelPage() {
                   
                   <div className="flex justify-between items-center bg-white/10 p-3.5 rounded-xl border border-white/10">
                     <div>
-                      <p className="text-xs font-bold text-white">Developer Sandbox Promotion</p>
+                      <p className="text-xs font-bold text-white">Developer Beta Promotion</p>
                       <p className="text-[10px] text-slate-400">Includes 1,000 requests</p>
                     </div>
                     <p className="font-headline text-base font-black text-emerald-500">FREE</p>
