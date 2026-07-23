@@ -25,6 +25,7 @@ import { setupSwagger } from './utils/swagger';
 // Import routes
 import authRoutes from './routes/auth.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import whatsappAdvancedRoutes from './routes/whatsapp.advanced.routes';
 import businessRoutes from './routes/business.routes';
 import reservationRoutes from './routes/reservation.routes';
 import paymentRoutes from './routes/payment.routes';
@@ -147,6 +148,7 @@ app.use(`/api/${API_VERSION}/checkout`, checkoutRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 // app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
+app.use(`/api/${API_VERSION}/whatsapp/advanced`, whatsappAdvancedRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);

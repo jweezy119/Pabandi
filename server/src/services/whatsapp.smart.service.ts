@@ -121,6 +121,13 @@ export class WhatsAppSmartService {
     return { text: reply, matchedIntent, pluginSummary: summary };
   }
 
+  async runSmartAction(intent: string, context?: { customerPhone?: string; businessPhone?: string; message?: string }) {
+    const customerPhone = context?.customerPhone || 'unknown';
+    const businessPhone = context?.businessPhone || '';
+    const message = context?.message || intent;
+    return this.processMessage(customerPhone, businessPhone, message);
+  }
+
   private async handleFlow(customerPhone: string, session: SmartSession, lower: string, raw: string): Promise<SmartReply | null> {
     if (session.intent === 'faq') {
       const summary = this.pluginSummary(['faq', 'support', 'automation']);
