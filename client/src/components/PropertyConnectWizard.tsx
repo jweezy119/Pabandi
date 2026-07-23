@@ -75,11 +75,10 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
     }
   };
 
-  const handleTestBooking = async () => {
-    if (!connectedPropertyId) return;
+  const handleHealthCheck = async () => {
     setTestResult('loading');
     try {
-      await hospitalityService.testBooking(connectedPropertyId);
+      await hospitalityService.getHealth();
       setTestResult('success');
     } catch {
       setTestResult('error');
@@ -417,7 +416,7 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
               {/* Connection test */}
               {connectedPropertyId && (
                 <button
-                  onClick={handleTestBooking}
+                  onClick={handleHealthCheck}
                   disabled={testResult === 'loading'}
                   className={`w-full py-2.5 text-xs font-bold rounded-xl border flex items-center justify-center gap-2 transition-all ${
                     testResult === 'success'

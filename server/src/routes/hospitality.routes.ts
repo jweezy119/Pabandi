@@ -7,6 +7,7 @@ import {
   connectProperty,
   listProperties,
   getProperty,
+  getConnectionHealth,
   simulateBooking,
 } from '../controllers/hospitality.controller';
 
@@ -62,6 +63,14 @@ router.get('/properties', listProperties);
  * Get a single connected property.
  */
 router.get('/property/:id', getProperty);
+
+router.get('/property/:id', getProperty);
+
+/**
+ * GET /api/hospitality/health
+ * Connection health/capability status for the current business.
+ */
+router.get('/health', getConnectionHealth);
 
 /** POST /api/hospitality/test-booking — disabled in production */
 router.post('/test-booking', (_req: any, res: any) => {
