@@ -12,6 +12,26 @@ const getDb = () => {
   return db;
 };
 
+const CITY_KEYWORDS = ['karachi', 'lahore', 'islamabad', 'dubai', 'london', 'new york', 'chicago', 'singapore', 'toronto'];
+const BUSINESS_KEYWORDS = ['hotel', 'lodge', 'resort', 'restaurant', 'cafe', 'salon', 'clinic', 'spa', 'fitness', 'property', 'rental', 'host'];
+
+function computeLeadScore(lead: { name?: string | null; phone?: string | null; city?: string | null; role?: string | null; businessName?: string | null; why?: string | null; businessType?: string | null }): number {
+  const text = [lead.city, lead.role, lead.businessName, lead.why, lead.businessType, lead.phone]
+    .map(value => String(value || ''))
+    .join(' ')
+    .toLowerCase();
+
+  let score = 40;
+  if (lead.phone) score += 10;
+  if (lead.city && CITY_KEYWORDS.some(keyword => text.includes(keyword))) score += 10;
+  if (lead.businessName || (lead.role || '').toLowerCase() === 'business') score += 15;
+  if (BUSINESS_KEYWORDS.some(keyword => text.includes(keyword))) score += 10;
+  if ((lead.why || '').length >= 20) score += 5;
+  if ((lead.why || '').length >= 60) score += 5;
+
+  return Math.min(100, Math.max(0, score));
+}
+
 // ── POST /waitlist — public, accepts both waitlist & city landing page format ──
 router.post('/', async (req: Request, res: Response) => {
   try {
@@ -35,6 +55,7 @@ router.post('/', async (req: Request, res: Response) => {
       lastContactedAt: null,
       notes: null,
       isBusinessLead,
+      score: computeLeadScore({ name, phone, city: cityResolved, role, businessName, why, businessType: type }),
     });
 
     res.json({ success: true, message: 'Welcome to Pabandi!', id: ref.id });
@@ -137,6 +158,7 @@ router.get('/outreach-summary', authenticate, async (req: AuthRequest, res: Resp
         byStatus, byCity,
         conversionRate: leads.length > 0
           ? ((byStatus.ONBOARDED / leads.length) * 100).toFixed(1) : '0.0',
+        avgScore: leads.length > 0 ? (leads.reduce((sum, l) => sum + Number(l.score || 0), 0) / leads.length).toFixed(1) : '0.0',
       },
     });
   } catch (error) {
