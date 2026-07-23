@@ -1,23 +1,5 @@
 import { useState } from 'react';
 
-const PASSPORT_MOCK = {
-  "wallet_address": "68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs",
-  "trust_score": 742,
-  "score_tier": "Gold",
-  "total_actions": 148,
-  "punctuality_rate": 0.94,
-  "completed_bookings": 139,
-  "missed_bookings": 9,
-  "disputes_lost": 1,
-  "disputes_won": 2,
-  "first_seen": "2025-08-12T00:00:00Z",
-  "last_updated": "2026-06-20T18:32:00Z",
-  "flags": [
-    "repeat_no_show_resolved",
-    "high_value_buyer"
-  ]
-};
-
 const LIVE_SALE_CODE = `import express from 'express';
 const app = express();
 
@@ -25,7 +7,7 @@ app.post('/live-sale/checkout', async (req, res) => {
   const { buyer_wallet } = req.body;
 
   const result = await fetch(
-    'https://api.pabandi.com/api/v1/passport/verify',
+        'https://api.pabandi.com/api/v1/passport/verify',
     {
       headers: {
         'Authorization': \`Bearer \${process.env.PABANDI_API_KEY}\`,
@@ -248,7 +230,7 @@ export default function DeveloperPortalPage() {
           </div>
           <div style={{ flex: '1 1 400px', background: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, color: '#818cf8', letterSpacing: '0.06em', marginBottom: '16px' }}>PASSPORT JSON</div>
-            <JsonViewer data={PASSPORT_MOCK} />
+            <JsonViewer data={{ wallet_address: '68AQ...', trust_score: 742, score_tier: 'Gold', total_actions: 148, punctuality_rate: 0.94, completed_bookings: 139, missed_bookings: 9, disputes_lost: 1, disputes_won: 2, flags: ['repeat_no_show_resolved', 'high_value_buyer'] }} />
           </div>
         </div>
       </section>

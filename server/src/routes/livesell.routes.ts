@@ -6,7 +6,6 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { liveSellerService } from '../services/live-seller.service';
 import { LiveSellerPlatform } from '@prisma/client';
-import { isDemoMode } from '../utils/env';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -137,11 +136,7 @@ router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, nex
       return res.status(400).json({ success: false, error: 'Shopify connect needs a Shopify OAuth strategy.' });
     }
     if (['ebay-live', 'amazon-live', 'instagram-live', 'custom-web'].includes(platform)) {
-      if (!isDemoMode()) {
-        return res.status(400).json({ success: false, error: 'Mock live-sell connect is disabled' });
-      }
-      // Mock OAuth redirect for mock platforms
-      return res.redirect(`/api/v1/livesell/callback/mock?platform=${platform}&state=${token}`);
+      return res.status(400).json({ success: false, error: 'Live-sell connect is not implemented for this platform yet' });
     }
   } catch (e) {
     next(e);
@@ -207,26 +202,8 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
   }
 });
 
-router.get('/callback/mock', async (req: any, res) => {
-  try {
-    if (!isDemoMode()) {
-      return res.status(404).json({ success: false, error: 'Not found' });
-    }
-    const state = decodeState(req.query.state as string);
-    const platformParam = req.query.platform as string;
-    const platform = platformParam.toUpperCase().replace('-', '_') as LiveSellerPlatform;
-    await liveSellerService.connect(state.businessId, {
-      platform,
-      accessToken: `mock_${platformParam}_access_token_${Date.now()}`,
-      refreshToken: `mock_${platformParam}_refresh_token_${Date.now()}`,
-      scope: 'mock_scope',
-      metadata: { mockConnected: true },
-    });
-    res.redirect(`${FRONTEND_URL}/business?livesell_success=${platformParam}`);
-  } catch (e) {
-    console.error('Mock callback error', e);
-    res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
-  }
+router.get('/callback/mock', (_req: any, res: any) => {
+  res.status(404).json({ success: false, error: 'Not found' });
 });
 
 router.delete('/:platform', authenticate, async (req: AuthRequest, res) => {
