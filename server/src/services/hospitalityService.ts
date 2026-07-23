@@ -66,6 +66,9 @@ export interface ConnectedProperty {
 // Production: use `prisma.connectedHospitalityProperty` model
 const connectedProperties = new Map<string, ConnectedProperty>();
 
+// Track per-property sync telemetry in memory (replace with Prisma in production)
+const syncTelemetry = new Map<string, { lastSyncAt?: string; lastEventAt?: string; eventCount: number; errorCount: number }>();
+
 // ─── PAB Reward per night stayed ──────────────────────────────────────────────
 const PAB_REWARD_PER_NIGHT = 50; // 50 $PAB tokens per night
 
