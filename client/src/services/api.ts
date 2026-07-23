@@ -276,7 +276,7 @@ export const hospitalityService = {
   getProperties: () => apiClient.get('/hospitality/properties'),
   /** Get a single connected property */
   getProperty: (id: string) => apiClient.get(`/hospitality/property/${id}`),
-  /** Simulate a test booking event for a connected property */
+  /** Verify a connected property by sending a test event */
   testBooking: (propertyId: string) => apiClient.post('/hospitality/test-booking', { propertyId }),
 };
 

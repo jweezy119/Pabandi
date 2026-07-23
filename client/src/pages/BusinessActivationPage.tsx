@@ -49,7 +49,7 @@ export default function BusinessActivationPage({ businessId }: BusinessActivatio
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             { label: 'Claim listing', action: () => navigate(`/business/${id}`), cta: 'Open profile' },
-            { label: 'Test booking flow', action: () => navigate(`/business/${id}`), cta: 'Book now' },
+            { label: 'Try booking', action: () => navigate(`/business/${id}`), cta: 'Book now' },
             ...(isLiveSeller ? [{ label: 'Try live selling', action: () => navigate('/live-selling'), cta: 'Open hub' }] : []),
             { label: 'Launch WhatsApp outreach', action: () => navigate('/business/dashboard'), cta: 'Open dashboard' },
             { label: 'Check dashboard', action: () => navigate('/business/dashboard'), cta: 'Dashboard' },

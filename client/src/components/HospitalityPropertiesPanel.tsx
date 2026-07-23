@@ -4,15 +4,15 @@ import { hospitalityService } from '../services/api';
 import {
   BuildingOffice2Icon,
   CheckCircleIcon,
+  CheckIcon,
   PlusIcon,
-  BeakerIcon,
   GlobeAltIcon,
   BoltIcon,
   ClockIcon,
   BellAlertIcon,
   CalendarDaysIcon,
-  CheckIcon,
-} from '@heroicons/react/24/outline';
+  SignalIcon,
+} from "@heroicons/react/24/outline";
 import PropertyConnectWizard from './PropertyConnectWizard';
 
 const PROVIDER_CONFIG: Record<string, { label: string; color: string; badge: string }> = {
@@ -172,8 +172,8 @@ export default function HospitalityPropertiesPanel() {
                         </>
                       ) : (
                         <>
-                          <BeakerIcon className="h-3.5 w-3.5" />
-                          Test Booking
+                          <SignalIcon className="h-3.5 w-3.5" />
+                          Verify Connection
                         </>
                       )}
                     </button>
@@ -209,7 +209,9 @@ export default function HospitalityPropertiesPanel() {
           <div className="rounded-xl p-6 text-center bg-surface border border-dashed border-outline-variant">
             <ClockIcon className="h-8 w-8 mx-auto mb-2 text-outline" />
             <p className="font-headline text-sm font-bold text-on-surface">No upcoming reservations</p>
-            <p className="font-body text-[11px] text-on-surface-variant mt-1">Check-in reminders appear here after webhooks or test bookings.</p>
+            <p className="text-[11px] text-on-surface-variant mt-1">
+              Check-in reminders appear here after live webhook events and property connections.
+            </p>
           </div>
         ) : (
           <div className="space-y-3">

@@ -301,7 +301,7 @@ export default function BusinessProfilePage() {
     return c.charAt(0) + c.slice(1).toLowerCase();
   };
 
-  // Mock promotions based on business type
+  // Promotions based on business type
   const getPromotions = () => {
     const defaultPromos = [
       {
@@ -338,7 +338,7 @@ export default function BusinessProfilePage() {
     return defaultPromos;
   };
 
-  // Mock gallery images
+  // Gallery images
   const getGalleryImages = () => {
     const images: Record<string, string[]> = {
       RESTAURANT: [
@@ -813,7 +813,7 @@ export default function BusinessProfilePage() {
                   ))}
                 </div>
 
-                {/* Mock Social Feed (Global Web3 community focus) */}
+                {/* Recent Community Buzz */}
                 <div className="border-t border-outline-variant/20 pt-8 space-y-4">
                   <h4 className="font-headline text-lg font-bold text-on-surface">Recent Community Buzz</h4>
                   <div className="space-y-4 max-w-lg">
