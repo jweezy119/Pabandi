@@ -3,6 +3,15 @@ import { aiNlpService } from '../services/ai.nlp.service';
 
 const router = Router();
 
+router.get('/status', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    service: 'ai',
+    endpoints: ['/api/v1/ai/status', '/api/v1/ai/models', '/api/v1/ai/nlp/classify', '/api/v1/ai/nlp/generate'],
+    models: aiNlpService.getEnabledModels(),
+  });
+});
+
 // POST /api/v1/ai/nlp/classify
 router.post('/nlp/classify', async (req: Request, res: Response, next: NextFunction) => {
   try {
