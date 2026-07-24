@@ -339,9 +339,9 @@ export default function HomePage() {
             </div>
 
             {/* About Me */}
-            <div className="mt-8 p-6 rounded-2xl glass-panel text-white stagger-item delay-3">
-              <h3 className="font-headline font-bold text-lg mb-2">About Me</h3>
-              <p className="text-sm text-white/80 leading-relaxed">
+            <div className="mt-8 pt-8 border-t border-white/5 text-white stagger-item delay-3 max-w-lg">
+              <h2 className="font-headline font-bold text-lg mb-2 text-primary">About Me</h2>
+              <p className="text-sm text-slate-300 leading-relaxed max-w-prose">
                 Built for people who value commitment. Pabandi turns bookings into trusted relationships, with AI-guided recommendations and verifiable reliability.
               </p>
             </div>
@@ -349,7 +349,7 @@ export default function HomePage() {
 
           {/* Right Col - The Interactive Map */}
           <div
-            className="flex-1 relative w-full h-[400px] sm:h-[500px] xl:h-[600px] rounded-3xl overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(6,182,212,0.15)] stagger-item"
+            className="flex-1 relative w-full h-[400px] sm:h-[500px] xl:h-[600px] rounded-3xl overflow-hidden stagger-item"
             style={{ animationDelay: "240ms" }}
           >
             <HomeMap
@@ -376,7 +376,7 @@ export default function HomePage() {
             />
 
             {selectedMapPlace && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 glass-panel p-5 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.4)] border border-outline-variant/40">
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 drop-shadow-2xl">
                 <div className="flex justify-between items-start mb-2">
                   <div className="min-w-0 pr-4">
                     <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">
@@ -432,9 +432,9 @@ export default function HomePage() {
                 }}
                 className={`${
                   category === c
-                    ? "bg-primary text-on-primary shadow-[0_8px_16px_rgba(1,29,53,0.08)]"
-                    : "bg-surface-container-low text-on-surface hover:bg-surface-container-highest"
-                } px-5 py-3 sm:px-4 sm:py-2 rounded-xl sm:rounded-lg font-label text-sm font-bold sm:font-medium whitespace-nowrap transition-colors touch-target shrink-0`}
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-slate-400 hover:text-white"
+                } px-2 py-2 font-label text-sm font-bold sm:font-medium whitespace-nowrap transition-colors touch-target shrink-0`}
               >
                 {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
               </button>
@@ -477,7 +477,7 @@ export default function HomePage() {
 
         {/* Live Seller / Freelance connection prompts */}
         {(category === "LIVE_SELLER" || category === "FREELANCE") && (
-          <section ref={category === "LIVE_SELLER" ? revealRef6 : revealRef7} className="rounded-2xl bg-surface-container-low border border-outline-variant/10 p-6 reveal">
+          <section ref={category === "LIVE_SELLER" ? revealRef6 : revealRef7} className="py-6 reveal">
             {category === "LIVE_SELLER" ? (
               <>
                 <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Live selling on Pabandi</h3>
@@ -557,9 +557,9 @@ export default function HomePage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   to={`/business/${businesses[0].id}`}
-                  className="md:col-span-8 rounded-xl overflow-hidden group relative h-80 block tile-hover border border-outline-variant/10 glowing-border glass-panel"
+                  className="md:col-span-8 group relative block tile-hover"
                 >
-                  <div className="absolute inset-0">
+                  <div className="w-full h-80 rounded-3xl overflow-hidden relative shadow-lg">
                     <img
                     alt={businesses[0].name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -618,17 +618,19 @@ export default function HomePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     to={`/business/${businesses[1].id}`}
-                    className="rounded-xl overflow-hidden relative group block min-h-[150px] tile-hover border border-outline-variant/10 glowing-border glass-panel"
+                    className="group relative block min-h-[150px] tile-hover"
                   >
-                    <img
-                      alt={businesses[1].name}
+                    <div className="w-full h-full absolute inset-0 rounded-3xl overflow-hidden shadow-lg">
+                      <img
+                        alt={businesses[1].name}
                       className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
                       src={
                         businesses[1].coverImageUrl ||
                         "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600"
                       }
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                  </div>
                     <div className="absolute top-4 right-4 z-10">
                       {(businesses[1].isClaimed || getBusinessLiveState(businesses[1])) && (
                         <span className="bg-[#14F195]/30 backdrop-blur-md text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-[#14F195]/40">
@@ -663,7 +665,7 @@ export default function HomePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     to={`/business/${businesses[2].id}`}
-                    className="bg-surface-container-low rounded-xl overflow-hidden flex-1 p-5 flex flex-col justify-center min-h-[150px] cursor-pointer group hover:bg-surface-container transition-colors shadow-sm tile-hover border border-outline-variant/10 glowing-border"
+                    className="flex-1 py-4 flex flex-col justify-center min-h-[150px] cursor-pointer group transition-colors tile-hover"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-headline text-lg font-bold text-on-surface">
@@ -730,15 +732,15 @@ export default function HomePage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl bg-surface-container-lowest border border-outline-variant/10 p-6 glowing-border"
+                className="py-4"
               >
                 <div
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.accent} mb-4`}
+                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${item.accent} mb-6 shadow-lg`}
                 />
-                <h4 className="font-headline font-bold text-on-surface mb-2">
+                <h4 className="font-headline font-bold text-on-surface mb-3 text-lg">
                   {item.title}
                 </h4>
-                <p className="font-body text-sm text-on-surface-variant">
+                <p className="font-body text-sm text-on-surface-variant leading-relaxed max-w-sm">
                   {item.body}
                 </p>
               </div>
@@ -767,8 +769,8 @@ export default function HomePage() {
         </section>
 
         {/* Social proof */}
-        <section ref={revealRef4} className="reveal">
-          <div className="rounded-3xl bg-surface-container-low border border-outline-variant/10 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <section ref={revealRef4} className="reveal pt-12 pb-24">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div>
               <h3 className="font-headline text-2xl font-black text-primary mb-2">
                 Join the Pabandi network
