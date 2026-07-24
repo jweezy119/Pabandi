@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 
-export type Intent = 'booking' | 'support' | 'cancellation' | 'general' | 'sales';
+export type Intent = 'booking' | 'support' | 'cancellation' | 'general' | 'sales' | 'book_table' | 'check_menu' | 'ask_question';
 
 export interface BookingEntities {
   intent: 'book_table' | 'check_menu' | 'ask_question' | 'cancel' | 'reschedule' | 'update' | 'status' | 'pay' | 'hours' | 'human' | 'faq' | 'general';
@@ -82,7 +82,7 @@ You are an intent classification engine. Analyze the following user message and 
 Output ONLY a raw JSON object with no markdown formatting.
 Schema:
 {
-  "intent": "booking" | "support" | "cancellation" | "general" | "sales",
+  "intent": "booking" | "support" | "cancellation" | "general" | "sales" | "book_table" | "check_menu" | "ask_question",
   "language": "en" | "ur" | "ar" | "es" etc (ISO 639-1 code),
   "sentiment": "positive" | "neutral" | "negative",
   "confidence": (number between 0 and 1)

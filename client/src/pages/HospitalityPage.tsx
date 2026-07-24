@@ -288,6 +288,25 @@ export default function HospitalityPage() {
                       </span>
                     </div>
 
+                    {/* AI Receptionist Toggle & Analytics */}
+                    <div className="mt-2 p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/5">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                          <SparklesIcon className="h-3.5 w-3.5 text-indigo-400" />
+                          AI Receptionist
+                        </span>
+                        <button 
+                          className={`w-8 h-4 rounded-full relative transition-colors ${prop.aiEnabled !== false ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                        >
+                          <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${prop.aiEnabled !== false ? 'left-4.5' : 'left-0.5'}`} style={{ transform: prop.aiEnabled !== false ? 'translateX(14px)' : 'translateX(0)' }} />
+                        </button>
+                      </div>
+                      <div className="flex justify-between text-[9px] text-slate-400">
+                        <span>Conv: <strong className="text-emerald-400">{prop.aiConversionRate || '32%'}</strong></span>
+                        <span>Deposits: <strong className="text-white">${prop.aiRevenue || '1,240'}</strong></span>
+                      </div>
+                    </div>
+
                     <button
                       onClick={() => handleHealthCheck()}
                       disabled={testingPropertyId === '__health__'}

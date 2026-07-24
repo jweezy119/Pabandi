@@ -105,6 +105,58 @@ export class OpenWAChatFlowService {
     }
   }
 
+  async sendBulkOutreachFlow(
+    toPhones: string[],
+    context: { businessName?: string; claimUrl?: string; delayBetweenMessages?: number; campaignCopy?: string; dailyCap?: number } = {}
+  ): Promise<{
+    sent: boolean;
+    batchId?: string;
+    status: string;
+    totalMessages?: number;
+  }> {
+    if (!this.isChatFlowLikelyAvailable() || !toPhones.length) {
+      return { sent: false, status: 'skipped' };
+    }
+
+    const greeting = context.campaignCopy || [
+      `Pabandi outreach for${context.businessName ? ` *${context.businessName}*` : ' your business'}.`,
+      ``,
+      `1) Claim profile`,
+      `2) View bookings`,
+      `3) Enable escrow + $PAB rewards`,
+    ].filter(Boolean).join('\n');
+
+    const sessionId = await this.resolveSessionId();
+    
+    // Enforce daily cap for AI campaigns
+    let targetPhones = toPhones;
+    if (context.dailyCap && context.dailyCap > 0 && targetPhones.length > context.dailyCap) {
+      targetPhones = targetPhones.slice(0, context.dailyCap);
+      console.log(`[Campaign] Capped bulk send to ${context.dailyCap} contacts (original: ${toPhones.length})`);
+    }
+
+    const messages = targetPhones.map(phone => ({
+      chatId: `${String(phone).replace(/[^\d]/g, '')}@c.us`,
+      text: greeting
+    }));
+
+    try {
+      const result = await openwaService.sendBulk(messages, {
+        sessionId,
+        delayBetweenMessages: context.delayBetweenMessages || 3000
+      });
+
+      return {
+        sent: true,
+        batchId: result.batchId,
+        status: result.status,
+        totalMessages: result.totalMessages
+      };
+    } catch (error: any) {
+      return { sent: false, status: `error:${error?.message || error}` };
+    }
+  }
+
   evaluateMenuByText(flow: ChatFlowConfig, currentState: ChatFlowState | null, messageBody: string): {
     reply: string;
     nextState: ChatFlowState | null;

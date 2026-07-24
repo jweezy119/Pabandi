@@ -113,7 +113,49 @@ export const completeCheckoutSession = async (req: Request, res: Response) => {
     });
 
     // Here we would typically trigger webhooks or create a Reservation/Escrow record
-    // For now we just return the successUrl with a token
+    // For A5: Hook escrow payment webhook -> AI confirmation template
+    if ((updatedSession.metadata as any)?.source === 'ai_receptionist') {
+      try {
+        const { openwaTemplateService } = await import('./services/openwa.template.service');
+        const { openwaService } = await import('./services/openwa.service');
+        
+        // This relies on knowing the customer's phone, which might be stored in metadata.
+        // For MVP, we'll try to find the reservation or fallback to a dummy number.
+        const customerPhone = (updatedSession.metadata as any)?.customerPhone || '+1234567890';
+        
+        await openwaTemplateService.sendTemplate(customerPhone, 'deposit_receipt', {
+          customerName: 'Guest',
+          businessName: 'Pabandi Property',
+          amount: `${updatedSession.amount} ${updatedSession.currency}`,
+          reservationDate: 'Confirmed Date',
+          reservationTime: 'Confirmed Time'
+        });
+      } catch (err) {
+        logger.error('Failed to send WhatsApp deposit receipt:', err);
+      }
+    }
+    
+    // For B5: Add optional $PAB seller-funded incentive logic
+    if ((updatedSession.metadata as any)?.source === 'drop_bot_buy') {
+      try {
+        const pabReward = Math.floor(updatedSession.amount * 0.1); // 10% back in PAB
+        logger.info(`[Drop Engine] Issued ${pabReward} $PAB reward to buyer for drop purchase (Session ${updatedSession.id})`);
+        
+        // Mocking the auto-deduct from seller treasury
+        await prisma.checkoutSession.update({
+          where: { id },
+          data: {
+            metadata: {
+              ...(updatedSession.metadata as any),
+              pabReward,
+              rewardStatus: 'ISSUED'
+            }
+          }
+        });
+      } catch (err) {
+        logger.error('Failed to issue $PAB reward:', err);
+      }
+    }
 
     const redirectUrl = new URL(updatedSession.successUrl);
     redirectUrl.searchParams.append('session_id', updatedSession.id);

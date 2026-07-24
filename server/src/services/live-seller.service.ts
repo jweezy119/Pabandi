@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { LiveSellerPlatform } from '@prisma/client';
+import { openwaService } from './openwa.service';
 
 export type StreamScheduleItem = {
   id?: string;
@@ -230,6 +231,22 @@ export class LiveSellerService {
     });
 
     return normalized;
+  }
+
+  /**
+   * Share a live selling product to a WhatsApp chat using OpenWA native product messages.
+   */
+  async shareProductOnWhatsApp(businessId: string, chatId: string, productId: string, body?: string) {
+    // Ideally we would resolve the business's specific OpenWA sessionId here,
+    // but openwaService.sendProduct will fallback to the default connected session.
+    return openwaService.sendProduct(chatId, productId, body);
+  }
+
+  /**
+   * Share the full business catalog to a WhatsApp chat.
+   */
+  async shareCatalogOnWhatsApp(businessId: string, chatId: string, body?: string) {
+    return openwaService.sendCatalog(chatId, body);
   }
 }
 

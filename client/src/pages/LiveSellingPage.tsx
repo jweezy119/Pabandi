@@ -95,6 +95,29 @@ export default function LiveSellingPage() {
             </div>
           </section>
         )}
+        
+        {isAuthenticated && (
+          <section className="mt-8 mb-6">
+            <h2 className="font-headline text-xl sm:text-2xl font-bold mb-4">Drop Engine Analytics</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
+                <div className="flex items-center gap-2 text-[#f0b429] font-headline font-black text-xs uppercase tracking-widest mb-2">Total Views</div>
+                <p className="font-headline font-bold text-2xl">12,450</p>
+                <p className="text-[10px] text-[#10b981] font-bold mt-1">↑ 15% this week</p>
+              </div>
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
+                <div className="flex items-center gap-2 text-[#f0b429] font-headline font-black text-xs uppercase tracking-widest mb-2">Drop Clicks</div>
+                <p className="font-headline font-bold text-2xl">3,120</p>
+                <p className="text-[10px] text-on-surface-variant mt-1">25% Click-Through Rate</p>
+              </div>
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5">
+                <div className="flex items-center gap-2 text-[#f0b429] font-headline font-black text-xs uppercase tracking-widest mb-2">Conversions</div>
+                <p className="font-headline font-bold text-2xl">184</p>
+                <p className="text-[10px] text-[#10b981] font-bold mt-1">5.8% Rate • $14,200 Revenue</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[

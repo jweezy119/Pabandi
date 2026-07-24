@@ -43,9 +43,11 @@ import hospitalityRoutes from './routes/hospitality.routes';
 import trustRoutes from './routes/trust.routes';
 import pabandiReviewRoutes from './routes/pabandiReview.routes';
 import disputeRoutes from './routes/dispute.routes';
+import escrowRoutes from './routes/escrow.routes';
 import loanRoutes from './routes/loan.routes';
 import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
+import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 
@@ -98,8 +100,11 @@ app.use(cors({
   credentials: true,
 }));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+// Body parsing middleware — capture raw body for webhook HMAC verification
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
@@ -144,6 +149,7 @@ app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/shopify-integration`, shopifyIntegrationRoutes);
 app.use(`/api/${API_VERSION}/webhooks`, webhookRoutes);
 app.use(`/api/${API_VERSION}/checkout`, checkoutRoutes);
+app.use(`/api/${API_VERSION}/escrow`, escrowRoutes);
 app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 // app.use(`/api/${API_VERSION}/badges`, badgeRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
@@ -221,6 +227,7 @@ app.use(`/api/${API_VERSION}/integrations`, integrationsRoutes);
 app.use(`/api/${API_VERSION}/integrations/livesell`, liveSellRoutes);
 app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
+app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
@@ -278,16 +285,31 @@ app.use(errorHandler);
 
 // Start server
 const parsedPort = typeof PORT === 'string' ? parseInt(PORT, 10) : PORT;
-httpServer.listen(parsedPort, '0.0.0.0', () => {
+httpServer.listen(parsedPort, '0.0.0.0', async () => {
   logger.info(`🚀 Server running on port ${parsedPort}`);
   logger.info(`📚 API available at http://localhost:${parsedPort}/api/${API_VERSION}`);
   logger.info(`🏥 Health check: http://localhost:${parsedPort}/health`);
   logger.info(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? '✅ configured' : '❌ not configured'}`);
+
+  // Start OpenWA webhook manager (registers handlers and webhook with OpenWA)
+  try {
+    const { registerWebhookHandlers } = await import('./services/openwa.webhook-handler.service');
+    const { webhookManager } = await import('./services/openwa.webhook-manager.service');
+    registerWebhookHandlers();
+    webhookManager.start().catch(err => logger.warn(`OpenWA webhook manager start deferred: ${err?.message}`));
+    logger.info('📡 OpenWA webhook manager initialized');
+  } catch (err) {
+    logger.warn(`OpenWA webhook manager skipped: ${(err as Error).message}`);
+  }
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  try {
+    const { webhookManager } = await import('./services/openwa.webhook-manager.service');
+    await webhookManager.stop();
+  } catch { /* ignore */ }
   httpServer.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);

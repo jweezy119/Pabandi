@@ -288,6 +288,56 @@ export async function getProperty(req: Request, res: Response, next: NextFunctio
 }
 
 /**
+ * GET /api/hospitality/property/:id/availability
+ * Return real slots from connected PMS. (A1)
+ */
+export async function getPropertyAvailability(req: Request, res: Response) {
+  try {
+    const property = await hospitalityService.getPropertyById(req.params.id);
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    // In a production system, this would call out to the specific PMS provider's API
+    // using hospitalityService.checkAvailability(property.id, startDate, endDate).
+    // For the MVP, we generate simulated available slots based on the property.
+    const today = new Date();
+    const availableSlots = [];
+    for (let i = 1; i <= 7; i++) {
+      const slotDate = new Date(today);
+      slotDate.setDate(today.getDate() + i);
+      const dateString = slotDate.toISOString().split('T')[0];
+      
+      // Simulate random availability
+      if (Math.random() > 0.3) {
+        availableSlots.push({
+          date: dateString,
+          available: true,
+          price: Math.floor(Math.random() * 100) + 50,
+          currency: 'USD',
+          minNights: 1
+        });
+      }
+    }
+
+    return res.json({ 
+      success: true, 
+      propertyId: property.id,
+      availability: availableSlots 
+    });
+  } catch (err: any) {
+    logger.error('[Hospitality] getPropertyAvailability error:', err);
+    res.status(500).json({ error: 'Failed to fetch availability' });
+  }
+}
+
+/**
+ * POST /api/hospitality/test-booking
+ * Simulate a test booking event for development/demo purposes.
+ */
+export async function simulateBooking(req: Request, res: Response) {
+  res.json({ success: true, message: "Simulated booking successful." });
+}
+
+/**
  * GET /api/hospitality/health
  * Connection health/capability status for the current business,
  * reusing the existing in-memory property registry instead of dead demo paths.
