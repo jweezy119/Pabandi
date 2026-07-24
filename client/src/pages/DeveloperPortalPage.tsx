@@ -520,6 +520,44 @@ export default function DeveloperPortalPage() {
         </div>
       </section>
 
+      {/* ── Integrator Grants ($PAB) ───────────────────────────────────────────── */}
+      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '1px solid #4f46e5', borderRadius: '24px', padding: '40px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'rgba(99,102,241,0.2)', filter: 'blur(50px)', borderRadius: '50%' }} />
+          
+          <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px', color: '#e0e7ff', letterSpacing: '-0.02em' }}>
+            EaaS Integrator Grants
+          </h2>
+          <p style={{ color: '#a5b4fc', fontSize: '18px', lineHeight: 1.6, marginBottom: '32px', maxWidth: '700px' }}>
+            We are aggressively distributing <strong>$PAB Token Grants</strong> to third-party platforms that integrate Pabandi Escrow. Earn equity-like upside simply by using our API.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '12px' }}>💻</div>
+              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Freelance Platforms</h3>
+              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Integrate our Milestone Escrow API. Earn $PAB for every $10,000 in gig volume processed.</p>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '12px' }}>🛡️</div>
+              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Insurance Protocols</h3>
+              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Use our Trust Score Quotes to price No-Show insurance. Earn $PAB for every premium underwritten.</p>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '12px' }}>🛒</div>
+              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Commerce Marketplaces</h3>
+              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Replace standard checkout with Pabandi DRPE. Earn $PAB based on total user trust verification volume.</p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '32px' }}>
+            <a href="mailto:grants@pabandi.com" style={{ display: 'inline-block', padding: '12px 24px', background: '#4f46e5', color: '#fff', fontWeight: 700, borderRadius: '8px', textDecoration: 'none', transition: 'background 0.2s' }}>
+              Apply for an Integration Grant →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ & Pricing ─────────────────────────────────────────────────────── */}
       <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto', display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
         

@@ -234,6 +234,20 @@ export class TrustScoreService {
 
     logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${newScore}`);
   }
+
+  /**
+   * Calculates a risk premium multiplier for third-party insurance integrations (e.g., Nexus Mutual).
+   * 
+   * @param trustScore The AI-calculated trust score (0-100)
+   * @returns A risk multiplier (e.g., 0.5x for ultra-safe, 3.0x for high risk)
+   */
+  public calculateInsurancePremium(trustScore: number): number {
+    if (trustScore >= 90) return 0.5;   // Platinum: 50% discount on premiums
+    if (trustScore >= 80) return 0.8;   // Gold: 20% discount
+    if (trustScore >= 50) return 1.0;   // Standard: Base premium
+    if (trustScore >= 30) return 1.5;   // Risky: 50% penalty
+    return 3.0;                         // High Risk: 300% penalty (or uninsurable)
+  }
 }
 
 export const trustScoreService = new TrustScoreService();

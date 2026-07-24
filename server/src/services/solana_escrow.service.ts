@@ -7,6 +7,7 @@ import {
 } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import { trustScoreService } from './trustScore.service';
+import { prisma } from '../utils/database';
 
 const PROGRAM_ID = new PublicKey('6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG');
 
@@ -51,8 +52,10 @@ export const solanaEscrowService = {
     // and that the parameters (total_amount, etc.) match our database records for this booking.
 
     // 1. Fetch real-time trust score for this customer
-    const trustScoreData = await trustScoreService.calculateScore(customerWallet);
-    const trustScore = trustScoreData.score; // 0-100
+    const user = await prisma.user.findUnique({
+      where: { walletAddress: customerWallet }
+    });
+    const trustScore = user ? user.trustScore : 50.0; // Default to 50 if user not registered
 
     // (Verification logic goes here to ensure the Tx embeds this correct trustScore)
     // For V1 prototype, we assume the frontend sent the correct Ix and we just sign.

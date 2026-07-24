@@ -31,14 +31,14 @@ export class MudarabahVaultService {
       const simulatedApy = 0.045; // 4.5% APY
       
       // Track the deposit in the database
-      await prisma.transaction.create({
+      await prisma.treasuryPosition.create({
         data: {
-          businessId: 'PABANDI_TREASURY',
-          type: 'MUDARABAH_DEPOSIT',
+          bucket: 'YIELD_REINVEST',
           amount,
-          currency: tokenMint,
-          status: 'COMPLETED',
-          metadata: {
+          status: 'DEPLOYED',
+          meta: {
+            type: 'MUDARABAH_DEPOSIT',
+            currency: tokenMint,
             escrowId,
             apy: simulatedApy,
             profitShareRatio: '70/30' // 70% to User, 30% to Pabandi
