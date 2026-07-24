@@ -54,13 +54,14 @@ export function Button({ children, onClick, variant = 'default', className = '' 
 
 type ChipProps = {
   children: React.ReactNode;
-  tone?: 'success' | 'info' | 'danger';
+  tone?: 'success' | 'info' | 'danger' | 'warning';
 };
 
 const chipTones: Record<NonNullable<ChipProps['tone']>, string> = {
   success: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/20',
   info: 'bg-indigo-500/15 text-indigo-200 border-indigo-400/20',
   danger: 'bg-rose-500/15 text-rose-300 border-rose-400/20',
+  warning: 'bg-amber-500/15 text-amber-300 border-amber-400/20',
 };
 
 export function Chip({ children, tone = 'info' }: ChipProps) {
