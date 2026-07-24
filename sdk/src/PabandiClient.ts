@@ -2,6 +2,8 @@ import axios, { AxiosInstance } from 'axios';
 import { BusinessResource } from './resources/Business';
 import { AuthResource } from './resources/Auth';
 import { ReliabilityResource } from './resources/Reliability';
+import { TrustResource } from './resources/Trust';
+import { EscrowResource } from './resources/Escrow';
 
 export interface PabandiClientOptions {
   apiKey?: string;
@@ -11,16 +13,19 @@ export interface PabandiClientOptions {
 
 export class PabandiClient {
   private client: AxiosInstance;
-  
+
   public business: BusinessResource;
   public auth: AuthResource;
   public reliability: ReliabilityResource;
+  public trust: TrustResource;
+  public escrow: EscrowResource;
 
   constructor(options: PabandiClientOptions) {
-    let baseURL = 'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1';
-    
+    let baseURL =
+      'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1';
+
     if (options.environment === 'development') {
-      baseURL = 'https://dev.api.pabandi.com/api/v1'; // Example
+      baseURL = 'https://dev.api.pabandi.com/api/v1';
     } else if (options.environment === 'local') {
       baseURL = 'http://localhost:5000/api/v1';
     }
@@ -44,5 +49,7 @@ export class PabandiClient {
     this.business = new BusinessResource(this.client);
     this.auth = new AuthResource(this.client);
     this.reliability = new ReliabilityResource(this.client);
+    this.trust = new TrustResource(this.client);
+    this.escrow = new EscrowResource(this.client);
   }
 }

@@ -7,10 +7,10 @@ app.post('/live-sale/checkout', async (req, res) => {
   const { buyer_wallet } = req.body;
 
   const result = await fetch(
-        'https://api.pabandi.com/api/v1/passport/verify',
+        'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/passport/verify',
     {
       headers: {
-        'Authorization': \`Bearer \${process.env.PABANDI_API_KEY}\`,
+        'Authorization': 'Bearer ' + process.env.PABANDI_API_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

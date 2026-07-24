@@ -1,7 +1,7 @@
 (function() {
-  const PABANDI_API_URL = 'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/shopify-integration/checkout';
-  
-  // Create styles
+  const API_BASE = 'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1';
+  const UNIVERSAL_CHECKOUT = `${API_BASE}/checkout/embed-checkout`;
+
   const style = document.createElement('style');
   style.innerHTML = `
     .pabandi-escrow-container {
@@ -65,14 +65,24 @@
   `;
   document.head.appendChild(style);
 
-  // Initialize widget
-  function initPabandiWidget() {
+  function setBusy(btn, busy) {
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.innerHTML = busy
+      ? '<span class="pabandi-loader"></span> Processing...'
+      : '<span>Checkout via Escrow</span>';
+  }
+
+  async function initPabandiWidget() {
     const container = document.getElementById('pabandi-trust-badge');
-    if (!container) return; // Not on a cart/product page with the widget
+    if (!container) return;
 
     const shopDomain = container.getAttribute('data-shop');
-    if (!shopDomain) {
-      console.error('Pabandi Widget: Missing data-shop attribute.');
+    const sellerId = container.getAttribute('data-seller-id');
+    const amount = container.getAttribute('data-amount');
+
+    if (!shopDomain && !sellerId) {
+      console.error('Pabandi Widget: Missing data-shop or data-seller-id.');
       return;
     }
 
@@ -82,7 +92,7 @@
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
           Pabandi Trust Protocol Verified
         </div>
-        <p style="font-size: 13px; color: #475569; margin: 0 0 12px 0;">Your funds are held securely in escrow until you confirm delivery.</p>
+        <p id="pabandi-widget-status" style="font-size: 13px; color: #475569; margin: 0 0 12px 0;">Your funds are held securely in escrow until you confirm delivery.</p>
         <button id="pabandi-escrow-checkout" class="pabandi-btn">
           <span>Checkout via Escrow</span>
         </button>
@@ -90,61 +100,78 @@
     `;
 
     const btn = document.getElementById('pabandi-escrow-checkout');
+    const status = document.getElementById('pabandi-widget-status');
+
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
-      
-      // Attempt to fetch Shopify Cart JSON
+      setBusy(btn, true);
+      if (status) status.textContent = 'Preparing escrow checkout...';
+
       try {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="pabandi-loader"></span> Processing...';
+        let checkoutUrl = null;
 
-        const cartResponse = await fetch('/cart.js');
-        if (!cartResponse.ok) {
-          throw new Error('Failed to fetch cart data');
-        }
-        
-        const cartData = await cartResponse.json();
-        
-        if (cartData.item_count === 0) {
-          alert("Your cart is empty.");
-          btn.disabled = false;
-          btn.innerHTML = '<span>Checkout via Escrow</span>';
-          return;
-        }
+        if (shopDomain) {
+          const cartResponse = await fetch('/cart.js');
+          const cartSource = cartResponse.ok ? await cartResponse.json() : null;
+          if (cartSource && cartSource.item_count === 0) {
+            if (status) status.textContent = 'Your cart is empty.';
+            setBusy(btn, false);
+            return;
+          }
 
-        // Call Pabandi API
-        const pabandiRes = await fetch(PABANDI_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shopUrl: shopDomain, cartData })
-        });
+          const shopPayload = {
+            shopUrl: shopDomain,
+            cartData: cartSource || {},
+            sellerId,
+            amount,
+          };
 
-        const pabandiData = await pabandiRes.json();
+          const shopRes = await fetch(`${API_BASE}/shopify-integration/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(shopPayload),
+          });
 
-        if (pabandiData.error) {
-          throw new Error(pabandiData.error);
-        }
-
-        if (pabandiData.checkoutUrl) {
-          window.location.href = pabandiData.checkoutUrl;
-        } else {
-          throw new Error("Invalid response from Pabandi.");
+          const shopData = await shopRes.json();
+          if (shopData.error) throw new Error(shopData.error);
+          checkoutUrl = shopData.checkoutUrl;
         }
 
+        if (!checkoutUrl) {
+          if (!sellerId || !amount) {
+            throw new Error('Missing seller checkout details.');
+          }
+
+          const universalRes = await fetch(UNIVERSAL_CHECKOUT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              businessId: sellerId,
+              amount,
+              source: shopDomain ? 'SHOPIFY' : 'UNIVERSAL',
+              successUrl: window.location.href,
+              cancelUrl: window.location.href,
+            }),
+          });
+
+          const universalData = await universalRes.json();
+          if (universalData.error) throw new Error(universalData.error);
+          checkoutUrl = universalData.data?.checkoutUrl;
+        }
+
+        if (!checkoutUrl) throw new Error('Invalid checkout response from Pabandi.');
+        window.location.href = checkoutUrl;
       } catch (err) {
         console.error('Pabandi Escrow Checkout Error:', err);
-        alert('Failed to initiate Escrow checkout: ' + err.message);
-        btn.disabled = false;
-        btn.innerHTML = '<span>Checkout via Escrow</span>';
+        if (status) status.textContent = 'Checkout failed: ' + err.message;
+        setBusy(btn, false);
       }
     });
   }
 
-  // Run on load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initPabandiWidget);
   } else {
     initPabandiWidget();
   }
-
 })();
