@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Pabandi Growth Partners — Account Manager Incentives</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { margin: 0; background: #080e17; color: #e8edf2; font-family: Inter, system-ui, sans-serif; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+      .clip { position: absolute; inset: 0; }
+      .scene-bg { position: absolute; inset: 0; background: #080e17; }
+
+      /* Typography */
+      .font-headline { font-family: Manrope, sans-serif; }
+      .font-body { font-family: Inter, sans-serif; }
+
+      /* Scene 1 — Counter Hook */
+      #scene-1 { display: grid; place-items: center; }
+      #counter-value {
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 140px;
+        color: #14f195; letter-spacing: -2px;
+        text-shadow: 0 0 60px rgba(20, 241, 149, 0.3), 0 0 120px rgba(20, 241, 149, 0.1);
+      }
+      #counter-label {
+        font-family: Inter, sans-serif; font-weight: 500; font-size: 24px;
+        color: #94a3b8; margin-top: 16px; letter-spacing: 0.5px;
+      }
+
+      /* Scene 2 — Commission Tiers */
+      #scene-2 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+      .tier-cards { display: flex; gap: 40px; align-items: center; }
+      .tier-card {
+        width: 380px; padding: 48px 40px; border-radius: 24px;
+        background: #0f172a; border: 1px solid #334155;
+        text-align: center; position: relative; overflow: hidden;
+      }
+      .tier-card::before {
+        content: ''; position: absolute; inset: -1px; border-radius: 24px; padding: 2px;
+        background: linear-gradient(135deg, rgba(20,241,149,0.3), rgba(59,130,246,0.3), rgba(153,69,255,0.3));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        pointer-events: none; opacity: 0.5;
+      }
+      .tier-label { font-family: Inter, sans-serif; font-weight: 700; font-size: 16px; color: #94a3b8; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px; }
+      .tier-rate { font-family: Manrope, sans-serif; font-weight: 800; font-size: 96px; color: #3b82f6; line-height: 1; }
+      .tier-forever {
+        display: inline-block; font-family: Manrope, sans-serif; font-weight: 800; font-size: 20px;
+        color: #14f195; background: rgba(20,241,149,0.1); padding: 6px 16px; border-radius: 8px;
+        margin-top: 12px; text-transform: uppercase; letter-spacing: 2px;
+      }
+      #tiers-subtitle {
+        font-family: Inter, sans-serif; font-weight: 500; font-size: 22px;
+        color: #6e7d92; margin-top: 8px;
+      }
+
+      /* Scene 3 — Bounty Stack */
+      #scene-3 { display: flex; align-items: center; justify-content: center; gap: 60px; padding: 60px; }
+      .bounty-panel {
+        width: 560px; padding: 48px; border-radius: 24px;
+        background: #0b121e; border: 1px solid #1e293b; position: relative;
+      }
+      .bounty-panel-title {
+        font-family: Inter, sans-serif; font-weight: 700; font-size: 14px;
+        color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 24px;
+      }
+      .bounty-form-field {
+        width: 100%; height: 48px; border-radius: 12px; background: #0f172a;
+        border: 1px solid #334155; padding: 0 16px; display: flex; align-items: center;
+        font-family: Inter, sans-serif; font-size: 15px; color: #94a3b8; margin-bottom: 16px;
+      }
+      .bounty-btn {
+        width: 100%; height: 52px; border-radius: 12px;
+        background: linear-gradient(135deg, #3b82f6, #172554); border: none;
+        font-family: Manrope, sans-serif; font-weight: 700; font-size: 16px; color: #fff;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+      }
+      .bounty-badge {
+        position: absolute; top: 40px; right: 40px;
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 28px;
+        color: #f0b429; background: rgba(240,180,41,0.12); padding: 8px 20px;
+        border-radius: 12px; border: 1px solid rgba(240,180,41,0.25);
+      }
+      .commission-badge {
+        position: absolute; top: 40px; right: 40px;
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 28px;
+        color: #14f195; background: rgba(20,241,149,0.12); padding: 8px 20px;
+        border-radius: 12px; border: 1px solid rgba(20,241,149,0.25);
+      }
+      .booking-card {
+        padding: 24px; border-radius: 16px; background: #0f172a;
+        border: 1px solid #334155; margin-bottom: 16px;
+      }
+      .booking-status {
+        font-family: Inter, sans-serif; font-weight: 700; font-size: 16px; color: #14f195;
+      }
+      .booking-detail {
+        font-family: Inter, sans-serif; font-weight: 500; font-size: 14px; color: #94a3b8; margin-top: 8px;
+      }
+      .wallet-bar {
+        position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 16px; padding: 16px 32px;
+        border-radius: 16px; background: #0b121e; border: 1px solid #334155;
+      }
+      .wallet-label { font-family: Inter, sans-serif; font-weight: 700; font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+      .wallet-amount { font-family: Manrope, sans-serif; font-weight: 800; font-size: 32px; color: #14f195; }
+      #ref-link-bar {
+        position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 12px; padding: 12px 28px;
+        border-radius: 12px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25);
+      }
+      #ref-link-text { font-family: 'Inter', monospace; font-weight: 600; font-size: 18px; color: #3b82f6; }
+
+      /* Scene 4 — Dashboard */
+      #scene-4 { padding: 60px 80px; display: flex; flex-direction: column; }
+      .dash-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;
+      }
+      .dash-title { font-family: Manrope, sans-serif; font-weight: 800; font-size: 36px; color: #e8edf2; }
+      .dash-subtitle { font-family: Inter, sans-serif; font-weight: 500; font-size: 16px; color: #94a3b8; margin-top: 4px; }
+      .stats-grid {
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 40px;
+      }
+      .stat-card {
+        padding: 28px; border-radius: 20px; background: #05090f;
+        border: 1px solid #1e293b; position: relative; overflow: hidden;
+      }
+      .stat-card::after {
+        content: ''; position: absolute; right: -16px; top: -16px; width: 80px; height: 80px;
+        border-radius: 50%; background: #0b121e;
+      }
+      .stat-icon {
+        width: 44px; height: 44px; border-radius: 14px; background: #0f172a;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; margin-bottom: 16px; position: relative; z-index: 1;
+      }
+      .stat-label {
+        font-family: Inter, sans-serif; font-weight: 700; font-size: 11px;
+        color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;
+        position: relative; z-index: 1;
+      }
+      .stat-value {
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 28px;
+        color: #e8edf2; position: relative; z-index: 1;
+      }
+      .stat-trend {
+        display: inline-block; font-family: Inter, sans-serif; font-weight: 700; font-size: 11px;
+        color: #14f195; background: rgba(20,241,149,0.1); padding: 3px 8px;
+        border-radius: 6px; position: absolute; top: 20px; right: 20px; z-index: 1;
+      }
+      .dash-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; flex: 1; }
+      .dash-panel {
+        padding: 28px; border-radius: 24px; background: #05090f;
+        border: 1px solid #1e293b; overflow: hidden;
+      }
+      .panel-title {
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 18px;
+        color: #e8edf2; margin-bottom: 20px;
+      }
+      .biz-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 18px; border-radius: 14px; background: #0b121e;
+        border: 1px solid #1e293b; margin-bottom: 10px;
+      }
+      .biz-name { font-family: Inter, sans-serif; font-weight: 700; font-size: 14px; color: #e8edf2; }
+      .biz-tags { display: flex; gap: 8px; margin-top: 6px; }
+      .biz-tag {
+        font-family: Inter, sans-serif; font-weight: 700; font-size: 10px;
+        text-transform: uppercase; letter-spacing: 1px; padding: 3px 10px; border-radius: 20px;
+      }
+      .tag-verified { color: #3b82f6; background: rgba(59,130,246,0.1); }
+      .tag-bookings { color: #14f195; background: rgba(20,241,149,0.1); }
+      .lead-bar-track { width: 80px; height: 6px; border-radius: 3px; background: #1e293b; overflow: hidden; }
+      .lead-bar-fill { height: 100%; border-radius: 3px; background: #3b82f6; width: 0%; }
+      .ledger-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 18px; border-radius: 14px; background: #0b121e;
+        border: 1px solid #1e293b; margin-bottom: 10px;
+      }
+      .ledger-type { font-family: Inter, sans-serif; font-weight: 700; font-size: 14px; color: #e8edf2; text-transform: capitalize; }
+      .ledger-date { font-family: Inter, sans-serif; font-weight: 500; font-size: 12px; color: #6e7d92; margin-top: 4px; }
+      .ledger-amount { font-family: Manrope, sans-serif; font-weight: 800; font-size: 16px; color: #14f195; }
+
+      /* Scene 5 — Punchline */
+      #scene-5 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+      #final-amount {
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 120px;
+        color: #14f195; letter-spacing: -2px;
+        text-shadow: 0 0 60px rgba(20, 241, 149, 0.3), 0 0 120px rgba(20, 241, 149, 0.1);
+      }
+      .tagline-line {
+        font-family: Manrope, sans-serif; font-weight: 800; font-size: 48px;
+        color: #e8edf2; letter-spacing: -0.5px;
+      }
+      .tagline-line.green { color: #14f195; text-shadow: 0 0 40px rgba(20, 241, 149, 0.25); }
+      #logo-block { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 20px; }
+      #logo-img { width: 80px; height: 80px; border-radius: 20px; object-fit: cover; }
+      #cta-btn {
+        font-family: Manrope, sans-serif; font-weight: 700; font-size: 18px;
+        color: #fff; background: linear-gradient(135deg, #3b82f6, #172554);
+        padding: 16px 40px; border-radius: 14px; border: none;
+        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+      }
+
+      /* Ambient glow */
+      .ambient-glow {
+        position: absolute; border-radius: 50%; pointer-events: none; filter: blur(100px);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="22"
+    >
+      <!-- ═══════════════ SCENE 1 — Counter Hook (0-3s) ═══════════════ -->
+      <section id="scene-1" class="clip" data-start="0" data-duration="3" data-track-index="1">
+        <div class="scene-bg"></div>
+        <div class="ambient-glow" style="width:400px;height:400px;background:rgba(20,241,149,0.06);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+        <div style="text-align:center; position:relative; z-index:1;">
+          <div id="counter-value">$0.00</div>
+          <div id="counter-label">Your referral earnings. Right now.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SCENE 2 — Commission Tiers (3-8s) ═══════════════ -->
+      <section id="scene-2" class="clip" data-start="3" data-duration="5" data-track-index="2">
+        <div class="scene-bg"></div>
+        <div class="ambient-glow" style="width:600px;height:600px;background:rgba(59,130,246,0.05);top:30%;left:20%;"></div>
+        <div class="ambient-glow" style="width:400px;height:400px;background:rgba(153,69,255,0.04);bottom:20%;right:15%;"></div>
+        <div class="tier-cards" style="position:relative; z-index:1;">
+          <div id="tier-1" class="tier-card">
+            <div class="tier-label">Year 1</div>
+            <div class="tier-rate">3%</div>
+          </div>
+          <div id="tier-2" class="tier-card">
+            <div class="tier-label">Year 2</div>
+            <div class="tier-rate">2%</div>
+          </div>
+          <div id="tier-3" class="tier-card">
+            <div class="tier-label">Year 3+</div>
+            <div class="tier-rate">1%</div>
+            <div id="tier-forever" class="tier-forever">forever</div>
+          </div>
+        </div>
+        <div id="tiers-subtitle" style="position:relative; z-index:1;">of every booking's platform fee</div>
+      </section>
+
+      <!-- ═══════════════ SCENE 3 — Bounty Stack (8-12s) ═══════════════ -->
+      <section id="scene-3" class="clip" data-start="8" data-duration="4" data-track-index="3">
+        <div class="scene-bg"></div>
+        <div id="ref-link-bar">
+          <div id="ref-link-text">pabandi.com/register?ref=AX7F3E92</div>
+        </div>
+        <!-- Left: Business Signup -->
+        <div id="bounty-left" class="bounty-panel" style="position:relative;">
+          <div class="bounty-panel-title">Business Signup</div>
+          <div class="bounty-form-field">Lahore Heritage Salon</div>
+          <div class="bounty-form-field">lahore-heritage@gmail.com</div>
+          <div id="bounty-btn" class="bounty-btn">Register Business →</div>
+          <div id="bounty-badge" class="bounty-badge">+5 $PAB</div>
+        </div>
+        <!-- Right: Customer Booking -->
+        <div id="bounty-right" class="bounty-panel" style="position:relative;">
+          <div class="bounty-panel-title">Customer Booking</div>
+          <div class="booking-card">
+            <div class="booking-status">✓ Booking Confirmed</div>
+            <div class="booking-detail">Premium Haircut — $45.00</div>
+            <div class="booking-detail" style="margin-top:4px;">Platform fee: $2.25</div>
+          </div>
+          <div id="commission-badge" class="commission-badge">+3% Commission</div>
+        </div>
+        <!-- Wallet bar -->
+        <div id="wallet-bar" class="wallet-bar">
+          <div class="wallet-label">Wallet Balance</div>
+          <div id="wallet-amount" class="wallet-amount">$5.07</div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SCENE 4 — Dashboard (12-18s) ═══════════════ -->
+      <section id="scene-4" class="clip" data-start="12" data-duration="6" data-track-index="4">
+        <div class="scene-bg" style="background:#05090f;"></div>
+        <!-- Header -->
+        <div class="dash-header" style="position:relative; z-index:1;">
+          <div>
+            <div class="dash-title">Partner Dashboard</div>
+            <div class="dash-subtitle">Welcome back, Ahmad. Track your growth and earnings.</div>
+          </div>
+        </div>
+        <!-- Stats Grid -->
+        <div class="stats-grid" style="position:relative; z-index:1;">
+          <div id="stat-1" class="stat-card">
+            <div class="stat-trend">+Lifetime</div>
+            <div class="stat-icon" style="color:#22c55e;">💰</div>
+            <div class="stat-label">Total Earned</div>
+            <div class="stat-value" id="stat-earned">$0</div>
+          </div>
+          <div id="stat-2" class="stat-card">
+            <div class="stat-trend">Secured</div>
+            <div class="stat-icon" style="color:#a855f7;">📊</div>
+            <div class="stat-label">Escrow Vol.</div>
+            <div class="stat-value" id="stat-escrow">$0</div>
+          </div>
+          <div id="stat-3" class="stat-card">
+            <div class="stat-icon" style="color:#14f195;">⏳</div>
+            <div class="stat-label">Pending Payouts</div>
+            <div class="stat-value" id="stat-pending">$0</div>
+          </div>
+          <div id="stat-4" class="stat-card">
+            <div class="stat-icon" style="color:#3b82f6;">🏢</div>
+            <div class="stat-label">Active Businesses</div>
+            <div class="stat-value" id="stat-businesses">0</div>
+          </div>
+          <div id="stat-5" class="stat-card">
+            <div class="stat-icon" style="color:#64748b;">👥</div>
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-value" id="stat-bookings">0</div>
+          </div>
+        </div>
+        <!-- Panels -->
+        <div class="dash-panels" style="position:relative; z-index:1;">
+          <div id="panel-referrals" class="dash-panel">
+            <div class="panel-title">Referred Businesses & Lead Scoring</div>
+            <div class="biz-row">
+              <div>
+                <div class="biz-name">Lahore Heritage Salon</div>
+                <div class="biz-tags">
+                  <span class="biz-tag tag-verified">Verified</span>
+                  <span class="biz-tag tag-bookings">142 Bookings</span>
+                </div>
+              </div>
+              <div class="lead-bar-track"><div id="lead-1" class="lead-bar-fill"></div></div>
+            </div>
+            <div class="biz-row">
+              <div>
+                <div class="biz-name">Islamabad Fitness Hub</div>
+                <div class="biz-tags">
+                  <span class="biz-tag tag-verified">Verified</span>
+                  <span class="biz-tag tag-bookings">98 Bookings</span>
+                </div>
+              </div>
+              <div class="lead-bar-track"><div id="lead-2" class="lead-bar-fill"></div></div>
+            </div>
+            <div class="biz-row">
+              <div>
+                <div class="biz-name">Karachi Glow Spa</div>
+                <div class="biz-tags">
+                  <span class="biz-tag tag-verified">Verified</span>
+                  <span class="biz-tag tag-bookings">247 Bookings</span>
+                </div>
+              </div>
+              <div class="lead-bar-track"><div id="lead-3" class="lead-bar-fill"></div></div>
+            </div>
+          </div>
+          <div id="panel-earnings" class="dash-panel">
+            <div class="panel-title">Recent Earnings</div>
+            <div class="ledger-row">
+              <div>
+                <div class="ledger-type">Booking Commission</div>
+                <div class="ledger-date">Jul 22, 2026</div>
+              </div>
+              <div class="ledger-amount">+$12.40</div>
+            </div>
+            <div class="ledger-row">
+              <div>
+                <div class="ledger-type">Signup Bounty</div>
+                <div class="ledger-date">Jul 21, 2026</div>
+              </div>
+              <div class="ledger-amount">+$5.00</div>
+            </div>
+            <div class="ledger-row">
+              <div>
+                <div class="ledger-type">Booking Commission</div>
+                <div class="ledger-date">Jul 20, 2026</div>
+              </div>
+              <div class="ledger-amount">+$8.75</div>
+            </div>
+            <div class="ledger-row">
+              <div>
+                <div class="ledger-type">Booking Commission</div>
+                <div class="ledger-date">Jul 19, 2026</div>
+              </div>
+              <div class="ledger-amount">+$15.20</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ SCENE 5 — Punchline & CTA (18-22s) ═══════════════ -->
+      <section id="scene-5" class="clip" data-start="18" data-duration="4" data-track-index="5">
+        <div class="scene-bg"></div>
+        <div class="ambient-glow" style="width:500px;height:500px;background:rgba(20,241,149,0.06);top:30%;left:50%;transform:translateX(-50%);"></div>
+        <div id="final-amount">$2,847.50</div>
+        <div id="tagline-1" class="tagline-line">Your network.</div>
+        <div id="tagline-2" class="tagline-line">Your income.</div>
+        <div id="tagline-3" class="tagline-line green">Forever.</div>
+        <div id="logo-block">
+          <img id="logo-img" src="assets/logo-coin-3d.jpg" alt="Pabandi" />
+          <button id="cta-btn">Become a Growth Partner →</button>
+        </div>
+      </section>
+
+      <!-- ═══════════════ AUDIO ═══════════════ -->
+      <audio id="bg-music" data-start="0" data-duration="22" data-track-index="10" data-volume="0.30" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
+
+      <!-- SFX -->
+      <audio id="sfx-tier-1" data-start="3.80" data-duration="0.12" data-track-index="11" data-volume="0.70" src="assets/sfx/impact/impactSoft_medium_000.ogg"></audio>
+      <audio id="sfx-tier-2" data-start="4.40" data-duration="0.18" data-track-index="12" data-volume="0.70" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx-tier-3" data-start="5.00" data-duration="0.14" data-track-index="13" data-volume="0.70" src="assets/sfx/impact/impactSoft_medium_002.ogg"></audio>
+      <audio id="sfx-bounty" data-start="9.20" data-duration="0.26" data-track-index="14" data-volume="0.65" src="assets/sfx/casino/chips-collide-1.ogg"></audio>
+      <audio id="sfx-click" data-start="8.80" data-duration="0.06" data-track-index="15" data-volume="0.55" src="assets/sfx/ui/mouseclick1.ogg"></audio>
+      <audio id="sfx-card-1" data-start="12.50" data-duration="0.11" data-track-index="16" data-volume="0.55" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-card-3" data-start="13.30" data-duration="0.11" data-track-index="17" data-volume="0.55" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-logo" data-start="21.00" data-duration="1.5" data-track-index="18" data-volume="0.75" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // ─── Helper: animated counter ───────────────────────────────
+      function animateCounter(el, target, prefix, suffix, duration, startTime) {
+        const obj = { val: 0 };
+        tl.to(obj, {
+          val: target,
+          duration: duration,
+          ease: "power2.out",
+          onUpdate: function() {
+            if (typeof target === 'number' && target % 1 !== 0) {
+              el.textContent = prefix + obj.val.toFixed(2) + suffix;
+            } else {
+              el.textContent = prefix + Math.round(obj.val).toLocaleString() + suffix;
+            }
+          }
+        }, startTime);
+      }
+
+      // ═══ SCENE 1 — Counter Hook (0-3s) ═══
+      // Counter starts after 0.3s, label fades in
+      tl.from("#counter-value", { opacity: 0, scale: 0.95, duration: 0.4, ease: "power3.out" }, 0.3);
+      tl.from("#counter-label", { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" }, 0.6);
+      // Animate counter from 0 to ~2847
+      animateCounter(document.getElementById("counter-value"), 2847.50, "$", "", 2.2, 0.5);
+
+      // ═══ SCENE 2 — Commission Tiers (3-8s) ═══
+      // Tier cards slam in from below, staggered // beat-locked: ~3.82s, ~4.39s, ~4.91s
+      tl.from("#tier-1", { y: 120, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.4)" }, 3.82);
+      tl.from("#tier-2", { y: 120, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.4)" }, 4.39);
+      tl.from("#tier-3", { y: 120, opacity: 0, scale: 0.9, duration: 0.5, ease: "back.out(1.4)" }, 4.91);
+      // "forever" tag pulses in
+      tl.from("#tier-forever", { opacity: 0, scale: 0.5, duration: 0.4, ease: "back.out(2)" }, 5.50);
+      tl.to("#tier-forever", { scale: 1.1, duration: 0.2, yoyo: true, repeat: 1, ease: "power1.inOut" }, 5.90);
+      // Subtitle
+      tl.from("#tiers-subtitle", { opacity: 0, y: 16, duration: 0.5, ease: "power3.out" }, 6.00);
+
+      // ═══ SCENE 3 — Bounty Stack (8-12s) ═══
+      // Ref link bar
+      tl.from("#ref-link-bar", { opacity: 0, y: -20, duration: 0.4, ease: "power3.out" }, 8.20);
+      // Left panel: business signup
+      tl.from("#bounty-left", { opacity: 0, x: -60, duration: 0.5, ease: "power3.out" }, 8.40);
+      // Cursor click on register button // beat-locked: ~8.74s
+      tl.to("#bounty-btn", { scale: 0.97, duration: 0.08, ease: "power1.in" }, 8.74);
+      tl.to("#bounty-btn", { scale: 1, duration: 0.12, ease: "power1.out" }, 8.82);
+      // Bounty badge flies up
+      tl.from("#bounty-badge", { opacity: 0, y: 30, scale: 0.7, duration: 0.4, ease: "back.out(2)" }, 9.00);
+      // Right panel: customer booking
+      tl.from("#bounty-right", { opacity: 0, x: 60, duration: 0.5, ease: "power3.out" }, 9.20);
+      // Commission badge
+      tl.from("#commission-badge", { opacity: 0, y: 30, scale: 0.7, duration: 0.4, ease: "back.out(2)" }, 9.80);
+      // Wallet bar
+      tl.from("#wallet-bar", { opacity: 0, y: 20, duration: 0.4, ease: "power3.out" }, 10.40);
+      animateCounter(document.getElementById("wallet-amount"), 5.07, "$", "", 0.8, 10.50);
+
+      // ═══ SCENE 4 — Dashboard (12-18s) ═══
+      // Header
+      tl.from(".dash-header", { opacity: 0, y: -20, duration: 0.4, ease: "power3.out" }, 12.20);
+      // Stat cards stagger in // beat-grid: 12.55s, 13.11s, 13.64s, 14.20s, 14.73s
+      tl.from("#stat-1", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" }, 12.55);
+      tl.from("#stat-2", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" }, 13.11);
+      tl.from("#stat-3", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" }, 13.30);
+      tl.from("#stat-4", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" }, 13.64);
+      tl.from("#stat-5", { opacity: 0, y: 30, duration: 0.4, ease: "power3.out" }, 14.00);
+      // Counter animations for stat values
+      animateCounter(document.getElementById("stat-earned"), 2847.50, "$", "", 1.2, 12.70);
+      animateCounter(document.getElementById("stat-escrow"), 14237.50, "$", "", 1.2, 13.20);
+      animateCounter(document.getElementById("stat-pending"), 312.00, "$", "", 0.8, 13.40);
+      animateCounter(document.getElementById("stat-businesses"), 23, "", "", 0.8, 13.80);
+      animateCounter(document.getElementById("stat-bookings"), 487, "", "", 0.8, 14.10);
+      // Panels fade in
+      tl.from("#panel-referrals", { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" }, 15.00);
+      tl.from("#panel-earnings", { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" }, 15.20);
+      // Lead bars fill
+      tl.to("#lead-1", { width: "92%", duration: 0.8, ease: "power2.out" }, 15.60);
+      tl.to("#lead-2", { width: "85%", duration: 0.8, ease: "power2.out" }, 15.80);
+      tl.to("#lead-3", { width: "97%", duration: 0.8, ease: "power2.out" }, 16.00);
+
+      // ═══ SCENE 5 — Punchline & CTA (18-22s) ═══
+      // Final amount
+      tl.from("#final-amount", { opacity: 0, scale: 0.9, duration: 0.5, ease: "power3.out" }, 18.30);
+      // Taglines stagger in
+      tl.from("#tagline-1", { opacity: 0, y: 24, duration: 0.4, ease: "power3.out" }, 19.00);
+      tl.from("#tagline-2", { opacity: 0, y: 24, duration: 0.4, ease: "power3.out" }, 19.60);
+      tl.from("#tagline-3", { opacity: 0, y: 24, scale: 1.05, duration: 0.5, ease: "power3.out" }, 20.20);
+      // Glow pulse on "Forever"
+      tl.to("#tagline-3", { textShadow: "0 0 60px rgba(20,241,149,0.5)", duration: 0.3, yoyo: true, repeat: 1, ease: "power1.inOut" }, 20.70);
+      // Logo and CTA // beat-locked: ~21.28s
+      tl.from("#logo-block", { opacity: 0, y: 20, duration: 0.5, ease: "power3.out" }, 21.00);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

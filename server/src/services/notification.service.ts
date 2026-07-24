@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import { sendWhatsAppMessage } from './ai.service';
 import { openwaAfterHoursService } from './openwa.after-hours.service';
+import { openwaTemplateService } from './openwa.template.service';
 
 // Use globally initialized admin from utils/firebase.ts
 const isFirebaseInitialized = () => admin.apps.length > 0;
@@ -194,8 +195,13 @@ export class NotificationService {
             settings: reservation.business.settings || null,
           }));
         } else {
-          const msg = `Hi ${reservation.customerName}! Your reservation at *${reservation.business.name}* is CONFIRMED for ${new Date(reservation.reservationDate).toLocaleDateString()} at ${reservation.reservationTime}. We look forward to seeing you!`;
-          await sendWhatsAppMessage(reservation.customerPhone, msg);
+          await openwaTemplateService.sendTemplate(reservation.customerPhone, 'booking_confirmation', {
+            customerName: reservation.customerName,
+            businessName: reservation.business.name,
+            reservationDate: new Date(reservation.reservationDate).toLocaleDateString(),
+            reservationTime: reservation.reservationTime,
+            guestCount: (reservation.numberOfGuests || 1).toString(),
+          });
         }
       }
 
@@ -289,8 +295,12 @@ export class NotificationService {
               settings: reservation.business.settings || null,
             }));
           } else {
-            const msg = `Reminder: Hi ${reservation.customerName}, your reservation at *${reservation.business.name}* is coming up on ${reservationDate.toLocaleDateString()} at ${reservation.reservationTime}.`;
-            await sendWhatsAppMessage(reservation.customerPhone, msg);
+            await openwaTemplateService.sendTemplate(reservation.customerPhone, 'booking_reminder', {
+              customerName: reservation.customerName,
+              businessName: reservation.business.name,
+              reservationDate: reservationDate.toLocaleDateString(),
+              reservationTime: reservation.reservationTime,
+            });
           }
         }
 
@@ -322,8 +332,15 @@ export class NotificationService {
       const settings = reservation.business.settings;
       if (settings?.notifyOwnerOnNewBooking && settings?.whatsappNumber) {
         const dashboardUrl = `${process.env.FRONTEND_URL || 'https://pabandi.com'}/business/dashboard`;
-        const msg = `🔔 *New Booking Alert*\n\nYou have a new reservation at *${reservation.business.name}*!\n\nName: ${reservation.customerName}\nDate: ${new Date(reservation.reservationDate).toLocaleDateString()}\nTime: ${reservation.reservationTime}\nGuests: ${reservation.numberOfGuests}\nPhone: ${reservation.customerPhone}\n\n👉 View & Manage: ${dashboardUrl}`;
-        await sendWhatsAppMessage(settings.whatsappNumber, msg);
+        await openwaTemplateService.sendTemplate(settings.whatsappNumber, 'new_booking_alert', {
+          businessName: reservation.business.name,
+          customerName: reservation.customerName,
+          reservationDate: new Date(reservation.reservationDate).toLocaleDateString(),
+          reservationTime: reservation.reservationTime,
+          guestCount: (reservation.numberOfGuests || 1).toString(),
+          customerPhone: reservation.customerPhone || 'N/A',
+          dashboardUrl,
+        });
       }
     } catch (error) {
       logger.error('Failed to send business notification', error);
@@ -348,8 +365,12 @@ export class NotificationService {
 
       const settings = reservation.business.settings;
       if (settings?.requestFeedbackAfterBooking && reservation.customerPhone) {
-        const msg = `Hi ${reservation.customerName}! Thank you for visiting *${reservation.business.name}*. We hope you had a great experience! Please let us know how we did by leaving a review on our Pabandi page. Your feedback helps us improve!`;
-        await sendWhatsAppMessage(reservation.customerPhone, msg);
+        const reviewUrl = `${process.env.FRONTEND_URL || 'https://pabandi.com'}/b/${reservation.business.id}/review`;
+        await openwaTemplateService.sendTemplate(reservation.customerPhone, 'review_request', {
+          customerName: reservation.customerName,
+          businessName: reservation.business.name,
+          reviewUrl,
+        });
       }
     } catch (error) {
       logger.error('Failed to send review request', error);

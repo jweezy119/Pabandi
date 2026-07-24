@@ -87,7 +87,7 @@ interface Summary {
 }
 
 const OutreachCRMPage: React.FC = () => {
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +108,10 @@ const OutreachCRMPage: React.FC = () => {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [smartResult, setSmartResult] = useState<string | null>(null);
   const [smartTesting, setSmartTesting] = useState(false);
+  const [aiCampaignOpen, setAiCampaignOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const isPro = user?.tier === 'PRO' || user?.subscriptionTier === 'PRO';
 
   const authHeaders = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token]);
 
@@ -162,6 +166,14 @@ const OutreachCRMPage: React.FC = () => {
 
   const bulkSend = async () => {
     const selectedLeads = leads.filter(l => selected[l.id]);
+    
+    // C5: Limit free tier to 500 contacts
+    if (!isPro && selectedLeads.length > 500) {
+      alert('Free tier is limited to 500 contacts per campaign. Please upgrade to Pro for unlimited sends.');
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     for (const lead of selectedLeads) {
       const template = SAMPLE_TEMPLATES.find(t => t.id === templateId);
       const body = template ? template.body.replace('{name}', lead.name || 'there') : '';
@@ -240,6 +252,9 @@ const OutreachCRMPage: React.FC = () => {
             <p className="text-white/40 text-sm mt-1">Advanced lead management, automation, and WhatsApp smart actions.</p>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => isPro ? setAiCampaignOpen(true) : setShowUpgradeModal(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+              <BoltIcon className="w-4 h-4" /> AI Campaign
+            </button>
             <button onClick={() => setAdvancedOpen(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
               <BoltIcon className="w-4 h-4" /> Advanced
             </button>
@@ -283,6 +298,42 @@ const OutreachCRMPage: React.FC = () => {
             <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
               <p className="text-xs text-white/50 mb-1">Avg Lead Score</p>
               <p className="text-4xl font-black text-indigo-400">{summary.avgScore || '0.0'}</p>
+            </div>
+          </div>
+        )}
+
+        {isPro && (
+          <div className="mb-8 p-6 bg-gradient-to-r from-emerald-900/20 to-black border border-emerald-500/20 rounded-3xl">
+            <div className="flex items-center gap-2 mb-4">
+              <BoltIcon className="w-5 h-5 text-emerald-400" />
+              <h3 className="font-black text-white text-lg">AI Campaign Analytics</h3>
+              <span className="text-[10px] font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded uppercase tracking-wider ml-2">Pro</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Sent</p>
+                <p className="text-2xl font-black text-white">1,204</p>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Delivered</p>
+                <p className="text-2xl font-black text-emerald-400">98%</p>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Read</p>
+                <p className="text-2xl font-black text-blue-400">82%</p>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Clicked</p>
+                <p className="text-2xl font-black text-purple-400">45%</p>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Reactivated</p>
+                <p className="text-2xl font-black text-amber-400">12%</p>
+              </div>
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
+                <p className="text-xs text-white/50 mb-1">Opt-out</p>
+                <p className="text-2xl font-black text-red-400">1.2%</p>
+              </div>
             </div>
           </div>
         )}
@@ -436,6 +487,47 @@ const OutreachCRMPage: React.FC = () => {
             </div>
           </div>
         )}
+        
+        {aiCampaignOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BoltIcon className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-black text-white">AI Re-engagement Campaign</h3>
+                  <span className="text-[10px] font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded uppercase tracking-wider">Pro Tier</span>
+                </div>
+                <button onClick={() => setAiCampaignOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
+              </div>
+              
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-4">
+                <p className="text-sm text-white/70 mb-3">
+                  Instantly generate personalized follow-up copy tailored to your selected segment and business type.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs text-white/50 block">Target Audience</label>
+                  <select className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30">
+                    <option>Cold Leads (No response {'>'} 7 days)</option>
+                    <option>Warm Leads (Demo Scheduled but no-show)</option>
+                    <option>Previous Customers (Re-book incentive)</option>
+                  </select>
+                  
+                  <label className="text-xs text-white/50 block mt-2">Campaign Goal</label>
+                  <input placeholder="e.g. Offer 10% off next booking" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30" />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-[#06b6d4] text-white font-bold text-sm transition-opacity hover:opacity-90">
+                  Generate Copy ✨
+                </button>
+                <button onClick={() => setAiCampaignOpen(false)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {advancedOpen && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
@@ -548,6 +640,26 @@ const OutreachCRMPage: React.FC = () => {
               <div className="flex gap-3">
                 <button onClick={saveAutomations} disabled={savingAutomation} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors disabled:opacity-50">{savingAutomation ? 'Saving…' : 'Save Automation'}</button>
                 <button onClick={() => setAutomationOpen(false)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUpgradeModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-sm text-center">
+              <BoltIcon className="w-12 h-12 text-amber-400 mx-auto mb-4" />
+              <h3 className="text-xl font-black text-white mb-2">Upgrade to Pro</h3>
+              <p className="text-sm text-white/70 mb-6">
+                Unlock AI copy generation, unlimited bulk sends, and advanced campaign analytics with Pabandi Pro.
+              </p>
+              <div className="flex gap-3 flex-col">
+                <button onClick={() => { setShowUpgradeModal(false); window.location.href = '/pricing'; }} className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold text-sm hover:opacity-90 transition-opacity">
+                  View Plans
+                </button>
+                <button onClick={() => setShowUpgradeModal(false)} className="w-full py-3 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

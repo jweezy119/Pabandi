@@ -9,6 +9,8 @@ const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api'
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || 'pabandi';
 
+import { createOpenWAMCPClient } from './openwa.mcp-client.service';
+export const openwaMcpClient = createOpenWAMCPClient(OPENWA_SESSION_ID);
 export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
   if (!OPENWA_API_KEY) {
     console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
@@ -53,11 +55,11 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
 
   const lowerMsg = message.trim().toLowerCase();
 
-  if (openwaDropBotService.isDropCommand(message)) {
+  if (openwaDropBotService.isDropEngineCommand(message)) {
     try {
       const business = await findBusinessByPublicPhone(businessPhone);
       if (business) {
-        const reply = await openwaDropBotService.handleDropCommand(business.id, message);
+        const reply = await openwaDropBotService.handleDropEngineCommand(business.id, customerPhone, message);
         await sendWhatsAppMessage(customerPhone, reply);
         return;
       }
@@ -111,10 +113,9 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
 
     const classification = await aiNlpService.classifyIntentAndLanguage(message);
     console.log(`[AI NLP] Classification result:`, classification);
-
-    if (classification.intent === 'booking' || classification.intent === 'sales') {
-      const template = "Great! Let's lock in your reservation/order. Share date, time, guests, and I'll check availability and create a secure booking link for {{businessName}}.";
-      const response = await aiNlpService.generateCopy(template, { businessName, businessSlug });
+    if (classification.intent === 'book_table' || classification.intent === 'booking' || classification.intent === 'sales') {
+      const template = "Great! Let's lock in your reservation. Please securely deposit $5 into the Web3 Escrow to confirm: https://pabandi.com/s/{{businessSlug}}?mode=instant";
+      const response = await aiNlpService.generateCopy(template, { businessSlug });
       await sendWhatsAppMessage(customerPhone, response);
       return;
     } else if (classification.intent === 'cancellation') {
@@ -124,8 +125,20 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
         await sendWhatsAppMessage(customerPhone, 'To cancel, share your booking ID or phone number used while booking.');
       }
       return;
-    } else if (classification.intent === 'support') {
-      await sendWhatsAppMessage(customerPhone, 'I can help with deposits, refunds, menus, timings, or human handoff. What do you need?');
+    } else if (classification.intent === 'check_menu') {
+      const template = "Here is our digital menu: https://pabandi.com/menu/{{businessSlug}}. Let me know if you want to place an order!";
+      const response = await aiNlpService.generateCopy(template, { businessSlug });
+      await sendWhatsAppMessage(customerPhone, response);
+      return;
+    } else if (classification.intent === 'ask_question' || classification.intent === 'support') {
+      const template = "I'm the AI assistant for {{businessName}}. I can help with deposits, refunds, menus, timings, or human handoff. What do you need?";
+      const response = await aiNlpService.generateCopy(template, { businessName });
+      await sendWhatsAppMessage(customerPhone, response);
+      return;
+    } else {
+      const template = "I'm the AI assistant for {{businessName}}. I can help you book a table, check our catalog, or answer general questions. How can I help you today?";
+      const response = await aiNlpService.generateCopy(template, { businessName });
+      await sendWhatsAppMessage(customerPhone, response);
       return;
     }
 

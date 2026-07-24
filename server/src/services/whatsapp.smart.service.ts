@@ -2,6 +2,7 @@ import { selectPlugins, buildPluginSummary } from './openwa.plugins.service';
 import { sendWhatsAppMessage } from './ai.service';
 import { hospitalityService } from './hospitalityService';
 import { aiNlpService } from './ai.nlp.service';
+import { openwaTemplateService } from './openwa.template.service';
 
 export interface SmartReply {
   text: string;
@@ -95,20 +96,11 @@ export class WhatsAppSmartService {
   }
 
   private async replyWithMenu(customerPhone: string): Promise<SmartReply> {
-    const text = [
-      'Pabandi AI receptionist:',
-      '1) Book appointment',
-      '2) Cancel reservation',
-      '3) Reschedule booking',
-      '4) Booking status',
-      '5) Pay / deposit',
-      '6) Ask anything',
-      '7) Human help',
-      '',
-      'Reply 1-7 or a phrase like "table for 4 tonight".',
-    ].join('\n');
-    const reply = await this.reply(customerPhone, text);
-    return { text: reply, matchedIntent: 'menu', action: 'menu' };
+    const summary = this.pluginSummary(['menu', 'support', 'automation', 'booking'], { businessName: '' });
+    // In a real flow, we would look up the business name.
+    await openwaTemplateService.sendTemplate(customerPhone, 'interactive_menu', { businessName: 'Pabandi Business' });
+    
+    return { text: 'Sent interactive menu template', matchedIntent: 'menu', pluginSummary: summary };
   }
 
   private async handleNewConversation(

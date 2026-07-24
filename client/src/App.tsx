@@ -48,6 +48,7 @@ import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
+import { PluginManagerPage } from './pages/PluginManagerPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
@@ -166,6 +167,10 @@ function App() {
             <Route
               path="business/analytics"
               element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="business/plugins"
+              element={isAuthenticated ? <PluginManagerPage /> : <Navigate to="/login" />}
             />
             <Route
               path="reservations"
