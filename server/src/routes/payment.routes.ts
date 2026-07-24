@@ -5,7 +5,9 @@ import { authenticate } from '../middleware/auth.middleware';
 const router = Router();
 
 router.post('/webhook', processPaymentWebhook); // No auth - webhook endpoint
-router.post('/simulate-webhook', processPaymentWebhook); // Mock frontend test endpoint
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/simulate-webhook', processPaymentWebhook); // Dev/test endpoint only
+}
 router.use(authenticate);
 router.post('/', createPayment);
 router.get('/:id', getPayment);

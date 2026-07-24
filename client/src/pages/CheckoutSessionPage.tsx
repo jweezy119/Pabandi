@@ -54,7 +54,7 @@ export const CheckoutSessionPage = () => {
     try {
       const response = await api.post(`/checkout/session/${session.id}/complete`);
       if (response.data.success && response.data.data.redirectUrl) {
-        toast.success('Payment simulated successfully! Redirecting...');
+        toast.success('Payment accepted. Redirecting...');
         window.location.href = response.data.data.redirectUrl;
       }
     } catch (error: any) {

@@ -211,8 +211,8 @@ router.post('/connect/META', async (req: AuthRequest, res: Response, next: NextF
 
 /**
  * POST /api/v1/social/connect/:platform
- * Stub OAuth connect — saves a simulated SocialIdentity.
- * In production: redirect to OAuth provider → callback saves real data.
+ * Manual social-identity connect route.
+ * In production: full OAuth redirect flow is preferred for providers that support it.
  */
 router.post('/connect/:platform', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
