@@ -32,7 +32,7 @@ const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
       reason: data.error || 'Checkout session creation failed'
     });
   }
-});`;
+})`;
 
 function JsonViewer({ data }: { data: unknown }) {
   const json = JSON.stringify(data, null, 2);
@@ -394,9 +394,15 @@ export default function DeveloperPortalPage() {
 
       {/* ── Live Sale Integration ─────────────────────────────────────────────── */}
       <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '32px', letterSpacing: '-0.02em' }}>
+        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '12px', letterSpacing: '-0.02em' }}>
           Live-Sale Integration Example
         </h2>
+        <p style={{ fontSize: '15px', color: '#94a3b8', marginBottom: '24px' }}>
+          Integrate checkout into live selling by calling the embed endpoint from your seller backend.
+          For multi-region or mirror deployments, set <code style={{ color: '#c4b5fd' }}>window.PABANDI_API_BASE</code> before loading the embed,
+          or use <code style={{ color: '#c4b5fd' }}>PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
+          without changing the copied snippet.
+        </p>
         <div style={{ background: '#0f172a', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>checkout.js</span>
