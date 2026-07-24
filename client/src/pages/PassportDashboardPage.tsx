@@ -154,7 +154,7 @@ export const PassportDashboardPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6">
             <h2 className="font-headline text-lg font-bold mb-2">Compute Category Score</h2>
-            <p className="font-body text-xs text-on-surface-variant mb-3">Score one category axis for current user or demo profile.</p>
+            <p className="font-body text-xs text-on-surface-variant mb-3">Score one category axis for the current user.</p>
             <select value={category} onChange={(event) => setCategory(event.target.value)} className="w-full rounded-xl border border-outline-variant/40 bg-surface p-3 mb-3">
               {['general', 'hospitality', 'live_selling', 'freelance', 'gig'].map((item) => (
                 <option key={item} value={item}>{item}</option>
@@ -167,7 +167,7 @@ export const PassportDashboardPage = () => {
 
           <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6">
             <h2 className="font-headline text-lg font-bold mb-2">Public Passport Lookup</h2>
-            <p className="font-body text-xs text-on-surface-variant mb-3">Show a public score snapshot for another user or demo profile.</p>
+            <p className="font-body text-xs text-on-surface-variant mb-3">Show a public score snapshot for another user.</p>
             <input value={targetId} onChange={(event) => setTargetId(event.target.value)} placeholder="Target user ID" className="w-full rounded-xl border border-outline-variant/40 bg-surface p-3 mb-3" />
             <button onClick={() => qc.invalidateQueries(['public-passport', targetId])} disabled={!targetId} type="button" className="w-full py-3 rounded-xl bg-primary text-on-primary font-bold disabled:opacity-50">
               Refresh Public Passport

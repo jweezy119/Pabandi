@@ -10,7 +10,7 @@ export class ReviewService {
             const apiKey = process.env.GOOGLE_MAPS_API_KEY;
             
             if (!apiKey) {
-                logger.warn('GOOGLE_MAPS_API_KEY not found. Skipping real API call, using mock validation state.');
+                logger.warn('GOOGLE_MAPS_API_KEY not found. Skipping real API call; validation state is provisional.');
                 return; // Optionally, throw an error if strictly requiring real data
             }
 

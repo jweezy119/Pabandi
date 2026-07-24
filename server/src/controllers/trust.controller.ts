@@ -30,17 +30,11 @@ export const getPublicTrustProfile = async (
     const attestation = await trustAttestationService.issue(userId);
     const velocity = await trustScoreService.computeVelocity(userId);
 
-    // Mocking rank and percentile for the demo
-    const rank = Math.floor(Math.random() * 5000) + 1;
-    const percentile = Math.floor(Math.random() * 20) + 80; // 80-99
-
     res.json({
       success: true,
       data: {
         score: user.trustScore,
         tier: user.verificationTier,
-        rank,
-        percentile,
         methodology: "1.0.0",
         attestation,
         trustVelocity: velocity

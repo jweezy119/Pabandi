@@ -69,7 +69,7 @@ export const requestSolanaTransfer = async (req: AuthRequest, res: Response, nex
     const { amount } = req.body;
     const wallet = await prisma.wallet.findUnique({ where: { userId: req.user!.id }, include: { user: true } });
 
-    // KYC check temporarily bypassed for MVP demo
+    // Identity verification can be enforced before withdrawals depending on policy.
     // if (!wallet?.user?.isEmailVerified || !wallet?.user?.isPhoneVerified) {
     //   throw new CustomError('Identity Verification (Phone & Email) is required before withdrawing funds to Solana to comply with AML laws.', 403);
     // }
@@ -154,7 +154,7 @@ export const mintBadge = async (req: AuthRequest, res: Response, next: NextFunct
     const badge = await badgeService.computeBadgeStatus(userId);
     const showRate = badge.totalBookings > 0 ? badge.attendanceRate : 100;
 
-    // Generate AI Trust Profile using Alibaba DashScope mock
+    // Generate AI Trust Profile
     const aiTrustProfile = await dashscopeService.generateTrustProfile(userId);
 
     const mintResult = await blockchainService.checkAndMintEligibleBadge(

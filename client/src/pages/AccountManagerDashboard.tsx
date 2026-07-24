@@ -175,7 +175,7 @@ export default function AccountManagerDashboard() {
             ) : (
               <div className="space-y-4">
                 {referrals.map((business, i) => {
-                  const leadScore = Math.min(100, Math.floor(Math.random() * 40) + 60); // Mock Lead Score
+                  const leadScore = business.leadScore ?? 0;
                   const scoreColor = leadScore >= 85 ? 'text-green-500 bg-green-500/10' : leadScore >= 70 ? 'text-yellow-500 bg-yellow-500/10' : 'text-red-500 bg-red-500/10';
                   
                   return (

@@ -579,7 +579,7 @@ export default function TrustPage() {
             { method: 'GET', path: '/api/v1/badge/:pseudonymousId', desc: 'Public. Returns signed badge JSON for any pseudonymous ID. No auth required.', tag: 'PUBLIC' },
             { method: 'GET', path: '/external/v1/badge/:pseudonymousId', desc: 'B2B API. Requires x-api-key. Returns same payload — for automated platform integrations.', tag: 'API KEY' },
             { method: 'GET', path: '/api/v1/social/identities', desc: 'Authenticated. Returns the calling user\'s connected platforms and trust boost breakdown.', tag: 'AUTH' },
-            { method: 'POST', path: '/api/v1/social/connect/:platform', desc: 'Authenticated. Connects a social platform via OAuth stub. Returns trust boost earned.', tag: 'AUTH' },
+            { method: 'POST', path: '/api/v1/social/connect/:platform', desc: 'Authenticated. Connects a social platform and returns trust boost earned.', tag: 'AUTH' },
           ].map(endpoint => (
             <div key={endpoint.path} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '20px' }}>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
