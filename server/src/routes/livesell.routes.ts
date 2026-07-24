@@ -202,10 +202,6 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
   }
 });
 
-router.get('/callback/mock', (_req: any, res: any) => {
-  res.status(404).json({ success: false, error: 'Not found' });
-});
-
 router.delete('/:platform', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
