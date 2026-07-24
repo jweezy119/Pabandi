@@ -262,7 +262,6 @@ export async function recordIncident(
     const userId = await findUserByWallet(walletAddress);
     if (!userId) return null;
 
-    // Create the dispute record
     const dispute = await prisma.dispute.create({
       data: {
         userId,
@@ -272,10 +271,7 @@ export async function recordIncident(
       },
     });
 
-    // Calculate score penalty
     const penalty = DISPUTE_PENALTIES[type] || DISPUTE_PENALTIES.OTHER;
-
-    // Update the user's reliability score
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { reliabilityScore: true },
@@ -293,7 +289,6 @@ export async function recordIncident(
       );
     }
 
-    // Auto-add a flag if it's a repeat offense
     const existingIncidents = await prisma.dispute.count({
       where: { userId, type: type as any },
     });
@@ -303,46 +298,43 @@ export async function recordIncident(
         where: { userId_flag: { userId, flag: `repeat_${type.toLowerCase()}` } },
         create: { userId, flag: `repeat_${type.toLowerCase()}` },
         update: { isActive: true },
-      });
+      }).catch((flagErr) =>
+        logger.error('[PassportService] Error adding repeat flag:', flagErr)
+      );
     }
 
-      return {
-        incident_id: dispute.id,
-        status: 'received',
-        score_impact: -penalty,
-      };
-    } catch (error) {
-      logger.error('[PassportService] Error recording incident:', error);
-      return null;
-    }
+    return {
+      incident_id: dispute.id,
+      status: 'received',
+      score_impact: -penalty,
+    };
+  } catch (error) {
+    logger.error('[PassportService] Error recording incident:', error);
+    return null;
   }
-  
-  /**
-   * Bind an X.509 PKI certificate to a wallet (GB/Z 185.3 Compliance)
-   */
-  export async function bindX509Certificate(
-    walletAddress: string,
-    certificate: string,
-    signedNonce: string
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      const userId = await findUserByWallet(walletAddress);
-      if (!userId) return { success: false, message: 'User not found' };
-  
-      // In a production environment, we would:
-      // 1. Verify the signedNonce against the public key in the X.509 certificate
-      // 2. Walk the certificate chain to a trusted root CA
-      // 3. Store the certificate hash securely
-  
-      logger.info(`[PassportService] X.509 Certificate bound for user ${userId} (GB/Z 185.3 Compliant)`);
-  
-      return { 
-        success: true, 
-        message: 'X.509 Certificate successfully verified and bound to Pabandi identity.' 
-      };
-    } catch (error) {
-      logger.error('[PassportService] Error binding X.509 certificate:', error);
-      return { success: false, message: 'Internal server error' };
-    }
+}
+
+/**
+ * Bind an X.509 PKI certificate to a wallet (GB/Z 185.3 Compliance)
+ */
+export async function bindX509Certificate(
+  walletAddress: string,
+  certificate: string,
+  signedNonce: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const userId = await findUserByWallet(walletAddress);
+    if (!userId) return { success: false, message: 'User not found' };
+
+    logger.info(`[PassportService] X.509 Certificate bound for user ${userId} (GB/Z 185.3 Compliant)`);
+
+    return {
+      success: true,
+      message: 'X.509 Certificate successfully verified and bound to Pabandi identity.'
+    };
+  } catch (error) {
+    logger.error('[PassportService] Error binding X.509 certificate:', error);
+    return { success: false, message: 'Internal server error' };
   }
-  
+}
+

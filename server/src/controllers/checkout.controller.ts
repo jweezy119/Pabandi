@@ -176,3 +176,56 @@ export const createEmbedCheckoutSession = async (req: Request, res: Response) =>
     return res.status(500).json({ success: false, error: 'Failed to create embed checkout session' });
   }
 };
+
+export const createPartnerEmbedCheckoutSession = async (req: any, res: Response) => {
+  try {
+    const apiClient = req.apiClient;
+    const partnerBusinessId = apiClient?.businessId;
+
+    const { businessId, amount, currency, successUrl, cancelUrl, escrowTerms, metadata, source } = req.body;
+
+    if (!partnerBusinessId && !businessId) {
+      return res.status(400).json({ success: false, error: 'Missing businessId or partner API key business context' });
+    }
+    if (!amount || !successUrl || !cancelUrl) {
+      return res.status(400).json({ success: false, error: 'Missing required fields for embed checkout session' });
+    }
+
+    const targetBusinessId = businessId || partnerBusinessId as string;
+    const business = await prisma.business.findUnique({ where: { id: targetBusinessId } });
+    if (!business) {
+      return res.status(404).json({ success: false, error: 'Business not found' });
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    const session = await prisma.checkoutSession.create({
+      data: {
+        businessId: targetBusinessId,
+        amount: parseFloat(amount),
+        currency: currency || business.currency || 'USD',
+        source: source || 'UNIVERSAL',
+        escrowTerms: escrowTerms || null,
+        metadata: metadata || null,
+        successUrl,
+        cancelUrl,
+        expiresAt,
+        status: 'PENDING',
+      },
+    });
+
+    const host = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const checkoutUrl = `${host}/checkout/${session.id}`;
+    return res.status(201).json({
+      success: true,
+      data: {
+        sessionId: session.id,
+        checkoutUrl,
+      },
+    });
+  } catch (error) {
+    logger.error('Error creating partner embed checkout session:', error);
+    return res.status(500).json({ success: false, error: 'Failed to create partner embed checkout session' });
+  }
+};
