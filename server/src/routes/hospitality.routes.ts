@@ -8,6 +8,9 @@ import {
   listProperties,
   getProperty,
   getConnectionHealth,
+  checkAvailability,
+  createReceptionistCheckout,
+  receptionistAnalytics,
 } from '../controllers/hospitality.controller';
 
 const router = Router();
@@ -20,5 +23,8 @@ router.post('/connect', connectProperty);
 router.get('/properties', listProperties);
 router.get('/property/:id', getProperty);
 router.get('/health', getConnectionHealth);
+router.get('/property/:businessId/availability', checkAvailability);
+router.post('/receptionist/checkout', createReceptionistCheckout);
+router.get('/receptionist/analytics/:businessId', receptionistAnalytics);
 
 export default router;

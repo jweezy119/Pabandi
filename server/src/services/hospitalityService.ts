@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 import { webhookService } from './webhook.service';
 
 // ─── Unified Booking Type ─────────────────────────────────────────────────────
@@ -176,6 +177,31 @@ class HospitalityService {
     if (!eventSuccess) current.errorCount += 1;
 
     syncTelemetry.set(propertyId, current);
+  }
+
+  async checkAvailability(businessId: string, dateIso: string, partySize: number) {
+    const day = new Date(dateIso);
+    if (Number.isNaN(day.getTime())) return { available: false, slots: [], reason: 'invalid_date' as const };
+
+    const startOfDay = new Date(dateIso);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
+
+    const sameDayReservations = prisma.reservation.count({
+      where: { businessId, reservationDate: { gte: startOfDay, lt: endOfDay }, status: { in: ['PENDING', 'CONFIRMED'] } },
+    });
+
+    const table = prisma.table.findFirst({
+      where: { businessId, isActive: true, capacity: { gte: partySize }, NOT: { reservations: { some: { reservationDate: { gte: startOfDay, lt: endOfDay }, status: { in: ['PENDING', 'CONFIRMED'] } } } } },
+      select: { id: true, capacity: true, name: true },
+      orderBy: { capacity: 'asc' },
+    });
+
+    const [bookedToday, matchedTable] = await Promise.all([sameDayReservations, table]);
+    const available = Boolean(matchedTable) && bookedToday === 0;
+    const slots = available ? ['18:00', '19:00', '20:00'] : [];
+    const reason = available ? ('available' as const) : ('fully_booked' as const);
+    return { available, slots, reason, matchedTable: matchedTable ? { id: matchedTable.id, name: matchedTable.name, capacity: matchedTable.capacity } : null, bookedToday };
   }
 
   // ─── Webhook Ingest ───────────────────────────────────────────────────────
