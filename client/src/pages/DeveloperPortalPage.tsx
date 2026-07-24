@@ -1,21 +1,22 @@
 import { useState } from 'react';
 
-const LIVE_SALE_CODE = `import express from 'express';
-const app = express();
-
-app.post('/live-sale/checkout', async (req, res) => {
-  const { buyer_wallet } = req.body;
+const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
+  const { buyer_wallet, amount, seller_id, currency } = req.body;
 
   const result = await fetch(
-        'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/passport/verify',
+        'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1/checkout/embed-checkout',
     {
       headers: {
         'Authorization': 'Bearer ' + process.env.PABANDI_API_KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        wallet_address: buyer_wallet,
-        required_tier: 'Gold'
+        businessId: seller_id,
+        amount,
+        currency: currency || 'USD',
+        successUrl: 'https://your-site.com/order/success',
+        cancelUrl: 'https://your-site.com/order/cancel',
+        source: 'LIVE_SELLER'
       }),
       method: 'POST'
     }
@@ -23,13 +24,12 @@ app.post('/live-sale/checkout', async (req, res) => {
 
   const data = await result.json();
 
-  if (data.status === 'eligible') {
-    return res.json({ checkout_allowed: true, score: data.passport.trust_score });
+  if (data.success && data.data?.checkoutUrl) {
+    return res.json({ checkout_allowed: true, checkoutUrl: data.data.checkoutUrl });
   } else {
     return res.json({
       checkout_allowed: false,
-      reason: 'Score below Gold tier',
-      deposit_amount_pab: 500
+      reason: data.error || 'Checkout session creation failed'
     });
   }
 });`;

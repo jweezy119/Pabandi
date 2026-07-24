@@ -156,14 +156,14 @@ export default function BusinessProfilePage() {
 
     try {
       if (formData.paymentMethod === 'bsc') {
-        const result = await executeBscDeposit("0.05", business.walletAddress || "0xMockBusinessAddress", "reservation_profile");
+        const result = await executeBscDeposit("0.05", business.walletAddress || "0x1234567890123456789012345678901234567890", "reservation_profile");
         if (!result.success) {
           alert(`BSC Deposit Failed: ${result.error}`);
           return;
         }
         transactionHash = result.transactionHash;
       } else if (formData.paymentMethod === 'solana') {
-        const result = await executeSolanaDeposit(0.1, business.walletAddress || "MockBusinessAddress");
+        const result = await executeSolanaDeposit(0.1, business.walletAddress || "PABANDi111111111111111111111111111111111111");
         if (!result.success) {
           alert(`Solana Deposit Failed: ${result.error}`);
           return;
@@ -266,6 +266,7 @@ export default function BusinessProfilePage() {
             onClose={() => setShowClaimOverlay(false)}
             onSubmit={submitClaim}
           />
+
           <PaymentLinkCard businessId={business.id} businessName={business.name} />
 
           <div className="flex gap-3 justify-center">
@@ -290,7 +291,6 @@ export default function BusinessProfilePage() {
       </div>
     );
   }
-
   // Categories helper
   const getCategoryLabel = (c: string) => {
     if (c === 'RESTAURANT') return 'Fine Dining';
