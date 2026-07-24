@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import apiClient from "../services/api";
@@ -11,7 +11,6 @@ import {
   ShieldCheckIcon,
   CreditCardIcon,
   CurrencyDollarIcon,
-  StarIcon,
   MapPinIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
@@ -184,34 +183,6 @@ export default function NewReservationPage() {
     const message = `Hi ${selectedPlace.name}! I just made a reservation at your venue using Pabandi. Please claim your profile to confirm and manage it: https://pabandi.com/business/${selectedPlace.id}`;
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
   };
-
-  const handlePlaceSelect = useCallback(async (place: PlaceDetails) => {
-    setSelectedPlace(place);
-    setError("");
-    try {
-      const res = await apiClient.get(
-        `/businesses?googlePlaceId=${place.googlePlaceId}&search=${encodeURIComponent(place.name)}`,
-      );
-      const matchingBiz = res.data?.data?.businesses?.[0];
-      if (matchingBiz) {
-        setSelectedPlace((prev) =>
-          prev
-            ? {
-                ...prev,
-                id: matchingBiz.id,
-                walletAddress: matchingBiz.walletAddress,
-                phone: matchingBiz.phone || prev.phone,
-                isClaimed: matchingBiz.isClaimed,
-                isE2eeEnabled: matchingBiz.settings?.isE2eeEnabled,
-                e2eePublicKey: matchingBiz.settings?.e2eePublicKey,
-              }
-            : null,
-        );
-      }
-    } catch (err) {
-      // ignore lookup errors
-    }
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
