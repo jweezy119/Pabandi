@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { reliabilityService } from '../services/reliability.service';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
 export const getGuidelines = async (req: Request, res: Response) => {
   try {
@@ -34,22 +35,27 @@ export const getGuidelines = async (req: Request, res: Response) => {
 
 export const getHistory = async (req: Request, res: Response) => {
   try {
-    // For now, we return a mocked receipt since we don't persist them in the DB yet
-    // In production, we would query a 'ScoreReceipt' table by req.user.userId
-    const mockReceipt = {
-      id: "receipt_1234",
-      date: new Date().toISOString(),
-      previousScore: 85,
-      newScore: 86.5,
-      totalChange: 1.5,
-      reasoning: "Attendance expected due to Elite status. Included +0 streak bonus."
-    };
+    const userId = (req as any).user?.userId || (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { reliabilityScore: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
 
     res.json({
       success: true,
-      data: [mockReceipt]
+      data: {
+        currentScore: user.reliabilityScore,
+        note: 'Detailed score history view is coming soon.',
+      },
     });
-
   } catch (error) {
     logger.error('Error fetching reliability history:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch history' });
