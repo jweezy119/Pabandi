@@ -58,4 +58,36 @@ router.post('/checkout', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
+/**
+ * POST /api/v1/escrow/sign-init-tx
+ * Oracle route for signing Solana DRPE Escrow initialization transactions.
+ */
+router.post('/sign-init-tx', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { serializedTxBase64, customerWallet } = req.body;
+    
+    if (!serializedTxBase64 || !customerWallet) {
+      res.status(400).json({ success: false, error: 'serializedTxBase64 and customerWallet are required' });
+      return;
+    }
+
+    const { solanaEscrowService } = await import('../services/solana_escrow.service');
+    
+    const signedTxBase64 = await solanaEscrowService.signInitializeEscrowTx(
+      serializedTxBase64,
+      customerWallet
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        signedTxBase64
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to sign Solana initialization transaction:', error);
+    res.status(500).json({ success: false, error: 'Oracle failed to sign transaction' });
+  }
+});
+
 export default router;

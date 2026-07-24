@@ -5,6 +5,13 @@ import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
+// Simple Phantom provider interface for MVP
+interface PhantomProvider {
+  isPhantom: boolean;
+  connect: () => Promise<{ publicKey: { toString: () => string } }>;
+  signTransaction: (transaction: any) => Promise<any>;
+}
+
 interface CheckoutSession {
   id: string;
   amount: number;
@@ -28,6 +35,7 @@ export const CheckoutSessionPage = () => {
   const [session, setSession] = useState<CheckoutSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [phantomWallet, setPhantomWallet] = useState<string | null>(null);
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -48,17 +56,53 @@ export const CheckoutSessionPage = () => {
     if (sessionId) fetchSession();
   }, [sessionId]);
 
+  const connectPhantom = async () => {
+    try {
+      const provider = (window as any).solana as PhantomProvider;
+      if (provider?.isPhantom) {
+        const resp = await provider.connect();
+        setPhantomWallet(resp.publicKey.toString());
+        toast.success('Phantom Wallet Connected!');
+      } else {
+        toast.error('Please install Phantom Wallet extension.');
+        window.open('https://phantom.app/', '_blank');
+      }
+    } catch (err) {
+      toast.error('Failed to connect Phantom wallet.');
+    }
+  };
+
   const handlePayment = async () => {
     if (!session) return;
+    
+    if (!phantomWallet) {
+      toast.error('Please connect your Phantom Wallet to proceed.');
+      return;
+    }
+
     setPaying(true);
     try {
+      // 1. Get partially signed transaction from Backend Oracle
+      toast('Requesting Oracle Signature...', { icon: '🔮' });
+      const txRes = await api.post('/escrow/sign-init-tx', {
+        serializedTxBase64: btoa('dummy_transaction_payload_for_prototype'),
+        customerWallet: phantomWallet
+      });
+
+      if (!txRes.data.success) throw new Error('Oracle rejected the transaction');
+
+      // 2. (In production: deserialize txRes.data.data.signedTxBase64 and prompt Phantom to sign)
+      toast('Confirming via Phantom...', { icon: '👻' });
+      await new Promise(r => setTimeout(r, 1500)); // Simulating wallet delay
+
+      // 3. Mark session complete
       const response = await api.post(`/checkout/session/${session.id}/complete`);
       if (response.data.success && response.data.data.redirectUrl) {
-        toast.success('Payment accepted. Redirecting...');
+        toast.success('Payment accepted and escrow locked!');
         window.location.href = response.data.data.redirectUrl;
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Payment failed');
+      toast.error(error.response?.data?.error || error.message || 'Payment failed');
       setPaying(false);
     }
   };
@@ -140,6 +184,29 @@ export const CheckoutSessionPage = () => {
                   <p className="text-xs text-zinc-400 mt-1">Funds will be held in a smart escrow until both parties confirm fulfillment.</p>
                 </div>
               </>
+            )}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-zinc-800">
+            {phantomWallet ? (
+              <div className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-purple-500/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <span className="text-xs">👻</span>
+                  </div>
+                  <span className="text-sm font-mono text-zinc-300">
+                    {phantomWallet.slice(0, 4)}...{phantomWallet.slice(-4)}
+                  </span>
+                </div>
+                <span className="text-xs text-green-400 font-bold">Connected</span>
+              </div>
+            ) : (
+              <button 
+                onClick={connectPhantom}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-[#AB9FF2] text-black font-bold text-sm hover:opacity-90 transition-opacity"
+              >
+                Connect Phantom Wallet
+              </button>
             )}
           </div>
         </div>
