@@ -3,15 +3,15 @@ import axios from 'axios';
 import { cryptoService } from './cryptoService';
 import { openwaAfterHoursService } from './openwa.after-hours.service';
 import { openwaFaqBotService } from './openwa.faq-bot.service';
-
-const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
-const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
-const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
-const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || 'pabandi';
-
 import { createOpenWAMCPClient } from './openwa.mcp-client.service';
-export const openwaMcpClient = createOpenWAMCPClient(OPENWA_SESSION_ID);
+
+export const openwaMcpClient = createOpenWAMCPClient(process.env.OPENWA_SESSION_ID || 'pabandi');
+
 export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
+  const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
+  const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
+  const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || 'pabandi';
+
   if (!OPENWA_API_KEY) {
     console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
     return;
@@ -33,8 +33,6 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
   } catch (error: any) {
     console.error(`[WhatsApp] Error sending message to ${toPhone} via OpenWA:`, error.response?.data || error.message);
   }
-
-  console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
 };
 
 export const findBusinessByPublicPhone = async (phoneNumber: string) => {
@@ -196,13 +194,13 @@ async function handleWhatsAppCancellation(phoneNumber: string, user: any) {
         data: { depositPaid: false },
       });
 
-      await sendWhatsAppMessage(phoneNumber, `✅ Your reservation at *${reservation.business.name}* on ${reservation.reservationDate} has been cancelled. Your deposit has been automatically refunded to you!`);
+      await sendWhatsAppMessage(phoneNumber, `Your reservation at ${reservation.business.name} on ${reservation.reservationDate} has been cancelled.`);
       return;
     }
 
-    await sendWhatsAppMessage(phoneNumber, `✅ Your reservation at *${reservation.business.name}* on ${reservation.reservationDate} has been cancelled successfully.`);
+    await sendWhatsAppMessage(phoneNumber, `Your reservation at ${reservation.business.name} on ${reservation.reservationDate} has been cancelled.`);
   } catch (error) {
     console.error('[WhatsApp Cancel Error]:', error);
-    await sendWhatsAppMessage(phoneNumber, "Sorry, we encountered an error while trying to cancel your reservation. Please try again or use the app.");
+    await sendWhatsAppMessage(phoneNumber, 'Sorry, we encountered an error while trying to cancel your reservation. Please try again or use the app.');
   }
 }

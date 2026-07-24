@@ -3,6 +3,7 @@ type ConversationSignal = {
   businessId: string;
   userMessage: string;
   agentReply: string;
+  traceId?: string;
   createdAt: Date;
 };
 
@@ -12,10 +13,11 @@ export const saveConversationSignal = async (
   phone: string,
   businessId: string,
   userMessage: string,
-  agentReply: string
+  agentReply: string,
+  traceId?: string
 ): Promise<void> => {
   const key = `${phone}:${businessId}`;
   const history = memory.get(key) || [];
-  history.push({ phone, businessId, userMessage, agentReply, createdAt: new Date() });
+  history.push({ phone, businessId, userMessage, agentReply, traceId, createdAt: new Date() });
   memory.set(key, history.slice(-20));
 };

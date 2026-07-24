@@ -86,7 +86,6 @@ export const handleIncomingWhatsApp = async (req: Request, res: Response): Promi
         const smartText = smartReply?.text || null;
 
         if (smartText) {
-          await sendWhatsAppMessage(customerPhone, smartText);
           if (matchedBusiness) {
             await saveConversationSignal(customerPhone, matchedBusiness.id, msgBody, smartText);
           }
