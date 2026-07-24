@@ -57,12 +57,30 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
     try {
       const business = await findBusinessByPublicPhone(businessPhone);
       if (business) {
-        const reply = await openwaDropBotService.handleDropCommand(business.id, message);
+        const phone = customerPhone;
+        const reply = await openwaDropBotService.handleDropCommand(business.id, message, phone);
         await sendWhatsAppMessage(customerPhone, reply);
         return;
       }
     } catch (e) {
       console.error('[Drop Bot Error]', e);
+    }
+  }
+
+  if (openwaDropBotService.isClaimCommand(message)) {
+    try {
+      const business = await findBusinessByPublicPhone(businessPhone);
+      if (business) {
+        const phone = customerPhone;
+        const claim = await openwaDropBotService.handleClaimCommand(business.id, message, phone);
+        await sendWhatsAppMessage(customerPhone, claim.text);
+        if (claim.paymentUrl) {
+          await sendWhatsAppMessage(customerPhone, `Pay here: ${claim.paymentUrl}`);
+        }
+        return;
+      }
+    } catch (e) {
+      console.error('[Drop Claim Error]', e);
     }
   }
 

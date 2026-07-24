@@ -2,12 +2,14 @@ import { selectPlugins, buildPluginSummary } from './openwa.plugins.service';
 import { sendWhatsAppMessage } from './ai.service';
 import { hospitalityService } from './hospitalityService';
 import { aiNlpService } from './ai.nlp.service';
+import { saveConversationSignal } from './whatsapp.conversation.service';
 
 export interface SmartReply {
   text: string;
   matchedIntent?: string;
   pluginSummary?: string;
   action?: string;
+  traceId?: string;
 }
 
 export interface SmartSession {
@@ -22,20 +24,46 @@ export interface SmartSession {
 const BOOKING_FIELDS = ['date', 'time', 'partySize', 'occasion', 'contact'] as const;
 type BookingField = typeof BOOKING_FIELDS[number];
 
+const SESSION_TTL_MS = 1000 * 60 * 60 * 6;
+
 export class WhatsAppSmartService {
-  private sessions = new Map<string, SmartSession>();
+  private sessions = new Map<string, { session: SmartSession; expiresAt: number }>();
   private conversations = new Map<string, Array<{ from: 'user' | 'agent'; text: string; at: number }>>();
 
-  getSession(phone: string): SmartSession | undefined {
-    return this.sessions.get(phone);
+  private sessionKey(phone: string, businessPhone: string) {
+    return `${phone}::${businessPhone}`;
   }
 
-  setSession(phone: string, session: SmartSession) {
-    this.sessions.set(phone, session);
+  private evictExpiredSessions() {
+    const now = Date.now();
+    for (const [key, record] of this.sessions) {
+      if (record.expiresAt < now) {
+        this.sessions.delete(key);
+      }
+    }
   }
 
-  clearSession(phone: string) {
-    this.sessions.delete(phone);
+  private touchSession(phone: string, businessPhone: string, session: SmartSession) {
+    this.evictExpiredSessions();
+    this.sessions.set(this.sessionKey(phone, businessPhone), {
+      session,
+      expiresAt: Date.now() + SESSION_TTL_MS,
+    });
+    return session;
+  }
+
+  getSession(phone: string, businessPhone: string): SmartSession | undefined {
+    this.evictExpiredSessions();
+    const record = this.sessions.get(this.sessionKey(phone, businessPhone));
+    return record?.session;
+  }
+
+  setSession(phone: string, businessPhone: string, session: SmartSession) {
+    this.touchSession(phone, businessPhone, session);
+  }
+
+  clearSession(phone: string, businessPhone: string) {
+    this.sessions.delete(this.sessionKey(phone, businessPhone));
   }
 
   getConversation(phone: string) {
@@ -50,10 +78,13 @@ export class WhatsAppSmartService {
     return trimmed;
   }
 
-  async reply(customerPhone: string, text: string, pluginSummary?: string) {
+  async reply(customerPhone: string, text: string, pluginSummary?: string, businessPhone = '') {
     this.appendConversation(customerPhone, 'agent', text);
     const payload = [text, pluginSummary].filter(Boolean).join('\n\n');
     await sendWhatsAppMessage(customerPhone, payload);
+    if (businessPhone) {
+      await saveConversationSignal(customerPhone, businessPhone, '', text);
+    }
     return payload;
   }
 
@@ -66,10 +97,10 @@ export class WhatsAppSmartService {
 
   async processMessage(customerPhone: string, businessPhone: string, message: string): Promise<SmartReply | null> {
     const lower = message.trim().toLowerCase();
-    const session = this.getSession(customerPhone);
+    const session = this.getSession(customerPhone, businessPhone);
 
     if (lower === '/menu' || lower === 'menu' || lower === 'help' || lower === 'start' || lower === 'options' || lower === 'main') {
-      this.clearSession(customerPhone);
+      this.clearSession(customerPhone, businessPhone);
       return this.replyWithMenu(customerPhone);
     }
 
@@ -91,6 +122,9 @@ export class WhatsAppSmartService {
       pluginAware: true,
       sessionMemory: true,
       conversationalBooking: true,
+      scopedSessions: true,
+      sessionTtlMs: SESSION_TTL_MS,
+      persistSmartSignals: true,
     };
   }
 
@@ -130,14 +164,14 @@ export class WhatsAppSmartService {
         '- Pay: share booking ID',
         '- Human: type "human"',
       ].join('\n');
-      const reply = await this.reply(customerPhone, fallback);
+      const reply = await this.reply(customerPhone, fallback, undefined, businessPhone);
       return { text: reply, matchedIntent: 'general', action: 'assist' };
     }
 
     if (intent !== 'book') {
       const text = this.introForIntent(intent);
       const pluginSummary = this.pluginSummary([intent, 'support', 'automation']);
-      const reply = await this.reply(customerPhone, text, pluginSummary);
+      const reply = await this.reply(customerPhone, text, pluginSummary, businessPhone);
       return { text: reply, matchedIntent: intent, pluginSummary, action: intent };
     }
 
@@ -156,9 +190,9 @@ export class WhatsAppSmartService {
       data: { raw, lower, outOfHours: outOfHours ? true : undefined },
       updatedAt: Date.now(),
     };
-    this.setSession(customerPhone, session);
+    this.touchSession(customerPhone, businessPhone, session);
 
-    const reply = await this.reply(customerPhone, startText, summary);
+    const reply = await this.reply(customerPhone, startText, summary, businessPhone);
     return { text: reply, matchedIntent: 'book', pluginSummary: summary, action: 'collect_details' };
   }
 
@@ -174,7 +208,7 @@ export class WhatsAppSmartService {
     if (session.intent === 'status') return this.handleStatusFlow(customerPhone, session, lower, raw);
 
     const text = 'I noted that. If you want to change date/time/guests, send the new details now.';
-    const reply = await this.reply(customerPhone, text);
+    const reply = await this.reply(customerPhone, text, undefined, session.businessPhone);
     return { text: reply, matchedIntent: session.intent, action: 'continue' };
   }
 
@@ -187,7 +221,7 @@ export class WhatsAppSmartService {
     if (!session.data.entities || typeof session.data.entities !== 'object') {
       const entities = await aiNlpService.extractBookingEntities(raw);
       session.data.entities = entities;
-      this.setSession(customerPhone, session);
+      this.touchSession(customerPhone, session.businessPhone, session);
     }
 
     const entities = session.data.entities as Record<string, any>;
@@ -195,20 +229,20 @@ export class WhatsAppSmartService {
     if (!entities.date && session.step === 'date') {
       session.step = 'date';
       session.data.userText = raw;
-      this.setSession(customerPhone, session);
-      const reply = await this.reply(customerPhone, 'Which date? Example: 2026-07-25');
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(customerPhone, 'Which date? Example: 2026-07-25', undefined, session.businessPhone);
       return { text: reply, matchedIntent: 'book', action: 'collect_date' };
     }
     if (!entities.time && session.step === 'date') {
       session.step = 'time';
-      this.setSession(customerPhone, session);
-      const reply = await this.reply(customerPhone, 'Got it. What time? Example: 19:00');
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(customerPhone, 'Got it. What time? Example: 19:00', undefined, session.businessPhone);
       return { text: reply, matchedIntent: 'book', action: 'collect_time' };
     }
     if (!entities.partySize && session.step !== 'confirm') {
       session.step = 'partySize';
-      this.setSession(customerPhone, session);
-      const reply = await this.reply(customerPhone, 'How many guests?');
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(customerPhone, 'How many guests?', undefined, session.businessPhone);
       return { text: reply, matchedIntent: 'book', action: 'collect_party_size' };
     }
 
@@ -218,23 +252,23 @@ export class WhatsAppSmartService {
 
     if (!dateStr && !timeStr && !partySize) {
       session.step = 'date';
-      this.setSession(customerPhone, session);
-      const reply = await this.reply(customerPhone, 'Please share a date, time, and number of guests.');
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(customerPhone, 'Please share a date, time, and number of guests.', undefined, session.businessPhone);
       return { text: reply, matchedIntent: 'book', action: 'collect_details' };
     }
 
     const businessId = String(session.data.businessId || session.businessPhone || '');
     if (!businessId) {
       session.step = 'source';
-      this.setSession(customerPhone, session);
-      const reply = await this.reply(customerPhone, 'Which venue is this for? Share the venue name or branch.');
+      this.touchSession(customerPhone, session.businessPhone, session);
+      const reply = await this.reply(customerPhone, 'Which venue is this for? Share the venue name or branch.', undefined, session.businessPhone);
       return { text: reply, matchedIntent: 'book', action: 'collect_business' };
     }
 
     session.data.date = dateStr;
     session.data.time = timeStr;
     session.data.partySize = partySize;
-    this.setSession(customerPhone, session);
+    this.touchSession(customerPhone, session.businessPhone, session);
 
     let availability: any = { available: true, matchedTable: { name: 'Recommended table' }, slots: [] };
     if (dateStr) {
@@ -244,15 +278,15 @@ export class WhatsAppSmartService {
 
     if (!availability.available) {
       const suggestion = availability.slots?.[0] ? ` Nearest slot: ${availability.slots[0]}. Available?` : '';
-      const reply = await this.reply(customerPhone, `That slot is unavailable.${suggestion} Or try another date/time.`);
+      const reply = await this.reply(customerPhone, `That slot is unavailable.${suggestion} Or try another date/time.`, undefined, session.businessPhone);
       session.step = 'date';
-      this.setSession(customerPhone, session);
+      this.touchSession(customerPhone, session.businessPhone, session);
       return { text: reply, matchedIntent: 'book', action: 'offer_alternative' };
     }
 
     session.step = 'confirm';
     session.data.status = 'ready';
-    this.setSession(customerPhone, session);
+    this.touchSession(customerPhone, session.businessPhone, session);
 
     const bookingText = [
       `${timeStr ? 'Time: ' + timeStr : ''}`,
@@ -262,7 +296,7 @@ export class WhatsAppSmartService {
       'Reply "confirm" to secure with deposit, or send new details.',
     ].filter(Boolean).join('\n');
 
-    const reply = await this.reply(customerPhone, bookingText);
+    const reply = await this.reply(customerPhone, bookingText, undefined, session.businessPhone);
     return { text: reply, matchedIntent: 'book', action: 'await_confirmation' };
   }
 
@@ -281,46 +315,46 @@ export class WhatsAppSmartService {
         'To secure this booking, pay the deposit with the payment link we send next.',
       ].join('\n\n');
 
-      const reply = await this.reply(customerPhone, interactive);
+      const reply = await this.reply(customerPhone, interactive, undefined, session.businessPhone);
       const linkText = `Secure your booking:\n${checkoutUrl}`;
-      const linkReply = await this.reply(customerPhone, linkText);
+      const linkReply = await this.reply(customerPhone, linkText, undefined, session.businessPhone);
 
       session.step = 'completed';
-      this.setSession(customerPhone, session);
+      this.touchSession(customerPhone, session.businessPhone, session);
 
       if (session.data.outOfHours) {
         session.data.willNotify = true;
-        this.setSession(customerPhone, session);
+        this.touchSession(customerPhone, session.businessPhone, session);
         const nudge = 'Because this was outside business hours, our team will confirm manually when we open.';
-        const nudgeReply = await this.reply(customerPhone, nudge);
+        const nudgeReply = await this.reply(customerPhone, nudge, undefined, session.businessPhone);
         return { text: [reply, linkReply, nudgeReply].join('\n\n'), matchedIntent: 'book', action: 'escrow_created' };
       }
 
       return { text: [reply, linkReply].join('\n\n'), matchedIntent: 'book', action: 'escrow_created' };
     } catch (error: any) {
       const errText = `Booking request saved. Our team will confirm shortly.\nError: ${error?.message || 'checkout unavailable'}`;
-      const reply = await this.reply(customerPhone, errText);
+      const reply = await this.reply(customerPhone, errText, undefined, session.businessPhone);
       session.step = 'awaiting_human';
-      this.setSession(customerPhone, session);
+      this.touchSession(customerPhone, session.businessPhone, session);
       return { text: reply, matchedIntent: 'book', action: 'human_required' };
     }
   }
 
   private async handleCancelFlow(customerPhone: string, session: SmartSession, lower: string, raw: string): Promise<SmartReply> {
-    const reply = await this.reply(customerPhone, 'Cancellation noted. Share booking ID or date and I will process eligible refunds.');
-    this.clearSession(customerPhone);
+    const reply = await this.reply(customerPhone, 'Cancellation noted. Share booking ID or date and I will process eligible refunds.', undefined, session.businessPhone);
+    this.clearSession(customerPhone, session.businessPhone);
     return { text: reply, matchedIntent: 'cancel', action: 'cancel_intake' };
   }
 
   private async handleStatusFlow(customerPhone: string, session: SmartSession, lower: string, raw: string): Promise<SmartReply> {
-    const reply = await this.reply(customerPhone, 'Please share booking ID or date/time and I will check status and payment.');
-    this.clearSession(customerPhone);
+    const reply = await this.reply(customerPhone, 'Please share booking ID or date/time and I will check status and payment.', undefined, session.businessPhone);
+    this.clearSession(customerPhone, session.businessPhone);
     return { text: reply, matchedIntent: 'status', action: 'status_intake' };
   }
 
   private async handleHandoff(customerPhone: string, businessPhone: string, session: SmartSession | undefined): Promise<SmartReply> {
-    this.clearSession(customerPhone);
-    const reply = await this.reply(customerPhone, 'Handoff requested. A team member will follow up shortly.');
+    this.clearSession(customerPhone, businessPhone);
+    const reply = await this.reply(customerPhone, 'Handoff requested. A team member will follow up shortly.', undefined, businessPhone);
     return { text: reply, matchedIntent: 'human', action: 'handoff' };
   }
 
