@@ -195,7 +195,7 @@ export default function BusinessCrmPage() {
                     {customers.map((c: any, i: number) => {
                       const u = c.user;
                       const name = u ? `${u.firstName} ${u.lastName}` : c.customerName;
-                      const score = u ? u.reliabilityScore : (Math.random() * 40 + 60).toFixed(0); // fallback mock if no user account
+                      const score = u ? u.reliabilityScore : 0;
                       const initial = name ? name[0].toUpperCase() : '?';
                       
                       return (

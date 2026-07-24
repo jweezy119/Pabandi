@@ -24,7 +24,7 @@ export const discoverAgents = async (req: ApiKeyRequest, res: Response): Promise
 
     // In a full implementation, we would use an LLM (like Gemini) to parse the query 
     // into structured requirements: { category: 'Beauty', minScore: 800, location: 'Karachi' }
-    // For this Alibaba demo, we will simulate the NLP matching logic.
+    // Using heuristic matching when an LLM is not configured.
 
     const isBeauty = query.toLowerCase().includes('beauty') || query.toLowerCase().includes('salon');
     const isLiveSeller = query.toLowerCase().includes('live') || query.toLowerCase().includes('seller');

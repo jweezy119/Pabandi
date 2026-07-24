@@ -74,24 +74,21 @@ export default function TapPayPage() {
     }
   };
 
-  const simulatePhantomPay = async () => {
+  const handleVerifyIntent = async () => {
     if (!intentId || !sellerId || !amount) {
-      setError('Create an intent before paying.');
+      setError('Create or save an intent before verifying.');
       setStatus('error');
       return;
     }
     setStatus('processing');
     setError('');
     setVerifyResult(null);
-    const fakeSignature = `simulated_${intentId}_${Date.now()}`;
-    setSignature(fakeSignature);
+    setSignature('');
     try {
-      const res = await tapService.verifyPayment({ signature: fakeSignature, sellerId, expectedAmount: amount, mint: undefined });
-      setVerifyResult(res.data);
-      setStatus(res.data?.success ? 'verified' : 'error');
-      if (!res.data?.success) {
-        setError(res.data?.message || 'Verification failed');
-      }
+      const res = await tapService.getMerchant(sellerId);
+      const data = (res.data?.data || res.data) as any;
+      setVerifyResult({ ...res.data, ...data });
+      setStatus('verified');
     } catch (err: any) {
       setStatus('error');
       setError(err?.response?.data?.message || 'Verification request failed');
@@ -185,6 +182,13 @@ export default function TapPayPage() {
 
           <div className="flex flex-wrap gap-3">
             <button
+              onClick={openWalletDeepLink}
+              disabled={!isReady}
+              className="px-5 py-2.5 bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors border border-white/20"
+            >
+              Open Wallet
+            </button>
+            <button
               onClick={handleCreateIntent}
               disabled={!isReady || status === 'processing'}
               className="px-5 py-2.5 bg-[#0ea5e9] hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
@@ -192,18 +196,11 @@ export default function TapPayPage() {
               {status === 'processing' ? 'Working...' : 'Create Intent'}
             </button>
             <button
-              onClick={simulatePhantomPay}
+              onClick={handleVerifyIntent}
               disabled={!isReady || status === 'processing'}
               className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
             >
-              Pay with Phantom
-            </button>
-            <button
-              onClick={openWalletDeepLink}
-              disabled={!isReady}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors border border-white/20"
-            >
-              Open Wallet
+              {status === 'processing' ? 'Working...' : 'Verify Payment'}
             </button>
           </div>
 
@@ -242,8 +239,8 @@ export default function TapPayPage() {
         </div>
 
         <div className="mt-6 p-4 rounded-xl border border-[#ffffff15] bg-[#141414] text-xs text-[#757575]">
-          <p className="font-bold text-[#9e9e9e] mb-1">Demo flow notes</p>
-          <p>This is a merchant Tap checkout preview. Create an intent, then simulate a Phantom-funded payment. No blockchain funds are used in this demo.</p>
+          <p className="font-bold text-[#9e9e9e] mb-1">Verification notes</p>
+          <p>Complete the payment in your wallet. Pabandi verifies the on-chain intent and confirms checkout for this seller.</p>
         </div>
       </div>
     </div>

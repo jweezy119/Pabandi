@@ -450,65 +450,23 @@ export default function NewReservationPage() {
         {/* Venue Selection */}
         <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 mb-8">
           <FieldLabel>Select Venue</FieldLabel>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              {
-                id: "demo_1",
-                name: "Grand Chicago Hall",
-                address: "Michigan Avenue, Chicago",
-                phone: "+92 300 111 2222",
-                rating: 4.8,
-              },
-              {
-                id: "demo_2",
-                name: "Skyline Bistro",
-                address: "River North, Chicago",
-                phone: "+92 300 333 4444",
-                rating: 4.9,
-              },
-              {
-                id: "demo_3",
-                name: "Cultural Center Lounge",
-                address: "Grant Park, Chicago",
-                phone: "+92 300 555 6666",
-                rating: 4.7,
-              },
-            ].map((venue) => (
+          {selectedPlace ? (
+            <div className="flex items-center justify-between rounded-lg border border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20 px-4 py-3">
+              <div>
+                <div className="text-sm font-bold text-primary">{selectedPlace.name}</div>
+                <div className="text-xs text-on-surface-variant">{selectedPlace.address}</div>
+              </div>
               <button
-                key={venue.id}
-                onClick={() =>
-                  handlePlaceSelect({
-                    googlePlaceId: venue.id,
-                    name: venue.name,
-                    address: venue.address,
-                    phone: venue.phone,
-                    rating: venue.rating,
-                    userRatingsTotal: 124,
-                    isClaimed: true,
-                    photoUrl:
-                      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=400",
-                  })
-                }
-                className={`flex flex-col items-start gap-2 rounded-lg border px-4 py-3 text-left transition-colors ${
-                  selectedPlace?.googlePlaceId === venue.id
-                    ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                    : "border-outline-variant/30 bg-surface-container-low hover:bg-surface-container"
-                }`}
+                type="button"
+                onClick={() => setSelectedPlace(null)}
+                className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors"
               >
-                <div className="flex items-center gap-1 text-xs text-amber-500 font-bold">
-                  <StarIcon className="h-3.5 w-3.5" /> {venue.rating}
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-primary">
-                    {venue.name}
-                  </div>
-                  <div className="text-xs text-on-surface-variant">
-                    {venue.address}
-                  </div>
-                </div>
+                Change
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <p className="text-xs text-on-surface-variant">Use the search above or the home search to find a venue, then continue.</p>
+          )}
         </div>
 
         {selectedPlace ? (
