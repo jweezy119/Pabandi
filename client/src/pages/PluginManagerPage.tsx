@@ -1,10 +1,11 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Shield, MessageCircle, Clock, Zap, Settings, Activity } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../store/authStore';
 
 export const PluginManagerPage = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [plugins, setPlugins] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

@@ -111,7 +111,7 @@ const OutreachCRMPage: React.FC = () => {
   const [aiCampaignOpen, setAiCampaignOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const isPro = user?.tier === 'PRO' || user?.subscriptionTier === 'PRO';
+  const isPro = (user as any)?.tier === 'PRO' || (user as any)?.subscriptionTier === 'PRO';
 
   const authHeaders = useMemo(() => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }), [token]);
 

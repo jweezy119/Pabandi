@@ -143,9 +143,16 @@ export default function Layout() {
   const isOwnerOrAdmin = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
 
   return (
-    <div className="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col">
+    <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative">
+      {/* Deep Space & Neon Background Layer */}
+      <div className="fixed inset-0 z-[-1] pointer-events-none bg-background overflow-hidden">
+         <img src="/assets/bg_abstract.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen" />
+         <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-radial-glow blur-3xl opacity-60" />
+         <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-glow blur-3xl opacity-50" />
+      </div>
+
       {!isAuthPage && (
-        <header className="bg-surface-bright/70 backdrop-blur-md flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b border-outline-variant/10 transition-all duration-300">
+        <header className="bg-surface/30 backdrop-blur-2xl flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b border-white/5 shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0 touch-target">
