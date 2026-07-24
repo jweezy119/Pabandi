@@ -12,7 +12,7 @@ import { encryptRsa } from '../utils/e2ee';
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [isProcessingWeb3, setIsProcessingWeb3] = useState(false);
@@ -32,14 +32,10 @@ export default function BookingPage() {
     paymentMethod: 'safepay',
   });
 
-  // Hero Demo: Interactive AI Score Slider
-  const { user } = useAuthStore();
-  const [demoScore, setDemoScore] = useState(
-    user?.reliabilityScore ? Math.round(user.reliabilityScore / 10) : 87
-  );
-  
-  // Calculate dynamic deposit based on the demo score
-  const dynamicDeposit = demoScore >= 80 ? 0 : demoScore >= 50 ? 5 : 15;
+  // Trust-based deposit hint derived from business/user signals, not a manual demo slider.
+  const trustScoreRaw = (business?.trustScore ?? user?.reliabilityScore ?? 0) as number;
+  const trustScore = Math.max(0, Math.min(100, Math.round(trustScoreRaw / 10)));
+  const dynamicDeposit = trustScore >= 80 ? 0 : trustScore >= 50 ? 5 : 15;
 
   const { data: businessData, isLoading: businessLoading } = useQuery(
     ['business', id],
@@ -273,28 +269,14 @@ export default function BookingPage() {
                   <span className="inline-flex items-center px-2 py-1 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label text-[11px] font-medium tracking-wide">
                     <StarIcon className="h-3 w-3 mr-1" /> {googleRating} Rating
                   </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded font-label text-[11px] font-bold tracking-wide transition-colors ${demoScore >= 80 ? 'bg-green-500/20 text-green-300 border border-green-500/50' : demoScore >= 50 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50' : 'bg-red-500/20 text-red-300 border border-red-500/50'}`}>
-                    <ShieldCheckIcon className="h-3 w-3 mr-1" /> AI Score: {demoScore}% Reliable → ${dynamicDeposit} Deposit
+                  <span className={`inline-flex items-center px-2 py-1 rounded font-label text-[11px] font-bold tracking-wide transition-colors ${trustScore >= 80 ? 'bg-green-500/20 text-green-300 border border-green-500/50' : trustScore >= 50 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50' : 'bg-red-500/20 text-red-300 border border-red-500/50'}`}>
+                    <ShieldCheckIcon className="h-3 w-3 mr-1" /> AI Score: {trustScore}% Reliable → ${dynamicDeposit} Deposit
                   </span>
                   <span className="hidden md:inline-flex items-center px-2 py-1 rounded bg-white/20 backdrop-blur-sm text-white font-label text-[11px] font-medium tracking-wide">
                      Premium Partner
                   </span>
                 </div>
                 
-                {/* Demo Control Slider (Only visible in demo environments or for admins, keeping it visible for the pitch) */}
-                <div className="flex items-center gap-3 mb-2 bg-black/40 p-2 rounded-lg backdrop-blur-md border border-white/10 w-fit">
-                  <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Demo AI Control</span>
-                  <input 
-                    type="range" 
-                    min="10" 
-                    max="99" 
-                    value={demoScore} 
-                    onChange={(e) => setDemoScore(parseInt(e.target.value))}
-                    className="w-32 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <span className="text-xs font-mono font-bold text-primary">{demoScore}%</span>
-                </div>
-
                 <h2 className="font-headline text-3xl md:text-[2.75rem] font-bold tracking-tight mb-2 leading-tight">{business.name}</h2>
                 <p className="font-body text-sm md:text-[0.875rem] text-slate-200 flex items-center">
                   <MapPinIcon className="h-4 w-4 mr-1" /> {business.address || 'Global Partner'}

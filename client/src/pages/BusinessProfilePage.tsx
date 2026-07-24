@@ -81,13 +81,7 @@ export default function BusinessProfilePage() {
     paymentMethod: 'safepay',
   });
 
-  // Hero Demo: Interactive AI Score Slider
-  const [demoScore, setDemoScore] = useState(
-    user?.reliabilityScore ? Math.round(user.reliabilityScore / 10) : 87
-  );
-  
-  // Calculate dynamic deposit based on the demo score
-  const dynamicDeposit = demoScore >= 80 ? 0 : demoScore >= 50 ? 5 : 15;
+  // Hero Demo removed for live credibility.
 
   // Load User Details into Booking Form when Authenticated
   useEffect(() => {
@@ -108,6 +102,9 @@ export default function BusinessProfilePage() {
   );
 
   const business = businessData?.data?.data?.business;
+
+  const businessTrustScore = Math.max(0, Math.min(100, Math.round((business?.trustScore ?? business?.reliabilityScore ?? 0) / 10)));
+  const businessDeposit = businessTrustScore >= 80 ? 0 : businessTrustScore >= 50 ? 5 : 15;
 
   // Fetch Synced Reviews
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery(
@@ -420,21 +417,16 @@ export default function BusinessProfilePage() {
                 )}
               </div>
 
-              {/* Demo Control Slider for Pitch */}
-              <div className="flex items-center gap-3 mb-4 bg-black/40 p-2.5 rounded-lg backdrop-blur-md border border-white/10 w-fit glowing-border">
-                <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Demo AI Control</span>
-                <input 
-                  type="range" 
-                  min="10" 
-                  max="99" 
-                  value={demoScore} 
-                  onChange={(e) => setDemoScore(parseInt(e.target.value))}
-                  className="w-32 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-primary"
-                />
-                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${demoScore >= 80 ? 'bg-green-500/20 text-green-300' : demoScore >= 50 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'}`}>
-                  {demoScore}% Reliable → ${dynamicDeposit} Deposit
-                </span>
-              </div>
+              {(() => {
+                const raw = (business?.trustScore ?? business?.reliabilityScore ?? 0) as number;
+                const computed = Math.max(0, Math.min(100, Math.round(raw / 10)));
+                const deposit = computed >= 80 ? 0 : computed >= 50 ? 5 : 15;
+                return (
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${computed >= 80 ? 'bg-green-500/20 text-green-300' : computed >= 50 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'}`}>
+                    {computed}% Reliable → ${deposit} Deposit
+                  </span>
+                );
+              })()}
               
               <h1 className="font-headline text-3xl md:text-5xl font-black tracking-tight mb-2 leading-none">{business.name}</h1>
               
