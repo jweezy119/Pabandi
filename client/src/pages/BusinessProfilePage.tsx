@@ -860,8 +860,8 @@ export default function BusinessProfilePage() {
                 
                 {/* Reliability SBT check indicators */}
                 <div className="text-right flex flex-col items-end">
-                  <span className={`font-headline text-lg font-black ${dynamicDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-amber-500'}`}>
-                    {dynamicDeposit === 0 ? 'Zero Deposit' : `$${dynamicDeposit} Deposit`}
+                  <span className={`font-headline text-lg font-black ${businessDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-amber-500'}`}>
+                    {businessDeposit === 0 ? 'Zero Deposit' : `$${businessDeposit} Deposit`}
                   </span>
                   <p className="font-body text-[9px] text-[#10b981] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
                 </div>
@@ -1025,7 +1025,7 @@ export default function BusinessProfilePage() {
                   disabled={bookingMutation.isLoading}
                   className="w-full bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline text-sm font-black tracking-wide py-3.5 rounded-xl hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all flex items-center justify-center gap-2"
                 >
-                  {bookingMutation.isLoading ? 'Processing...' : (mode === 'instant' ? (itemPrice && parseFloat(itemPrice) > 0 ? `Pay $${itemPrice} to Buy` : 'Confirm Instant Order') : (dynamicDeposit > 0 ? `Pay $${dynamicDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly'))}
+                  {bookingMutation.isLoading ? 'Processing...' : (mode === 'instant' ? (itemPrice && parseFloat(itemPrice) > 0 ? `Pay $${itemPrice} to Buy` : 'Confirm Instant Order') : (businessDeposit > 0 ? `Pay $${businessDeposit} Deposit to Confirm` : 'Confirm Reservation Instantly'))}
                 </button>
               </form>
               

@@ -33,9 +33,6 @@ export default function BookingPage() {
   });
 
   // Trust-based deposit hint derived from business/user signals, not a manual demo slider.
-  const trustScoreRaw = (business?.trustScore ?? user?.reliabilityScore ?? 0) as number;
-  const trustScore = Math.max(0, Math.min(100, Math.round(trustScoreRaw / 10)));
-  const dynamicDeposit = trustScore >= 80 ? 0 : trustScore >= 50 ? 5 : 15;
 
   const { data: businessData, isLoading: businessLoading } = useQuery(
     ['business', id],
@@ -44,6 +41,11 @@ export default function BookingPage() {
   );
 
   const business = businessData?.data?.business;
+
+  // Trust-based deposit hint derived from business/user signals, not a manual demo slider.
+  const trustScoreRaw = (business?.trustScore ?? user?.reliabilityScore ?? 0) as number;
+  const trustScore = Math.max(0, Math.min(100, Math.round(trustScoreRaw / 10)));
+  const dynamicDeposit = trustScore >= 80 ? 0 : trustScore >= 50 ? 5 : 15;
 
   const { data: analyticsData } = useQuery(
     ['business-analytics', id],
