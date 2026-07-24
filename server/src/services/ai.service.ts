@@ -35,7 +35,7 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
   console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
 };
 
-async function findBusinessByPublicPhone(phoneNumber: string) {
+export const findBusinessByPublicPhone = async (phoneNumber: string) => {
   const clean = String(phoneNumber).replace(/[^\d]/g, '');
   if (!clean) return null;
 
@@ -43,7 +43,7 @@ async function findBusinessByPublicPhone(phoneNumber: string) {
     where: { phone: { contains: clean } },
     include: { settings: true },
   });
-}
+};
 
 import { aiNlpService } from './ai.nlp.service';
 import { openwaDropBotService } from './openwa.drop-bot.service';
@@ -81,7 +81,7 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
     if (business) {
       businessSlug = business.slug || business.id;
       businessName = business.name;
-      
+
       const rawSettings = (business as any)?.settings;
       const settings =
         rawSettings && typeof rawSettings === 'object'
@@ -108,22 +108,30 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
         return;
       }
     }
-    
-    // Use the new NLP adapter
+
     const classification = await aiNlpService.classifyIntentAndLanguage(message);
     console.log(`[AI NLP] Classification result:`, classification);
-    
+
     if (classification.intent === 'booking' || classification.intent === 'sales') {
-      const template = "Great! Let's lock in your reservation/order. Please securely deposit $5 into the Web3 Escrow to confirm: https://pabandi.com/s/{{businessSlug}}?mode=instant";
-      const response = await aiNlpService.generateCopy(template, { businessSlug });
+      const template = "Great! Let's lock in your reservation/order. Share date, time, guests, and I'll check availability and create a secure booking link for {{businessName}}.";
+      const response = await aiNlpService.generateCopy(template, { businessName, businessSlug });
       await sendWhatsAppMessage(customerPhone, response);
       return;
-    } else {
-      const template = "I'm the AI assistant for {{businessName}}. I can help you book a table, check our catalog, or answer general questions. How can I help you today?";
-      const response = await aiNlpService.generateCopy(template, { businessName });
-      await sendWhatsAppMessage(customerPhone, response);
+    } else if (classification.intent === 'cancellation') {
+      if (user) {
+        await handleWhatsAppCancellation(customerPhone, user);
+      } else {
+        await sendWhatsAppMessage(customerPhone, 'To cancel, share your booking ID or phone number used while booking.');
+      }
+      return;
+    } else if (classification.intent === 'support') {
+      await sendWhatsAppMessage(customerPhone, 'I can help with deposits, refunds, menus, timings, or human handoff. What do you need?');
       return;
     }
+
+    const fallback = "I'm the AI assistant for {{businessName}}. You can book, cancel, reschedule, check status, or ask a question. Share details like date/time/guests and I'll continue.";
+    const fallbackResponse = await aiNlpService.generateCopy(fallback, { businessName, businessSlug });
+    await sendWhatsAppMessage(customerPhone, fallbackResponse);
 
   } catch (pluginErr) {
     console.error('[Plugin] Pre-AI plugin handling failed:', pluginErr);

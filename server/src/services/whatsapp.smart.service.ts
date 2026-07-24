@@ -216,12 +216,31 @@ export class WhatsAppSmartService {
     const timeStr = String(entities.time || session.data.time || '');
     const partySize = Number(entities.partySize || session.data.partySize || 2);
 
-    const availability = await hospitalityService.checkAvailability(session.data.businessId as string || session.businessPhone, dateStr, Number.isFinite(partySize) ? partySize : 2);
-    session.data.availability = availability;
+    if (!dateStr && !timeStr && !partySize) {
+      session.step = 'date';
+      this.setSession(customerPhone, session);
+      const reply = await this.reply(customerPhone, 'Please share a date, time, and number of guests.');
+      return { text: reply, matchedIntent: 'book', action: 'collect_details' };
+    }
+
+    const businessId = String(session.data.businessId || session.businessPhone || '');
+    if (!businessId) {
+      session.step = 'source';
+      this.setSession(customerPhone, session);
+      const reply = await this.reply(customerPhone, 'Which venue is this for? Share the venue name or branch.');
+      return { text: reply, matchedIntent: 'book', action: 'collect_business' };
+    }
+
     session.data.date = dateStr;
     session.data.time = timeStr;
     session.data.partySize = partySize;
     this.setSession(customerPhone, session);
+
+    let availability: any = { available: true, matchedTable: { name: 'Recommended table' }, slots: [] };
+    if (dateStr) {
+      availability = await hospitalityService.checkAvailability(businessId, dateStr, Number.isFinite(partySize) ? partySize : 2);
+    }
+    session.data.availability = availability;
 
     if (!availability.available) {
       const suggestion = availability.slots?.[0] ? ` Nearest slot: ${availability.slots[0]}. Available?` : '';

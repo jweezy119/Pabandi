@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
-import { processWhatsAppMessage } from '../services/ai.service';
+import { processWhatsAppMessage, findBusinessByPublicPhone, sendWhatsAppMessage } from '../services/ai.service';
+import { whatsAppSmartService } from '../services/whatsapp.smart.service';
+import { saveConversationSignal } from '../services/whatsapp.conversation.service';
 import { prisma } from '../utils/database';
 
 const VERIFY_TOKEN = process.env.META_WA_VERIFY_TOKEN || 'pabandi_wa_secret_2026';
@@ -71,11 +73,28 @@ export const handleIncomingWhatsApp = async (req: Request, res: Response): Promi
           where: { phone: customerPhone }
         });
 
-        // Process the message through our AI Service
-        // We do this asynchronously so we can quickly respond 200 OK to Meta
-        processWhatsAppMessage(customerPhone, businessPhone, msgBody, user).catch(error => {
-          console.error('[WhatsApp] Error processing message:', error);
-        });
+        // Smart booking first, fallback to existing AI flow so cancel/after-hours/faq still run.
+        const matchedBusiness = await findBusinessByPublicPhone(businessPhone);
+        let smartReply = null;
+        if (matchedBusiness) {
+          try {
+            smartReply = await whatsAppSmartService.processMessage(customerPhone, businessPhone, msgBody);
+          } catch (smartErr) {
+            console.error('[WhatsApp Smart]', smartErr);
+          }
+        }
+        const smartText = smartReply?.text || null;
+
+        if (smartText) {
+          await sendWhatsAppMessage(customerPhone, smartText);
+          if (matchedBusiness) {
+            await saveConversationSignal(customerPhone, matchedBusiness.id, msgBody, smartText);
+          }
+        } else {
+          processWhatsAppMessage(customerPhone, businessPhone, msgBody, user).catch(error => {
+            console.error('[WhatsApp] Error processing message:', error);
+          });
+        }
       }
       
       // Send 200 OK to acknowledge receipt
