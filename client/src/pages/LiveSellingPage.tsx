@@ -61,7 +61,8 @@ export default function LiveSellingPage() {
             <h1 className="font-headline text-3xl sm:text-4xl md:text-5xl font-black leading-[1.05]">Sell Live</h1>
           </div>
           <p className="text-on-surface-variant max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed">
-            One catalog. One link. Escrow-backed instant checkout from TikTok, YouTube, or Shopify.
+            Pabandi is the WhatsApp-native commerce escrow layer for live sellers.
+            One catalog, one link, instant checkout with deposit protection from TikTok, YouTube, or Shopify.
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
             {isAuthenticated ? (

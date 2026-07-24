@@ -2,7 +2,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { ShieldCheckIcon, BoltIcon, LinkIcon, BanknotesIcon } from '@heroicons/react/24/outline';
 
 export default function Web3Page() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-20 space-y-24 font-body">
@@ -13,17 +13,10 @@ export default function Web3Page() {
           {t("Web3 Made Simple", "Web3 Ko Aasaan Banaya")}
         </div>
         <h1 className="font-headline text-[2.5rem] md:text-[4rem] leading-[1.1] font-black text-on-surface tracking-tight">
-          {language === 'en' ? (
-            <>How Pabandi Uses <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#9945FF]">Web3</span> to Eliminate Fraud</>
-          ) : (
-            <>Pabandi <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#9945FF]">Web3</span> Ke Zariye Fraud Kaise Khatam Karta Hai</>
-          )}
+          Pabandi is the <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#9945FF]">WhatsApp-native commerce escrow layer</span>.
         </h1>
         <p className="text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-          {t(
-            "You don’t need to be a crypto expert to use Pabandi. We use blockchain technology in the background purely as a tool to lock deposits safely, guarantee payments, and reward you for showing up.",
-            "Pabandi istemal karne ke liye aapko crypto expert banne ki zaroorat nahi. Hum blockchain ka istemal sirf deposits ko mehfooz rakhne aur aapko inaam dene ke liye karte hain."
-          )}
+          You don’t need to understand crypto to use Pabandi. Web3 is the trust layer behind WhatsApp checkout: deposit protection, verified commitment, and portable reputation for real commerce.
         </p>
       </section>
 

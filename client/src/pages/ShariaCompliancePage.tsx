@@ -52,15 +52,15 @@ export default function ShariaCompliancePage() {
           </div>
           <h1 className="font-headline text-4xl md:text-6xl font-black tracking-tight text-on-surface leading-tight">
             {language === 'en' ? (
-              <>Ethical Finance meets <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Web3 Trust</span></>
+              <>Pabandi is the<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">WhatsApp-native commerce escrow layer</span></>
             ) : (
-              <>Akhlaqi Maliyat aur <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Web3 ka Aitmaad</span></>
+              <>Pabandi hai<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">WhatsApp-native commerce escrow layer</span></>
             )}
           </h1>
           <p className="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
             {t(
-              "Pabandi’s escrow system and token economy are built from the ground up to adhere to Islamic finance principles. No interest, no gambling, just fair trade and shared success.",
-              "Pabandi ka escrow system aur token economy Islami usoolon par mabni hain. Koi sood nahi, koi juwa nahi, siraf munsifana tijarat aur mushtarika kamyabi."
+              "Ethical escrow for bookings and live commerce. No interest, no hidden terms. Just fair deposit protection and commitment on WhatsApp.",
+              "Bookings aur live commerce ke liye ethical escrow. Koi sood nahi, koi chhpay huay shart nahi. Sirf adaalat aur waqf ki hifzanama WhatsApp par."
             )}
           </p>
         </div>

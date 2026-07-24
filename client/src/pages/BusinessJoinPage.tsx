@@ -178,11 +178,11 @@ export default function BusinessJoinPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-white font-headline tracking-tight">
-              Hire an <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">AI Agent</span><br />to secure your revenue.
+              Pabandi is the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">WhatsApp-native commerce escrow layer</span><br />for your business.
             </h1>
 
             <p className="text-base sm:text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-xl">
-              Pabandi's Agentic AI analyses customer history, weather, local events, and 40+ data points autonomously. High-risk? The agent negotiates and captures a deposit automatically — before they even leave your page.
+              AI-backed booking support on WhatsApp. Escrow-backed checkout from conversation to deposit. Zero training for you or your customers.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">

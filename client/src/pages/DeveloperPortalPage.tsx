@@ -136,13 +136,17 @@ export default function DeveloperPortalPage() {
       {/* ── Overview & Problem ────────────────────────────────────────────────── */}
       <section style={{ padding: '0 24px 60px', maxWidth: '900px', margin: '0 auto' }}>
         <p style={{ fontSize: '18px', color: '#e2e8f0', lineHeight: 1.8, marginBottom: '24px' }}>
-          Pabandi is building a portable reliability layer for the global service economy. If you run a platform where trust between strangers matters — live selling, marketplaces, rentals, clinic bookings, hospitality — this API gives you access to that trust without building it from scratch.
+          Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
+          Integrate escrow-backed bookings, trust verification, and checkout into live selling,
+          marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from scratch.
         </p>
         <p style={{ fontSize: '16px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '24px', paddingLeft: '20px', borderLeft: '4px solid #334155' }}>
-          <strong>The problem today:</strong> Every live sale, wholesale order, and booking is secured by "bro trust" or advance payment. The informal economy bleeds 20–30% to no-pays and ghosting because there's no portable trust layer.
+          <strong>The problem today:</strong> Manual deposits, late cash, and informal trust still dominate local commerce.
+          WhatsApp is where the conversation happens—commitment, protection, and verification should happen there too.
         </p>
         <p style={{ fontSize: '16px', color: '#818cf8', lineHeight: 1.7, paddingLeft: '20px', borderLeft: '4px solid #818cf8' }}>
-          <strong>The Pabandi answer:</strong> Users build a Trust Score through real behavior (showing up, paying on time, completing bookings). That score becomes their Passport — a portable, on-chain reputation ID any platform can verify.
+          <strong>The Pabandi answer:</strong> The Passport is the portable trust ID; the escrow layer is the guarantee.
+          Buyers and sellers transact on WhatsApp with verified commitment, deposit protection, and $PAB rewards.
         </p>
       </section>
 

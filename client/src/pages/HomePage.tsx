@@ -265,13 +265,13 @@ export default function HomePage() {
           {/* Left Col - Copy */}
           <div className="w-full xl:w-auto xl:min-w-[320px] space-y-6 max-w-2xl mx-auto xl:mx-0 pt-6">
             <h1 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.1] stagger-item">
-              Your Reliability <br />
+              Pabandi is the<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">
-                Finally Pays.
+                WhatsApp-native commerce escrow layer
               </span>
             </h1>
             <p className="font-body text-base sm:text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
-              Booking trust for the global service economy. Find venues, reserve with confidence, and earn rewards for showing up.
+              Zero-training booking support via WhatsApp. Guaranteed commitment for hospitality and informal merchants. Deposit protection, built in.
             </p>
 
             {/* Search */}

@@ -11,10 +11,10 @@ export default function TechnologyPage() {
           Next-Generation Infrastructure
         </div>
         <h1 className="font-headline text-[3rem] md:text-[4.5rem] leading-[1.05] font-bold text-on-surface tracking-tight">
-          Where <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]">AI</span> meets <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#9945FF]">Web3</span>.
+          Pabandi is the <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]">WhatsApp-native commerce escrow layer</span>.
         </h1>
         <p className="font-body text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-          Pabandi is powered by a proprietary AI risk engine and secured by the Solana blockchain, creating the first trustless, no-show proof reservation economy.
+          Zero training for merchants and buyers. AI-backed booking support on WhatsApp, contactless escrow checkout, and verified commitment for the informal economy.
         </p>
       </section>
 

@@ -206,9 +206,9 @@ export default function HospitalityPage() {
           </h1>
 
           <p className="text-sm md:text-base text-on-surface-variant mt-6 max-w-2xl mx-auto leading-relaxed">
-            Connect your existing PMS (Beds24, Cloudbeds, Lodgify) to Pabandi's Solana escrow layer.
-            Every booking deposit auto-locks on-chain. No-shows are enforced automatically.
-            Guests earn $PAB rewards for every night they actually show up.
+            Pabandi is the WhatsApp-native commerce escrow layer for hospitality.
+            Connect your PMS, let guests book on WhatsApp, and protect every deposit
+            with escrow-backed checkout. Zero training required.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">

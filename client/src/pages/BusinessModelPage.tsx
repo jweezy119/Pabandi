@@ -51,7 +51,8 @@ export default function BusinessModelPage() {
             Pabandi Business Model & Pricing
           </h1>
           <p className="text-sm md:text-base text-slate-400 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Reliability infrastructure built to scale. From independent local businesses needing dynamic booking protection to massive aggregators querying real-time prediction data.
+            Pabandi is the WhatsApp-native commerce escrow layer for informal and live commerce.
+            Merchant-first pricing, escrow checkout APIs, and portable trust built for real-world transactions.
           </p>
         </div>
       </section>
