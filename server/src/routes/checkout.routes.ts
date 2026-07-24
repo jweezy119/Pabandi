@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession } from '../controllers/checkout.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
 const router = Router();
 
-// Create a generic external-style checkout session without strict business ownership enforcement.
-// Intended for embedded partner flows: Shopify, live selling, freelance, hospitality widgets, etc.
+// Partner embed checkout: accepts `x-api-key` without existing merchant session.
+// Intended for embedded partner checkout calls from Shopify, live selling, freelance, hospitality widgets, etc.
+router.post('/embed-checkout/public', apiKeyAuth, createPartnerEmbedCheckoutSession);
+
+// Generic internal embed checkout path: currently requires active session.
 router.post('/embed-checkout', createEmbedCheckoutSession);
 
 // Create a new checkout session (protected, requires business context)
