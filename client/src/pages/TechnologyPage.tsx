@@ -196,7 +196,7 @@ export default function TechnologyPage() {
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-8 text-center backdrop-blur-xl sm:p-12">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#f59e0b] to-[#fcd34d] shadow-lg shadow-amber-500/20">
-            <span className="material-symbols-outlined text-3xl text-white">workspace_premium</span>
+            <span className="text-3xl">🏆</span>
           </div>
 
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-slate-100">The Pabandi Score</h2>
