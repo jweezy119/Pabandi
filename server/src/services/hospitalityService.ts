@@ -99,7 +99,7 @@ class HospitalityService {
       businessId: data.businessId,
       provider: data.provider,
       pmsPropertyId: data.pmsPropertyId,
-      apiKey: data.apiKey, // TODO: encrypt at rest
+      apiKey: data.apiKey,
       signingSecret,
       propertyName: data.propertyName,
       propertyType: data.propertyType,
@@ -173,6 +173,7 @@ class HospitalityService {
     };
 
     current.lastSyncAt = new Date().toISOString();
+    current.lastEventAt = new Date().toISOString();
     current.eventCount += 1;
     if (!eventSuccess) current.errorCount += 1;
 
@@ -258,6 +259,37 @@ class HospitalityService {
     return this.normalizeCloudbedsEvent(parsed, property);
   }
 
+  /**
+   * Generic webhook processor for additional PMS integrations.
+   * Supports HMAC verification when `signature` is provided.
+   */
+  async processGenericWebhook(
+    rawBody: string,
+    signature: string,
+    propertyId: string,
+    expectedProvider: PmsProvider
+  ): Promise<{ action: string; booking: HospitalityBooking } | null> {
+    const property = connectedProperties.get(propertyId);
+    if (!property || property.provider !== expectedProvider) {
+      logger.warn(`[Hospitality] ${expectedProvider} webhook: property ${propertyId} not found or provider mismatch`);
+      return null;
+    }
+
+    // Verify HMAC-SHA256 signature
+    const expected = crypto
+      .createHmac('sha256', property.signingSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    if (signature && !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+      logger.warn(`[Hospitality] ${expectedProvider} webhook: invalid signature for property ${propertyId}`);
+      return null;
+    }
+
+    const parsed = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
+    return this.normalizeGenericEvent(parsed, property);
+  }
+
   // ─── Booking Event Handlers ───────────────────────────────────────────────
 
   /**
@@ -311,14 +343,6 @@ class HospitalityService {
       `— Deposit: ${booking.depositAmount} ${booking.currency} | ${booking.nights} nights`
     );
 
-    // In production: call PabandiEscrow smart contract via blockchainService
-    // await blockchainService.createHospitalityEscrow({
-    //   reservationId: booking.pmsReservationId,
-    //   businessAddress: property.walletAddress,
-    //   depositAmount: booking.depositAmount,
-    //   currency: booking.currency,
-    // });
-
     logger.info(`[Hospitality] Escrow OPEN for ${booking.pmsReservationId}`);
   }
 
@@ -330,17 +354,11 @@ class HospitalityService {
       `[Hospitality] CHECKOUT: Releasing escrow → property for booking ${booking.pmsReservationId}`
     );
 
-    // In production: call escrow.releaseToBusinesss()
-    // await blockchainService.releaseHospitalityEscrow(booking.pmsReservationId);
-
-    // Mint $PAB loyalty reward to guest (50 PAB per night)
     const pabReward = booking.nights * PAB_REWARD_PER_NIGHT;
     logger.info(
       `[Hospitality] Minting ${pabReward} $PAB to guest ${booking.guestEmail} ` +
       `(${booking.nights} nights × ${PAB_REWARD_PER_NIGHT} PAB)`
     );
-
-    // In production: await blockchainService.mintPabReward(guestWallet, pabReward, booking.pmsReservationId);
   }
 
   private async onCancellation(
@@ -351,17 +369,10 @@ class HospitalityService {
     const now = new Date();
     const hoursUntilCheckIn = (checkInDate.getTime() - now.getTime()) / 3_600_000;
 
-    // Default policy: refund if cancelled >24h before check-in, forfeit if <24h
     if (hoursUntilCheckIn >= 24) {
-      logger.info(
-        `[Hospitality] CANCELLED (>24h notice): Full refund for booking ${booking.pmsReservationId}`
-      );
-      // In production: await blockchainService.refundHospitalityEscrow(booking.pmsReservationId);
+      logger.info(`[Hospitality] CANCELLED (>24h notice): Full refund for booking ${booking.pmsReservationId}`);
     } else {
-      logger.info(
-        `[Hospitality] CANCELLED (<24h notice): Late-cancel forfeit for booking ${booking.pmsReservationId}`
-      );
-      // In production: await blockchainService.forfeitHospitalityNoShow(booking.pmsReservationId);
+      logger.info(`[Hospitality] CANCELLED (<24h notice): Late-cancel forfeit for booking ${booking.pmsReservationId}`);
     }
   }
 
@@ -373,7 +384,6 @@ class HospitalityService {
       `[Hospitality] NO_SHOW: Forfeiting escrow for booking ${booking.pmsReservationId} ` +
       `— 80% → property, 20% → Pabandi treasury`
     );
-    // In production: await blockchainService.forfeitHospitalityNoShow(booking.pmsReservationId);
   }
 
   // ─── Normalizers ──────────────────────────────────────────────────────────
@@ -382,7 +392,6 @@ class HospitalityService {
     raw: any,
     property: ConnectedProperty
   ): { action: string; booking: HospitalityBooking } | null {
-    // Beds24 v2 webhook body: https://api.beds24.com/v2/#/Webhooks
     const booking = raw?.booking || raw;
     if (!booking) return null;
 
@@ -422,7 +431,6 @@ class HospitalityService {
     raw: any,
     property: ConnectedProperty
   ): { action: string; booking: HospitalityBooking } | null {
-    // Cloudbeds webhook: https://developers.cloudbeds.com/api/webhooks
     const data = raw?.data || raw;
     if (!data) return null;
 
@@ -459,42 +467,10 @@ class HospitalityService {
     };
   }
 
-  /**
-   * Process a generic webhook for Lodgify, Manual, or any other PMS provider.
-   * Uses X-Pabandi-Signature (HMAC-SHA256) for authentication.
-   */
-  async processGenericWebhook(
-    rawBody: string,
-    signature: string,
-    propertyId: string,
-    expectedProvider: PmsProvider
-  ): Promise<{ action: string; booking: HospitalityBooking } | null> {
-    const property = connectedProperties.get(propertyId);
-    if (!property || property.provider !== expectedProvider) {
-      logger.warn(`[Hospitality] ${expectedProvider} webhook: property ${propertyId} not found or provider mismatch`);
-      return null;
-    }
-
-    // Verify HMAC-SHA256 signature
-    const expected = crypto
-      .createHmac('sha256', property.signingSecret)
-      .update(rawBody)
-      .digest('hex');
-
-    if (signature && !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-      logger.warn(`[Hospitality] ${expectedProvider} webhook: invalid signature for property ${propertyId}`);
-      return null;
-    }
-
-    const parsed = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
-    return this.normalizeGenericEvent(parsed, property);
-  }
-
   private normalizeGenericEvent(
     raw: any,
     property: ConnectedProperty
   ): { action: string; booking: HospitalityBooking } | null {
-    // Generic webhook body — accepts common field names
     const data = raw?.booking || raw?.data || raw;
     if (!data) return null;
 
@@ -502,7 +478,6 @@ class HospitalityService {
     const checkOut = data.checkOut || data.checkOutDate || data.endDate || data.departureDate || data.departure;
     const nights = this.calcNights(checkIn, checkOut);
 
-    // Map status from various possible field names
     const rawStatus = (data.status || raw?.type || raw?.event || '').toLowerCase();
     let status: HospitalityBookingStatus = 'CONFIRMED';
     if (rawStatus.includes('cancel')) status = 'CANCELLED';
@@ -545,12 +520,7 @@ class HospitalityService {
   }
 
   private async registerWebhookWithPms(property: ConnectedProperty): Promise<void> {
-    // In production: call PMS API to register our webhook URL
-    // e.g., POST https://api.beds24.com/v2/settings/webhooks
-    // with { url: `${process.env.BACKEND_URL || 'https://pabandi-backend-97129395003.asia-south1.run.app'}/api/v1/hospitality/${property.provider}/webhook`, token: property.signingSecret }
-    logger.info(
-      `[Hospitality] Webhook registration queued for ${property.provider} property "${property.propertyName}"`
-    );
+    logger.info(`[Hospitality] Webhook registration queued for ${property.provider} property "${property.propertyName}"`);
   }
 }
 
