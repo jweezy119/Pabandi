@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { cryptoService } from '../services/cryptoService';
 import { prisma } from '../utils/database';
+import { isDemoMode } from '../utils/env';
 
 const router = Router();
 
@@ -27,7 +28,7 @@ router.post('/escrow/create', async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!isDemoMode()) {
       res.status(501).json({ success: false, error: 'On-chain escrow creation is not yet enabled for production.' });
       return;
     }
