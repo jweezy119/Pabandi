@@ -27,13 +27,16 @@ router.post('/escrow/create', async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    if (process.env.NODE_ENV === 'production') {
+      res.status(501).json({ success: false, error: 'On-chain escrow creation is not yet enabled for production.' });
+      return;
+    }
 
+    const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     await prisma.reservation.update({
       where: { id: reservationId },
       data: { cryptoDepositTxHash: mockTxHash, depositStatus: 'PENDING' },
     });
-
     res.json({
       success: true,
       data: {
