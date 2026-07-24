@@ -19,6 +19,7 @@ import { openwaChatFlowService } from '../services/openwa.chat-flow.service';
 import { channexService } from '../services/channex.service';
 import moment from 'moment-timezone';
 import { ReferralService } from '../services/referral.service';
+import { defaultDepositModeWeb3 } from '../utils/env';
 
 const referralService = new ReferralService();
 
@@ -240,12 +241,17 @@ export const createReservation = async (
     let depositAmount = req.body.depositAmount || null;
     if (!depositAmount && (requireDeposit || business.requireDeposit)) {
       if (business.depositPercentage) {
-        // Calculate based on estimated bill (could be enhanced)
-        depositAmount = 1000 * business.depositPercentage; // Placeholder
+        depositAmount = 1000 * business.depositPercentage;
       } else if (business.depositAmount) {
         depositAmount = business.depositAmount;
       }
     }
+
+    const depositDefaultWeb3 = defaultDepositModeWeb3();
+    let depositStatus: 'PAID' | 'PENDING_WEB3' | 'PENDING' | 'NOT_REQUIRED' =
+      !!req.body.transactionHash ? 'PAID'
+      : !!depositAmount ? (depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING')
+      : 'NOT_REQUIRED';
 
     // Determine concierge status and initial reservation status
     const isConcierge = !business.isClaimed;
@@ -254,7 +260,7 @@ export const createReservation = async (
     // Calculate total amount from services
     let totalAmount = 0;
     const servicesToCreate: any[] = [];
-    
+
     if (serviceIds && Array.isArray(serviceIds)) {
       const selectedServices = await prisma.businessService.findMany({
         where: { id: { in: serviceIds }, businessId: business.id }
@@ -295,7 +301,7 @@ export const createReservation = async (
         trustSignals: trustSignals as any,
         depositRequired: !!depositAmount || !!req.body.transactionHash,
         depositAmount,
-        depositStatus: !!req.body.transactionHash ? 'PAID' : (!!depositAmount ? 'PENDING' : 'NOT_REQUIRED'),
+        depositStatus,
         cryptoDepositTxHash: req.body.transactionHash,
         source: 'web',
         totalAmount: totalAmount > 0 ? totalAmount : null,
