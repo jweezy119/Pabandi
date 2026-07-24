@@ -1105,3 +1105,50 @@ model ReferralPayout {
   profile AccountManagerProfile @relation(fields: [profileId], references: [id])
   ledgers ReferralLedger[]
 }
+
+enum PmsProvider {
+  beds24
+  cloudbeds
+  lodgify
+  manual
+}
+
+model ConnectedHospitalityProperty {
+  id             String      @id @default(cuid())
+  businessId     String
+  provider       PmsProvider
+  pmsPropertyId  String
+  apiKey         String?
+  signingSecret  String?
+  propertyName   String
+  propertyType   String
+  address        String?
+  country        String?
+  webhookUrl     String?
+  isActive       Boolean     @default(true)
+  lastSyncAt     DateTime?
+  lastSyncedAt   DateTime?
+  lastTestedAt   DateTime?
+  lastErrorAt    DateTime?
+  lastSuccessAt  DateTime?
+  eventCount     Int         @default(0)
+  errorCount     Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([businessId])
+  @@map("connected_hospitality_properties")
+  telemetry PmsSyncTelemetry[]
+}
+
+model PmsSyncTelemetry {
+  id               String   @id @default(cuid())
+  propertyId       String
+  lastSyncAt       DateTime?
+  lastEventAt      DateTime?
+  lastErrorAt      DateTime?
+  eventCount       Int      @default(0)
+  errorCount       Int      @default(0)
+
+  property ConnectedHospitalityProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
