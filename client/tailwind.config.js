@@ -65,10 +65,10 @@ export default {
         "3xl": "1.5rem"
       },
       fontFamily: {
-        "headline": ["Space Grotesk", "sans-serif"],
-        "body": ["Inter", "sans-serif"],
-        "label": ["Inter", "sans-serif"],
-        "sans": ["Inter", "sans-serif"]
+        "headline": ["Outfit", "sans-serif"],
+        "body": ["Plus Jakarta Sans", "sans-serif"],
+        "label": ["Plus Jakarta Sans", "sans-serif"],
+        "sans": ["Plus Jakarta Sans", "sans-serif"]
       },
       backgroundImage: {
         'glass-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
