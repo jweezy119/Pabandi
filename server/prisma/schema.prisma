@@ -507,6 +507,7 @@ enum ReservationStatus {
 enum DepositStatus {
   NOT_REQUIRED
   PENDING
+  PENDING_WEB3
   PAID
   APPLIED_TO_SERVICE
   REIMBURSED_TO_BUSINESS
