@@ -18,9 +18,8 @@ router.post('/checkout', async (req: Request, res: Response, next: NextFunction)
     }
 
     // Lookup business based on property
-    const property = await prisma.hospitalityProperty.findUnique({
-      where: { id: propertyId }
-    });
+    const { hospitalityService } = await import('../services/hospitalityService');
+    const property = await hospitalityService.getPropertyById(propertyId);
 
     if (!property) {
       res.status(404).json({ success: false, error: 'Property not found' });

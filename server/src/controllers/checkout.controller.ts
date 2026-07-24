@@ -116,8 +116,8 @@ export const completeCheckoutSession = async (req: Request, res: Response) => {
     // For A5: Hook escrow payment webhook -> AI confirmation template
     if ((updatedSession.metadata as any)?.source === 'ai_receptionist') {
       try {
-        const { openwaTemplateService } = await import('./services/openwa.template.service');
-        const { openwaService } = await import('./services/openwa.service');
+        const { openwaTemplateService } = await import('../services/openwa.template.service');
+        const { openwaService } = await import('../services/openwa.service');
         
         // This relies on knowing the customer's phone, which might be stored in metadata.
         // For MVP, we'll try to find the reservation or fallback to a dummy number.
