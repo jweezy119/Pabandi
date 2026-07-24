@@ -278,6 +278,12 @@ export const hospitalityService = {
   getProperty: (id: string) => apiClient.get(`/hospitality/property/${id}`),
   /** Verify a connected property's health/connection status */
   getHealth: () => apiClient.get('/hospitality/health'),
+  /** Get availability for a business on a date */
+  getAvailability: (businessId: string, date: string, guests?: number) => apiClient.get(`/hospitality/property/${encodeURIComponent(businessId)}/availability`, { params: { date, guests } }),
+  /** Create receptionist checkout session from chat */
+  createReceptionistCheckout: (data: { businessId: string; customerPhone: string; summary?: string }) => apiClient.post('/hospitality/receptionist/checkout', data),
+  /** Receptionist analytics for a business */
+  receptionistAnalytics: (businessId: string) => apiClient.get(`/hospitality/receptionist/analytics/${encodeURIComponent(businessId)}`),
 };
 
 export const adminService = {
