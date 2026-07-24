@@ -65,7 +65,7 @@ router.post('/plugins/:id/activate', (req: Request, res: Response, next: NextFun
     const { active } = req.body;
     // In a real app, this would persist the plugin preference per-business to the DB.
     // For now, update the admin plugin list in memory.
-    const updated = updateAdminPlugin(req.params.id, { status: active ? 'active' : 'inactive' });
+    const updated = updateAdminPlugin(req.params.id, { enabled: active });
     res.json({ success: true, data: updated });
   } catch (error) {
     next(error);
