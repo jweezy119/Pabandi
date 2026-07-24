@@ -16,6 +16,12 @@ router.get('/status', (_req: Request, res: Response) => {
       '/api/v1/web3/reputation/:address',
       '/api/v1/web3/escrow/receipts/:reservationId',
     ],
+    demoMode: isDemoMode(),
+    requiredEnv: [
+      process.env.BSC_RPC_URL || process.env.BSC_RPC_TESTNET_URL ? 'BSC_RPC_URL/BSC_RPC_TESTNET_URL' : null,
+      process.env.ESCROW_ORACLE_PRIVATE_KEY ? 'ESCROW_ORACLE_PRIVATE_KEY' : null,
+      process.env.ESCROW_CONTRACT_ADDRESS ? 'ESCROW_CONTRACT_ADDRESS' : null,
+    ].filter(Boolean),
   });
 });
 
@@ -28,21 +34,43 @@ router.post('/escrow/create', async (req: Request, res: Response, next: NextFunc
       return;
     }
 
-    if (!isDemoMode()) {
-      res.status(501).json({ success: false, error: 'On-chain escrow creation is not yet enabled for production.' });
+    if (isDemoMode()) {
+      const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      await prisma.reservation.update({
+        where: { id: reservationId },
+        data: { cryptoDepositTxHash: mockTxHash, depositStatus: 'PENDING' },
+      });
+      res.json({
+        success: true,
+        data: {
+          txHash: mockTxHash,
+          status: 'pending_deposit',
+          simulated: true,
+        },
+      });
       return;
     }
 
-    const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const missing = [
+      !process.env.BSC_RPC_URL && !process.env.BSC_RPC_TESTNET_URL && 'BSC_RPC_URL',
+      !process.env.ESCROW_ORACLE_PRIVATE_KEY && 'ESCROW_ORACLE_PRIVATE_KEY',
+      !process.env.ESCROW_CONTRACT_ADDRESS && 'ESCROW_CONTRACT_ADDRESS',
+    ].filter(Boolean);
+    if (missing.length) {
+      res.status(501).json({ success: false, error: `On-chain escrow requires ${missing.join(', ')}` });
+      return;
+    }
+
     await prisma.reservation.update({
       where: { id: reservationId },
-      data: { cryptoDepositTxHash: mockTxHash, depositStatus: 'PENDING' },
+      data: { depositStatus: 'PENDING_WEB3' },
     });
     res.json({
       success: true,
       data: {
-        txHash: mockTxHash,
+        reservationId,
         status: 'pending_deposit',
+        simulated: false,
       },
     });
   } catch (error) {
