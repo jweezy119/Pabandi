@@ -21,6 +21,7 @@
     "burn:lp": "ts-node scripts/burn-lp.ts"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
     "@google/generative-ai": "^0.24.1",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",

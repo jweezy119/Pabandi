@@ -36,6 +36,7 @@ export const CheckoutSessionPage = () => {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [phantomWallet, setPhantomWallet] = useState<string | null>(null);
+  const [isGasless, setIsGasless] = useState(true); // UX Abstraction: Pabandi pays network fees
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -86,7 +87,8 @@ export const CheckoutSessionPage = () => {
       toast('Requesting Oracle Signature...', { icon: '🔮' });
       const txRes = await api.post('/escrow/sign-init-tx', {
         serializedTxBase64: btoa('dummy_transaction_payload_for_prototype'),
-        customerWallet: phantomWallet
+        customerWallet: phantomWallet,
+        sponsorFees: isGasless // Tell backend treasury to sign as fee payer
       });
 
       if (!txRes.data.success) throw new Error('Oracle rejected the transaction');
@@ -208,6 +210,17 @@ export const CheckoutSessionPage = () => {
                 Connect Phantom Wallet
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Gasless / Network Fee Abstraction Toggle */}
+        <div className="bg-[#181818] rounded-2xl p-4 border border-zinc-800 mb-6 flex items-center justify-between cursor-pointer" onClick={() => setIsGasless(!isGasless)}>
+          <div>
+            <h3 className="text-sm font-bold text-white">Gasless Checkout</h3>
+            <p className="text-xs text-zinc-400 mt-1">Pabandi treasury covers Solana network fees</p>
+          </div>
+          <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isGasless ? 'bg-[#95BF47]' : 'bg-zinc-700'}`}>
+            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${isGasless ? 'translate-x-6' : 'translate-x-0'}`} />
           </div>
         </div>
 

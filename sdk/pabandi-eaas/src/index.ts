@@ -17,6 +17,16 @@ export interface CreateEscrowParams {
   cancelUrl: string;
 }
 
+export interface Milestone {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+export interface CreateMilestoneEscrowParams extends CreateEscrowParams {
+  milestones: Milestone[];
+}
+
 export interface OracleSignResponse {
   success: boolean;
   data?: {
@@ -66,6 +76,44 @@ export class PabandiEscrow {
     });
 
     return response.data;
+  }
+
+  /**
+   * Initializes a new milestone-based escrow session on the Pabandi backend.
+   * Perfect for Freelance Platforms (e.g. Hyve, DeeLance).
+   */
+  public async createMilestoneEscrow(params: CreateMilestoneEscrowParams) {
+    const response = await axios.post(`${this.apiUrl}/checkout/milestone`, {
+      ...params,
+      source: 'eaas_sdk_freelance'
+    }, {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Fetches the trust/reliability score of a given wallet or business ID.
+   * Perfect for Insurance Protocols (e.g. Nexus Mutual) to price premiums
+   * for no-shows or default risk dynamically.
+   * 
+   * @param targetId The Business ID or Wallet Address.
+   */
+  public async getTrustScoreQuote(targetId: string) {
+    try {
+      const response = await axios.get(`${this.apiUrl}/trust/quote/${targetId}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch trust score quote');
+    }
   }
 
   /**
