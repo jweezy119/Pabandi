@@ -73,20 +73,7 @@ Write a single, high-converting WhatsApp message template for this campaign. Mak
    * Find dormant customers who haven't been contacted in a while.
    */
   async findDormantLeads(businessId: string, daysDormant: number = 180) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysDormant);
-
-    return prisma.waitlistLead.findMany({
-      where: {
-        // Here we would typically filter by businessId if the CRM supported per-business leads.
-        // Assuming global waitlist leads for now or filtering by status.
-        outreachStatus: { in: ['CONTACTED', 'NOT_INTERESTED', 'ONBOARDED'] },
-        OR: [
-          { lastContactedAt: { lt: cutoffDate } },
-          { lastContactedAt: null }
-        ]
-      },
-      take: 50 // Limit for safety
-    });
+    // Stubbed until WaitlistLead CRM model is added to prisma schema
+    return [];
   }
 };
