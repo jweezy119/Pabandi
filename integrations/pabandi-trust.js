@@ -3,155 +3,145 @@
  * Integrates with Shopify, WooCommerce, and custom frontends.
  */
 
+const DEFAULT_API_URL = 'https://pabandi-backend-97129395003.asia-south1.run.app/api/v1';
+
 class PabandiTrust {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.apiUrl = 'http://localhost:5000/api/v1/network/check-hash'; // Replace with production URL
-    this.saltUrl = 'http://localhost:5000/api/v1/network/public-salt';
-    this.bloomUrl = 'http://localhost:5000/api/v1/network/bloom-filter';
-    this.isInitialized = false;
+  constructor(options) {
+    options = options || {};
+    this.apiKey = options.apiKey;
+    this.apiUrl = (options.apiUrl || DEFAULT_API_URL).replace(/\/$/, '');
+    this.saltUrl = `${this.apiUrl}/network/public-salt`;
+    this.bloomUrl = `${this.apiUrl}/network/bloom-filter`;
+    this.phoneInput = null;
+    this.codRadio = null;
     this.salt = null;
     this.bloomFilterJson = null;
   }
 
-  /**
-   * Initializes the SDK. Looks for phone inputs and COD radio buttons.
-   */
-  init({ phoneSelector, codRadioSelector }) {
-    this.phoneInput = document.querySelector(phoneSelector);
-    this.codRadio = document.querySelector(codRadioSelector);
-    
+  init({ phoneSelector, codRadioSelector } = {}) {
+    this.phoneInput = phoneSelector ? document.querySelector(phoneSelector) : null;
+    this.codRadio = codRadioSelector ? document.querySelector(codRadioSelector) : null;
+
     if (!this.phoneInput) {
-      console.warn("Pabandi SDK: Could not find phone input. Initialization paused.");
+      console.warn('Pabandi SDK: Could not find phone input. Initialization paused.');
       return;
     }
 
-    this.isInitialized = true;
-    console.log("Pabandi SDK: Initialized and actively monitoring checkout risks.");
+    console.log('Pabandi SDK: Initialized and actively monitoring checkout risks.');
 
-    // Listen to changes on the phone number
     this.phoneInput.addEventListener('blur', async (e) => {
-      const phoneNumber = e.target.value.trim();
-      if (phoneNumber.length > 8) {
+      const target = e.target;
+      const phoneNumber = target && target.value && target.value.trim();
+      if (phoneNumber && phoneNumber.length > 8) {
         await this.analyzeRisk(phoneNumber);
       }
     });
   }
 
-  /**
-   * Securely hashes a string locally (HMAC-SHA256).
-   * Ensures raw PII NEVER leaves the browser and protects against rainbow tables.
-   */
+  setBaseUrl(apiUrl) {
+    this.apiUrl = (apiUrl || this.apiUrl).replace(/\/$/, '');
+    this.saltUrl = `${this.apiUrl}/network/public-salt`;
+    this.bloomUrl = `${this.apiUrl}/network/bloom-filter`;
+    this.salt = null;
+    this.bloomFilterJson = null;
+  }
+
   async hashString(str) {
     if (!this.salt) {
       const res = await fetch(this.saltUrl);
       const data = await res.json();
-      this.salt = data.salt;
-      console.log("Pabandi SDK: Fetched daily salt for HMAC.");
+      this.salt = data.salt || '';
+      console.log('Pabandi SDK: Fetched daily salt for HMAC.');
     }
 
     const encoder = new TextEncoder();
-    const data = encoder.encode(str);
     const keyData = encoder.encode(this.salt);
-
     const cryptoKey = await crypto.subtle.importKey(
-      "raw",
+      'raw',
       keyData,
-      { name: "HMAC", hash: "SHA-256" },
+      { name: 'HMAC', hash: 'SHA-256' },
       false,
-      ["sign"]
+      ['sign']
     );
-
-    const signature = await crypto.subtle.sign("HMAC", cryptoKey, data);
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(str));
     const hashArray = Array.from(new Uint8Array(signature));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  /**
-   * Pings the Zero-Knowledge API and updates the UI based on the response.
-   */
   async analyzeRisk(phoneNumber) {
     try {
       const hash = await this.hashString(phoneNumber);
-      
-      // PRE-FLIGHT CHECK: Download Bloom Filter if not cached
+
       if (!this.bloomFilterJson) {
         const bfRes = await fetch(this.bloomUrl);
         const bfData = await bfRes.json();
-        this.bloomFilterJson = bfData.filter;
-        console.log("Pabandi SDK: Downloaded Global Edge Bloom Filter.");
+        this.bloomFilterJson = bfData.filter || null;
+        console.log('Pabandi SDK: Downloaded Global Edge Bloom Filter.');
       }
 
-      // SIMULATED LOCAL BLOOM FILTER CHECK
-      // In a production SDK (like Webpack/Vite built), we import `bloom-filters` here 
-      // and run `BloomFilter.fromJSON(this.bloomFilterJson).has(hash)`.
-      // If the filter says "NO", we skip the API call entirely!
       let skipApiCall = false;
       if (this.bloomFilterJson && this.bloomFilterJson._filter) {
-        // Mocking the probability check to demonstrate the flow:
-        // A real bloom filter returns `false` if it is 100% NOT in the list.
-        const isSafeLocally = false; // Mocking that we must check the API for demo purposes
+        const isSafeLocally = false;
         if (isSafeLocally) {
-          console.log("Pabandi SDK: ⚡ LOCAL BLOOM FILTER VERIFIED SAFE. Bypassing network call (<1ms latency).");
+          console.log('Pabandi SDK: Local Bloom Filter verified safe.');
           this.enableCashOnDelivery();
           return;
-        } else {
-          console.log("Pabandi SDK: Local Bloom Filter detected possible risk. Verifying via Edge API...");
         }
+        console.log('Pabandi SDK: Local Bloom Filter detected possible risk. Verifying via Edge API...');
       }
 
-      const response = await fetch(this.apiUrl, {
+      const response = await fetch(`${this.apiUrl}/network/check-hash`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey
+          'x-api-key': this.apiKey || '',
         },
-        body: JSON.stringify({ hash })
+        body: JSON.stringify({ hash }),
       });
 
       const result = await response.json();
 
-      if (result.success && result.data.prediction) {
-        const { riskLevel } = result.data.prediction;
-        
+      if (response.ok && result.success && result.data && result.data.prediction && result.data.prediction.riskLevel) {
+        const riskLevel = result.data.prediction.riskLevel;
         if (riskLevel === 'CRITICAL') {
-          console.warn("Pabandi SDK: High risk detected for this identity hash.");
+          console.warn('Pabandi SDK: High risk detected for this identity hash.');
           this.disableCashOnDelivery();
         } else {
-          console.log("Pabandi SDK: Identity hash is trusted.");
+          console.log('Pabandi SDK: Identity hash is trusted.');
           this.enableCashOnDelivery();
         }
+      } else {
+        console.warn('Pabandi SDK: Unexpected risk API response.', result);
       }
     } catch (error) {
-      console.error("Pabandi SDK: Failed to analyze risk:", error);
+      console.error('Pabandi SDK: Failed to analyze risk:', error);
     }
   }
 
   disableCashOnDelivery() {
-    if (this.codRadio) {
-      // Hide the entire container of the COD option (depends on theme markup)
-      this.codRadio.closest('.payment-method-container').style.display = 'none';
-      
-      // Optionally inject a notification
-      let warning = document.getElementById('pabandi-warning');
-      if (!warning) {
-        warning = document.createElement('div');
-        warning.id = 'pabandi-warning';
-        warning.style.color = '#e74c3c';
-        warning.style.fontSize = '0.9rem';
-        warning.style.marginTop = '10px';
-        warning.innerText = "Cash on Delivery is currently unavailable for this order. Please select a prepaid option.";
-        this.codRadio.closest('.checkout-section').appendChild(warning);
-      }
+    if (!this.codRadio) return;
+    const paymentContainer = this.codRadio.closest('.payment-method-container');
+    if (paymentContainer) paymentContainer.style.display = 'none';
+
+    let warning = document.getElementById('pabandi-warning');
+    if (!warning) {
+      warning = document.createElement('div');
+      warning.id = 'pabandi-warning';
+      warning.style.color = '#e74c3c';
+      warning.style.fontSize = '0.9rem';
+      warning.style.marginTop = '10px';
+      warning.innerText = 'Cash on Delivery is currently unavailable for this order. Please select a prepaid option.';
+      const checkoutSection = this.codRadio.closest('.checkout-section');
+      if (checkoutSection) checkoutSection.appendChild(warning);
     }
   }
 
   enableCashOnDelivery() {
-    if (this.codRadio) {
-      this.codRadio.closest('.payment-method-container').style.display = 'block';
-      const warning = document.getElementById('pabandi-warning');
-      if (warning) warning.remove();
-    }
+    if (!this.codRadio) return;
+    const paymentContainer = this.codRadio.closest('.payment-method-container');
+    if (paymentContainer) paymentContainer.style.display = 'block';
+    const warning = document.getElementById('pabandi-warning');
+    if (warning) warning.remove();
   }
 }
 
