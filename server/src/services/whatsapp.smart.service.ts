@@ -1,5 +1,7 @@
 import { selectPlugins, buildPluginSummary } from './openwa.plugins.service';
 import { sendWhatsAppMessage } from './ai.service';
+import { hospitalityService } from './hospitalityService';
+import { aiNlpService } from './ai.nlp.service';
 
 export interface SmartReply {
   text: string;

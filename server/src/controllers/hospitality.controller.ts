@@ -1,6 +1,62 @@
 import { Request, Response, NextFunction } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { aiNlpService } from '../services/ai.nlp.service';
+
+export async function checkAvailability(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { businessId } = req.params;
+    const { date, guests } = req.query as any;
+    const partySize = typeof guests === 'string' ? parseInt(guests, 10) : 2;
+    if (!businessId || !date) return res.status(400).json({ error: 'businessId and date are required' });
+    const result = await hospitalityService.checkAvailability(businessId, date, Number.isFinite(partySize) ? partySize : 2);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    logger.error('[Hospitality] availability error:', err);
+    next(err);
+  }
+}
+
+export async function createReceptionistCheckout(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { businessId, customerPhone, summary, status: conversationStatus } = req.body || {};
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
+    if (!business) return res.status(404).json({ error: 'Business not found' });
+
+    const session = await prisma.checkoutSession.create({
+      data: {
+        business: { connect: { id: businessId } },
+        amount: 0,
+        currency: 'USD',
+        escrowTerms: { source: 'ai_receptionist', customerPhone: customerPhone || '', summary: summary || '', status: conversationStatus || 'open' },
+        successUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`,
+        cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/hospitality`,
+        metadata: { source: 'ai_receptionist', customerPhone },
+        status: 'PENDING',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+
+    res.status(201).json({ success: true, data: { sessionId: session.id, checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}` } });
+  } catch (err: any) {
+    logger.error('[Hospitality] receptionist checkout error:', err);
+    next(err);
+  }
+}
+
+export async function receptionistAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { businessId } = req.params;
+    const conversations = await prisma.checkoutSession.count({ where: { businessId, metadata: { path: ['source'], equals: 'ai_receptionist' } } });
+    const bookings = await prisma.reservation.count({ where: { businessId, createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) } } });
+    const paid = await prisma.payment.count({ where: { status: 'COMPLETED', reservation: { businessId } } });
+    res.json({ success: true, data: { conversations, bookings, conversions: paid, conversionRate: conversations ? Math.min(1, paid / conversations) : 0 } });
+  } catch (err: any) {
+    logger.error('[Hospitality] receptionist analytics error:', err);
+    next(err);
+  }
+}
 
 /**
  * POST /api/hospitality/beds24/webhook

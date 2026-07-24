@@ -54,8 +54,8 @@ const HOW_IT_WORKS = [
   {
     step: '02',
     icon: LockClosedIcon,
-    title: 'Deposits Auto-Escrow',
-    desc: 'When a guest books, Pabandi automatically locks the deposit in a Solana smart contract. Funds are held trustlessly — no chargebacks, no disputes.',
+    title: 'Deposit Protection',
+    desc: 'Pabandi is designed to lock the deposit in escrow and enforce release/refund rules via verified booking events, reducing no-shows and disputes.',
     color: '#f0b429',
   },
   {
