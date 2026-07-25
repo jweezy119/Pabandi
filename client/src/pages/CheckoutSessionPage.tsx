@@ -5,7 +5,6 @@ import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
-import * as anchor from '@coral-xyz/anchor';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import IDL from '../utils/pabandi_escrow.json';
 
@@ -77,20 +76,40 @@ export const CheckoutSessionPage = () => {
     }
   };
 
+  const PROGRAM_ID = new PublicKey('6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG');
+
+  const isAnchorAvailable = () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const anchorModule = require('@coral-xyz/anchor');
+      return Boolean(anchorModule);
+    } catch {
+      return false;
+    }
+  };
+
   const handlePayment = async () => {
     if (!session) return;
-    
+
     if (!phantomWallet) {
       toast.error('Please connect your Phantom Wallet to proceed.');
       return;
     }
 
+    if (!isAnchorAvailable()) {
+      toast.error('Solana escrow checkout is temporarily unavailable. Please use Credit Card checkout.');
+      return;
+    }
+
     setPaying(true);
     try {
-      const PROGRAM_ID = new PublicKey('6ebgdhyUV7zEHqRmpnaPguWQPYJu9Vq4dpFs79VduTjG');
+      const anchor = require('@coral-xyz/anchor') as any;
+      const AnchorProvider = anchor.AnchorProvider;
+      const BN = anchor.BN;
+      const Program = anchor.Program;
       const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
-      const provider = new anchor.AnchorProvider(connection, (window as any).solana, { commitment: 'confirmed' });
-      const program = new anchor.Program(IDL as anchor.Idl, provider);
+      const provider = new AnchorProvider(connection, (window as any).solana, { commitment: 'confirmed' });
+      const program = new Program(IDL as any, provider);
 
       const customerPubkey = new PublicKey(phantomWallet);
       const mintPubkey = new PublicKey(import.meta.env.VITE_SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111');
@@ -112,25 +131,26 @@ export const CheckoutSessionPage = () => {
       toast('Building transaction...', { icon: '🏗️' });
 
       // Build the initialize_escrow instruction
-      const ix = await program.methods.initializeEscrow(
-        reservationId,
-        user?.trustScore || 50,
-        new anchor.BN(session.amount * 10 ** 9),
-        new anchor.BN(Math.floor(Date.now() / 1000) + 86400) // 24h deadline
-      )
-      .accounts({
-        customer: customerPubkey,
-        escrowState: escrowStatePDA,
-        vaultTokenAccount: vaultTokenPDA,
-        customerTokenAccount: customerTokenAccount,
-        mint: mintPubkey,
-        oracle: oraclePubkey,
-        systemProgram: SystemProgram.programId,
-      })
-      .instruction();
+      const ix = await program.methods
+        .initializeEscrow(
+          reservationId,
+          new BN(user?.trustScore || 50),
+          new BN(session.amount * 10 ** 9),
+          new BN(Math.floor(Date.now() / 1000) + 86400) // 24h deadline
+        )
+        .accounts({
+          customer: customerPubkey,
+          escrowState: escrowStatePDA,
+          vaultTokenAccount: vaultTokenPDA,
+          customerTokenAccount,
+          mint: mintPubkey,
+          oracle: oraclePubkey,
+          systemProgram: SystemProgram.programId,
+        })
+        .instruction();
 
       const { blockhash } = await connection.getLatestBlockhash('confirmed');
-      
+
       const transaction = new Transaction({
         recentBlockhash: blockhash,
         feePayer: customerPubkey,
@@ -144,7 +164,7 @@ export const CheckoutSessionPage = () => {
       const txRes = await api.post('/escrow/sign-init-tx', {
         serializedTxBase64,
         customerWallet: phantomWallet,
-        sponsorFees: isGasless // Tell backend treasury to sign as fee payer
+        sponsorFees: isGasless, // Tell backend treasury to sign as fee payer
       });
 
       if (!txRes.data.success) throw new Error('Oracle rejected the transaction');
@@ -152,17 +172,17 @@ export const CheckoutSessionPage = () => {
       // 2. Deserialize txRes.data.data.signedTxBase64 and prompt Phantom to sign
       toast('Confirming via Phantom...', { icon: '👻' });
       const partiallySignedTx = Transaction.from(Buffer.from(txRes.data.data.signedTxBase64, 'base64'));
-      
+
       // Request signature from user
       const signedTx = await (window as any).solana.signTransaction(partiallySignedTx);
-      
+
       // Broadcast to network
       const txSignature = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction(txSignature, 'confirmed');
 
       // 3. Mark session complete
       const response = await api.post(`/checkout/session/${session.id}/complete`, {
-        transactionHash: txSignature
+        transactionHash: txSignature,
       });
       if (response.data.success && response.data.data.redirectUrl) {
         toast.success('Payment accepted and escrow locked!');
