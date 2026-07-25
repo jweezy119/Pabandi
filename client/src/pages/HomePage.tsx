@@ -1,16 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useScrollReveal } from "../hooks/useScrollReveal";
-import { useQuery } from "react-query";
-import { businessService, liveSellerService } from "../services/api";
-import {
-  MapPinIcon,
-  BuildingStorefrontIcon,
-} from "@heroicons/react/24/outline";
-import HomeMap from "../components/HomeMap";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useQuery } from 'react-query';
+import { businessService, liveSellerService } from '../services/api';
+import HomeMap from '../components/HomeMap';
+import { tokens } from '../design-system';
 
-
-// Haversine distance calculation (in km)
 const getDistance = (
   lat1: number,
   lon1: number,
@@ -22,7 +17,7 @@ const getDistance = (
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
@@ -34,10 +29,8 @@ const INITIAL_CENTER = { lat: 41.8781, lng: -87.6298 };
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [category, setCategory] = useState("ALL");
-  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(
-    null,
-  );
+  const [category, setCategory] = useState('ALL');
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState(INITIAL_CENTER);
   const [selectedMapPlace, setSelectedMapPlace] = useState<{
@@ -46,11 +39,17 @@ export default function HomePage() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const revealRef1 = useScrollReveal<HTMLDivElement>();
-
+  const revealRef2 = useScrollReveal<HTMLDivElement>();
+  const revealRef3 = useScrollReveal<HTMLDivElement>();
+  const revealRef4 = useScrollReveal<HTMLDivElement>();
+  const revealRef5 = useScrollReveal<HTMLDivElement>();
+  const revealRef6 = useScrollReveal<HTMLDivElement>();
+  const revealRef7 = useScrollReveal<HTMLDivElement>();
+  const revealRef8 = useScrollReveal<HTMLDivElement>();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   useEffect(() => {
@@ -71,13 +70,6 @@ export default function HomePage() {
     setShowOnboarding(false);
     sessionStorage.setItem('pabandi_location_onboarding_dismissed', '1');
   };
-  const revealRef2 = useScrollReveal<HTMLDivElement>();
-  const revealRef3 = useScrollReveal<HTMLDivElement>();
-  const revealRef4 = useScrollReveal<HTMLDivElement>();
-  const revealRef5 = useScrollReveal<HTMLDivElement>();
-  const revealRef6 = useScrollReveal<HTMLDivElement>();
-  const revealRef7 = useScrollReveal<HTMLDivElement>();
-  const revealRef8 = useScrollReveal<HTMLDivElement>();
 
   const { data: liveData } = useQuery(
     'live-sellers-home',
@@ -103,10 +95,10 @@ export default function HomePage() {
   };
 
   const { data, isLoading } = useQuery(
-    ["businesses", category, userLoc, search],
+    ['businesses', category, userLoc, search],
     async () => {
       const params: any = {
-        category: category !== "ALL" ? category : undefined,
+        category: category !== 'ALL' ? category : undefined,
       };
       if (userLoc) {
         params.latitude = userLoc.lat;
@@ -126,10 +118,8 @@ export default function HomePage() {
     return res.data?.data?.businesses || [];
   }, { enabled: !!(!data || data.length === 0) });
 
-  const source = (fallbackContext.data && fallbackContext.data.length > 0) ? fallbackContext.data : (data || []);
-
+  const source = fallbackContext.data && fallbackContext.data.length > 0 ? fallbackContext.data : (data || []);
   let businesses = source || [];
-
   businesses = rankBusinesses([...businesses], userLoc);
 
   const handleGetLocation = () => {
@@ -140,13 +130,11 @@ export default function HomePage() {
         setLocLoading(false);
       },
       (err) => {
-        console.error("Location access denied or failed", err);
+        console.error('Location access denied or failed', err);
         setLocLoading(false);
       },
     );
   };
-
-
 
   const handleSearch = useCallback(async () => {
     const q = search.trim();
@@ -164,7 +152,7 @@ export default function HomePage() {
 
   const handleBookPlace = useCallback(
     (place: { name: string; address?: string; lat: number; lng: number }) => {
-      navigate("/reservations/new", {
+      navigate('/reservations/new', {
         state: {
           placeName: place.name,
           address: place.address,
@@ -176,20 +164,18 @@ export default function HomePage() {
     [navigate],
   );
 
-
-
   const cities = [
-    { name: "Chicago", lat: 41.8781, lng: -87.6298 },
-    { name: "New York", lat: 40.7128, lng: -74.006 },
-    { name: "Los Angeles", lat: 34.0522, lng: -118.2437 },
-    { name: "London", lat: 51.5074, lng: -0.1278 },
-    { name: "Dubai", lat: 25.2048, lng: 55.2708 },
-    { name: "Singapore", lat: 1.3521, lng: 103.8198 },
+    { name: 'Chicago', lat: 41.8781, lng: -87.6298 },
+    { name: 'New York', lat: 40.7128, lng: -74.006 },
+    { name: 'Los Angeles', lat: 34.0522, lng: -118.2437 },
+    { name: 'London', lat: 51.5074, lng: -0.1278 },
+    { name: 'Dubai', lat: 25.2048, lng: 55.2708 },
+    { name: 'Singapore', lat: 1.3521, lng: 103.8198 },
   ];
+
   function rankBusinesses(items: any[], userLoc: { lat: number; lng: number } | null) {
     if (!items.length) return items;
     if (!userLoc) {
-      // Drop items with no usable coordinates rather than pretending they are in Chicago
       return items.filter((it) => Number.isFinite(it.latitude) && Number.isFinite(it.longitude));
     }
     const scored = items
@@ -218,104 +204,87 @@ export default function HomePage() {
   }
 
   const getCategoryLabel = (c: string) => {
-    if (c === "ALL") return "All Categories";
-    if (c === "ECOMMERCE") return "E-Commerce";
-    if (c === "MARKETPLACE") return "Marketplace";
-    if (c === "LIVE_SELLER") return "Live Seller";
-    if (c === "RESTAURANT") return "Fine Dining";
-    if (c === "FITNESS_CENTER") return "Fitness";
+    if (c === 'ALL') return 'All Categories';
+    if (c === 'ECOMMERCE') return 'E-Commerce';
+    if (c === 'MARKETPLACE') return 'Marketplace';
+    if (c === 'LIVE_SELLER') return 'Live Seller';
+    if (c === 'RESTAURANT') return 'Fine Dining';
+    if (c === 'FITNESS_CENTER') return 'Fitness';
     return c.charAt(0) + c.slice(1).toLowerCase();
   };
 
   return (
-    <div className="w-full pb-24 md:pb-10 font-body">
+    <div className="w-full pb-24 font-body md:pb-10" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
 
       {showOnboarding && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="max-w-md w-full rounded-3xl border border-white/15 bg-[#0f172a]/90 p-8 text-center shadow-2xl">
-            <h2 className="font-headline text-3xl font-black text-white mb-3">See what’s already nearby</h2>
-            <p className="text-slate-300 text-sm leading-relaxed mb-6">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-white/15 bg-slate-900/90 p-8 text-center shadow-2xl">
+            <h2 className="mb-3 font-headline text-3xl font-black text-white">See what’s already nearby</h2>
+            <p className="mb-6 text-sm leading-relaxed text-slate-300">
               Turn on location and we’ll show real nearby businesses inside your map — no searching required.
             </p>
             <div className="flex flex-col gap-3">
-              <button
-                onClick={handleOnboardingLocation}
-                className="w-full py-3.5 rounded-xl bg-primary text-on-primary font-bold shadow-lg"
-              >
-                Use my location
-              </button>
-              <button
-                onClick={handleOnboardingDismiss}
-                className="w-full py-3 rounded-xl text-slate-300 font-semibold hover:text-white"
-              >
-                Not now
-              </button>
+              <button onClick={handleOnboardingLocation} className="w-full rounded-xl bg-indigo-500 py-3.5 font-bold text-white shadow-lg">Use my location</button>
+              <button onClick={handleOnboardingDismiss} className="w-full rounded-xl py-3 font-semibold text-slate-300 hover:text-white">Not now</button>
             </div>
           </div>
         </div>
       )}
+
       {/* IMMERSIVE HERO WITH MAP */}
-      <section className="relative w-full bg-[#0f172a] text-white py-12 md:py-24 border-b border-slate-800">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-[120px] opacity-25 animate-blob animate-float-slow" />
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 animate-blob animation-delay-2000 animate-float-delayed" />
+      <section className="relative w-full border-b border-white/10 bg-[#0f172a] py-12 text-white md:py-24">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-[#14F195] opacity-25 blur-[120px] mix-blend-multiply animate-blob animate-float-slow" />
+          <div className="absolute top-0 right-1/4 h-96 w-96 rounded-full bg-[#06b6d4] opacity-20 blur-[120px] mix-blend-multiply animate-blob animate-float-delayed animation-delay-2000" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col xl:flex-row gap-8 md:gap-12">
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 px-4 xl:flex-row xl:gap-12 sm:px-6">
           {/* Left Col - Copy */}
-          <div className="w-full xl:w-auto xl:min-w-[320px] space-y-6 max-w-2xl mx-auto xl:mx-0 pt-6">
-            <h1 className="font-headline text-4xl sm:text-5xl md:text-7xl font-black tracking-tight leading-[1.1] stagger-item">
+          <div className="mx-auto max-w-2xl pt-6 xl:mx-0 xl:w-auto xl:min-w-[320px] xl:space-y-6">
+            <h1 className="font-headline text-4xl font-black tracking-tight leading-[1.1] sm:text-5xl md:text-7xl stagger-item">
               Pabandi is the<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14F195] to-[#06b6d4]">
+              <span className="bg-gradient-to-r from-[#14F195] to-[#06b6d4] bg-clip-text text-transparent">
                 WhatsApp-native commerce escrow layer
               </span>
             </h1>
-            <p className="font-body text-base sm:text-xl text-slate-300 leading-relaxed max-w-xl stagger-item">
+            <p className="font-body max-w-xl text-base leading-relaxed text-slate-300 sm:text-xl stagger-item">
               Zero-training booking support via WhatsApp. Guaranteed commitment for hospitality and informal merchants. Deposit protection, built in.
             </p>
 
             {/* Search */}
-            <div className="pt-4 relative z-50 stagger-item px-1">
-              <p className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-3">
-                Find & Book Anywhere
-              </p>
-              <div className="glass-input rounded-2xl flex items-center px-4 py-4 sm:px-4 sm:py-3 shadow-sm w-full gap-3 sm:gap-2">
-                <BuildingStorefrontIcon className="h-6 w-6 sm:h-5 sm:w-5 text-outline shrink-0" />
+            <div className="stagger-item px-1 pt-4">
+              <p className="mb-3 text-sm font-bold uppercase tracking-widest text-slate-400">Find & Book Anywhere</p>
+              <div className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 shadow-sm sm:gap-2 sm:px-4 sm:py-3">
+                <span className="shrink-0 text-slate-300">🏢</span>
                 <input
                   ref={searchInputRef}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
+                    if (e.key === 'Enter') handleSearch();
                   }}
                   type="text"
                   placeholder="Where to?"
-                  className="bg-transparent border-none focus:ring-0 w-full font-body text-base sm:text-sm text-on-surface placeholder-outline font-medium focus:outline-none touch-target"
+                  className="w-full border-none bg-transparent font-body text-base text-white outline-none focus:ring-0 sm:text-sm"
                 />
-                <button
-                  onClick={handleSearch}
-                  className="px-4 py-2 sm:px-3 sm:py-1.5 rounded-lg bg-primary text-on-primary text-sm sm:text-xs font-bold shrink-0 touch-target"
-                >
+                <button onClick={handleSearch} className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2 text-xs font-bold text-white sm:px-3 sm:py-1.5 sm:text-xs">
                   Search
                 </button>
               </div>
 
-              <div className="mt-4 flex gap-2 flex-wrap">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   onClick={handleGetLocation}
                   disabled={locLoading}
-                  className="flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-surface-container border border-outline-variant/10 rounded-full px-4 py-2.5 sm:px-3 sm:py-1.5 hover:bg-surface-container-high touch-target"
+                  className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold hover:bg-white/10 sm:px-3 sm:py-1.5 sm:text-sm"
                 >
-                  <MapPinIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />{" "}
-                  {locLoading ? "Locating..." : "Near Me"}
+                  📍 {locLoading ? 'Locating...' : 'Near Me'}
                 </button>
                 {cities.map((city) => (
                   <button
                     key={city.name}
-                    onClick={() =>
-                      navigate(`/search?q=${encodeURIComponent(city.name)}`)
-                    }
-                    className="text-xs sm:text-sm font-bold bg-surface-container border border-outline-variant/10 rounded-full px-4 py-2.5 sm:px-3 sm:py-1.5 hover:bg-surface-container-high touch-target"
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(city.name)}`)}
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-bold hover:bg-white/10 sm:px-3 sm:py-1.5 sm:text-sm"
                   >
                     {city.name}
                   </button>
@@ -323,46 +292,40 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3 sm:gap-4 pt-6 text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest stagger-item">
-              <span className="flex items-center gap-1">
-                <span className="text-[#14F195]">✓</span> Global
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-[#14F195]">✓</span> AI Protected
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="text-[#14F195]">✓</span> Earn $PAB
-              </span>
-              <Link to="/pricing" className="ml-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition-colors">
+            <div className="flex flex-wrap gap-3 pt-6 text-xs font-bold uppercase tracking-widest text-slate-400 sm:gap-4 sm:text-sm stagger-item">
+              <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> Global</span>
+              <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> AI Protected</span>
+              <span className="flex items-center gap-1"><span className="text-[#14F195]">✓</span> Earn $PAB</span>
+              <Link to="/pricing" className="ml-2 rounded-lg bg-white/10 px-4 py-2 text-xs text-white transition-colors hover:bg-white/20">
                 View Plans →
               </Link>
             </div>
 
             {/* About Me */}
-            <div className="mt-8 pt-8 border-t border-white/5 text-white stagger-item delay-3 max-w-lg">
-              <h2 className="font-headline font-bold text-lg mb-2 text-primary">About Me</h2>
-              <p className="text-sm text-slate-300 leading-relaxed max-w-prose">
+            <div className="mt-8 max-w-lg border-t border-white/5 pt-8 text-white delay-3 stagger-item">
+              <h2 className="mb-2 font-headline text-lg font-bold text-indigo-300">About Me</h2>
+              <p className="max-w-prose text-sm leading-relaxed text-slate-300">
                 Built for people who value commitment. Pabandi turns bookings into trusted relationships, with AI-guided recommendations and verifiable reliability.
               </p>
             </div>
           </div>
 
-          {/* Right Col - The Interactive Map */}
+         {/* Right Col - The Interactive Map */}
           <div
-            className="flex-1 relative w-full h-[400px] sm:h-[500px] xl:h-[600px] rounded-3xl overflow-hidden stagger-item"
-            style={{ animationDelay: "240ms" }}
+            className="relative h-[400px] w-full flex-1 sm:h-[500px] xl:h-[600px] rounded-3xl overflow-hidden stagger-item"
+            style={{ animationDelay: '240ms' }}
           >
             <HomeMap
               center={mapCenter}
               selectedPlace={selectedMapPlace}
               userLocation={userLoc}
               places={businesses.slice(0, 8).map((b: any) => {
-                const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || "");
+                const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || '');
                 return {
                   lat: b.latitude ?? mapCenter.lat,
                   lng: b.longitude ?? mapCenter.lng,
                   name: b.name,
-                  subtitle: [cityText, b.description, b.category].filter(Boolean).join(" · "),
+                  subtitle: [cityText, b.description, b.category].filter(Boolean).join(' · '),
                 };
               })}
               onPlaceSelect={(place) =>
@@ -376,34 +339,24 @@ export default function HomePage() {
             />
 
             {selectedMapPlace && (
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-10 drop-shadow-2xl">
-                <div className="flex justify-between items-start mb-2">
+              <div className="absolute bottom-8 left-1/2 z-10 mx-auto w-[90%] max-w-sm -translate-x-1/2 drop-shadow-2xl">
+                <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 pr-4">
-                    <h3 className="text-xl font-bold font-headline text-on-surface leading-tight truncate">
-                      {selectedMapPlace.name}
-                    </h3>
-                    <p className="text-sm text-on-surface-variant font-medium mt-1 truncate">
-                      {selectedMapPlace.address}
-                    </p>
+                    <h3 className="font-headline text-xl font-bold leading-tight text-white">{selectedMapPlace.name}</h3>
+                    <p className="mt-1 truncate text-sm font-medium text-slate-300">{selectedMapPlace.address}</p>
                   </div>
                   <button
                     onClick={() => setSelectedMapPlace(null)}
-                    className="p-1.5 hover:bg-surface-container rounded-full text-on-surface-variant transition-colors flex-shrink-0"
+                    className="flex-shrink-0 rounded-full p-1.5 text-slate-300 transition-colors hover:bg-white/10"
                   >
-                    <span className="material-symbols-outlined text-lg">
-                      close
-                    </span>
+                    ✕
                   </button>
                 </div>
-
                 <button
                   onClick={() => handleBookPlace(selectedMapPlace)}
-                  className="w-full py-3.5 bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-bold rounded-xl shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all flex items-center justify-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3.5 font-bold text-white shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all"
                 >
-                  Make Reservation
-                  <span className="material-symbols-outlined text-[18px]">
-                    arrow_forward
-                  </span>
+                  Make Reservation →
                 </button>
               </div>
             )}
@@ -412,38 +365,34 @@ export default function HomePage() {
       </section>
 
       {/* Categories & Curated List */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 space-y-10 sm:space-y-12 mt-8 sm:mt-12">
+      <div className="mx-auto max-w-7xl mt-8 space-y-10 px-4 sm:px-6 sm:mt-12 sm:space-y-12 md:px-8">
         {/* Global Category Filters */}
         <section ref={revealRef1} className="reveal">
-          <div className="flex justify-center overflow-x-auto gap-3 no-scrollbar pb-2 pt-4 scroll-smooth">
-            {["ALL","RESTAURANT","SALON","CLINIC","SPA","FITNESS_CENTER","PROPERTY_RENTAL","LIVE_SELLER","FREELANCE"].map((c) => (
+          <div className="scroll-smooth flex gap-3 overflow-x-auto pb-2 pt-4 no-scrollbar">
+            {['ALL','RESTAURANT','SALON','CLINIC','SPA','FITNESS_CENTER','PROPERTY_RENTAL','LIVE_SELLER','FREELANCE'].map((c) => (
               <button
                 key={c}
                 onClick={() => {
-                  if (c === "LIVE_SELLER") {
-                    navigate("/live-selling");
+                  if (c === 'LIVE_SELLER') {
+                    navigate('/live-selling');
                     return;
                   }
-                  if (c === "FREELANCE") {
-                    navigate("/search?category=FREELANCE");
+                  if (c === 'FREELANCE') {
+                    navigate(`/search?category=FREELANCE`);
                     return;
                   }
                   setCategory(c);
                 }}
-                className={`${
-                  category === c
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-slate-400 hover:text-white"
-                } px-2 py-2 font-label text-sm font-bold sm:font-medium whitespace-nowrap transition-colors touch-target shrink-0`}
+                className={`whitespace-nowrap px-2 py-2 font-label text-sm font-bold transition-colors touch-target shrink-0 sm:font-medium ${
+                  category === c ? 'text-indigo-300 border-b-2 border-indigo-300' : 'text-slate-400 hover:text-white'
+                } ${c === 'LIVE_SELLER' ? 'text-slate-100' : ''}`}
               >
-                {c === "LIVE_SELLER" ? "🎥 Live Seller" : c === "FREELANCE" ? "💻 Freelance" : getCategoryLabel(c)}
+                {c === 'LIVE_SELLER' ? '🎥 Live Seller' : c === 'FREELANCE' ? '💻 Freelance' : getCategoryLabel(c)}
               </button>
             ))}
           </div>
-          {/* Scroll hint on mobile */}
-          <div className="flex sm:hidden items-center justify-center gap-1.5 mt-1 mb-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-            <span className="material-symbols-outlined text-[14px]">swipe</span>
-            Swipe to explore
+          <div className="flex items-center justify-center gap-1.5 mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 sm:hidden">
+            <span>↔</span> Swipe to explore
           </div>
         </section>
 
@@ -461,201 +410,160 @@ export default function HomePage() {
                     lng: biz.longitude ?? mapCenter.lng,
                   })
                 }
-                className="px-4 py-2.5 sm:px-3 sm:py-2 rounded-xl bg-surface-container-low border border-outline-variant/10 text-sm sm:text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors touch-target"
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs touch-target"
               >
                 {biz.name.replace(new RegExp(`(${search.trim()})`, 'gi'), '$1')}
                 {biz.__distanceKm != null && (
-                  <span className="ml-1 text-[10px] font-medium text-on-surface-variant">
-                    · {biz.__distanceKm.toFixed(1)} km
-                  </span>
+                  <span className="ml-1 text-[10px] font-medium text-slate-400"> · {biz.__distanceKm.toFixed(1)} km</span>
                 )}
               </button>
             ))}
           </div>
         )}
 
-
         {/* Live Seller / Freelance connection prompts */}
-        {(category === "LIVE_SELLER" || category === "FREELANCE") && (
-          <section ref={category === "LIVE_SELLER" ? revealRef6 : revealRef7} className="py-6 reveal">
-            {category === "LIVE_SELLER" ? (
-              <>
-                <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Live selling on Pabandi</h3>
-                <p className="text-sm text-on-surface-variant mb-4">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
+        {(category === 'LIVE_SELLER' || category === 'FREELANCE') && (
+          <section ref={category === 'LIVE_SELLER' ? revealRef6 : revealRef7} className="reveal py-6">
+            {category === 'LIVE_SELLER' ? (
+              <div>
+                <h3 className="font-headline mb-2 text-xl font-bold text-white">Live selling on Pabandi</h3>
+                <p className="mb-4 text-sm text-slate-300">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/live-selling" className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm">Open Live Selling</Link>
-                  <Link to="/live-sell" className="px-4 py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors">Browse public hub</Link>
+                  <Link to="/live-selling" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-4 py-2 font-headline text-sm font-bold text-white shadow-sm">Open Live Selling</Link>
+                  <Link to="/live-sell" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10">Browse public hub</Link>
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <h3 className="font-headline text-xl font-bold text-on-surface mb-2">Freelance on Pabandi</h3>
-                <p className="text-sm text-on-surface-variant mb-4">Import reputation from platforms you already use.</p>
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+              <div>
+                <h3 className="font-headline mb-2 text-xl font-bold text-white">Freelance on Pabandi</h3>
+                <p className="mb-4 text-sm text-slate-300">Import reputation from platforms you already use.</p>
+                <div className="flex flex-wrap gap-3 sm:flex-row">
                   {['TikTok Live','YouTube Shopping','Shopify Live'].map((platform) => (
-                    <Link key={platform} to="/live-selling" className="px-4 py-3 sm:py-2 rounded-xl bg-surface border border-outline-variant/20 text-sm font-bold text-on-surface hover:bg-surface-container-high transition-colors touch-target text-center">
+                    <Link key={platform} to="/live-selling" className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-bold text-white transition-colors hover:bg-white/10 sm:py-2 touch-target">
                       {platform} ↗
                     </Link>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </section>
         )}
 
         {/* Featured Businesses */}
         <section ref={revealRef2} className="space-y-6 reveal">
-          <div className="flex justify-between items-center">
-            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-              {userLoc ? "Near You" : "Curated for You"}
-            </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-headline text-2xl font-bold tracking-tight text-white">{userLoc ? 'Near You' : 'Curated for You'}</h3>
             <button
               onClick={handleGetLocation}
               disabled={locLoading}
-              className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+              className="flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1.5 text-sm font-medium text-indigo-300 transition-colors hover:bg-indigo-500/20"
             >
-              <MapPinIcon className="h-4 w-4" />
-              {locLoading ? "Locating..." : "Near Me"}
+              📍 {locLoading ? 'Locating...' : 'Near Me'}
             </button>
           </div>
 
           {activeLiveCount > 0 && (
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff0050] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff0050]" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#ff0050] opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#ff0050]" />
               </span>
-              <span className="font-label text-[11px] font-bold text-on-surface">
-                Live now: {activeLiveCount} show{activeLiveCount > 1 ? 's' : ''}
-              </span>
+              <span className="font-label text-[11px] font-bold text-white">Live now: {activeLiveCount} show{activeLiveCount > 1 ? 's' : ''}</span>
             </div>
           )}
 
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
             </div>
           ) : businesses.length === 0 ? (
-            <div className="text-center py-12 bg-surface-container-low rounded-xl">
-              <p className="font-body text-on-surface-variant">
-                No businesses found matching your criteria.
-              </p>
-              <button
-                onClick={() => {
-                  setCategory("ALL");
-                }}
-                className="mt-4 text-primary font-bold hover:underline"
-              >
+            <div className="rounded-xl bg-white/5 py-12 text-center">
+              <p className="font-body text-slate-300">No businesses found matching your criteria.</p>
+              <button onClick={() => setCategory('ALL')} className="mt-4 font-bold text-indigo-300 hover:underline">
                 Clear filters
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-              {/* Main Feature - First Business */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
               {businesses[0] && (
                 <Link
                   target="_blank"
                   rel="noopener noreferrer"
                   to={`/business/${businesses[0].id}`}
-                  className="md:col-span-8 group relative block tile-hover"
+                  className="relative block md:col-span-8 group"
                 >
-                  <div className="w-full h-80 rounded-3xl overflow-hidden relative shadow-lg">
+                  <div className="h-80 overflow-hidden rounded-3xl shadow-lg">
                     <img
-                    alt={businesses[0].name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    src={
-                      businesses[0].coverImageUrl ||
-                      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200"
-                    }
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" /></div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6 w-full z-10">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                      alt={businesses[0].name}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      src={businesses[0].coverImageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'}
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-indigo-700/90 via-indigo-500/40 to-transparent" />
+                  <div className="absolute bottom-0 left-0 z-10 w-full p-6">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                         {getCategoryLabel(businesses[0].category)}
                       </span>
-                      <span className="flex items-center text-on-primary text-sm font-body">
-                        <span
-                          className="material-symbols-outlined text-[16px] mr-1 text-yellow-400"
-                          style={{ fontVariationSettings: "'FILL' 1" }}
-                        >
-                          star
-                        </span>
-                        {businesses[0].rating?.toFixed(1) || "4.9"}
+                      <span className="flex items-center text-sm font-body text-white">
+                        ⭐ {businesses[0].rating?.toFixed(1) || '4.9'}
                       </span>
                       {(businesses[0].isClaimed || getBusinessLiveState(businesses[0])) && (
-                        <span className="bg-[#14F195]/20 text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#14F195]/30">
-                          {getBusinessLiveState(businesses[0]) && (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live ·{' '}
-                            </>
-                          )}
+                        <span className="flex items-center gap-1 rounded border border-[#14F195]/40 bg-[#14F195]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#14F195]">
+                          {getBusinessLiveState(businesses[0]) && <><span className="h-1.5 w-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live · </>}
                           Solana Protected
                         </span>
                       )}
                       {!businesses[0].isClaimed && !getBusinessLiveState(businesses[0]) && (
-                        <span className="bg-amber-500/20 text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-label border border-[#f59e0b]/30">
+                        <span className="rounded border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
                           Unclaimed Listing
                         </span>
                       )}
                     </div>
-                    <h4 className="font-headline text-2xl font-bold text-on-primary mb-1">
-                      {businesses[0].name}
-                    </h4>
-                    <p className="font-body text-slate-300 text-sm max-w-md line-clamp-2">
-                      {businesses[0].description ||
-                        `${businesses[0].city} • Discover our premium services.`}
+                    <h4 className="mb-1 font-headline text-2xl font-bold text-white">{businesses[0].name}</h4>
+                    <p className="max-w-md line-clamp-2 text-sm text-slate-300">
+                      {businesses[0].description || `${businesses[0].city} • Discover our premium services.`}
                     </p>
                   </div>
                 </Link>
               )}
 
-              {/* Secondary Stack - Next Two Businesses */}
-              <div className="md:col-span-4 flex flex-col gap-6">
+              <div className="flex flex-col gap-6 md:col-span-4">
                 {businesses[1] && (
                   <Link
                     target="_blank"
                     rel="noopener noreferrer"
                     to={`/business/${businesses[1].id}`}
-                    className="group relative block min-h-[150px] tile-hover"
+                    className="group relative block min-h-[150px]"
                   >
-                    <div className="w-full h-full absolute inset-0 rounded-3xl overflow-hidden shadow-lg">
+                    <div className="absolute inset-0 overflow-hidden rounded-3xl shadow-lg">
                       <img
                         alt={businesses[1].name}
-                      className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-                      src={
-                        businesses[1].coverImageUrl ||
-                        "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600"
-                      }
-                    />
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        src={businesses[1].coverImageUrl || 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600'}
+                      />
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                  </div>
                     <div className="absolute top-4 right-4 z-10">
                       {(businesses[1].isClaimed || getBusinessLiveState(businesses[1])) && (
-                        <span className="bg-[#14F195]/30 backdrop-blur-md text-[#14F195] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-[#14F195]/40">
-                          {getBusinessLiveState(businesses[1]) && (
-                            <>
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live
-                            </>
-                          )}
+                        <span className="flex items-center gap-1 rounded border border-[#14F195]/40 bg-[#14F195]/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#14F195] backdrop-blur-md">
+                          {getBusinessLiveState(businesses[1]) && <><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#14F195]" /> Live</>}
                           {getBusinessLiveState(businesses[1]) && ' · '}
                           Solana
                         </span>
                       )}
                       {!businesses[1].isClaimed && !getBusinessLiveState(businesses[1]) && (
-                        <span className="bg-amber-500/30 backdrop-blur-md text-[#fbbf24] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-[#f59e0b]/40">
+                        <span className="rounded border border-amber-500/40 bg-amber-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-200 backdrop-blur-md">
                           Unclaimed
                         </span>
                       )}
                     </div>
-                    <div className="absolute bottom-0 left-0 p-5 z-10">
-                      <span className="bg-secondary-container text-on-secondary-fixed-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-2 inline-block">
+                    <div className="absolute bottom-0 left-0 z-10 p-5">
+                      <span className="mb-2 inline-block rounded bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                         {getCategoryLabel(businesses[1].category)}
                       </span>
-                      <h4 className="font-headline text-lg font-bold text-on-primary">
-                        {businesses[1].name}
-                      </h4>
+                      <h4 className="font-headline text-lg font-bold text-white">{businesses[1].name}</h4>
                     </div>
                   </Link>
                 )}
@@ -665,38 +573,32 @@ export default function HomePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     to={`/business/${businesses[2].id}`}
-                    className="flex-1 py-4 flex flex-col justify-center min-h-[150px] cursor-pointer group transition-colors tile-hover"
+                    className="flex flex-1 flex-col justify-center min-h-[150px] rounded-3xl border border-white/10 bg-white/5 p-5 transition-colors group"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-headline text-lg font-bold text-on-surface">
-                        {businesses[2].name}
-                      </h4>
-                      {(businesses[2].isClaimed || getBusinessLiveState(businesses[2])) && (
-                        <span className="bg-[#14F195]/20 text-[#10b981] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#14F195]/30">
-                          {getBusinessLiveState(businesses[2]) && (
-                            <>
-                              <span className="inline-flex w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse align-middle mr-1" /> Live ·{' '}
-                            </>
-                          )}
-                          Solana
-                        </span>
-                      )}
-                      {!businesses[2].isClaimed && !getBusinessLiveState(businesses[2]) && (
-                        <span className="bg-amber-500/20 text-[#d97706] px-2 py-0.5 rounded text-[9px] font-bold uppercase border border-[#f59e0b]/30">
-                          Unclaimed
-                        </span>
-                      )}
+                    <div className="mb-2 flex items-start justify-between">
+                      <h4 className="font-headline text-lg font-bold text-white">{businesses[2].name}</h4>
+                      <div className="flex flex-col gap-2">
+                        {(businesses[2].isClaimed || getBusinessLiveState(businesses[2])) && (
+                          <span className="flex items-center gap-1 rounded border border-[#14F195]/30 bg-[#14F195]/20 px-2 py-0.5 text-[9px] font-bold uppercase text-[#10b981]">
+                            {getBusinessLiveState(businesses[2]) && <><span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#14F195] animate-pulse align-middle" /> Live · </>}
+                            Solana
+                          </span>
+                        )}
+                        {!businesses[2].isClaimed && !getBusinessLiveState(businesses[2]) && (
+                          <span className="rounded border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-300">
+                            Unclaimed
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="font-body text-on-surface-variant text-sm mb-4 line-clamp-2">
-                      {businesses[2].description ||
-                        `${businesses[2].city} • Premium service with Pabandi.`}
+                    <p className="mb-4 line-clamp-2 text-sm text-slate-300">
+                      {businesses[2].description || `${businesses[2].city} • Premium service with Pabandi.`}
                     </p>
                     <div className="mt-auto flex items-center justify-between">
-                      <span className="text-xs text-on-surface-variant font-medium">
-                        {getCategoryLabel(businesses[2].category)} •{" "}
-                        {businesses[2].city}
+                      <span className="text-xs font-medium text-slate-300">
+                        {getCategoryLabel(businesses[2].category)} • {businesses[2].city}
                       </span>
-                      <span className="text-primary text-sm font-bold group-hover:translate-x-1 transition-transform">
+                      <span className="text-sm font-bold text-indigo-300 transition-transform group-hover:translate-x-1">
                         Book →
                       </span>
                     </div>
@@ -708,41 +610,18 @@ export default function HomePage() {
         </section>
 
         {/* App Features / proof grid */}
-        <section ref={revealRef3} className="reveal space-y-6">
-          <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-            Why book with Pabandi
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section ref={revealRef3} className="space-y-6 reveal">
+          <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Why book with Pabandi</h3>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              {
-                title: "Reliability-First Booking",
-                body: "No-shows hurt trust. Pabandi protects reliability with AI-based no-show prediction.",
-                accent: "from-[#14F195] to-[#06b6d4]",
-              },
-              {
-                title: "Earn $PAB on Honored Appointments",
-                body: "Customers can earn rewards when they show up and honor their reservation.",
-                accent: "from-[#f472b6] to-[#a855f7]",
-              },
-              {
-                title: "Global + Local Map Search",
-                body: "Discover venues with openstreet-powered search, then book instantly.",
-                accent: "from-[#fbbf24] to-[#f97316]",
-              },
+              { title: 'Reliability-First Booking', body: 'No-shows hurt trust. Pabandi protects reliability with AI-based no-show prediction.', gradient: 'bg-gradient-to-br from-[#14F195] to-[#06b6d4]' },
+              { title: 'Earn $PAB on Honored Appointments', body: 'Customers can earn rewards when they show up and honor their reservation.', gradient: 'bg-gradient-to-br from-[#f472b6] to-[#a855f7]' },
+              { title: 'Global + Local Map Search', body: 'Discover venues with map-powered search, then book instantly.', gradient: 'bg-gradient-to-br from-[#fbbf24] to-[#f97316]' },
             ].map((item) => (
-              <div
-                key={item.title}
-                className="py-4"
-              >
-                <div
-                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${item.accent} mb-6 shadow-lg`}
-                />
-                <h4 className="font-headline font-bold text-on-surface mb-3 text-lg">
-                  {item.title}
-                </h4>
-                <p className="font-body text-sm text-on-surface-variant leading-relaxed max-w-sm">
-                  {item.body}
-                </p>
+              <div key={item.title} className="py-4">
+                <div className={`mb-6 h-12 w-12 rounded-full shadow-lg ${item.gradient}`} />
+                <h4 className="mb-3 text-lg font-bold text-white">{item.title}</h4>
+                <p className="max-w-sm text-sm leading-relaxed text-slate-300">{item.body}</p>
               </div>
             ))}
           </div>
@@ -751,17 +630,15 @@ export default function HomePage() {
         {/* Escrow and trust preview */}
         <section ref={revealRef8} className="reveal">
           <div className="text-center mb-8">
-            <h3 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-              Transaction protection built in
-            </h3>
-            <p className="font-body text-on-surface-variant text-sm mt-2 mb-4">
+            <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Transaction protection built in</h3>
+            <p className="mt-2 mb-4 text-sm text-slate-300">
               Bookings are protected with deposit escrow, verification, and real rewards for honored appointments.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/checkout" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold text-sm shadow-sm hover:opacity-90 transition-opacity">
+              <Link to="/checkout" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Open checkout
               </Link>
-              <Link to="/how-it-works" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-surface border border-outline-variant/20 text-on-surface font-headline font-bold text-sm shadow-sm hover:bg-surface-container transition-colors">
+              <Link to="/how-it-works" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-colors hover:bg-white/10">
                 How it works
               </Link>
             </div>
@@ -769,22 +646,15 @@ export default function HomePage() {
         </section>
 
         {/* Social proof */}
-        <section ref={revealRef4} className="reveal pt-12 pb-24">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <section ref={revealRef4} className="reveal border-t border-white/5 pt-12 pb-24">
+          <div className="flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
             <div>
-              <h3 className="font-headline text-2xl font-black text-primary mb-2">
-                Join the Pabandi network
-              </h3>
-              <p className="font-body text-on-surface-variant text-sm max-w-xl">
-                Salons, clinics, fitness studios, and restaurants are moving to
-                Pabandi to protect their time, reduce no-shows, and reward loyal
-                customers.
+              <h3 className="mb-2 font-headline text-2xl font-black text-indigo-300">Join the Pabandi network</h3>
+              <p className="max-w-xl text-sm text-slate-300">
+                Salons, clinics, fitness studios, and restaurants are moving to Pabandi to protect their time, reduce no-shows, and reward loyal customers.
               </p>
             </div>
-            <Link
-              to="/auth"
-              className="bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary font-headline font-bold px-6 py-3 rounded-xl shadow-sm hover:opacity-90"
-            >
+            <Link to="/auth" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
               Get Started
             </Link>
           </div>
