@@ -5,6 +5,8 @@ import { ArrowLeftIcon, UserIcon, CheckCircleIcon, VideoCameraIcon } from '@hero
 import { businessService, reservationService, liveSellerService, passportService, popService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { tokens } from '../design-system';
+import { checkTrustActionAccess, type TrustActionAccess } from '../services/trustApi';
+import { getAuthToken } from '../utils/authToken';
 
 function getDraftReservationId(sellerId?: string) {
   if (!sellerId) return null;
@@ -28,6 +30,7 @@ export default function UniversalCheckoutPage() {
   const [dae, setDae] = useState<{ suggestedEscrowPercentage: number; trustFrictionScore: number; dAE_reason?: string } | null>(null);
   const [reservationId] = useState<string | null>(() => getDraftReservationId(sellerId));
   const [popStatus, setPopStatus] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     customerName: '',
     customerPhone: '',
@@ -117,6 +120,18 @@ export default function UniversalCheckoutPage() {
   const depositAmount = dae ? Math.round(baseDeposit * (dae.suggestedEscrowPercentage / 100)) : baseDeposit;
   const pabReward = liveState?.rewardPab || Math.round(form.priceCents / 100);
 
+  const { data: trustAccess } = useQuery<TrustActionAccess>(
+    ['trust-access', 'BOOKING'],
+    () => checkTrustActionAccess('BOOKING'),
+    { retry: false, enabled: typeof window !== 'undefined' ? Boolean(getAuthToken()) : false, staleTime: 1000 * 60 }
+  );
+
+  const trustDeniedReason = trustAccess?.allowed
+    ? null
+    : trustAccess?.missingStamps?.length
+      ? `Missing trust stamps: ${trustAccess.missingStamps.join(', ')}`
+      : 'Trust score requirement not met for booking.';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStep('confirm');
@@ -128,7 +143,13 @@ export default function UniversalCheckoutPage() {
       return;
     }
 
+    if (trustDeniedReason) {
+      alert(trustDeniedReason);
+      return;
+    }
+
     try {
+      setSubmitting(true);
       const payload: any = {
         businessId: sellerId,
         reservationDate: form.reservationDate,
@@ -159,6 +180,8 @@ export default function UniversalCheckoutPage() {
     } catch (err) {
       console.error('Booking failed', err);
       alert('Booking failed. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -372,6 +395,10 @@ export default function UniversalCheckoutPage() {
               {isAuthenticated ? 'Continue to confirm' : 'Log in to book'}
             </button>
 
+            {isAuthenticated && trustDeniedReason && (
+              <p className="text-[10px] sm:text-xs text-red-300 text-center mt-2">{trustDeniedReason}</p>
+            )}
+
             {!isAuthenticated && (
               <p className="text-[10px] sm:text-xs text-on-surface-variant text-center">
                 Log in or create an account to protect your booking with deposit escrow.
@@ -382,6 +409,24 @@ export default function UniversalCheckoutPage() {
 
         {step === 'confirm' && (
           <div className="space-y-6">
+            <div className="flex flex-col gap-3">
+              <div className={`rounded-2xl border p-4 sm:p-5 ${trustDeniedReason ? 'border-red-500/40 bg-red-500/10' : 'border-green-500/30 bg-green-500/10'}`}>
+                <h3 className="font-headline font-bold text-lg mb-1">Trust gate</h3>
+                <p className="text-sm text-on-surface-variant">
+                  This booking action requires trust verification.
+                </p>
+                <div className="mt-2 text-xs text-on-surface-variant">
+                  {trustDeniedReason ? (
+                    <span className="text-red-300 font-semibold">{trustDeniedReason}</span>
+                  ) : typeof trustAccess !== 'undefined' ? (
+                    <span className="text-green-200 font-semibold">Verified</span>
+                  ) : (
+                    <span>Checking access...</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-green-500/30 bg-green-500/10 p-5 sm:p-6">
               <h3 className="font-headline font-bold text-lg text-green-700 mb-2">Review your booking</h3>
               <div className="space-y-2 text-sm">
@@ -408,9 +453,10 @@ export default function UniversalCheckoutPage() {
               </button>
               <button
                 onClick={handleConfirmBooking}
-                className="flex-1 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-[#06b6d4] text-black font-headline font-bold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all"
+                disabled={submitting || Boolean(trustDeniedReason)}
+                className="flex-1 py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-green-500 to-[#06b6d4] text-black font-headline font-bold shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                Confirm booking
+                {submitting ? 'Submitting...' : 'Confirm booking'}
               </button>
             </div>
           </div>
