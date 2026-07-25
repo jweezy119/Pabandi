@@ -6,7 +6,7 @@ import { getPluginCatalog } from '../services/openwa.plugins.service';
 const router = Router();
 
 // GET /api/v1/openwa/sessions - list active OpenWA sessions
-router.get('/sessions', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/sessions', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const sessions = await openwaService.listSessions();
     res.json({ success: true, data: sessions });
@@ -16,7 +16,7 @@ router.get('/sessions', async (req: Request, res: Response, next: NextFunction) 
 });
 
 // GET /api/v1/openwa/plugins - list OpenWA plugins
-router.get('/plugins', (req: Request, res: Response, next: NextFunction) => {
+router.get('/plugins', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const plugins = listAdminPlugins();
     res.json({ success: true, data: plugins });
@@ -50,7 +50,7 @@ router.patch('/plugins/:id', (req: Request, res: Response, next: NextFunction) =
 });
 
 // GET /api/v1/openwa/plugins/available - List all available plugins from the catalog
-router.get('/plugins/available', (req: Request, res: Response, next: NextFunction) => {
+router.get('/plugins/available', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const catalog = getPluginCatalog();
     res.json({ success: true, data: catalog.plugins });
@@ -73,7 +73,7 @@ router.post('/plugins/:id/activate', (req: Request, res: Response, next: NextFun
 });
 
 // GET /api/v1/openwa/health - Get connection health of OpenWA
-router.get('/health', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const health = await openwaService.healthCheck();
     res.json({ success: true, data: health });

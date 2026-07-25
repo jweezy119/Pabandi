@@ -80,10 +80,10 @@ export const solanaEscrowService = {
     const user = await prisma.user.findUnique({
       where: { walletAddress: customerWallet }
     });
-    const trustScore = user ? user.trustScore : 50.0; // Default to 50 if user not registered
+    if (!user) {
+      throw new Error(`Oracle user not registered for wallet: ${customerWallet}`);
+    }
 
-    // V2: Verify the trust_score parameter inside the ix matches the db trustScore.
-    
     // Sign with the Oracle key
     transaction.sign([oracleKeypair]);
 
