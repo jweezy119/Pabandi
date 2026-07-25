@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import { aiNlpService } from '../services/ai.nlp.service';
 
 export async function checkAvailability(req: Request, res: Response, next: NextFunction) {
   try {
@@ -261,7 +260,7 @@ export async function connectProperty(req: Request, res: Response) {
  * GET /api/hospitality/properties
  * List all properties connected to the authenticated business.
  */
-export async function listProperties(req: Request, res: Response, next: NextFunction) {
+export async function listProperties(req: Request, res: Response) {
   try {
     const businessId = (req as any).user?.businessId || req.query.businessId as string || 'demo';
     const properties = await hospitalityService.getPropertiesByBusiness(businessId);
@@ -276,7 +275,7 @@ export async function listProperties(req: Request, res: Response, next: NextFunc
  * GET /api/hospitality/property/:id
  * Get a single connected property's details.
  */
-export async function getProperty(req: Request, res: Response, next: NextFunction) {
+export async function getProperty(req: Request, res: Response) {
   try {
     const property = await hospitalityService.getPropertyById(req.params.id);
     if (!property) return res.status(404).json({ error: 'Property not found' });
@@ -333,7 +332,7 @@ export async function getPropertyAvailability(req: Request, res: Response) {
  * POST /api/hospitality/test-booking
  * Simulate a test booking event for development/demo purposes.
  */
-export async function simulateBooking(req: Request, res: Response) {
+export async function simulateBooking(_req: Request, res: Response) {
   res.json({ success: true, message: "Simulated booking successful." });
 }
 
@@ -342,7 +341,7 @@ export async function simulateBooking(req: Request, res: Response) {
  * Connection health/capability status for the current business,
  * reusing the existing in-memory property registry instead of dead demo paths.
  */
-export async function getConnectionHealth(req: Request, res: Response, next: NextFunction) {
+export async function getConnectionHealth(req: Request, res: Response) {
   try {
     const businessId = (req as any).user?.businessId || req.query.businessId || 'demo';
     const health = await hospitalityService.getConnectionHealth(businessId);

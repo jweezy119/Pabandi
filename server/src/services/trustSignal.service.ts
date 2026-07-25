@@ -128,13 +128,6 @@ export class TrustSignalService {
     };
   }
 
-  private buildHeaderValue(phone: string): string {
-    const sid = process.env.TWILIO_ACCOUNT_SID || '';
-    const token = process.env.TWILIO_AUTH_TOKEN || '';
-    if (!sid || !token) return '';
-    return 'Authorization: ' + 'Basic ' + Buffer.from(sid + ':' + token).toString('base64');
-  }
-
   private async checkBreachExposure(email: string): Promise<boolean> {
     try {
       const resp = await fetch(

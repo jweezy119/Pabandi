@@ -239,8 +239,7 @@ export const getUsage = async (
 
 export const channexWebhook = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   try {
     const payload = req.body;

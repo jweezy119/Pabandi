@@ -1,6 +1,5 @@
 import { prisma } from '../utils/database';
 import { isDemoMode, web3RequiredEnv, web3ContractAddress, web3ExplorerBase } from '../utils/env';
-import { logger } from '../utils/logger';
 
 const chainLabel = web3RequiredEnv().chain;
 const explorerBase = web3ExplorerBase();
@@ -20,8 +19,8 @@ export const createReservationEscrow = async (reservationId: string, options?: {
     return { success: false as const, error: 'Reservation not found' };
   }
 
-  const business = await prisma.business.findUnique({ where: { id: reservation.businessId } });
-  const amount = options?.amount || reservation.depositAmount || 0;
+  const _business = await prisma.business.findUnique({ where: { id: reservation.businessId } });
+  const _amount = options?.amount || reservation.depositAmount || 0;
 
   if (isDemoMode()) {
     const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;

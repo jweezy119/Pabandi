@@ -1,6 +1,5 @@
 import { prisma } from '../utils/database';
 import { cryptoService } from './cryptoService';
-import { logger } from '../utils/logger';
 import crypto from 'crypto';
 
 export interface TrustAttestation {

@@ -1,5 +1,4 @@
 import { LRUCache } from 'lru-cache';
-import { logger } from '../utils/logger';
 
 class CacheService {
   private networkCache: LRUCache<string, any>;
