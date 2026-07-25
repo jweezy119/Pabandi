@@ -9,8 +9,15 @@ This captures the highest-signal efficiency and safety fixes found from enabling
   - `noImplicitReturns`
 - Verified client `tsc --noEmit` remains clean after shared `getAuthToken()` helper rollout.
 - Frontend trust components now route token gating through `client/src/utils/authToken.ts` instead of scattered `localStorage.getItem('token')` calls.
+- Added shared `server/src/utils/apiResponse.ts` helpers `ok()` and `fail()` for typed API envelopes.
 
-## Top improvement clusters
+## Completed patches
+- `server/src/controllers/checkout.controller.ts` - standardized response wrappers with `ok()`/`fail()`.
+- `server/src/controllers/trust.controller.ts` - added strict response interfaces for public trust endpoints.
+- `server/src/controllers/external.controller.ts` - migrated loose `res.status(...).json({...})` success/error wrappers to shared helpers.
+- `server/src/controllers/hospitality.controller.ts` - migrated JSON-API responses to `ok()`/`fail()`; fixed Beds24/Cloudbeds webhook success paths to preserve existing timing.
+
+## Remaining improvement clusters
 1. **Unused imports/code removal**
    - Most common: `req`, `res`, `next`, domain services imported but never referenced.
    - High-volume files: `src/controllers/*`, `src/services/*`, `src/routes/*`.
@@ -36,12 +43,11 @@ This captures the highest-signal efficiency and safety fixes found from enabling
    - OSM / LocationIQ / Overpass search + caching is split between `controllers/business.controller.ts` and `routes/business.routes.ts`.
    - Move to `services/businessSearch.service.ts` plus mapper/cache helpers.
 
-## Suggested first patch targets
+## Suggested next patch targets
 - `src/services/trustAttestation.service.ts` - unused `logger`
 - `src/services/trustSignal.service.ts` - unused `buildHeaderValue` and param
 - `src/controllers/badge.service.ts(162)` - unused `breakdown`
 - `src/services/cryptoService.ts(597,642)` - unused vars
-- `src/services/hospitalityService.ts(339,351,366,381)` - unused `property`
 - `src/controllers/trust.controller.ts` - unused imports + return paths
 - `src/controllers/admin.controller.ts` - unused imports + return paths
 - `src/routes/livesell.routes.ts` - console → logger + implicit returns
