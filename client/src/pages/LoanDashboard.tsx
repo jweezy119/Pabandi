@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { loanService } from '../services/api';
 import { CurrencyDollarIcon, BanknotesIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 export default function LoanDashboard() {
   const [usdcAmount, setUsdcAmount] = useState<number | ''>('');
@@ -31,11 +32,11 @@ export default function LoanDashboard() {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-on-surface-variant font-headline">Loading DeFi Profile...</div>;
+    return <div className="p-8 text-center font-headline" style={{ background: tokens.color.background, color: tokens.color.text }}>Loading DeFi Profile...</div>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20 font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-on-surface font-headline tracking-tight">Halal DeFi Lending</h1>
