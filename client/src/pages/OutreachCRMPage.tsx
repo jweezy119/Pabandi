@@ -11,6 +11,7 @@ import {
   PlayIcon,
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -243,7 +244,7 @@ const OutreachCRMPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f0a] text-white">
+    <div className="min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
 
         <div className="flex items-center justify-between mb-8">
