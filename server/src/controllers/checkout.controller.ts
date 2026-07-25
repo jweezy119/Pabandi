@@ -158,6 +158,32 @@ export const completeCheckoutSession = async (req: Request, res: Response) => {
       }
     }
 
+    // Pabandi Blended Yield & FX Router Integration
+    // Route idle escrow funds into validation-as-a-service infrastructure
+    try {
+      const { yieldService } = await import('../services/yield.service');
+      const tier = updatedSession.amount > 1000 ? 'INSTITUTIONAL' : 'RETAIL';
+      
+      const stakingPos = await yieldService.orchestrateStaking(
+        updatedSession.amount, 
+        updatedSession.currency, 
+        tier
+      );
+      
+      await prisma.checkoutSession.update({
+        where: { id },
+        data: {
+          metadata: {
+            ...(updatedSession.metadata as any),
+            yieldPositionId: stakingPos.id,
+            yieldStatus: stakingPos.status
+          }
+        }
+      });
+    } catch (err) {
+      logger.error('Failed to orchestrate staking yield:', err);
+    }
+
     const redirectUrl = new URL(updatedSession.successUrl);
     redirectUrl.searchParams.append('session_id', updatedSession.id);
     redirectUrl.searchParams.append('status', 'success');
