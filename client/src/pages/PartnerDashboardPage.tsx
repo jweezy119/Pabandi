@@ -7,7 +7,7 @@ import {
   ArrowTrendingUpIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
-import { Surface, Button } from '../design-system';
+import { Surface, Button, tokens } from '../design-system';
 
 function StatChip({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
   return (
@@ -45,7 +45,7 @@ export default function PartnerDashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#020617] text-white">
+    <div className="flex min-h-screen flex-col" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8 md:mb-8 flex flex-col gap-6 sm:gap-8">
         <div className="flex flex-col gap-2">
           <h1 className="font-headline text-[2rem] font-bold tracking-tight text-indigo-300">Growth Partner Hub</h1>
