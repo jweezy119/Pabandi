@@ -38,6 +38,61 @@ function mapTierToUI(score: number) {
   return 'BRONZE';
 }
 
+export interface TrustProfileResponseData {
+  score: number;
+  tier: string;
+  uiTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  methodology?: string;
+  trustVelocity?: unknown;
+  attestation?: unknown;
+}
+
+export interface TrustAuditTimelineItem {
+  date: string;
+  pointsDelta: number;
+  reason: string;
+  severity: string;
+  component: string;
+  previousScore: number;
+  newScore: number;
+}
+
+export interface TrustActionRequirementResponseData {
+  action: string;
+  requiredScore: number;
+  requiredStamps: string[];
+}
+
+export interface TrustActionAccessResponseData {
+  allowed: boolean;
+  action: string;
+  score: number;
+  requiredScore: number;
+  missingStamps: string[];
+  reason?: string;
+}
+
+export interface TrustStampResponse {
+  id: string;
+  userId: string;
+  stampType: string;
+  weight: number;
+  issuer?: string;
+  context?: string;
+  attestationHash: string;
+  revoked: boolean;
+  issuedAt: string;
+  effectiveWeight?: number;
+  isTrusted?: boolean;
+  isExpired?: boolean;
+}
+
+export interface GuestEscrowEventResponse {
+  success: boolean;
+  recorded: boolean;
+  eventType: string;
+}
+
 export const getMyTrustProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const user = resolveCurrentUser(req);
@@ -53,7 +108,7 @@ export const getMyTrustProfile = async (req: AuthRequest, res: Response, next: N
     const attestation = await trustAttestationService.issue(user.id);
     const velocity = await trustScoreService.computeVelocity(user.id);
 
-    res.json({
+    const payload = {
       success: true,
       data: {
         score: fullUser.trustScore,
@@ -62,8 +117,10 @@ export const getMyTrustProfile = async (req: AuthRequest, res: Response, next: N
         methodology: '1.0.0',
         attestation,
         trustVelocity: velocity,
-      },
-    });
+      } as TrustProfileResponseData,
+    };
+
+    res.json(payload);
   } catch (error) {
     next(error);
   }
@@ -92,8 +149,8 @@ export const getMyTrustAuditTimeline = async (req: AuthRequest, res: Response, n
       },
     });
 
-    const timeline = audits.map((a) => ({
-      date: a.createdAt,
+    const timeline: TrustAuditTimelineItem[] = audits.map((a) => ({
+      date: a.createdAt.toISOString(),
       pointsDelta: Math.round((a.newScore - a.previousScore) * 10) / 10,
       reason: a.changeReason,
       severity: a.severity,
@@ -117,14 +174,16 @@ export const getActionRequirements = async (req: AuthRequest, res: Response, nex
       return res.status(404).json({ success: false, message: `Unknown trust action: ${action}` });
     }
 
-    res.json({
+    const payload = {
       success: true,
       data: {
         action,
         requiredScore: requirement.score,
         requiredStamps: requirement.reasons,
-      },
-    });
+      } as TrustActionRequirementResponseData,
+    };
+
+    res.json(payload);
   } catch (error) {
     next(error);
   }
@@ -159,7 +218,7 @@ export const checkMyActionAccess = async (req: AuthRequest, res: Response, next:
         severity: 'neutral',
       }).catch(() => undefined);
 
-      return res.json({
+      const payload = {
         success: true,
         data: {
           allowed: false,
@@ -168,11 +227,13 @@ export const checkMyActionAccess = async (req: AuthRequest, res: Response, next:
           requiredScore: requirement.score,
           missingStamps: requirement.reasons,
           reason: `Minimum trust score ${requirement.score} is required for ${action}.`,
-        },
-      });
+        } as TrustActionAccessResponseData,
+      };
+
+      return res.json(payload);
     }
 
-    res.json({
+    const payload = {
       success: true,
       data: {
         allowed: true,
@@ -180,8 +241,10 @@ export const checkMyActionAccess = async (req: AuthRequest, res: Response, next:
         score,
         requiredScore: requirement.score,
         missingStamps: [],
-      },
-    });
+      } as TrustActionAccessResponseData,
+    };
+
+    res.json(payload);
   } catch (error) {
     next(error);
   }
@@ -200,7 +263,7 @@ export const getMyTrustStamps = async (req: AuthRequest, res: Response, next: Ne
       prisma.business.count({ where: { ownerId: user.id } }),
     ]);
 
-    const stamps = [
+    const stamps: TrustStampResponse[] = [
       {
         id: `local::booking_history::${user.id}`,
         userId: user.id,
@@ -280,7 +343,7 @@ export const createMyTrustStamp = async (req: AuthRequest, res: Response, next: 
       metadata: { context, origin: 'api', issuedAt: new Date().toISOString() },
     });
 
-    const stamp = {
+    const stamp: TrustStampResponse = {
       id: `stub::${stampType}::${user.id}::${Date.now()}`,
       userId: user.id,
       stampType,
@@ -295,7 +358,7 @@ export const createMyTrustStamp = async (req: AuthRequest, res: Response, next: 
       isExpired: false,
     };
 
-    res.status(201).json({ success: true, data: stamp });
+    res.status(201).json({ success: true, data: stamp } as { success: true; data: TrustStampResponse });
   } catch (error) {
     next(error);
   }
@@ -325,7 +388,13 @@ export const recordGuestEscrowEvent = async (req: AuthRequest, res: Response, ne
       }).catch(() => undefined);
     }
 
-    res.json({ success: true, recorded: true, eventType: payload.eventType });
+    const response: GuestEscrowEventResponse = {
+      success: true,
+      recorded: true,
+      eventType: payload.eventType,
+    };
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
