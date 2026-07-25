@@ -594,7 +594,7 @@ export class CryptoService {
       const contract = new ethers.Contract(PABANDI_POV_BSC, POV_ABI, wallet);
 
       const tx = await contract.mintProofOfVisit(customerWallet, businessId, businessName);
-      const receipt = await tx.wait();
+      await tx.wait();
       
       logger.info(`[POV] Minted Proof of Visit for ${customerWallet} at ${businessName}. Tx: ${tx.hash}`);
       
@@ -637,11 +637,6 @@ export class CryptoService {
     } as const;
 
     return buckets[type];
-  }
-
-  private closePoolBucket(rewardType: RewardType): 'LP_PROVISION' | 'YIELD_REINVEST' | undefined {
-    if (rewardType === 'BUSINESS_RESERVATION_HONORED') return 'LP_PROVISION';
-    return 'YIELD_REINVEST';
   }
 
   async creditTreasury(amount: number, bucket: 'OPERATING' | 'LP_PROVISION' | 'YIELD_REINVEST' | 'EMERGENCY') {
