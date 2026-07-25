@@ -1,3 +1,4 @@
+import { tokens } from '../design-system';
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
@@ -317,7 +318,7 @@ export default function NewReservationPage() {
 
   if (success) {
     return (
-      <div className="bg-surface min-h-screen text-on-surface flex items-center justify-center p-6">
+      <div className="flex items-center justify-center p-6 min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
             <CheckCircleIcon className="h-10 w-10" />

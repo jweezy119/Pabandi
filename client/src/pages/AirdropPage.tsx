@@ -1,3 +1,4 @@
+import { tokens } from '../design-system';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -88,7 +89,7 @@ export const AirdropPage: React.FC = () => {
   const pctOfMax = Math.round((earnedPab / MAX_PAB) * 100);
 
   return (
-    <div className="min-h-screen bg-[#020817] text-white relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
       {/* Orbs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-emerald-500 rounded-full blur-[200px] opacity-[0.07] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-violet-600 rounded-full blur-[150px] opacity-[0.05] pointer-events-none" />
