@@ -1,9 +1,9 @@
 import Stripe from 'stripe';
 import { logger } from '../utils/logger';
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2026-06-24.dahlia',
+const getStripeKey = () => process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder';
+const stripe = new Stripe(getStripeKey(), {
+  apiVersion: '2026-06-24.dahlia' as any,
 });
 
 export const stripeService = {
@@ -28,7 +28,7 @@ export const stripeService = {
     const success = successUrl || `${frontendUrl}/reservations?stripe_success=true&ref=${reservationId}`;
     const cancel = cancelUrl || `${frontendUrl}/reservations?stripe_cancel=true&ref=${reservationId}`;
 
-    if (!stripeSecretKey) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       logger.warn('STRIPE_SECRET_KEY not set');
       return `${frontendUrl}/reservations?stripe_disabled=true&ref=${reservationId}`;
     }
@@ -87,7 +87,7 @@ export const stripeService = {
    * Refund a Stripe PaymentIntent.
    */
   async refundDeposit(paymentIntentId: string, amountCents?: number): Promise<boolean> {
-    if (!stripeSecretKey) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       logger.warn('STRIPE_SECRET_KEY not set — skipping Stripe refund');
       return true;
     }
