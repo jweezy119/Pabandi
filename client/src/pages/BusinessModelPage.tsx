@@ -1,3 +1,4 @@
+import { tokens } from '../design-system';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -35,7 +36,7 @@ export default function BusinessModelPage() {
   const premiumPrice = billingInterval === 'yearly' ? Math.round(premiumBasePrice * 0.8) : premiumBasePrice;
 
   return (
-    <div style={{ background: '#0a0f1a', color: '#e8edf2' }} className="min-h-screen pb-20 sm:pb-24 md:pb-16 font-body">
+    <div style={{ background: tokens.color.background, color: tokens.color.text }} className="min-h-screen pb-20 sm:pb-24 md:pb-16 font-body">
       {/* Hero Banner */}
       <section 
         className="relative overflow-hidden py-20 px-4 text-center border-b border-white/10"

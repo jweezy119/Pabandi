@@ -1,3 +1,4 @@
+import { tokens } from '../design-system';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
@@ -221,7 +222,7 @@ export default function BusinessProfilePage() {
     const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
     return (
-      <div className="bg-surface min-h-screen text-on-surface flex items-center justify-center p-6 font-body">
+      <div className="flex items-center justify-center p-6 font-body min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
             <ShieldCheckIcon className="h-10 w-10 text-primary" />
@@ -363,7 +364,7 @@ export default function BusinessProfilePage() {
   };
 
   return (
-    <div className="bg-surface min-h-screen text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+    <div className="font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <LocalBusinessJsonLd business={business || {}} />
 
       {/* Cover Hero Banner */}
