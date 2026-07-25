@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 export default function AccountManagerDashboard() {
   const { user } = useAuthStore();
@@ -64,7 +65,7 @@ export default function AccountManagerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
@@ -73,7 +74,7 @@ export default function AccountManagerDashboard() {
   // Not registered as an AM
   if (!summary) {
     return (
-      <div className="min-h-screen bg-surface p-6 sm:p-12 flex flex-col items-center">
+      <div className="min-h-screen p-6 sm:p-12 flex flex-col items-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="max-w-2xl w-full bg-surface-container-lowest border border-outline-variant/30 p-8 rounded-3xl shadow-sm text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
           <h1 className="text-3xl font-black text-on-surface font-headline mb-4 relative z-10">
@@ -97,7 +98,7 @@ export default function AccountManagerDashboard() {
   const referralLink = `${window.location.origin}/register?role=business&ref=${summary.referralCode}`;
 
   return (
-    <div className="min-h-screen bg-surface p-4 sm:p-8">
+    <div className="min-h-screen p-4 sm:p-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header Section */}

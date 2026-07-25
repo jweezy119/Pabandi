@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { socialService } from '../services/api';
 import DownloadableTrustBadge from '../components/DownloadableTrustBadge';
+import { tokens } from '../design-system';
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -348,7 +349,7 @@ export default function TrustPage() {
   };
 
   return (
-    <div style={{ background: '#020617', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ background: tokens.color.background, minHeight: '100vh', color: tokens.color.text, fontFamily: 'Inter, system-ui, sans-serif' }}>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <section ref={heroRef} style={{ padding: '80px 24px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>

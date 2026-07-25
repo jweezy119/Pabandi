@@ -9,6 +9,7 @@ import {
   ShieldCheckIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 const FAQ = [
   {
@@ -56,7 +57,7 @@ export default function LiveSellCustomerPage() {
   const products = (catalog || []).filter((it: any) => it.active !== false);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body mobile-safe-bottom">
+    <div className="min-h-screen font-body mobile-safe-bottom" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-12">
 
         {/* ── HERO ───────────────────────────────────────────────────── */}
