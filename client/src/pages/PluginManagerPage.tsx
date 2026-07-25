@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Shield, MessageCircle, Clock, Zap, Settings, Activity } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { tokens } from '../design-system';
 
 export const PluginManagerPage = () => {
   const { user } = useAuthStore();
@@ -65,7 +66,7 @@ export const PluginManagerPage = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="mb-8 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
