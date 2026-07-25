@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -1105,6 +1105,65 @@ model ReferralPayout {
 
   profile AccountManagerProfile @relation(fields: [profileId], references: [id])
   ledgers ReferralLedger[]
+}
+
+model OfframpIntent {
+  id               String   @id @default(cuid())
+  customerWallet   String
+  businessId       String?
+  amountUsdc       Float
+  minRatePkr       Float
+  destinationType  String   // JazzCash|Easypaisa|Raast|bank
+  destinationRef   String
+  lockedTxHash     String?
+  status           String   @default("PENDING_LP") // PENDING_LP|MATCHED|PROOF_SUBMITTED|SETTLED|REFUNDED|DISPUTED
+  requestedAt      DateTime @default(now())
+  matchedAt        DateTime?
+  settledAt        DateTime?
+  expiresAt        DateTime?
+  lpWallet         String?
+  feePct           Float    @default(0.85)
+  quotePkr         Float?
+  metadata         Json?
+
+  @@index([customerWallet])
+  @@index([status])
+}
+
+model OfframpProof {
+  id            String   @id @default(cuid())
+  intentId      String
+  lpWallet      String
+  imageBase64   String
+  plainTextExtract Json?
+  verifyResult  Json
+  confidence    Float
+  status        String   @default("PENDING") // PENDING|ACCEPTED|REJECTED|DISPUTED
+  submittedAt   DateTime @default(now())
+  verifiedAt    DateTime?
+
+  @@index([intentId])
+}
+
+model LiquidityProvider {
+  id              String   @id @default(cuid())
+  walletAddress   String   @unique
+  displayName     String?
+  raastId         String?
+  jazzCashAccount String?
+  bankIban        String?
+  pkrReserveUsd   Float    @default(0)
+  collateralUsdc  Float    @default(0)
+  trustScore      Float    @default(40)
+  tier            String   @default("BRONZE") // BRONZE|SILVER|GOLD|ELITE
+  maxSingleUsdc   Float    @default(500)
+  dailyLimitUsdc  Float    @default(2000)
+  isActive        Boolean  @default(true)
+  pvaraLicense    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([walletAddress])
 }
 
 enum PmsProvider {
