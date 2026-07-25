@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
-import toast from 'react-hot-toast';
+import { Surface, Button, tokens } from '../design-system';
+import { toast } from 'react-hot-toast';
 
 export default function DietaryPassportPage() {
   const { user, updateProfile } = useAuthStore();
@@ -34,7 +35,7 @@ export default function DietaryPassportPage() {
       });
       
       toast.success('Zero-Knowledge Passport saved securely.');
-      updateProfile({ encryptedDietaryData: encryptedBackup }); // Refresh user state
+      updateProfile({ encryptedDietaryData: encryptedBackup });
     } catch (error) {
       console.error(error);
       toast.error('Failed to save passport.');
@@ -44,23 +45,26 @@ export default function DietaryPassportPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Dietary & Preference Passport</h1>
-      <p className="text-gray-600 mb-8">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8 font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
+      <h1 className="font-headline mb-6 text-3xl font-bold text-on-surface">
+        Dietary & Preference Passport
+      </h1>
+      <p className="mb-8" style={{ color: tokens.color.muted }}>
         Your dietary preferences are encrypted locally using Zero-Knowledge architecture. 
         Pabandi servers cannot read this data. It is only decrypted by the restaurant when you book a table.
       </p>
 
-      <div className="bg-white shadow rounded-lg p-6">
+      <Surface className="p-6">
         <form onSubmit={handleSave} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-on-surface">
               Allergies & Restrictions
             </label>
-            <div className="mt-1">
+            <div>
               <textarea
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors"
+                style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }}
                 placeholder="e.g., Peanuts, Gluten, Shellfish"
                 value={allergies}
                 onChange={(e) => setAllergies(e.target.value)}
@@ -69,13 +73,14 @@ export default function DietaryPassportPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-on-surface">
               Dining Preferences
             </label>
-            <div className="mt-1">
+            <div>
               <textarea
                 rows={3}
-                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors"
+                style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }}
                 placeholder="e.g., Preferred seating, spice tolerance"
                 value={preferences}
                 onChange={(e) => setPreferences(e.target.value)}
@@ -84,24 +89,20 @@ export default function DietaryPassportPage() {
           </div>
 
           {user?.encryptedDietaryData && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-700">
+            <div className="rounded-xl border p-4" style={{ background: 'rgba(34,197,94,0.08)', borderColor: 'rgba(34,197,94,0.25)' }}>
+              <p className="text-sm text-emerald-300">
                 ✅ Your passport is currently secured and backed up.
               </p>
             </div>
           )}
 
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
+            <Button type="submit" disabled={loading}>
               {loading ? 'Encrypting & Saving...' : 'Save Encrypted Passport'}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Surface>
     </div>
   );
 }

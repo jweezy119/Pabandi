@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { tokens } from '../design-system';
 
 /**
  * This page handles the redirect from the backend after Google OAuth.
@@ -41,11 +42,10 @@ export default function AuthCallbackPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center"
-      style={{ background: 'var(--color-bg)' }}>
+    <div className="flex min-h-screen items-center justify-center" style={{ background: tokens.color.background }}>
       <div className="text-center">
-        <div className="w-10 h-10 border-2 border-[#0ea5e955] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm text-[#757575]" >Completing sign-in…</p>
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-[#0ea5e955] border-t-transparent" />
+        <p className="text-sm" style={{ color: tokens.color.muted }}>Completing sign-in…</p>
       </div>
     </div>
   );
