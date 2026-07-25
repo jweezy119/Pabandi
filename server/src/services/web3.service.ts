@@ -19,8 +19,6 @@ export const createReservationEscrow = async (reservationId: string, options?: {
     return { success: false as const, error: 'Reservation not found' };
   }
 
-  const _business = await prisma.business.findUnique({ where: { id: reservation.businessId } });
-  const _amount = options?.amount || reservation.depositAmount || 0;
 
   if (isDemoMode()) {
     const mockTxHash = `escrow_init_${Date.now()}_${Math.random().toString(36).substring(7)}`;
