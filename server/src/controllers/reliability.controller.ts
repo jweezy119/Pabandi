@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { reliabilityService } from '../services/reliability.service';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 
-export const getGuidelines = async (req: Request, res: Response) => {
+export const getGuidelines = async (_req: Request, res: Response) => {
   try {
     const guidelines = {
       description: "Pabandi uses the Global Trust Protocol, an industry-agnostic Elo-based scoring algorithm.",

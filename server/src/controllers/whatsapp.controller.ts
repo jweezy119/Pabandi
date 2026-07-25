@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { processWhatsAppMessage, findBusinessByPublicPhone, sendWhatsAppMessage } from '../services/ai.service';
+import { processWhatsAppMessage, findBusinessByPublicPhone } from '../services/ai.service';
 import { whatsAppSmartService } from '../services/whatsapp.smart.service';
 import { saveConversationSignal } from '../services/whatsapp.conversation.service';
 import { prisma } from '../utils/database';

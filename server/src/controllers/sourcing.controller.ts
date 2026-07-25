@@ -137,9 +137,6 @@ export const consultAdvisor = async (req: Request, res: Response) => {
 
     // Get simple metrics for context
     const totalReservations = await prisma.reservation.count({ where: { businessId: business.id } });
-    const completedReservations = await prisma.reservation.count({
-      where: { businessId: business.id, status: 'COMPLETED' }
-    });
     const noShowReservations = await prisma.reservation.count({
       where: { businessId: business.id, status: 'NO_SHOW' }
     });

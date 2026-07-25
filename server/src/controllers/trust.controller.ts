@@ -4,6 +4,7 @@ import { trustAttestationService } from '../services/trustAttestation.service';
 import { trustScoreService } from '../services/trustScore.service';
 import { trustAuditWriter } from '../services/trustAuditWriter';
 import type { AuthRequest } from '../middleware/auth.middleware';
+import { fail, ok } from '../utils/apiResponse';
 
 const ATTEMPT_REASON_MAP: Record<string, string> = {
   BOOKING: 'booking.access.check',
@@ -366,35 +367,33 @@ export const createMyTrustStamp = async (req: AuthRequest, res: Response, next: 
 
 export const recordGuestEscrowEvent = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const payload = req.body as { eventType?: string };
+    const { eventType } = req.body ?? {};
 
-    if (!payload?.eventType) {
-      return res.status(400).json({ success: false, message: 'eventType is required' });
+    if (!eventType) {
+      return fail(res, 'eventType is required', 400);
     }
 
-    const weight = payload.eventType === 'DISPUTE_LOST' ? -15 : payload.eventType === 'APPOINTMENT_HONORED' ? 5 : 0;
+    const weight = eventType === 'DISPUTE_LOST' ? -15 : eventType === 'APPOINTMENT_HONORED' ? 5 : 0;
 
     if (weight !== 0) {
       await trustAuditWriter.enqueue({
         userId: (req.user?.id as string) || 'guest',
         previousScore: 0,
         newScore: weight,
-        changeReason: `guest.escrow.event:${payload.eventType}`,
+        changeReason: `guest.escrow.event:${eventType}`,
         component: 'guest_escrow',
         severity: weight > 0 ? 'positive' : 'negative',
         weightUsed: weight,
         methodology: '1.0.0',
-        metadata: payload,
+        metadata: { eventType },
       }).catch(() => undefined);
     }
 
-    const response: GuestEscrowEventResponse = {
+    return ok(res, {
       success: true,
       recorded: true,
-      eventType: payload.eventType,
-    };
-
-    res.json(response);
+      eventType,
+    });
   } catch (error) {
     next(error);
   }
