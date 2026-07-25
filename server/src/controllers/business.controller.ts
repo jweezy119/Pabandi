@@ -9,6 +9,7 @@ import { osintService } from '../services/osint.service';
 import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
 import crypto from 'crypto';
+import { fail, ok } from '../utils/apiResponse';
 
 export const createBusiness = async (
   req: AuthRequest,
@@ -105,11 +106,7 @@ export const createBusiness = async (
       logger.error('Background OSINT check failed', err);
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'Business created successfully',
-      data: { business, user },
-    });
+    return ok(res, { business, user }, 201);
   } catch (error) {
     next(error);
   }
@@ -326,16 +323,10 @@ export const getBusiness = async (
         longitude: business.longitude,
       };
 
-      return res.json({
-        success: true,
-        data: { business: publicBusiness },
-      });
+      return ok(res, { business: publicBusiness });
     }
 
-    res.json({
-      success: true,
-      data: { business },
-    });
+    return ok(res, { business });
   } catch (error) {
     next(error);
   }
@@ -1006,7 +997,7 @@ export const getBusinessServices = async (req: AuthRequest, res: Response, next:
       where: { businessId, isActive: true },
       orderBy: { createdAt: 'asc' }
     });
-    res.json({ success: true, data: { services } });
+    return ok(res, { services });
   } catch (error) {
     next(error);
   }
@@ -1019,7 +1010,7 @@ export const createBusinessService = async (req: AuthRequest, res: Response, nex
     const business = await prisma.business.findUnique({ where: { id } });
 
     if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+      return fail(res, 'Not authorized', 403);
     }
 
     const service = await prisma.businessService.create({
@@ -1032,7 +1023,7 @@ export const createBusinessService = async (req: AuthRequest, res: Response, nex
         isActive: isActive !== undefined ? isActive : true
       }
     });
-    res.json({ success: true, data: { service } });
+    return ok(res, { service });
   } catch (error) {
     next(error);
   }
@@ -1063,7 +1054,7 @@ export const updateBusinessService = async (req: AuthRequest, res: Response, nex
         ...(isActive !== undefined && { isActive }),
       }
     });
-    res.json({ success: true, data: { service } });
+    return ok(res, { service });
   } catch (error) {
     next(error);
   }
@@ -1075,18 +1066,18 @@ export const deleteBusinessService = async (req: AuthRequest, res: Response, nex
     const business = await prisma.business.findUnique({ where: { id } });
 
     if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'ADMIN')) {
-      return res.status(403).json({ success: false, message: 'Not authorized' });
+      return fail(res, 'Not authorized', 403);
     }
 
     const existingService = await prisma.businessService.findUnique({ where: { id: serviceId } });
     if (!existingService || existingService.businessId !== id) {
-      return res.status(404).json({ success: false, message: 'Service not found in this business' });
+      return fail(res, 'Service not found in this business', 404);
     }
 
     await prisma.businessService.delete({
       where: { id: serviceId }
     });
-    res.json({ success: true, message: 'Service deleted' });
+    return ok(res, { message: 'Service deleted' });
   } catch (error) {
     next(error);
   }
