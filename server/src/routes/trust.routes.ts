@@ -1,12 +1,25 @@
 import { Router } from 'express';
-import { getPublicTrustProfile, getTrustAuditTimeline } from '../controllers/trust.controller';
+import {
+  getMyTrustProfile,
+  getMyTrustAuditTimeline,
+  getMyTrustStamps,
+  createMyTrustStamp,
+  getActionRequirements,
+  checkMyActionAccess,
+  recordGuestEscrowEvent,
+} from '../controllers/trust.controller';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Public endpoint for third-parties to verify a user's trust score
-router.get('/public/:userId', getPublicTrustProfile);
+router.get('/public/:userId', getMyTrustProfile);
+router.get('/audit/:userId', getMyTrustAuditTimeline);
 
-// Get the audit timeline (could be protected by auth, but left open for demo)
-router.get('/audit/:userId', getTrustAuditTimeline);
+router.get('/score/me', authenticate, getMyTrustProfile);
+router.get('/stamps/me', authenticate, getMyTrustStamps);
+router.post('/stamps/issue', authenticate, createMyTrustStamp);
+router.get('/requirements/:action', getActionRequirements);
+router.post('/action/:action/check', authenticate, checkMyActionAccess);
+router.post('/guest/escrow-event', recordGuestEscrowEvent);
 
 export default router;
