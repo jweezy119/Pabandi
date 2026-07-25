@@ -6,7 +6,7 @@ import { fail, ok } from '../utils/apiResponse';
 
 // ─── GET /admin/stats ───────────────────────────────────────────────
 
-export const getAdminStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getAdminStats = async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const [
       totalUsers,
@@ -185,7 +185,7 @@ export const updateUserRole = async (req: AuthRequest, res: Response, next: Next
 
 // ─── GET /admin/openwa/plugins ─────────────────────────────────────
 
-export const getOpenwaPlugins = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getOpenwaPlugins = async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const plugins = listAdminPlugins();
     return ok(res, { plugins, source: 'openwa_catalog' });
@@ -219,7 +219,7 @@ export const updateOpenwaPlugin = async (req: AuthRequest, res: Response, next: 
 
 // ─── GET /admin/profile-requests ─────────────────────────────────────
 
-export const getProfileRequests = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getProfileRequests = async (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const requests = await prisma.profileChangeRequest.findMany({
       where: { status: 'PENDING' },
