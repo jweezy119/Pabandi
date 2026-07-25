@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { tokens } from '../design-system';
 import { CheckCircleIcon, ShieldCheckIcon, BuildingStorefrontIcon, ArrowRightIcon, StarIcon } from '@heroicons/react/24/outline';
 
 const CITY_DATA: Record<string, {
@@ -47,7 +48,7 @@ export const CityLandingPage: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#020817] text-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="text-center">
           <h1 className="text-4xl font-black mb-4">City Not Found</h1>
           <Link to="/" className="text-emerald-400 hover:underline">← Back to Home</Link>
@@ -71,7 +72,7 @@ export const CityLandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020817] text-white relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
       {/* Orbs */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[180px] opacity-[0.08] pointer-events-none" style={{ background: data.heroColor }} />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-[140px] opacity-[0.06] pointer-events-none" />
