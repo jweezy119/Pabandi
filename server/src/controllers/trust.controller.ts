@@ -1,9 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { trustAttestationService } from '../services/trustAttestation.service';
 import { trustScoreService } from '../services/trustScore.service';
 import { trustAuditWriter } from '../services/trustAuditWriter';
-import { trustSignalService } from '../services/trustSignal.service';
 import type { AuthRequest } from '../middleware/auth.middleware';
 
 const ATTEMPT_REASON_MAP: Record<string, string> = {

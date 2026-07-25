@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { tokens } from '../design-system';
 import { checkTrustActionAccess, type TrustActionAccess } from '../services/trustApi';
+import { getAuthToken } from '../utils/authToken';
 
 type TrustGateProps = {
   action: 'BOOKING' | 'REVIEW' | 'AIRDROP_CLAIM' | 'REFERRAL_ACTIVATE' | 'TAP_PAY_CHECKOUT' | 'WAITLIST_JOIN';
@@ -11,9 +12,7 @@ type TrustGateProps = {
 export function TrustGate({ action, children, fallback }: TrustGateProps) {
   const { data, isLoading, error } = useQuery(['trust-access', action], () => checkTrustActionAccess(action), {
     retry: false,
-    enabled:
-      typeof window !== 'undefined' &&
-      Boolean(localStorage.getItem('token')),
+    enabled: typeof window !== 'undefined' ? Boolean(getAuthToken()) : false,
     staleTime: 1000 * 60,
   });
 

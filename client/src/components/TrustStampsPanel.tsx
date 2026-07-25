@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { tokens } from '../design-system';
 import { listMyTrustStamps, type TrustStamp } from '../services/trustApi';
+import { getAuthToken } from '../utils/authToken';
 
 type TrustStampsPanelProps = {
   title?: string;
@@ -43,7 +44,7 @@ export function TrustStampsPanel({
 }: TrustStampsPanelProps) {
   const { data, isLoading, error } = useQuery(['trust-stamps'], () => listMyTrustStamps(), {
     retry: false,
-    enabled: typeof window !== 'undefined' && Boolean(localStorage.getItem('token')),
+    enabled: typeof window !== 'undefined' ? Boolean(getAuthToken()) : false,
     staleTime: 1000 * 60,
   });
 

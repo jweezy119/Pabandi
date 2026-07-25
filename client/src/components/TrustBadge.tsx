@@ -1,5 +1,6 @@
 import { useQuery } from 'react-query';
 import { getMyTrustScore } from '../services/trustApi';
+import { getAuthToken } from '../utils/authToken';
 import { tokens } from '../design-system';
 
 export function trustTierLabel(tier: string) {
@@ -12,7 +13,7 @@ export function trustTierLabel(tier: string) {
 export function TrustBadge() {
   const { data, isLoading, error } = useQuery(['trust-score'], () => getMyTrustScore(), {
     retry: false,
-    enabled: typeof window !== 'undefined' && Boolean(localStorage.getItem('token')),
+    enabled: typeof window !== 'undefined' ? Boolean(getAuthToken()) : false,
   });
 
   if (isLoading || error || !data) {
