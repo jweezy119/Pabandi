@@ -1,5 +1,6 @@
 import { ShieldCheckIcon, ScaleIcon, DocumentCheckIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from '../context/LanguageContext';
+import { tokens } from '../design-system';
 
 export default function ShariaCompliancePage() {
   const { t, language } = useLanguage();
@@ -38,7 +39,7 @@ export default function ShariaCompliancePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body overflow-hidden">
+    <div className="min-h-screen font-body overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
       {/* ─── Hero Section ────────────────────────────────────────────────────────── */}
       <section className="relative pt-24 pb-16 px-6 md:px-8 text-center max-w-5xl mx-auto">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-3xl">
