@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ShieldCheckIcon, ExclamationTriangleIcon, FingerPrintIcon, LockClosedIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ShieldCheckIcon, ExclamationTriangleIcon, FingerPrintIcon, LockClosedIcon, CheckCircleIcon, ArrowPathIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -174,6 +174,21 @@ export const CheckoutSessionPage = () => {
     }
   };
 
+  const handleStripePayment = async () => {
+    if (!session) return;
+    setPaying(true);
+    try {
+      const response = await api.post(`/checkout/session/${session.id}/stripe`);
+      if (response.data.success && response.data.data.url) {
+        window.location.href = response.data.data.url;
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to initiate Stripe payment');
+      setPaying(false);
+    }
+  };
+
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -298,20 +313,43 @@ export const CheckoutSessionPage = () => {
         )}
 
         {/* Pay Button */}
-        <button
-          onClick={handlePayment}
-          disabled={paying}
-          className="w-full py-4 rounded-xl bg-[#95BF47] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {paying ? (
-            <ArrowPathIcon className="w-6 h-6 animate-spin" />
-          ) : (
-            <>
-              <LockClosedIcon className="w-5 h-5" />
-              Pay & Secure Funds
-            </>
-          )}
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={handleStripePayment}
+            disabled={paying}
+            className="w-full py-4 rounded-xl bg-indigo-500 text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
+          >
+            {paying ? (
+              <ArrowPathIcon className="w-6 h-6 animate-spin" />
+            ) : (
+              <>
+                <CreditCardIcon className="w-5 h-5" />
+                Pay with Credit Card
+              </>
+            )}
+          </button>
+          
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-zinc-800"></div>
+            <span className="flex-shrink-0 mx-4 text-zinc-500 text-xs font-bold uppercase">Or pay with Crypto</span>
+            <div className="flex-grow border-t border-zinc-800"></div>
+          </div>
+
+          <button
+            onClick={handlePayment}
+            disabled={paying}
+            className="w-full py-4 rounded-xl bg-[#95BF47] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {paying ? (
+              <ArrowPathIcon className="w-6 h-6 animate-spin" />
+            ) : (
+              <>
+                <LockClosedIcon className="w-5 h-5" />
+                Pay with Solana ($PAB)
+              </>
+            )}
+          </button>
+        </div>
 
         <p className="text-center text-xs text-zinc-500 mt-4">
           Protected by Pabandi Escrow. Funds are not released to the seller until terms are met.

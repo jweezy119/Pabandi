@@ -242,13 +242,11 @@ export default function HomePage() {
           {/* Left Col - Copy */}
           <div className="mx-auto max-w-2xl pt-6 xl:mx-0 xl:w-auto xl:min-w-[320px] xl:space-y-6">
             <h1 className="font-headline text-4xl font-black tracking-tight leading-[1.1] sm:text-5xl md:text-7xl stagger-item">
-              Pabandi is the<br />
-              <span className="bg-gradient-to-r from-[#14F195] to-[#06b6d4] bg-clip-text text-transparent">
-                WhatsApp-native commerce escrow layer
-              </span>
+              The <span className="bg-gradient-to-r from-[#14F195] to-[#06b6d4] bg-clip-text text-transparent">universal trust engine</span><br />
+              for commerce
             </h1>
             <p className="font-body max-w-xl text-base leading-relaxed text-slate-300 sm:text-xl stagger-item">
-              Zero-training booking support via WhatsApp. Guaranteed commitment for hospitality and informal merchants. Deposit protection, built in.
+              AI-driven reliability scoring, automated escrow, and zero-training checkout. Built to secure transactions for hospitality, live sellers, and informal merchants worldwide.
             </p>
 
             {/* Search */}

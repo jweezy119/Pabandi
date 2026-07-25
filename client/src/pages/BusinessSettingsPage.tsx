@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import apiClient from '../services/api';
 import { Surface, Button, Badge, tokens } from '../design-system';
+import toast from 'react-hot-toast';
 
 type Tab = 'profile' | 'notifications' | 'webhooks' | 'payments' | 'ai' | 'live-selling' | 'api-keys';
 type DepositStrategy = 'FLAT' | 'PERCENTAGE' | 'AI_DYNAMIC';
@@ -145,6 +146,18 @@ export default function BusinessSettingsPage() {
       })();
     }
   }, [activeTab, bizRes?.id]);
+
+  const handleConnectStripe = async () => {
+    if (!bizRes?.id) return;
+    try {
+      const res = await apiClient.post(`/business/${bizRes.id}/stripe-connect`);
+      if (res.data.success && res.data.data.url) {
+        window.location.href = res.data.data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to connect to Stripe');
+    }
+  };
 
   const handleGenerateKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -419,14 +432,18 @@ export default function BusinessSettingsPage() {
 
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="font-bold text-white">Safepay Integration (Fiat)</h4>
-                  <Badge tone="success">Connected</Badge>
+                  <h4 className="font-bold text-white">Stripe Checkout & Connect</h4>
+                  {bizRes?.stripeAccountId ? (
+                     <Badge tone="success">Connected</Badge>
+                  ) : (
+                     <Button variant="default" onClick={handleConnectStripe}>Connect Stripe</Button>
+                  )}
                 </div>
-                <p className="mt-2 text-sm text-white/70">Safepay is configured globally via the backend. Customers can pay via Debit/Credit Card, PayPal, and Apple Pay.</p>
+                <p className="mt-2 text-sm text-white/70">Connect your Stripe account to automatically route customer payments to your bank account (minus the Pabandi fee).</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge tone="success">💳 Cards</Badge>
-                  <Badge tone="success">🅿️ PayPal</Badge>
                   <Badge tone="success">🍎 Apple Pay</Badge>
+                  <Badge tone="success">🤖 Google Pay</Badge>
                 </div>
               </div>
 

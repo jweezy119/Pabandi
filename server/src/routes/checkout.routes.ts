@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout } from '../controllers/checkout.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
@@ -21,5 +21,8 @@ router.get('/session/:id', getCheckoutSession);
 // Complete the checkout session (in a real app, this would be via Stripe/payment gateway webhook)
 // For MVP/Demo, this is called by the frontend when buyer clicks pay
 router.post('/session/:id/complete', completeCheckoutSession);
+
+// Initiate Stripe Checkout session
+router.post('/session/:id/stripe', initiateStripeCheckout);
 
 export default router;
