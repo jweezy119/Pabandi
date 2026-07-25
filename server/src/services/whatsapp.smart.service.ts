@@ -22,8 +22,6 @@ export interface SmartSession {
   updatedAt: number;
 }
 
-const BOOKING_FIELDS = ['date', 'time', 'partySize', 'occasion', 'contact'] as const;
-
 const SESSION_TTL_MS = 1000 * 60 * 60 * 6;
 
 export class WhatsAppSmartService {
@@ -95,7 +93,11 @@ export class WhatsAppSmartService {
     return this.processMessage(customerPhone, businessPhone, message);
   }
 
-  async processMessage(customerPhone: string, businessPhone: string, message: string): Promise<SmartReply | null> {
+  async processMessage(
+    customerPhone: string,
+    businessPhone: string,
+    message: string
+  ): Promise<SmartReply | null> {
     const lower = message.trim().toLowerCase();
     const session = this.getSession(customerPhone, businessPhone);
 
@@ -130,9 +132,8 @@ export class WhatsAppSmartService {
 
   private async replyWithMenu(customerPhone: string): Promise<SmartReply> {
     const summary = this.pluginSummary(['menu', 'support', 'automation', 'booking'], { businessName: '' });
-    // In a real flow, we would look up the business name.
     await openwaTemplateService.sendTemplate(customerPhone, 'interactive_menu', { businessName: 'Pabandi Business' });
-    
+
     return { text: 'Sent interactive menu template', matchedIntent: 'menu', pluginSummary: summary };
   }
 
@@ -289,46 +290,6 @@ export class WhatsAppSmartService {
 
     const reply = await this.reply(customerPhone, bookingText, undefined, session.businessPhone);
     return { text: reply, matchedIntent: 'book', action: 'await_confirmation' };
-  }
-
-  private async handleConfirmCheckout(customerPhone: string, session: SmartSession): Promise<SmartReply> {
-    const summary = String(session.data.summary || `${session.data.date || ''} ${session.data.time || ''}`).trim();
-    const _customerPhoneVal = customerPhone.replace(/\D/g, '').slice(-10);
-
-    try {
-      const checkoutUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`;
-
-      const interactive = [
-        'Your booking details:',
-        `${summary}`,
-        `Party: ${session.data.partySize || 2}`,
-        ' ',
-        'To secure this booking, pay the deposit with the payment link we send next.',
-      ].join('\n\n');
-
-      const reply = await this.reply(customerPhone, interactive, undefined, session.businessPhone);
-      const linkText = `Secure your booking:\n${checkoutUrl}`;
-      const linkReply = await this.reply(customerPhone, linkText, undefined, session.businessPhone);
-
-      session.step = 'completed';
-      this.touchSession(customerPhone, session.businessPhone, session);
-
-      if (session.data.outOfHours) {
-        session.data.willNotify = true;
-        this.touchSession(customerPhone, session.businessPhone, session);
-        const nudge = 'Because this was outside business hours, our team will confirm manually when we open.';
-        const nudgeReply = await this.reply(customerPhone, nudge, undefined, session.businessPhone);
-        return { text: [reply, linkReply, nudgeReply].join('\n\n'), matchedIntent: 'book', action: 'escrow_created' };
-      }
-
-      return { text: [reply, linkReply].join('\n\n'), matchedIntent: 'book', action: 'escrow_created' };
-    } catch (error: any) {
-      const errText = `Booking request saved. Our team will confirm shortly.\nError: ${error?.message || 'checkout unavailable'}`;
-      const reply = await this.reply(customerPhone, errText, undefined, session.businessPhone);
-      session.step = 'awaiting_human';
-      this.touchSession(customerPhone, session.businessPhone, session);
-      return { text: reply, matchedIntent: 'book', action: 'human_required' };
-    }
   }
 
   private async handleCancelFlow(customerPhone: string, session: SmartSession, _lower: string, _raw: string): Promise<SmartReply> {

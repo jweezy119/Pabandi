@@ -83,7 +83,7 @@ router.get('/health', async (_req: Request, res: Response, next: NextFunction) =
 });
 
 // GET /api/v1/openwa/stats - Get message delivery stats
-router.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/stats', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const sessions = await openwaService.listSessions();
     res.json({
