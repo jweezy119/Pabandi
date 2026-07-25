@@ -50,6 +50,7 @@ import openwaRoutes from './routes/openwa.routes';
 import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
+import offrampRoutes from './routes/offramp.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -228,6 +229,7 @@ app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
+app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
