@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import { Helmet } from 'react-helmet-async';
+import { tokens } from '../design-system';
 
 export default function ShopifyAppBridge() {
   const [searchParams] = useSearchParams();
@@ -53,7 +54,7 @@ export default function ShopifyAppBridge() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-container-lowest p-6 font-body">
+    <div className="min-h-screen p-6 font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <Helmet>
         <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
         <meta name="shopify-api-key" content={import.meta.env.VITE_SHOPIFY_API_KEY || "022dcfed1c002a1f6a9ce6a655aefab4"} />
