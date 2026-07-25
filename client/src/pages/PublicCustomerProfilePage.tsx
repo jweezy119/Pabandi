@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { userService } from '../services/api';
 import toast from 'react-hot-toast';
+import { tokens } from '../design-system';
 
 export const PublicCustomerProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ export const PublicCustomerProfilePage: React.FC = () => {
     user.reliabilityScore >= 600 ? 'text-[#D97706]' : 'text-error';
 
   return (
-    <div className="min-h-screen bg-surface pt-24 pb-12 px-4 md:px-6 relative overflow-hidden">
+    <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
       {/* Background Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D97706]/20 blur-[120px] rounded-full pointer-events-none" />
