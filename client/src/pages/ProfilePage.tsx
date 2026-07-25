@@ -20,6 +20,7 @@ import {
   SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { ScoreReceipts } from '../components/ScoreReceipts';
+import { tokens } from '../design-system';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loyalty tier definitions (Pabandi-global)
@@ -730,7 +731,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8">
+    <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <ToastContainer toasts={toasts} />
 
       {hasPendingRequest && (

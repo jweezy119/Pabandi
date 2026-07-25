@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { textSearchService } from '../services/api';
+import { tokens } from '../design-system';
 
 export default function FreelancePage() {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ export default function FreelancePage() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
+    <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
         <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
           <h1 className="font-headline text-2xl sm:text-3xl md:text-4xl font-black">Freelance</h1>

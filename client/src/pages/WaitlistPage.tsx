@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 export const WaitlistPage: React.FC = () => {
   const [count, setCount] = useState<number>(847);
@@ -61,7 +62,7 @@ export const WaitlistPage: React.FC = () => {
 
   if (showSuccess) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
         {/* Animated Orbs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#14F195] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
@@ -104,7 +105,7 @@ export const WaitlistPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 relative overflow-hidden flex flex-col items-center">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
       {/* Animated Orbs */}
       <div className="absolute top-0 -left-4 w-72 h-72 bg-[#14F195] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="absolute top-0 -right-4 w-72 h-72 bg-[#06b6d4] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
