@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { businessService, passportService } from '../services/api';
 import QRCodeLib from 'qrcode';
+import { tokens } from '../design-system';
 
 type Business = {
   id: string;
@@ -131,7 +132,7 @@ export const PublicPassportPage: React.FC = () => {
   const displayLocation = seller?.city || seller?.address || '';
 
   return (
-    <div className="min-h-screen bg-surface pt-24 pb-12 px-4">
+    <div className="min-h-screen pt-24 pb-12 px-4" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-3xl mx-auto">
         {loading ? (
           <div className="animate-pulse space-y-4">
