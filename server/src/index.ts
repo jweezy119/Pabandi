@@ -186,6 +186,7 @@ app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
+app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
 app.use('/', tapRoutes);
@@ -302,6 +303,15 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   } catch (err) {
     logger.warn(`OpenWA webhook manager skipped: ${(err as Error).message}`);
   }
+
+  // Start Phase 0 Offramp SLA Sweeper
+  setInterval(() => {
+    import('./services/offramp.service').then(({ offrampService }) => {
+      offrampService.expireStaleIntents().catch(err => {
+        logger.error(`[Offramp Sweeper Error] ${err.message}`);
+      });
+    });
+  }, 5000);
 });
 
 // Graceful shutdown

@@ -5,6 +5,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
 import { stripeService } from '../services/stripe.service';
+import { offrampService } from '../services/offramp.service';
 import { osintService } from '../services/osint.service';
 import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
@@ -1229,6 +1230,48 @@ export const connectStripe = async (req: AuthRequest, res: Response, next: NextF
       success: true,
       data: {
         url: onboardingUrl,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestPayout = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { amount, targetRaastId, currency } = req.body;
+
+    const business = await prisma.business.findUnique({
+      where: { id },
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    if (business.ownerId !== req.user?.id && req.user?.role !== 'ADMIN') {
+      throw new CustomError('Not authorized', 403);
+    }
+
+    if (!amount || !targetRaastId) {
+      throw new CustomError('Amount and targetRaastId are required', 400);
+    }
+
+    // Map the old B2B PayoutRequest to the new OfframpIntent structure
+    const intent = await offrampService.requestIntent(
+      '0x0000000000000000000000000000000000000000', // customerWallet stub for B2B API
+      parseFloat(amount),
+      270.0, // minRatePkr stub
+      'Raast',
+      targetRaastId,
+      business.id
+    );
+
+    res.json({
+      success: true,
+      data: {
+        intent
       },
     });
   } catch (error) {
