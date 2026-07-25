@@ -34,9 +34,10 @@ type ButtonProps = {
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  style?: React.CSSProperties;
 };
 
-export function Button({ children, onClick, variant = 'default', className = '', disabled = false, type = 'button' }: ButtonProps) {
+export function Button({ children, onClick, variant = 'default', className = '', disabled = false, type = 'button', style }: ButtonProps) {
   const base = [
     'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
@@ -49,7 +50,7 @@ export function Button({ children, onClick, variant = 'default', className = '',
   };
 
   return (
-    <button onClick={onClick} type={type} className={`${base} ${variants[variant]} ${className}`}>
+    <button onClick={onClick} type={type} className={`${base} ${variants[variant]} ${className}`} style={style}>
       {children}
     </button>
   );
