@@ -62,7 +62,7 @@ router.post('/checkout', async (req: Request, res: Response, next: NextFunction)
  * POST /api/v1/escrow/sign-init-tx
  * Oracle route for signing Solana DRPE Escrow initialization transactions.
  */
-router.post('/sign-init-tx', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/sign-init-tx', async (req: Request, res: Response, _next: NextFunction) => {
   try {
     const { serializedTxBase64, customerWallet } = req.body;
     

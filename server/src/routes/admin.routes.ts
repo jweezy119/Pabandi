@@ -39,7 +39,7 @@ router.get('/profile-requests', getProfileRequests);
 router.put('/profile-requests/:id/approve', approveProfileRequest);
 router.put('/profile-requests/:id/reject', rejectProfileRequest);
 
-router.get('/openwa/plugins', (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/openwa/plugins', (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const plugins = listAdminPlugins();
     res.json({ success: true, data: { plugins, source: 'openwa_catalog' } });

@@ -159,7 +159,7 @@ export class BadgeService {
     const attended = totalBookings - noShows;
     const attendanceRate = totalBookings > 0 ? Math.round((attended / totalBookings) * 100) : 100;
 
-    const { totalBoost, breakdown } = this.computeSocialTrustBoost(identities);
+    const { totalBoost } = this.computeSocialTrustBoost(identities);
 
     // Calculate Graph Trust Bonus / Penalty
     let graphTrustBoost = 0;

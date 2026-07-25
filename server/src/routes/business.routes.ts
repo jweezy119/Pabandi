@@ -31,7 +31,7 @@ const router = Router();
 router.get('/', rateLimiter, async (req, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
-    const { googlePlaceId, category, search, latitude, longitude } = req.query;
+    const { category, search, latitude, longitude } = req.query;
 
     // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
