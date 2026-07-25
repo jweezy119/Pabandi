@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
+import { tokens } from '../design-system';
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const CheckIcon = () => (
@@ -121,7 +122,8 @@ export default function BusinessJoinPage() {
   if (submitted) {
     return (
       <div 
-        className="flex items-center justify-center p-6 bg-[#080e17] text-[#edf1f5] min-h-screen"
+        className="flex items-center justify-center p-6 min-h-screen"
+        style={{ background: tokens.color.background, color: tokens.color.text }}
       >
         <div className="text-center max-w-md">
           <div className="text-5xl sm:text-6xl mb-6">🎉</div>
@@ -151,10 +153,10 @@ export default function BusinessJoinPage() {
   }
 
   return (
-    <div className="bg-[#080e17] text-[#edf1f5] font-body min-h-screen selection:bg-blue-500/30">
+    <div className="font-body min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
       
       {/* ── Nav ─────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#080e17]/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-white/5 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 text-sm font-bold hover:opacity-80 transition-opacity">
             <span className="text-slate-400">← Back</span>

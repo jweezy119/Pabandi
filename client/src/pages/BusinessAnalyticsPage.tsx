@@ -15,6 +15,7 @@ import {
   ArrowTrendingUpIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 /* ── Utility: format currency ── */
 const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toString();
@@ -190,7 +191,7 @@ export default function BusinessAnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="bg-surface min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="text-center">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
             <ChartBarIcon className="h-6 w-6 text-primary" />
@@ -202,7 +203,7 @@ export default function BusinessAnalyticsPage() {
   }
 
   return (
-    <div className="bg-surface min-h-screen text-on-surface pb-24 md:pb-12">
+    <div className="min-h-screen pb-24 md:pb-12" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* ── Header ── */}
