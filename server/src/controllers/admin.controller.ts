@@ -1,12 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
-import { ReferralService } from '../services/referral.service';
-
-const referralService = new ReferralService();
+import { fail, ok } from '../utils/apiResponse';
 
 // ─── GET /admin/stats ───────────────────────────────────────────────
+
 export const getAdminStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const [
@@ -23,19 +22,16 @@ export const getAdminStats = async (req: AuthRequest, res: Response, next: NextF
       prisma.reservation.groupBy({ by: ['customerId'] }).then(r => r.length),
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        funnel: {
-          signedUp: totalUsers,
-          madeReservation: usersWithReservations,
-          completedBooking: completedReservations,
-        },
-        totals: {
-          users: totalUsers,
-          businesses: totalBusinesses,
-          reservations: totalReservations,
-        },
+    return ok(res, {
+      funnel: {
+        signedUp: totalUsers,
+        madeReservation: usersWithReservations,
+        completedBooking: completedReservations,
+      },
+      totals: {
+        users: totalUsers,
+        businesses: totalBusinesses,
+        reservations: totalReservations,
       },
     });
   } catch (error) {
@@ -44,6 +40,7 @@ export const getAdminStats = async (req: AuthRequest, res: Response, next: NextF
 };
 
 // ─── GET /admin/users ───────────────────────────────────────────────
+
 export const getAllUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { role, page = '1', limit = '50' } = req.query;
@@ -74,13 +71,14 @@ export const getAllUsers = async (req: AuthRequest, res: Response, next: NextFun
       prisma.user.count({ where }),
     ]);
 
-    res.json({ success: true, data: { users, total, page: parseInt(page as string), limit: parseInt(limit as string) } });
+    return ok(res, { users, total, page: parseInt(page as string), limit: parseInt(limit as string) });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/users/:id ──────────────────────────────────────────
+
 export const getUserDetail = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const user = await prisma.user.findUnique({
@@ -94,14 +92,15 @@ export const getUserDetail = async (req: AuthRequest, res: Response, next: NextF
         business: true,
       },
     });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.json({ success: true, data: { user } });
+    if (!user) return fail(res, 'User not found', 404);
+    return ok(res, { user });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/reservations ────────────────────────────────────────
+
 export const getAllReservations = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { status, page = '1', limit = '50' } = req.query;
@@ -124,13 +123,14 @@ export const getAllReservations = async (req: AuthRequest, res: Response, next: 
       prisma.reservation.count({ where }),
     ]);
 
-    res.json({ success: true, data: { reservations, total } });
+    return ok(res, { reservations, total });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/businesses ──────────────────────────────────────────
+
 export const getAllBusinesses = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { verified } = req.query;
@@ -146,13 +146,14 @@ export const getAllBusinesses = async (req: AuthRequest, res: Response, next: Ne
       },
     });
 
-    res.json({ success: true, data: { businesses } });
+    return ok(res, { businesses });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── PATCH /admin/businesses/:id/verify ────────────────────────────
+
 export const verifyBusiness = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const business = await prisma.business.update({
@@ -160,13 +161,14 @@ export const verifyBusiness = async (req: AuthRequest, res: Response, next: Next
       data: { isVerified: true },
     });
 
-    res.json({ success: true, data: { business } });
+    return ok(res, { business });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── PATCH /admin/users/:id/role ───────────────────────────────────
+
 export const updateUserRole = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { role } = req.body;
@@ -175,46 +177,48 @@ export const updateUserRole = async (req: AuthRequest, res: Response, next: Next
       data: { role },
       select: { id: true, email: true, role: true },
     });
-    res.json({ success: true, data: { user } });
+    return ok(res, { user });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/openwa/plugins ─────────────────────────────────────
+
 export const getOpenwaPlugins = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const plugins = listAdminPlugins();
-    res.json({ success: true, data: { plugins, source: 'openwa_catalog' } });
+    return ok(res, { plugins, source: 'openwa_catalog' });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/openwa/plugins/:id ─────────────────────────────────
+
 export const getOpenwaPlugin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const plugin = getAdminPlugin(req.params.id);
-    if (!plugin) {
-      return res.status(404).json({ success: false, message: 'Plugin not found' });
-    }
-    res.json({ success: true, data: { plugin } });
+    if (!plugin) return fail(res, 'Plugin not found', 404);
+    return ok(res, { plugin });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── PATCH /admin/openwa/plugins/:id ───────────────────────────────
+
 export const updateOpenwaPlugin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const plugin = updateAdminPlugin(req.params.id, req.body || {});
-    res.json({ success: true, data: { plugin } });
+    return ok(res, { plugin });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── GET /admin/profile-requests ─────────────────────────────────────
+
 export const getProfileRequests = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const requests = await prisma.profileChangeRequest.findMany({
@@ -224,18 +228,19 @@ export const getProfileRequests = async (req: AuthRequest, res: Response, next: 
         user: { select: { email: true, firstName: true, lastName: true, role: true } }
       }
     });
-    res.json({ success: true, data: { requests } });
+    return ok(res, { requests });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── PUT /admin/profile-requests/:id/approve ─────────────────────────
+
 export const approveProfileRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const request = await prisma.profileChangeRequest.findUnique({ where: { id: req.params.id } });
     if (!request || request.status !== 'PENDING') {
-      return res.status(404).json({ success: false, message: 'Pending request not found' });
+      return fail(res, 'Pending request not found', 404);
     }
 
     const changes = request.requestedChanges as Record<string, any>;
@@ -244,26 +249,26 @@ export const approveProfileRequest = async (req: AuthRequest, res: Response, nex
     if (changes.lastName) updateData.lastName = changes.lastName;
     if (changes.profilePictureUrl) updateData.profilePictureUrl = changes.profilePictureUrl;
 
-    // Run in transaction: update user and mark request APPROVED
     await prisma.$transaction([
       prisma.user.update({ where: { id: request.userId }, data: updateData }),
-      prisma.profileChangeRequest.update({ where: { id: request.id }, data: { status: 'APPROVED' } })
+      prisma.profileChangeRequest.update({ where: { id: request.id }, data: { status: 'APPROVED' } }),
     ]);
 
-    res.json({ success: true, message: 'Profile change approved' });
+    return ok(res, { message: 'Profile change approved' });
   } catch (error) {
     next(error);
   }
 };
 
 // ─── PUT /admin/profile-requests/:id/reject ──────────────────────────
+
 export const rejectProfileRequest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const request = await prisma.profileChangeRequest.update({
       where: { id: req.params.id },
-      data: { status: 'REJECTED' }
+      data: { status: 'REJECTED' },
     });
-    res.json({ success: true, message: 'Profile change rejected' });
+    return ok(res, { request });
   } catch (error) {
     next(error);
   }
