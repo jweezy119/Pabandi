@@ -32,11 +32,13 @@ type ButtonProps = {
   onClick?: () => void;
   variant?: Variant;
   className?: string;
+  disabled?: boolean;
 };
 
-export function Button({ children, onClick, variant = 'default', className = '' }: ButtonProps) {
+export function Button({ children, onClick, variant = 'default', className = '', disabled = false }: ButtonProps) {
   const base = [
     'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer',
+    disabled ? 'opacity-50 cursor-not-allowed' : '',
   ].join(' ');
 
   const variants: Record<Variant, string> = {
@@ -55,6 +57,7 @@ export function Button({ children, onClick, variant = 'default', className = '' 
 type ChipProps = {
   children: React.ReactNode;
   tone?: 'success' | 'info' | 'danger' | 'warning';
+  className?: string;
 };
 
 const chipTones: Record<NonNullable<ChipProps['tone']>, string> = {
@@ -64,9 +67,9 @@ const chipTones: Record<NonNullable<ChipProps['tone']>, string> = {
   warning: 'bg-amber-500/15 text-amber-300 border-amber-400/20',
 };
 
-export function Chip({ children, tone = 'info' }: ChipProps) {
+export function Chip({ children, tone = 'info', className = '' }: ChipProps) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide ${chipTones[tone]}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide ${chipTones[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -180,6 +183,8 @@ export function CodeBlock({ code, language = 'json' }: CodeBlockProps) {
 type BadgeProps = {
   children: React.ReactNode;
   tone?: 'success' | 'warning' | 'danger' | 'info';
+  className?: string;
+  style?: React.CSSProperties;
 };
 
 const badgeTones: Record<NonNullable<BadgeProps['tone']>, string> = {
@@ -189,9 +194,9 @@ const badgeTones: Record<NonNullable<BadgeProps['tone']>, string> = {
   info: 'bg-indigo-500/15 text-indigo-200 border-indigo-400/25',
 };
 
-export function Badge({ children, tone = 'info' }: BadgeProps) {
+export function Badge({ children, tone = 'info', className = '', style }: BadgeProps) {
   return (
-    <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wide ${badgeTones[tone]}`}>
+    <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wide ${badgeTones[tone]} ${className}`} style={style}>
       {children}
     </span>
   );
