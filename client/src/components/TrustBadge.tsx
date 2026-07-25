@@ -20,7 +20,7 @@ export function TrustBadge() {
     return null;
   }
 
-  const tier = data.tier || 'BRONZE';
+  const tier = data.uiTier || data.tier || 'BRONZE';
   const tone =
     tier === 'PLATINUM'
       ? tokens.color.primary

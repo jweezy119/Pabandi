@@ -5,19 +5,23 @@ export type TrustStamp = {
   userId: string;
   stampType: string;
   weight: number;
-  issuer: string;
+  issuer?: string;
   context?: string;
   attestationHash: string;
   expiresAt?: string;
   revoked: boolean;
   issuedAt: string;
+  effectiveWeight?: number;
+  isTrusted?: boolean;
+  isExpired?: boolean;
 };
 
 export type TrustScore = {
   score: number;
-  tier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
-  nextTierScore: number;
-  missingRequiredStamps: string[];
+  tier: string;
+  uiTier: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM';
+  methodology?: string;
+  trustVelocity?: unknown;
 };
 
 export type TrustActionRequirements = {
