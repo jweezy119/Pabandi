@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircleIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { tokens } from '../design-system';
 
 export default function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
@@ -19,7 +20,7 @@ export default function CheckoutSuccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex items-center justify-center font-body">
+    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="w-full max-w-md">
         
         {/* Receipt Card DOM Element */}
