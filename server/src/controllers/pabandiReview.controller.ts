@@ -3,7 +3,6 @@ import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { CustomError } from '../middleware/errorHandler';
 import { cryptoService } from '../services/cryptoService';
-import { logger } from '../utils/logger';
 
 export const createReview = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

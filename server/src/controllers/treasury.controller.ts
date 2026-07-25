@@ -14,7 +14,7 @@ export const createTribute = async (req: any, res: Response) => {
   }
 };
 
-export const getSummary = async (req: any, res: Response) => {
+export const getSummary = async (_req: any, res: Response) => {
   try {
     const summary = await getTreasurySummary();
     const recentPositions = await prisma.treasuryPosition.findMany({

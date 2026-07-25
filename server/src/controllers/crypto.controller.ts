@@ -6,7 +6,6 @@ import { badgeService } from '../services/badge.service';
 import { dashscopeService } from '../services/ai/dashscope.service';
 import { CustomError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
-import { BadgeTier } from '../types/blockchain.types';
 
 export const getMyWallet = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
