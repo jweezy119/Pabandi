@@ -23,7 +23,6 @@ export interface SmartSession {
 }
 
 const BOOKING_FIELDS = ['date', 'time', 'partySize', 'occasion', 'contact'] as const;
-type BookingField = typeof BOOKING_FIELDS[number];
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 6;
 
@@ -207,7 +206,7 @@ export class WhatsAppSmartService {
   private async advanceBookingFlow(
     customerPhone: string,
     session: SmartSession,
-    lower: string,
+    _lower: string,
     raw: string
   ): Promise<SmartReply> {
     if (!session.data.entities || typeof session.data.entities !== 'object') {
@@ -294,7 +293,7 @@ export class WhatsAppSmartService {
 
   private async handleConfirmCheckout(customerPhone: string, session: SmartSession): Promise<SmartReply> {
     const summary = String(session.data.summary || `${session.data.date || ''} ${session.data.time || ''}`).trim();
-    const customerPhoneVal = customerPhone.replace(/\D/g, '').slice(-10);
+    const _customerPhoneVal = customerPhone.replace(/\D/g, '').slice(-10);
 
     try {
       const checkoutUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`;
@@ -332,19 +331,19 @@ export class WhatsAppSmartService {
     }
   }
 
-  private async handleCancelFlow(customerPhone: string, session: SmartSession, lower: string, raw: string): Promise<SmartReply> {
+  private async handleCancelFlow(customerPhone: string, session: SmartSession, _lower: string, _raw: string): Promise<SmartReply> {
     const reply = await this.reply(customerPhone, 'Cancellation noted. Share booking ID or date and I will process eligible refunds.', undefined, session.businessPhone);
     this.clearSession(customerPhone, session.businessPhone);
     return { text: reply, matchedIntent: 'cancel', action: 'cancel_intake' };
   }
 
-  private async handleStatusFlow(customerPhone: string, session: SmartSession, lower: string, raw: string): Promise<SmartReply> {
+  private async handleStatusFlow(customerPhone: string, session: SmartSession, _lower: string, _raw: string): Promise<SmartReply> {
     const reply = await this.reply(customerPhone, 'Please share booking ID or date/time and I will check status and payment.', undefined, session.businessPhone);
     this.clearSession(customerPhone, session.businessPhone);
     return { text: reply, matchedIntent: 'status', action: 'status_intake' };
   }
 
-  private async handleHandoff(customerPhone: string, businessPhone: string, session: SmartSession | undefined): Promise<SmartReply> {
+  private async handleHandoff(customerPhone: string, businessPhone: string, _session: SmartSession | undefined): Promise<SmartReply> {
     this.clearSession(customerPhone, businessPhone);
     const reply = await this.reply(customerPhone, 'Handoff requested. A team member will follow up shortly.', undefined, businessPhone);
     return { text: reply, matchedIntent: 'human', action: 'handoff' };

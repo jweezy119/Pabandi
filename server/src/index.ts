@@ -108,7 +108,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.path}`);
   next();
 });
@@ -120,11 +120,10 @@ app.use('/api/', rateLimiter);
 app.use('/api/', auditLog);
 
 // Firebase App Check Middleware for API routes
-// Ensure this runs before your actual API routes are registered
-// app.use('/api/', requireAppCheck); // TEMPORARILY DISABLED to fix sign in
+app.use('/api/', requireAppCheck);
 
 // Health check endpoints
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -133,7 +132,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/healthz', (req, res) => {
+app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
@@ -249,7 +248,7 @@ app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
 setupSwagger(app);
 
 // API Documentation
-app.get(`/api/${API_VERSION}/docs`, (req, res) => {
+app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
   res.redirect('/api/docs');
 });
 
@@ -273,7 +272,7 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
