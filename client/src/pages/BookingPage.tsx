@@ -4,11 +4,12 @@ import { useQuery, useMutation } from 'react-query';
 import { businessService, reservationService, stakingService, walletService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
-import { ShieldCheckIcon, StarIcon, MapPinIcon, ClockIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
 import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
 import { encryptRsa } from '../utils/e2ee';
+import { Button, Chip, Surface, Badge, tokens } from '../design-system';
+
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function BookingPage() {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [isProcessingWeb3, setIsProcessingWeb3] = useState(false);
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const initialDate = urlParams.get('date') || '';
   const initialTime = urlParams.get('time') || '';
@@ -32,8 +33,6 @@ export default function BookingPage() {
     paymentMethod: 'safepay',
   });
 
-  // Trust-based deposit hint derived from business/user signals, not a manual demo slider.
-
   const { data: businessData, isLoading: businessLoading } = useQuery(
     ['business', id],
     () => businessService.getBusiness(id!),
@@ -42,7 +41,6 @@ export default function BookingPage() {
 
   const business = businessData?.data?.business;
 
-  // Trust-based deposit hint derived from business/user signals, not a manual demo slider.
   const trustScoreRaw = (business?.trustScore ?? user?.reliabilityScore ?? 0) as number;
   const trustScore = Math.max(0, Math.min(100, Math.round(trustScoreRaw / 10)));
   const dynamicDeposit = trustScore >= 80 ? 0 : trustScore >= 50 ? 5 : 15;
@@ -52,19 +50,17 @@ export default function BookingPage() {
     () => businessService.getBusinessAnalytics(id!),
     { enabled: !!id }
   );
-  
-  const analytics = analyticsData?.data?.analytics;
 
+  const analytics = analyticsData?.data?.analytics;
   const googleRating = business?.rating || analytics?.googleRating || 4.9;
 
-  // Get Wallet Balance for Staking
   const { data: walletData } = useQuery('pab-wallet-balances', async () => {
     const res = await walletService.getBalances();
     return res.data?.data;
   }, { enabled: isAuthenticated });
-  
+
   const offChainBalance = Number(walletData?.offChainBalance || 0);
-  const REQUIRED_STAKE = 50; // Mock required stake amount for premium venues
+  const REQUIRED_STAKE = 50;
 
   const bookingMutation = useMutation(
     (data: any) => reservationService.createReservation(data),
@@ -72,10 +68,8 @@ export default function BookingPage() {
       onSuccess: async (res) => {
         const data = res?.data?.data;
         if (data?.prediction?.requiresDeposit || data?.reservation?.depositRequired) {
-          // Show the AI deposit screen instead of redirecting
           setBookingResult(data);
         } else {
-          // No deposit required, go to reservations
           navigate('/reservations');
         }
       },
@@ -83,47 +77,44 @@ export default function BookingPage() {
   );
 
   const handlePayDeposit = async () => {
-    // Haptic Feedback
-    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
       window.navigator.vibrate([30, 50, 30]);
     }
 
     if (!bookingResult) return;
-    const { checkoutUrl, reservation } = bookingResult;
+    const { reservation } = bookingResult;
 
     if (formData.paymentMethod === 'paypal' || formData.paymentMethod === 'safepay') {
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      window.location.href = bookingResult.checkoutUrl || '/reservations';
+      return;
+    }
+
+    setIsProcessingWeb3(true);
+    try {
+      let web3Result: { success: boolean; transactionHash?: string; error?: string } | undefined;
+
+      if (formData.paymentMethod === 'bsc') {
+        web3Result = await executeBscDeposit(reservation.depositAmount?.toString() || '0.05', business.walletAddress || '', reservation.id);
+        if (!web3Result.success) throw new Error(web3Result.error || 'BSC deposit failed');
+      } else if (formData.paymentMethod === 'solana') {
+        web3Result = await executeSolanaDeposit(0.1, business.walletAddress || '');
+        if (!web3Result.success) throw new Error(web3Result.error || 'Solana deposit failed');
+      } else if (formData.paymentMethod === 'stellar-franklin') {
+        web3Result = await executeStellarFranklinDeposit('10.00', business.walletAddress || '');
+        if (!web3Result.success) throw new Error(web3Result.error || 'Stellar deposit failed');
+      } else if (formData.paymentMethod === 'stake') {
+        await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
       }
-    } else {
-      setIsProcessingWeb3(true);
-      try {
-        let web3Result: { success: boolean; transactionHash?: string; error?: string } | undefined;
-        
-        if (formData.paymentMethod === 'bsc') {
-          web3Result = await executeBscDeposit(reservation.depositAmount?.toString() || "0.05", business.walletAddress || "", reservation.id);
-          if (!web3Result.success) throw new Error(web3Result.error || 'BSC deposit failed');
-        } else if (formData.paymentMethod === 'solana') {
-          web3Result = await executeSolanaDeposit(0.1, business.walletAddress || "");
-          if (!web3Result.success) throw new Error(web3Result.error || 'Solana deposit failed');
-        } else if (formData.paymentMethod === 'stellar-franklin') {
-          web3Result = await executeStellarFranklinDeposit("10.00", business.walletAddress || "");
-          if (!web3Result.success) throw new Error(web3Result.error || 'Stellar deposit failed');
-        } else if (formData.paymentMethod === 'stake') {
-          await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
-        }
-        
-        // Update reservation on backend
-        await reservationService.updateReservation(reservation.id, {
-           depositStatus: 'PAID',
-           cryptoDepositTxHash: web3Result?.transactionHash || '',
-        });
-        navigate('/reservations');
-      } catch (err: any) {
-        alert('Transaction failed: ' + (err.message || 'Unknown error'));
-      } finally {
-        setIsProcessingWeb3(false);
-      }
+
+      await reservationService.updateReservation(reservation.id, {
+        depositStatus: 'PAID',
+        cryptoDepositTxHash: web3Result?.transactionHash || '',
+      });
+      navigate('/reservations');
+    } catch (err: any) {
+      alert('Transaction failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsProcessingWeb3(false);
     }
   };
 
@@ -139,10 +130,7 @@ export default function BookingPage() {
       const payload = JSON.parse(atob(user.encryptedDietaryData));
       const textToEncrypt = `Allergies: ${payload.allergies}\nPreferences: ${payload.preferences}`;
       const encrypted = await encryptRsa(textToEncrypt, business.e2eePublicKey);
-      setFormData(prev => ({
-        ...prev,
-        specialRequests: `E2EE:${encrypted}`
-      }));
+      setFormData(prev => ({ ...prev, specialRequests: `E2EE:${encrypted}` }));
       alert('Dietary Passport attached and encrypted with Zero-Knowledge E2EE.');
     } catch (e) {
       console.error(e);
@@ -150,9 +138,7 @@ export default function BookingPage() {
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -160,38 +146,32 @@ export default function BookingPage() {
     e.preventDefault();
     if (!id) return;
     if (!isAuthenticated) {
-        navigate('/login');
-        return;
+      navigate('/login');
+      return;
     }
-    
-    // Haptic Feedback
-    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
+
+    if (typeof window !== 'undefined' && window.navigator?.vibrate) {
       window.navigator.vibrate(50);
     }
-    
-    // Check if coming from concierge
+
     const urlParams = new URLSearchParams(window.location.search);
     const isConcierge = urlParams.get('concierge') === 'true';
-    
-    // Pass paymentMethod so the backend creates the fiat checkoutUrl if needed
+
     bookingMutation.mutate({ businessId: id, isConcierge, ...formData });
   };
-
   if (businessLoading || !business) {
     return (
-      <div className="min-h-screen bg-surface p-4 md:p-8 flex flex-col max-w-7xl mx-auto gap-8 mt-16 animate-pulse">
-        {/* Skeleton Hero */}
-        <div className="w-full h-[353px] md:h-[442px] rounded-xl glass-surface"></div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="min-h-screen bg-background p-4 md:p-8 flex flex-col max-w-7xl mx-auto gap-8 mt-16">
+        <div className="h-[353px] md:h-[442px] rounded-xl bg-surface/50" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="lg:col-span-4 space-y-8">
-            <div className="rounded-xl shadow-sm border border-outline-variant/20 glass-surface"></div>
-            <div className="rounded-xl shadow-sm border border-outline-variant/20 glass-surface"></div>
+            <div className="h-32 rounded-xl border border-white/[0.07] bg-white/[0.03]" />
+            <div className="h-40 rounded-xl border border-white/[0.07] bg-white/[0.03]" />
           </div>
           <div className="lg:col-span-8 space-y-4">
-            <div className="bg-surface-container-lowest h-24 rounded-xl shadow-sm border border-outline-variant/20"></div>
-            <div className="bg-surface-container-lowest h-24 rounded-xl shadow-sm border border-outline-variant/20"></div>
-            <div className="bg-surface-container-lowest h-24 rounded-xl shadow-sm border border-outline-variant/20"></div>
+            <div className="h-24 rounded-xl border border-white/[0.07] bg-white/[0.03]" />
+            <div className="h-24 rounded-xl border border-white/[0.07] bg-white/[0.03]" />
+            <div className="h-24 rounded-xl border border-white/[0.07] bg-white/[0.03]" />
           </div>
         </div>
       </div>
@@ -199,418 +179,255 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="bg-surface min-h-screen pb-24 md:pb-12 text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
-      {/* Top App Bar - Web */}
-      <header className="hidden md:flex justify-between items-center w-full px-6 py-4 bg-surface/80 backdrop-blur-md sticky top-0 z-40 transition-all duration-300">
-        <h1 className="font-headline text-2xl font-bold tracking-tighter text-primary cursor-pointer" onClick={() => navigate('/')}>Pabandi</h1>
+    <div
+      className="min-h-screen text-slate-100 antialiased"
+      style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
+    >
+      {/* Top App Bar */}
+      <header className="sticky top-0 z-40 hidden md:flex items-center justify-between bg-background/80 px-6 py-4 backdrop-blur-md">
+        <h1 className="cursor-pointer font-headline text-2xl font-bold tracking-tighter text-primary" onClick={() => navigate('/')}>Pabandi</h1>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            <button onClick={() => navigate('/reservations')} className="text-on-surface-variant hover:text-primary font-body text-sm font-medium transition-colors">My Bookings</button>
+            <button onClick={() => navigate('/reservations')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">My Bookings</button>
           ) : (
-            <button onClick={() => navigate('/login')} className="text-on-surface-variant hover:text-primary font-body text-sm font-medium transition-colors">Sign In</button>
+            <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">Sign In</button>
           )}
         </div>
       </header>
 
-      {/* Main Content Box */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 md:mt-8">
-        
-        {/* Validation/Booking Success or Failure */}
+      <main className="mx-auto max-w-7xl mt-4 px-4 md:mt-8 sm:px-6 lg:px-8">
         {bookingMutation.isError && (
-          <div className="bg-error-container text-on-error-container p-4 rounded-lg mb-6 border border-error/20 flex items-center shadow-sm">
-            <span className="material-symbols-outlined mr-2">error</span>
+          <Surface className="mb-6 border-red-500/20 bg-red-500/10 text-red-200">
             {(bookingMutation.error as any)?.response?.data?.message || 'Booking failed'}
-          </div>
+          </Surface>
         )}
 
-        {/* Claim Business Banner */}
-        {business.isClaimed === false && (
-          <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-center justify-between shadow-sm">
-            <div className="flex items-center gap-3 mb-3 sm:mb-0">
-              <span className="material-symbols-outlined text-primary text-2xl">verified</span>
+        {/* Hero */}
+        <div className="relative h-[353px] overflow-hidden rounded-xl md:h-[442px] md:mb-16">
+          <img alt={business.name} className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs0Ker3tH73HShnpzCYS57ru-3m9EJycGJWEoAjRes7gsogMja6_xbRcECJxl_z65r8L8K1RlEZ2Yi88YJIyaf83nLezBsjFXmlb_CGtThPJ6ogXH5z611EYKzBEDTMXJzLDG7fyLLKF34ij9frHsDsecGNoy_hs7IvUhUmEZAuY_nv4p5KYyTXW-LOg21c0WpklLm6jEm6yaeo4IOy7Cbsvl4x9UTkBa5rXOf0SxMRAdn2ZWlqSWwjXH_p0OZcyCMXCl4COE9RDOk" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#011d35]/90 via-[#011d35]/40 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-full p-6 text-white md:p-10">
+            <div className="flex flex-col-reverse items-start justify-between gap-4 md:flex-row md:items-end">
               <div>
-                <h3 className="text-on-surface font-semibold">Is this your business?</h3>
-                <p className="text-on-surface-variant text-sm">Claim this listing to manage bookings, respond to reviews, and update details.</p>
-              </div>
-            </div>
-            <button 
-              onClick={async () => {
-                if (!isAuthenticated) {
-                  navigate('/login');
-                  return;
-                }
-                if (confirm('Are you sure you want to claim this business?')) {
-                  try {
-                    await businessService.claimBusiness(business.id);
-                    alert('Business claimed successfully!');
-                    navigate('/dashboard');
-                  } catch (e: any) {
-                    alert(e.response?.data?.message || 'Failed to claim business');
-                  }
-                }
-              }}
-              className="bg-primary text-on-primary px-6 py-2 rounded-full font-medium hover:bg-primary/90 transition-colors shrink-0"
-            >
-              Claim Now
-            </button>
-          </div>
-        )}
-
-        {/* Hero Section */}
-        <div className="relative w-full h-[353px] md:h-[442px] rounded-xl overflow-hidden mb-8 md:mb-16 shadow-sm">
-          <img 
-            alt={business.name} 
-            className="w-full h-full object-cover" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs0Ker3tH73HShnpzCYS57ru-3m9EJycGJWEoAjRes7gsogMja6_xbRcECJxl_z65r8L8K1RlEZ2Yi88YJIyaf83nLezBsjFXmlb_CGtThPJ6ogXH5z611EYKzBEDTMXJzLDG7fyLLKF34ij9frHsDsecGNoy_hs7IvUhUmEZAuY_nv4p5KYyTXW-LOg21c0WpklLm6jEm6yaeo4IOy7Cbsvl4x9UTkBa5rXOf0SxMRAdn2ZWlqSWwjXH_p0OZcyCMXCl4COE9RDOk" 
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#011d35]/90 via-[#011d35]/40 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 text-white">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label text-[11px] font-medium tracking-wide">
-                    <StarIcon className="h-3 w-3 mr-1" /> {googleRating} Rating
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded font-label text-[11px] font-bold tracking-wide transition-colors ${trustScore >= 80 ? 'bg-green-500/20 text-green-300 border border-green-500/50' : trustScore >= 50 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50' : 'bg-red-500/20 text-red-300 border border-red-500/50'}`}>
-                    <ShieldCheckIcon className="h-3 w-3 mr-1" /> AI Score: {trustScore}% Reliable → ${dynamicDeposit} Deposit
-                  </span>
-                  <span className="hidden md:inline-flex items-center px-2 py-1 rounded bg-white/20 backdrop-blur-sm text-white font-label text-[11px] font-medium tracking-wide">
-                     Premium Partner
-                  </span>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <Chip tone="success">⭐ {googleRating} Rating</Chip>
+                  <Badge tone={trustScore >= 80 ? 'success' : trustScore >= 50 ? 'warning' : 'danger'}>AI Score: {trustScore}% Reliable → ${dynamicDeposit} Deposit</Badge>
+                  <Chip tone="info">Premium Partner</Chip>
                 </div>
-                
-                <h2 className="font-headline text-3xl md:text-[2.75rem] font-bold tracking-tight mb-2 leading-tight">{business.name}</h2>
-                <p className="font-body text-sm md:text-[0.875rem] text-slate-200 flex items-center">
-                  <MapPinIcon className="h-4 w-4 mr-1" /> {business.address || 'Global Partner'}
+                <h2 className="font-headline text-3xl font-bold tracking-tight md:text-[2.75rem]">{business.name}</h2>
+                <p className="flex items-center font-body text-sm text-slate-200 md:text-[0.875rem]">
+                  <span className="mr-1">📍</span> {business.address || 'Global Partner'}
                 </p>
               </div>
-              <div className="hidden md:flex gap-3">
-                <button 
-                  className="bg-white/10 backdrop-blur-md text-white font-body text-sm font-medium px-6 py-3 rounded border border-white/30 hover:bg-white/20 transition-all hover:scale-105 active:scale-95"
-                >
-                    Save
-                </button>
-                <button 
+              <div className="hidden gap-3 md:flex">
+                <button className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-body text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-white/20">Save</button>
+                <button
                   onClick={() => {
-                    if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) window.navigator.vibrate(30);
+                    if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(30);
                     setShowBookingForm(true);
-                  }} 
-                  className="bg-white text-primary font-body text-sm font-semibold px-8 py-3 rounded hover:bg-slate-50 transition-all shadow-sm hover:scale-105 hover:shadow-primary/20 active:scale-95"
+                  }}
+                  className="rounded-lg bg-white px-8 py-3 font-body text-sm font-semibold text-primary shadow-sm transition-all hover:bg-slate-50 active:scale-95"
                 >
-                    Make Reservation
+                  Make Reservation
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Columns */}
-        <div className={`grid grid-cols-1 ${showBookingForm ? 'lg:grid-cols-2' : 'lg:grid-cols-12'} gap-8 md:gap-12 transition-all duration-300`}>
-          
-          {/* Details & Location */}
+        <div className={`grid grid-cols-1 gap-8 md:gap-12 transition-all duration-300 ${showBookingForm ? 'lg:grid-cols-2' : 'lg:grid-cols-12'}`}>
           <div className={`${showBookingForm ? 'lg:col-span-1' : 'lg:col-span-4'} space-y-8`}>
-            
-            {/* Info Card */}
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-              <h3 className="font-headline text-xl font-semibold text-primary mb-6">Details</h3>
+            <Surface>
+              <h3 className="mb-6 font-headline text-xl font-semibold text-primary">Details</h3>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0">
-                    <ClockIcon className="h-5 w-5" />
-                  </div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">🕒</div>
                   <div>
-                    <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Opening Hours</h4>
-                    <p className="font-body text-[0.875rem] text-on-surface-variant">Mon - Sat: 10:00 AM - 9:00 PM</p>
+                    <h4 className="font-body text-[0.875rem] font-medium text-slate-100">Opening Hours</h4>
+                    <p className="font-body text-[0.875rem] text-slate-300">Mon - Sat: 10:00 AM - 9:00 PM</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0">
-                    <PhoneIcon className="h-5 w-5" />
-                  </div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">📞</div>
                   <div>
-                    <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Contact</h4>
-                    <p className="font-body text-[0.875rem] text-on-surface-variant">{business.address || `${business.city || ''}, ${business.state || business.country || 'United States'}`}</p>
+                    <h4 className="font-body text-[0.875rem] font-medium text-slate-100">Contact</h4>
+                    <p className="font-body text-[0.875rem] text-slate-300">{business.address || `${business.city || ''}, ${business.state || business.country || 'United States'}`}</p>
                   </div>
                 </div>
               </div>
-            </div>
+            </Surface>
 
-            {/* Map Card */}
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-               <h3 className="font-headline text-xl font-semibold text-primary mb-4">Location</h3>
-               <div className="w-full h-48 rounded-lg overflow-hidden bg-surface-container-low">
-                  <BusinessMap 
-                    latitude={business.latitude || 24.8607} 
-                    longitude={business.longitude || 67.0011} 
-                    name={business.name} 
-                    zoom={15} 
-                  />
-               </div>
-            </div>
-
+            <Surface>
+              <h3 className="mb-4 font-headline text-xl font-semibold text-primary">Location</h3>
+              <div className="h-48 overflow-hidden rounded-lg bg-surface">
+                <BusinessMap latitude={business.latitude || 24.8607} longitude={business.longitude || 67.0011} name={business.name} zoom={15} />
+              </div>
+            </Surface>
           </div>
 
-          {/* Booking Form Or Services */}
           <div className={`${showBookingForm ? 'lg:col-span-1' : 'lg:col-span-8'}`}>
             {showBookingForm ? (
-               <div className="bg-surface-container-lowest rounded-xl p-6 md:p-8 shadow-sm border border-outline-variant/20 animate-in slide-in-from-right-4 duration-300">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Table Reservation</h3>
-                    <button onClick={() => setShowBookingForm(false)} className="text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
-                      Cancel
-                    </button>
+              <Surface>
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Table Reservation</h3>
+                  <button onClick={() => setShowBookingForm(false)} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">Cancel</button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-200">Date *</label>
+                      <input type="date" name="reservationDate" required min={format(new Date(), 'yyyy-MM-dd')} value={formData.reservationDate} onChange={handleChange} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-200">Time *</label>
+                      <input type="time" name="reservationTime" required value={formData.reservationTime} onChange={handleChange} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-200">Guests *</label>
+                      <select name="numberOfGuests" required value={formData.numberOfGuests} onChange={handleChange} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => <option key={num} value={num}>{num} {num === 1 ? 'Person' : 'People'}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-200">Your Name *</label>
+                      <input type="text" name="customerName" required value={formData.customerName} onChange={handleChange} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-200">Phone Number *</label>
+                    <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary" placeholder="+1 (555) 000-0000" />
+                  </div>
+
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="block text-sm font-medium text-slate-200">Special Requests</label>
+                      {user?.encryptedDietaryData && business?.e2eePublicKey && (
+                        <button type="button" onClick={handleAttachPassport} className="flex items-center gap-1 text-xs font-bold text-primary hover:underline">🔒 Attach Encrypted Dietary Passport</button>
+                      )}
+                    </div>
+                    <textarea name="specialRequests" value={formData.specialRequests} onChange={handleChange} rows={2} className="w-full rounded-md border-0 bg-surface px-3 py-2 font-body text-sm text-slate-100 outline-none focus:ring-1 focus:ring-primary" placeholder="Any special requests or dietary needs..." />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-200">Deposit Payment Method</label>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                      {[
+                        { value: 'safepay', label: 'Safepay', sub: 'Fiat' },
+                        { value: 'bsc', label: 'Web3 BSC', sub: 'BNB / USDT' },
+                        { value: 'solana', label: 'Web3 Solana', sub: 'SOL / USDC' },
+                        { value: 'stellar-franklin', label: 'Web3 Stellar', sub: 'BENJI / FOBXX' },
+                        { value: 'stake', label: 'Stake PAB', sub: `${REQUIRED_STAKE} PAB required`, disabled: offChainBalance < REQUIRED_STAKE },
+                      ].map((option) => {
+                        const selected = formData.paymentMethod === option.value;
+                        return (
+                          <label key={option.value} className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border p-3 transition-all ${selected ? 'border-primary bg-surface' : 'border-white/10 bg-surface hover:bg-surface/80'} ${option.disabled ? 'cursor-not-allowed opacity-50' : ''}`}>
+                            <input type="radio" name="paymentMethod" value={option.value} checked={selected} onChange={handleChange} disabled={option.disabled} className="sr-only" />
+                            <span className="text-xs font-semibold text-slate-100">{option.label}</span>
+                            <span className="text-[10px] text-slate-400">{option.sub}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Surface className="border-tertiary/30 bg-tertiary/10">
+                    <div className="flex items-start gap-4">
+                      <span className="mt-0.5 text-tertiary">🛡️</span>
                       <div>
-                        <label className="block text-sm font-medium text-on-surface mb-1">Date *</label>
-                        <input type="date" name="reservationDate" required min={format(new Date(), 'yyyy-MM-dd')} value={formData.reservationDate} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-on-surface mb-1">Time *</label>
-                        <input type="time" name="reservationTime" required value={formData.reservationTime} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
+                        <h4 className="font-body text-sm font-semibold text-slate-100">Pabandi Protected Booking</h4>
+                        <p className="mt-1 text-xs text-slate-300 leading-relaxed">Checking in securely earns you Pabandi Reliability Tokens. No-shows may affect your platform reliability score.</p>
                       </div>
                     </div>
+                  </Surface>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div>
-                         <label className="block text-sm font-medium text-on-surface mb-1">Guests *</label>
-                         <select name="numberOfGuests" required value={formData.numberOfGuests} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm">
-                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                             <option key={num} value={num}>{num} {num === 1 ? 'Person' : 'People'}</option>
-                           ))}
-                         </select>
-                       </div>
-                       <div>
-                         <label className="block text-sm font-medium text-on-surface mb-1">Your Name *</label>
-                         <input type="text" name="customerName" required value={formData.customerName} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
-                       </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-on-surface mb-1">Phone Number *</label>
-                       <input type="tel" name="customerPhone" required value={formData.customerPhone} onChange={handleChange} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="+1 (555) 000-0000" />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-on-surface">Special Requests</label>
-                        {user?.encryptedDietaryData && business?.e2eePublicKey && (
-                          <button 
-                            type="button" 
-                            onClick={handleAttachPassport}
-                            className="text-xs text-primary font-bold hover:underline flex items-center gap-1"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">lock</span>
-                            Attach Encrypted Dietary Passport
-                          </button>
-                        )}
-                      </div>
-                      <textarea name="specialRequests" value={formData.specialRequests} onChange={handleChange} rows={2} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" placeholder="Any special requests or dietary needs..." />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-on-surface mb-2">Deposit Payment Method</label>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-2">
-                        {/* Safepay / Fiat */}
-                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'safepay' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
-                          <input type="radio" name="paymentMethod" value="safepay" checked={formData.paymentMethod === 'safepay'} onChange={handleChange} className="sr-only" />
-                          <span className="material-symbols-outlined text-primary mb-1">credit_card</span>
-                          <span className="text-xs font-medium text-center">Safepay</span>
-                        </label>
-
-                        {/* BSC BNB */}
-                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'bsc' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
-                          <input type="radio" name="paymentMethod" value="bsc" checked={formData.paymentMethod === 'bsc'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-on-surface text-sm">Web3 BSC</span>
-                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">BNB / USDT</span>
-                        </label>
-
-                        {/* Solana */}
-                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'solana' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
-                          <input type="radio" name="paymentMethod" value="solana" checked={formData.paymentMethod === 'solana'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-on-surface text-sm">Web3 Solana</span>
-                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">SOL / USDC</span>
-                        </label>
-
-                        {/* Stellar Franklin Templeton */}
-                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm ${formData.paymentMethod === 'stellar-franklin' ? 'bg-surface-container-lowest border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'}`}>
-                          <input type="radio" name="paymentMethod" value="stellar-franklin" checked={formData.paymentMethod === 'stellar-franklin'} onChange={handleChange} className="sr-only" />
-                          <span className="font-semibold text-on-surface text-sm">Web3 Stellar</span>
-                          <span className="text-[10px] text-on-surface-variant font-medium mt-1">BENJI / FOBXX</span>
-                        </label>
-
-                        {/* Stake PAB */}
-                        <label className={`flex flex-col items-center justify-center p-3 rounded-xl cursor-pointer transition-all shadow-sm relative overflow-hidden ${formData.paymentMethod === 'stake' ? 'bg-primary-container/20 border border-primary ring-1 ring-primary' : 'bg-surface-container-lowest border border-outline-variant/20 hover:bg-surface-container-low'} ${offChainBalance < REQUIRED_STAKE ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                          <input type="radio" name="paymentMethod" value="stake" disabled={offChainBalance < REQUIRED_STAKE} checked={formData.paymentMethod === 'stake'} onChange={handleChange} className="sr-only" />
-                          {formData.paymentMethod === 'stake' && <div className="absolute inset-0 bg-[radial-gradient(var(--color-primary)_1px,transparent_1px)] [background-size:8px_8px] opacity-10 pointer-events-none" />}
-                          <span className="font-headline font-black text-primary text-sm flex items-center gap-1 z-10"><ShieldCheckIcon className="h-4 w-4" /> Stake PAB</span>
-                          <span className="text-[10px] text-on-surface-variant font-medium mt-1 z-10">{REQUIRED_STAKE} PAB required</span>
-                          {offChainBalance < REQUIRED_STAKE && (
-                            <span className="text-[8px] text-error font-bold mt-1 z-10">You have {offChainBalance}</span>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="bg-tertiary-fixed/20 border-l-4 border-tertiary p-4 rounded-r-lg flex items-start gap-4 mt-6">
-                       <div className="text-tertiary mt-0.5">
-                         <ShieldCheckIcon className="h-5 w-5" />
-                       </div>
-                       <div>
-                         <h4 className="font-body text-sm font-semibold text-on-tertiary-fixed-variant">Pabandi Protected Booking</h4>
-                         <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                           Your booking is verified. Checking in securely earns you Pabandi Reliability Tokens. No-shows may affect your platform reliability score.
-                         </p>
-                       </div>
-                    </div>
-
-                    <div className="pt-2">
-                       <button 
-                         type="submit" 
-                         disabled={bookingMutation.isLoading} 
-                         className="w-full relative overflow-hidden bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline text-lg font-semibold py-4 rounded-lg shadow-[0_0_20px_rgba(var(--color-primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--color-primary),0.5)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 flex justify-center items-center gap-2"
-                       >
-                         {bookingMutation.isLoading && (
-                           <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                         )}
-                         <span className="relative z-10 flex items-center gap-2">
-                           {bookingMutation.isLoading ? (
-                             <>
-                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                               Analyzing Risk...
-                             </>
-                           ) : 'Request Reservation'}
-                         </span>
-                       </button>
-                    </div>
-                  </form>
-               </div>
+                  <div>
+                    <Button variant="default" onClick={() => {}} className="w-full py-4 text-lg font-semibold">
+                      Request Reservation
+                    </Button>
+                  </div>
+                </form>
+              </Surface>
             ) : bookingResult ? (
-               <div className="bg-surface-container-lowest rounded-xl p-6 md:p-8 shadow-[0_0_40px_rgba(var(--color-primary),0.15)] border border-primary/30 animate-in slide-in-from-bottom-8 fade-in duration-700 relative overflow-hidden">
-                  {/* Neon Glow Effects */}
-                  <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl mix-blend-screen pointer-events-none"></div>
-                  <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-tertiary/20 rounded-full blur-3xl mix-blend-screen pointer-events-none"></div>
-
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <ShieldCheckIcon className="w-48 h-48 text-primary animate-pulse" />
+              <Surface className="relative overflow-hidden">
+                <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/20 blur-3xl mix-blend-screen" />
+                <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-tertiary/20 blur-3xl mix-blend-screen" />
+                <div className="relative z-10">
+                  <div className="mb-2 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">🤖</div>
+                    <h3 className="font-headline text-[1.75rem] font-bold tracking-tight text-primary">AI Risk Analysis</h3>
                   </div>
-                  
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-primary text-2xl">robot_2</span>
-                      </div>
-                      <h3 className="font-headline text-[1.75rem] font-bold text-primary tracking-tight">AI Risk Analysis</h3>
-                    </div>
-                    
-                    <p className="text-on-surface-variant font-body mb-8">
-                      Our autonomous agent has analyzed your booking request to secure this reservation.
-                    </p>
+                  <p className="mb-8 font-body text-slate-300">Our autonomous agent has analyzed your booking request to secure this reservation.</p>
 
-                    <div className="rounded-xl glass-surface p-6 mb-8 border border-outline-variant/30">
-                      <div className="flex justify-between items-center mb-6 pb-6 border-b border-outline-variant/20">
-                        <div>
-                          <p className="text-sm font-medium text-on-surface-variant mb-1">No-Show Risk Score</p>
-                          <div className="flex items-end gap-2">
-                            <span className={`text-4xl font-black font-headline ${bookingResult.prediction.riskScore >= 70 ? 'text-error' : bookingResult.prediction.riskScore >= 40 ? 'text-orange-500' : 'text-primary'}`}>
-                              {bookingResult.prediction.riskScore}
-                            </span>
-                            <span className="text-on-surface-variant mb-1 font-medium">/ 100</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-on-surface-variant mb-1">Required Deposit</p>
-                          <div className="text-3xl font-black font-headline text-on-surface">
-                             {business.currency || 'USD'} {bookingResult.reservation.depositAmount || 0}
-                          </div>
-                        </div>
-                      </div>
-
+                  <Surface className="mb-8 border border-white/10">
+                    <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-6">
                       <div>
-                         <h4 className="font-semibold text-on-surface mb-3 flex items-center gap-2">
-                           <span className="material-symbols-outlined text-sm">insights</span>
-                           Agent Insights
-                         </h4>
-                         <ul className="space-y-3">
-                           {Object.entries(bookingResult.reservation.aiFactors || {}).map(([factor, impact]: [string, any]) => (
-                             <li key={factor} className="flex justify-between items-center bg-surface-container p-3 rounded-lg border border-outline-variant/10">
-                               <span className="font-body text-sm font-medium text-on-surface capitalize">{factor.replace(/([A-Z])/g, ' $1').trim()}</span>
-                               <span className={`font-mono text-xs font-bold px-2 py-1 rounded ${impact > 0 ? 'bg-error-container text-on-error-container' : 'bg-primary-container text-on-primary-container'}`}>
-                                 {impact > 0 ? '+' : ''}{impact}% Risk
-                               </span>
-                             </li>
-                           ))}
-                           {Object.keys(bookingResult.reservation.aiFactors || {}).length === 0 && (
-                             <li className="text-sm text-on-surface-variant italic">Standard baseline risk applied.</li>
-                           )}
-                         </ul>
-                      </div>
-                    </div>
-
-                    <div className="bg-tertiary-fixed/20 border-l-4 border-tertiary p-4 rounded-r-lg mb-8">
-                       <p className="text-sm text-on-surface-variant font-medium">
-                         <strong className="text-on-tertiary-fixed-variant">Trust Ecosystem:</strong> This deposit is fully credited towards your final bill. Checking in successfully will reward you with $PAB tokens and lower your future risk scores!
-                       </p>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <button 
-                        onClick={() => { setBookingResult(null); setShowBookingForm(false); }}
-                        className="flex-1 bg-surface-container text-on-surface font-semibold py-4 rounded-lg hover:bg-surface-container-high transition-all active:scale-95"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={handlePayDeposit}
-                        disabled={isProcessingWeb3}
-                        className="flex-[2] relative overflow-hidden bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline text-lg font-semibold py-4 rounded-lg shadow-[0_0_20px_rgba(var(--color-primary),0.4)] hover:shadow-[0_0_30px_rgba(var(--color-primary),0.6)] hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 flex justify-center items-center gap-2 group"
-                      >
-                        {isProcessingWeb3 ? (
-                          <span className="flex items-center gap-2">
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Processing Web3 Tx...
-                          </span>
-                        ) : (
-                          <>
-                            Pay Deposit & Confirm
-                            <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                          </>
-                        )}
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none"></div>
-                      </button>
-                    </div>
-                  </div>
-               </div>
-            ) : (
-               <div className="space-y-8 animate-in fade-in duration-500">
-                  <div className="flex justify-between items-end mb-6">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Services Overview</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Placeholder Services */}
-                    {[1,2,3,4].map((i) => (
-                      <div key={i} className="bg-surface-container-lowest p-5 rounded-xl flex justify-between items-center group shadow-sm border border-outline-variant/20 hover:border-primary/50 transition-all cursor-pointer" onClick={() => setShowBookingForm(true)}>
-                        <div>
-                          <h4 className="font-body text-[0.875rem] font-medium text-on-surface mb-1">Standard Reservation</h4>
-                          <p className="font-body text-[0.6875rem] text-on-surface-variant">Secure your spot instantly</p>
+                        <p className="mb-1 text-sm font-medium text-slate-300">No-Show Risk Score</p>
+                        <div className="flex items-end gap-2">
+                          <span className={`font-headline text-4xl font-black ${bookingResult.prediction.riskScore >= 70 ? 'text-red-400' : bookingResult.prediction.riskScore >= 40 ? 'text-orange-400' : 'text-primary'}`}>{bookingResult.prediction.riskScore}</span>
+                          <span className="mb-1 font-medium text-slate-300">/ 100</span>
                         </div>
-                        <button className="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                          <span className="material-symbols-outlined text-[16px]">add</span>
-                        </button>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-right">
+                        <p className="mb-1 text-sm font-medium text-slate-300">Required Deposit</p>
+                        <div className="font-headline text-3xl font-black text-slate-100">{business.currency || 'USD'} {bookingResult.reservation.depositAmount || 0}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="mb-3 flex items-center gap-2 font-semibold text-slate-100">📊 Agent Insights</h4>
+                      <ul className="space-y-3">
+                        {Object.entries(bookingResult.reservation.aiFactors || {}).map(([factor, impact]: [string, any]) => (
+                          <li key={factor} className="flex items-center justify-between rounded-lg border border-white/10 bg-surface/50 p-3">
+                            <span className="font-body text-sm font-medium text-slate-100 capitalize">{factor.replace(/([A-Z])/g, ' $1').trim()}</span>
+                            <span className={`font-mono rounded px-2 py-1 text-xs font-bold ${impact > 0 ? 'bg-red-500/15 text-red-300' : 'bg-primary/15 text-indigo-200'}`}>{impact > 0 ? '+' : ''}{impact}% Risk</span>
+                          </li>
+                        ))}
+                        {Object.keys(bookingResult.reservation.aiFactors || {}).length === 0 && (
+                          <li className="italic text-slate-400">Standard baseline risk applied.</li>
+                        )}
+                      </ul>
+                    </div>
+                  </Surface>
 
-                  <div className="mt-8">
-                    <h3 className="font-headline text-[1.5rem] font-semibold text-primary mb-6">Latest Reviews</h3>
-                    <ReviewCarousel reviews={analytics?.reviews || [
-                      { id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Checked in smoothly using Pabandi.', time: new Date().toISOString(), sentimentLabel: 'positive' },
-                    ]} />
+                  <Surface className="mb-8 border-tertiary/30 bg-tertiary/10">
+                    <p className="text-sm text-slate-300">
+                      <strong className="text-slate-100">Trust Ecosystem:</strong> This deposit is fully credited towards your final bill. Checking in successfully will reward you with $PAB tokens and lower your future risk scores!
+                    </p>
+                  </Surface>
+
+                  <div className="flex gap-4">
+                    <Button variant="ghost" onClick={() => { setBookingResult(null); setShowBookingForm(false); }} className="flex-1">Cancel</Button>
+                    <Button onClick={handlePayDeposit} disabled={isProcessingWeb3} className="flex-[2]">
+                      {isProcessingWeb3 ? 'Processing...' : 'Pay Deposit & Confirm'}
+                    </Button>
                   </div>
-               </div>
+                </div>
+              </Surface>
+            ) : (
+              <div className="space-y-8">
+                <div className="flex items-end justify-between">
+                  <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Services Overview</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Surface key={i} className="flex cursor-pointer items-center justify-between transition-all hover:border-white/20" onClick={() => setShowBookingForm(true)}>
+                      <div>
+                        <h4 className="font-body text-[0.875rem] font-medium text-slate-100">Standard Reservation</h4>
+                        <p className="font-body text-[0.6875rem] text-slate-300">Secure your spot instantly</p>
+                      </div>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-primary transition-colors group-hover:bg-primary group-hover:text-white">+</div>
+                    </Surface>
+                  ))}
+                </div>
+                <div>
+                  <h3 className="mb-6 font-headline text-[1.5rem] font-semibold text-primary">Latest Reviews</h3>
+                  <ReviewCarousel reviews={analytics?.reviews || [{ id: '1', authorName: 'Ali Khan', rating: 5, text: 'Fantastic service! Checked in smoothly using Pabandi.', time: new Date().toISOString(), sentimentLabel: 'positive' }]} />
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -618,16 +435,16 @@ export default function BookingPage() {
 
       {/* Mobile Fixed CTA */}
       {!showBookingForm && (
-        <div className="md:hidden fixed bottom-6 left-4 right-4 z-40 flex justify-center animate-in slide-in-from-bottom-8 duration-500">
-          <button 
+        <div className="fixed bottom-6 left-4 right-4 z-40 flex justify-center md:hidden">
+          <button
             onClick={() => {
-              if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) window.navigator.vibrate(30);
+              if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(30);
               setShowBookingForm(true);
-            }} 
-            className="w-full max-w-sm bg-gradient-to-r from-primary to-primary-container text-on-primary font-body text-sm font-medium px-8 py-4 rounded-full shadow-[0_0_20px_rgba(var(--color-primary),0.3)] flex justify-center items-center gap-2 hover:opacity-90 active:scale-95 transition-all"
+            }}
+            className="w-full max-w-sm rounded-full bg-gradient-to-r from-primary to-primary-container px-8 py-4 font-body text-sm font-medium text-white shadow-[0_0_20px_rgba(var(--color-primary),0.3)]"
           >
             <span>Book Appointment</span>
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            <span className="ml-1">→</span>
           </button>
         </div>
       )}

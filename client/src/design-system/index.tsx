@@ -79,13 +79,15 @@ type SurfaceProps = {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
 };
 
-export function Surface({ children, className = '', style }: SurfaceProps) {
+export function Surface({ children, className = '', style, onClick }: SurfaceProps) {
   return (
     <div
-      className={`rounded-xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-xl transition-transform duration-200 hover:-translate-y-[2px] hover:border-white/10 ${className}`}
+      className={`rounded-xl border border-white/[0.07] bg-white/[0.03] p-5 backdrop-blur-xl transition-all duration-200 hover:-translate-y-[2px] hover:border-white/10 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       style={style}
+      onClick={onClick}
     >
       {children}
     </div>
