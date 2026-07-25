@@ -7,12 +7,7 @@ import { getOrCreateAssociatedTokenAccount, transfer } from '@solana/spl-token';
 import bs58 from 'bs58';
 import { ethers } from 'ethers';
 
-// Pabandi Escrow Contract (BSC Testnet)
-const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
-const ESCROW_ABI = [
-  "function releaseToBusiness(string memory _reservationId) external",
-  "function refundToCustomer(string memory _reservationId) external"
-];
+import { solanaEscrowService } from './solana_escrow.service';
 
 // Pabandi Proof of Visit Contract (BSC Testnet)
 const PABANDI_POV_BSC = '0x1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0T'; // Dummy
@@ -527,20 +522,30 @@ export class CryptoService {
    */
   async releaseEscrowToBusiness(reservationId: string): Promise<void> {
     try {
-      const pk = process.env.ESCROW_ORACLE_PRIVATE_KEY;
-      if (!pk) {
-        logger.warn(`[Escrow] Mocking release to business for ${reservationId} (No private key)`);
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: { business: true }
+      });
+      if (!reservation) return;
+
+      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
+      const businessWallet = await prisma.wallet.findUnique({ where: { userId: reservation.business.ownerId! } });
+      
+      if (!customerWallet?.address || !businessWallet?.address) {
+        logger.warn(`[Escrow] Missing wallet for release ${reservationId}`);
         return;
       }
-      
-      const provider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org/');
-      const wallet = new ethers.Wallet(pk, provider);
-      const contract = new ethers.Contract(PABANDI_ESCROW_BSC, ESCROW_ABI, wallet);
 
-      logger.info(`[Escrow] Calling releaseToBusiness on-chain for ${reservationId}`);
-      const tx = await contract.releaseToBusiness(reservationId);
-      await tx.wait();
-      logger.info(`[Escrow] Funds released for ${reservationId}. Tx: ${tx.hash}`);
+      logger.info(`[Escrow] Calling releaseEscrow on Solana for ${reservationId}`);
+      
+      const mintStr = process.env.SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111';
+      
+      await solanaEscrowService.triggerReleaseEscrow(
+        reservationId,
+        customerWallet.address,
+        businessWallet.address,
+        mintStr
+      );
     } catch (e: any) {
       logger.error(`[Escrow] Failed to release funds for ${reservationId}: ${e.message}`);
     }
@@ -552,20 +557,27 @@ export class CryptoService {
    */
   async refundEscrowToCustomer(reservationId: string): Promise<void> {
     try {
-      const pk = process.env.ESCROW_ORACLE_PRIVATE_KEY;
-      if (!pk) {
-        logger.warn(`[Escrow] Mocking refund to customer for ${reservationId} (No private key)`);
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: { business: true }
+      });
+      if (!reservation) return;
+
+      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
+      if (!customerWallet?.address) {
+        logger.warn(`[Escrow] Missing customer wallet for refund ${reservationId}`);
         return;
       }
-      
-      const provider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org/');
-      const wallet = new ethers.Wallet(pk, provider);
-      const contract = new ethers.Contract(PABANDI_ESCROW_BSC, ESCROW_ABI, wallet);
 
-      logger.info(`[Escrow] Calling refundToCustomer on-chain for ${reservationId}`);
-      const tx = await contract.refundToCustomer(reservationId);
-      await tx.wait();
-      logger.info(`[Escrow] Funds refunded for ${reservationId}. Tx: ${tx.hash}`);
+      logger.info(`[Escrow] Calling refundEscrow on Solana for ${reservationId}`);
+      
+      const mintStr = process.env.SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111';
+      
+      await solanaEscrowService.triggerRefundEscrow(
+        reservationId,
+        customerWallet.address,
+        mintStr
+      );
     } catch (e: any) {
       logger.error(`[Escrow] Failed to refund funds for ${reservationId}: ${e.message}`);
     }
