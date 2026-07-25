@@ -6,6 +6,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
 import { liveSellerService } from '../services/live-seller.service';
 import { LiveSellerPlatform } from '@prisma/client';
+import { fail, ok } from '../utils/apiResponse';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -32,87 +33,87 @@ function decodeState(token: string) {
 router.get('', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const integrations = await liveSellerService.listForBusiness(biz.id);
-    res.json({ success: true, data: integrations });
+    return ok(res, integrations);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to list integrations' });
+    console.error('Failed to list integrations', e);
+    return fail(res, 'Failed to list integrations', 500);
   }
 });
 
 router.get('/:platform/state', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     const state = await liveSellerService.getShowState(biz.id, platform);
-    res.json({ success: true, data: state });
+    return ok(res, state);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to load show state' });
+    console.error('Failed to load show state', e);
+    return fail(res, 'Failed to load show state', 500);
   }
 });
 
 router.patch('/:platform/state', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     const state = await liveSellerService.upsertShowState(biz.id, platform, req.body || {});
-    res.json({ success: true, data: state });
+    return ok(res, state);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to update show state' });
+    console.error('Failed to update show state', e);
+    return fail(res, 'Failed to update show state', 500);
   }
 });
 
 router.get('/:platform/catalog', async (req: any, res) => {
   try {
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
-    res.json({ success: true, data: { platform, items: [] } });
+    return ok(res, { platform, items: [] });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to load catalog' });
+    console.error('Failed to load catalog', e);
+    return fail(res, 'Failed to load catalog', 500);
   }
 });
 
 router.post('/:platform/orders', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     const order = await liveSellerService.addOrder(biz.id, platform, req.body || {});
-    res.status(201).json({ success: true, data: order });
+    return ok(res, order, 201);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to add order' });
+    console.error('Failed to add order', e);
+    return fail(res, 'Failed to add order', 500);
   }
 });
 
 router.get('/:platform/schedule', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     const schedule = await liveSellerService.getSchedule(biz.id, platform);
-    res.json({ success: true, data: schedule });
+    return ok(res, schedule);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to load schedule' });
+    console.error('Failed to load schedule', e);
+    return fail(res, 'Failed to load schedule', 500);
   }
 });
 
 router.post('/:platform/schedule', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const platform = req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform;
     const schedule = await liveSellerService.setSchedule(biz.id, platform, req.body?.schedule || []);
-    res.json({ success: true, data: schedule });
+    return ok(res, schedule);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to save schedule' });
+    console.error('Failed to save schedule', e);
+    return fail(res, 'Failed to save schedule', 500);
   }
 });
 
@@ -120,10 +121,10 @@ router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, nex
   try {
     const platform = req.params.platform;
     if (!['tiktok-live', 'youtube-shopping', 'shopify-live', 'ebay-live', 'amazon-live', 'instagram-live', 'custom-web'].includes(platform)) {
-      return res.status(400).json({ success: false, error: 'Unsupported platform' });
+      return fail(res, 'Unsupported platform', 400);
     }
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     const token = stateToken(req.user!.id, biz.id, platform);
 
     if (platform === 'tiktok-live') {
@@ -133,10 +134,10 @@ router.get('/connect/:platform', authenticate, async (req: AuthRequest, res, nex
       return passport.authenticate('google', { state: token, scope: ['https://www.googleapis.com/auth/youtube.readonly'] })(req, res, next);
     }
     if (platform === 'shopify-live') {
-      return res.status(400).json({ success: false, error: 'Shopify connect needs a Shopify OAuth strategy.' });
+      return fail(res, 'Shopify connect needs a Shopify OAuth strategy.', 400);
     }
     if (['ebay-live', 'amazon-live', 'instagram-live', 'custom-web'].includes(platform)) {
-      return res.status(400).json({ success: false, error: 'Live-sell connect is not implemented for this platform yet' });
+      return fail(res, 'Live-sell connect is not implemented for this platform yet', 400);
     }
   } catch (e) {
     next(e);
@@ -159,7 +160,7 @@ router.get('/callback/tiktok', passport.authenticate('tiktok', { session: false,
     res.redirect(`${FRONTEND_URL}/business?livesell_success=${state.platform}`);
   } catch (e) {
     console.error('Live sell callback error', e);
-    res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
+    return res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
   }
 });
 
@@ -178,7 +179,7 @@ router.get('/callback/google', passport.authenticate('google', { session: false,
     res.redirect(`${FRONTEND_URL}/business?livesell_success=youtube-shopping`);
   } catch (e) {
     console.error('YouTube callback error', e);
-    res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
+    return res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
   }
 });
 
@@ -198,19 +199,19 @@ router.get('/callback/shopify', passport.authenticate('shopify', { session: fals
     res.redirect(`${FRONTEND_URL}/business?livesell_success=shopify-live`);
   } catch (e) {
     console.error('Shopify callback error', e);
-    res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
+    return res.redirect(`${FRONTEND_URL}/business?livesell_error=callback_failed`);
   }
 });
 
 router.delete('/:platform', authenticate, async (req: AuthRequest, res) => {
   try {
     const biz = await requireBusiness(req, res);
-    if (!biz) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    if (!biz) return fail(res, 'Business profile not found', 400);
     await liveSellerService.disconnect(biz.id, req.params.platform.toUpperCase().replace('-', '_') as LiveSellerPlatform);
-    res.json({ success: true, message: 'Integration disconnected' });
+    return ok(res, { message: 'Integration disconnected' });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ success: false, error: 'Failed to disconnect integration' });
+    console.error('Failed to disconnect integration', e);
+    return fail(res, 'Failed to disconnect integration', 500);
   }
 });
 
