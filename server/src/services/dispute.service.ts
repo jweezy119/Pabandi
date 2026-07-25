@@ -1,11 +1,9 @@
 import { PrismaClient, DisputeOutcome, DisputeType } from '@prisma/client';
 import { ReliabilityService } from './reliability.service';
-import { TrustScoreService } from './trustScore.service';
 import { blockchainService } from './blockchain.service';
 
 const prisma = new PrismaClient();
 const reliabilityService = new ReliabilityService();
-const trustScoreService = new TrustScoreService();
 
 export class DisputeService {
   /**
