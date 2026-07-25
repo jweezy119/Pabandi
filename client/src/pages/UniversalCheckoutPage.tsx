@@ -4,6 +4,7 @@ import { useQuery } from 'react-query';
 import { ArrowLeftIcon, UserIcon, CheckCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import { businessService, reservationService, liveSellerService, passportService, popService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { tokens } from '../design-system';
 
 function getDraftReservationId(sellerId?: string) {
   if (!sellerId) return null;
@@ -175,22 +176,20 @@ export default function UniversalCheckoutPage() {
 
   if (!seller && !liveState) {
     return (
-      <div className="min-h-screen bg-surface text-on-surface font-body">
-        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
           <VideoCameraIcon className="h-12 w-12 text-outline mx-auto mb-4" />
           <h1 className="font-headline text-2xl font-bold mb-2">Seller not found</h1>
           <p className="text-on-surface-variant mb-6">This seller page may not be active yet.</p>
           <Link to="/" className="px-6 py-2 bg-primary text-on-primary rounded-xl font-bold">Back to home</Link>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body mobile-safe-bottom">
+    <div className="min-h-screen font-body mobile-safe-bottom" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <button onClick={() => navigate(-1)} className="p-3 sm:p-3 bg-surface-container-low hover:bg-surface-container-high rounded-2xl transition-colors touch-target">
+          <button onClick={() => navigate(-1)} className="p-3 bg-surface-container-low hover:bg-surface-container-high rounded-2xl transition-colors touch-target">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           <div>
