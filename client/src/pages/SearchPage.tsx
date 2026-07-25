@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { businessService, textSearchService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { MapPinIcon, CalendarDaysIcon, VideoCameraIcon, StarIcon } from '@heroicons/react/24/outline';
+import { Surface, Button, tokens } from '../design-system';
 
 type Business = {
   id: string;
@@ -51,7 +51,7 @@ const QUICK_PROMPTS = [
     label: 'Live Selling',
     href: '/live-sell',
     sub: 'TikTok · YouTube · Shopify',
-    icon: VideoCameraIcon,
+    icon: '🎥',
     accent: 'from-emerald-500/20 to-green-500/20',
   },
   {
@@ -59,7 +59,7 @@ const QUICK_PROMPTS = [
     label: 'Stays & Hospitality',
     href: '/hospitality',
     sub: 'Short-term rentals with escrow',
-    icon: CalendarDaysIcon,
+    icon: '📅',
     accent: 'from-blue-500/20 to-cyan-500/20',
   },
   {
@@ -67,7 +67,7 @@ const QUICK_PROMPTS = [
     label: 'Freelance',
     href: '/search?category=FREELANCE',
     sub: 'Designers · Coders · Creators',
-    icon: StarIcon,
+    icon: '⭐',
     accent: 'from-orange-500/20 to-amber-500/20',
   },
 ];
@@ -194,8 +194,8 @@ export default function SearchPage() {
 
   const recommendations = useMemo(() => buildSearchSuggestions(q), [q]);
   const currentSuggestions = useMemo(() => {
-    const fromWen = qwenSource.data || [];
-    if (fromWen.length) return fromWen;
+    const fromSource = qwenSource.data || [];
+    if (fromSource.length) return fromSource;
     return recommendations.map((r) => r.label);
   }, [qwenSource.data, recommendations]);
 
@@ -250,26 +250,26 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-col gap-1">
-          <h1 className="font-headline text-2xl sm:text-3xl font-black">What do you want to book?</h1>
-          <p className="text-sm text-on-surface-variant">
+          <h1 className="font-headline text-2xl font-black sm:text-3xl">What do you want to book?</h1>
+          <p className="text-sm text-slate-300">
             Quick actions, smart suggestions, and trusted venues nearby.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {QUICK_PROMPTS.map((prompt) => (
             <Link
               key={prompt.key}
               to={prompt.href}
-              className={`flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-gradient-to-br ${prompt.accent} p-3 sm:p-4 active:scale-[0.99] transition-all`}
+              className={`flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-br ${prompt.accent} p-3 active:scale-[0.99] transition-all sm:p-4`}
             >
-              <prompt.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <span className="shrink-0 text-lg sm:text-xl">{prompt.icon}</span>
               <span className="min-w-0">
-                <span className="block text-sm sm:text-base font-headline font-bold text-on-surface">{prompt.label}</span>
-                <span className="block text-[10px] sm:text-xs text-on-surface-variant truncate">{prompt.sub}</span>
+                <span className="block text-sm font-bold sm:text-base">{prompt.label}</span>
+                <span className="block truncate text-[10px] text-slate-300 sm:text-xs">{prompt.sub}</span>
               </span>
             </Link>
           ))}
@@ -294,10 +294,10 @@ export default function SearchPage() {
               }
             }}
             placeholder="Search services, businesses..."
-            className="w-full p-3 sm:p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:border-indigo-400 sm:p-4"
           />
           {showDropdown && currentSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-outline-variant/20 bg-surface shadow-xl shadow-black/40 z-30 overflow-hidden">
+            <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/90 shadow-xl">
               {currentSuggestions.map((suggestion, idx) => (
                 <button
                   key={`${suggestion}-${idx}`}
@@ -307,9 +307,9 @@ export default function SearchPage() {
                     const match = recommendations.find((r) => r.label === suggestion);
                     applyQuery(match?.value === 'ALL' ? '' : match?.label || suggestion);
                   }}
-                  className="w-full text-left px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high"
+                  className="w-full text-left px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/10"
                 >
-                  <span className="text-primary mr-2">🔎</span>
+                  <span className="mr-2 text-indigo-300">🔎</span>
                   {suggestion}
                 </button>
               ))}
@@ -317,15 +317,15 @@ export default function SearchPage() {
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => applyCategory(c)}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-colors touch-target ${
-                  category === c ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low text-on-surface hover:bg-surface-container-high'
+                className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors touch-target ${
+                  category === c ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'
                 }`}
               >
                 {CATEGORY_LABELS[c] || c}
@@ -342,21 +342,21 @@ export default function SearchPage() {
                 );
               }
             }}
-            className="px-4 py-2 rounded-2xl bg-surface-container-low border border-outline-variant/20 text-xs font-bold hover:bg-surface-container-high touch-target"
+            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold hover:bg-white/10 touch-target"
           >
             Near Me
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs sm:text-sm text-on-surface-variant">
+          <span className="text-xs text-slate-300 sm:text-sm">
             {isLoading ? 'Searching…' : results.length ? `${results.length} result${results.length === 1 ? '' : 's'}` : 'Showing fallback results.'}
           </span>
           {q.trim() && (
             <button
               type="button"
               onClick={() => applyQuery('')}
-              className="text-xs font-bold text-primary"
+              className="text-xs font-bold text-indigo-300"
             >
               Clear search
             </button>
@@ -364,24 +364,24 @@ export default function SearchPage() {
         </div>
 
         {results.length === 0 && !isLoading && (
-          <div className="rounded-3xl border border-outline-variant/10 bg-surface-container-low p-8 text-center">
-            <MapPinIcon className="h-8 w-8 text-outline mx-auto mb-2" />
-            <p className="text-sm text-on-surface-variant font-medium">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+            <div className="mx-auto mb-2 text-3xl">🔍</div>
+            <p className="text-sm font-medium text-slate-300">
               No exact hits yet in this area.
             </p>
-            <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
-              <button onClick={() => applyCategory('ALL')} className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Browse all listings</button>
-              <Link to="/business/join" className="px-5 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-bold text-center">Recommend a business</Link>
+            <div className="mt-3 flex flex-col justify-center gap-2 sm:flex-row">
+              <button onClick={() => applyCategory('ALL')} className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white">Browse all listings</button>
+              <Link to="/business/join" className="rounded-xl border border-white/15 px-5 py-2.5 text-center text-sm font-bold text-white">Recommend a business</Link>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {results.map((biz: any) => (
-            <div key={biz.id || `${biz.name}-${biz.address}`} className="rounded-3xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high active:scale-[0.99] transition-all">
+            <Surface key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
               <Link to={`/business/${biz.id}`} className="block">
                 <div
-                  className="h-36 sm:h-40 rounded-t-3xl"
+                  className="h-36 rounded-t-2xl sm:h-40"
                   style={{
                     backgroundImage: biz.coverImageUrl ? `url(${biz.coverImageUrl})` : undefined,
                     backgroundSize: 'cover',
@@ -389,32 +389,28 @@ export default function SearchPage() {
                   }}
                 />
                 <div className="p-4">
-                  <div className="flex justify-between items-start gap-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-headline font-bold text-sm leading-snug">{biz.name}</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5 truncate">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
+                      <p className="font-bold leading-snug text-white">{biz.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-slate-300">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-1 rounded">{CATEGORY_LABELS[biz.category] || biz.category}</p>
+                    <div className="shrink-0 text-right">
+                      <p className="rounded bg-indigo-500/10 px-1.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-200">{CATEGORY_LABELS[biz.category] || biz.category}</p>
                       {typeof biz.rating === 'number' && (
-                        <p className="text-[10px] font-bold text-on-surface-variant mt-1">{biz.rating.toFixed(1)} ★ {biz.reviewCount || 0}</p>
+                        <p className="mt-1 text-[10px] font-bold text-slate-300">{biz.rating.toFixed(1)} ★ {biz.reviewCount || 0}</p>
                       )}
-                      {distanceLabel(biz) && <p className="text-[10px] font-bold text-on-surface-variant mt-1">{distanceLabel(biz)}</p>}
+                      {distanceLabel(biz) && <p className="mt-1 text-[10px] font-bold text-slate-300">{distanceLabel(biz)}</p>}
                     </div>
                   </div>
-                  {biz.description && <p className="text-xs text-on-surface-variant line-clamp-2 mt-2">{biz.description}</p>}
+                  {biz.description && <p className="mt-2 line-clamp-2 text-xs text-slate-300">{biz.description}</p>}
                 </div>
               </Link>
               <div className="px-4 pb-4">
-                <button
-                  type="button"
-                  onClick={() => handleBookNow(biz)}
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-primary to-[#06b6d4] text-on-primary text-sm font-bold touch-target"
-                >
+                <Button onClick={() => handleBookNow(biz)} className="w-full py-3 text-sm font-bold">
                   {isAuthenticated ? 'Book now' : 'Log in to book'}
-                </button>
+                </Button>
               </div>
-            </div>
+            </Surface>
           ))}
         </div>
       </div>

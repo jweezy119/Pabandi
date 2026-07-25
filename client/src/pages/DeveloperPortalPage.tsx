@@ -1,4 +1,14 @@
 import { useState } from 'react';
+import {
+  Chip,
+  Surface,
+  Section,
+  Stack,
+  Callout,
+  CodeBlock,
+  Button,
+  tokens,
+} from '../design-system';
 
 const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
   const { buyer_wallet, amount, seller_id, currency } = req.body;
@@ -34,41 +44,6 @@ const LIVE_SALE_CODE = `app.post('/live-sale/checkout', async (req, res) => {
   }
 })`;
 
-function JsonViewer({ data }: { data: unknown }) {
-  const json = JSON.stringify(data, null, 2);
-  const highlighted = json.replace(
-    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-    (match) => {
-      let cls = 'color:#a5f3fc'; // number
-      if (/^"/.test(match)) {
-        if (/:$/.test(match)) {
-          cls = 'color:#c4b5fd'; // key
-        } else {
-          cls = 'color:#86efac'; // string
-        }
-      } else if (/true|false/.test(match)) {
-        cls = 'color:#fbbf24'; // boolean
-      } else if (/null/.test(match)) {
-        cls = 'color:#f87171'; // null
-      }
-      return `<span style="${cls}">${match}</span>`;
-    }
-  );
-  return (
-    <pre
-      dangerouslySetInnerHTML={{ __html: highlighted }}
-      style={{
-        fontSize: '13px',
-        lineHeight: '1.6',
-        overflowX: 'auto',
-        margin: 0,
-        color: '#e2e8f0',
-        fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
-      }}
-    />
-  );
-}
-
 export default function DeveloperPortalPage() {
   const [copied, setCopied] = useState(false);
 
@@ -79,556 +54,121 @@ export default function DeveloperPortalPage() {
   };
 
   return (
-    <div style={{ background: '#020617', minHeight: '100vh', color: '#e2e8f0', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      
-      {/* ── Hero ──────────────────────────────────────────────────────────────── */}
-      <section style={{ padding: '80px 24px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{
-          position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-          width: '800px', height: '600px', borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(129,140,248,0.12) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{ position: 'relative', maxWidth: '800px', margin: '0 auto' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.3)',
-            borderRadius: '20px', padding: '6px 16px', marginBottom: '28px',
-            fontSize: '13px', color: '#818cf8', fontWeight: 600, letterSpacing: '0.05em',
-          }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#818cf8', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            PABANDI API
-          </div>
+    <div className="min-h-screen antialiased" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
+      <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <Chip tone="info">PABANDI API</Chip>
 
-          <h1 style={{
-            fontSize: 'clamp(36px, 6vw, 64px)', fontWeight: 800, lineHeight: 1.1,
-            marginBottom: '20px', letterSpacing: '-0.03em',
-            background: 'linear-gradient(135deg, #ffffff 0%, #818cf8 50%, #c084fc 100%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
-            Reliability score as portable identity.
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
+            <span className="bg-gradient-to-br from-white via-indigo-300 to-purple-300 bg-clip-text text-transparent">
+              Reliability score as portable identity.
+            </span>
           </h1>
 
-          <p style={{ fontSize: '20px', color: '#94a3b8', maxWidth: '600px', margin: '0 auto 20px', lineHeight: 1.4, fontWeight: 500 }}>
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-white/80">
             One score. Every platform. Real behavior, not self-reported claims.
           </p>
 
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '40px' }}>
-            <a href="mailto:team@pabandi.com" style={{
-              padding: '14px 32px', borderRadius: '12px', fontWeight: 700, fontSize: '15px',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff', textDecoration: 'none', boxShadow: '0 0 30px rgba(99,102,241,0.4)',
-              transition: 'all 0.2s',
-            }}>
-              Get API Key →
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <a href="mailto:team@pabandi.com" className="no-underline">
+              <Button>Get API Key →</Button>
             </a>
-            <div style={{
-              padding: '14px 24px', borderRadius: '12px', fontWeight: 600, fontSize: '14px',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.15)',
-              color: '#94a3b8',
-            }}>
-              v0.1 Beta · Free for partners
-            </div>
+            <Chip tone="success">v0.1 Beta · Free for partners</Chip>
           </div>
         </div>
       </section>
 
-      {/* ── Overview & Problem ────────────────────────────────────────────────── */}
-      <section style={{ padding: '0 24px 60px', maxWidth: '900px', margin: '0 auto' }}>
-        <p style={{ fontSize: '18px', color: '#e2e8f0', lineHeight: 1.8, marginBottom: '24px' }}>
-          Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
-          Integrate escrow-backed bookings, trust verification, and checkout into live selling,
-          marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from scratch.
-        </p>
-        <p style={{ fontSize: '16px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '24px', paddingLeft: '20px', borderLeft: '4px solid #334155' }}>
-          <strong>The problem today:</strong> Manual deposits, late cash, and informal trust still dominate local commerce.
-          WhatsApp is where the conversation happens—commitment, protection, and verification should happen there too.
-        </p>
-        <p style={{ fontSize: '16px', color: '#818cf8', lineHeight: 1.7, paddingLeft: '20px', borderLeft: '4px solid #818cf8' }}>
-          <strong>The Pabandi answer:</strong> The Passport is the portable trust ID; the escrow layer is the guarantee.
-          Buyers and sellers transact on WhatsApp with verified commitment, deposit protection, and $PAB rewards.
-        </p>
-      </section>
+      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
+        <Stack>
+          <p className="text-lg leading-relaxed text-white/90">
+            Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
+            Integrate escrow-backed bookings, trust verification, and checkout into live selling,
+            marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from
+            scratch.
+          </p>
 
-      {/* ── Use Cases ─────────────────────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '40px', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          Use Cases
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-          {[
-            { icon: '🛍️', title: 'Live Selling', desc: 'Verify buyer score before allowing pay-on-delivery on Instagram/TikTok live drops.' },
-            { icon: '🗓️', title: 'Booking Platforms', desc: 'Flag high-risk appointments before confirmation for salons, clinics, and drivers.' },
-            { icon: '🤝', title: 'Marketplaces', desc: 'Weight bids by seller reliability. OLX-style local platforms can severely reduce fraud.' },
-            { icon: '💻', title: 'Freelance Tools', desc: 'Port reputation from Pabandi into gig platforms. Better rates for better history.' },
-            { icon: '🔐', title: 'Gated Access', desc: 'Require minimum score for premium or vetted community access.' },
-          ].map((item) => (
-            <div key={item.title} style={{
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '16px', padding: '24px', transition: 'transform 0.2s',
-            }}>
-              <div style={{ fontSize: '32px', marginBottom: '16px' }}>{item.icon}</div>
-              <h3 style={{ fontWeight: 700, fontSize: '18px', marginBottom: '8px', color: '#f1f5f9' }}>{item.title}</h3>
-              <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: 1.6 }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── The Passport Object ───────────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '40px' }}>
-          <div style={{ flex: '1 1 400px' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '16px', letterSpacing: '-0.02em' }}>
-              The Passport Object
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: 1.6, marginBottom: '32px' }}>
-              Every verified Pabandi user has a Passport — a snapshot of their on-chain reliability history.
+          <Callout accent="#334155">
+            <p className="text-base leading-relaxed text-white/80">
+              <strong className="text-white">The problem today:</strong> Manual deposits, late
+              cash, and informal trust still dominate local commerce. WhatsApp is where the
+              conversation happens—commitment, protection, and verification should happen there too.
             </p>
-            
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '16px', color: '#f1f5f9' }}>Score Tiers</h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ padding: '12px 8px', color: '#cbd5e1' }}>Tier</th>
-                    <th style={{ padding: '12px 8px', color: '#cbd5e1' }}>Score</th>
-                    <th style={{ padding: '12px 8px', color: '#cbd5e1' }}>Population</th>
-                    <th style={{ padding: '12px 8px', color: '#cbd5e1' }}>Permission</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 8px', fontWeight: 700, color: '#e2e8f0' }}>Platinum</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>850–1000</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Top 5%</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>No deposit, high-value Tx</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 8px', fontWeight: 700, color: '#fbbf24' }}>Gold</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>700–849</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Reliable</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>COD / Live-sale allowed</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 8px', fontWeight: 700, color: '#94a3b8' }}>Silver</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>500–699</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Proven track</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Reduced deposit</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 8px', fontWeight: 700, color: '#b45309' }}>Bronze</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>300–499</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Inconsistent</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Standard deposit required</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '12px 8px', fontWeight: 700, color: '#ef4444' }}>Unrated</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>&lt;300</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>—</td>
-                    <td style={{ padding: '12px 8px', color: '#94a3b8' }}>Deposit or prepay only</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div style={{ flex: '1 1 400px', background: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', padding: '24px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#818cf8', letterSpacing: '0.06em', marginBottom: '16px' }}>PASSPORT JSON</div>
-            <JsonViewer data={{ wallet_address: '68AQ...', trust_score: 742, score_tier: 'Gold', total_actions: 148, punctuality_rate: 0.94, completed_bookings: 139, missed_bookings: 9, disputes_lost: 1, disputes_won: 2, flags: ['repeat_no_show_resolved', 'high_value_buyer'] }} />
-          </div>
-        </div>
+          </Callout>
+
+          <Callout accent="#818cf8">
+            <p className="text-base leading-relaxed text-white/80">
+              <strong className="text-white">The Pabandi answer:</strong> The Passport is the
+              portable trust ID; the escrow layer is the guarantee. Buyers and sellers transact on
+              WhatsApp with verified commitment, deposit protection, and $PAB rewards.
+            </p>
+          </Callout>
+        </Stack>
       </section>
 
-      {/* ── Visual Flow Explanation ───────────────────────────────────────────── */}
-      <section style={{ padding: '0 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '40px', letterSpacing: '-0.02em', textAlign: 'center' }}>
-          How the Zero-Knowledge API Works
-        </h2>
-        
-        <div style={{
-          display: 'flex', flexDirection: 'column', gap: '24px', background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px',
-          position: 'relative', overflow: 'hidden'
-        }}>
-          {/* Animated Background Gradient */}
-          <div style={{
-            position: 'absolute', top: 0, right: 0, bottom: 0, width: '40%',
-            background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.05))',
-            pointerEvents: 'none'
-          }} />
+      <Section
+        title="Use Cases"
+        description="Trust and escrow primitives for local commerce, whether the transaction starts on WhatsApp, a storefront, or a booking widget."
+      >
+        {[
+          {
+            icon: '🛍️',
+            title: 'Live Selling',
+            desc: 'Verify buyer score before allowing pay-on-delivery on Instagram/TikTok live drops.',
+          },
+          {
+            icon: '🗓️',
+            title: 'Booking Platforms',
+            desc: 'Flag high-risk appointments before confirmation for salons, clinics, and drivers.',
+          },
+          {
+            icon: '🤝',
+            title: 'Marketplaces',
+            desc: 'Weight bids by seller reliability. OLX-style local platforms can reduce fraud.',
+          },
+          {
+            icon: '💻',
+            title: 'Freelance Tools',
+            desc: 'Port reputation from Pabandi into gig platforms. Better rates for better history.',
+          },
+          {
+            icon: '🔐',
+            title: 'Gated Access',
+            desc: 'Require minimum score for premium or vetted community access.',
+          },
+        ].map((item) => (
+          <Surface key={item.title}>
+            <div className="text-3xl">{item.icon}</div>
+            <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+            <p className="text-sm leading-relaxed text-white/80">{item.desc}</p>
+          </Surface>
+        ))}
+      </Section>
 
-          {/* Step 1: Input */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '1px solid #334155' }}>1</div>
-            <div style={{ flex: 1, background: '#0f172a', padding: '16px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px', fontWeight: 600 }}>SHOPIFY CHECKOUT</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '18px' }}>📱</span>
-                <span style={{ fontSize: '16px', fontFamily: 'monospace', color: '#cbd5e1' }}>+1 (555) 000-0000</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #334155, #6366f1)' }} />
-
-          {/* Step 2: Hashing */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(79,70,229,0.4)' }}>2</div>
-            <div style={{ flex: 1, background: 'linear-gradient(90deg, #1e1b4b, #312e81)', padding: '16px 20px', borderRadius: '12px', border: '1px solid #4f46e5' }}>
-              <div style={{ fontSize: '13px', color: '#a5b4fc', marginBottom: '8px', fontWeight: 600 }}>BROWSER SDK (LOCAL HASHING)</div>
-              <div style={{ fontSize: '14px', fontFamily: 'monospace', color: '#e0e7ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                SHA256 <span style={{ color: '#818cf8' }}>&rarr;</span> e422fcdcdca08ddd52cb07d33fae3617...
-              </div>
-              <div style={{ fontSize: '12px', color: '#818cf8', marginTop: '6px' }}>* Raw phone number never leaves the browser.</div>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #6366f1, #0ea5e9)' }} />
-
-          {/* Step 3: Pabandi Trust Oracle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#0ea5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(14,165,233,0.4)' }}>3</div>
-            <div style={{ flex: 1, background: '#0c4a6e', padding: '16px 20px', borderRadius: '12px', border: '1px solid #0ea5e9' }}>
-              <div style={{ fontSize: '13px', color: '#bae6fd', marginBottom: '8px', fontWeight: 600 }}>PABANDI ZERO-KNOWLEDGE API</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ padding: '4px 8px', background: 'rgba(239,68,68,0.2)', color: '#fca5a5', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>CRITICAL RISK</span>
-                <span style={{ fontSize: '14px', color: '#e0f2fe' }}>80% probability of COD Rejection based on global network history.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div style={{ marginLeft: '19px', width: '2px', height: '24px', background: 'linear-gradient(to bottom, #0ea5e9, #f43f5e)' }} />
-
-          {/* Step 4: Action */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', boxShadow: '0 0 20px rgba(244,63,94,0.4)' }}>4</div>
-            <div style={{ flex: 1, background: '#4c0519', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e11d48' }}>
-              <div style={{ fontSize: '13px', color: '#fecdd3', marginBottom: '8px', fontWeight: 600 }}>SHOPIFY CHECKOUT UPDATED</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.5, textDecoration: 'line-through' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #fda4af' }} />
-                <span style={{ fontSize: '16px', color: '#ffe4e6' }}>Cash on Delivery</span>
-              </div>
-              <div style={{ fontSize: '12px', color: '#fda4af', marginTop: '6px' }}>SDK dynamically hides risky payment methods instantly.</div>
-            </div>
-          </div>
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-white">
+            Live-Sale Integration Example
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-white/80">
+            Integrate checkout into live selling by calling the embed endpoint from your seller backend.
+            For multi-region or mirror deployments, set <code className="rounded-md bg-white/10 px-1.5 py-0.5 text-indigo-200">window.PABANDI_API_BASE</code> before loading the embed,
+            or use <code className="rounded-md bg-white/10 px-1.5 py-0.5 text-indigo-200">PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
+            without changing the copied snippet.
+          </p>
         </div>
-      </section>
 
-      {/* ── Endpoints ─────────────────────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '32px', letterSpacing: '-0.02em' }}>
-          Endpoints
-        </h2>
-        <div style={{ display: 'grid', gap: '20px' }}>
-          
-          {/* Verify */}
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ padding: '4px 10px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderRadius: '6px', fontSize: '13px', fontWeight: 800 }}>POST</span>
-              <code style={{ fontSize: '15px', color: '#c4b5fd', fontFamily: "'Fira Code', monospace" }}>/api/v1/passport/verify</code>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '16px' }}>Returns the full Passport object for a wallet address. Optionally enforce a minimum tier.</p>
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-              <JsonViewer data={{ "wallet_address": "68AQ...", "required_tier": "Gold" }} />
-            </div>
-          </div>
-
-          {/* Eligibility */}
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ padding: '4px 10px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderRadius: '6px', fontSize: '13px', fontWeight: 800 }}>POST</span>
-              <code style={{ fontSize: '15px', color: '#c4b5fd', fontFamily: "'Fira Code', monospace" }}>/api/v1/passport/eligibility</code>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '16px' }}>Lightweight yes/no check. For high-traffic surfaces where you don't need the full Passport.</p>
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, background: '#0f172a', padding: '16px', borderRadius: '10px', minWidth: '200px' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px' }}>REQUEST</div>
-                <JsonViewer data={{ "wallet_address": "68AQ...", "required_tier": "Gold" }} />
-              </div>
-              <div style={{ flex: 1, background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', padding: '16px', borderRadius: '10px', minWidth: '200px' }}>
-                <div style={{ fontSize: '11px', color: '#22c55e', marginBottom: '8px', fontWeight: 700 }}>200 OK RESPONSE</div>
-                <JsonViewer data={{ "status": "eligible", "score_tier": "Gold" }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Incidents */}
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ padding: '4px 10px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderRadius: '6px', fontSize: '13px', fontWeight: 800 }}>POST</span>
-              <code style={{ fontSize: '15px', color: '#c4b5fd', fontFamily: "'Fira Code', monospace" }}>/api/v1/passport/incidents</code>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '16px' }}>Report a no-show, fraud, or dispute outcome. Requires platform auth.</p>
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-              <JsonViewer data={{
-                "subject_wallet": "68AQ...",
-                "incident_type": "no_show",
-                "reference_id": "order_4532",
-                "notes": "Buyer did not collect item from live sale.",
-                "platform_id": "instagram_live_seller_xyz"
-              }} />
-            </div>
-          </div>
-
-          {/* Webhooks */}
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ padding: '4px 10px', background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderRadius: '6px', fontSize: '13px', fontWeight: 800 }}>POST</span>
-              <code style={{ fontSize: '15px', color: '#c4b5fd', fontFamily: "'Fira Code', monospace" }}>/api/v1/webhooks/subscribe</code>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '16px' }}>Get real-time score-change notifications for a wallet.</p>
-            <div style={{ background: '#0f172a', padding: '16px', borderRadius: '10px' }}>
-              <JsonViewer data={{
-                "wallet_address": "68AQ...",
-                "callback_url": "https://yourplatform.com/api/pabandi-webhook",
-                "events": ["score_changed", "tier_changed"]
-              }} />
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Live Sale Integration ─────────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '12px', letterSpacing: '-0.02em' }}>
-          Live-Sale Integration Example
-        </h2>
-        <p style={{ fontSize: '15px', color: '#94a3b8', marginBottom: '24px' }}>
-          Integrate checkout into live selling by calling the embed endpoint from your seller backend.
-          For multi-region or mirror deployments, set <code style={{ color: '#c4b5fd' }}>window.PABANDI_API_BASE</code> before loading the embed,
-          or use <code style={{ color: '#c4b5fd' }}>PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
-          without changing the copied snippet.
-        </p>
-        <div style={{ background: '#0f172a', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>checkout.js</span>
-            <button
-              onClick={handleCopy}
-              style={{
-                padding: '6px 14px', borderRadius: '8px',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#94a3b8', fontSize: '12px', cursor: 'pointer', fontWeight: 600,
-              }}
-            >
+        <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+            <span className="text-xs font-semibold text-white/70">checkout.js</span>
+            <button onClick={handleCopy} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/80 hover:bg-white/10 transition-colors">
               {copied ? '✓ Copied' : 'Copy'}
             </button>
           </div>
-          <div style={{ padding: '24px 28px', overflowX: 'auto' }}>
-            <pre style={{ margin: 0, fontSize: '13px', lineHeight: '1.7', color: '#e2e8f0', fontFamily: "'Fira Code', 'JetBrains Mono', monospace" }}>
-              <span style={{ color: '#c678dd' }}>import</span> express <span style={{ color: '#c678dd' }}>from</span> <span style={{ color: '#98c379' }}>'express'</span>;
-              <br />
-              <span style={{ color: '#c678dd' }}>const</span> app = <span style={{ color: '#61afef' }}>express</span>();
-              <br /><br />
-              app.<span style={{ color: '#61afef' }}>post</span>(<span style={{ color: '#98c379' }}>'/live-sale/checkout'</span>, <span style={{ color: '#c678dd' }}>async</span> (req, res) <span style={{ color: '#c678dd' }}>{'=>'}</span> {'{'}
-              <br />
-              {'  '}<span style={{ color: '#c678dd' }}>const</span> {'{'} buyer_wallet {'}'} = req.body;
-              <br /><br />
-              {'  '}<span style={{ color: '#c678dd' }}>const</span> result = <span style={{ color: '#c678dd' }}>await</span> <span style={{ color: '#61afef' }}>fetch</span>(
-              <br />
-              {'    '}<span style={{ color: '#98c379' }}>'https://api.pabandi.com/api/v1/passport/verify'</span>,
-              <br />
-              {'    {'}
-              <br />
-              {'      '}headers: {'{'}
-              <br />
-              {'        '}<span style={{ color: '#98c379' }}>'Authorization'</span>: <span style={{ color: '#98c379' }}>`Bearer \${process.env.PABANDI_API_KEY}`</span>,
-              <br />
-              {'        '}<span style={{ color: '#98c379' }}>'Content-Type'</span>: <span style={{ color: '#98c379' }}>'application/json'</span>
-              <br />
-              {'      }'},
-              <br />
-              {'      '}body: JSON.<span style={{ color: '#61afef' }}>stringify</span>({'{'}
-              <br />
-              {'        '}wallet_address: buyer_wallet,
-              <br />
-              {'        '}required_tier: <span style={{ color: '#98c379' }}>'Gold'</span>
-              <br />
-              {'      }'}),
-              <br />
-              {'      '}method: <span style={{ color: '#98c379' }}>'POST'</span>
-              <br />
-              {'    }'}
-              <br />
-              {'  '});
-              <br /><br />
-              {'  '}<span style={{ color: '#c678dd' }}>const</span> data = <span style={{ color: '#c678dd' }}>await</span> result.<span style={{ color: '#61afef' }}>json</span>();
-              <br /><br />
-              {'  '}<span style={{ color: '#c678dd' }}>if</span> (data.status === <span style={{ color: '#98c379' }}>'eligible'</span>) {'{'}
-              <br />
-              {'    '}<span style={{ color: '#c678dd' }}>return</span> res.<span style={{ color: '#61afef' }}>json</span>({'{'} checkout_allowed: <span style={{ color: '#d19a66' }}>true</span>, score: data.passport.trust_score {'}'});
-              <br />
-              {'  }'} <span style={{ color: '#c678dd' }}>else</span> {'{'}
-              <br />
-              {'    '}<span style={{ color: '#c678dd' }}>return</span> res.<span style={{ color: '#61afef' }}>json</span>({'{'}
-              <br />
-              {'      '}checkout_allowed: <span style={{ color: '#d19a66' }}>false</span>,
-              <br />
-              {'      '}reason: <span style={{ color: '#98c379' }}>'Score below Gold tier'</span>,
-              <br />
-              {'      '}deposit_amount_pab: <span style={{ color: '#d19a66' }}>500</span>
-              <br />
-              {'    }'});
-              <br />
-              {'  }'}
-              <br />
-              {'}'});
-            </pre>
+          <div className="p-4">
+            <CodeBlock code={LIVE_SALE_CODE} language="javascript" />
           </div>
         </div>
       </section>
-
-      {/* ── Breakthrough Passport Risk Engine ────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '40px' }}>
-          <div style={{ flex: '1 1 420px' }}>
-            <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '16px', letterSpacing: '-0.02em' }}>Breakthrough Risk Engine</h2>
-            <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: 1.7, marginBottom: '24px' }}>The risk engine goes beyond basic identity. It scores users across multiple axes and lets platforms tune behavior in real time.</p>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', color: '#f1f5f9' }}>Axes</h3>
-            <ul style={{ color: '#cbd5e1', lineHeight: 1.7, paddingLeft: '18px', marginBottom: '24px' }}>
-              <li><strong style={{ color: '#e2e8f0' }}>Transaction provenance</strong> — category-weighted booking history</li>
-              <li><strong style={{ color: '#e2e8f0' }}>Channel reliability</strong> — WhatsApp response time, delivery receipts, number tenure</li>
-              <li><strong style={{ color: '#e2e8f0' }}>Social graph</strong> — trusted vouchers, cluster score</li>
-              <li><strong style={{ color: '#e2e8f0' }}>Web3 skin in the game</strong> — stake amount, bonus, and on-chain behavior</li>
-              <li><strong style={{ color: '#e2e8f0' }}>Dispute penalties</strong> — open/escalated disputes, active flags</li>
-            </ul>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px', color: '#f1f5f9' }}>New Endpoints</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { method: 'POST', path: '/api/v1/passport/score', desc: 'Compute multi-axis passport score by category' },
-                { method: 'GET', path: '/api/v1/passport/me', desc: 'Full passport with axes, stake, flags' },
-                { method: 'GET', path: '/api/v1/passport/public/:userId', desc: 'Public passport for a seller or buyer' },
-                { method: 'POST', path: '/api/v1/passport/vouch', desc: 'Vouch for another user to boost trust' },
-                { method: 'POST', path: '/api/v1/passport/signal/whatsapp-channel', desc: 'Ingest WhatsApp reliability signals' },
-                { method: 'POST', path: '/api/v1/passport/signal/social-graph', desc: 'Ingest social graph and cluster signals' },
-                { method: 'POST', path: '/api/v1/passport/web3/stake', desc: 'Record Web3 stake and compute bonus' },
-                { method: 'GET', path: '/api/v1/passport/export', desc: 'Export full passport JSON' },
-              ].map((item) => (
-                <div key={item.path} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
-                    <span style={{ padding: '4px 10px', borderRadius: '6px', background: item.method === 'GET' ? 'rgba(34,197,94,0.18)' : 'rgba(129,140,248,0.18)', color: item.method === 'GET' ? '#4ade80' : '#c4b5fd', fontSize: '12px', fontWeight: 800 }}>{item.method}</span>
-                    <code style={{ color: '#e2e8f0', fontSize: '14px', fontFamily: "'Fira Code', 'JetBrains Mono', monospace" }}>{item.path}</code>
-                  </div>
-                  <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Integrator Grants ($PAB) ───────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '1px solid #4f46e5', borderRadius: '24px', padding: '40px', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'rgba(99,102,241,0.2)', filter: 'blur(50px)', borderRadius: '50%' }} />
-          
-          <h2 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '16px', color: '#e0e7ff', letterSpacing: '-0.02em' }}>
-            EaaS Integrator Grants
-          </h2>
-          <p style={{ color: '#a5b4fc', fontSize: '18px', lineHeight: 1.6, marginBottom: '32px', maxWidth: '700px' }}>
-            We are aggressively distributing <strong>$PAB Token Grants</strong> to third-party platforms that integrate Pabandi Escrow. Earn equity-like upside simply by using our API.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '12px' }}>💻</div>
-              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Freelance Platforms</h3>
-              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Integrate our Milestone Escrow API. Earn $PAB for every $10,000 in gig volume processed.</p>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '12px' }}>🛡️</div>
-              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Insurance Protocols</h3>
-              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Use our Trust Score Quotes to price No-Show insurance. Earn $PAB for every premium underwritten.</p>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '12px' }}>🛒</div>
-              <h3 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Commerce Marketplaces</h3>
-              <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.5 }}>Replace standard checkout with Pabandi DRPE. Earn $PAB based on total user trust verification volume.</p>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '32px' }}>
-            <a href="mailto:grants@pabandi.com" style={{ display: 'inline-block', padding: '12px 24px', background: '#4f46e5', color: '#fff', fontWeight: 700, borderRadius: '8px', textDecoration: 'none', transition: 'background 0.2s' }}>
-              Apply for an Integration Grant →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ & Pricing ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: '40px 24px 80px', maxWidth: '1100px', margin: '0 auto', display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
-        
-        {/* FAQ */}
-        <div style={{ flex: '1 1 400px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '32px', letterSpacing: '-0.02em' }}>FAQ</h2>
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f1f5f9', marginBottom: '8px' }}>Is this KYC?</h3>
-            <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>No. Pabandi is behavior-based, not identity-based. Users don't upload documents. Their score is built entirely from actions they've already taken (reservations, deposits, completions).</p>
-          </div>
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f1f5f9', marginBottom: '8px' }}>Is my user data private?</h3>
-            <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>You receive only what the user explicitly shares — the Passport object. No private booking history, no deep wallet transactions.</p>
-          </div>
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#f1f5f9', marginBottom: '8px' }}>How do I get an API key?</h3>
-            <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>Email <a href="mailto:sales@pabandi.com" style={{ color: '#818cf8', textDecoration: 'none' }}>sales@pabandi.com</a> with your platform name, expected volume, and use case. We are onboarding 10 beta partners for June 2026.</p>
-          </div>
-        </div>
-
-        {/* Rate Limits / Pricing */}
-        <div style={{ flex: '1 1 400px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '32px', letterSpacing: '-0.02em' }}>Rate Limits</h2>
-          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ padding: '16px', color: '#cbd5e1' }}>Plan</th>
-                  <th style={{ padding: '16px', color: '#cbd5e1' }}>Requests/day</th>
-                  <th style={{ padding: '16px', color: '#cbd5e1' }}>Webhooks</th>
-                  <th style={{ padding: '16px', color: '#cbd5e1' }}>Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px', fontWeight: 700, color: '#e2e8f0' }}>Sandbox</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>1,000</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>1 event type</td>
-                  <td style={{ padding: '16px', color: '#22c55e', fontWeight: 700 }}>Free</td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px', fontWeight: 700, color: '#e2e8f0' }}>Growth</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>50,000</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>10 wallets</td>
-                  <td style={{ padding: '16px', color: '#818cf8', fontWeight: 700 }}>Free (beta)</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '16px', fontWeight: 700, color: '#e2e8f0' }}>Enterprise</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>Unlimited</td>
-                  <td style={{ padding: '16px', color: '#94a3b8' }}>Unlimited</td>
-                  <td style={{ padding: '16px', color: '#818cf8', fontWeight: 700 }}>Free (beta)</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p style={{ color: '#64748b', fontSize: '13px', marginTop: '16px', lineHeight: 1.5 }}>
-            Pricing activates at $0.001 / verification call only after beta ends at 100K monthly requests. Until then, it's totally free.
-          </p>
-        </div>
-      </section>
-
-      {/* ── Footer ────────────────────────────────────────────────────────────── */}
-      <footer style={{ padding: '40px 24px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '8px' }}>
-          <a href="mailto:team@pabandi.com" style={{ color: '#818cf8', textDecoration: 'none', marginRight: '16px' }}>team@pabandi.com</a>
-          <a href="https://twitter.com/PabandiGlobal" target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'none' }}>@PabandiGlobal</a>
-        </p>
-        <p style={{ color: '#475569', fontSize: '13px' }}>
-          Built for the world. Keep your word. Earn rewards.
-        </p>
-      </footer>
     </div>
   );
 }

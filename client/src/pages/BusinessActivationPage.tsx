@@ -4,7 +4,8 @@ import { useQuery } from 'react-query';
 import { businessService } from '../services/api';
 import { ClaimOverlay } from '../components/ClaimOverlay';
 import { PaymentLinkCard } from '../components/PaymentLinkCard';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { Surface, tokens } from '../design-system';
 
 type BusinessActivationPageProps = {
   businessId?: string;
@@ -39,14 +40,14 @@ export default function BusinessActivationPage({ businessId }: BusinessActivatio
   }, [biz, isLiveSeller]);
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+    <div className="min-h-screen pb-10 font-body" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
         <div className="flex flex-col gap-1">
           <h1 className="font-headline text-2xl sm:text-3xl font-black">{biz?.name ? `${biz.name} launch plan` : 'Business launch plan'}</h1>
-          <p className="text-sm text-on-surface-variant">Complete these steps to unlock bookings, escrow protection, and $PAB rewards.</p>
+          <p className="text-sm" style={{ color: tokens.color.muted }}>Complete these steps to unlock bookings, escrow protection, and $PAB rewards.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           {[
             { label: 'Claim listing', action: () => navigate(`/business/${id}`), cta: 'Open profile' },
             { label: 'Try booking', action: () => navigate(`/business/${id}`), cta: 'Book now' },
@@ -57,30 +58,34 @@ export default function BusinessActivationPage({ businessId }: BusinessActivatio
             <button
               key={item.label}
               onClick={item.action}
-              className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 text-left hover:bg-surface-container-high active:scale-[0.99] transition-colors touch-target"
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4 text-left transition-colors hover:-translate-y-[2px] hover:border-white/10"
             >
-              <span className="block font-headline font-bold text-sm sm:text-base mb-1">{item.label}</span>
-              <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-primary">
-                {item.cta} <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <span className="block font-headline font-bold text-sm sm:text-base mb-1" style={{ color: tokens.color.text }}>{item.label}</span>
+              <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold" style={{ color: tokens.color.primary }}>
+                {item.cta} <ArrowRightIcon className="h-4 w-4" />
               </span>
             </button>
           ))}
         </div>
 
-        <div className="rounded-3xl border border-outline-variant/10 bg-surface-container-low p-6 space-y-3">
-          <h3 className="font-headline text-xl font-bold">Activation checklist</h3>
+        <Surface className="mt-6 space-y-3">
+          <h3 className="font-headline text-xl font-bold" style={{ color: tokens.color.text }}>Activation checklist</h3>
           <div className="flex flex-wrap gap-2">
             {steps.map((step) => (
-              <span key={step.label} className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border ${step.done ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100' : 'border-outline-variant/20 bg-surface text-on-surface-variant'}`}>
-                {step.done ? <CheckCircleIcon className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-outline-variant/40" />}
+              <span key={step.label} className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs sm:text-sm font-bold ${
+                step.done
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                  : 'border-white/10 bg-white/5 text-white/70'
+              }`}>
+                {step.done ? <CheckCircleIcon className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-white/40" />}
                 {step.label}
               </span>
             ))}
           </div>
-        </div>
+        </Surface>
 
-        <div className="space-y-3">
-          <h3 className="font-headline text-xl font-bold">Payment & checkout</h3>
+        <div className="mt-6 space-y-3">
+          <h3 className="font-headline text-xl font-bold" style={{ color: tokens.color.text }}>Payment & checkout</h3>
           {id && <PaymentLinkCard businessId={id} businessName={biz?.name || 'seller'} />}
         </div>
 
