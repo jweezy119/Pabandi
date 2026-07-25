@@ -4,6 +4,7 @@ import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { BusinessCategory, UserRole } from '@prisma/client';
+import { stripeService } from '../services/stripe.service';
 import { osintService } from '../services/osint.service';
 import { channexService } from '../services/channex.service';
 import { logger } from '../utils/logger';
@@ -1199,6 +1200,45 @@ export const getApiKeys = async (
     res.json({
       success: true,
       data: { apiKeys: keys }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const connectStripe = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    const business = await prisma.business.findUnique({
+      where: { id },
+    });
+
+    if (!business) {
+      throw new CustomError('Business not found', 404);
+    }
+
+    if (business.ownerId !== req.user?.id && req.user?.role !== 'ADMIN') {
+      throw new CustomError('Not authorized', 403);
+    }
+
+    let accountId = business.stripeAccountId;
+
+    if (!accountId) {
+      accountId = await stripeService.createConnectAccount(business.id);
+      await prisma.business.update({
+        where: { id: business.id },
+        data: { stripeAccountId: accountId },
+      });
+    }
+
+    const onboardingUrl = await stripeService.createAccountLink(accountId);
+
+    res.json({
+      success: true,
+      data: {
+        url: onboardingUrl,
+      },
     });
   } catch (error) {
     next(error);

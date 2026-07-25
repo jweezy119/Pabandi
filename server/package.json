@@ -62,6 +62,7 @@
     "passport-tiktok-auth": "^1.0.12",
     "passport-twitter": "^1.0.4",
     "redis": "^4.6.12",
+    "stripe": "^22.3.2",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "tweetnacl": "^1.0.3",

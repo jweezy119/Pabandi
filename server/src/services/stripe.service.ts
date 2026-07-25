@@ -1,25 +1,10 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import Stripe from 'stripe';
 import { logger } from '../utils/logger';
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
-const STRIPE_API_URL = 'https://api.stripe.com/v1';
-
-/**
- * Minimal Stripe API client using native fetch.
- * No extra npm package needed — saves dependencies and stays frugal.
- */
-function stripeHeaders() {
-  return {
-    Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
-    'Content-Type': 'application/x-www-form-urlencoded',
-  };
-}
-
-function toFormEncoded(obj: Record<string, string | number>): string {
-  return Object.entries(obj)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join('&');
-}
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2026-06-24.dahlia',
+});
 
 export const stripeService = {
   /**
@@ -29,51 +14,69 @@ export const stripeService = {
    * @param reservationId Used as metadata reference
    * @param successUrl Redirect URL after successful payment
    * @param cancelUrl  Redirect URL if user cancels
+   * @param destinationAccountId Optional Stripe Connect account ID to route funds to
    */
   async createCheckoutUrl(
     amountCents: number,
     currency: string,
     reservationId: string,
     successUrl?: string,
-    cancelUrl?: string
+    cancelUrl?: string,
+    destinationAccountId?: string
   ): Promise<string> {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const success = successUrl || `${frontendUrl}/reservations?stripe_success=true&ref=${reservationId}`;
     const cancel = cancelUrl || `${frontendUrl}/reservations?stripe_cancel=true&ref=${reservationId}`;
 
-    if (!STRIPE_SECRET_KEY) {
+    if (!stripeSecretKey) {
       logger.warn('STRIPE_SECRET_KEY not set');
       return `${frontendUrl}/reservations?stripe_disabled=true&ref=${reservationId}`;
     }
 
     try {
-      const body = toFormEncoded({
-        'payment_method_types[]': 'card',
-        'line_items[0][price_data][currency]': currency.toLowerCase(),
-        'line_items[0][price_data][unit_amount]': amountCents,
-        'line_items[0][price_data][product_data][name]': 'Reservation Deposit',
-        'line_items[0][price_data][product_data][description]': `Deposit for reservation #${reservationId}`,
-        'line_items[0][quantity]': 1,
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        payment_method_types: ['card'],
         mode: 'payment',
         success_url: success,
         cancel_url: cancel,
-        'metadata[reservation_id]': reservationId,
-      });
+        line_items: [
+          {
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: 'Reservation Deposit',
+                description: `Deposit for reservation #${reservationId}`,
+              },
+              unit_amount: amountCents,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          reservation_id: reservationId,
+        },
+      };
 
-      const response = await fetch(`${STRIPE_API_URL}/checkout/sessions`, {
-        method: 'POST',
-        headers: stripeHeaders(),
-        body,
-      });
+      // If a destination account is provided, route the funds via PaymentIntent parameters
+      if (destinationAccountId) {
+        // Platform takes a 1.5% facilitation fee
+        const applicationFeeAmount = Math.floor(amountCents * 0.015);
+        sessionParams.payment_intent_data = {
+          application_fee_amount: applicationFeeAmount,
+          transfer_data: {
+            destination: destinationAccountId,
+          },
+        };
+      }
 
-      const data = (await response.json()) as any;
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
-      if (!response.ok || !data.url) {
-        throw new Error(data.error?.message || 'Stripe checkout session creation failed');
+      if (!session.url) {
+        throw new Error('Stripe checkout session creation failed - no URL returned');
       }
 
       logger.info(`Stripe checkout session created for reservation: ${reservationId}`);
-      return data.url;
+      return session.url;
     } catch (error: any) {
       logger.error('Stripe checkout session creation failed', error.message);
       return `${frontendUrl}/reservations?stripe_disabled=true&ref=${reservationId}`;
@@ -82,33 +85,20 @@ export const stripeService = {
 
   /**
    * Refund a Stripe PaymentIntent.
-   * @param paymentIntentId The Stripe PaymentIntent ID stored on the reservation
-   * @param amountCents     Amount in cents to refund (omit for full refund)
    */
   async refundDeposit(paymentIntentId: string, amountCents?: number): Promise<boolean> {
-    if (!STRIPE_SECRET_KEY) {
+    if (!stripeSecretKey) {
       logger.warn('STRIPE_SECRET_KEY not set — skipping Stripe refund');
       return true;
     }
 
     try {
-      const params: Record<string, string | number> = {
+      const refundParams: Stripe.RefundCreateParams = {
         payment_intent: paymentIntentId,
       };
-      if (amountCents) params.amount = amountCents;
+      if (amountCents) refundParams.amount = amountCents;
 
-      const response = await fetch(`${STRIPE_API_URL}/refunds`, {
-        method: 'POST',
-        headers: stripeHeaders(),
-        body: toFormEncoded(params),
-      });
-
-      const data = (await response.json()) as any;
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Stripe refund failed');
-      }
-
+      await stripe.refunds.create(refundParams);
       logger.info(`Stripe refund issued for PaymentIntent: ${paymentIntentId}`);
       return true;
     } catch (error: any) {
@@ -119,7 +109,6 @@ export const stripeService = {
 
   /**
    * Verify a Stripe webhook signature.
-   * See: https://stripe.com/docs/webhooks/signatures
    */
   verifyWebhook(signature: string, rawBody: Buffer | string): boolean {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -130,26 +119,40 @@ export const stripeService = {
     }
 
     try {
-      // Stripe signature format: t=timestamp,v1=hmac,...
-      const parts = signature.split(',');
-      const tPart = parts.find((p) => p.startsWith('t='));
-      const v1Part = parts.find((p) => p.startsWith('v1='));
-
-      if (!tPart || !v1Part) return false;
-
-      const timestamp = tPart.slice(2);
-      const receivedSig = v1Part.slice(3);
-
-      const payload = `${timestamp}.${rawBody}`;
-      const hmac = createHmac('sha256', secret);
-      hmac.update(payload);
-      const expected = hmac.digest('hex');
-
-      // Use timing-safe comparison to prevent timing attacks
-      return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(receivedSig, 'hex'));
+      stripe.webhooks.constructEvent(rawBody, signature, secret);
+      return true;
     } catch (error) {
       logger.error('Stripe webhook signature verification failed', error);
       return false;
     }
   },
+
+  /**
+   * Stripe Connect: Create an Express connected account.
+   */
+  async createConnectAccount(businessId: string): Promise<string> {
+    const account = await stripe.accounts.create({
+      type: 'express',
+      metadata: {
+        businessId,
+      },
+    });
+    return account.id;
+  },
+
+  /**
+   * Stripe Connect: Create an account link for onboarding.
+   */
+  async createAccountLink(accountId: string): Promise<string> {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${frontendUrl}/settings?stripe_refresh=true`,
+      return_url: `${frontendUrl}/settings?stripe_return=true`,
+      type: 'account_onboarding',
+    });
+
+    return accountLink.url;
+  }
 };

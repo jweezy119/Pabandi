@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { stripeService } from '../services/stripe.service';
 
 // Create a new checkout session (Hosted Payment Link)
 export const createCheckoutSession = async (req: Request, res: Response) => {
@@ -269,5 +270,40 @@ export const createPartnerEmbedCheckoutSession = async (req: any, res: Response)
   } catch (error) {
     logger.error('Error creating partner embed checkout session:', error);
     return res.status(500).json({ success: false, error: 'Failed to create partner embed checkout session' });
+  }
+};
+
+export const initiateStripeCheckout = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true }
+    });
+
+    if (!session || session.status !== 'PENDING') {
+      return res.status(404).json({ success: false, error: 'Valid checkout session not found' });
+    }
+
+    // Convert amount to cents for Stripe
+    const amountCents = Math.round(session.amount * 100);
+
+    const stripeUrl = await stripeService.createCheckoutUrl(
+      amountCents,
+      session.currency,
+      session.id, // using session ID as reservationId for metadata mapping
+      session.successUrl,
+      session.cancelUrl,
+      session.business.stripeAccountId || undefined
+    );
+
+    res.json({
+      success: true,
+      data: { url: stripeUrl }
+    });
+  } catch (error: any) {
+    logger.error('Error initiating Stripe checkout', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };

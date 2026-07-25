@@ -79,6 +79,7 @@ model Business {
   id                     String                  @id @default(cuid())
   ownerId                String?                 @unique
   name                   String
+  stripeAccountId        String?                 @unique
   description            String?
   category               BusinessCategory
   address                String
