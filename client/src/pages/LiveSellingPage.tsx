@@ -7,6 +7,7 @@ import {
   ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
+import { tokens } from '../design-system';
 
 const PLATFORMS = [
   { id: 'tiktok-live', label: 'TikTok Live', brand: 'bg-[#ff0050]/10 text-[#ff0050] border-[#ff0050]/30' },
@@ -53,7 +54,7 @@ export default function LiveSellingPage() {
   const liveNow = (liveStatus || []).filter((s: any) => s?.isLive).length;
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body">
+    <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-10 sm:space-y-12">
         <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
           <div className="flex items-center gap-3 mb-3">
