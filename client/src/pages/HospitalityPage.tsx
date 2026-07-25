@@ -1,29 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import {
-  BuildingOffice2Icon,
-  ShieldCheckIcon,
-  BoltIcon,
-  StarIcon,
-  CheckIcon,
-  ArrowUpRightIcon,
-  GlobeAltIcon,
-  SparklesIcon,
-  LockClosedIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  PlusIcon,
-  SignalIcon,
-} from '@heroicons/react/24/outline';
 import PropertyConnectWizard from '../components/PropertyConnectWizard';
 import { hospitalityService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { Button, Chip, Surface, Badge, tokens } from '../design-system';
 
-// Property type mapping for wizard pre-selection
 type PropertyType = 'hotel' | 'guesthouse' | 'riad' | 'safari_camp' | 'experience' | 'vacation_rental' | 'other';
 
-// ─── Property Type Cards ──────────────────────────────────────────────────────
 const PROPERTY_TYPES: { icon: string; label: string; desc: string; wizardType: PropertyType }[] = [
   { icon: '🏨', label: 'Hotels & Resorts', desc: 'Full-service hotels, boutique properties, and luxury resorts.', wizardType: 'hotel' },
   { icon: '🏡', label: 'Guesthouses & B&Bs', desc: 'Independent guesthouses, bed-and-breakfasts, and family stays.', wizardType: 'guesthouse' },
@@ -33,7 +17,6 @@ const PROPERTY_TYPES: { icon: string; label: string; desc: string; wizardType: P
   { icon: '🏢', label: 'Serviced Apartments', desc: 'Short-term rentals and corporate serviced accommodation.', wizardType: 'vacation_rental' },
 ];
 
-// ─── Partner PMS Logos ────────────────────────────────────────────────────────
 const PMS_PARTNERS = [
   { name: 'Beds24', url: 'https://beds24.com', badge: 'OPEN API', badgeColor: '#10b981' },
   { name: 'Cloudbeds', url: 'https://cloudbeds.com', badge: 'OAUTH', badgeColor: '#6366f1' },
@@ -42,56 +25,35 @@ const PMS_PARTNERS = [
   { name: 'Manual/Custom', url: '#', badge: 'WEBHOOK', badgeColor: '#64748b' },
 ];
 
-// ─── How It Works Steps ───────────────────────────────────────────────────────
 const HOW_IT_WORKS = [
   {
     step: '01',
-    icon: GlobeAltIcon,
     title: 'Connect Your PMS',
     desc: 'Link Pabandi to your Beds24, Cloudbeds, or Lodgify account in under 3 minutes. We register a secure webhook with your PMS — no code changes required.',
     color: '#6366f1',
   },
   {
     step: '02',
-    icon: LockClosedIcon,
     title: 'Deposit Protection',
-    desc: 'Pabandi is designed to lock the deposit in escrow and enforce release/refund rules via verified booking events, reducing no-shows and disputes.',
+    desc: 'Pabandi locks the deposit in escrow and enforces release/refund rules via verified booking events, reducing no-shows and disputes.',
     color: '#f0b429',
   },
   {
     step: '03',
-    icon: BoltIcon,
-    title: 'Instant Release + $PAB Rewards',
-    desc: 'On checkout, the deposit releases instantly to your property. The guest earns 50 $PAB tokens per night — redeemable for discounts on future stays.',
+    title: 'Verified Checkout',
+    desc: 'Guests book on WhatsApp or your storefront. Release, refund, and forfeit happen automatically from PMS events.',
     color: '#10b981',
   },
 ];
 
-// ─── FAQ Items ────────────────────────────────────────────────────────────────
 const FAQS = [
-  {
-    q: 'Do I need to change my booking process?',
-    a: 'No. Pabandi sits silently behind your existing PMS. Your guests book exactly as before — Pabandi intercepts the webhook and handles escrow automatically.',
-  },
-  {
-    q: 'What happens when a guest no-shows?',
-    a: 'The escrow smart contract automatically forfeits: 80% of the deposit goes to your property, 20% to the Pabandi treasury. No manual follow-up required.',
-  },
-  {
-    q: 'What about cancellations within policy?',
-    a: "Cancellations with more than 24 hours' notice trigger a full refund. Late cancellations (< 24h before check-in) are treated as no-shows.",
-  },
-  {
-    q: 'What currencies are supported?',
-    a: 'We support USD via Solana (USDC), PayPal, Alibaba Pay, and Binance Pay. All deposits are priced in USD and settled on Solana for trustless escrow.',
-  },
-  {
-    q: 'Does this comply with Islamic finance principles?',
-    a: 'Yes. The escrow mechanism does not charge interest. Guest funds are held, not lent. See our Halal Staking documentation for more details.',
-  },
+  { q: 'Do I need to change my booking process?', a: 'No. Pabandi sits silently behind your existing PMS. Your guests book exactly as before — Pabandi intercepts the webhook and handles escrow automatically.' },
+  { q: 'What happens when a guest no-shows?', a: 'The escrow smart contract automatically forfeits: 80% of the deposit goes to your property, 20% to the Pabandi treasury. No manual follow-up required.' },
+  { q: 'What about cancellations within policy?', a: "Cancellations with more than 24 hours' notice trigger a full refund. Late cancellations (< 24h before check-in) are treated as no-shows." },
+  { q: 'What currencies are supported?', a: 'We support USD via Solana (USDC), PayPal, Alibaba Pay, and Binance Pay. All deposits are priced in USD and settled on Solana for trustless escrow.' },
+  { q: 'Does this comply with Islamic finance principles?', a: 'Yes. The escrow mechanism does not charge interest. Guest funds are held, not lent. See our Halal Staking documentation for more details.' },
 ];
 
-// ─── PMS badge colors ────────────────────────────────────────────────────────
 const PROVIDER_COLORS: Record<string, string> = {
   beds24: '#10b981',
   cloudbeds: '#6366f1',
@@ -107,7 +69,6 @@ export default function HospitalityPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
 
-  // Fetch connected properties when authenticated
   const { data: propertiesData, refetch: refetchProperties } = useQuery(
     'hospitality-properties',
     () => hospitalityService.getProperties(),
@@ -146,21 +107,19 @@ export default function HospitalityPage() {
     }
     setIsProcessingCheckout(true);
     try {
-      // Use Safepay for B2B Subscription Payment
       const token = localStorage.getItem('token');
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          amount: price, // $19
+          amount: price,
           paymentMethod: 'safepay',
-          reservationId: `sub_${planName.toLowerCase().replace(/[^a-z0-9]/g, '_')}` // mock reference
-        })
+          reservationId: `sub_${planName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+        }),
       });
-      
       const data = await res.json();
       if (data.paymentUrl || data.data?.checkoutUrl) {
         window.location.href = data.paymentUrl || data.data.checkoutUrl;
@@ -175,62 +134,35 @@ export default function HospitalityPage() {
   };
 
   return (
-    <div style={{ background: '#0a0f1a', color: '#e8edf2' }} className="min-h-screen pb-24 md:pb-16 font-body">
-
-      {/* ─── Hero ─────────────────────────────────────────────────────────── */}
-      <section
-        className="relative overflow-hidden py-24 px-4 text-center"
-        style={{
-          background: 'radial-gradient(ellipse at top left, rgba(99, 102, 241, 0.12) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(240, 180, 41, 0.08) 0%, transparent 50%)',
-        }}
-      >
-        {/* Floating ambient blobs */}
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full opacity-10 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #6366f1, transparent)' }} />
-        <div className="absolute bottom-10 right-10 w-80 h-80 rounded-full opacity-8 blur-3xl pointer-events-none"
-          style={{ background: 'radial-gradient(circle, #f0b429, transparent)' }} />
-
-        <div className="max-w-4xl mx-auto relative z-10">
-          <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border mb-6"
-            style={{ background: 'rgba(99, 102, 241, 0.08)', borderColor: 'rgba(99, 102, 241, 0.3)', color: '#a5b4fc' }}
+    <div
+      className="min-h-screen text-slate-100 antialiased"
+      style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
+    >
+      {/* Hero */}
+      <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <Chip tone="info">Hospitality & Experiences Vertical</Chip>
+          <h1
+            className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
+            style={{
+              background: 'linear-gradient(135deg, #f0b429 0%, #fb923c 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
           >
-            <BuildingOffice2Icon className="h-3.5 w-3.5" />
-            Hospitality & Experiences Vertical
-          </span>
-
-          <h1 className="font-headline text-4xl md:text-6xl font-black leading-tight tracking-tight text-white mt-2">
-            Trustless Deposits for<br />
-            <span style={{ background: 'linear-gradient(135deg, #f0b429, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Hotels &amp; Experiences
-            </span>
+            Trustless Deposits for<br />Hotels &amp; Experiences
           </h1>
-
-          <p className="text-sm md:text-base text-on-surface-variant mt-6 max-w-2xl mx-auto leading-relaxed">
-            Pabandi is the WhatsApp-native commerce escrow layer for hospitality.
-            Connect your PMS, let guests book on WhatsApp, and protect every deposit
-            with escrow-backed checkout. Zero training required.
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-300">
+            Connect your PMS, let guests book on WhatsApp, and protect every deposit with escrow-backed checkout.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <button
-              id="hospitality-connect-btn"
-              onClick={() => handleOpenWizard()}
-              className="btn-primary px-8 py-3.5 text-sm font-bold flex items-center gap-2 justify-center"
-            >
-              <BoltIcon className="h-4 w-4" />
-              Connect Your Property
-            </button>
-            <Link to="/pricing" className="btn-secondary px-8 py-3.5 text-sm font-bold flex items-center gap-2 justify-center">
-              View Pricing
-              <ArrowUpRightIcon className="h-4 w-4" />
-            </Link>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={() => handleOpenWizard()}>Connect Your Property</Button>
+            <Link to="/pricing"><Button variant="outline">View Pricing</Button></Link>
           </div>
-
-          {/* Trust bar */}
-          <div className="flex flex-wrap gap-6 justify-center mt-10 text-xs text-on-surface-variant">
+          <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
             {['No chargebacks', 'Instant settlement', 'Sharia-compliant', '50 $PAB per night'].map((item) => (
               <span key={item} className="flex items-center gap-1.5">
-                <CheckIcon className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-emerald-400">✓</span>
                 {item}
               </span>
             ))}
@@ -238,273 +170,175 @@ export default function HospitalityPage() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-
-        {/* ─── Connected Properties Dashboard (Authenticated Users) ─────── */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        {/* Connected Properties */}
         {isAuthenticated && connectedProperties.length > 0 && (
           <section className="mt-12 mb-8">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="font-headline text-xl md:text-2xl font-black text-white">Your Connected Properties</h2>
-                <p className="text-xs text-on-surface-variant mt-1">Properties receiving Pabandi escrow protection.</p>
+                <h2 className="text-xl font-bold text-white md:text-2xl">Your Connected Properties</h2>
+                <p className="text-xs text-slate-400 mt-1">Properties receiving Pabandi escrow protection.</p>
               </div>
-              <button
-                onClick={() => handleOpenWizard()}
-                className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-white/5 border border-white/15 text-white hover:bg-white/10 transition-colors"
-              >
-                <PlusIcon className="h-3.5 w-3.5" />
-                Add Property
-              </button>
+              <Button variant="ghost" onClick={() => handleOpenWizard()} className="px-3 py-2 text-xs">
+                + Add Property
+              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {connectedProperties.map((prop: any) => {
                 const providerColor = PROVIDER_COLORS[prop.provider] || '#64748b';
                 return (
-                  <div
-                    key={prop.id}
-                    className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/20 transition-colors"
-                  >
+                  <Surface key={prop.id} className="flex flex-col gap-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-sm font-bold text-white">{prop.propertyName}</h3>
                         <p className="text-[10px] text-slate-400 mt-0.5">{prop.country || 'Global'}</p>
                       </div>
-                      <span
-                        className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-                        style={{ background: `${providerColor}20`, color: providerColor, border: `1px solid ${providerColor}40` }}
-                      >
+                      <Badge tone="info" className={!providerColor ? '' : ''} style={providerColor ? { background: `${providerColor}20`, color: providerColor, borderColor: `${providerColor}40` } : undefined}>
                         {prop.provider}
-                      </span>
+                      </Badge>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        <CheckIcon className="h-3 w-3" />
-                        {prop.isActive ? 'Active' : 'Inactive'}
+                        ✓ {prop.isActive ? 'Active' : 'Inactive'}
                       </span>
-                      <span className="text-[10px] text-slate-400">
-                        {prop.propertyType?.replace('_', ' ')}
-                      </span>
+                      <span className="text-[10px] text-slate-400">{prop.propertyType?.replace('_', ' ')}</span>
                     </div>
-
-                    {/* AI Receptionist Toggle & Analytics */}
-                    <div className="mt-2 p-3 rounded-xl border border-indigo-500/30 bg-indigo-500/5">
+                    <Surface className="border-indigo-500/30 bg-indigo-500/5">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                          <SparklesIcon className="h-3.5 w-3.5 text-indigo-400" />
-                          AI Receptionist
-                        </span>
-                        <button 
+                        <span className="text-[11px] font-bold text-white">AI Receptionist</span>
+                        <button
                           className={`w-8 h-4 rounded-full relative transition-colors ${prop.aiEnabled !== false ? 'bg-indigo-500' : 'bg-slate-600'}`}
                         >
-                          <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${prop.aiEnabled !== false ? 'left-4.5' : 'left-0.5'}`} style={{ transform: prop.aiEnabled !== false ? 'translateX(14px)' : 'translateX(0)' }} />
+                          <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform" style={{ transform: prop.aiEnabled !== false ? 'translateX(14px)' : 'translateX(0)' }} />
                         </button>
                       </div>
                       <div className="flex justify-between text-[9px] text-slate-400">
                         <span>Conv: <strong className="text-emerald-400">{prop.aiConversionRate || '32%'}</strong></span>
                         <span>Deposits: <strong className="text-white">${prop.aiRevenue || '1,240'}</strong></span>
                       </div>
-                    </div>
-
-                    <button
+                    </Surface>
+                    <Button
+                      variant="outline"
                       onClick={() => handleHealthCheck()}
                       disabled={testingPropertyId === '__health__'}
-                      className="w-full mt-1 py-2 text-[11px] font-bold rounded-lg border border-white/15 text-on-surface-variant hover:text-white hover:border-white/30 transition-all flex items-center justify-center gap-2 bg-white/5"
+                      className="w-full mt-1 py-2 text-[11px] font-bold"
                     >
-                      {testingPropertyId === '__health__' ? (
-                        <>
-                          <span className="animate-spin rounded-full h-3 w-3 border-2 border-current/30 border-t-current" />
-                          Checking...
-                        </>
-                      ) : (
-                        <>
-                          <SignalIcon className="h-3.5 w-3.5" />
-                          Verify Connection
-                        </>
-                      )}
-                    </button>
-                  </div>
+                      {testingPropertyId === '__health__' ? 'Checking...' : 'Verify Connection'}
+                    </Button>
+                  </Surface>
                 );
               })}
             </div>
           </section>
         )}
 
-        {/* ─── Stats Banner ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 mb-16">
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-4 mt-12 mb-16 md:grid-cols-4">
           {[
             { value: '$0', label: 'Chargeback risk', sub: 'Escrow-protected' },
             { value: '< 3 min', label: 'Setup time', sub: 'No code required' },
             { value: '50 PAB', label: 'Per night rewarded', sub: 'Guest loyalty' },
             { value: '80/20', label: 'No-show split', sub: 'Property / Treasury' },
-          ].map(({ value, label, sub }) => (
-            <div key={label}
-              className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center"
-            >
-              <p className="font-headline text-2xl font-black text-white">{value}</p>
-              <p className="text-xs font-bold text-white mt-1">{label}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
-            </div>
+          ].map((item) => (
+            <Surface key={item.label} className="flex flex-col items-center gap-1 text-center">
+              <p className="text-2xl font-black text-white">{item.value}</p>
+              <p className="text-[10px] font-bold text-white">{item.label}</p>
+              <p className="text-[10px] text-slate-400">{item.sub}</p>
+            </Surface>
           ))}
         </div>
 
-        {/* ─── How It Works ────────────────────────────────────────────────── */}
+        {/* How It Works */}
         <section className="mb-20">
           <div className="text-center mb-10">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">How It Works</h2>
-            <p className="text-xs text-on-surface-variant mt-2">Three steps between your PMS and trustless escrow protection.</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">How It Works</h2>
+            <p className="text-xs text-slate-400 mt-2">Three steps between your PMS and trustless escrow protection.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {HOW_IT_WORKS.map(({ step, icon: Icon, title, desc, color }) => (
-              <div key={step}
-                className="relative rounded-2xl p-6 border flex flex-col gap-4"
-                style={{
-                  background: `linear-gradient(135deg, ${color}0a 0%, var(--color-surface-raised) 100%)`,
-                  borderColor: `${color}30`,
-                }}
-              >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {HOW_IT_WORKS.map(({ step, title, desc, color }) => (
+              <Surface key={step} className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `${color}18`, border: `1.5px solid ${color}35` }}
-                  >
-                    <Icon className="h-5 w-5" style={{ color }} />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${color}18`, border: `1.5px solid ${color}35` }}>
+                    <span className="text-sm font-black" style={{ color }}>{step}</span>
                   </div>
-                  <span className="text-[10px] font-black tracking-widest uppercase" style={{ color }}>{step}</span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white mb-1.5">{title}</h3>
-                  <p className="text-[11px] text-on-surface-variant leading-relaxed">{desc}</p>
+                  <h3 className="text-sm font-bold text-white">{title}</h3>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
                 </div>
-              </div>
+              </Surface>
             ))}
-          </div>
-
-          {/* Flow Diagram */}
-          <div className="mt-8 p-5 rounded-2xl border border-white/10 bg-white/5 overflow-x-auto">
-            <div className="flex items-center justify-between gap-2 min-w-[520px]">
-              {[
-                { label: 'Guest Books', icon: '📅', sub: 'Via your PMS' },
-                { label: '→', icon: '', sub: '' },
-                { label: 'Webhook Fires', icon: '⚡', sub: 'Beds24/Cloudbeds' },
-                { label: '→', icon: '', sub: '' },
-                { label: 'Escrow Opens', icon: '🔐', sub: 'Solana on-chain' },
-                { label: '→', icon: '', sub: '' },
-                { label: 'Checkout', icon: '✅', sub: 'Auto-release' },
-                { label: '→', icon: '', sub: '' },
-                { label: '$PAB Minted', icon: '🪙', sub: 'Guest reward' },
-              ].map(({ label, icon, sub }, i) => (
-                label === '→'
-                  ? <span key={i} className="text-outline-variant text-xl shrink-0">→</span>
-                  : (
-                    <div key={i} className="flex flex-col items-center text-center shrink-0">
-                      <span className="text-2xl mb-1">{icon}</span>
-                      <p className="text-[11px] font-bold text-white">{label}</p>
-                      <p className="text-[9px] text-slate-400">{sub}</p>
-                    </div>
-                  )
-              ))}
-            </div>
           </div>
         </section>
 
-        {/* ─── Property Types ──────────────────────────────────────────────── */}
+        {/* Property Types */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">Built for Every Hospitality Type</h2>
-            <p className="text-xs text-on-surface-variant">
-              Reserve your slot in the check-in queue for this venue.
-            </p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Built for Every Hospitality Type</h2>
+            <p className="text-xs text-slate-400 mt-2">Reserve your slot in the check-in queue for this venue.</p>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             {PROPERTY_TYPES.map(({ icon, label, desc, wizardType }) => (
               <button
                 key={label}
                 onClick={() => handleOpenWizard(wizardType)}
-                className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-primary/40 transition-all group cursor-pointer text-left"
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-all hover:border-white/20 group"
               >
-                <span className="text-3xl mb-3 block">{icon}</span>
-                <h3 className="text-sm font-bold text-white mb-1 group-hover:text-primary transition-colors">{label}</h3>
+                <span className="mb-3 block text-3xl">{icon}</span>
+                <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors">{label}</h3>
                 <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
-                <span className="text-[9px] font-bold text-primary/70 mt-2 block opacity-0 group-hover:opacity-100 transition-opacity">
-                  Click to connect →
-                </span>
+                <span className="mt-2 block text-[9px] font-bold text-primary/70 opacity-0 transition-opacity group-hover:opacity-100">Click to connect →</span>
               </button>
             ))}
           </div>
         </section>
 
-        {/* ─── PMS Integrations ────────────────────────────────────────────── */}
+        {/* PMS Integrations */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">Integrates With Your Existing Software</h2>
-            <p className="text-xs text-on-surface-variant mt-2">Connect Pabandi to your PMS in minutes, not months.</p>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Integrates With Your Existing Software</h2>
+            <p className="text-xs text-slate-400 mt-2">Connect Pabandi to your PMS in minutes, not months.</p>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             {PMS_PARTNERS.map(({ name, badge, badgeColor }) => (
-              <div key={name}
-                className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col items-center gap-2 hover:border-white/20 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                  <GlobeAltIcon className="h-5 w-5 text-slate-400" />
+              <div key={name} className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
+                  <span className="text-lg">🔗</span>
                 </div>
                 <p className="text-xs font-bold text-white text-center leading-tight">{name}</p>
-                <span
-                  className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
-                  style={{ background: `${badgeColor}20`, color: badgeColor, border: `1px solid ${badgeColor}40` }}
-                >
+                <span className="text-[8px] font-black uppercase tracking-widest rounded px-1.5 py-0.5" style={{ background: `${badgeColor}20`, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
                   {badge}
                 </span>
               </div>
             ))}
           </div>
-
-          {/* API Architecture note */}
-          <div
-            className="mt-6 p-4 rounded-xl border flex items-start gap-3"
-            style={{ background: 'rgba(99, 102, 241, 0.04)', borderColor: 'rgba(99, 102, 241, 0.2)' }}
-          >
-            <ShieldCheckIcon className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-white">Webhook-based, zero polling</p>
-              <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">
-                Pabandi registers a signed webhook endpoint directly in your PMS. When a booking is created, modified, or cancelled, the PMS pushes the event to us instantly — no scheduled polling, no delays. HMAC-SHA256 signatures verify every incoming event.
-              </p>
+          <Surface className="mt-6 border-indigo-500/25 bg-indigo-500/5">
+            <div className="flex items-start gap-3">
+              <span className="text-indigo-400">🛡️</span>
+              <div>
+                <p className="text-xs font-bold text-white">Webhook-based, zero polling</p>
+                <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">Pabandi registers a signed webhook endpoint directly in your PMS. When a booking is created, modified, or cancelled, the PMS pushes the event to us instantly — no scheduled polling, no delays. HMAC-SHA256 signatures verify every incoming event.</p>
+              </div>
             </div>
-          </div>
+          </Surface>
         </section>
 
-        {/* ─── Escrow Detail ───────────────────────────────────────────────── */}
+        {/* Escrow Detail */}
         <section className="mb-20">
-          <div
-            className="rounded-2xl p-6 md:p-8 border"
-            style={{
-              background: 'linear-gradient(135deg, rgba(240, 180, 41, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%)',
-              borderColor: 'rgba(240, 180, 41, 0.25)',
-            }}
-          >
-            <div className="flex flex-col md:flex-row gap-8">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 md:p-8">
+            <div className="flex flex-col gap-4 md:flex-row md:gap-8">
               <div className="flex-1">
-                <span className="text-[9px] font-black uppercase tracking-widest text-[#f0b429] border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 rounded">
-                  Smart Contract Layer
-                </span>
-                <h2 className="font-headline text-xl md:text-2xl font-black text-white mt-3 mb-4">
-                  PabandiEscrow.sol — On-chain Hospitality Protection
-                </h2>
-                <p className="text-[11px] text-slate-400 leading-relaxed mb-6">
-                  Every hospitality deposit is held in a trustless Solana smart contract. Neither Pabandi nor the property can move funds arbitrarily — only verified booking events from the PMS trigger release, refund, or forfeit.
-                </p>
-
-                <div className="space-y-3">
+                <Chip tone="warning">Smart Contract Layer</Chip>
+                <h2 className="mt-3 text-xl font-bold text-white md:text-2xl">PabandiEscrow.sol — On-chain Hospitality Protection</h2>
+                <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">Every hospitality deposit is held in a trustless Solana smart contract. Neither Pabandi nor the property can move funds arbitrarily — only verified booking events from the PMS trigger release, refund, or forfeit.</p>
+                <div className="mt-4 space-y-2">
                   {[
                     { event: 'Guest Checks Out ✅', action: 'releaseToProperty()', result: '100% → Property', color: '#10b981' },
                     { event: 'Cancelled >24h Before ⏱️', action: 'refundCustomer()', result: '100% → Guest', color: '#6366f1' },
                     { event: 'No-Show / Late Cancel ❌', action: 'forfeitNoShow()', result: '80% → Property · 20% → Treasury', color: '#f59e0b' },
                   ].map(({ event, action, result, color }) => (
-                    <div key={event} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                    <div key={event} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
                       <div className="flex-1">
                         <p className="text-xs font-bold text-white">{event}</p>
                         <p className="text-[10px] font-mono text-slate-400">{action}</p>
@@ -514,154 +348,86 @@ export default function HospitalityPage() {
                   ))}
                 </div>
               </div>
-
-              {/* $PAB Rewards Panel */}
-              <div className="md:w-60 shrink-0">
-                <div className="bg-white/5 rounded-2xl border border-white/10 p-5 h-full flex flex-col gap-4">
-                  <div className="text-center">
-                    <span className="text-4xl">🪙</span>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-[#f0b429] mt-2">Guest Loyalty</p>
-                    <p className="font-headline text-3xl font-black text-white mt-1">50 PAB</p>
-                    <p className="text-[10px] text-slate-400">per night stayed</p>
-                  </div>
-                  <hr className="border-outline-variant/20" />
-                  <div className="space-y-2">
-                    {[
-                      '1 night = 50 PAB',
-                      '3 nights = 150 PAB',
-                      '7 nights = 350 PAB',
-                      'Redeem for discounts',
-                    ].map((item) => (
-                      <div key={item} className="flex items-center gap-2">
-                        <StarIcon className="h-3 w-3 text-[#f0b429] shrink-0" />
-                        <span className="text-[11px] text-slate-400">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => handleOpenWizard()}
-                    className="btn-primary w-full py-2.5 text-xs font-bold mt-auto"
-                  >
-                    Activate for My Property
-                  </button>
+              <Surface className="md:w-60 md:shrink-0">
+                <div className="text-center">
+                  <span className="text-4xl">🪙</span>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#f0b429] mt-2">Guest Loyalty</p>
+                  <p className="font-headline text-3xl font-black text-white mt-1">50 PAB</p>
+                  <p className="text-[10px] text-slate-400">per night stayed</p>
                 </div>
-              </div>
+                <hr className="border-white/10 my-3" />
+                <div className="space-y-2">
+                  {['1 night = 50 PAB', '3 nights = 150 PAB', '7 nights = 350 PAB', 'Redeem for discounts'].map((item) => (
+                    <div key={item} className="flex items-center gap-2">
+                      <span className="text-[#f0b429]">⭐</span>
+                      <span className="text-[11px] text-slate-400">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button onClick={() => handleOpenWizard()} className="mt-4 w-full py-2.5 text-xs font-bold">Activate for My Property</Button>
+              </Surface>
             </div>
           </div>
         </section>
 
-        {/* ─── Pricing Callout ─────────────────────────────────────────────── */}
+        {/* Pricing */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">Hospitality Add-On Pricing</h2>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Hospitality Add-On Pricing</h2>
             <p className="text-xs text-slate-400 mt-2">Layer on top of any Pabandi plan.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 max-w-4xl mx-auto">
             {[
-              {
-                name: 'Starter Hospitality',
-                price: 'Free',
-                sub: 'Up to 20 bookings/mo',
-                features: ['1 property', 'Beds24 integration', 'Manual escrow trigger', '5% escrow commission'],
-                cta: 'Start Free',
-                highlight: false,
-              },
-              {
-                name: 'Growth Hospitality',
-                price: '$19',
-                sub: '/ month add-on',
-                features: ['Up to 5 properties', 'Beds24 + Cloudbeds', 'Auto-webhook escrow', '2.5% escrow commission', '$PAB guest rewards'],
-                cta: 'Pay with Safepay',
-                highlight: true,
-                priceValue: 19,
-              },
-              {
-                name: 'Enterprise Hospitality',
-                price: 'Custom',
-                sub: 'Per property volume',
-                features: ['Unlimited properties', 'All PMS providers', 'White-label SDK', '1% escrow commission', 'Dedicated support', 'Halal-certified escrow'],
-                cta: 'Contact Sales',
-                highlight: false,
-              },
+              { name: 'Starter Hospitality', price: 'Free', sub: 'Up to 20 bookings/mo', features: ['1 property', 'Beds24 integration', 'Manual escrow trigger', '5% escrow commission'], cta: 'Start Free', highlight: false },
+              { name: 'Growth Hospitality', price: '$19', sub: '/ month add-on', features: ['Up to 5 properties', 'Beds24 + Cloudbeds', 'Auto-webhook escrow', '2.5% escrow commission', '$PAB guest rewards'], cta: 'Pay with Safepay', highlight: true },
+              { name: 'Enterprise Hospitality', price: 'Custom', sub: 'Per property volume', features: ['Unlimited properties', 'All PMS providers', 'White-label SDK', '1% escrow commission', 'Dedicated support', 'Halal-certified escrow'], cta: 'Contact Sales', highlight: false },
             ].map(({ name, price, sub, features, cta, highlight }) => (
-              <div
-                key={name}
-                className="rounded-2xl p-6 flex flex-col justify-between border"
-                style={highlight ? {
-                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(255, 255, 255, 0.05) 100%)',
-                  borderColor: 'rgba(99, 102, 241, 0.4)',
-                } : {
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderColor: 'rgba(255, 255, 255, 0.08)',
-                }}
-              >
-                {highlight && (
-                  <span className="text-[9px] font-black uppercase tracking-wider bg-indigo-500 text-white px-2 py-0.5 rounded-full self-start mb-3">
-                    Most Popular
-                  </span>
-                )}
+              <div key={name} className={`flex flex-col justify-between rounded-2xl border p-6 ${highlight ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                {highlight && <Chip tone="info" className="self-start mb-3">Most Popular</Chip>}
                 <div>
                   <h3 className="text-sm font-bold text-white">{name}</h3>
                   <div className="my-4">
                     <span className="font-headline text-3xl font-black text-white">{price}</span>
                     <span className="text-xs text-slate-400 ml-1">{sub}</span>
                   </div>
-                  <hr className="border-outline-variant/20 my-3" />
+                  <hr className="border-white/10 my-3" />
                   <ul className="space-y-2.5">
                     {features.map((f) => (
                       <li key={f} className="flex items-start gap-2 text-[11px] text-slate-400">
-                        <CheckIcon className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                        <span className="text-indigo-400">✓</span>
                         {f}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <button
-                  onClick={() => {
-                    if (cta === 'Contact Sales') {
-                      navigate('/contact');
-                    } else {
-                      handlePlanCheckout(name, highlight ? 19 : 0);
-                    }
-                  }}
+                <Button
+                  variant={highlight ? 'default' : 'outline'}
+                  onClick={() => cta === 'Contact Sales' ? navigate('/contact') : handlePlanCheckout(name, highlight ? 19 : 0)}
                   disabled={isProcessingCheckout && highlight}
-                  className={`w-full py-2.5 text-xs font-bold mt-6 rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                    highlight ? 'btn-primary shadow-[0_0_20px_rgba(var(--color-primary),0.3)]' : 'btn-secondary'
-                  }`}
+                  className="mt-6 w-full py-2.5 text-xs font-bold"
                 >
                   {isProcessingCheckout && highlight ? 'Processing...' : cta}
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ─── FAQ ─────────────────────────────────────────────────────────── */}
+        {/* FAQ */}
         <section className="mb-20 max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-headline text-xl md:text-2xl font-black text-white">Frequently Asked Questions</h2>
+            <h2 className="text-xl font-bold text-white md:text-2xl">Frequently Asked Questions</h2>
           </div>
           <div className="space-y-2">
             {FAQS.map(({ q, a }, i) => (
-              <div
-                key={i}
-                className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl overflow-hidden"
-              >
-                <button
-                  id={`faq-${i}`}
-                  className="w-full flex items-center justify-between p-4 text-left"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                >
+              <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+                <button className="flex w-full items-center justify-between p-4 text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
                   <span className="text-xs font-bold text-white pr-4">{q}</span>
-                  {openFaq === i
-                    ? <ChevronUpIcon className="h-4 w-4 text-on-surface-variant shrink-0" />
-                    : <ChevronDownIcon className="h-4 w-4 text-on-surface-variant shrink-0" />
-                  }
+                  <span className="text-slate-400">{openFaq === i ? '−' : '+'}</span>
                 </button>
                 {openFaq === i && (
                   <div className="px-4 pb-4">
-                    <p className="text-[11px] text-on-surface-variant leading-relaxed">{a}</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{a}</p>
                   </div>
                 )}
               </div>
@@ -669,42 +435,21 @@ export default function HospitalityPage() {
           </div>
         </section>
 
-        {/* ─── CTA Banner ──────────────────────────────────────────────────── */}
+        {/* CTA Banner */}
         <section className="mb-16">
-          <div
-            className="rounded-3xl p-8 md:p-12 text-center border"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(240, 180, 41, 0.06) 100%)',
-              borderColor: 'rgba(99, 102, 241, 0.3)',
-            }}
-          >
-            <SparklesIcon className="h-8 w-8 text-indigo-400 mx-auto mb-4" />
-            <h2 className="font-headline text-2xl md:text-3xl font-black text-white">
-              Ready to Protect Your Property?
-            </h2>
-            <p className="text-sm text-on-surface-variant mt-3 max-w-lg mx-auto leading-relaxed">
-              Join hotels and guesthouses across South Asia and the Middle East who use Pabandi to eliminate no-shows and reward loyal guests.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-              <button
-                id="hospitality-cta-btn"
-                onClick={() => handleOpenWizard()}
-                className="btn-primary px-8 py-3.5 text-sm font-bold"
-              >
-                Connect Your Property — Free
-              </button>
-              <Link to="/contact" className="btn-secondary px-8 py-3.5 text-sm font-bold">
-                Talk to Sales
-              </Link>
+          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-8 text-center md:p-12">
+            <div className="text-3xl mb-4">✨</div>
+            <h2 className="text-2xl font-bold text-white md:text-3xl">Ready to Protect Your Property?</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-400 leading-relaxed">Join hotels and guesthouses across South Asia and the Middle East who use Pabandi to eliminate no-shows and reward loyal guests.</p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={() => handleOpenWizard()} className="px-8 py-3.5 text-sm font-bold">Connect Your Property — Free</Button>
+              <Link to="/contact"><Button variant="outline" className="px-8 py-3.5 text-sm font-bold">Talk to Sales</Button></Link>
             </div>
           </div>
         </section>
       </div>
 
-      {/* ─── Property Connect Wizard Modal ───────────────────────────────── */}
-      {showWizard && (
-        <PropertyConnectWizard onClose={handleCloseWizard} initialPropertyType={wizardPropertyType} />
-      )}
+      {showWizard && <PropertyConnectWizard onClose={handleCloseWizard} initialPropertyType={wizardPropertyType} />}
     </div>
   );
 }
