@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
 import { trustScoreService } from '../services/trustScore.service';
 import { ApiKeyRequest } from '../middleware/apiKey.middleware';
+import { ok, fail } from '../utils/apiResponse';
 import crypto from 'crypto';
 
 // ─── Score Endpoint ────────────────────────────────────────────────────────────
@@ -27,10 +28,7 @@ export const getReliabilityScore = async (
     } = req.body;
 
     if (!externalUserId) {
-      return res.status(400).json({
-        success: false,
-        error: 'externalUserId is required',
-      });
+      return fail(res, 'externalUserId is required', 400);
     }
 
     // Optionally cross-reference a Pabandi user for enriched scoring
@@ -74,26 +72,23 @@ export const getReliabilityScore = async (
       `[External API] Score for externalUserId=${externalUserId} riskScore=${finalRiskScore} client=${client.name}`
     );
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        requestId,
-        externalUserId,
-        pabandiEnriched: pabandiReliabilityScore !== null,
-        reliabilityScore: pabandiReliabilityScore ?? Math.round((1 - prediction.probability) * 100),
-        riskScore: finalRiskScore,
-        riskLevel: prediction.riskLevel,
-        probability: prediction.probability,
-        factors: prediction.factors,
-        depositRecommendation: prediction.depositRecommendation,
-        overbookingAdvice: prediction.overbookingAdvice ?? null,
-        meta: {
-          tier: client.tier,
-          quotaUsed: client.callsUsed + 1,
-          quotaLimit: client.callsLimit,
-          quotaRemaining,
-          scoredAt: new Date().toISOString(),
-        },
+    return ok(res, {
+      requestId,
+      externalUserId,
+      pabandiEnriched: pabandiReliabilityScore !== null,
+      reliabilityScore: pabandiReliabilityScore ?? Math.round((1 - prediction.probability) * 100),
+      riskScore: finalRiskScore,
+      riskLevel: prediction.riskLevel,
+      probability: prediction.probability,
+      factors: prediction.factors,
+      depositRecommendation: prediction.depositRecommendation,
+      overbookingAdvice: prediction.overbookingAdvice ?? null,
+      meta: {
+        tier: client.tier,
+        quotaUsed: client.callsUsed + 1,
+        quotaLimit: client.callsLimit,
+        quotaRemaining,
+        scoredAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -122,7 +117,7 @@ export const getPartnerTrustBadge = async (
     });
 
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return fail(res, 'User not found', 404);
     }
 
     const latestAudit = await prisma.trustAuditTrail.findFirst({
@@ -131,19 +126,16 @@ export const getPartnerTrustBadge = async (
       select: { currentHash: true, previousHash: true }
     });
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        userId,
-        score: user.trustScore,
-        tier: user.verificationTier,
-        osintSignals: 10 + user.socialIdentities.length, // baseline 10 + socials
-        hashes: latestAudit ? [latestAudit.currentHash, latestAudit.previousHash || '0x000000000000'] : ['0x000000000000'],
-        meta: {
-          clientName: req.apiClient!.name,
-          tier: req.apiClient!.tier,
-          scoredAt: new Date().toISOString(),
-        },
+    return ok(res, {
+      userId,
+      score: user.trustScore,
+      tier: user.verificationTier,
+      osintSignals: 10 + user.socialIdentities.length,
+      hashes: latestAudit ? [latestAudit.currentHash, latestAudit.previousHash || '0x000000000000'] : ['0x000000000000'],
+      meta: {
+        clientName: req.apiClient!.name,
+        tier: req.apiClient!.tier,
+        scoredAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -163,7 +155,7 @@ export const reportTransactionOutcome = async (
     const { userId, status, transactionId } = req.body;
     
     if (!userId || !status) {
-      return res.status(400).json({ success: false, error: 'userId and status are required' });
+      return fail(res, 'userId and status are required', 400);
     }
 
     let severity: 'positive' | 'negative' | 'neutral' = 'neutral';
@@ -176,10 +168,7 @@ export const reportTransactionOutcome = async (
       severity
     });
 
-    return res.status(200).json({
-      success: true,
-      message: `Transaction outcome '${status}' logged to Trust Physics Engine. Score calibration queued.`,
-    });
+    return ok(res, { message: `Transaction outcome '${status}' logged to Trust Physics Engine. Score calibration queued.` });
   } catch (error) {
     logger.error('[External API] reportTransactionOutcome error:', error);
     next(error);
@@ -210,24 +199,21 @@ export const getUsage = async (
       orderBy: { createdAt: 'asc' },
     });
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        client: {
-          name: client.name,
-          tier: client.tier,
-        },
-        quota: {
-          used: client.callsUsed,
-          limit: client.callsLimit,
-          remaining: Math.max(0, client.callsLimit - client.callsUsed),
-          percentUsed: Math.round((client.callsUsed / client.callsLimit) * 100),
-        },
-        recentActivity: dailyUsage.map((d) => ({
-          date: d.createdAt,
-          calls: d._count.id,
-        })),
+    return ok(res, {
+      client: {
+        name: client.name,
+        tier: client.tier,
       },
+      quota: {
+        used: client.callsUsed,
+        limit: client.callsLimit,
+        remaining: Math.max(0, client.callsLimit - client.callsUsed),
+        percentUsed: Math.round((client.callsUsed / client.callsLimit) * 100),
+      },
+      recentActivity: dailyUsage.map((d) => ({
+        date: d.createdAt,
+        calls: d._count.id,
+      })),
     });
   } catch (error) {
     logger.error('[External API] getUsage error:', error);
@@ -291,7 +277,7 @@ export const channexWebhook = async (
       }
     }
 
-    return res.status(200).json({ success: true });
+    return ok(res, { received: true });
   } catch (error) {
     logger.error('[Channex Webhook] Error:', error);
     // Always return 200 to webhooks to prevent retries unless it's a critical error
