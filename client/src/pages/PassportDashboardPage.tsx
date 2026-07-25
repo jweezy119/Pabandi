@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { passportService } from '../services/api';
 import { TrustKeyring } from '../components/TrustKeyring';
+import { tokens } from '../design-system';
 
 const TIER_COPY: Record<string, { label: string; grade: string }> = {
   gem: { label: 'Gem', grade: 'Top 5%' },
@@ -86,7 +87,7 @@ export const PassportDashboardPage = () => {
 
   if (!my) {
     return (
-      <div className="min-h-screen bg-surface text-on-surface p-6 text-center">
+      <div className="min-h-screen p-6 text-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
         <div className="max-w-sm mx-auto mt-20 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-6">
           <p className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Loading</p>
           <p className="font-body text-sm text-on-surface-variant">Pulling your Pabandi passport signals...</p>
@@ -96,7 +97,7 @@ export const PassportDashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface">
+    <div className="min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
