@@ -2,15 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import { hospitalityService, PmsProvider } from '../services/hospitalityService';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { fail, ok } from '../utils/apiResponse';
 
 export async function checkAvailability(req: Request, res: Response, next: NextFunction) {
   try {
     const { businessId } = req.params;
     const { date, guests } = req.query as any;
     const partySize = typeof guests === 'string' ? parseInt(guests, 10) : 2;
-    if (!businessId || !date) return res.status(400).json({ error: 'businessId and date are required' });
+    if (!businessId || !date) return fail(res, 'businessId and date are required', 400);
     const result = await hospitalityService.checkAvailability(businessId, date, Number.isFinite(partySize) ? partySize : 2);
-    res.json({ success: true, data: result });
+    return ok(res, result);
   } catch (err: any) {
     logger.error('[Hospitality] availability error:', err);
     next(err);
@@ -21,7 +22,7 @@ export async function createReceptionistCheckout(req: Request, res: Response, ne
   try {
     const { businessId, customerPhone, summary, status: conversationStatus } = req.body || {};
     const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) return res.status(404).json({ error: 'Business not found' });
+    if (!business) return fail(res, 'Business not found', 404);
 
     const session = await prisma.checkoutSession.create({
       data: {
@@ -37,7 +38,7 @@ export async function createReceptionistCheckout(req: Request, res: Response, ne
       },
     });
 
-    res.status(201).json({ success: true, data: { sessionId: session.id, checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}` } });
+    return ok(res, { sessionId: session.id, checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}` }, 201);
   } catch (err: any) {
     logger.error('[Hospitality] receptionist checkout error:', err);
     next(err);
@@ -50,7 +51,7 @@ export async function receptionistAnalytics(req: Request, res: Response, next: N
     const conversations = await prisma.checkoutSession.count({ where: { businessId, metadata: { path: ['source'], equals: 'ai_receptionist' } } });
     const bookings = await prisma.reservation.count({ where: { businessId, createdAt: { gte: new Date(Date.now() - 30 * 86_400_000) } } });
     const paid = await prisma.payment.count({ where: { status: 'COMPLETED', reservation: { businessId } } });
-    res.json({ success: true, data: { conversations, bookings, conversions: paid, conversionRate: conversations ? Math.min(1, paid / conversations) : 0 } });
+    return ok(res, { conversations, bookings, conversions: paid, conversionRate: conversations ? Math.min(1, paid / conversations) : 0 });
   } catch (err: any) {
     logger.error('[Hospitality] receptionist analytics error:', err);
     next(err);
@@ -68,20 +69,20 @@ export async function beds24Webhook(req: Request, res: Response) {
     const result = await hospitalityService.processBeds24Webhook(req.body, authToken);
 
     if (!result) {
-      return res.status(401).json({ error: 'Unauthorized or unrecognized property' });
+      return fail(res, 'Unauthorized or unrecognized property', 401);
     }
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
       hospitalityService.touchSync(property.id, true);
-      res.status(200).json({ received: true });
+      return ok(res, { received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
-      res.status(200).json({ received: true, note: 'property not found' });
+      return ok(res, { received: true, note: 'property not found' });
     }
   } catch (err: any) {
     logger.error('[Hospitality] Beds24 webhook error:', err);
-    res.status(500).json({ error: 'Internal error' });
+    return fail(res, 'Internal error', 500);
   }
 }
 
@@ -105,14 +106,14 @@ export async function cloudbedsWebhook(req: Request, res: Response) {
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
       try { hospitalityService.touchSync(property.id, true); } catch {}
-      res.status(200).json({ received: true });
+      return ok(res, { received: true });
       await hospitalityService.handleBookingEvent(result.booking, property);
     } else {
-      res.status(200).json({ received: true });
+      return ok(res, { received: true });
     }
   } catch (err: any) {
     logger.error('[Hospitality] Cloudbeds webhook error:', err);
-    res.status(500).json({ error: 'Internal error' });
+    return fail(res, 'Internal error', 500);
   }
 }
 
@@ -208,12 +209,12 @@ export async function connectProperty(req: Request, res: Response) {
     const businessId = (req as any).user?.businessId || req.body.businessId || 'demo';
 
     if (!provider || !pmsPropertyId || !apiKey || !propertyName) {
-      return res.status(400).json({ error: 'Missing required fields: provider, pmsPropertyId, apiKey, propertyName' });
+      return fail(res, 'Missing required fields: provider, pmsPropertyId, apiKey, propertyName', 400);
     }
 
     const validProviders: PmsProvider[] = ['beds24', 'cloudbeds', 'lodgify', 'manual'];
     if (!validProviders.includes(provider)) {
-      return res.status(400).json({ error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` });
+      return fail(res, `Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
     }
 
     const property = await hospitalityService.connectProperty({
@@ -252,7 +253,7 @@ export async function connectProperty(req: Request, res: Response) {
     });
   } catch (err: any) {
     logger.error('[Hospitality] connectProperty error:', err);
-    res.status(500).json({ error: 'Failed to connect property' });
+    return fail(res, 'Failed to connect property', 500);
   }
 }
 
@@ -264,10 +265,10 @@ export async function listProperties(req: Request, res: Response) {
   try {
     const businessId = (req as any).user?.businessId || req.query.businessId as string || 'demo';
     const properties = await hospitalityService.getPropertiesByBusiness(businessId);
-    return res.json({ properties });
+    return ok(res, { properties });
   } catch (err: any) {
     logger.error('[Hospitality] listProperties error:', err);
-    res.status(500).json({ error: 'Failed to fetch properties' });
+    return fail(res, 'Failed to fetch properties', 500);
   }
 }
 
@@ -278,11 +279,11 @@ export async function listProperties(req: Request, res: Response) {
 export async function getProperty(req: Request, res: Response) {
   try {
     const property = await hospitalityService.getPropertyById(req.params.id);
-    if (!property) return res.status(404).json({ error: 'Property not found' });
-    return res.json({ property });
+    if (!property) return fail(res, 'Property not found', 404);
+    return ok(res, { property });
   } catch (err: any) {
     logger.error('[Hospitality] getProperty error:', err);
-    res.status(500).json({ error: 'Failed to fetch property' });
+    return fail(res, 'Failed to fetch property', 500);
   }
 }
 
@@ -293,19 +294,15 @@ export async function getProperty(req: Request, res: Response) {
 export async function getPropertyAvailability(req: Request, res: Response) {
   try {
     const property = await hospitalityService.getPropertyById(req.params.id);
-    if (!property) return res.status(404).json({ error: 'Property not found' });
+    if (!property) return fail(res, 'Property not found', 404);
 
-    // In a production system, this would call out to the specific PMS provider's API
-    // using hospitalityService.checkAvailability(property.id, startDate, endDate).
-    // For the MVP, we generate simulated available slots based on the property.
     const today = new Date();
     const availableSlots = [];
     for (let i = 1; i <= 7; i++) {
       const slotDate = new Date(today);
       slotDate.setDate(today.getDate() + i);
       const dateString = slotDate.toISOString().split('T')[0];
-      
-      // Simulate random availability
+
       if (Math.random() > 0.3) {
         availableSlots.push({
           date: dateString,
@@ -317,14 +314,13 @@ export async function getPropertyAvailability(req: Request, res: Response) {
       }
     }
 
-    return res.json({ 
-      success: true, 
+    return ok(res, {
       propertyId: property.id,
-      availability: availableSlots 
+      availability: availableSlots
     });
   } catch (err: any) {
     logger.error('[Hospitality] getPropertyAvailability error:', err);
-    res.status(500).json({ error: 'Failed to fetch availability' });
+    return fail(res, 'Failed to fetch availability', 500);
   }
 }
 
