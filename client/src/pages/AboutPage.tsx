@@ -1,4 +1,5 @@
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { tokens } from '../design-system';
 
 export default function AboutPage() {
   const heroRef = useScrollReveal() as any;
@@ -8,7 +9,7 @@ export default function AboutPage() {
   const socialsRef = useScrollReveal() as any;
 
   return (
-    <div className="w-full bg-[#020617] text-white min-h-screen font-body pb-16 sm:pb-20">
+    <div className="w-full min-h-screen font-body pb-16 sm:pb-20" style={{ background: tokens.color.background, color: tokens.color.text }}>
       
       {/* ── HERO SECTION ──────────────────────────────────────────────────────── */}
       <section 
@@ -33,7 +34,7 @@ export default function AboutPage() {
         
         {/* Question 1 */}
         <div ref={storyRef1} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 group hover:from-indigo-500 hover:to-purple-500 transition-all duration-500 shadow-xl hover:shadow-indigo-500/20">
-          <div className="bg-[#0f172a] rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
+          <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
             <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
               <span className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl border border-indigo-500/30">
                 🚀
@@ -65,7 +66,7 @@ export default function AboutPage() {
 
         {/* Question 2 */}
         <div ref={storyRef2} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 group hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 shadow-xl hover:shadow-emerald-500/20">
-          <div className="bg-[#0f172a] rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
+          <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
             <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
               <span className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl border border-emerald-500/30">
                 💡
@@ -94,7 +95,7 @@ export default function AboutPage() {
 
         {/* ── LIVE SELLING ASPECT ─────────────────────────────────────────────── */}
         <div ref={liveSellingRef} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/20 transform transition-transform duration-500 hover:scale-[1.02]">
-          <div className="bg-[#0f172a]/90 rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-xl">
+          <div className="rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-xl" style={{ background: "rgba(15,23,42,0.9)" }}>
             <div className="absolute top-0 right-0 p-6 opacity-20">
               <svg className="w-24 h-24 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
