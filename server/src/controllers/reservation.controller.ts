@@ -411,6 +411,27 @@ export const createReservation = async (
        });
     }
 
+    // Yield Integration: Route locked deposits to Mudarabah Yield Vault
+    if (depositAmount && req.body.transactionHash && !req.body.transactionHash.startsWith('pending_')) {
+      try {
+        await prisma.treasuryPosition.create({
+          data: {
+            bucket: 'YIELD_REINVEST',
+            amount: depositAmount,
+            status: 'DEPLOYED',
+            meta: {
+              source: 'ESCROW_DEPOSIT_LOCK',
+              reservationId: reservation.id,
+              expectedApy: 0.045 // 4.5% simulated yield
+            }
+          }
+        });
+        logger.info(`Routed ${depositAmount} to Mudarabah Yield Vault for ${reservation.id}`);
+      } catch (err) {
+        logger.error(`Failed to log TreasuryPosition for yield: ${err}`);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',
@@ -782,9 +803,26 @@ export const completeReservation = async (
       await cryptoService.triggerConciergeCashback(reservation.customerId, reservation.id);
     }
 
-    // Escrow Integration: Release funds to business
+    // Escrow Integration: Release funds to business with 1.5% Platform Fee
     if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
-      await cryptoService.releaseEscrowToBusiness(reservation.id);
+      try {
+        const depositAmount = reservation.depositAmount || 0;
+        const platformFee = depositAmount * 0.015;
+        
+        if (platformFee > 0) {
+          await prisma.treasuryPosition.create({
+            data: {
+              bucket: 'OPERATING',
+              amount: platformFee,
+              status: 'DEPLOYED',
+              meta: { source: 'ESCROW_FACILITATION_FEE', reservationId: reservation.id }
+            }
+          });
+        }
+        await cryptoService.releaseEscrowToBusiness(reservation.id);
+      } catch (err) {
+        logger.error(`Failed to process escrow release or fee: ${err}`);
+      }
     }
 
     // Proof of Visit SBT Minting
