@@ -75,11 +75,11 @@ export async function beds24Webhook(req: Request, res: Response) {
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
       hospitalityService.touchSync(property.id, true);
-      return ok(res, { received: true });
+      const response = { received: true } as const;
       await hospitalityService.handleBookingEvent(result.booking, property);
-    } else {
-      return ok(res, { received: true, note: 'property not found' });
+      return ok(res, response);
     }
+    return ok(res, { received: true, note: 'property not found' });
   } catch (err: any) {
     logger.error('[Hospitality] Beds24 webhook error:', err);
     return fail(res, 'Internal error', 500);
@@ -100,17 +100,17 @@ export async function cloudbedsWebhook(req: Request, res: Response) {
     const result = await hospitalityService.processCloudbedsWebhook(rawBody, signature, propertyId);
 
     if (!result) {
-      return res.status(401).json({ error: 'Invalid signature or unknown property' });
+      return fail(res, 'Invalid signature or unknown property', 401);
     }
 
     const property = await hospitalityService.getPropertyById(result.booking.propertyId);
     if (property) {
       try { hospitalityService.touchSync(property.id, true); } catch {}
-      return ok(res, { received: true });
+      const response = { received: true } as const;
       await hospitalityService.handleBookingEvent(result.booking, property);
-    } else {
-      return ok(res, { received: true });
+      return ok(res, response);
     }
+    return ok(res, { received: true });
   } catch (err: any) {
     logger.error('[Hospitality] Cloudbeds webhook error:', err);
     return fail(res, 'Internal error', 500);
