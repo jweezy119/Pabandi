@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { tapService } from '../services/api';
 import QRCodeLib from 'qrcode';
+import { tokens } from '../design-system';
 
 type PaymentStatus = 'idle' | 'processing' | 'verified' | 'error';
 
@@ -104,7 +105,7 @@ export default function TapPayPage() {
   const isReady = sellerId && amount > 0;
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+    <div style={{ background: tokens.color.background, minHeight: '100vh', color: tokens.color.text }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 className="text-3xl font-black text-[#e8e8e8] mb-2">Tap Checkout</h1>
         <p className="text-sm text-[#757575] mb-1">
