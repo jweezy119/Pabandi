@@ -9,67 +9,67 @@ datasource db {
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  email                 String                 @unique
-  phone                 String?                @unique
-  passwordHash          String
-  firstName             String
-  lastName              String
-  role                  UserRole               @default(CUSTOMER)
-  isEmailVerified       Boolean                @default(false)
-  isPhoneVerified       Boolean                @default(false)
-  reliabilityScore      Float                  @default(750)
-  trustScore            Float                  @default(50.0)
-  verificationTier      String                 @default("BASIC")
-  commerceScore         Float                  @default(50.0)
-  hospitalityScore      Float                  @default(50.0)
-  freelanceScore        Float                  @default(50.0)
-  appointmentScore      Float                  @default(50.0)
-  osintLastChecked      DateTime?
-  firstOffenseGraceUsed DateTime?
-  gracePeriodUntil      DateTime?
-  fcmToken              String?
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  googleId              String?                @unique
-  facebookId            String?                @unique
-  resetToken            String?
-  resetTokenExpires     DateTime?
-  linkedinId            String?                @unique
-  profilePictureUrl     String?
-  tiktokId              String?                @unique
-  twitterId             String?                @unique
-  walletAddress         String?                @unique
-  stripeCustomerId      String?
-  bountyPaid            Boolean                @default(false)
-  nonce                 String?
-  referredById          String?
-  business              Business?
-  cryptoRewards         CryptoReward[]
-  payments              Payment[]
-  reservations          Reservation[]
-  socialIdentities      SocialIdentity[]
-  referredBy            User?                  @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals             User[]                 @relation("UserReferrals")
-  wallet                Wallet?
-  stakeTransactions     StakeTransaction[]
-  stakingPositions      StakingPosition[]
-  loans                 Loan[]
-  disputesAgainst       Dispute[]              @relation("DisputesAgainst")
-  disputesFiled         Dispute[]              @relation("DisputesFiled")
-  flags                 UserFlag[]
-  deviceFingerprint     String?
-  failedLoginAttempts   Int                    @default(0)
-  accountLockedUntil    DateTime?
-  trustAudits           TrustAuditTrail[]
-  pabandiReviews        PabandiReview[]
-  encryptedDietaryData  String?
-  profileChangeRequests ProfileChangeRequest[]
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  phone                  String?                 @unique
+  passwordHash           String
+  firstName              String
+  lastName               String
+  role                   UserRole                @default(CUSTOMER)
+  isEmailVerified        Boolean                 @default(false)
+  isPhoneVerified        Boolean                 @default(false)
+  reliabilityScore       Float                   @default(750)
+  trustScore             Float                   @default(50.0)
+  verificationTier       String                  @default("BASIC")
+  commerceScore          Float                   @default(50.0)
+  hospitalityScore       Float                   @default(50.0)
+  freelanceScore         Float                   @default(50.0)
+  appointmentScore       Float                   @default(50.0)
+  osintLastChecked       DateTime?
+  firstOffenseGraceUsed  DateTime?
+  gracePeriodUntil       DateTime?
+  fcmToken               String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  googleId               String?                 @unique
+  facebookId             String?                 @unique
+  resetToken             String?
+  resetTokenExpires      DateTime?
+  linkedinId             String?                 @unique
+  profilePictureUrl      String?
+  tiktokId               String?                 @unique
+  twitterId              String?                 @unique
+  walletAddress          String?                 @unique
+  stripeCustomerId       String?
+  bountyPaid             Boolean                 @default(false)
+  nonce                  String?
+  referredById           String?
+  business               Business?
+  cryptoRewards          CryptoReward[]
+  payments               Payment[]
+  reservations           Reservation[]
+  socialIdentities       SocialIdentity[]
+  referredBy             User?                   @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals              User[]                  @relation("UserReferrals")
+  wallet                 Wallet?
+  stakeTransactions      StakeTransaction[]
+  stakingPositions       StakingPosition[]
+  loans                  Loan[]
+  disputesAgainst        Dispute[]               @relation("DisputesAgainst")
+  disputesFiled          Dispute[]               @relation("DisputesFiled")
+  flags                  UserFlag[]
+  deviceFingerprint      String?
+  failedLoginAttempts    Int                     @default(0)
+  accountLockedUntil     DateTime?
+  trustAudits            TrustAuditTrail[]
+  pabandiReviews         PabandiReview[]
+  encryptedDietaryData   String?
+  profileChangeRequests  ProfileChangeRequest[]
   passportScoreSnapshots PassportScoreSnapshot[]
-  whatsappSignals WhatsAppChannelSignal[]
-  socialGraphSignals SocialGraphSignal[]
-  web3Stakes Web3StakeRecord[]
-  AccountManagerProfile AccountManagerProfile?
+  whatsappSignals        WhatsAppChannelSignal[]
+  socialGraphSignals     SocialGraphSignal[]
+  web3Stakes             Web3StakeRecord[]
+  AccountManagerProfile  AccountManagerProfile?
 
   @@index([email])
   @@index([phone])
@@ -947,84 +947,86 @@ enum ChangeStatus {
   APPROVED
   REJECTED
 }
-model PassportScoreSnapshot {
-  id               String   @id @default(cuid())
-  userId           String
-  category         String
-  baseScore        Float
-  compositeScore   Float
-  tier             String
-  penalty          Float
-  stakeBonus       Float
-  socialBonus      Float
-  channelBonus     Float
-  meta             Json?
-  createdAt        DateTime @default(now())
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PassportScoreSnapshot {
+  id             String   @id @default(cuid())
+  userId         String
+  category       String
+  baseScore      Float
+  compositeScore Float
+  tier           String
+  penalty        Float
+  stakeBonus     Float
+  socialBonus    Float
+  channelBonus   Float
+  meta           Json?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, category])
 }
 
 model WhatsAppChannelSignal {
-  id               String   @id @default(cuid())
-  userId           String
-  signalCategory   String
-  scoreDelta       Float
+  id                String   @id @default(cuid())
+  userId            String
+  signalCategory    String
+  scoreDelta        Float
   newCompositeScore Float
-  tier             String
-  meta             Json?
-  createdAt        DateTime @default(now())
+  tier              String
+  meta              Json?
+  createdAt         DateTime @default(now())
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, signalCategory])
 }
 
 model SocialGraphSignal {
-  id               String   @id @default(cuid())
-  userId           String
-  sourceUserId     String?
-  signalCategory   String
-  scoreDelta       Float
+  id                String   @id @default(cuid())
+  userId            String
+  sourceUserId      String?
+  signalCategory    String
+  scoreDelta        Float
   newCompositeScore Float
-  tier             String
-  meta             Json?
-  createdAt        DateTime @default(now())
+  tier              String
+  meta              Json?
+  createdAt         DateTime @default(now())
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, signalCategory])
 }
 
 model Web3StakeRecord {
-  id               String   @id @default(cuid())
-  userId           String
-  stakeAmount      Float
-  stakeBonus       Float
+  id                String   @id @default(cuid())
+  userId            String
+  stakeAmount       Float
+  stakeBonus        Float
   newCompositeScore Float
-  tier             String
-  txHash           String?
-  meta             Json?
-  createdAt        DateTime @default(now())
+  tier              String
+  txHash            String?
+  meta              Json?
+  createdAt         DateTime @default(now())
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model PopEvidencePackage {
-  id               String   @id @default(cuid())
-  reservationId    String
-  evidence         Json
-  buyerIntentAt    DateTime?
-  merchantStartAt DateTime?
+  id                String    @id @default(cuid())
+  reservationId     String
+  evidence          Json
+  buyerIntentAt     DateTime?
+  merchantStartAt   DateTime?
   merchantFulfillAt DateTime?
-  noShowAt         DateTime?
-  createdAt        DateTime @default(now())
+  noShowAt          DateTime?
+  createdAt         DateTime  @default(now())
 
   @@index([reservationId])
 }
+
 enum PartnerStatus {
   ACTIVE
   SUSPENDED
@@ -1115,41 +1117,100 @@ enum PmsProvider {
 }
 
 model ConnectedHospitalityProperty {
-  id             String      @id @default(cuid())
-  businessId     String
-  provider       PmsProvider
-  pmsPropertyId  String
-  apiKey         String?
-  signingSecret  String?
-  propertyName   String
-  propertyType   String
-  address        String?
-  country        String?
-  webhookUrl     String?
-  isActive       Boolean     @default(true)
-  lastSyncAt     DateTime?
-  lastSyncedAt   DateTime?
-  lastTestedAt   DateTime?
-  lastErrorAt    DateTime?
-  lastSuccessAt  DateTime?
-  eventCount     Int         @default(0)
-  errorCount     Int         @default(0)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String             @id @default(cuid())
+  businessId    String
+  provider      PmsProvider
+  pmsPropertyId String
+  apiKey        String?
+  signingSecret String?
+  propertyName  String
+  propertyType  String
+  address       String?
+  country       String?
+  webhookUrl    String?
+  isActive      Boolean            @default(true)
+  lastSyncAt    DateTime?
+  lastSyncedAt  DateTime?
+  lastTestedAt  DateTime?
+  lastErrorAt   DateTime?
+  lastSuccessAt DateTime?
+  eventCount    Int                @default(0)
+  errorCount    Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  telemetry     PmsSyncTelemetry[]
 
   @@index([businessId])
   @@map("connected_hospitality_properties")
-  telemetry PmsSyncTelemetry[]
 }
 
 model PmsSyncTelemetry {
-  id               String   @id @default(cuid())
-  propertyId       String
-  lastSyncAt       DateTime?
-  lastEventAt      DateTime?
-  lastErrorAt      DateTime?
-  eventCount       Int      @default(0)
-  errorCount       Int      @default(0)
+  id          String    @id @default(cuid())
+  propertyId  String
+  lastSyncAt  DateTime?
+  lastEventAt DateTime?
+  lastErrorAt DateTime?
+  eventCount  Int       @default(0)
+  errorCount  Int       @default(0)
 
   property ConnectedHospitalityProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model OfframpIntent {
+  id              String    @id @default(cuid())
+  customerWallet  String
+  businessId      String?
+  amountUsdc      Float
+  minRatePkr      Float
+  destinationType String // JazzCash|Easypaisa|Raast|bank
+  destinationRef  String // CNIC/RAST/account normalized
+  lockedTxHash    String?
+  status          String    @default("PENDING_LP") // PENDING_LP|MATCHED|PROOF_SUBMITTED|SETTLED|REFUNDED|DISPUTED
+  requestedAt     DateTime  @default(now())
+  matchedAt       DateTime?
+  settledAt       DateTime?
+  expiresAt       DateTime?
+  lpWallet        String?
+  feePct          Float     @default(0.85)
+  idempotencyKey  String?   @unique
+  metadata        Json?
+
+  @@index([customerWallet])
+  @@index([status])
+}
+
+model OfframpProof {
+  id               String    @id @default(cuid())
+  intentId         String
+  lpWallet         String
+  imageBase64      String
+  plainTextExtract Json?
+  verifyResult     Json
+  confidence       Float
+  status           String    @default("PENDING") // PENDING|ACCEPTED|REJECTED|DISPUTED
+  submittedAt      DateTime  @default(now())
+  verifiedAt       DateTime?
+
+  @@index([intentId])
+}
+
+model LiquidityProvider {
+  id              String   @id @default(cuid())
+  walletAddress   String   @unique
+  displayName     String?
+  raastId         String?
+  jazzCashAccount String?
+  bankIban        String?
+  pkrReserveUsd   Float    @default(0)
+  collateralUsdc  Float    @default(0)
+  trustScore      Float    @default(40)
+  tier            String   @default("BRONZE") // BRONZE|SILVER|GOLD|ELITE
+  maxSingleUsdc   Float    @default(500)
+  dailyLimitUsdc  Float    @default(2000)
+  isActive        Boolean  @default(true)
+  pvaraLicense    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([walletAddress])
 }
