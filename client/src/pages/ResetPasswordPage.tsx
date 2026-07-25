@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
+import { Surface, Button, tokens } from '../design-system';
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -37,65 +38,58 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 bg-surface">
-      
-      <div className="glow-blob w-[500px] h-[500px] bottom-[-100px] right-[-100px] bg-tertiary-fixed-dim/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4" style={{ background: tokens.color.background }}>
+      <div className="absolute right-[-100px] bottom-[-100px] h-[500px] w-[500px] rounded-full bg-primary/5 blur-3xl" />
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black"
-              style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>
               P
             </div>
-            <span className="text-xl font-black tracking-tight text-primary font-headline" >Pabandi</span>
+            <span className="font-headline text-xl font-black tracking-tight" style={{ color: tokens.color.primary }}>Pabandi</span>
           </Link>
         </div>
 
-        <div className="auth-panel">
-          <h1 className="text-2xl font-bold mb-2 text-on-surface font-headline" >Reset Password</h1>
-          <p className="text-sm mb-6 text-on-surface-variant font-body" >
+        <Surface>
+          <h1 className="font-headline text-2xl font-bold" style={{ color: tokens.color.text }}>Reset Password</h1>
+          <p className="mb-6 text-sm" style={{ color: tokens.color.muted }}>
             Choose a new password for your account.
           </p>
 
           {success ? (
             <div className="text-center">
-              <div className="mb-4 px-4 py-3 rounded-xl text-sm font-medium"
-                style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
+              <div className="mb-4 rounded-xl border px-4 py-3 text-sm font-medium" style={{ background: 'rgba(16,185,129,0.12)', borderColor: 'rgba(16,185,129,0.25)', color: '#10b981' }}>
                 Password reset successfully! Redirecting to login...
               </div>
-              <Link to="/login" className="btn-primary w-full">
-                Go to Login Now
+              <Link to="/login" className="block w-full">
+                <Button className="w-full">Go to Login Now</Button>
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="px-4 py-3 rounded-xl text-sm font-medium bg-error-container text-on-error-container border border-error/20">
+                <div className="rounded-xl border px-4 py-3 text-sm font-medium" style={{ background: 'rgba(239,68,68,0.10)', borderColor: 'rgba(239,68,68,0.25)', color: '#fca5a5' }}>
                   {error}
                 </div>
               )}
-              
+
               <div>
-                <label htmlFor="password" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant" >New Password</label>
-                <input id="password" type="password" required
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="input-field" placeholder="Min. 8 characters" />
+                <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.muted }}>New Password</label>
+                <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors" style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }} />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant" >Confirm New Password</label>
-                <input id="confirmPassword" type="password" required
-                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="input-field" placeholder="••••••••" />
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.muted }}>Confirm New Password</label>
+                <input id="confirmPassword" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors" style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }} />
               </div>
 
-              <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+              <Button type="submit" disabled={loading} className="w-full" style={{ marginTop: 8 }}>
                 {loading ? 'Resetting...' : 'Reset Password'}
-              </button>
+              </Button>
             </form>
           )}
-        </div>
+        </Surface>
       </div>
     </div>
   );
