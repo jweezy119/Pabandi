@@ -1259,14 +1259,14 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
     }
 
     // Map the old B2B PayoutRequest to the new OfframpIntent structure
-    const intent = await offrampService.requestIntent(
-      '0x0000000000000000000000000000000000000000', // customerWallet stub for B2B API
-      parseFloat(amount),
-      270.0, // minRatePkr stub
-      'Raast',
-      targetRaastId,
-      business.id
-    );
+    const intent = await offrampService.requestIntent({
+      customerWallet: '0x0000000000000000000000000000000000000000', // customerWallet stub for B2B API
+      amountUsdc: parseFloat(amount),
+      minRatePkr: 270.0, // minRatePkr stub
+      destinationType: 'Raast',
+      destinationRef: targetRaastId,
+      businessId: business.id,
+    });
 
     res.json({
       success: true,
