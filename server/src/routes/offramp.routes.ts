@@ -9,6 +9,7 @@ import {
   expireStaleIntents,
   listProviders,
   registerProvider,
+  testWebhookDelivery,
 } from '../controllers/offramp.controller';
 
 const router = Router();
@@ -20,5 +21,6 @@ router.post('/lp/accept-proof', authenticate, authorize('BUSINESS_OWNER', 'ADMIN
 router.post('/admin/expire-stale', authenticate, authorize('ADMIN'), expireStaleIntents);
 router.get('/providers', authenticate, listProviders);
 router.post('/providers/register', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), registerProvider);
+router.post('/dev/test-webhook', authenticate, authorize('ADMIN'), testWebhookDelivery);
 
 export default router;

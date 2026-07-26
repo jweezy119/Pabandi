@@ -2,6 +2,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { offrampService } from '../services/offramp.service';
+import { webhookService } from '../services/webhook.service';
 import { ok, fail } from '../utils/apiResponse';
 
 export const createIntent = async (req: Request, res: Response, next: NextFunction) => {
@@ -169,6 +170,32 @@ export const registerProvider = async (req: AuthRequest, res: Response, next: Ne
     return ok(res, { provider }, 201);
   } catch (error: any) {
     if (error.code === 'P2002') return fail(res, 'Wallet address already registered', 409);
+    next(error);
+  }
+};
+
+export const testWebhookDelivery = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return fail(res, 'Webhook test endpoint is disabled in production', 404);
+    }
+
+    const { eventName, targetUrl, payload } = req.body;
+
+    if (!eventName || !targetUrl) {
+      return fail(res, 'eventName and targetUrl are required', 400);
+    }
+
+    const businessId = (req.user?.id as string) || 'guest';
+
+    await webhookService.dispatch(String(eventName), businessId, {
+      test: true,
+      targetUrl,
+      payload: payload || {},
+    });
+
+    return ok(res, { queued: true, eventName, targetUrl });
+  } catch (error) {
     next(error);
   }
 };
