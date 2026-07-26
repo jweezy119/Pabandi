@@ -40,7 +40,26 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
     const host = process.env.FRONTEND_URL || 'http://localhost:3000';
     const checkoutUrl = `${host}/checkout/${session.id}`;
-    return ok(res, { sessionId: session.id, checkoutUrl }, 201);
+
+    let gateway = 'UNIVERSAL';
+    let providerUrl: string | undefined;
+    if (business.currency === 'PKR') {
+      try {
+        providerUrl = await safepayService.createCheckoutUrl(amount, session.id);
+        gateway = 'safepay';
+      } catch {
+        providerUrl = checkoutUrl;
+      }
+    }
+
+    if (providerUrl && providerUrl !== checkoutUrl) {
+      await prisma.checkoutSession.update({
+        where: { id: session.id },
+        data: { metadata: { ...(metadata || {}), gateway, providerUrl } },
+      });
+    }
+
+    return ok(res, { sessionId: session.id, checkoutUrl: providerUrl || checkoutUrl, gateway }, 201);
   } catch (error) {
     logger.error('Error creating checkout session:', error);
     return fail(res, 'Failed to create checkout session', 500);
@@ -78,7 +97,12 @@ export const getCheckoutSession = async (req: Request, res: Response) => {
       session.status = 'EXPIRED';
     }
 
-    return ok(res, session);
+    const metadata = (session.metadata as any) || {};
+    const responsePayload: any = session;
+    if (metadata.gateway) responsePayload.gateway = metadata.gateway;
+    if (metadata.providerUrl) responsePayload.providerUrl = metadata.providerUrl;
+
+    return ok(res, responsePayload);
   } catch (error) {
     logger.error('Error fetching checkout session:', error);
     return fail(res, 'Failed to fetch checkout session', 500);
@@ -336,6 +360,42 @@ export const initiateStripeCheckout = async (req: Request, res: Response) => {
     return ok(res, { url: stripeUrl });
   } catch (error: any) {
     logger.error('Error initiating Stripe checkout', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const initiateCryptoCheckout = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true },
+    });
+
+    if (!session || session.status !== 'PENDING') {
+      return fail(res, 'Valid checkout session not found', 404);
+    }
+
+    const mint = process.env.USDC_MINT_DEVNET || 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtCJr';
+    const treasury =
+      process.env.TAP_TREASURY ||
+      process.env.NEXT_PUBLIC_PLATFORM_WALLET ||
+      process.env.PLATFORM_WALLET_ADDRESS ||
+      '';
+
+    return ok(res, {
+      url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}`,
+      gateway: 'crypto',
+      currency: session.currency || 'USD',
+      amount: session.amount,
+      mint,
+      treasury,
+      reservationId: session.id,
+      businessId: session.businessId,
+    }, 201);
+  } catch (error: any) {
+    logger.error('Error initiating crypto checkout', error);
     return fail(res, 'Internal server error', 500);
   }
 };
