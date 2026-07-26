@@ -1265,14 +1265,14 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
     const walletAddress =
       business.owner?.wallet?.address || '0x0000000000000000000000000000000000000000';
 
-    const intent = await offrampService.requestIntent({
-      customerWallet: walletAddress,
-      amountUsdc: parseFloat(amount),
-      minRatePkr: 270.0, // minRatePkr stub
-      destinationType: 'Raast',
-      destinationRef: targetRaastId,
-      businessId: business.id,
-    });
+    const intent = await offrampService.requestIntent(
+      walletAddress,
+      parseFloat(amount),
+      270.0, // minRatePkr stub
+      'Raast',
+      targetRaastId,
+      business.id
+    );
 
     res.json({
       success: true,
