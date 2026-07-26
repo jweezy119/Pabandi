@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { stripeService } from '../services/stripe.service';
+import { safepayService } from '../services/safepay.service';
 import { fail, ok } from '../utils/apiResponse';
 
 export const createCheckoutSession = async (req: Request, res: Response) => {
@@ -210,7 +211,29 @@ export const createEmbedCheckoutSession = async (req: Request, res: Response) =>
 
     const host = process.env.FRONTEND_URL || 'http://localhost:3000';
     const checkoutUrl = `${host}/checkout/${session.id}`;
-    return ok(res, { sessionId: session.id, checkoutUrl }, 201);
+
+    let gateway = 'UNIVERSAL';
+    let providerUrl: string | undefined;
+    if (business.currency === 'PKR') {
+      try {
+        const providerUrlCandidate = await safepayService.createCheckoutUrl(amount, session.id);
+        providerUrl = providerUrlCandidate;
+        gateway = 'safepay';
+      } catch {
+        providerUrl = checkoutUrl;
+      }
+    }
+
+    if (providerUrl && providerUrl !== checkoutUrl) {
+      await prisma.checkoutSession.update({
+        where: { id: session.id },
+        data: {
+          metadata: { ...(metadata || {}), gateway, providerUrl },
+        },
+      });
+    }
+
+    return ok(res, { sessionId: session.id, checkoutUrl: providerUrl || checkoutUrl, gateway }, 201);
   } catch (error) {
     logger.error('Error creating embed checkout session:', error);
     return fail(res, 'Failed to create embed checkout session', 500);
@@ -257,7 +280,29 @@ export const createPartnerEmbedCheckoutSession = async (req: any, res: Response)
 
     const host = process.env.FRONTEND_URL || 'http://localhost:3000';
     const checkoutUrl = `${host}/checkout/${session.id}`;
-    return ok(res, { sessionId: session.id, checkoutUrl }, 201);
+
+    let gateway = 'UNIVERSAL';
+    let providerUrl: string | undefined;
+    if (business.currency === 'PKR') {
+      try {
+        const providerUrlCandidate = await safepayService.createCheckoutUrl(amount, session.id);
+        providerUrl = providerUrlCandidate;
+        gateway = 'safepay';
+      } catch {
+        providerUrl = checkoutUrl;
+      }
+    }
+
+    if (providerUrl && providerUrl !== checkoutUrl) {
+      await prisma.checkoutSession.update({
+        where: { id: session.id },
+        data: {
+          metadata: { ...(metadata || {}), gateway, providerUrl },
+        },
+      });
+    }
+
+    return ok(res, { sessionId: session.id, checkoutUrl: providerUrl || checkoutUrl, gateway }, 201);
   } catch (error) {
     logger.error('Error creating partner embed checkout session:', error);
     return fail(res, 'Failed to create partner embed checkout session', 500);
