@@ -384,6 +384,12 @@ export const initiateCryptoCheckout = async (req: Request, res: Response) => {
       process.env.PLATFORM_WALLET_ADDRESS ||
       '';
 
+    // persist crypto gateway so frontend shows the USDC button
+    await prisma.checkoutSession.update({
+      where: { id: session.id },
+      data: { metadata: { ...(session.metadata as any || {}), gateway: 'crypto' } },
+    });
+
     return ok(res, {
       url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}`,
       gateway: 'crypto',
