@@ -10,7 +10,9 @@ import {
   listProviders,
   registerProvider,
   testWebhookDelivery,
-  streamLpIntents
+  emiWebhook,
+  createSettlementReceipt,
+  streamLpIntents,
 } from '../controllers/offramp.controller';
 
 const router = Router();
@@ -32,6 +34,8 @@ router.post('/admin/expire-stale', authenticate, authorize('ADMIN'), expireStale
 router.get('/providers', authenticate, listProviders);
 router.post('/providers/register', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), registerProvider);
 router.post('/dev/test-webhook', authenticate, authorize('ADMIN'), testWebhookDelivery);
+router.post('/webhook/emi', emiWebhook);
+router.post('/settlement/receipt', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), createSettlementReceipt);
 
 // LP Facing Routes
 router.get('/lp/stream', lpAuthMiddleware, streamLpIntents);
