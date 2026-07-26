@@ -1,7 +1,8 @@
+import { AuthRequest } from '../middleware/auth.middleware';
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { offrampService } from '../services/offramp.service';
-import { ok } from '../utils/apiResponse';
+import { ok, fail } from '../utils/apiResponse';
 
 export const createIntent = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -71,6 +72,93 @@ export const getIntents = async (req: Request, res: Response, next: NextFunction
 
     return ok(res, { intents });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const acceptProof = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { intentId, proofId } = req.body;
+    if (!intentId || !proofId) return fail(res, 'intentId and proofId are required', 400);
+
+    await offrampService.acceptProof(intentId, proofId);
+    const intent = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
+    return ok(res, { intent });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const expireStaleIntents = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const expiredCount = await offrampService.expireStaleIntents();
+    return ok(res, { expiredCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listProviders = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const providers = await prisma.liquidityProvider.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        walletAddress: true,
+        displayName: true,
+        raastId: true,
+        jazzCashAccount: true,
+        bankIban: true,
+        pkrReserveUsd: true,
+        collateralUsdc: true,
+        trustScore: true,
+        tier: true,
+        maxSingleUsdc: true,
+        dailyLimitUsdc: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    return ok(res, { providers });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const registerProvider = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const {
+      walletAddress,
+      displayName,
+      raastId,
+      jazzCashAccount,
+      bankIban,
+      pkrReserveUsd,
+      collateralUsdc,
+      maxSingleUsdc,
+      dailyLimitUsdc,
+    } = req.body;
+
+    if (!walletAddress) return fail(res, 'walletAddress is required', 400);
+
+    const provider = await prisma.liquidityProvider.create({
+      data: {
+        walletAddress: String(walletAddress),
+        displayName: displayName ? String(displayName) : null,
+        raastId: raastId ? String(raastId) : null,
+        jazzCashAccount: jazzCashAccount ? String(jazzCashAccount) : null,
+        bankIban: bankIban ? String(bankIban) : null,
+        pkrReserveUsd: Number(pkrReserveUsd || 0),
+        collateralUsdc: Number(collateralUsdc || 0),
+        maxSingleUsdc: Number(maxSingleUsdc || 500),
+        dailyLimitUsdc: Number(dailyLimitUsdc || 2000),
+      },
+    });
+
+    return ok(res, { provider }, 201);
+  } catch (error: any) {
+    if (error.code === 'P2002') return fail(res, 'Wallet address already registered', 409);
     next(error);
   }
 };
