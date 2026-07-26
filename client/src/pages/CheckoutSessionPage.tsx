@@ -215,6 +215,22 @@ export const CheckoutSessionPage = () => {
     window.location.href = session.providerUrl;
   };
 
+  const handleTapPayment = async () => {
+    if (!session) return;
+    try {
+      const payload: any = { sellerId: session.business.id, amount: session.amount };
+      if (session.gateway !== 'crypto') payload.currency = 'USDC';
+      const response = await api.post('/tap/intents', payload);
+      if (response.data?.success && response.data?.data?.id) {
+        const intent = response.data.data;
+        const merchantUrl = `${window.location.origin}/t/pay/${intent.sellerId}?amount=${encodeURIComponent(intent.amount)}&currency=${encodeURIComponent(intent.currency || 'USDC')}`;
+        window.location.href = merchantUrl;
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.message || 'Failed to initiate Tap payment');
+    }
+  };
+
 
   if (loading) {
     return (
@@ -358,7 +374,24 @@ export const CheckoutSessionPage = () => {
             </button>
           )}
 
-          {session?.gateway !== 'safepay' && (
+          {(session?.gateway === 'crypto' || session?.currency === 'USDC') && (
+            <button
+              onClick={handleTapPayment}
+              disabled={paying}
+              className="w-full py-4 rounded-xl bg-[#14F195] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {paying ? (
+                <ArrowPathIcon className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  <CreditCardIcon className="w-5 h-5" />
+                  Pay with USDC
+                </>
+              )}
+            </button>
+          )}
+
+          {session?.gateway !== 'safepay' && session?.currency !== 'USDC' && session?.gateway !== 'crypto' && (
             <>
               <button
                 onClick={handleStripePayment}
