@@ -1,5 +1,5 @@
 import { PaymentRailProvider, VerificationPayload, VerificationResult } from '../../interfaces/payment-rail.provider';
-import { aiPaymentVerifier } from '../ai.payment.verifier.service';
+import { aiPaymentVerifierService } from '../ai.payment.verifier.service';
 import { logger } from '../../utils/logger';
 
 export class QwenScreenshotRail implements PaymentRailProvider {
@@ -13,7 +13,7 @@ export class QwenScreenshotRail implements PaymentRailProvider {
     logger.info(`[QwenScreenshotRail] Verifying intent ${payload.intentId} via DashScope`);
 
     // Call the original DashScope implementation
-    const result = await aiPaymentVerifier.verify(
+    const result = await aiPaymentVerifierService.verify(
       payload.screenshotBase64,
       payload.expectedAmountPkr,
       payload.expectedDestination
@@ -22,8 +22,14 @@ export class QwenScreenshotRail implements PaymentRailProvider {
     return {
       isValid: result.isValid,
       confidence: result.confidence,
-      fields: result.fields,
-      rawJson: result.rawJson
+      fields: {
+        transferAmount: result.fields?.amount ?? null,
+        recipientAccount: result.fields?.recipient ?? null,
+        bankName: result.fields?.bank ?? null,
+        currency: result.fields?.currency ?? null,
+        transactionDate: result.fields?.date ?? null,
+      },
+      rawJson: result.raw
     };
   }
 }
