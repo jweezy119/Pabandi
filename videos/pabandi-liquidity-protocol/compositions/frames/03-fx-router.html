@@ -1,0 +1,45 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-neutral, #0f172a);
+      color: var(--text-base, #ffffff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-sans);
+    }
+    .node {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #0ea5e9;
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      font-weight: bold;
+      position: absolute;
+    }
+    .ring {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      border: 4px dashed #38bdf8;
+      position: absolute;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-fx-router" data-width="1920" data-height="1080">
+    <div class="ring" id="ring"></div>
+    <div class="node" id="usdc">USDC</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.from("#usdc", { opacity: 0, scale: 0, duration: 1 }, 1.0);
+    tl.from("#ring", { opacity: 0, rotation: -90, duration: 2, ease: "power3.out" }, 1.5);
+    window.__timelines["03-fx-router"] = tl;
+  </script>
+</template>

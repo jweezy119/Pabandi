@@ -1,0 +1,40 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-surface, #1e293b);
+      color: var(--text-base, #ffffff);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-sans);
+    }
+    .card {
+      width: 400px;
+      height: 250px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .receipt {
+      margin-top: 40px;
+      font-size: 64px;
+      font-weight: bold;
+    }
+  </style>
+
+  <div id="root" data-composition-id="02-onramp" data-width="1920" data-height="1080">
+    <div class="card" id="card"></div>
+    <div class="receipt" id="receipt">5,000 PKR</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.from("#card", { opacity: 0, x: -100, duration: 1 }, 0.5);
+    tl.from("#receipt", { opacity: 0, scale: 0.8, duration: 1 }, 2.0);
+    window.__timelines["02-onramp"] = tl;
+  </script>
+</template>

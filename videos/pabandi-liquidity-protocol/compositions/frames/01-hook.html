@@ -1,0 +1,30 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-neutral, #0f172a);
+      color: var(--text-base, #ffffff);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-sans);
+    }
+    .text {
+      font-size: 80px;
+      font-weight: 800;
+      text-align: center;
+      max-width: 1200px;
+    }
+  </style>
+
+  <div id="root" data-composition-id="01-hook" data-width="1920" data-height="1080">
+    <div class="text" id="t1">How does 5,000 PKR turn into crypto...</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.from("#t1", { opacity: 0, y: 50, duration: 1 }, 0.5);
+    window.__timelines["01-hook"] = tl;
+  </script>
+</template>

@@ -136,6 +136,10 @@ export default function BusinessSettingsPage() {
     },
   });
 
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [raastId, setRaastId] = useState('');
+  const [withdrawStatus, setWithdrawStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+
   useEffect(() => {
     if (activeTab === 'api-keys' && bizRes?.id) {
       (async () => {
@@ -174,6 +178,29 @@ export default function BusinessSettingsPage() {
       }
     } catch (err: any) {
       setKeyError(err.response?.data?.message || 'Failed to generate key');
+    }
+  };
+
+  const handleWithdraw = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bizRes?.id || !withdrawAmount || !raastId) return;
+    setWithdrawStatus('processing');
+    try {
+      const res = await apiClient.post(`/business/${bizRes.id}/payouts/raast`, {
+        amount: withdrawAmount,
+        targetRaastId: raastId,
+        currency: 'USDC'
+      });
+      if (res.data.success) {
+        setWithdrawStatus('success');
+        toast.success(`Withdrawal of ${withdrawAmount} initiated to Raast ID: ${raastId}`);
+        setWithdrawAmount('');
+        setTimeout(() => setWithdrawStatus('idle'), 3000);
+      }
+    } catch (err: any) {
+      setWithdrawStatus('error');
+      toast.error(err.response?.data?.message || 'Failed to initiate withdrawal');
+      setTimeout(() => setWithdrawStatus('idle'), 3000);
     }
   };
 
@@ -454,6 +481,30 @@ export default function BusinessSettingsPage() {
                 </div>
                 <p className="mt-2 text-sm text-white/70">Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.</p>
                 <a href="/wallet" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 transition-opacity shadow-sm">Connect Phantom Wallet →</a>
+              </div>
+
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <h4 className="font-bold text-white">Withdraw Funds (Raast / Bank Transfer)</h4>
+                  <Badge tone="success">Pakistan</Badge>
+                </div>
+                <p className="text-sm text-white/70 mb-4">Instantly withdraw your escrowed funds directly to your local PKR bank account via our P2P Liquidity Engine.</p>
+                
+                <form onSubmit={handleWithdraw} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Amount (USDC)</label>
+                      <input type="number" required className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" min="1" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="0.00" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Raast ID / IBAN</label>
+                      <input type="text" required className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={raastId} onChange={e => setRaastId(e.target.value)} placeholder="03XXXXXXXXX" />
+                    </div>
+                  </div>
+                  <Button type="submit" disabled={withdrawStatus === 'processing'} variant="default" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white">
+                    {withdrawStatus === 'processing' ? 'Processing...' : withdrawStatus === 'success' ? 'Settlement Initiated!' : 'Withdraw to Raast'}
+                  </Button>
+                </form>
               </div>
 
               <TapLinkGenerator sellerId={bizRes?.id} />

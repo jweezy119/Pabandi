@@ -1,0 +1,47 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--bg-neutral, #0f172a);
+      color: var(--text-base, #ffffff);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      font-family: var(--font-sans);
+    }
+    .node {
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: #334155;
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .line {
+      position: absolute;
+      width: 0;
+      height: 8px;
+      background: #10b981;
+      top: 50%;
+      left: 250px;
+    }
+  </style>
+
+  <div id="root" data-composition-id="06-settlement" data-width="1920" data-height="1080">
+    <div class="node" id="lp">Liquidity<br/>Provider</div>
+    <div class="line" id="line"></div>
+    <div class="node" id="merchant">Merchant<br/>Bank</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.from("#lp", { opacity: 0, x: -50, duration: 1 }, 0.5);
+    tl.from("#merchant", { opacity: 0, x: 50, duration: 1 }, 0.5);
+    tl.to("#line", { width: 1420, duration: 1, ease: "power2.inOut" }, 1.5);
+    window.__timelines["06-settlement"] = tl;
+  </script>
+</template>

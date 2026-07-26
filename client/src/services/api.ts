@@ -311,4 +311,17 @@ export const accountManagerService = {
   generateCode: () => apiClient.post('/account-manager/generate-code'),
 };
 
+export const offrampLpService = {
+  getIntents: (lpWallet: string, apiKey: string) => 
+    apiClient.get('/offramp/lp/intents', { 
+      params: { wallet: lpWallet },
+      headers: { 'x-api-key': apiKey } 
+    }),
+  submitProof: (intentId: string, lpWallet: string, imageBase64: string, apiKey: string) => 
+    apiClient.post('/offramp/lp/submit-proof', { intentId, lpWallet, imageBase64 }, {
+      headers: { 'x-api-key': apiKey }
+    }),
+  createStreamUrl: (lpWallet: string, apiKey: string) => `${API_HOST}/api/v1/offramp/lp/stream?wallet=${lpWallet}&apiKey=${apiKey}`
+};
+
 export default apiClient;
