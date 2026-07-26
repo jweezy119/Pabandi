@@ -14,16 +14,26 @@ export const createIntent = async (req: Request, res: Response, next: NextFuncti
       destinationRef,
       businessId,
       lockedTxHash,
+      idempotencyKey,
     } = req.body;
 
+    if (!customerWallet || !destinationType || !destinationRef) {
+      return fail(res, 'customerWallet, destinationType, and destinationRef are required', 400);
+    }
+
+    if (!amountUsdc || Number(amountUsdc) <= 0) {
+      return fail(res, 'amountUsdc must be greater than 0', 400);
+    }
+
     const intent = await offrampService.requestIntent({
-      customerWallet: String(customerWallet || ''),
-      amountUsdc: Number(amountUsdc || 0),
+      customerWallet: String(customerWallet),
+      amountUsdc: Number(amountUsdc),
       minRatePkr: Number(minRatePkr || 0),
-      destinationType: String(destinationType || ''),
-      destinationRef: String(destinationRef || ''),
-      businessId,
-      lockedTxHash,
+      destinationType: String(destinationType),
+      destinationRef: String(destinationRef),
+      businessId: businessId ? String(businessId) : undefined,
+      lockedTxHash: lockedTxHash ? String(lockedTxHash) : undefined,
+      idempotencyKey: idempotencyKey ? String(idempotencyKey) : undefined,
     });
 
     return ok(res, { intent });

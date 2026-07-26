@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { aiPaymentVerifierService } from './ai.payment.verifier.service';
+import { webhookService } from './webhook.service';
 
 export type IntentStatus = 'PENDING_LP' | 'MATCHED' | 'PROOF_SUBMITTED' | 'SETTLED' | 'REFUNDED' | 'DISPUTED';
 
@@ -13,26 +14,66 @@ export class OfframpService {
     destinationRef: string;
     businessId?: string;
     lockedTxHash?: string;
+    idempotencyKey?: string;
   }) {
+    if (input.idempotencyKey) {
+      const recent = await prisma.offrampIntent.findFirst({
+        where: { metadata: { path: ['idempotencyKey'], equals: input.idempotencyKey } },
+        orderBy: { requestedAt: 'desc' },
+      });
+
+      if (recent && ['SETTLED', 'REFUNDED', 'DISPUTED', 'REJECTED'].includes(recent.status)) {
+        return recent;
+      }
+    }
+
+    if (!input.amountUsdc || input.amountUsdc <= 0) {
+      throw new Error('Invalid amountUsdc: must be greater than 0');
+    }
+    const trimmedRef = String(input.destinationRef).trim();
+    if (trimmedRef.length < 3 || trimmedRef.length > 64) {
+      throw new Error('Invalid destinationRef: must be 3-64 characters');
+    }
+
     const intent = await prisma.offrampIntent.create({
       data: {
         customerWallet: input.customerWallet,
         amountUsdc: input.amountUsdc,
         minRatePkr: input.minRatePkr,
         destinationType: input.destinationType,
-        destinationRef: input.destinationRef,
+        destinationRef: trimmedRef,
         businessId: input.businessId,
         lockedTxHash: input.lockedTxHash,
         expiresAt: new Date(Date.now() + 1000 * 60 * 2),
         quotePkr: +(input.amountUsdc * input.minRatePkr).toFixed(2),
+        metadata: input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
       },
     });
 
     logger.info(`[Offramp] Intent created ${intent.id} for ${input.customerWallet}`);
+    if (input.businessId) {
+      webhookService.dispatch('offramp.intent.created', input.businessId, {
+        intentId: intent.id,
+        amountUsdc: intent.amountUsdc,
+        quotePkr: intent.quotePkr,
+        destinationType: intent.destinationType,
+        expiresAt: intent.expiresAt,
+      });
+    }
     return intent;
   }
 
   async matchLp(intentId: string, lpWallet: string) {
+    const now = new Date();
+    const intent = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
+    if (!intent) throw new Error('Intent not found');
+    if (intent.expiresAt && intent.expiresAt < now) {
+      throw new Error('Intent expired');
+    }
+    if (intent.status !== 'PENDING_LP') {
+      throw new Error(`Intent already ${intent.status}`);
+    }
+
     const lp = await prisma.liquidityProvider.findUnique({
       where: { walletAddress: lpWallet },
     });
@@ -41,7 +82,11 @@ export class OfframpService {
       throw new Error('Liquidity provider not found or inactive');
     }
 
-    const intent = await prisma.offrampIntent.update({
+    if (intent.amountUsdc > lp.maxSingleUsdc) {
+      throw new Error(`Amount exceeds LP max single payout of ${lp.maxSingleUsdc} USDC`);
+    }
+
+    const updated = await prisma.offrampIntent.update({
       where: { id: intentId },
       data: {
         status: 'MATCHED',
@@ -51,7 +96,15 @@ export class OfframpService {
     });
 
     logger.info(`[Offramp] Intent ${intentId} matched with LP ${lpWallet}`);
-    return intent;
+    if (intent.businessId) {
+      webhookService.dispatch('offramp.intent.matched', intent.businessId, {
+        intentId: updated.id,
+        lpWallet,
+        matchedAt: updated.matchedAt,
+        amountUsdc: updated.amountUsdc,
+      });
+    }
+    return updated;
   }
 
   async submitProof(intentId: string, lpWallet: string, imageBase64: string) {
