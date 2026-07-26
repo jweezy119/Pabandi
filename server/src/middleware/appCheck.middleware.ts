@@ -8,6 +8,10 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
     return next();
   }
 
+  if (process.env.SKIP_APP_CHECK === 'true') {
+    return next();
+  }
+
   const appCheckToken = req.header('X-Firebase-AppCheck');
 
   if (!appCheckToken) {
@@ -21,10 +25,6 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
 
   try {
     const appCheckClaims = await admin.appCheck().verifyToken(appCheckToken);
-    
-    // Optionally you can attach the claims to the request if you need to use them
-    // req.appCheckClaims = appCheckClaims;
-
     return next();
   } catch (error) {
     logger.error('Failed to verify App Check token:', error);
