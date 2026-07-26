@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout } from '../controllers/checkout.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
@@ -24,5 +24,8 @@ router.post('/session/:id/complete', completeCheckoutSession);
 
 // Initiate Stripe Checkout session
 router.post('/session/:id/stripe', initiateStripeCheckout);
+
+// Initiate deterministic crypto checkout session payload
+router.post('/session/:id/crypto', initiateCryptoCheckout);
 
 export default router;
