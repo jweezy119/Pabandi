@@ -1,4 +1,5 @@
-import { openwaService, OpenWAMessageSendResult } from './openwa.service';
+import { openwaService } from './whatsapp.service';
+import { OpenWAMessageSendResult } from './openwa.service';
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------

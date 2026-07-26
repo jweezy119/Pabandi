@@ -1,5 +1,5 @@
 import { webhookManager, OpenWAWebhookPayload } from './openwa.webhook-manager.service';
-import { openwaService } from './openwa.service';
+import { openwaService } from './whatsapp.service';
 import { openwaAfterHoursService } from './openwa.after-hours.service';
 import { openwaFaqBotService } from './openwa.faq-bot.service';
 import { whatsAppIntentService } from './whatsapp-intent.service';
@@ -7,6 +7,7 @@ import { whatsAppSmartService } from './whatsapp.smart.service';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import * as admin from 'firebase-admin';
+import { OfframpService } from './offramp.service';
 
 // ---------------------------------------------------------------------------
 // Message ACK tracking (delivery receipts)
@@ -71,9 +72,25 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
   const messageBody = data.body || '';
   const messageId = data.id || '';
 
-  if (!senderPhone || !messageBody) return;
+  if (!senderPhone || (!messageBody && !data.hasMedia)) return;
 
-  logger.info(`[WebhookHandler] Incoming message from ${senderPhone}: "${messageBody.substring(0, 80)}"`);
+  logger.info(`[WebhookHandler] Incoming message from ${senderPhone}: "${messageBody.substring(0, 80)}" ${data.hasMedia ? '[MEDIA ATTACHED]' : ''}`);
+  
+  // -------------------------------------------------------------------
+  // 0. AI Vision Rail (Step 5 feature)
+  // -------------------------------------------------------------------
+  if (data.hasMedia) {
+    logger.info(`[WebhookHandler] Routing inbound media to AI Vision rail for ${senderPhone}`);
+    try {
+      // Stub for Qwen Vision processing
+      await openwaService.sendText(senderPhone, 'I see you sent an image/media. Let me review that for you (Qwen Vision active).', { sessionId });
+      // Here we would extract data.mediaUrl or use Evolution API to download the media buffer
+      // and send it to ai.nlp.service's vision endpoints. For now, we ack the receipt intelligently.
+      return;
+    } catch (e) {
+      logger.error(`[WebhookHandler] Vision rail error: ${e}`);
+    }
+  }
 
   // -------------------------------------------------------------------
   // 1. Handle Opt-outs for CRM campaigns
@@ -103,6 +120,49 @@ async function handleIncomingMessage(payload: OpenWAWebhookPayload): Promise<voi
       }
     } catch (e: any) {
       logger.warn(`[WebhookHandler] Opt-out handling failed: ${e?.message}`);
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // 1.5. LP Terminal Commands (ACCEPT, SKIP, PAUSE)
+  // -------------------------------------------------------------------
+  const parts = messageBody.trim().split(' ');
+  const command = parts[0]?.toUpperCase();
+
+  if (['ACCEPT', 'SKIP', 'PAUSE'].includes(command)) {
+    const channel = await prisma.lpChannel.findFirst({
+      where: { address: senderPhone, verified: true },
+    });
+
+    if (channel) {
+      const lp = await prisma.liquidityProvider.findUnique({ where: { id: channel.lpId } });
+      if (lp) {
+        try {
+          if (command === 'ACCEPT') {
+            const intentId = parts[1];
+            if (!intentId) throw new Error('Missing intent ID. Use ACCEPT <ID>');
+            
+            const offrampService = new OfframpService();
+            await offrampService.matchLp(intentId, lp.walletAddress);
+            await openwaService.sendText(senderPhone, `✅ Successfully claimed intent ${intentId}! Please fulfill within SLA.`, { sessionId });
+          } else if (command === 'PAUSE') {
+            await prisma.lpChannel.update({
+              where: { id: channel.id },
+              data: { quietHours: 'PAUSED' }
+            });
+            await openwaService.sendText(senderPhone, '⏸ You are now paused. You will not receive new intents.', { sessionId });
+          } else if (command === 'SKIP') {
+            await openwaService.sendText(senderPhone, '⏭ Skipped. Passing to the next LP.', { sessionId });
+          }
+        } catch (e: any) {
+          if (e.message.includes('already matched')) {
+            await openwaService.sendText(senderPhone, '🤝 Too slow, next one\'s yours.', { sessionId });
+          } else {
+            await openwaService.sendText(senderPhone, `❌ Error: ${e.message}`, { sessionId });
+          }
+        }
+        return; // Early return so LP commands aren't processed as customer bots
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { openwaService, OpenWAWebhook } from './openwa.service';
+import { openwaService } from './whatsapp.service';
+import { OpenWAWebhook } from './openwa.service';
 import { logger } from '../utils/logger';
 
 const PABANDI_WEBHOOK_SECRET = process.env.OPENWA_WEBHOOK_SECRET || 'pabandi-webhook-secret-' + (process.env.NODE_ENV || 'development');

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { openwaService } from '../services/openwa.service';
+import { openwaService } from '../services/whatsapp.service';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
 import { getPluginCatalog } from '../services/openwa.plugins.service';
 

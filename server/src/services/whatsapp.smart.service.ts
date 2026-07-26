@@ -1,5 +1,5 @@
 import { selectPlugins, buildPluginSummary } from './openwa.plugins.service';
-import { sendWhatsAppMessage } from './ai.service';
+import { sendWhatsAppMessage, findBusinessByPublicPhone } from './ai.service';
 import { hospitalityService } from './hospitalityService';
 import { aiNlpService } from './ai.nlp.service';
 import { openwaTemplateService } from './openwa.template.service';
@@ -79,10 +79,15 @@ export class WhatsAppSmartService {
   async reply(customerPhone: string, text: string, pluginSummary?: string, businessPhone = '') {
     this.appendConversation(customerPhone, 'agent', text);
     const payload = [text, pluginSummary].filter(Boolean).join('\n\n');
-    await sendWhatsAppMessage(customerPhone, payload);
+    
+    let sessionId: string | undefined;
     if (businessPhone) {
       await saveConversationSignal(customerPhone, businessPhone, '', text);
+      const business = await findBusinessByPublicPhone(businessPhone);
+      sessionId = business?.settings?.whatsappInstanceId || undefined;
     }
+    
+    await sendWhatsAppMessage(customerPhone, payload, { sessionId });
     return payload;
   }
 
@@ -147,17 +152,21 @@ export class WhatsAppSmartService {
     this.appendConversation(customerPhone, 'user', raw);
 
     if (!intent) {
-      const fallback = [
-        'I can help with bookings, cancellations, status, or payments.',
-        'Quick links:',
-        '- Book: share date, time, guests',
-        '- Cancel: share booking ID or date',
-        '- Status: share date/time',
-        '- Pay: share booking ID',
-        '- Human: type "human"',
-      ].join('\n');
-      const reply = await this.reply(customerPhone, fallback, undefined, businessPhone);
-      return { text: reply, matchedIntent: 'general', action: 'assist' };
+      // Step 5: Route unmatched inbound messages to Qwen for AI-first intent routing
+      const aiClassified = await aiNlpService.classifyIntentAndLanguage(raw);
+      
+      if (aiClassified.intent === 'general' || aiClassified.intent === 'support' || aiClassified.confidence < 0.5) {
+        // Use Qwen to generate a conversational, context-aware fallback response
+        const fallbackText = await aiNlpService.generateCopy(
+          'A customer sent an unclear message. Ask them how we can help with Escrow, payments, or bookings in a friendly, conversational way.', 
+          { customerMessage: raw }
+        );
+        const reply = await this.reply(customerPhone, fallbackText, undefined, businessPhone);
+        return { text: reply, matchedIntent: 'general', action: 'assist' };
+      }
+      
+      // If AI matched an intent, use that instead
+      intent = aiClassified.intent;
     }
 
     if (intent !== 'book') {
