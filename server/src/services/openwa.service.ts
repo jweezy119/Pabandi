@@ -558,4 +558,5 @@ export class OpenWAService implements WhatsAppProvider {
     // so this is a no-op fallback.
     return Promise.resolve();
   }
+}
 
