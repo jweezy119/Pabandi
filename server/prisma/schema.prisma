@@ -274,6 +274,7 @@ model BusinessSettings {
   sendWhatsAppReminders       Boolean  @default(true)
   notifyOwnerOnNewBooking     Boolean  @default(true)
   whatsappNumber              String?
+  whatsappInstanceId          String?
   requestFeedbackAfterBooking Boolean  @default(true)
   isE2eeEnabled               Boolean  @default(false)
   e2eePublicKey               String?
@@ -1127,6 +1128,7 @@ model OfframpIntent {
   feePct           Float    @default(0.85)
   quotePkr         Float?
   metadata         Json?
+  idempotencyKey   String?  @unique
 
   @@index([customerWallet])
   @@index([status])
@@ -1156,16 +1158,47 @@ model LiquidityProvider {
   bankIban        String?
   pkrReserveUsd   Float    @default(0)
   collateralUsdc  Float    @default(0)
+  lockedCollateralUsdc Float @default(0)
   trustScore      Float    @default(40)
   tier            String   @default("BRONZE") // BRONZE|SILVER|GOLD|ELITE
   maxSingleUsdc   Float    @default(500)
   dailyLimitUsdc  Float    @default(2000)
   isActive        Boolean  @default(true)
+  mudarabahOptIn  Boolean  @default(false)
   pvaraLicense    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([walletAddress])
+}
+
+model LpChannel {
+  id        String   @id @default(cuid())
+  lpId      String
+  type      String   // WHATSAPP|TELEGRAM|SMS|API
+  address   String   // The phone number, telegram chat ID, or webhook URL
+  verified  Boolean  @default(false)
+  priority  Int      @default(1)
+  quietHours String? // e.g., "23:00-07:00"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lpId])
+  @@index([type])
+}
+
+model VaultLedger {
+  id        String   @id @default(cuid())
+  lpId      String
+  intentId  String?
+  action    String   // LOCK|RELEASE|CREDIT|SLASH
+  amount    Float
+  balanceAfter Float
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([lpId])
+  @@index([intentId])
 }
 
 enum PmsProvider {

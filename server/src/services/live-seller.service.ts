@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { LiveSellerPlatform } from '@prisma/client';
-import { openwaService } from './openwa.service';
+import { openwaService } from './whatsapp.service';
 
 export type StreamScheduleItem = {
   id?: string;

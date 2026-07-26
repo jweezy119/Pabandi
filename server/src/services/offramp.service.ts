@@ -5,6 +5,8 @@ import { mockEmiRail } from './rails/mock-emi.rail';
 import { EventEmitter } from 'events';
 import { webhookService } from './webhook.service';
 
+import { channelDispatcher } from './channel-dispatcher.service';
+
 export type IntentStatus = 'PENDING_LP' | 'MATCHED' | 'PROOF_SUBMITTED' | 'SETTLED' | 'REFUNDED' | 'DISPUTED';
 export const offrampEvents = new EventEmitter();
 
@@ -19,13 +21,14 @@ export class OfframpService {
     idempotencyKey?: string
   ) {
     if (idempotencyKey) {
-      const recent = await prisma.offrampIntent.findFirst({
-        where: { metadata: { path: ['idempotencyKey'], equals: idempotencyKey } },
-        orderBy: { requestedAt: 'desc' },
+      const recent = await prisma.offrampIntent.findUnique({
+        where: { idempotencyKey },
       });
 
       if (recent && ['SETTLED', 'REFUNDED', 'DISPUTED', 'REJECTED'].includes(recent.status)) {
         return recent;
+      } else if (recent) {
+        return recent; // Already pending or matched
       }
     }
 
@@ -45,9 +48,9 @@ export class OfframpService {
         destinationType,
         destinationRef: trimmedRef,
         businessId,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 2),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 2), // We will update TTL logic later based on trust tiers
         quotePkr: +(amountUsdc * minRatePkr).toFixed(2),
-        metadata: idempotencyKey ? { idempotencyKey } : undefined,
+        idempotencyKey,
       },
     });
 
@@ -63,6 +66,10 @@ export class OfframpService {
     }
 
     offrampEvents.emit('intent_updated', intent);
+    
+    // Broadcast to LPs via ChannelDispatcher
+    await channelDispatcher.dispatchNewIntent(intent);
+    
     return intent;
   }
 
@@ -101,13 +108,40 @@ export class OfframpService {
       throw new Error(`Amount exceeds LP max single payout of ${lp.maxSingleUsdc} USDC`);
     }
 
-    const updated = await prisma.offrampIntent.update({
-      where: { id: intentId },
-      data: {
-        status: 'MATCHED',
-        lpWallet: targetLpWallet,
-        matchedAt: new Date(),
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const availableUsdc = lp.collateralUsdc - lp.lockedCollateralUsdc;
+      if (availableUsdc < intent.amountUsdc) {
+        throw new Error('Insufficient available collateral');
+      }
+
+      const { count } = await tx.offrampIntent.updateMany({
+        where: { id: intentId, status: 'PENDING_LP' },
+        data: {
+          status: 'MATCHED',
+          lpWallet: targetLpWallet,
+          matchedAt: new Date(),
+        },
+      });
+
+      if (count === 0) throw new Error('Intent already matched, expired, or not found');
+
+      await tx.liquidityProvider.update({
+        where: { walletAddress: targetLpWallet },
+        data: { lockedCollateralUsdc: { increment: intent.amountUsdc } }
+      });
+
+      await tx.vaultLedger.create({
+        data: {
+          lpId: lp.id,
+          intentId: intent.id,
+          action: 'LOCK',
+          amount: intent.amountUsdc,
+          balanceAfter: availableUsdc - intent.amountUsdc,
+          reason: 'Matched Intent'
+        }
+      });
+
+      return await tx.offrampIntent.findUniqueOrThrow({ where: { id: intentId } });
     });
 
     logger.info(`[Offramp] Intent ${intentId} matched with LP ${targetLpWallet}`);
@@ -207,8 +241,31 @@ export class OfframpService {
       await tx.liquidityProvider.update({
         where: { walletAddress: intent.lpWallet! },
         data: {
-          pkrReserveUsd: { decrement: intent.amountUsdc },
+          lockedCollateralUsdc: { decrement: intent.amountUsdc },
           collateralUsdc: { increment: netToLp }
+        }
+      });
+
+      const lp = await tx.liquidityProvider.findUnique({ where: { walletAddress: intent.lpWallet! } });
+
+      await tx.vaultLedger.create({
+        data: {
+          lpId: lp!.id,
+          intentId: intent.id,
+          action: 'RELEASE',
+          amount: intent.amountUsdc,
+          balanceAfter: lp!.collateralUsdc - lp!.lockedCollateralUsdc,
+          reason: 'Intent Settled'
+        }
+      });
+      await tx.vaultLedger.create({
+        data: {
+          lpId: lp!.id,
+          intentId: intent.id,
+          action: 'CREDIT',
+          amount: netToLp,
+          balanceAfter: lp!.collateralUsdc - lp!.lockedCollateralUsdc,
+          reason: 'Yield and Principal payout'
         }
       });
     });
@@ -244,6 +301,51 @@ export class OfframpService {
       if (result.count > 0) {
         logger.warn(`[Offramp] SLA breach (180s expired) on intent ${intent.id}. Refunding customer.`);
         count++;
+
+        if (intent.lpWallet) {
+          // If it was matched, they held up the user. We must unlock their collateral.
+           await prisma.$transaction(async (tx) => {
+             const lp = await tx.liquidityProvider.findUnique({ where: { walletAddress: intent.lpWallet! } });
+             if (lp) {
+               await tx.liquidityProvider.update({
+                 where: { id: lp.id },
+                 data: { lockedCollateralUsdc: { decrement: intent.amountUsdc } }
+               });
+               await tx.vaultLedger.create({
+                 data: {
+                   lpId: lp.id,
+                   intentId: intent.id,
+                   action: 'RELEASE',
+                   amount: intent.amountUsdc,
+                   balanceAfter: (lp.collateralUsdc - lp.lockedCollateralUsdc) + intent.amountUsdc,
+                   reason: 'Intent Expired (Strike)'
+                 }
+               });
+
+               const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+               const strikes = await tx.vaultLedger.count({
+                 where: {
+                   lpId: lp.id,
+                   reason: 'Intent Expired (Strike)',
+                   createdAt: { gte: oneDayAgo }
+                 }
+               });
+
+               if (strikes >= 3) {
+                 await tx.lpChannel.updateMany({
+                   where: { lpId: lp.id },
+                   data: { quietHours: 'PAUSED' }
+                 });
+                 await tx.liquidityProvider.update({
+                   where: { id: lp.id },
+                   data: { trustScore: { decrement: 5 } }
+                 });
+                 logger.warn(`[Offramp] LP ${lp.walletAddress} hit 3 strikes in 24h. Trust decayed and channels paused.`);
+               }
+             }
+          });
+        }
+
         const refundedIntent = await prisma.offrampIntent.findUnique({ where: { id: intent.id } });
         if (refundedIntent) offrampEvents.emit('intent_updated', refundedIntent);
       }

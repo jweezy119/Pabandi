@@ -80,6 +80,42 @@ export class MudarabahVaultService {
       throw error;
     }
   }
+
+  /**
+   * Sweep idle collateral into Mudarabah
+   */
+  public async sweepIdleCollateral() {
+    const lps = await prisma.liquidityProvider.findMany({
+      where: { mudarabahOptIn: true, isActive: true }
+    });
+
+    for (const lp of lps) {
+      const available = lp.collateralUsdc - lp.lockedCollateralUsdc;
+      if (available > 100) {
+        // Find existing yield positions for this LP
+        const existing = await prisma.treasuryPosition.findFirst({
+           where: { status: 'DEPLOYED', meta: { path: ['lpWallet'], equals: lp.walletAddress } }
+        });
+
+        if (!existing) {
+          logger.info(`[Mudarabah Vault] Sweeping ${available} USDC for LP ${lp.walletAddress} into yield vault.`);
+          await prisma.treasuryPosition.create({
+            data: {
+              bucket: 'YIELD_REINVEST',
+              amount: available,
+              status: 'DEPLOYED',
+              meta: {
+                type: 'MUDARABAH_LP_IDLE',
+                lpWallet: lp.walletAddress,
+                apy: 0.045,
+                profitShareRatio: '70/30'
+              }
+            }
+          });
+        }
+      }
+    }
+  }
 }
 
 export const mudarabahVaultService = new MudarabahVaultService();

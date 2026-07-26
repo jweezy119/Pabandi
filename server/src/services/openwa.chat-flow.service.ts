@@ -1,4 +1,4 @@
-import { openwaService } from './openwa.service';
+import { openwaService } from './whatsapp.service';
 import { getPluginCatalog, findPluginsByKeywords } from './openwa.plugins.service';
 
 const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || process.env.OPENWA_SESSION || 'default';

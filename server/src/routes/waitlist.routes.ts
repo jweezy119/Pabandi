@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
-import { openwaService } from '../services/openwa.service';
+import { openwaService } from '../services/whatsapp.service';
 import { loadPluginCatalog, scorePlugin, selectPlugins, buildPluginSummary } from '../services/openwa.plugins.service';
 
 const router = Router();

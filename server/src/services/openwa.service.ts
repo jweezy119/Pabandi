@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { EventEmitter } from 'events';
+import { WhatsAppProvider } from './whatsapp.provider';
 
 const OPENWA_BASE_URL = (process.env.OPENWA_API_URL || 'http://localhost:2785/api').replace(/\/$/, '');
 const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
@@ -121,7 +122,7 @@ export interface OpenWABatchStatus {
 // Service
 // ---------------------------------------------------------------------------
 
-export class OpenWAService {
+export class OpenWAService implements WhatsAppProvider {
   private emitter: EventEmitter;
 
   constructor() {
@@ -551,6 +552,10 @@ export class OpenWAService {
       return { status: 'unreachable' };
     }
   }
-}
 
-export const openwaService = new OpenWAService();
+  async sendPresence(chatId: string, type: 'composing' | 'recording' | 'available' | 'unavailable', options?: { sessionId?: string }): Promise<void> {
+    // OpenWA doesn't support sendPresence natively via API out of the box in this wrapper,
+    // so this is a no-op fallback.
+    return Promise.resolve();
+  }
+

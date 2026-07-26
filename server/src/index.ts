@@ -48,6 +48,7 @@ import loanRoutes from './routes/loan.routes';
 import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
 import openwaWebhookRoutes from './routes/openwa.webhook.routes';
+import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
@@ -232,6 +233,7 @@ app.use(`/api/${API_VERSION}/integrations/livesell`, liveSellRoutes);
 app.use(`/api/${API_VERSION}/shopify`, shopifyRoutes);
 app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
+app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 
@@ -305,6 +307,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.info('📡 OpenWA webhook manager initialized');
   } catch (err) {
     logger.warn(`OpenWA webhook manager skipped: ${(err as Error).message}`);
+  }
+
+  // Start Telegram LP Bot
+  try {
+    const { startTelegramBot } = await import('./services/telegram-bot.service');
+    startTelegramBot();
+  } catch (err) {
+    logger.warn(`Telegram bot skipped: ${(err as Error).message}`);
   }
 
   // Start Phase 0 Offramp SLA Sweeper

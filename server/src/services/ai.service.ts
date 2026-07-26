@@ -7,31 +7,30 @@ import { createOpenWAMCPClient } from './openwa.mcp-client.service';
 
 export const openwaMcpClient = createOpenWAMCPClient(process.env.OPENWA_SESSION_ID || 'pabandi');
 
-export const sendWhatsAppMessage = async (toPhone: string, message: string) => {
-  const OPENWA_API_URL = process.env.OPENWA_API_URL || 'http://localhost:2785/api';
-  const OPENWA_API_KEY = process.env.OPENWA_API_KEY || '';
-  const OPENWA_SESSION_ID = process.env.OPENWA_SESSION_ID || 'pabandi';
+import { openwaService } from './whatsapp.service';
 
-  if (!OPENWA_API_KEY) {
+export const sendWhatsAppMessage = async (toPhone: string, message: string, options?: { sessionId?: string }) => {
+  if (!process.env.OPENWA_API_KEY && !process.env.EVOLUTION_API_KEY) {
     console.warn(`[WhatsApp MOCK] To: ${toPhone} | Message: ${message}`);
     return;
   }
 
   try {
-    const url = `${OPENWA_API_URL}/sessions/${OPENWA_SESSION_ID}/messages/send-text`;
     const formattedPhone = toPhone.replace('+', '').replace(/\D/g, '') + '@c.us';
-    const data = { chatId: formattedPhone, text: message };
-
-    await axios.post(url, data, {
-      headers: {
-        'X-API-Key': OPENWA_API_KEY,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log(`[WhatsApp] Sent message via OpenWA to ${toPhone}`);
+    
+    // Simulate typing before sending AI message (AI-Smart feature)
+    if (openwaService.sendPresence) {
+      await openwaService.sendPresence(formattedPhone, 'composing', options).catch(() => {});
+      // Wait for a brief moment to let typing indicator show
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+    
+    const result = await openwaService.sendText(formattedPhone, message, options);
+    console.log(`[WhatsApp] Sent message via Provider to ${toPhone} (ID: ${result.messageId}, Session: ${options?.sessionId || 'default'})`);
+    return result.messageId;
   } catch (error: any) {
-    console.error(`[WhatsApp] Error sending message to ${toPhone} via OpenWA:`, error.response?.data || error.message);
+    console.error(`[WhatsApp] Error sending message to ${toPhone} via Provider:`, error.response?.data || error.message);
+    return null;
   }
 };
 
