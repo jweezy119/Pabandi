@@ -107,43 +107,45 @@ export class ChannelDispatcher {
   }
 
   init() {
-    offrampEvents.on('intent_updated', async (intent: OfframpIntent) => {
-      try {
-        const user = await prisma.user.findUnique({
-          where: { walletAddress: intent.customerWallet }
-        });
+    setTimeout(() => {
+      offrampEvents.on('intent_updated', async (intent: OfframpIntent) => {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { walletAddress: intent.customerWallet }
+          });
 
-        if (!user || !user.phone) return;
+          if (!user || !user.phone) return;
 
-        let message = '';
-        switch (intent.status) {
-          case 'MATCHED':
-            if (intent.lpWallet) {
-              const lp = await prisma.liquidityProvider.findUnique({ where: { walletAddress: intent.lpWallet } });
-              const lpName = lp?.displayName || 'A verified merchant';
-              const rating = lp?.trustScore ? (lp.trustScore / 10).toFixed(1) : '4.9';
-              message = `🤝 Your trade was claimed by ${lpName} (${rating}★)!\n\nThey are sending ${intent.quotePkr} PKR to your account now.`;
-            }
-            break;
-          case 'PROOF_SUBMITTED':
-            message = `⏳ The merchant submitted proof of payment. Our AI is verifying the receipt...`;
-            break;
-          case 'SETTLED':
-            message = `✅ Trade Settled! ${intent.quotePkr} PKR has been confirmed. Your USDC was released.`;
-            break;
-          case 'REFUNDED':
-            message = `↩️ The trade expired before it could be fulfilled. Your USDC has been refunded.`;
-            break;
+          let message = '';
+          switch (intent.status) {
+            case 'MATCHED':
+              if (intent.lpWallet) {
+                const lp = await prisma.liquidityProvider.findUnique({ where: { walletAddress: intent.lpWallet } });
+                const lpName = lp?.displayName || 'A verified merchant';
+                const rating = lp?.trustScore ? (lp.trustScore / 10).toFixed(1) : '4.9';
+                message = `🤝 Your trade was claimed by ${lpName} (${rating}★)!\n\nThey are sending ${intent.quotePkr} PKR to your account now.`;
+              }
+              break;
+            case 'PROOF_SUBMITTED':
+              message = `⏳ The merchant submitted proof of payment. Our AI is verifying the receipt...`;
+              break;
+            case 'SETTLED':
+              message = `✅ Trade Settled! ${intent.quotePkr} PKR has been confirmed. Your USDC was released.`;
+              break;
+            case 'REFUNDED':
+              message = `↩️ The trade expired before it could be fulfilled. Your USDC has been refunded.`;
+              break;
+          }
+
+          if (message) {
+            await sendWhatsAppMessage(user.phone, message);
+            logger.info(`[Dispatcher] Sent status push to customer ${user.phone}: ${intent.status}`);
+          }
+        } catch (e) {
+          logger.error(`[Dispatcher] Failed to process status push for intent ${intent.id}:`, e);
         }
-
-        if (message) {
-          await sendWhatsAppMessage(user.phone, message);
-          logger.info(`[Dispatcher] Sent status push to customer ${user.phone}: ${intent.status}`);
-        }
-      } catch (e) {
-        logger.error(`[Dispatcher] Failed to process status push for intent ${intent.id}:`, e);
-      }
-    });
+      });
+    }, 0);
   }
 }
 
