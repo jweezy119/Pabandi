@@ -1,0 +1,43 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #020617;
+      color: var(--text-base, #ffffff);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-sans);
+    }
+    .title {
+      font-size: 72px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      color: #94a3b8;
+    }
+    .logo {
+      font-size: 140px;
+      font-weight: 900;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  </style>
+
+  <div id="root" data-composition-id="07-outro" data-width="1920" data-height="1080">
+    <div class="title" id="p1">Zero SWIFT Delays.</div>
+    <div class="title" id="p2">Zero Crypto Complexity.</div>
+    <div class="logo" id="logo">Pabandi.</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.from("#p1", { opacity: 0, y: 30, duration: 1 }, 0.5);
+    tl.from("#p2", { opacity: 0, y: 30, duration: 1 }, 2.0);
+    tl.from("#logo", { opacity: 0, scale: 0.8, duration: 1.5, ease: "back.out(1.7)" }, 4.0);
+    window.__timelines["07-outro"] = tl;
+  </script>
+</template>

@@ -34,6 +34,7 @@ import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
+import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
 import AirdropPage from './pages/AirdropPage';
 import CityLandingPage from './pages/CityLandingPage';
@@ -99,6 +100,7 @@ function App() {
 
             <Route path="/wallet" element={<WalletDashboard />} />
             <Route path="/loans" element={<LoanDashboard />} />
+            <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
             <Route path="/social-graph" element={<div className="p-8">Social Graph Content Here</div>} />
 
             <Route path="/waitlist" element={<WaitlistPage />} />

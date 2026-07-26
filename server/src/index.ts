@@ -51,7 +51,7 @@ import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
-
+import offrampWebhookRoutes from './routes/offramp-webhook.routes';
 const app = express();
 const httpServer = createServer(app);
 
@@ -187,6 +187,7 @@ app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
 app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
+app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
 app.use('/', tapRoutes);

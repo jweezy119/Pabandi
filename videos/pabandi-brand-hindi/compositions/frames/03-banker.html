@@ -1,0 +1,27 @@
+<template>
+<div id="root" data-composition-id="03-banker" data-width="1920" data-height="1080">
+    <style>
+      #root {
+        width: 1920px; height: 1080px; position: relative; overflow: hidden;
+        background-color: var(--hf-canvas); color: var(--hf-ink);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Inter', sans-serif;
+      }
+      .content {
+        text-align: center; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 40px;
+      }
+      .text-large { font-size: 90px; font-weight: 800; letter-spacing: -2px; }
+      .image-container { width: 600px; height: 600px; margin-bottom: 40px; transform: scale(0); }
+      .image-container img { width: 100%; height: 100%; object-fit: contain; }
+    </style>
+    <div class="content">
+      <div class="image-container" data-hf-id="image"><img src="../../public/banker.png" /></div>
+      <div class="text-large" data-hf-id="text1">While they count your cash...</div>
+    </div>
+    <script>
+      const tl = gsap.timeline();
+      tl.to('[data-hf-id="image"]', { scale: 1, duration: 1, ease: 'power3.out' }, 0);
+      tl.from('[data-hf-id="text1"]', { y: 100, opacity: 0, duration: 1, ease: 'power3.out' }, 1);
+    </script>
+  </div>
+</template>

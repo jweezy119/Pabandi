@@ -1,0 +1,26 @@
+<template>
+<div id="root" data-composition-id="05-instant" data-width="1920" data-height="1080">
+    <style>
+      #root {
+        width: 1920px; height: 1080px; position: relative; overflow: hidden;
+        background-color: var(--hf-canvas); color: var(--hf-ink);
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Inter', sans-serif;
+      }
+      .content {
+        text-align: center; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 40px;
+      }
+      .text-large { font-size: 90px; font-weight: 800; letter-spacing: -2px; }
+      .text-medium { font-size: 70px; font-weight: 500; opacity: 0.8; }
+    </style>
+    <div class="content">
+      <div class="text-large" data-hf-id="text1">Instant P2P.</div>
+      <div class="text-medium" data-hf-id="text2">Zero Crypto Headaches.</div>
+    </div>
+    <script>
+      const tl = gsap.timeline();
+      tl.from('[data-hf-id="text1"]', { y: 100, opacity: 0, duration: 1, ease: 'power3.out' }, 0);
+      tl.from('[data-hf-id="text2"]', { y: 50, opacity: 0, duration: 1, ease: 'power3.out' }, 0.5);
+    </script>
+  </div>
+</template>
