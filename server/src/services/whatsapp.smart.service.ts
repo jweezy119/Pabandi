@@ -148,7 +148,7 @@ export class WhatsAppSmartService {
     lower: string,
     raw: string
   ): Promise<SmartReply | null> {
-    const intent = this.matchIntent(lower);
+    let intent = this.matchIntent(lower);
     this.appendConversation(customerPhone, 'user', raw);
 
     if (!intent) {
