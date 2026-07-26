@@ -1244,6 +1244,7 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
 
     const business = await prisma.business.findUnique({
       where: { id },
+      include: { owner: { include: { wallet: true } } },
     });
 
     if (!business) {
@@ -1258,9 +1259,14 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
       throw new CustomError('Amount and targetRaastId are required', 400);
     }
 
-    // Map the old B2B PayoutRequest to the new OfframpIntent structure
+    // Map the old B2B PayoutRequest to the new OfframpIntent structure.
+    // Prefer the business owner's wallet address if available; otherwise fall back
+    // to an EVM placeholder so the API flow still completes for unlinked accounts.
+    const walletAddress =
+      business.owner?.wallet?.address || '0x0000000000000000000000000000000000000000';
+
     const intent = await offrampService.requestIntent({
-      customerWallet: '0x0000000000000000000000000000000000000000', // customerWallet stub for B2B API
+      customerWallet: walletAddress,
       amountUsdc: parseFloat(amount),
       minRatePkr: 270.0, // minRatePkr stub
       destinationType: 'Raast',
