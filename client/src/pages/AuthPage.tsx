@@ -108,6 +108,11 @@ export default function AuthPage() {
     if (urlError === 'facebook_not_configured') return 'Facebook login is not configured yet. Please add FACEBOOK_APP_ID in backend.';
     if (urlError === 'facebook_failed') return 'Facebook authentication failed. Please try again.';
     if (urlError === 'google_failed') return 'Google authentication failed. Please try again.';
+    if (urlError === 'twitter_failed') return 'X/Twitter authentication failed. Please try again.';
+    if (urlError === 'linkedin_failed') return 'LinkedIn authentication failed. Please try again.';
+    if (urlError === 'tiktok_failed') return 'TikTok authentication failed. Please try again.';
+    if (urlError === 'oauth_failed') return 'Authentication failed. Please try again.';
+    if (urlError === 'token_parse_failed') return 'Login succeeded, but we could not read your session token. Please try again.';
     return '';
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
