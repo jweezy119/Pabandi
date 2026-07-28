@@ -12,6 +12,11 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
     return next();
   }
 
+  // TEMPORARY FIX: App Check token logic was disabled on the frontend 
+  // to prevent hangs, so we must also bypass it on the backend globally
+  // otherwise all API calls (search, maps, etc.) will fail with 401.
+  return next();
+
   // Bypass App Check for OAuth redirect and callback routes because browser
   // redirects (window.location.href) cannot attach custom headers.
   const oauthPaths = ['/auth/google', '/auth/facebook', '/auth/twitter', '/auth/linkedin', '/auth/tiktok'];
