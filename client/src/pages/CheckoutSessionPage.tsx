@@ -215,6 +215,11 @@ export const CheckoutSessionPage = () => {
     window.location.href = session.providerUrl;
   };
 
+  const handleEscrowPayment = () => {
+    if (!session?.providerUrl) return;
+    window.location.href = session.providerUrl;
+  };
+
   const handleTapPayment = async () => {
     if (!session) return;
     try {
@@ -391,7 +396,24 @@ export const CheckoutSessionPage = () => {
             </button>
           )}
 
-          {session?.gateway !== 'safepay' && session?.currency !== 'USDC' && session?.gateway !== 'crypto' && (
+          {session?.gateway === 'escrow' && (
+            <button
+              onClick={handleEscrowPayment}
+              disabled={paying || !session?.providerUrl}
+              className="w-full py-4 rounded-xl bg-[#1F2937] text-white font-bold text-lg border border-indigo-500/40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {paying ? (
+                <ArrowPathIcon className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  <CreditCardIcon className="w-5 h-5" />
+                  Pay with Escrow.com
+                </>
+              )}
+            </button>
+          )}
+
+          {session?.gateway !== 'safepay' && session?.currency !== 'USDC' && session?.gateway !== 'crypto' && session?.gateway !== 'escrow' && (
             <>
               <button
                 onClick={handleStripePayment}
