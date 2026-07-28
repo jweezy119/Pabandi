@@ -12,6 +12,13 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
     return next();
   }
 
+  // Bypass App Check for OAuth redirect and callback routes because browser
+  // redirects (window.location.href) cannot attach custom headers.
+  const oauthPaths = ['/auth/google', '/auth/facebook', '/auth/twitter', '/auth/linkedin', '/auth/tiktok'];
+  if (oauthPaths.some(path => req.originalUrl.includes(path))) {
+    return next();
+  }
+
   const appCheckToken = req.header('X-Firebase-AppCheck');
 
   if (!appCheckToken) {
