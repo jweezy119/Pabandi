@@ -166,7 +166,8 @@ export class WhatsAppSmartService {
       }
       
       // If AI matched an intent, use that instead
-      intent = aiClassified.intent;
+      const aiIntent = aiClassified.intent || 'general';
+      return { text: '', matchedIntent: aiIntent, action: 'route_ai' };
     }
 
     if (intent !== 'book') {

@@ -54,6 +54,7 @@ import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
 import webhookStripeRoutes from './routes/webhook.stripe.routes';
+import webhookEscrowRoutes from './routes/webhook.escrow.routes';
 const app = express();
 const httpServer = createServer(app);
 
@@ -191,6 +192,7 @@ app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
+app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
 app.use('/', tapRoutes);
