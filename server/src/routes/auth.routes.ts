@@ -8,8 +8,16 @@ import passport from 'passport';
 import { cryptoService } from '../services/cryptoService';
 import jwt from 'jsonwebtoken';
 import type { Secret, JwtPayload } from 'jsonwebtoken';
+import cookieSession from 'cookie-session';
 
 const router = Router();
+
+// Used for OAuth 1.0 (e.g. Twitter) which requires a session
+const oauthSession = cookieSession({
+  name: 'oauth-session',
+  keys: [process.env.JWT_SECRET || 'fallback-secret'],
+  maxAge: 10 * 60 * 1000, // 10 minutes is enough for OAuth flow
+});
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -214,27 +222,30 @@ router.get(
 
 // ── Twitter OAuth ──────────────────────────────────────────────────────────
 
-router.get('/twitter', (req: Request, res: Response, next: NextFunction) => {
+router.get('/twitter', oauthSession, (req: Request, res: Response, next: NextFunction) => {
   const role = (req.query.role as string) || 'customer';
-  passport.authenticate('twitter', {
-    state: role,
-  })(req, res, next);
+  // Twitter is OAuth 1.0a and doesn't natively support passing state, so we store it in the session
+  (req as any).session.role = role;
+  passport.authenticate('twitter')(req, res, next);
 });
 
 router.get(
   '/twitter/callback',
+  oauthSession,
   passport.authenticate('twitter', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=twitter_failed` }),
   (req: Request, res: Response) => {
+    // Retrieve role from session that we set in the initial step
+    const storedRole = (req as any).session?.role || 'customer';
     const user = req.user as any;
     if (!user) {
       return res.redirect(`${FRONTEND_URL}/login?error=twitter_failed`);
     }
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+      { id: user.id, email: user.email, role: storedRole, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${storedRole}`);
   }
 );
 
