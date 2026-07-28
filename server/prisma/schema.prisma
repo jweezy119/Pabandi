@@ -861,11 +861,28 @@ model CheckoutSession {
   expiresAt   DateTime
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  escrowEvents EscrowEvent[]
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])
+}
+
+model EscrowEvent {
+  id                   String    @id @default(cuid())
+  checkoutSessionId    String
+  escrowTransactionId  String
+  eventType            String
+  status               String
+  payload              Json
+  processed            Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+
+  checkoutSession CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
+
+  @@index([escrowTransactionId])
+  @@index([checkoutSessionId])
 }
 
 enum CheckoutStatus {
