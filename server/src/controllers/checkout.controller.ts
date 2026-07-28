@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { stripeService } from '../services/stripe.service';
 import { safepayService } from '../services/safepay.service';
+import { escrowService } from '../services/escrow.service';
 import { fail, ok } from '../utils/apiResponse';
 
 export const createCheckoutSession = async (req: Request, res: Response) => {
@@ -402,6 +403,62 @@ export const initiateCryptoCheckout = async (req: Request, res: Response) => {
     }, 201);
   } catch (error: any) {
     logger.error('Error initiating crypto checkout', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const initiateEscrowCheckout = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { buyerEmail, sellerEmail } = req.body;
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true },
+    });
+
+    if (!session || session.status !== 'PENDING') {
+      return fail(res, 'Valid checkout session not found', 404);
+    }
+
+    const description = session.escrowTerms
+      ? `Escrow session ${id}`
+      : `Pabandi escrow session ${id}`;
+    const title = `Reservation ${id}`;
+
+    const result = await escrowService.createTransaction({
+      amount: session.amount,
+      currency: session.currency,
+      buyerEmail: buyerEmail || session.successUrl.replace(/.*\/\//, '').split('/')[0] || 'buyer@pabandi.com',
+      sellerEmail: sellerEmail || 'seller@pabandi.com',
+      description,
+      itemTitle: title,
+      reference: id,
+    });
+
+    await prisma.checkoutSession.update({
+      where: { id: session.id },
+      data: {
+        metadata: {
+          ...(session.metadata as any || {}),
+          gateway: 'escrow',
+          escrowTransactionId: result.id,
+          providerUrl: result.url,
+        },
+      },
+    });
+
+    return ok(res, {
+      url: result.url || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${id}`,
+      gateway: 'escrow',
+      currency: session.currency || 'USD',
+      amount: session.amount,
+      reservationId: id,
+      businessId: session.businessId,
+      transactionId: result.id,
+    }, 201);
+  } catch (error: any) {
+    logger.error('Error initiating escrow checkout', error);
     return fail(res, 'Internal server error', 500);
   }
 };
