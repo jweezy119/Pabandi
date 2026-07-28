@@ -36,7 +36,10 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
   }
 
   try {
-    const appCheckClaims = await admin.appCheck().verifyToken(appCheckToken);
+    if (!admin.appCheck) {
+      return res.status(500).json({ success: false, error: 'App Check is not configured.', code: 'app-check/not-configured' });
+    }
+    const appCheckClaims = await (admin.appCheck() as any).verifyToken(appCheckToken);
     return next();
   } catch (error) {
     logger.error('Failed to verify App Check token:', error);
