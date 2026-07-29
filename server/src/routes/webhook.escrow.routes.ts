@@ -22,11 +22,40 @@ router.post(
 
       const eventType = String(payload?.event || payload?.event_type || '');
       const escrowTransactionId = String(payload?.transaction_id || payload?.transactionId || '');
-      const escrowStatus = String(payload?.status || eventType || 'unknown');
+      const rawStatus = String(payload?.status || eventType || 'unknown');
       const escrowId = String(payload?.id || '');
 
       if (!escrowTransactionId) {
         return res.status(200).json({ received: true });
+      }
+
+      const normalizedEvent = eventType || 'unknown';
+      const normalizedLower = rawStatus.toLowerCase();
+      let mappedStatus = 'PENDING';
+      if (
+        normalizedLower.includes('release') ||
+        normalizedLower.includes('completed') ||
+        normalizedLower.includes('complete')
+      ) {
+        mappedStatus = 'RELEASED';
+      } else if (
+        normalizedLower.includes('cancel') ||
+        normalizedLower.includes('cancelled') ||
+        normalizedLower.includes('refunded')
+      ) {
+        mappedStatus = 'CANCELLED';
+      } else if (
+        normalizedLower.includes('dispute') ||
+        normalizedLower.includes('chargeback')
+      ) {
+        mappedStatus = 'DISPUTED';
+      } else if (
+        normalizedLower.includes('fund') ||
+        normalizedLower.includes('approved') ||
+        normalizedLower.includes('paid') ||
+        normalizedLower.includes('received')
+      ) {
+        mappedStatus = 'FUNDED';
       }
 
       await prisma.$transaction(async (tx) => {
@@ -44,28 +73,28 @@ router.post(
           return;
         }
 
+        const isTerminal = ['RELEASED', 'CANCELLED', 'DISPUTED'].includes(mappedStatus);
+        const newStatus = isTerminal ? mappedStatus : session.status;
+
         await tx.escrowEvent.create({
           data: {
             checkoutSessionId: session.id,
             escrowTransactionId,
-            eventType: eventType || 'unknown',
-            status: escrowStatus,
+            eventType: normalizedEvent,
+            status: mappedStatus,
             payload,
           },
         });
 
-        const isTerminal = ['released', 'cancelled', 'dispute_opened'].includes(escrowStatus.toLowerCase());
-        const status = isTerminal ? escrowStatus.toUpperCase() : session.status;
-
         await tx.checkoutSession.update({
           where: { id: session.id },
           data: {
-            status: status as any,
+            status: newStatus as any,
             metadata: {
               ...(session.metadata as any || {}),
               escrowTransactionId,
               ...(escrowId ? { escrowId } : {}),
-              lastEscrowEvent: eventType,
+              lastEscrowEvent: normalizedEvent,
             },
           },
         });
