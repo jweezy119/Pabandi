@@ -890,6 +890,9 @@ enum CheckoutStatus {
   PAID
   EXPIRED
   CANCELLED
+  FUNDED
+  RELEASED
+  DISPUTED
 }
 
 enum LoanStatus {
