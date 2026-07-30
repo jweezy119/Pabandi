@@ -21,8 +21,9 @@ export const sendWhatsAppMessage = async (toPhone: string, message: string, opti
     // Simulate typing before sending AI message (AI-Smart feature)
     if (openwaService.sendPresence) {
       await openwaService.sendPresence(formattedPhone, 'composing', options).catch(() => {});
-      // Wait for a brief moment to let typing indicator show
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Dynamically wait based on message length (simulating human typing speed)
+      const delayMs = Math.min(3000, Math.max(800, message.length * 20));
+      await new Promise(resolve => setTimeout(resolve, delayMs));
     }
     
     const result = await openwaService.sendText(formattedPhone, message, options);
@@ -139,7 +140,7 @@ export const processWhatsAppMessage = async (customerPhone: string, businessPhon
       return;
     }
 
-    const fallback = "I'm the AI assistant for {{businessName}}. You can book, cancel, reschedule, check status, or ask a question. Share details like date/time/guests and I'll continue.";
+    const fallback = `I'm the AI assistant for *{{businessName}}*.\n\nYou can:\n- *Book* a table\n- *Cancel* or *Reschedule*\n- *Check Status*\n- Ask a question\n\nPlease share details like date, time, and guests!`;
     const fallbackResponse = await aiNlpService.generateCopy(fallback, { businessName, businessSlug });
     await sendWhatsAppMessage(customerPhone, fallbackResponse);
 

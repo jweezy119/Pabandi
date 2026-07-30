@@ -308,27 +308,18 @@ router.post('/lead/:id/send-whatsapp', authenticate, async (req: AuthRequest, re
       .join('\n');
 
     const resolvedSessionId = sessionId || process.env.OPENWA_SESSION_ID || process.env.OPENWA_SESSION || 'default';
-    const openwaUrl = `${(process.env.OPENWA_API_URL || 'http://localhost:2785/api').replace(/\/$/, '')}/sessions/${encodeURIComponent(resolvedSessionId)}/messages/send-text`;
 
-    const response = await fetch(openwaUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(process.env.OPENWA_API_KEY ? { 'X-API-Key': process.env.OPENWA_API_KEY } : {}),
-      },
-      body: JSON.stringify({
-        to: destination.replace(/[^0-9]/g, '') + '@c.us',
-        text: body,
-        pluginContext: 'pabandi:plugin-catalog-outreach',
-      }),
+    const result = await openwaService.sendText(destination, body, {
+      sessionId: resolvedSessionId,
+      pluginContext: 'pabandi:plugin-catalog-outreach',
     });
 
-    const result = await response.json().catch(() => ({}));
+    const isSuccess = result.status !== 'failed';
 
     const updates: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
-      outreachAttempts: Number(lead.outreachAttempts ?? 0) + (response.ok ? 1 : 0),
-      lastContactedAt: response.ok ? new Date().toISOString() : (lead.lastContactedAt ?? null),
+      outreachAttempts: Number(lead.outreachAttempts ?? 0) + (isSuccess ? 1 : 0),
+      lastContactedAt: isSuccess ? new Date().toISOString() : (lead.lastContactedAt ?? null),
       outreachStatus: ((lead.outreachStatus as string) || 'NEW').toUpperCase(),
       lastOutreachChannel: 'whatsapp-openwa',
       lastOutreachBody: body,
@@ -337,16 +328,16 @@ router.post('/lead/:id/send-whatsapp', authenticate, async (req: AuthRequest, re
       lastOutreachDestination: destination,
     };
 
-    if (response.ok) {
+    if (isSuccess) {
       updates.outreachStatus = 'CONTACTED';
     }
 
     await getDb().collection('waitlist').doc(id).update(updates);
 
-    if (!response.ok) {
+    if (!isSuccess) {
       return res.status(502).json({
         success: false,
-        error: result?.message || 'OpenWA gateway rejected the send request',
+        error: 'OpenWA gateway rejected the send request',
         gateway: result,
       });
     }

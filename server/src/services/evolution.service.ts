@@ -222,10 +222,10 @@ export class EvolutionProvider implements WhatsAppProvider {
   async getLabels(sessionId?: string): Promise<unknown[]> { return []; }
   async assignLabel(chatId: string, labelId: string, sessionId?: string): Promise<{ success: boolean }> { return { success: true }; }
   
-  async getCatalog(sessionId?: string): Promise<unknown> { return null; }
-  async getProducts(sessionId?: string, page?: number, limit?: number): Promise<{ products: OpenWACatalogProduct[]; total: number }> { return { products: [], total: 0 }; }
-  async sendProduct(chatId: string, productId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { return { status: 'failed' }; }
-  async sendCatalog(chatId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { return { status: 'failed' }; }
+  async getCatalog(sessionId?: string): Promise<unknown> { console.warn('[Evolution] getCatalog not supported'); return null; }
+  async getProducts(sessionId?: string, page?: number, limit?: number): Promise<{ products: OpenWACatalogProduct[]; total: number }> { console.warn('[Evolution] getProducts not supported'); return { products: [], total: 0 }; }
+  async sendProduct(chatId: string, productId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { console.warn('[Evolution] sendProduct not supported'); return { status: 'failed' }; }
+  async sendCatalog(chatId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { console.warn('[Evolution] sendCatalog not supported'); return { status: 'failed' }; }
   
   async sendBulk(messages: OpenWABulkMessage[], options?: { delayBetweenMessages?: number; sessionId?: string }): Promise<OpenWABulkResult> { return { batchId: 'evolution_bulk', status: 'queued', totalMessages: messages.length }; }
   async getBatchStatus(batchId: string, sessionId?: string): Promise<OpenWABatchStatus> { return { batchId, status: 'completed' }; }

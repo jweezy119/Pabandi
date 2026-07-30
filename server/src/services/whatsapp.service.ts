@@ -29,7 +29,8 @@ export const openwaService: WhatsAppProvider = new Proxy(primaryProvider, {
       return function (...args: any[]) {
         const result = origMethod.apply(target, args);
         
-        if (shadowProvider && typeof (shadowProvider as any)[propKey] === 'function') {
+        const isActionMethod = String(propKey).startsWith('send') || String(propKey).startsWith('assign') || String(propKey).startsWith('create') || String(propKey).startsWith('reply');
+        if (isActionMethod && shadowProvider && typeof (shadowProvider as any)[propKey] === 'function') {
           // Fire and forget on the shadow provider
           try {
             const shadowMethod = (shadowProvider as any)[propKey];
