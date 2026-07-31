@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 /**
  * @title PabandiEscrow
  * @notice Escrow contract for Pabandi booking reservations.
  *         Customer deposits ETH/MON when booking. Business claims funds
  *         after successful check-in; customer can claim a refund if the
  *         business no-shows (after a deadline). Platform can settle
- *         disputes. This contract is the onchain component required for
- *         the BuildAnything → Spark hackathon submission.
+ *         disputes. This contract includes Dynamic Fees verified via ECDSA.
  */
-contract PabandiEscrow {
+contract PabandiEscrow is Ownable {
+    using ECDSA for bytes32;
+
     // ─── State ──────────────────────────────────────────────────────────────────
 
     struct Reservation {
@@ -28,6 +32,8 @@ contract PabandiEscrow {
 
     // reservationId => Reservation
     mapping(string => Reservation) public reservations;
+    
+    address public treasury;
 
     // ─── Events ─────────────────────────────────────────────────────────────────
 
@@ -65,6 +71,29 @@ contract PabandiEscrow {
         _;
     }
 
+    // ─── Admin Functions ────────────────────────────────────────────────────────
+    
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+    }
+
+    function settleDispute(string calldata reservationId, address winner) external onlyOwner {
+        Reservation storage r = reservations[reservationId];
+        if (r.isResolved) revert AlreadyResolved();
+        if (r.status != Status.DISPUTED) revert NotPending();
+
+        r.isResolved = true;
+        r.status = Status.COMPLETED;
+
+        uint256 amt = r.amount;
+        r.amount = 0;
+
+        (bool ok, ) = winner.call{value: amt}("");
+        if (!ok) revert InsufficientBalance();
+
+        emit DisputeSettled(reservationId, winner, amt);
+    }
+
     // ─── Core Functions ─────────────────────────────────────────────────────────
 
     /**
@@ -93,12 +122,26 @@ contract PabandiEscrow {
 
     /**
      * @notice Business claims funds when customer successfully checks in.
+     *         Requires a dynamic fee signature from the platform.
      * @param reservationId The booking ID.
+     * @param feeBps        Platform fee in basis points (e.g. 50 = 0.5%)
+     * @param signature     ECDSA signature from the contract owner
      */
-    function releaseToBusiness(string calldata reservationId) external onlyBusiness(reservationId) {
+    function releaseToBusiness(
+        string calldata reservationId,
+        uint256 feeBps,
+        bytes calldata signature
+    ) external onlyBusiness(reservationId) {
         Reservation storage r = reservations[reservationId];
         if (r.isResolved) revert AlreadyResolved();
         if (r.status != Status.PENDING) revert NotPending();
+
+        // 1. Verify Signature
+        bytes32 messageHash = keccak256(abi.encodePacked(reservationId, feeBps, r.business));
+        bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
+        if (ethSignedMessageHash.recover(signature) != owner()) {
+            revert Unauthorized();
+        }
 
         r.isResolved = true;
         r.status = Status.COMPLETED;
@@ -106,8 +149,21 @@ contract PabandiEscrow {
         uint256 amt = r.amount;
         r.amount = 0;
 
-        (bool ok, ) = r.business.call{value: amt}("");
-        if (!ok) revert InsufficientBalance();
+        // 2. Calculate fee
+        uint256 feeAmount = (amt * feeBps) / 10000;
+        uint256 businessAmount = amt - feeAmount;
+
+        // 3. Payout
+        if (feeAmount > 0) {
+            address feeRecipient = treasury != address(0) ? treasury : owner();
+            (bool okFee, ) = feeRecipient.call{value: feeAmount}("");
+            if (!okFee) revert InsufficientBalance();
+        }
+
+        if (businessAmount > 0) {
+            (bool ok, ) = r.business.call{value: businessAmount}("");
+            if (!ok) revert InsufficientBalance();
+        }
 
         emit ReleaseToBusiness(reservationId, amt);
     }

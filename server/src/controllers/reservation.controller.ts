@@ -123,6 +123,19 @@ export const createReservation = async (
       throw new CustomError('Business not found or inactive', 404);
     }
 
+    // Enforce Buyer Trust Gates
+    if (req.user) {
+      const customer = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { minimumSellerTrustScore: true }
+      });
+      if (customer && customer.minimumSellerTrustScore > 0) {
+        if (business.trustScore < customer.minimumSellerTrustScore) {
+          throw new CustomError(`This business does not meet your minimum trust score requirement (${customer.minimumSellerTrustScore}).`, 403);
+        }
+      }
+    }
+
     // Parse reservation date and time
     const tz = business.timezone || 'America/New_York';
     const dateTime = moment.tz(

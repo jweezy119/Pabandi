@@ -646,6 +646,36 @@ export class CryptoService {
       data: { bucket, amount: normalized, status: 'PENDING', meta: { source: 'CRYPTO_SERVICE_TRIBUTE' } },
     });
   }
+
+  // --- Dynamic Fee Signature (EVM) ---
+  
+  calculateEscrowFee(businessTrustScore: number): number {
+    if (businessTrustScore < 50) return 300; // 3%
+    if (businessTrustScore <= 80) return 150; // 1.5%
+    return 50; // 0.5%
+  }
+
+  async generateDynamicFeeSignature(reservationId: string, businessAddress: string, trustScore: number): Promise<{ feeBps: number, signature: string }> {
+    const feeBps = this.calculateEscrowFee(trustScore);
+    
+    if (!process.env.ESCROW_ORACLE_PRIVATE_KEY) {
+      logger.warn('No ESCROW_ORACLE_PRIVATE_KEY found. Generating dummy signature for dynamic fee.');
+      return { feeBps, signature: '0x' };
+    }
+
+    const wallet = new ethers.Wallet(process.env.ESCROW_ORACLE_PRIVATE_KEY);
+    
+    // Equivalent to keccak256(abi.encodePacked(reservationId, feeBps, businessAddress))
+    const messageHash = ethers.solidityPackedKeccak256(
+      ['string', 'uint256', 'address'],
+      [reservationId, feeBps, businessAddress]
+    );
+
+    // Sign the hash (ethers signs the message hash with the '\x19Ethereum Signed Message:\n32' prefix)
+    const signature = await wallet.signMessage(ethers.getBytes(messageHash));
+    
+    return { feeBps, signature };
+  }
 }
 
 export const cryptoService = new CryptoService();
