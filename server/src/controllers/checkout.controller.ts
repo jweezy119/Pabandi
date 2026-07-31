@@ -462,3 +462,64 @@ export const initiateEscrowCheckout = async (req: Request, res: Response) => {
     return fail(res, 'Internal server error', 500);
   }
 };
+
+export const getCheckoutReceipt = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true },
+    });
+
+    if (!session) {
+      return fail(res, 'Checkout session not found', 404);
+    }
+
+    const events = await prisma.escrowEvent.findMany({
+      where: { checkoutSessionId: id },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const latestEvent = events[events.length - 1] || null;
+    const metadata = (session.metadata as any) || {};
+    const transactionId = metadata.escrowTransactionId || metadata.transactionId || null;
+
+    const statusLabel =
+      session.status === 'PAID'
+        ? 'Payment confirmed'
+        : session.status === 'FUNDED'
+          ? 'Funds secured in escrow'
+          : session.status === 'RELEASED'
+            ? 'Funds released to seller'
+            : session.status === 'CANCELLED'
+              ? 'Transaction cancelled'
+              : session.status === 'DISPUTED'
+                ? 'Dispute opened'
+                : session.status === 'EXPIRED'
+                  ? 'Session expired'
+                  : 'Awaiting payment';
+
+    const receipt = {
+      sessionId: session.id,
+      businessName: session.business?.name || 'Pabandi',
+      amount: session.amount,
+      currency: session.currency,
+      status: session.status,
+      statusLabel,
+      gateway: metadata.gateway || 'UNIVERSAL',
+      providerUrl: metadata.providerUrl || null,
+      transactionId,
+      webhookUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${id}`,
+      eventCount: events.length,
+      lastEvent: latestEvent,
+      events,
+      updatedAt: session.updatedAt,
+    };
+
+    return ok(res, { receipt });
+  } catch (error: any) {
+    logger.error('Error fetching checkout receipt', error);
+    return fail(res, 'Failed to fetch receipt', 500);
+  }
+};

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShieldCheckIcon, ExclamationTriangleIcon, FingerPrintIcon, LockClosedIcon, CheckCircleIcon, ArrowPathIcon, CreditCardIcon } from '@heroicons/react/24/outline';
+import { ShareIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -218,6 +219,14 @@ export const CheckoutSessionPage = () => {
   const handleEscrowPayment = () => {
     if (!session?.providerUrl) return;
     window.location.href = session.providerUrl;
+  };
+
+  const shareOnWhatsApp = () => {
+    if (!session) return;
+    const text = encodeURIComponent(
+      `Pay securely with Pabandi escrow.\nAmount: ${session.amount} ${session.currency}\nLink: ${window.location.origin}/checkout/${session.id}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const handleTapPayment = async () => {
@@ -452,6 +461,16 @@ export const CheckoutSessionPage = () => {
               </button>
             </>
           )}
+        </div>
+
+        <div className="mt-3">
+          <button
+            onClick={shareOnWhatsApp}
+            className="w-full py-3 rounded-xl bg-zinc-900 text-white font-bold text-sm border border-zinc-800 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+          >
+            <ShareIcon className="w-4 h-4" />
+            Share checkout on WhatsApp
+          </button>
         </div>
 
         <p className="text-center text-xs text-zinc-500 mt-4">
