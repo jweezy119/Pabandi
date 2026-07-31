@@ -29,3 +29,30 @@ export async function addOrder(req: Request, res: Response) {
   const data = await liveSellerService.addOrder(businessId, platform, req.body || {});
   res.status(201).json({ success: true, data });
 }
+
+export async function importEbay(req: Request, res: Response) {
+  try {
+    const businessId = (req as any).businessId;
+    if (!businessId) return res.status(400).json({ success: false, error: 'Business profile not found' });
+    const data = await liveSellerService.importEbayListings(businessId);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+export async function dropWhatsApp(req: Request, res: Response) {
+  try {
+    const businessId = (req as any).businessId;
+    const { chatId, itemId } = req.body;
+    
+    if (!businessId || !chatId || !itemId) {
+      return res.status(400).json({ success: false, error: 'Missing parameters' });
+    }
+    
+    const data = await liveSellerService.dropEbayItemToWhatsApp(businessId, chatId, itemId);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+}

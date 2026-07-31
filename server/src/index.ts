@@ -57,6 +57,7 @@ import webhookStripeRoutes from './routes/webhook.stripe.routes';
 import webhookEscrowRoutes from './routes/webhook.escrow.routes';
 import didRoutes from './routes/did.routes';
 import vcRoutes from './routes/vc.routes';
+import ebayRoutes from './routes/ebay.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -194,6 +195,9 @@ app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
+app.use('/.well-known', didRoutes);
+app.use('/api/v1/passport/vc', vcRoutes);
+app.use('/api/v1/live-seller/ebay', ebayRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 

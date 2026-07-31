@@ -7,6 +7,7 @@ import { prisma } from '../utils/database';
 import { liveSellerService } from '../services/live-seller.service';
 import { LiveSellerPlatform } from '@prisma/client';
 import { fail, ok } from '../utils/apiResponse';
+import { importEbay, dropWhatsApp } from '../controllers/livesell.controller';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -212,6 +213,31 @@ router.delete('/:platform', authenticate, async (req: AuthRequest, res) => {
   } catch (e) {
     console.error('Failed to disconnect integration', e);
     return fail(res, 'Failed to disconnect integration', 500);
+  }
+});
+
+router.post('/ebay/import', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return fail(res, 'Business profile not found', 400);
+    const data = await liveSellerService.importEbayListings(biz.id);
+    return ok(res, data);
+  } catch (e: any) {
+    console.error('Failed to import eBay listings', e);
+    return fail(res, e.message, 500);
+  }
+});
+
+router.post('/whatsapp/drop', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const biz = await requireBusiness(req, res);
+    if (!biz) return fail(res, 'Business profile not found', 400);
+    const { chatId, itemId } = req.body;
+    const data = await liveSellerService.dropEbayItemToWhatsApp(biz.id, chatId, itemId);
+    return ok(res, data);
+  } catch (e: any) {
+    console.error('Failed to drop item to WhatsApp', e);
+    return fail(res, e.message, 500);
   }
 });
 
