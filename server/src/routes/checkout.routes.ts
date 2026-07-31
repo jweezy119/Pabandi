@@ -14,22 +14,14 @@ router.post('/embed-checkout', createEmbedCheckoutSession);
 
 // Create a new checkout session (protected, requires business context)
 router.post('/session', authenticate, createCheckoutSession);
-
-// Get checkout session details for the buyer UI (public)
 router.get('/session/:id', getCheckoutSession);
-
-// Complete the checkout session (in a real app, this would be via Stripe/payment gateway webhook)
-// For MVP/Demo, this is called by the frontend when buyer clicks pay
 router.post('/session/:id/complete', completeCheckoutSession);
+router.post('/embed-checkout', createEmbedCheckoutSession);
+router.post('/embed-checkout/public', apiKeyAuth, createPartnerEmbedCheckoutSession);
 
-// Initiate Stripe Checkout session
-router.post('/session/:id/stripe', initiateStripeCheckout);
-
-// Initiate deterministic crypto checkout session payload
-router.post('/session/:id/crypto', initiateCryptoCheckout);
-
-// Initiate escrow checkout session
-router.post('/session/:id/escrow', initiateEscrowCheckout);
+router.post('/session/:id/stripe', authenticate, apiKeyAuth, initiateStripeCheckout);
+router.post('/session/:id/crypto', authenticate, apiKeyAuth, initiateCryptoCheckout);
+router.post('/session/:id/escrow', authenticate, apiKeyAuth, initiateEscrowCheckout);
 
 // Deterministic ops/checkout receipt for buyer and seller views
 router.get('/session/:id/receipt', getCheckoutReceipt);

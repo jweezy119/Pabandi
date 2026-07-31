@@ -412,6 +412,10 @@ export const initiateEscrowCheckout = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { buyerEmail, sellerEmail } = req.body;
 
+    if (!process.env.ESCROW_API_EMAIL || !process.env.ESCROW_API_KEY) {
+      return fail(res, 'Escrow.com checkout is unavailable right now.', 503);
+    }
+
     const session = await prisma.checkoutSession.findUnique({
       where: { id },
       include: { business: true },
@@ -529,6 +533,8 @@ export const createDemoCheckoutSession = async (_req: Request, res: Response) =>
     const demoBusinessId = 'cms28eons000k2358v5n5y9o9';
     const amount = 5000;
     const currency = 'USD';
+    const escrowConfigured = Boolean(process.env.ESCROW_API_EMAIL && process.env.ESCROW_API_KEY);
+    const gateway = escrowConfigured ? 'escrow' : 'stripe';
 
     const session = await prisma.checkoutSession.create({
       data: {
@@ -540,9 +546,9 @@ export const createDemoCheckoutSession = async (_req: Request, res: Response) =>
         cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/demo`,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         metadata: {
-          gateway: 'escrow',
-          rails: ['escrow'],
           source: 'demo',
+          gateway,
+          ...(gateway === 'escrow' ? { rails: ['escrow'] } : {}),
         },
       },
     });
@@ -550,7 +556,7 @@ export const createDemoCheckoutSession = async (_req: Request, res: Response) =>
     return ok(res, {
       sessionId: session.id,
       checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}`,
-      gateway: 'escrow',
+      gateway,
       currency,
       amount,
     }, 201);
