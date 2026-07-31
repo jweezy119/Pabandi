@@ -7,7 +7,7 @@ const vcService = new VCService();
 export const getDidDocument = async (req: Request, res: Response) => {
   try {
     const keys = await prisma.issuerKey.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { rotatedAt: 'desc' },
       take: 5 // Keep recent rotated keys alive in DID doc for validation
     });
 

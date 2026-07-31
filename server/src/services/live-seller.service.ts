@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { LiveSellerPlatform } from '@prisma/client';
 import { openwaService } from './whatsapp.service';
+import { ebayService } from './ebay.service';
 
 export type StreamScheduleItem = {
   id?: string;
@@ -247,6 +248,60 @@ export class LiveSellerService {
    */
   async shareCatalogOnWhatsApp(businessId: string, chatId: string, body?: string) {
     return openwaService.sendCatalog(chatId, body);
+  }
+
+  // ==========================================
+  // eBay Specific Integration
+  // ==========================================
+  
+  async importEbayListings(businessId: string) {
+    const integration = await this.prisma.liveSellerIntegration.findUnique({
+      where: { businessId_platform: { businessId, platform: 'EBAY_LIVE' } }
+    });
+
+    if (!integration || !integration.isActive || !integration.accessToken) {
+      throw new Error('eBay integration not connected or missing token.');
+    }
+
+    const ebayListings = await ebayService.fetchActiveListings(integration.accessToken);
+    
+    // Map eBay format to Pabandi ShowItem format
+    const newItems: ShowItem[] = ebayListings.map(item => ({
+      id: item.sku,
+      name: item.product.title,
+      description: item.product.description,
+      price: parseFloat(item.price.value),
+      currency: item.price.currency,
+      inventory: item.availability.shipToLocationAvailability.quantity,
+      images: item.product.imageUrls,
+      buyItNow: true
+    }));
+
+    const currentShow = await this.getShowState(businessId, 'EBAY_LIVE');
+    const mergedItems = [...currentShow.items, ...newItems];
+
+    return this.upsertShowState(businessId, 'EBAY_LIVE', { items: mergedItems });
+  }
+  
+  async dropEbayItemToWhatsApp(businessId: string, chatId: string, itemId: string) {
+    const show = await this.getShowState(businessId, 'EBAY_LIVE');
+    const item = show.items.find(i => i.id === itemId);
+    
+    if (!item) {
+      throw new Error('eBay item not found in current show state');
+    }
+    
+    // Construct a beautiful WhatsApp Drop Message
+    const message = `🔥 *LIVE DROP: eBay Item* 🔥\n\n` +
+      `📦 *${item.name}*\n` +
+      `💰 Price: ${item.currency} ${item.price}\n` +
+      `✨ ${item.description || 'Limited stock available!'}\n\n` +
+      `👉 *Buy Now on eBay:* https://www.ebay.com/itm/${item.id}`;
+      
+    // Send via OpenWA or AI Service
+    // For MVP we just send text. If we had the actual openwa image sender we could attach item.images[0]
+    await openwaService.sendProduct(chatId, item.id, message);
+    return { success: true, message: 'Broadcasted to WhatsApp' };
   }
 }
 
