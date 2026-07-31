@@ -523,3 +523,39 @@ export const getCheckoutReceipt = async (req: Request, res: Response) => {
     return fail(res, 'Failed to fetch receipt', 500);
   }
 };
+
+export const createDemoCheckoutSession = async (_req: Request, res: Response) => {
+  try {
+    const demoBusinessId = 'cms28eons000k2358v5n5y9o9';
+    const amount = 5000;
+    const currency = 'USD';
+
+    const session = await prisma.checkoutSession.create({
+      data: {
+        businessId: demoBusinessId,
+        amount,
+        currency,
+        source: 'UNIVERSAL',
+        successUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/demo`,
+        cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/demo`,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        metadata: {
+          gateway: 'escrow',
+          rails: ['escrow'],
+          source: 'demo',
+        },
+      },
+    });
+
+    return ok(res, {
+      sessionId: session.id,
+      checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout/${session.id}`,
+      gateway: 'escrow',
+      currency,
+      amount,
+    }, 201);
+  } catch (error: any) {
+    logger.error('Error creating demo checkout session', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};

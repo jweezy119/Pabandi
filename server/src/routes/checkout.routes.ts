@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, getCheckoutReceipt } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, getCheckoutReceipt, createDemoCheckoutSession } from '../controllers/checkout.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
@@ -33,5 +33,8 @@ router.post('/session/:id/escrow', initiateEscrowCheckout);
 
 // Deterministic ops/checkout receipt for buyer and seller views
 router.get('/session/:id/receipt', getCheckoutReceipt);
+
+// Public demo checkout session for CoCreate walkthroughs
+router.post('/session/demo', createDemoCheckoutSession);
 
 export default router;
