@@ -35,6 +35,9 @@ export class DisputeService {
       }
     });
 
+    // Auto-assign eligible jurors (trust score > 90, not parties)
+    await this.assignJurors(dispute.id, [reportedById, userId]);
+
     return dispute;
   }
 
@@ -99,6 +102,43 @@ export class DisputeService {
     } else if (votesForUser >= 3) {
       await this.resolveDispute(dispute, DisputeOutcome.DISMISSED);
     }
+  }
+
+  public async assignJurors(disputeId: string, excludeIds: string[] = []) {
+    const eligibleJurors = await prisma.user.findMany({
+      where: {
+        trustScore: { gte: 90 },
+        id: { notIn: excludeIds },
+      },
+      take: 5,
+      orderBy: { trustScore: 'desc' },
+    });
+
+    const existing = await prisma.juryVote.findMany({
+      where: { disputeId },
+      select: { jurorId: true },
+    });
+
+    const assignedJurorIds = eligibleJurors.map(j => j.id);
+    const alreadyAssigned = new Set(existing.map(v => v.jurorId));
+
+    const toAssign = assignedJurorIds.filter(id => !alreadyAssigned.has(id));
+    const assignments = toAssign.map(jurorId =>
+      prisma.juryVote.create({
+        data: {
+          disputeId,
+          jurorId,
+          voteForId: '',
+          reason: 'Auto-assigned juror awaiting vote',
+        },
+      })
+    );
+
+    if (assignments.length > 0) {
+      await prisma.$transaction(assignments);
+    }
+
+    return assignedJurorIds;
   }
 
   private async resolveDispute(dispute: any, outcome: DisputeOutcome) {
