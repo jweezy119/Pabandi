@@ -10,6 +10,7 @@ import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
+import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
 import BookingPage from './pages/BookingPage';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
@@ -117,6 +118,7 @@ function App() {
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
             <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
+            <Route path="demo-checkout" element={<DemoCheckoutPage />} />
             {/* Business partner landing page — public */}
             <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
