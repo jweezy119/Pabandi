@@ -233,6 +233,25 @@ export class TrustScoreService {
     });
 
     logger.info(`[TrustScoreService] User ${userId} score updated from ${previousScore} to ${newScore}`);
+
+    // 6. Auto-Issuance Triggers for Open Badges v3
+    try {
+      const { VCService } = require('./vc.service');
+      const vcSvc = new VCService();
+
+      // Only issue if crossing the threshold upwards
+      if (newScore >= 80 && previousScore < 80) {
+        await vcSvc.issueTrustCredential(userId, 'TRUST_SCORE');
+        logger.info(`[TrustScoreService] Auto-issued TRUST_SCORE VC to ${userId}`);
+      }
+      
+      if (newScore >= 95 && previousScore < 95) {
+        await vcSvc.issueTrustCredential(userId, 'COMMERCE_ELITE');
+        logger.info(`[TrustScoreService] Auto-issued COMMERCE_ELITE VC to ${userId}`);
+      }
+    } catch (err: any) {
+      logger.error(`[TrustScoreService] VC Auto-issue failed: ${err.message}`);
+    }
   }
 
   /**

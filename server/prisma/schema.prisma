@@ -71,6 +71,7 @@ model User {
   socialGraphSignals     SocialGraphSignal[]
   web3Stakes             Web3StakeRecord[]
   AccountManagerProfile  AccountManagerProfile?
+  verifiableCredentials  VerifiableCredential[]
 
   @@index([email])
   @@index([phone])
@@ -1267,4 +1268,42 @@ model PmsSyncTelemetry {
   errorCount  Int       @default(0)
 
   property ConnectedHospitalityProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+enum CredentialType {
+  TRUST_SCORE
+  COMMERCE_ELITE
+  HOSPITALITY_ELITE
+  FREELANCE_ELITE
+  PASSPORT_SUMMARY
+  ESCROW_COMPLETED
+  DISPUTE_JUROR
+}
+
+model VerifiableCredential {
+  id              String           @id @default(cuid())
+  userId          String
+  credentialType  CredentialType
+  jwtProof        String           // signed JWT
+  statusListIndex Int              // revocation bit position
+  isRevoked       Boolean          @default(false)
+  issuedAt        DateTime         @default(now())
+  expiresAt       DateTime
+  context         String[]         @default(["https://www.w3.org/2018/credentials/v1"])
+  subject         Json             // { id, trustScore, tier, ... }
+  metadata        Json?
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, credentialType])
+  @@index([isRevoked])
+}
+
+model IssuerKey {
+  id            String   @id @default(cuid())
+  kid           String   @unique  // key ID for DID
+  publicKeyJwk  Json
+  privateKeyPem String   // encrypted at rest
+  algorithm     String   @default("ES256")
+  rotatedAt     DateTime @default(now())
+  isActive      Boolean  @default(true)
 }

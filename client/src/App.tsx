@@ -26,6 +26,7 @@ import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
+import { WalletPage } from './pages/WalletPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
@@ -195,6 +196,10 @@ function App() {
             <Route
               path="profile"
               element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/wallet"
+              element={isAuthenticated ? <WalletPage /> : <Navigate to="/login" />}
             />
             <Route
               path="passport"
