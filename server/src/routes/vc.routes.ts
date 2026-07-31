@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { issueCredential, listCredentials, revokeCredential, verifyCredential, getStatusList } from '../controllers/vc.controller';
+import { issueCredential, listCredentials, revokeCredential, verifyCredential, getStatusList, createPresentation } from '../controllers/vc.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -12,6 +12,7 @@ router.get('/status-list/:index', getStatusList);
 router.use(authenticate);
 
 router.post('/issue', issueCredential);
+router.post('/presentation', createPresentation);
 router.get('/', listCredentials);
 router.post('/revoke/:id', revokeCredential);
 

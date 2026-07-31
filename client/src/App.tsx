@@ -27,6 +27,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import { WalletPage } from './pages/WalletPage';
+import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
@@ -200,6 +201,10 @@ function App() {
             <Route
               path="/wallet"
               element={isAuthenticated ? <WalletPage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/verifier"
+              element={isAuthenticated ? <VerifierSandboxPage /> : <Navigate to="/login" />}
             />
             <Route
               path="passport"
