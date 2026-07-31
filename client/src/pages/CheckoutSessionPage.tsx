@@ -23,6 +23,7 @@ interface CheckoutSession {
   status: string;
   gateway?: string;
   providerUrl?: string;
+  successUrl?: string;
   escrowTerms?: {
     depositPercentage?: number;
     description?: string;
@@ -216,9 +217,26 @@ export const CheckoutSessionPage = () => {
     window.location.href = session.providerUrl;
   };
 
-  const handleEscrowPayment = () => {
-    if (!session?.providerUrl) return;
-    window.location.href = session.providerUrl;
+  const handleEscrowPayment = async () => {
+    if (!session) return;
+    try {
+      setPaying(true);
+      if (!session.providerUrl) {
+        const response = await api.post(`/checkout/session/${session.id}/escrow`, {
+          buyerEmail: session.successUrl || 'buyer@pabandi.com',
+          sellerEmail: 'seller@pabandi.com',
+        });
+        if (response.data?.success && response.data?.data?.url) {
+          window.location.href = response.data.data.url;
+          return;
+        }
+        throw new Error(response.data?.error || 'Failed to start Escrow.com checkout');
+      }
+      window.location.href = session.providerUrl;
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.message || 'Failed to initiate Escrow.com payment');
+      setPaying(false);
+    }
   };
 
   const shareOnWhatsApp = () => {
