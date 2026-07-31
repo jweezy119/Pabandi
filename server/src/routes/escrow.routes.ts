@@ -90,4 +90,57 @@ router.post('/sign-init-tx', async (req: Request, res: Response, _next: NextFunc
   }
 });
 
+/**
+ * POST /api/v1/escrow/generate-fee-signature
+ * Generates an ECDSA signature for the dynamic escrow fee (EVM).
+ */
+router.post('/generate-fee-signature', async (req: Request, res: Response, _next: NextFunction) => {
+  try {
+    const { reservationId } = req.body;
+    
+    if (!reservationId) {
+      res.status(400).json({ success: false, error: 'reservationId is required' });
+      return;
+    }
+
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { business: true }
+    });
+
+    if (!reservation) {
+      res.status(404).json({ success: false, error: 'Reservation not found' });
+      return;
+    }
+
+    // Business must have a wallet connected to claim
+    const businessWallet = await prisma.wallet.findUnique({
+      where: { userId: reservation.business.ownerId! }
+    });
+
+    if (!businessWallet?.address) {
+      res.status(400).json({ success: false, error: 'Business has no Web3 wallet connected' });
+      return;
+    }
+
+    const { cryptoService } = await import('../services/cryptoService');
+    const { feeBps, signature } = await cryptoService.generateDynamicFeeSignature(
+      reservationId,
+      businessWallet.address,
+      reservation.business.trustScore
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        feeBps,
+        signature
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to generate fee signature:', error);
+    res.status(500).json({ success: false, error: 'Failed to generate fee signature' });
+  }
+});
+
 export default router;

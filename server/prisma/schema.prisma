@@ -20,6 +20,7 @@ model User {
   isPhoneVerified        Boolean                 @default(false)
   reliabilityScore       Float                   @default(750)
   trustScore             Float                   @default(50.0)
+  minimumSellerTrustScore Int                    @default(0)
   verificationTier       String                  @default("BASIC")
   commerceScore          Float                   @default(50.0)
   hospitalityScore       Float                   @default(50.0)
