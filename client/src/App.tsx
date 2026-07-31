@@ -29,6 +29,8 @@ import ProfilePage from './pages/ProfilePage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import TrustPage from './pages/TrustPage';
+import { TrustPulsePage } from './pages/TrustPulsePage';
+import { CommunityJuryPage } from './pages/CommunityJuryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import TapPayPage from './pages/TapPayPage';
@@ -140,6 +142,8 @@ function App() {
             <Route path="developer" element={<PublicSEO seo={{ title: 'Pabandi Developer Portal | Local Business API', description: 'Explore the Pabandi developer API for local business data, escrow hooks, live-selling integrations, and trust-score endpoints.' }}><DeveloperPortalPage /></PublicSEO>} />
             {/* Social & Professional Trust Layer — public */}
             <Route path="trust" element={<PublicSEO seo={{ title: 'Pabandi Trust & Passport', description: 'Build your Pabandi Passport with trust scores, social verification, and portable credibility across the informal economy.' }}><TrustPage /></PublicSEO>} />
+            <Route path="trust/pulse" element={<TrustPulsePage />} />
+            <Route path="trust/jury" element={<CommunityJuryPage />} />
             {/* Privacy Policy */}
             <Route path="privacy" element={<PublicSEO seo={{ title: 'Privacy Policy', description: 'Pabandi privacy policy: data usage, escrow records, review visibility, and seller/customer rights.' }}><PrivacyPolicyPage /></PublicSEO>} />
             {/* Terms of Service */}
