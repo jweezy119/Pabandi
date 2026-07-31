@@ -55,6 +55,9 @@ import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
 import webhookStripeRoutes from './routes/webhook.stripe.routes';
 import webhookEscrowRoutes from './routes/webhook.escrow.routes';
+import didRoutes from './routes/did.routes';
+import vcRoutes from './routes/vc.routes';
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -193,6 +196,11 @@ app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
+
+// W3C Verifiable Credentials (OBv3)
+app.use('/.well-known', didRoutes);
+app.use(`/api/${API_VERSION}/passport/vc`, vcRoutes);
+
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
 app.use('/', tapRoutes);
