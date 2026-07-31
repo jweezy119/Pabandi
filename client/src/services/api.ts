@@ -212,6 +212,10 @@ export const passportService = {
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}/reviews`),
   getMyPassport: () => apiClient.get('/passport/me'),
   getVCs: () => apiClient.get('/passport/vc').then(res => res.data),
+  createPresentation: (vcId: string, disclosedFields: string[]) => 
+    apiClient.post('/passport/vc/presentation', { vcId, disclosedFields }).then(res => res.data),
+  verifyCredential: (jwtProof: string) =>
+    apiClient.post('/passport/vc/verify', { jwtProof }).then(res => res.data),
   computeScore: (userId: string, category: string = 'general') =>
     apiClient.post('/passport/score', { userId, category }),
   vouchForUser: (sourceUserId: string, targetUserId: string) =>

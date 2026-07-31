@@ -249,8 +249,27 @@ export class TrustScoreService {
         await vcSvc.issueTrustCredential(userId, 'COMMERCE_ELITE');
         logger.info(`[TrustScoreService] Auto-issued COMMERCE_ELITE VC to ${userId}`);
       }
+
+      // 7. Auto-Revoke Triggers (Zero-Trust Model)
+      if (newScore < 80 && previousScore >= 80) {
+        // Find and revoke TRUST_SCORE VC
+        await prisma.verifiableCredential.updateMany({
+          where: { userId, credentialType: 'TRUST_SCORE', isRevoked: false },
+          data: { isRevoked: true }
+        });
+        logger.warn(`[TrustScoreService] Auto-revoked TRUST_SCORE VC for ${userId} due to score drop`);
+      }
+
+      if (newScore < 95 && previousScore >= 95) {
+        // Find and revoke COMMERCE_ELITE VC
+        await prisma.verifiableCredential.updateMany({
+          where: { userId, credentialType: 'COMMERCE_ELITE', isRevoked: false },
+          data: { isRevoked: true }
+        });
+        logger.warn(`[TrustScoreService] Auto-revoked COMMERCE_ELITE VC for ${userId} due to score drop`);
+      }
     } catch (err: any) {
-      logger.error(`[TrustScoreService] VC Auto-issue failed: ${err.message}`);
+      logger.error(`[TrustScoreService] VC Auto-issue/revoke failed: ${err.message}`);
     }
   }
 

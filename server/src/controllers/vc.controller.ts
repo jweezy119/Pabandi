@@ -6,29 +6,31 @@ const vcService = new VCService();
 
 export const getDidDocument = async (req: Request, res: Response) => {
   try {
-    const activeKey = await prisma.issuerKey.findFirst({
-      where: { isActive: true },
-      orderBy: { rotatedAt: 'desc' }
+    const keys = await prisma.issuerKey.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5 // Keep recent rotated keys alive in DID doc for validation
     });
 
-    if (!activeKey) {
-      return res.status(404).json({ error: 'Issuer key not found' });
+    if (keys.length === 0) {
+      return res.status(404).json({ error: 'Issuer keys not found' });
     }
 
     // Pabandi's Decentralized Identifier
     const did = 'did:web:pabandi.local';
+    
+    const verificationMethods = keys.map(k => ({
+      id: `${did}#${k.kid}`,
+      type: 'JsonWebKey',
+      controller: did,
+      publicKeyJwk: k.publicKeyJwk as any
+    }));
 
     const didDocument = {
       '@context': 'https://www.w3.org/ns/did/v1',
       id: did,
-      verificationMethod: [{
-        id: `${did}#${activeKey.kid}`,
-        type: 'JsonWebKey',
-        controller: did,
-        publicKeyJwk: activeKey.publicKeyJwk
-      }],
-      authentication: [`${did}#${activeKey.kid}`],
-      assertionMethod: [`${did}#${activeKey.kid}`]
+      verificationMethod: verificationMethods,
+      authentication: verificationMethods.map(vm => vm.id),
+      assertionMethod: verificationMethods.map(vm => vm.id)
     };
 
     res.json(didDocument);
@@ -148,5 +150,22 @@ export const getStatusList = async (req: Request, res: Response) => {
     res.json(statusList);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const createPresentation = async (req: Request, res: Response) => {
+  try {
+    const { vcId, disclosedFields } = req.body;
+    // @ts-ignore - req.user is populated by auth middleware
+    const userId = req.user?.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { VCService } = require('../services/vc.service');
+    const vcSvc = new VCService();
+    const result = await vcSvc.createSelectiveDisclosurePresentation(vcId, userId, disclosedFields || []);
+
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };
