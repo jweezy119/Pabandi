@@ -10,6 +10,7 @@ import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
+import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import BookingPage from './pages/BookingPage';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
@@ -115,6 +116,7 @@ function App() {
             <Route path="business/:id" element={<BusinessProfilePage />} />
             <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
             <Route path="checkout-success" element={<CheckoutSuccessPage />} />
+            <Route path="checkout-cancel" element={<CheckoutCancelPage />} />
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="b/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/:id/book" element={<BookingPage />} />
