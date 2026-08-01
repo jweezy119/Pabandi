@@ -35,6 +35,7 @@ import webhookRoutes from './routes/webhook.routes';
 import cryptoRoutes from './routes/crypto.routes';
 import externalRoutes from './routes/external.routes';
 import apiClientsRoutes from './routes/apiClients.routes';
+import apiKeyRoutes from './routes/apiKey.routes';
 import socialRoutes from './routes/social.routes';
 import checkoutRoutes from './routes/checkout.routes';
 import walletRoutes from './routes/wallet.routes';
@@ -162,6 +163,7 @@ app.use(`/api/${API_VERSION}/crypto`, cryptoRoutes);
 app.use(`/api/${API_VERSION}/whatsapp`, whatsappRoutes);
 app.use(`/api/${API_VERSION}/whatsapp/advanced`, whatsappAdvancedRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
+app.use(`/api/${API_VERSION}/api-keys`, apiKeyRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
@@ -191,7 +193,6 @@ app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
 app.use(`/api/${API_VERSION}/airdrop`, airdropRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
-app.use('/api/waitlist', waitlistRoutes); // Added both for compatibility
 app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
@@ -207,7 +208,6 @@ app.use(`/api/${API_VERSION}/passport/vc`, vcRoutes);
 
 import tapRoutes from './routes/tap.routes';
 app.use(`/api/${API_VERSION}/tap`, tapRoutes);
-app.use('/', tapRoutes);
 
 app.use(`/api/${API_VERSION}/hospitality`, hospitalityRoutes);
 app.use('/api/hospitality', hospitalityRoutes); // Short alias for PMS webhooks
@@ -249,7 +249,6 @@ app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
-app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
