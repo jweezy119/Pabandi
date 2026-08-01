@@ -25,6 +25,16 @@ router.get('/plugins', (_req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// GET /api/v1/openwa/plugins/available - List all available plugins from the catalog
+router.get('/plugins/available', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const catalog = getPluginCatalog();
+    res.json({ success: true, data: catalog.plugins });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/v1/openwa/plugins/:id - get single plugin
 router.get('/plugins/:id', (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -44,16 +54,6 @@ router.patch('/plugins/:id', (req: Request, res: Response, next: NextFunction) =
   try {
     const updated = updateAdminPlugin(req.params.id, req.body);
     res.json({ success: true, data: updated });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET /api/v1/openwa/plugins/available - List all available plugins from the catalog
-router.get('/plugins/available', (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    const catalog = getPluginCatalog();
-    res.json({ success: true, data: catalog.plugins });
   } catch (error) {
     next(error);
   }
