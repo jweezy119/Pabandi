@@ -190,7 +190,7 @@ export const safepayService = {
   /**
    * Verify Webhook Signature to safely update Reservation Status
    */
-  verifyWebhook(signature: string, payload: any): boolean {
+  verifyWebhook(signature: string, rawBody: Buffer | string): boolean {
     try {
       const crypto = require('crypto');
       const secret = process.env.SAFEPAY_WEBHOOK_SECRET;
@@ -200,8 +200,9 @@ export const safepayService = {
         return process.env.NODE_ENV !== 'production'; // Allow in dev if missing
       }
 
+      const body = Buffer.isBuffer(rawBody) ? rawBody.toString('utf-8') : String(rawBody);
       const hmac = crypto.createHmac('sha256', secret);
-      hmac.update(JSON.stringify(payload));
+      hmac.update(body);
       const expectedSignature = hmac.digest('hex');
 
       return signature === expectedSignature;

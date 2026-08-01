@@ -139,6 +139,8 @@ export default function BusinessSettingsPage() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [raastId, setRaastId] = useState('');
   const [withdrawStatus, setWithdrawStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [lastPayoutReference, setLastPayoutReference] = useState<string | null>(null);
+  const [lastPayoutStatus, setLastPayoutStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === 'api-keys' && bizRes?.id) {
@@ -185,14 +187,20 @@ export default function BusinessSettingsPage() {
     e.preventDefault();
     if (!bizRes?.id || !withdrawAmount || !raastId) return;
     setWithdrawStatus('processing');
+    setLastPayoutReference(null);
+    setLastPayoutStatus(null);
     try {
       const res = await apiClient.post(`/business/${bizRes.id}/payouts/raast`, {
         amount: withdrawAmount,
         targetRaastId: raastId,
-        currency: 'USDC'
+        currency: 'USDC',
       });
       if (res.data.success) {
         setWithdrawStatus('success');
+        const payoutReference =
+          res.data.data?.intent?.metadata?.payoutReference || null;
+        setLastPayoutReference(payoutReference);
+        setLastPayoutStatus(res.data.data?.intent?.status || 'PENDING_LP');
         toast.success(`Withdrawal of ${withdrawAmount} initiated to Raast ID: ${raastId}`);
         setWithdrawAmount('');
         setTimeout(() => setWithdrawStatus('idle'), 3000);
@@ -504,6 +512,12 @@ export default function BusinessSettingsPage() {
                   <Button type="submit" disabled={withdrawStatus === 'processing'} variant="default" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white">
                     {withdrawStatus === 'processing' ? 'Processing...' : withdrawStatus === 'success' ? 'Settlement Initiated!' : 'Withdraw to Raast'}
                   </Button>
+                  {lastPayoutReference && (
+                    <p className="mt-2 text-xs text-white/70">
+                      Payout reference: <span className="font-mono text-white">{lastPayoutReference}</span>
+                      {lastPayoutStatus ? <span> · Status: {lastPayoutStatus}</span> : null}
+                    </p>
+                  )}
                 </form>
               </div>
 

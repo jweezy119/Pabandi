@@ -18,7 +18,8 @@ import {
   generateApiKey,
   getApiKeys,
   connectStripe,
-  requestPayout
+  requestPayout,
+  getPayoutStatus
 } from '../controllers/business.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 import { rateLimiter } from '../middleware/rateLimiter';
@@ -429,6 +430,7 @@ router.post('/:id/generate-link', generateBookingLink);
 router.post('/:id/channex-connect', authorize('BUSINESS_OWNER', 'ADMIN'), connectChannex);
 router.post('/:id/stripe-connect', authorize('BUSINESS_OWNER', 'ADMIN'), connectStripe);
 router.post('/:id/payouts/raast', authorize('BUSINESS_OWNER', 'ADMIN'), requestPayout);
+router.get('/:id/payouts/raast', authorize('BUSINESS_OWNER', 'ADMIN'), getPayoutStatus);
 
 // Business Services Management
 router.post('/:id/services', authorize('BUSINESS_OWNER', 'ADMIN'), createBusinessService);

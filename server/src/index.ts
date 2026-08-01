@@ -197,13 +197,11 @@ app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 app.use('/.well-known', didRoutes);
-app.use('/api/v1/passport/vc', vcRoutes);
 app.use('/api/v1/live-seller/ebay', ebayRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 
 // W3C Verifiable Credentials (OBv3)
-app.use('/.well-known', didRoutes);
 app.use(`/api/${API_VERSION}/passport/vc`, vcRoutes);
 
 import tapRoutes from './routes/tap.routes';

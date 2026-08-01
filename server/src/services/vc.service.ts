@@ -66,4 +66,31 @@ export class VCService {
 
     return vcRecord;
   }
+
+  async createSelectiveDisclosurePresentation(vcId: string, userId: string, disclosedFields: string[]) {
+    const vcRecord = await prisma.verifiableCredential.findUnique({
+      where: { id: vcId },
+    });
+
+    if (!vcRecord || vcRecord.userId !== userId) {
+      throw new Error('Verifiable credential not found or unauthorized');
+    }
+
+    const subject = (vcRecord.subject as Record<string, unknown>) || {};
+    const sanitizedSubject = disclosedFields.length
+      ? Object.fromEntries(
+          Object.entries(subject).filter(([key]) => disclosedFields.includes(key)),
+        )
+      : subject;
+
+    return {
+      vcId: vcRecord.id,
+      credentialType: vcRecord.credentialType,
+      subject: sanitizedSubject,
+      jwtProof: vcRecord.jwtProof,
+      issuanceDate: vcRecord.issuedAt,
+      expirationDate: vcRecord.expiresAt,
+      issuer: 'did:web:pabandi.local',
+    };
+  }
 }

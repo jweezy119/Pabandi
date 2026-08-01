@@ -43,7 +43,12 @@ export const createPayment = async (
     let paymentUrl = `/payment/process/${payment.id}`;
     if (paymentMethod === 'safepay') {
       try {
-        paymentUrl = await safepayService.createCheckoutUrl(amount, reservationId || payment.id);
+        const checkoutReference = `pay_${payment.id}`;
+        paymentUrl = await safepayService.createCheckoutUrl(amount, checkoutReference);
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: { gatewayResponse: { ...(payment.gatewayResponse as any || {}), safepayReference: checkoutReference } },
+        });
       } catch (err) {
         logger.error(`Safepay initialization failed: ${err}`);
       }
@@ -156,41 +161,76 @@ export const processPaymentWebhook = async (
 ) => {
   try {
     const signature = req.headers['x-sfpy-signature'] as string;
-    const isValid = safepayService.verifyWebhook(signature, req.body);
+    const rawBody = (req as any).rawBody || JSON.stringify(req.body || {});
+    const isValid = safepayService.verifyWebhook(signature, rawBody);
 
-    if (!isValid && process.env.NODE_ENV === 'production') {
+    if (!isValid) {
       logger.error('Invalid Safepay webhook signature');
-      throw new CustomError('Invalid signature', 401);
+      return res.status(401).json({ success: false, message: 'Invalid signature' });
     }
 
-    const { tracker, reference, state } = req.body;
-    
-    // Safepay states: 'completed', 'failed', 'cancelled'
-    const status: any = state === 'completed' ? 'COMPLETED' : 
-                   state === 'failed' ? 'FAILED' : 'FAILED'; // Use FAILED for cancelled payments too if not in enum
+    const payload = req.body || {};
+    const { tracker, reference, state } = payload;
+    const mappedStatus = mapSafePayState(state);
 
-    const payment = await prisma.payment.update({
-      where: { id: reference },
-      data: {
-        status: status,
-        transactionId: tracker,
-        gatewayResponse: req.body,
-      },
+    if (!reference) {
+      return res.status(400).json({ success: false, message: 'Missing reference' });
+    }
+
+    const payment = await prisma.payment.findUnique({
+      where: { id: String(reference) },
     });
 
-    if (status === 'COMPLETED') {
-      const fee = +(payment.amount * 0.03).toFixed(2);
-      await prisma.payment.update({ where: { id: payment.id }, data: { platformFeeAmount: fee, platformFeeStatus: 'CAPTURED' } });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
     }
 
-    if (payment.reservationId && status === 'COMPLETED') {
-      await prisma.reservation.update({ where: { id: payment.reservationId }, data: { depositPaid: true } });
+    const terminalStatuses = ['COMPLETED', 'FAILED', 'CANCELLED'] as const;
+    const isTerminal = terminalStatuses.includes(payment.status as any);
+
+    const updates: any = {
+      gatewayResponse: {
+        ...((payment.gatewayResponse as Record<string, unknown>) || {}),
+        safepay: payload,
+      },
+    };
+
+    if (!isTerminal) {
+      updates.status = mappedStatus;
+      if (tracker) updates.transactionId = String(tracker);
     }
 
-    logger.info(`Payment webhook processed: ${payment.id} - ${status}`);
+    const updated = await prisma.payment.update({
+      where: { id: payment.id },
+      data: updates,
+    });
 
-    res.json({ success: true });
+    if (mappedStatus === 'COMPLETED' && payment.status !== 'COMPLETED') {
+      const fee = +(updated.amount * 0.03).toFixed(2);
+      await prisma.payment.update({
+        where: { id: updated.id },
+        data: { platformFeeAmount: fee, platformFeeStatus: 'CAPTURED' },
+      });
+
+      if (updated.reservationId) {
+        await prisma.reservation.update({
+          where: { id: updated.reservationId },
+          data: { depositPaid: true },
+        });
+      }
+    }
+
+    logger.info(`Payment webhook processed: ${updated.id} - ${updated.status}`);
+
+    res.json({ success: true, status: updated.status });
   } catch (error) {
     next(error);
   }
 };
+
+function mapSafePayState(state: unknown): string {
+  const normalized = String(state || '').toLowerCase();
+  if (normalized === 'completed') return 'COMPLETED';
+  if (normalized === 'cancelled' || normalized === 'canceled') return 'CANCELLED';
+  return 'FAILED';
+}

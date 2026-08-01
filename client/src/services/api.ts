@@ -92,7 +92,7 @@ export const businessService = {
   getBusinessCustomers: (id: string) => apiClient.get(`/businesses/${id}/customers`),
   /** Get the logged-in owner's business */
   getMyBusiness: () => apiClient.get('/businesses/me'),
-  /** Get public businesses for the homepage */
+  /** Public businesses for the homepage */
   getPublicBusinesses: (params?: any) => apiClient.get('/businesses', { params }),
   /** Claim an unclaimed business */
   claimBusiness: (id: string) => apiClient.post(`/businesses/${id}/claim`),
@@ -108,6 +108,8 @@ export const businessService = {
 
   connectChannex: (businessId: string) =>
     apiClient.post(`/businesses/${businessId}/channex-connect`),
+  getRaastPayoutStatus: (businessId: string, payoutReference: string) =>
+    apiClient.get(`/businesses/${businessId}/payouts/raast`, { params: { payoutReference } }),
 };
 
 export const reservationService = {
@@ -212,7 +214,7 @@ export const passportService = {
     apiClient.get(`/passport/public/${encodeURIComponent(sellerId)}/reviews`),
   getMyPassport: () => apiClient.get('/passport/me'),
   getVCs: () => apiClient.get('/passport/vc').then(res => res.data),
-  createPresentation: (vcId: string, disclosedFields: string[]) => 
+  createPresentation: (vcId: string, disclosedFields: string[]) =>
     apiClient.post('/passport/vc/presentation', { vcId, disclosedFields }).then(res => res.data),
   verifyCredential: (jwtProof: string) =>
     apiClient.post('/passport/vc/verify', { jwtProof }).then(res => res.data),

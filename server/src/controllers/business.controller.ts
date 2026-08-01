@@ -1237,6 +1237,45 @@ export const connectStripe = async (req: AuthRequest, res: Response, next: NextF
   }
 };
 
+export const getPayoutStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { payoutReference } = req.query;
+
+    if (!payoutReference || typeof payoutReference !== 'string') {
+      return fail(res, 'payoutReference query parameter is required', 400);
+    }
+
+    const intent = await prisma.offrampIntent.findFirst({
+      where: {
+        businessId: id,
+        metadata: {
+          path: ['payoutReference'],
+          equals: payoutReference,
+        },
+      },
+      orderBy: { requestedAt: 'desc' },
+    });
+
+    if (!intent) {
+      return fail(res, 'Payout intent not found', 404);
+    }
+
+    const meta = (intent.metadata as Record<string, unknown>) || {};
+    return ok(res, {
+      intent,
+      payout: {
+        reference: meta.payoutReference || payoutReference,
+        targetRaastId: meta.targetRaastId || null,
+        currency: meta.currency || 'PKR',
+        status: intent.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const requestPayout = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
@@ -1274,10 +1313,23 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
       business.id
     );
 
+    const payoutReference = `raast_${business.id}_${Date.now()}`;
+    const updatedIntent = await prisma.offrampIntent.update({
+      where: { id: intent.id },
+      data: {
+        metadata: {
+          ...((intent.metadata as Record<string, unknown>) || {}),
+          payoutReference,
+          targetRaastId,
+          currency: currency || 'PKR',
+        },
+      },
+    });
+
     res.json({
       success: true,
       data: {
-        intent
+        intent: updatedIntent,
       },
     });
   } catch (error) {
