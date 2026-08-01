@@ -246,9 +246,13 @@ export const createEmbedCheckoutSession = async (req: Request, res: Response) =>
     let providerUrl: string | undefined;
     if (business.currency === 'PKR') {
       try {
-        const providerUrlCandidate = await safepayService.createCheckoutUrl(amount, session.id);
-        providerUrl = providerUrlCandidate;
+        const checkoutReference = `cs_${session.id}`;
+        providerUrl = await safepayService.createCheckoutUrl(amount, checkoutReference);
         gateway = 'safepay';
+        await prisma.checkoutSession.update({
+          where: { id: session.id },
+          data: { metadata: { ...(metadata || {}), gateway, providerUrl, safepayReference: checkoutReference } },
+        });
       } catch {
         providerUrl = checkoutUrl;
       }

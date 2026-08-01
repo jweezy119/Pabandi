@@ -210,5 +210,42 @@ export const safepayService = {
       logger.error('Error verifying Safepay webhook signature:', error);
       return false;
     }
+  },
+
+  async getOrderStatus(reference: string): Promise<{ found: boolean; remoteStatus?: string; transactionId?: string }> {
+    try {
+      const authResponse = await fetch(`${SAFEPAY_API_URL}/client/passport/v1/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+          client_id: SAFEPAY_API_KEY,
+          client_secret: SAFEPAY_SECRET_KEY,
+        }),
+      });
+
+      const authData = (await authResponse.json()) as any;
+      const token = authData?.data?.token;
+
+      if (!token) return { found: false };
+
+      const response = await fetch(`${SAFEPAY_API_URL}/order/v1/get`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) return { found: false, remoteStatus: `http_${response.status}` };
+
+      const data = (await response.json()) as any;
+      const status = data?.data?.status || data?.status || data?.state;
+      const tracker = data?.data?.tracker || data?.tracker || data?.transactionId;
+      return { found: true, remoteStatus: status, transactionId: tracker };
+    } catch (error) {
+      logger.error('Failed to get Safepay order status:', error);
+      return { found: false };
+    }
   }
 };

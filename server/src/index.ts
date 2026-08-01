@@ -152,6 +152,8 @@ app.use(`/api/${API_VERSION}/reservations`, reservationRoutes);
 app.use(`/api/${API_VERSION}/disputes`, disputeRoutes);
 app.use(`/api/${API_VERSION}/loans`, loanRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
+import paymentReconciliationRoutes from './routes/payment-reconciliation.routes';
+app.use(`/api/${API_VERSION}/payments`, paymentReconciliationRoutes);
 app.use(`/api/${API_VERSION}/analytics`, analyticsRoutes);
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
 app.use(`/api/${API_VERSION}/shopify-integration`, shopifyIntegrationRoutes);
