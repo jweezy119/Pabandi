@@ -10,9 +10,11 @@ import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
-import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
 import BookingPage from './pages/BookingPage';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
+import TapPayPage from './pages/TapPayPage';
+import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
+import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
 import BusinessCrmPage from './pages/BusinessCrmPage';
 import WalletDashboard from './pages/WalletDashboard';
@@ -35,8 +37,6 @@ import { TrustPulsePage } from './pages/TrustPulsePage';
 import { CommunityJuryPage } from './pages/CommunityJuryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
-import TapPayPage from './pages/TapPayPage';
-import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
@@ -121,7 +121,6 @@ function App() {
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
-            <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
             <Route path="demo-checkout" element={<DemoCheckoutPage />} />
             {/* Business partner landing page — public */}
             <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
