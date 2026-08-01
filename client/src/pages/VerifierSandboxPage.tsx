@@ -86,6 +86,11 @@ export const VerifierSandboxPage: React.FC = () => {
             <p className="mt-1 text-sm text-green-700">
               The signature is authentic, the DID is resolved, and the credential has not been revoked.
             </p>
+            {result?.status && (
+              <p className="mt-2 text-xs text-green-700">
+                Status: {result.status.valid ? 'Active' : 'Revoked'} | List Index: {result.status.statusListIndex ?? '—'} | Revoked indices: {result.status.revocationIndices.length ? result.status.revocationIndices.join(', ') : 'none'}
+              </p>
+            )}
           </div>
         )}
 

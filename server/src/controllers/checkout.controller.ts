@@ -46,8 +46,13 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     let providerUrl: string | undefined;
     if (business.currency === 'PKR') {
       try {
-        providerUrl = await safepayService.createCheckoutUrl(amount, session.id);
+        const checkoutReference = `cs_${session.id}`;
+        providerUrl = await safepayService.createCheckoutUrl(amount, checkoutReference);
         gateway = 'safepay';
+        await prisma.checkoutSession.update({
+          where: { id: session.id },
+          data: { metadata: { ...(metadata || {}), gateway, providerUrl, safepayReference: checkoutReference } },
+        });
       } catch {
         providerUrl = checkoutUrl;
       }
@@ -272,7 +277,7 @@ export const createPartnerEmbedCheckoutSession = async (req: any, res: Response)
 
     const { businessId, amount, currency, successUrl, cancelUrl, escrowTerms, metadata, source } = req.body;
 
-    if (!partnerBusinessId && !businessId) {
+    if (!partnerBusinessId || !businessId) {
       return fail(res, 'Missing businessId or partner API key business context', 400);
     }
     if (!amount || !successUrl || !cancelUrl) {
@@ -310,9 +315,13 @@ export const createPartnerEmbedCheckoutSession = async (req: any, res: Response)
     let providerUrl: string | undefined;
     if (business.currency === 'PKR') {
       try {
-        const providerUrlCandidate = await safepayService.createCheckoutUrl(amount, session.id);
-        providerUrl = providerUrlCandidate;
+        const checkoutReference = `cs_${session.id}`;
+        providerUrl = await safepayService.createCheckoutUrl(amount, checkoutReference);
         gateway = 'safepay';
+        await prisma.checkoutSession.update({
+          where: { id: session.id },
+          data: { metadata: { ...(metadata || {}), gateway, providerUrl, safepayReference: checkoutReference } },
+        });
       } catch {
         providerUrl = checkoutUrl;
       }
