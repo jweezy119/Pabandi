@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../utils/database';
 require('@shopify/shopify-api/adapters/node');
-import { shopifyApi, ApiVersion } from '@shopify/shopify-api';
+import { shopifyApi, ApiVersion, DeliveryMethod } from '@shopify/shopify-api';
+import { VCService } from '../services/vc.service';
 
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY || 'dummy_api_key',
@@ -10,6 +11,41 @@ const shopify = shopifyApi({
   hostName: process.env.SHOPIFY_HOST_NAME || 'localhost:5000',
   apiVersion: ApiVersion.January25,
   isEmbeddedApp: true,
+});
+
+shopify.webhooks.addHandlers({
+  ORDERS_CREATE: [
+    {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: '/api/v1/shopify/webhooks',
+      callback: async (topic, shop, body, webhookId) => {
+        try {
+          const payload = JSON.parse(body);
+          const email = payload.email || payload.customer?.email;
+          const phone = payload.phone || payload.customer?.phone;
+          
+          if (!email && !phone) return;
+
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                ...(email ? [{ email }] : []),
+                ...(phone ? [{ phone }] : [])
+              ]
+            }
+          });
+
+          if (user) {
+            const vcSvc = new VCService();
+            await vcSvc.issueTrustCredential(user.id, 'TRUST_SCORE');
+            console.log(`[Shopify Webhook] Async Issued VC for user ${user.id}`);
+          }
+        } catch (e) {
+          console.error('[Shopify Webhook] Error in async VC issuance:', e);
+        }
+      },
+    },
+  ],
 });
 
 export const shopifyAuth = async (req: Request, res: Response) => {
@@ -110,5 +146,34 @@ export const shopifyWebhooks = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Failed to process webhook:', error.message);
     res.status(500).send(error.message);
+  }
+};
+
+export const createVerificationSession = async (req: Request, res: Response) => {
+  try {
+    const crypto = require('crypto');
+    const nonce = crypto.randomBytes(16).toString('hex');
+    // For MVP, normally saved to Redis mapping to a session ID
+    res.json({
+      success: true,
+      nonce,
+      deepLink: `pabandi://verify?session=${nonce}`
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate session' });
+  }
+};
+
+export const verificationCallback = async (req: Request, res: Response) => {
+  try {
+    const { vpJwt, nonce } = req.body;
+    if (!vpJwt || !nonce) {
+      return res.status(400).json({ error: 'Missing presentation or nonce' });
+    }
+    
+    // In a real verifier implementation, we would decode the VP and validate the signature/nonce here.
+    res.json({ success: true, message: 'Verification successful. Session authorized.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Verification callback failed' });
   }
 };

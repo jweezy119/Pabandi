@@ -13,8 +13,8 @@
 }
 
 @layer base {
-  body {
-    @apply bg-background text-on-background font-body min-h-screen selection:bg-primary/30 selection:text-primary;
+  html, body {
+    @apply bg-background text-on-background font-body min-h-screen selection:bg-primary/30 selection:text-primary overflow-x-hidden w-full;
   }
 
   h1, h2, h3, h4, h5, h6 {

@@ -21,10 +21,12 @@ export class VCService {
     // 1 year expiry
     const exp = iat + (365 * 24 * 60 * 60);
 
+    const finalTier = user.trustScore <= 80 ? 'GUEST' : user.verificationTier;
+
     const credentialSubject = {
       id: subjectDid,
       trustScore: user.trustScore,
-      tier: user.verificationTier,
+      tier: finalTier,
       commerceScore: user.commerceScore,
       hospitalityScore: user.hospitalityScore
     };
@@ -67,7 +69,7 @@ export class VCService {
     return vcRecord;
   }
 
-  async createSelectiveDisclosurePresentation(vcId: string, userId: string, disclosedFields: string[]) {
+  async createSelectiveDisclosurePresentation(vcId: string, userId: string, disclosedFields: string[], nonce?: string) {
     const vcRecord = await prisma.verifiableCredential.findUnique({
       where: { id: vcId },
     });
@@ -91,6 +93,7 @@ export class VCService {
       issuanceDate: vcRecord.issuedAt,
       expirationDate: vcRecord.expiresAt,
       issuer: 'did:web:pabandi.local',
+      nonce: nonce || undefined,
     };
   }
 }

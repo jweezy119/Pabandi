@@ -143,7 +143,7 @@ export default function Layout() {
   const isOwnerOrAdmin = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
 
   return (
-    <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative">
+    <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative w-full overflow-x-hidden">
       {/* Deep Space & Neon Background Layer */}
       <div className="fixed inset-0 z-[-1] pointer-events-none bg-background overflow-hidden">
          <img src="/assets/bg_abstract.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen" />
