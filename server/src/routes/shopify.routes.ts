@@ -4,6 +4,8 @@ import {
   shopifyAuthCallback,
   connectShopifyStore,
   shopifyWebhooks,
+  createVerificationSession,
+  verificationCallback
 } from '../controllers/shopify.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -20,5 +22,9 @@ router.post('/connect', authenticate, connectShopifyStore);
 
 // Webhooks
 router.post('/webhooks', shopifyWebhooks);
+
+// VC Verification endpoints for Shopify Checkout App blocks
+router.post('/verify/session', createVerificationSession);
+router.post('/verify/callback', verificationCallback);
 
 export default router;

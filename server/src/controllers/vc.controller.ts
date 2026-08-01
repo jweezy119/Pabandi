@@ -127,9 +127,13 @@ export const revokeCredential = async (req: Request, res: Response) => {
 
 export const verifyCredential = async (req: Request, res: Response) => {
   try {
-    const { jwtProof } = req.body;
+    const { jwtProof, nonce, vpNonce } = req.body;
     if (!jwtProof) {
       return res.status(400).json({ error: 'jwtProof is required', valid: false });
+    }
+
+    if (nonce && vpNonce !== nonce) {
+      return res.status(400).json({ error: 'Nonce mismatch. Possible replay attack.', valid: false });
     }
 
     const decodedToken = jwt.decode(jwtProof, { complete: true });
