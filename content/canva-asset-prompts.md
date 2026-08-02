@@ -63,4 +63,34 @@ Bold dark-mode CTA slide. Giant text: "Use Pabandi Before Your Bank Manager Reti
 
 ---
 
-*End of pack.*
+## Slide 11 — $PAB Token Rewards
+**Canva Prompt:**
+Dark-mode slide with a glowing Solana-style token icon at center: "$PAB" in neon green, surrounded by floating gold coins and a shield labeled "Reliability Staked". A buyer and seller shaking hands over a phone showing "Paid ✓". Text overlay: "Be Good. Get Rewarded. No Speculation Needed." Subtext: "Stake trust. Earn rewards. Every booking counts." Bottom: "pabandi.com/token" in neon green. Pakistani truck-art border in gold. Colors: dark navy, neon green, gold.
+
+---
+
+## Slide 12 — CoCreate 2026 Badge
+**Canva Prompt:**
+Bold dark-mode slide. Center: a glowing CoCreate 2026 badge (Alibaba-style) with "Alibaba CoCreate 2026" text. Around it: floating icons of Pabandi features — escrow shield, WhatsApp chat bubble, Solana logo, Raast arrow, Tap button, W3C badge. Text: "Pabandi: Trust Infrastructure for the Informal Economy." Subtext: "Built for Pakistan. Ready for the World." Bottom: "Alibaba CoCreate 2026 — Dubai" in white. Colors: dark navy, gold, neon green, white.
+
+---
+
+## Slide 13 — Live Selling / WhatsApp Commerce
+**Canva Prompt:**
+Split-screen dark-mode slide. Left: a TikTok/Instagram live seller showcasing products on phone, notification popping "Payment Received ✓ via Pabandi". Right: WhatsApp chat thread showing "Order Confirmed", "Payment Held in Escrow", "Delivered — Release Payment". Center divider: lightning bolt with "Instant Trust". Text overlay: "Live Sell. Get Paid. Never Chase." Subtext: "WhatsApp-first commerce with escrow-backed payments." Colors: dark navy, WhatsApp green, neon green, gold.
+
+---
+
+## Slide 14 — Passport Risk Engine
+**Canva Prompt:**
+Infographic-style slide. Center: a floating 3D shield labeled "Pabandi Passport" with multi-axis radar chart showing Trust, Reliability, Payment History, Verification Level, and Community Score. Around it: small icons of a fingerprint, a bank, a Solana node, a WhatsApp icon, and a W3C badge. Text: "One Score. Every Axis. Portable Everywhere." Subtext: "Not just identity — reputation, on-chain and portable." Colors: dark navy, neon green, gold, white.
+
+---
+
+## Slide 15 — The Stack (One-Pager)
+**Canva Prompt:**
+Dark-mode stack diagram. Vertical flow: Top — "Buyer clicks link" → "Escrow holds payment" → "Seller ships" → "Buyer confirms" → "Escrow releases". Each step has its icon: link icon, shield icon, truck icon, checkmark icon, money icon. Side annotations: SafePay (PKR), Tap (USDC), Stripe (Card), Raast (Instant PK), Solana (Fallback). Bottom banner: "One Stack. Every Rail. Zero Drama." Colors: dark navy, neon green, gold, electric blue.
+
+---
+
+*End of pack (15 slides).*
