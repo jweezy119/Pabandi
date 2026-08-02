@@ -337,3 +337,159 @@ Style: Mix of meme culture, Pakistani truck art colors, and modern SaaS design. 
 ---
 
 *End of content package. Copy-paste into NotebookLM Studio or Canva Magic Media as needed.*
+
+---
+
+## 11. CoCreate 2026 — Pitch Script (NotebookLM Source)
+
+[START SCRIPT]
+
+**Host:** Alibaba CoCreate 2026. Dubai. The world's biggest stage for builders from emerging markets. And Pabandi is here to tell you why the informal economy deserves better infrastructure.
+
+Picture this.
+
+A woman in Lahore sells handmade jewelry on Instagram. A buyer in Dubai wants 50 pieces. The buyer says: "Send me the link. I'll pay."
+
+The woman sends a bank account number. The buyer hesitates. The woman hesitates. Nobody moves.
+
+This is the trust gap that costs the informal economy **billions** every year. Not in dollars — in opportunity. In missed transactions. In relationships that never start because neither side trusts the other.
+
+**Pabandi closes that gap.**
+
+One link. One tap. The buyer's money goes into escrow. The seller ships. The buyer confirms. The escrow releases. Both sides win. No bank. No drama. No 3-day wait.
+
+And here's the part that makes this CoCreate-worthy: **the trust is portable.**
+
+Every transaction builds a Pabandi Passport — a W3C Verifiable Credential that follows the seller everywhere. Open a shop on Shopify? Your Pabandi Passport goes with you. Sell on WhatsApp? Same passport. List on eBay? Same passport.
+
+No re-verification. No starting from zero. No "trust me bro" moment.
+
+The stack is real and it's live:
+- SafePay for PKR payouts
+- Tap for USDC on Solana
+- Stripe for card payments
+- Raast for instant bank transfers
+- Escrow.com for international deals
+- OpenWA for WhatsApp-native commerce
+- Web3 for portable reputation
+
+And yes — we have a reconciliation worker that eats stuck webhooks for breakfast. Because in Pakistan, "the system is down" is not an excuse. It's a feature. And we handle it.
+
+This is not a startup pitch. This is infrastructure for 250 million Pakistanis who do business the way it should work — fast, fair, and with their money protected.
+
+Alibaba CoCreate 2026. Pabandi. **Stream smart, not hard.**
+
+[END SCRIPT]
+
+---
+
+## 12. CoCreate 2026 — Judge Hook (Twitter/X Thread Starter)
+
+Tweet 1/10:
+> Alibaba CoCreate 2026 is looking for builders from emerging markets.
+>
+> Pabandi is a Pakistani startup building trust infrastructure for the informal economy.
+>
+> Here's the problem we solve:
+>
+> 1/10
+
+Tweet 2/10:
+> Millions of informal businesses in Pakistan sell every day.
+>
+> But when it comes to getting paid?
+>
+> They're stuck in the same loop:
+> - Send bank details
+> - Buyer hesitates
+> - Seller hesitates
+> - Deal dies
+>
+> 2/10
+
+Tweet 3/10:
+> The trust gap costs the informal economy billions in missed transactions.
+>
+> Not in dollars. In opportunity. In relationships that never start because neither side trusts the other.
+>
+> Pabandi exists to close that gap.
+>
+> 3/10
+
+Tweet 4/10:
+> How it works:
+>
+> 1. Buyer clicks a payment link
+> 2. Money goes into escrow
+> 3. Seller ships
+> 4. Buyer confirms
+> 5. Escrow releases automatically
+>
+> No bank. No drama. No 3-day wait.
+>
+> 4/10
+
+Tweet 5/10:
+> The trust layer is portable.
+>
+> Every transaction builds a Pabandi Passport — a W3C Verifiable Credential.
+>
+> Open a Shopify store? Same passport.
+> Sell on WhatsApp? Same passport.
+> List on eBay? Same passport.
+>
+> No re-verification. No starting from zero.
+>
+> 5/10
+
+Tweet 6/10:
+> Payment rails we support (all live):
+>
+> • SafePay — PKR payouts
+> • Tap — USDC on Solana
+> • Stripe — card payments
+> • Raast — instant bank transfers
+> • Escrow.com — international deals
+> • OpenWA — WhatsApp-native commerce
+>
+> 6/10
+
+Tweet 7/10:
+> And yes — we have a reconciliation worker that eats stuck webhooks for breakfast.
+>
+> Because in Pakistan, "the system is down" is not an excuse.
+> It's a feature. And we handle it.
+>
+> 7/10
+
+Tweet 8/10:
+> This is not a startup pitch.
+>
+> This is infrastructure for 250 million Pakistanis who do business the way it should work:
+> fast, fair, and with their money protected.
+>
+> 8/10
+
+Tweet 9/10:
+> Alibaba CoCreate 2026 submission highlights:
+>
+> • Live app: pabandi-42c5b.web.app
+> • Backend: Cloud Run (pabandi-server)
+> • Token: $PAB on Solana
+> • Trust engine: W3C Verifiable Credentials + multi-axis scoring
+> • Commerce: WhatsApp-first with OpenWA gateway
+>
+> 9/10
+
+Tweet 10/10:
+> Stream smart, not hard.
+>
+> Pabandi — trust infrastructure for the informal economy.
+>
+> #AlibabaCoCreate #CoCreate2026 #Pakistan #Fintech #Web3
+>
+> 10/10
+
+---
+
+*End of CoCreate 2026 content pack.*
