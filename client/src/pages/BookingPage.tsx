@@ -9,6 +9,7 @@ import ReviewCarousel from '../components/ReviewCarousel';
 import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
 import { encryptRsa } from '../utils/e2ee';
 import { Button, Chip, Surface, Badge, tokens } from '../design-system';
+import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
@@ -211,7 +212,11 @@ export default function BookingPage() {
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Chip tone="success">⭐ {googleRating} Rating</Chip>
-                  <Badge tone={trustScore >= 80 ? 'success' : trustScore >= 50 ? 'warning' : 'danger'}>AI Score: {trustScore}% Reliable → ${dynamicDeposit} Deposit</Badge>
+                  <Chip tone="warning" className="flex items-center gap-1">
+                    <ShieldCheckIcon className="h-3.5 w-3.5" />
+                    Trust Score: {trustScore}/100
+                  </Chip>
+                  <Badge tone={trustScore >= 80 ? 'success' : trustScore >= 50 ? 'warning' : 'danger'}>Escrow Deposit: ${dynamicDeposit}</Badge>
                   <Chip tone="info">Premium Partner</Chip>
                 </div>
                 <h2 className="font-headline text-3xl font-bold tracking-tight md:text-[2.75rem]">{business.name}</h2>
