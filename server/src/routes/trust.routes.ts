@@ -33,7 +33,58 @@ router.get('/flux/:userId', async (req, res) => {
   try {
     const { trustFluxService } = await import('../services/trustFlux.service');
     const flux = await trustFluxService.computeTrustFlux(userId);
+    // Also compute peer-normalized velocity
+    flux.peerNormalizedVelocity = await trustFluxService.getPeerNormalizedVelocity(userId, flux.velocity);
     res.json({ success: true, data: flux });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/flux/:userId/predict
+ * Returns 30-day forward trajectory projection with decayed velocity.
+ */
+router.get('/flux/:userId/predict', async (req, res) => {
+  const { userId } = req.params;
+  const days = Number(req.query.days || 30);
+  try {
+    const { trustFluxService } = await import('../services/trustFlux.service');
+    const projection = await trustFluxService.predict(userId, days);
+    res.json({ success: true, data: projection });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/trust/veil/issue
+ * Issue a zero-knowledge trust badge proving score ≥ threshold without revealing score.
+ * Body: { userId, trustScore, threshold }
+ */
+router.post('/veil/issue', async (req, res) => {
+  const { userId, trustScore, threshold = 70 } = req.body;
+  try {
+    const { trustVeilService } = await import('../services/trustVeil.service');
+    const proof = await trustVeilService.issueProof(userId, trustScore, threshold);
+    res.json({ success: true, data: proof });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/veil/verify/:proofId
+ * Verify a TrustVeil proof. Only learns: isAboveThreshold, trend, validity.
+ * The actual score is never revealed.
+ */
+router.get('/veil/verify/:proofId', async (req, res) => {
+  const { proofId } = req.params;
+  try {
+    const { trustVeilService } = await import('../services/trustVeil.service');
+    // In production, fetch the proof from DB by proofId
+    // For now, return the verification schema
+    res.json({ success: true, data: { verified: 'proofId-based lookup requires DB integration' } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

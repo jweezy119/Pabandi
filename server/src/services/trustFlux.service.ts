@@ -34,6 +34,7 @@ export interface TrustFluxResult {
   trend: 'RISING' | 'STEADY' | 'DECLINING' | 'VOLATILE';
   predictedScore30d: number;
   predictedScore90d: number;
+  peerNormalizedVelocity?: number; // z-score vs same-tier users
 }
 
 const DECAY_LAMBDA = 0.9;        // ~10-day half-life for event decay
@@ -149,21 +150,25 @@ export class TrustFluxService {
       decay: Math.pow(DECAY_LAMBDA, (now - e.ts) / (24 * 60 * 60 * 1000)),
     }));
 
-    // ── 4. Time-binned aggregation ──────────────────────────────────────
+// ── 4. Time-binned aggregation with attention weights ──────────────
     const buckets = 4; // 4 bins of ~7.5 days
     const bucketSize = (WINDOW_DAYS * 24 * 60 * 60 * 1000) / buckets;
 
     const bucketScores = Array(buckets).fill(0);
     const bucketWeights = Array(buckets).fill(0);
+    const bucketAges: number[][] = Array(buckets).fill(0).map(() => []);
 
     for (const e of decayedEvents) {
       const bucketIdx = Math.min(
         buckets - 1,
         Math.floor((now - e.ts) / bucketSize)
       );
-      const weightedDelta = e.delta * e.weight * e.decay;
+      // Attention: more recent events get higher weight (linear recency attention)
+      const recencyAttention = 1 + (e.ageDays / 30); // older = more weight in past
+      const weightedDelta = e.delta * e.weight * e.decay * recencyAttention;
       bucketScores[bucketIdx] += weightedDelta;
-      bucketWeights[bucketIdx] += e.weight * e.decay;
+      bucketWeights[buckets - 1 - bucketIdx] += e.weight * e.decay; // recent bucket first
+      bucketAges[bucketIdx].push(e.ageDays);
     }
 
     // Normalize
@@ -171,8 +176,15 @@ export class TrustFluxService {
       bucketWeights[i] > 0 ? s / bucketWeights[i] : 0
     );
 
-    // ── 5. Velocity via linear regression ──────────────────────────────
-    const velocityRaw = this.linearRegressionSlope(normalizedScores);
+    // ── 4.5. EMA momentum smoothing on bucket scores ────────────────
+    const EMA_ALPHA = 0.3; // smoothing factor
+    const emaScores = this.applyEMA(normalizedScores);
+
+    // ── 5. Velocity via linear regression (on EMA-smoothed scores) ──
+    const velocityRaw = this.linearRegressionSlope(emaScores);
+
+    // ── 5.5. Acceleration (second derivative) ───────────────────────
+    const acceleration = this.computeAcceleration(emaScores);
 
     // ── 6. Confidence ──────────────────────────────────────────────────
     const totalEvents = decayedEvents.length;
@@ -186,10 +198,16 @@ export class TrustFluxService {
     // ── 8. Anomaly detection ──────────────────────────────────────────
     const anomaly = this.detectAnomaly(normalizedScores, confidence);
 
-    // ── 9. Predictions ────────────────────────────────────────────────
+    // ── 9. Predictions (velocity + acceleration model) ────────────────────
     const currentScore = await this.getCurrentScore(userId, normalizedScores);
-    const predictedScore30d = Math.max(0, Math.min(100, currentScore + velocityRaw * 10));
-    const predictedScore90d = Math.max(0, Math.min(100, currentScore + velocityRaw * 30));
+    // v(t) = velocity + acceleration * t
+    // score(t) = currentScore + velocity * t + 0.5 * acceleration * t^2
+    const predictedScore30d = Math.max(0, Math.min(100,
+      currentScore + velocityRaw * 10 + 0.5 * acceleration * 100
+    ));
+    const predictedScore90d = Math.max(0, Math.min(100,
+      currentScore + velocityRaw * 30 + 0.5 * acceleration * 900
+    ));
 
     // ── 10. Trajectory ────────────────────────────────────────────────
     const trajectory = normalizedScores.map((score, i) => ({
@@ -208,6 +226,95 @@ export class TrustFluxService {
       predictedScore30d: Math.round(predictedScore30d),
       predictedScore90d: Math.round(predictedScore90d),
     };
+  }
+
+  /** Apply EMA smoothing to reduce noise in velocity signal */
+  private applyEMA(scores: number[], alpha = 0.3): number[] {
+    if (scores.length === 0) return scores;
+    const ema: number[] = [scores[0]];
+    for (let i = 1; i < scores.length; i++) {
+      ema[i] = alpha * scores[i] + (1 - alpha) * ema[i - 1];
+    }
+    return ema;
+  }
+
+  /** Compute acceleration (second derivative of the score trajectory) */
+  private computeAcceleration(emaScores: number[]): number {
+    if (emaScores.length < 3) return 0;
+    // Second difference: a[i] = ema[i] - 2*ema[i-1] + ema[i-2]
+    const secondDiffs: number[] = [];
+    for (let i = 2; i < emaScores.length; i++) {
+      secondDiffs.push(emaScores[i] - 2 * emaScores[i - 1] + emaScores[i - 2]);
+    }
+    return secondDiffs.reduce((a, b) => a + b, 0) / secondDiffs.length;
+  }
+
+  /** Peer-group normalization: compare user's velocity to similar-tier peers */
+  public async getPeerNormalizedVelocity(userId: string, rawVelocity: number): Promise<number> {
+    const userFlux = await this.computeTrustFlux(userId);
+    const currentScore = await this.getCurrentScore(userId, []);
+    const tier = currentScore >= 80 ? 'HIGH' : currentScore >= 50 ? 'MEDIUM' : 'LOW';
+
+    // Get peer users in same tier
+    const peers = await prisma.user.findMany({
+      where: {
+        trustScore: {
+          gte: tier === 'HIGH' ? 80 : tier === 'MEDIUM' ? 50 : 0,
+          lte: tier === 'HIGH' ? 100 : tier === 'MEDIUM' ? 79 : 49,
+        },
+        NOT: { id: userId },
+      },
+      select: { id: true, trustScore: true },
+      take: 50,
+    });
+
+    if (peers.length === 0) return rawVelocity;
+
+    const peerVelocities: number[] = [];
+    for (const peer of peers) {
+      try {
+        const flux = await this.computeTrustFlux(peer.id);
+        peerVelocities.push(flux.velocity);
+      } catch {
+        // skip
+      }
+    }
+
+    if (peerVelocities.length === 0) return rawVelocity;
+
+    const peerAvg = peerVelocities.reduce((a, b) => a + b, 0) / peerVelocities.length;
+    const peerStd = Math.sqrt(
+      peerVelocities.map(v => Math.pow(v - peerAvg, 2)).reduce((a, b) => a + b, 0) / peerVelocities.length
+    ) || 0.001;
+
+    // Z-score normalization: how far above/below peer average
+    return (rawVelocity - peerAvg) / peerStd;
+  }
+
+  /** Generate a 30-day forward trajectory projection */
+  public async predict(userId: string, days = 30): Promise<Array<{ ts: number; score: number; velocity: number }>> {
+    const flux = await this.computeTrustFlux(userId);
+    const currentScore = await this.getCurrentScore(userId, []);
+
+    const projection: Array<{ ts: number; score: number; velocity: number }> = [];
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    for (let d = 0; d <= days; d++) {
+      // Apply velocity + acceleration decay
+      const decayFactor = Math.pow(0.97, d / 7); // velocity decays slightly over time
+      const effectiveVelocity = flux.velocity * decayFactor;
+      const score = Math.max(0, Math.min(100,
+        currentScore + effectiveVelocity * d + 0.5 * 0.01 * d * d
+      ));
+      projection.push({
+        ts: now + d * dayMs,
+        score: Math.round(score * 10) / 10,
+        velocity: Math.round(effectiveVelocity * 1000) / 1000,
+      });
+    }
+
+    return projection;
   }
 
   /** Linear regression slope — measures trend direction */

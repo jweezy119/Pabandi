@@ -200,4 +200,20 @@ router.get('/arbitrator/tiers', (_req: Request, res: Response): any => {
   });
 });
 
+/**
+ * GET /api/v1/staking/pabond/stats
+ * Returns Pabond bonding curve statistics: price, APY, TVL, daily volume,
+ * top 10 velocity leaders. Public endpoint.
+ */
+router.get('/pabond/stats', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const { pabondService } = await import('../services/pabond.service');
+    const stats = await pabondService.getStats();
+    res.json({ success: true, data: stats });
+  } catch (err: any) {
+    logger.error(`[StakingRoutes] pabond/stats error: ${err.message}`);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
