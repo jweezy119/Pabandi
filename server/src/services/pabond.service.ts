@@ -39,6 +39,7 @@ export interface PabondResult {
   pricePerPAB: number;          // USD per $PAB (what user paid)
   velocity: number;             // TrustFlux velocity (-1 to +1)
   velocityMultiplier: number;    // [0.5, 2.0]
+  velocityBonus: number;          // additional bonus from rising velocity [1.0, 1.10]
   totalSupply: number;           // circulating $PAB supply
   reserveUSD: number;            // total USD in the bonding curve
   effectiveApr: number;          // implied APR from velocity trend
@@ -86,6 +87,7 @@ export class PabondService {
         pricePerPAB: 0,
         velocity: 0,
         velocityMultiplier: 1.0,
+        velocityBonus: 1.0,
         totalSupply: Number(this.totalSupplyPAB),
         reserveUSD: Number(this.reserveUSD),
         effectiveApr: 0,
@@ -113,11 +115,15 @@ export class PabondService {
     const curveFactor = reserveBN.div(supplyBN.pow(1.5));
     const pabTokens = amountBN.sqrt().times(curveFactor).times(slippageFactor);
 
+    // 5a. Apply velocity bonus (rising trust = extra $PAB)
+    const velocityBonus = this.getVelocityBonus(velocity);
+    const finalPabTokens = pabTokens.times(velocityBonus);
+
     // 5. Update reserve and supply
     this.reserveUSD = this.reserveUSD.plus(amountBN);
-    this.totalSupplyPAB = this.totalSupplyPAB.plus(pabTokens);
+    this.totalSupplyPAB = this.totalSupplyPAB.plus(finalPabTokens);
 
-    const pricePerPAB = Number(amountBN.div(pabTokens));
+    const pricePerPAB = Number(amountBN.div(finalPabTokens));
 
     // Record the mint via TrustAuditTrail (has JSON metadata field)
     await prisma.trustAuditTrail.create({
@@ -143,21 +149,22 @@ export class PabondService {
     });
 
     // 7. Compute effective APR based on velocity trend
-    const effectiveApr = this.computeEffectiveApr(velocity, amountUSD, Number(pabTokens));
+    const effectiveApr = this.computeEffectiveApr(velocity, amountUSD, Number(finalPabTokens));
 
-    logger.info(`[Pabond] Minted ${Number(pabTokens).toFixed(4)} $PAB for user ${userId} ` +
-      `(${velocityMult.toFixed(2)}x velocity mult, price $${pricePerPAB.toFixed(4)}/PAB)`);
+    logger.info(`[Pabond] Minted ${Number(finalPabTokens).toFixed(4)} $PAB for user ${userId} ` +
+      `(${velocityMult.toFixed(2)}x velocity mult, +${(velocityBonus - 1) * 100}% bonus, price $${pricePerPAB.toFixed(4)}/PAB)`);
 
     return {
       success: true,
       userId,
       amountUSD,
-      pabTokens: Number(pabTokens.toFixed(8)),
+      pabTokens: Number(finalPabTokens.toFixed(8)),
       pricePerPAB: Math.round(pricePerPAB * 1e6) / 1e6,
       velocity: Math.round(velocity * 1000) / 1000,
       velocityMultiplier: Math.round(velocityMult * 1000) / 1000,
       totalSupply: Number(this.totalSupplyPAB),
       reserveUSD: Number(this.reserveUSD),
+      velocityBonus: Math.round(velocityBonus * 1000) / 1000,
       effectiveApr,
     };
   }
@@ -202,7 +209,116 @@ export class PabondService {
     return Math.round((baseApr + velocityAprBoost + volumeBonus) * 100) / 100;
   }
 
-  /** Load persisted state from DB */
+  /**
+   * AMM-style batch redemption: burn $PAB to get proportional reserve share.
+   * Batch processing with yield claim (accumulated fees from curve trades).
+   */
+  public async batchRedeem(userId: string, pabAmount: number): Promise<{ success: boolean; usdReturn: number; yield: number }> {
+    if (pabAmount <= 0 || new BigNumber(pabAmount).gt(this.totalSupplyPAB)) {
+      return { success: false, usdReturn: 0, yield: 0 };
+    }
+
+    const burnRatio = new BigNumber(pabAmount).div(this.totalSupplyPAB);
+
+    // Proportional reserve share
+    const reserveShare = this.reserveUSD.times(burnRatio);
+
+    // Yield claim: accumulated trading fees (simplified: 0.05% of reserve)
+    const yieldClaim = reserveShare.times(0.0005);
+    const usdReturn = reserveShare.minus(yieldClaim).times(0.97); // 3% exit fee
+
+    this.reserveUSD = this.reserveUSD.minus(reserveShare);
+    this.totalSupplyPAB = this.totalSupplyPAB.minus(pabAmount);
+
+    await prisma.trustAuditTrail.create({
+      data: {
+        userId,
+        previousScore: 0,
+        newScore: 0,
+        changeReason: 'PABOND_BATCH_REDEEM',
+        component: 'SYSTEM',
+        severity: 'neutral',
+        metadata: { usdReturn: Number(usdReturn), yieldClaim: Number(yieldClaim), pabBurned: pabAmount } as any,
+      } as any,
+    });
+
+    logger.info(`[Pabond] Batch redeem: ${pabAmount} $PAB → $${Number(usdReturn).toFixed(2)} + $${Number(yieldClaim).toFixed(4)} yield`);
+    return { success: true, usdReturn: Number(usdReturn.toFixed(2)), yield: Number(yieldClaim.toFixed(4)) };
+  }
+
+  /**
+   * Compute comprehensive Pabond statistics for dashboards.
+   * Returns current price, APY, TVL, daily volume, top 10 velocity leaders.
+   */
+  public async getStats(): Promise<{
+    pricePerPAB: number;
+    apy: number;
+    tvl: number;
+    dailyVolume: number;
+    totalSupply: number;
+    topVelocityLeaders: Array<{ userId: string; velocity: number; pabBalance: number }>;
+  }> {
+    // Get recent mint events for daily volume (last 24h)
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentMints = await prisma.trustAuditTrail.findMany({
+      where: {
+        changeReason: { startsWith: 'PABOND_MINT_' },
+        createdAt: { gte: yesterday },
+      },
+      select: { metadata: true },
+    });
+
+    const dailyVolume = recentMints.reduce((sum, audit) => {
+      const meta = audit.metadata as Record<string, any> | null;
+      return sum + (Number(meta?.amountUSD) || 0);
+    }, 0);
+
+    // Top velocity leaders (users with highest positive TrustFlux velocity)
+    const topUsers = await prisma.user.findMany({
+      where: { trustScore: { gt: 50 } },
+      select: { id: true, trustScore: true },
+      take: 50,
+    });
+
+    const leaders: Array<{ userId: string; velocity: number; pabBalance: number }> = [];
+    for (const user of topUsers) {
+      try {
+        const flux = await trustFluxService.computeTrustFlux(user.id);
+        if (flux.velocity > 0.1) {
+          leaders.push({
+            userId: user.id,
+            velocity: Math.round(flux.velocity * 1000) / 1000,
+            pabBalance: user.trustScore * 100, // placeholder — in prod query staking positions
+          });
+        }
+      } catch { /* skip */ }
+    }
+
+    leaders.sort((a, b) => b.velocity - a.velocity);
+
+    return {
+      pricePerPAB: this.getCurrentPrice(),
+      apy: this.computeEffectiveApr(0.5, 1000, this.totalSupplyPAB.toNumber()) / 100,
+      tvl: Number(this.reserveUSD),
+      dailyVolume,
+      totalSupply: Number(this.totalSupplyPAB),
+      topVelocityLeaders: leaders.slice(0, 10),
+    };
+  }
+
+  /**
+   * Compute daily reward rate for velocity bonus.
+   * Users with velocity > 0.5 get a 10% bonus on minted $PAB.
+   */
+  private getVelocityBonus(velocity: number): number {
+    if (velocity > 0.5) return 1.10;  // 10% bonus for high rising trust
+    if (velocity > 0.3) return 1.05;  // 5% bonus for moderate rising
+    if (velocity > 0.1) return 1.02;  // 2% bonus for slight rising
+    return 1.0;
+  }
+
+  /**
+   * Load persisted state from DB */
   private async loadState(): Promise<void> {
     try {
       const state = await prisma.trustAuditTrail.findFirst({
