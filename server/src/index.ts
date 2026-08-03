@@ -191,7 +191,7 @@ import sourcingRoutes from './routes/sourcing.routes';
 app.use(`/api/${API_VERSION}/social`, socialRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
-app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
+app.use(`/api/${API_VERSION}/token-staking`, stakingRoutes);
 app.use(`/api/${API_VERSION}/airdrop`, airdropRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
