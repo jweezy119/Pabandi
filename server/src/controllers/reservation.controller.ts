@@ -4,6 +4,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
 import { pabTokenStakingService } from '../services/pabTokenStaking.service';
+import { pabondService } from '../services/pabond.service';
 import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
@@ -460,6 +461,31 @@ export const createReservation = async (
       }
     }
 
+    // ── Pabond: Mint $PAB via bonding curve for completed booking commitment ──
+    // Users earn $PAB proportional to deposit amount, with velocity multiplier
+    // from TrustFlux. Rising-trust users get cheaper $PAB.
+    let pabondResult: { pabTokens: number; velocityMultiplier: number } | null = null;
+    if (depositAmount && req.user?.id) {
+      try {
+        const depositUSD = Number((depositAmount / 100).toFixed(2)); // convert cents to USD
+        const mintResult = await pabondService.mint({
+          userId: req.user.id,
+          amountUSD: depositUSD,
+          source: 'BOOKING_DEPOSIT',
+          metadata: { reservationId: reservation.id, depositAmount },
+        });
+        if (mintResult.success) {
+          pabondResult = {
+            pabTokens: mintResult.pabTokens,
+            velocityMultiplier: mintResult.velocityMultiplier,
+          };
+          logger.info(`[Pabond] Minted ${mintResult.pabTokens} $PAB for deposit on reservation ${reservation.id}`);
+        }
+      } catch (err: any) {
+        logger.error(`[Pabond] Failed to mint $PAB: ${err.message}`);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',
@@ -473,6 +499,7 @@ export const createReservation = async (
           totalStakedPab: totalStaked,
           depositReduction: stakeMultiplier > 1.0 ? `${Math.round((1 - 1/stakeMultiplier) * 100)}% via $PAB staking` : undefined,
         },
+        pabond: pabondResult,
       },
     });
   } catch (error) {

@@ -23,4 +23,20 @@ router.post('/action/:action/check', authenticate, checkMyActionAccess);
 router.post('/guest/escrow-event', recordGuestEscrowEvent);
 router.get('/pulse/:userId', streamTrustPulse);
 
+/**
+ * GET /api/v1/trust/flux/:userId
+ * Returns TrustFlux trajectory data (velocity-driven GNN prediction).
+ * Public endpoint — anyone can check a user's trust trend direction.
+ */
+router.get('/flux/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const { trustFluxService } = await import('../services/trustFlux.service');
+    const flux = await trustFluxService.computeTrustFlux(userId);
+    res.json({ success: true, data: flux });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

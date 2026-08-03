@@ -29,6 +29,7 @@ import AlibabaQwenConsultantWidget from '../components/AlibabaQwenConsultantWidg
 import LiveSellerPanel from '../components/LiveSellerPanel';
 import HospitalityPropertiesPanel from '../components/HospitalityPropertiesPanel';
 import PaymentLinkGenerator from '../components/PaymentLinkGenerator';
+import TrustFluxWidget from '../components/TrustFluxWidget';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -364,6 +365,8 @@ export default function BusinessDashboard() {
         </div>
 
         <BusinessPabRewards />
+        {/* ── TrustFlux Widget ── */}
+        <TrustFluxWidget userId={user?.id} />
         {/* ── WhatsApp OpenWA Status ── */}
         <OpenWAStatusPanel />
 
