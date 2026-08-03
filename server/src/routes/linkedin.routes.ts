@@ -142,6 +142,14 @@ router.get('/stats', async (_req: Request, res: Response): Promise<any> => {
  * GET /api/v1/linkedin/personas
  * Get all target personas for LinkedIn outreach.
  */
+router.get('/content-templates', async (_req: Request, res: Response) => {
+  res.json({ success: true, data: CONTENT_TEMPLATES });
+});
+
+/**
+ * GET /api/v1/linkedin/personas
+ * Get all target personas for LinkedIn outreach.
+ */
 router.get('/personas', async (_req: Request, res: Response) => {
   res.json({
     success: true,
@@ -157,11 +165,54 @@ router.get('/personas', async (_req: Request, res: Response) => {
 });
 
 /**
- * GET /api/v1/linkedin/content-templates
- * Get content templates for LinkedIn posts.
+ * POST /api/v1/linkedin/generate-role-post
+ * Generate a role-specific hiring post for LinkedIn.
+ * Body: { roleTitle, industry, companyName? }
  */
-router.get('/content-templates', async (_req: Request, res: Response) => {
-  res.json({ success: true, data: CONTENT_TEMPLATES });
+router.post('/generate-role-post', async (req: Request, res: Response): Promise<any> => {
+  const { roleTitle, industry, companyName } = req.body;
+  if (!roleTitle || !industry) {
+    return res.status(400).json({ success: false, error: 'roleTitle and industry required' });
+  }
+  try {
+    const post = linkedinLeadGenService.generateRolePost(roleTitle, industry, companyName);
+    res.json({ success: true, data: { post, roleTitle, industry } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/run-funnel
+ * Run the full auto-funnel: schedule posts → auto-DM prospects → capture leads.
+ * Body: { personas?: string[], postCount?: number, dmLimit?: number }
+ */
+router.post('/run-funnel', async (req: Request, res: Response): Promise<any> => {
+  const { personas: personaIds, postCount = 3, dmLimit = 50 } = req.body;
+
+  try {
+    const personas = personaIds
+      ? LINKEDIN_PERSONAS.filter(p => personaIds.includes(p.id))
+      : LINKEDIN_PERSONAS;
+
+    const result = await linkedinLeadGenService.runFullFunnel(personas, postCount, dmLimit);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/linkedin/stats
+ * Get lead-gen funnel stats.
+ */
+router.get('/stats', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const stats = linkedinLeadGenService.getStats();
+    res.json({ success: true, data: stats });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 export default router;
