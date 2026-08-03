@@ -486,6 +486,29 @@ export const createReservation = async (
       }
     }
 
+    // ── Reputation Insurance: Underwrite optional coverage ───────────────
+    let insuranceOffer: any = null;
+    try {
+      const { reputationInsuranceService } = await import('../services/reputationInsurance.service');
+      const underwriteResult = await reputationInsuranceService.underwrite(
+        business.id, // provider
+        req.user!.id, // customer
+        reservation.id,
+        requireDeposit ? Number(depositAmount) : 0,
+        'NO_SHOW'
+      );
+      insuranceOffer = {
+        available: underwriteResult.approved,
+        riskBand: underwriteResult.riskBand,
+        premiumUSD: underwriteResult.premiumUSD,
+        premiumPAB: underwriteResult.premiumPAB,
+        coverageAmount: underwriteResult.coverageAmount,
+        reason: underwriteResult.reason,
+      };
+    } catch (err: any) {
+      logger.error(`[Insurance] Failed to underwrite: ${err.message}`);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',
@@ -497,9 +520,12 @@ export const createReservation = async (
           requiresDeposit: requireDeposit,
           stakingMultiplier: stakeMultiplier,
           totalStakedPab: totalStaked,
-          depositReduction: stakeMultiplier > 1.0 ? `${Math.round((1 - 1/stakeMultiplier) * 100)}% via $PAB staking` : undefined,
+          depositReduction: stakeMultiplier > 1.0
+            ? `${Math.round((1 - 1 / stakeMultiplier) * 100)}% via $PAB staking`
+            : undefined,
         },
         pabond: pabondResult,
+        insurance: insuranceOffer,
       },
     });
   } catch (error) {
