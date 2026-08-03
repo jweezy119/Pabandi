@@ -183,6 +183,16 @@ export const stakingService = {
   unstakeYield: (positionId: string) => apiClient.post('/staking/pool/unstake', { positionId }),
 };
 
+// $PAB Token Staking for Trust Multipliers
+export const tokenStakingService = {
+  stake: (data: { amount: number; txHash?: string }) => apiClient.post('/token-staking/stake', data).then(res => res.data),
+  unstake: (positionId: string) => apiClient.post('/token-staking/unstake', { positionId }).then(res => res.data),
+  getPositions: () => apiClient.get('/token-staking/positions').then(res => res.data),
+  getMultiplier: (userId: string) => apiClient.get(`/token-staking/multiplier/${userId}`).then(res => res.data),
+  getDepositMultiplier: (userId: string, baseDeposit: number) =>
+    apiClient.get(`/token-staking/deposit-multiplier/${userId}?baseDeposit=${baseDeposit}`).then(res => res.data),
+};
+
 export const disputeService = {
   fileDispute: (data: { reservationId: string; againstId: string; reason: string; stakedAmount: number; evidenceUrls?: string[] }) => apiClient.post('/disputes', data).then(res => res.data),
   vote: (disputeId: string, data: { voteForId: string; reason?: string }) => apiClient.post(`/disputes/${disputeId}/vote`, data).then(res => res.data),
