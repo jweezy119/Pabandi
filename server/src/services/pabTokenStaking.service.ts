@@ -93,6 +93,7 @@ export const REWARD_RATES: Record<string, number> = {
   POSITIVE_REVIEW: 0.2,       // $PAB per verified review
   ON_TIME_RATE: 1.0,          // $PAB per 5-star booking
   STREAK_BONUS: 5.0,          // $PAB for 5 consecutive completions
+  DISPUTE_WON: 10.0,          // $PAB for winning an AI arbitrated dispute
 };
 
 export class PabTokenStakingService {
