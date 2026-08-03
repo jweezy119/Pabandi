@@ -237,8 +237,9 @@ export class LinkedInLeadGenService {
 
     this.leads.set(leadId, lead);
 
-    // Record in audit trail
-    await prisma.trustAuditTrail.create({
+    // Record in audit trail (optional — may fail if SYSTEM user doesn't exist)
+    try {
+      await prisma.trustAuditTrail.create({
       data: {
         userId: 'SYSTEM',
         previousScore: 0,
@@ -256,6 +257,9 @@ export class LinkedInLeadGenService {
         } as any,
       } as any,
     });
+    } catch (dbErr: any) {
+      logger.warn(`[LinkedInLeadGen] Audit trail write skipped: ${dbErr.message}`);
+    }
 
     logger.info(`[LinkedInLeadGen] Captured lead ${leadId} (${persona}) from ${source}`);
     return lead;
@@ -292,23 +296,27 @@ export class LinkedInLeadGenService {
 
         logger.info(`[LinkedInLeadGen] DM sent to ${prospect.firstName} — "${message.substring(0, 60)}..."`);
 
-        // Record as potential lead in audit trail
-        await prisma.trustAuditTrail.create({
-          data: {
-            userId: 'SYSTEM',
-            previousScore: 0,
-            newScore: 0,
-            changeReason: 'LINKEDIN_DM_SENT',
-            component: 'LINKEDIN_LEADGEN',
-            severity: 'positive',
-            currentHash: crypto.randomBytes(32).toString('hex'),
-            metadata: {
-              linkedinId: prospect.linkedinId,
-              persona: persona.id,
-              messagePreview: message.substring(0, 100),
+        // Record as potential lead in audit trail (optional)
+        try {
+          await prisma.trustAuditTrail.create({
+            data: {
+              userId: 'SYSTEM',
+              previousScore: 0,
+              newScore: 0,
+              changeReason: 'LINKEDIN_DM_SENT',
+              component: 'LINKEDIN_LEADGEN',
+              severity: 'positive',
+              currentHash: crypto.randomBytes(32).toString('hex'),
+              metadata: {
+                linkedinId: prospect.linkedinId,
+                persona: persona.id,
+                messagePreview: message.substring(0, 100),
+              } as any,
             } as any,
-          } as any,
-        });
+          });
+        } catch (dbErr: any) {
+          logger.warn(`[LinkedInLeadGen] Audit trail write skipped: ${dbErr.message}`);
+        }
       } catch (err: any) {
         failed++;
         errors.push(`${prospect.firstName}: ${err.message}`);
@@ -345,24 +353,29 @@ export class LinkedInLeadGenService {
       // Issue a free 7-day insurance policy worth $500 (courtesy)
       // (covered by Pabandi's risk pool)
 
-      await prisma.trustAuditTrail.create({
-        data: {
-          userId: businessId,
-          previousScore: 0,
-          newScore: baselineScore,
-          changeReason: 'LINKEDIN_LEAD_CONVERTED',
-          component: 'LINKEDIN_LEADGEN',
-          severity: 'positive',
-          currentHash: crypto.randomBytes(32).toString('hex'),
-          metadata: {
-            leadId,
-            persona: lead.persona,
-            source: lead.source,
-            trustFluxVelocity: defaultFlux.velocity,
-            hasZKProof: !!proof,
-          } as any,
-        } as any,
-      });
+      // Record conversion in audit trail (optional)
+      try {
+        await prisma.trustAuditTrail.create({
+          data: {
+            userId: businessId,
+            previousScore: 0,
+            newScore: baselineScore,
+            changeReason: 'LINKEDIN_LEAD_CONVERTED',
+            component: 'LINKEDIN_LEADGEN',
+            severity: 'positive',
+            currentHash: crypto.randomBytes(32).toString('hex'),
+            metadata: {
+              leadId,
+              persona: lead.persona,
+              source: lead.source,
+              trustFluxVelocity: defaultFlux.velocity,
+              hasZKProof: !!proof,
+            } as any,
+          },
+        });
+      } catch (dbErr: any) {
+        logger.warn(`[LinkedInLeadGen] Audit trail write skipped: ${dbErr.message}`);
+      }
 
       this.leads.delete(leadId);
       logger.info(`[LinkedInLeadGen] Converted lead ${leadId} → business ${businessId}`);
