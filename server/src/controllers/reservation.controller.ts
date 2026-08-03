@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
+import { pabTokenStakingService } from '../services/pabTokenStaking.service';
 import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
@@ -245,6 +246,9 @@ export const createReservation = async (
     // Get AI prediction
     const prediction = await noShowPredictor.predict(features);
 
+    // Apply $PAB staking multiplier to reduce deposit for staked users
+    const { multiplier: stakeMultiplier, totalStaked } = await pabTokenStakingService.getTrustMultiplier(req.user!.id);
+
     // Determine if deposit is required
     const settings = business.settings;
     const requireDeposit =
@@ -258,6 +262,11 @@ export const createReservation = async (
       } else if (business.depositAmount) {
         depositAmount = business.depositAmount;
       }
+    }
+
+    // Reduce deposit by staking multiplier (e.g., 2.5x staker pays 40% of deposit)
+    if (depositAmount && stakeMultiplier > 1.0) {
+      depositAmount = Math.round(depositAmount / stakeMultiplier);
     }
 
     const depositDefaultWeb3 = defaultDepositModeWeb3();
@@ -460,6 +469,9 @@ export const createReservation = async (
         prediction: {
           riskScore: prediction.riskScore,
           requiresDeposit: requireDeposit,
+          stakingMultiplier: stakeMultiplier,
+          totalStakedPab: totalStaked,
+          depositReduction: stakeMultiplier > 1.0 ? `${Math.round((1 - 1/stakeMultiplier) * 100)}% via $PAB staking` : undefined,
         },
       },
     });

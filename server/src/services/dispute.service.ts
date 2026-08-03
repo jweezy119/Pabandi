@@ -1,6 +1,9 @@
 import { PrismaClient, DisputeOutcome, DisputeType } from '@prisma/client';
 import { ReliabilityService } from './reliability.service';
 import { blockchainService } from './blockchain.service';
+import { trustArbitratorService } from './trustArbitrator.service';
+import { pabTokenStakingService } from './pabTokenStaking.service';
+import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 const reliabilityService = new ReliabilityService();
@@ -37,6 +40,101 @@ export class DisputeService {
 
     // Auto-assign eligible jurors (trust score > 90, not parties)
     await this.assignJurors(dispute.id, [reportedById, userId]);
+
+    // Trigger AI Trust Arbitrator for low-value disputes (<$500)
+    // High-value disputes go to human jury for peer review
+    try {
+    } catch {
+      // ignore — AI arbitration will still attempt
+    }
+
+    // For small disputes, let AI arbitrate immediately.
+    // For larger disputes, keep peer jury open.
+    const reservationForClaim = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      select: { totalAmount: true, depositAmount: true },
+    }).catch(() => null);
+    const claimAmount = reservationForClaim?.totalAmount || reservationForClaim?.depositAmount || 0;
+
+    if (claimAmount < 500) {
+      // Low-value: AI arbitrates autonomously
+      const arbitratorEvidence = {
+        disputeId: dispute.id,
+        claimAmount,
+        currency: 'USD',
+        customerId: dispute.userId ?? undefined,
+        businessId: dispute.reportedById ?? undefined,
+        customerTrustScore: 0,
+        businessTrustScore: 0,
+        customerStakedPab: 0,
+        businessStakedPab: 0,
+        messages: [],
+        evidenceImages: evidenceUrls || [],
+        bookingDetails: {
+          reservationId,
+          reservationDate: new Date().toISOString(),
+          amount: claimAmount,
+          status: 'DISPUTED',
+          paymentMethod: 'unknown',
+        },
+        initialClaim: description,
+      };
+
+      // Fetch trust scores
+      const customerUser = await prisma.user.findUnique({
+        where: { id: dispute.userId! },
+        select: { trustScore: true },
+      }).catch(() => null);
+      const businessUser = await prisma.user.findUnique({
+        where: { id: dispute.reportedById! },
+        select: { trustScore: true },
+      }).catch(() => null);
+
+      arbitratorEvidence.customerTrustScore = Number(customerUser?.trustScore || 0);
+      arbitratorEvidence.businessTrustScore = Number(businessUser?.trustScore || 0);
+
+      // Get staking amounts
+      const [custStake, bizStake] = await Promise.all([
+        prisma.stakingPosition.aggregate({
+          where: { userId: dispute.userId!, status: 'ACTIVE' },
+          _sum: { amount: true },
+        }),
+        prisma.stakingPosition.aggregate({
+          where: { userId: dispute.reportedById!, status: 'ACTIVE' },
+          _sum: { amount: true },
+        }),
+      ]);
+      arbitratorEvidence.customerStakedPab = Number(custStake._sum?.amount || 0);
+      arbitratorEvidence.businessStakedPab = Number(bizStake._sum?.amount || 0);
+
+      const arbitrationResult = await trustArbitratorService.arbitrate(arbitratorEvidence);
+
+      if (!arbitrationResult.needsHumanReview) {
+        // AI resolved it — apply outcome
+        const outcome =
+          arbitrationResult.ruling === 'BUYER_WINS' ? DisputeOutcome.UPHELD
+          : arbitrationResult.ruling === 'SELLER_WINS' ? DisputeOutcome.DISMISSED
+          : DisputeOutcome.RESOLVED; // REFUND_HALF
+
+        await this.resolveDispute(dispute, outcome);
+
+        // Apply $PAB rewards/slashes
+        if (arbitrationResult.pabReward) {
+          await pabTokenStakingService.rewardUser(
+            arbitrationResult.pabReward.recipient,
+            'DISPUTE_WON', // $PAB reward for winning AI arbitrated dispute
+          ).catch(() => {});
+        }
+        if (arbitrationResult.pabSlash) {
+          // Slashing is handled by the staking service via dispute resolution
+          logger.info(`[Dispute] AI arbitrator slashed ${arbitrationResult.pabSlash.amount} $PAB from user ${arbitrationResult.pabSlash.target}`);
+        }
+
+        logger.info(`[Dispute] AI arbitration resolved dispute ${dispute.id}: ${arbitrationResult.ruling} (confidence: ${arbitrationResult.confidence})`);
+      } else {
+        logger.info(`[Dispute] Dispute ${dispute.id} escalated to human jury (AI confidence: ${arbitrationResult.confidence})`);
+      }
+    }
 
     return dispute;
   }
