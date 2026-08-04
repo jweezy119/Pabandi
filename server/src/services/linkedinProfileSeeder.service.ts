@@ -18,36 +18,24 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { LINKEDIN_PERSONAS } from './linkedinLeadGen.service';
 
-// ── Seed Queries (public LinkedIn search URLs) ──────────────────────────────
-// These are the exact search queries a human would type into LinkedIn
+// ── Seed Queries (used for public data source fetches) ─────────────────────────
+// These map persona types to real search queries for each data source
 const SEED_QUERIES: Record<string, string[]> = {
   'freelance-dev': [
-    'freelance full stack developer mumbai',
-    'freelance react developer delhi',
-    'freelance node developer bangalore',
-    'freelance developer pakistan',
-    'freelance developer remote',
+    'developer', 'full stack developer', 'frontend developer',
+    'react developer', 'node.js developer', 'mobile developer',
   ],
   'small-biz-owner': [
-    'restaurant owner mumbai',
-    'salon owner delhi',
-    'boutique owner bangalore',
-    'small business owner pakistan',
-    'shop owner lahore',
+    'business owner', 'entrepreneur', 'small business', 'shop owner',
+    'restaurant owner', 'startup founder',
   ],
   'project-owner': [
-    'project manager startup delhi',
-    'agency owner mumbai',
-    'consulting firm owner bangalore',
-    'construction company owner pakistan',
-    'marketing agency owner remote',
+    'project manager', 'technical lead', 'engineering manager',
+    'product manager', 'CTO', 'startup founder',
   ],
   'solopreneur': [
-    'solopreneur mumbai',
-    'independent consultant delhi',
-    'freelance designer pakistan',
-    'content creator bangalore',
-    'business coach remote',
+    'solopreneur', 'independent consultant', 'freelance designer',
+    'content creator', 'business coach', 'consultant',
   ],
 };
 
