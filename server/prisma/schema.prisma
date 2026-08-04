@@ -1307,3 +1307,37 @@ model IssuerKey {
   rotatedAt     DateTime @default(now())
   isActive      Boolean  @default(true)
 }
+
+model Web3Agent {
+  id                  String    @id @default(cuid())
+  profileId           String    @unique
+  walletAddress       String    @unique
+  encryptedPrivateKey String    // AES-256-GCM encrypted
+  category            String
+  balancePab          Float     @default(0)
+  dailyOutflow        Float     @default(0)
+  dailyTransactions   Int       @default(0)
+  lastReset           DateTime  @default(now())
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  transactions AgentTransaction[]
+}
+
+model AgentTransaction {
+  id          String   @id @default(cuid())
+  agentId     String
+  type        String   // FUNDING | BOOKING_PAYMENT | STAKE | BADGE_PURCHASE | FEE_COLLECTION
+  amount      Float
+  txHash      String?
+  fromAddress String?
+  toAddress   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  agent Web3Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@index([txHash])
+}
