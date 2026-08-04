@@ -6,13 +6,31 @@ const router = Router();
 
 /**
  * POST /api/v1/linkedin/seed
- * Seed profiles from public LinkedIn search.
+ * Seed profiles from real public sources (GitHub, AngelList, Wellfound, Fiverr RSS, Chambers).
  * Body: { profilesPerPersona?: number }
  */
 router.post('/', async (req: Request, res: Response): Promise<any> => {
   const profilesPerPersona = Number(req.body.profilesPerPersona) || 25;
   try {
     const results = await linkedinProfileSeeder.seedAllProfiles(profilesPerPersona);
+    res.json({ success: true, data: results });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/seed/with-wallets
+ * Seed real profiles AND generate + fund Solana wallets with $PAB.
+ * This bootstraps the self-economy: each profile gets a wallet with $1 PAB,
+ * then can self-generate bookings/revenue.
+ * Body: { profilesPerPersona?: number, fundingUsd?: number }
+ */
+router.post('/with-wallets', async (req: Request, res: Response): Promise<any> => {
+  const profilesPerPersona = Number(req.body.profilesPerPersona) || 25;
+  const fundingUsd = Number(req.body.fundingUsd) || 1;
+  try {
+    const results = await linkedinProfileSeeder.seedWithWallets(profilesPerPersona, fundingUsd);
     res.json({ success: true, data: results });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
