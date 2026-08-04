@@ -66,7 +66,8 @@ export interface SeedProfile {
   profileCompleteness: number;  // [0, 1] — how complete the profile is
   trustVelocity: number;         // [-1, 1] — initial TrustFlux velocity
   persona: string;
-  seedSource: 'LINKEDIN_SEARCH' | 'MANUAL_IMPORT' | 'USER_REFERRAL';
+  seedSource: 'LINKEDIN_SEARCH' | 'MANUAL_IMPORT' | 'USER_REFERRAL' | 'GITHUB' | 'FIVERR' | 'ANGELLIST' | 'WELLFOUND' | 'CHAMBER';
+  githubUrl?: string;
 }
 
 // ── Profile Scorer (assigns initial trust based on public signals) ────────────
@@ -436,8 +437,8 @@ export class LinkedInProfileSeeder {
           totalSeeded++;
         }
 
-        // Rate-limit: 2 seconds between queries (frugal)
-        await this.sleep(2000);
+        // Rate-limit: 500ms between batches (frugal but faster)
+        await this.sleep(500);
       }
 
       results[persona.id] = totalSeeded;
@@ -453,15 +454,21 @@ export class LinkedInProfileSeeder {
   public async seedProfile(
     rawProfile: Partial<SeedProfile>,
     persona: { id: string; name: string },
-    seedSource: 'LINKEDIN_SEARCH' | 'MANUAL_IMPORT' | 'USER_REFERRAL' = 'LINKEDIN_SEARCH'
+    seedSource: 'LINKEDIN_SEARCH' | 'MANUAL_IMPORT' | 'USER_REFERRAL' | 'GITHUB' | 'FIVERR' | 'ANGELLIST' | 'WELLFOUND' | 'CHAMBER' = 'LINKEDIN_SEARCH'
   ): Promise<SeedProfile | null> {
-    if (!rawProfile.linkedinUrl || !rawProfile.firstName) {
+    if (!rawProfile.firstName) {
+      return null;
+    }
+    // Accept either linkedinUrl or githubUrl as the profile URL
+    const profileUrl = rawProfile.linkedinUrl || rawProfile.githubUrl || '';
+    if (!profileUrl) {
       return null;
     }
 
     const profile: SeedProfile = {
       linkedinId: rawProfile.linkedinId || crypto.randomBytes(6).toString('hex'),
-      linkedinUrl: rawProfile.linkedinUrl,
+      linkedinUrl: profileUrl,
+      githubUrl: rawProfile.githubUrl,
       firstName: rawProfile.firstName,
       lastName: rawProfile.lastName || '',
       headline: rawProfile.headline || '',
