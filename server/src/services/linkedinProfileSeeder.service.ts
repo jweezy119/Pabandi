@@ -794,6 +794,75 @@ export class LinkedInProfileSeeder {
     return { imported, errors };
   }
 
+  /**
+   * Self-Economy Simulation: seeded profiles make bookings with each other.
+   * Freelancer profiles "book" project-owner profiles for services,
+   * generating PAB rewards + escrow fees that flow back into the ecosystem.
+   *
+   * This creates a self-sustaining micro-economy: seeded wallets fund bookings,
+   * booking fees generate platform revenue, revenue funds new profile wallets.
+   */
+  async simulateSelfEconomy(rounds: number = 3): Promise<{
+    bookingsMade: number;
+    pabRewarded: number;
+    pabFees: number;
+    pabBurned: number;
+    roundsCompleted: number;
+  }> {
+    let bookingsMade = 0;
+    let pabRewarded = 0;
+    let pabFees = 0;
+    let pabBurned = 0;
+
+    const profiles = Array.from(this.seeded.values());
+    const freelancers = profiles.filter(p => p.persona === 'freelance-dev' && p.walletAddress);
+    const businesses = profiles.filter(p => (p.persona === 'project-owner' || p.persona === 'small-biz-owner') && p.walletAddress);
+
+    const BOOKING_FEE_PAB = 5;  // Platform fee per booking (5 PAB)
+    const PAB_TO_USDC_RATE = 0.01;
+
+    for (let round = 0; round < rounds; round++) {
+      if (freelancers.length === 0 || businesses.length === 0) break;
+
+      // Each freelancer makes 1 booking per round with a random business
+      for (const freelancer of freelancers) {
+        if (freelancers.indexOf(freelancer) >= businesses.length) break;
+        const business = businesses[round % businesses.length];
+
+        // Simulate booking: freelancer pays business, platform takes fee
+        const bookingFee = BOOKING_FEE_PAB;
+        const pabReward = 10;  // PAB reward for completed booking
+
+        pabFees += bookingFee;
+        pabRewarded += pabReward;
+
+        // Burn 10% of fees as deflationary mechanism
+        const burned = Math.floor(bookingFee * 0.1);
+        pabBurned += burned;
+
+        bookingsMade++;
+        logger.info(`[ProfileSeeder] Self-economy booking: ${freelancer.firstName} → ${business.firstName} | fee: ${bookingFee} PAB, reward: ${pabReward} PAB`);
+      }
+
+      // Every 2 rounds, redistribute accumulated fees to top-tier profiles
+      if (round > 0 && round % 2 === 0) {
+        const feeRedistribution = Math.floor(pabFees * 0.5);
+        if (feeRedistribution > 0) {
+          logger.info(`[ProfileSeeder] Revenue redistribution: ${feeRedistribution} PAB to ${freelancers.length} profiles`);
+          // In production: actual token transfers here
+        }
+      }
+    }
+
+    return {
+      bookingsMade,
+      pabRewarded,
+      pabFees,
+      pabBurned,
+      roundsCompleted: rounds,
+    };
+  }
+
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

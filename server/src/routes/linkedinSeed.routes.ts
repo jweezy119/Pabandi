@@ -99,4 +99,20 @@ router.get('/stats', async (_req: Request, res: Response): Promise<any> => {
   }
 });
 
+/**
+ * POST /api/v1/linkedin/seed/simulate-economy
+ * Run self-economy simulation: seeded profiles book each other,
+ * generating PAB rewards + platform fees.
+ * Body: { rounds?: number }
+ */
+router.post('/simulate-economy', async (req: Request, res: Response): Promise<any> => {
+  const rounds = Number(req.body.rounds) || 3;
+  try {
+    const result = await linkedinProfileSeeder.simulateSelfEconomy(rounds);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
