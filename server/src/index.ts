@@ -61,6 +61,7 @@ import vcRoutes from './routes/vc.routes';
 import ebayRoutes from './routes/ebay.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
+import linkedinSeedRoutes from './routes/linkedinSeed.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -171,6 +172,7 @@ app.use(`/api/${API_VERSION}/api-keys`, apiKeyRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 app.use(`/api/${API_VERSION}/monetization`, monetizationRoutes);
 app.use(`/api/${API_VERSION}/linkedin`, linkedinRoutes);
+app.use(`/api/${API_VERSION}/linkedin/seed`, linkedinSeedRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
 import aiRoutes from './routes/ai.routes';
