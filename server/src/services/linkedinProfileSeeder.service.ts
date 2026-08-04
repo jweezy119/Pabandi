@@ -466,8 +466,10 @@ export class LinkedInProfileSeeder {
   private loadLocalSeedData(): Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }> {
     try {
       // seedProfilesData is the imported JSON (tsc compiles JSON alongside TS)
-      const data = seedProfilesData as unknown as Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }>;
-      return data;
+      // When using `import * as`, tsc wraps in { default: [...] }, so handle both
+      const data = (seedProfilesData as any).default || seedProfilesData;
+      const arr = Array.isArray(data) ? data : (data as any).items || [];
+      return arr as Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }>;
     } catch (err: any) {
       logger.warn(`[ProfileSeeder] Failed to load seedProfiles.json: ${err.message}`);
       return [];
