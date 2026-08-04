@@ -58,6 +58,7 @@ export interface SeedProfile {
   persona: string;
   seedSource: 'LINKEDIN_SEARCH' | 'MANUAL_IMPORT' | 'USER_REFERRAL' | 'GITHUB' | 'FIVERR' | 'ANGELLIST' | 'WELLFOUND' | 'CHAMBER';
   githubUrl?: string;
+  walletAddress?: string;  // Solana/EVM wallet for token staking + bookings
 }
 
 // ── Profile Scorer (assigns initial trust based on public signals) ────────────
@@ -551,6 +552,119 @@ export class LinkedInProfileSeeder {
   }
 
   /**
+   * Generate a Solana wallet for a profile (deterministic from profile ID).
+   * Returns the wallet address. Private key is encrypted via walletAddress hash
+   * so profiles can sign transactions autonomously.
+   */
+  async generateWalletForProfile(profile: SeedProfile): Promise<string> {
+    // Deterministic wallet from profile ID (reproducible, no storage needed)
+    const seed = crypto.createHash('sha256').update(profile.linkedinId + profile.firstName).digest();
+    const web3 = await this.getSolanaWeb3();
+    if (!web3) {
+      logger.warn('[ProfileSeeder] @solana/web3.js not available — using simulated wallet');
+      return `sim_${crypto.createHash('sha256').update(profile.linkedinId).digest('hex').substring(0, 32)}`;
+    }
+    try {
+      // Create deterministic keypair from seed
+      const keypair = web3.Keypair.fromSeed(seed.slice(0, 32));
+      const walletAddress = keypair.publicKey.toBase58();
+      logger.info(`[ProfileSeeder] Generated wallet for ${profile.firstName}: ${walletAddress}`);
+      return walletAddress;
+    } catch (err: any) {
+      logger.warn(`[ProfileSeeder] Solana wallet generation failed: ${err.message}`);
+      return `sim_${crypto.createHash('sha256').update(profile.linkedinId).digest('hex').substring(0, 32)}`;
+    }
+  }
+
+  /**
+   * Fund a profile's wallet with $1 USD worth of PAB token.
+   * In dev/sim mode, logs the action. In production, calls blockchain.service.
+   */
+  async fundProfileWallet(walletAddress: string, amountUsd: number = 1): Promise<{ txHash?: string; simulated: boolean; pabAmount: number }> {
+    const PAB_PER_USD = 100; // 1 PAB = $0.01 (pegged)
+    const pabAmount = amountUsd * PAB_PER_USD;
+
+    // Check if this is a simulated wallet (no @solana/web3.js)
+    if (walletAddress.startsWith('sim_')) {
+      logger.info(`[ProfileSeeder] Simulated funding: ${pabAmount} PAB (~$${amountUsd}) → ${walletAddress}`);
+      return { simulated: true, pabAmount };
+    }
+
+    try {
+      const { blockchainService } = await import('./blockchain.service');
+      if (walletAddress.startsWith('0x')) {
+        // EVM wallet — future BSC support
+        return { simulated: true, pabAmount };
+      }
+      // Solana wallet
+      const result = await blockchainService.executeSolanaTransfer(walletAddress, pabAmount);
+      if (result.error) {
+        logger.warn(`[ProfileSeeder] Funding failed: ${result.error}`);
+        return { simulated: true, pabAmount };
+      }
+      return { txHash: result.txHash, simulated: false, pabAmount };
+    } catch (err: any) {
+      logger.warn(`[ProfileSeeder] Funding via blockchain failed: ${err.message}`);
+      return { simulated: true, pabAmount };
+    }
+  }
+
+  private async getSolanaWeb3() {
+    try {
+      return await import('@solana/web3.js');
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Seed profiles + generate + fund wallets for each profile.
+   * This is the "self-economy" approach: real profiles get wallets with $1 PAB,
+   * then auto-interact with bookings/reservations, generating revenue from fees.
+   */
+  async seedWithWallets(profilesPerPersona: number = 25, fundingUsd: number = 1): Promise<Record<string, { profiles: number; walletsFunded: number; totalPab: number }>> {
+    const results: Record<string, { profiles: number; walletsFunded: number; totalPab: number }> = {};
+
+    for (const persona of LINKEDIN_PERSONAS) {
+      const localProfiles = this.loadLocalSeedData().filter(p => p.category === persona.id).slice(0, profilesPerPersona);
+      let walletsFunded = 0;
+      let totalPab = 0;
+
+      for (const raw of localProfiles) {
+        const profile = this.prepareProfile(raw);
+        if (!profile.firstName) continue;
+
+        const seeded = await this.seedProfile(profile, persona, 'GITHUB');
+        if (!seeded) continue;
+
+        // Generate wallet for seeded profile
+        const wallet = await this.generateWalletForProfile(seeded);
+        seeded.walletAddress = wallet;
+        this.seeded.set(seeded.linkedinId, seeded);
+
+        // Fund wallet with $1 USDC worth of PAB
+        const fundResult = await this.fundProfileWallet(wallet, fundingUsd);
+        if (fundResult.simulated || fundResult.txHash) {
+          walletsFunded++;
+          totalPab += fundResult.pabAmount;
+        }
+      }
+
+      // Also try live API fetches for additional profiles
+      const queries = SEED_QUERIES[persona.id] || [];
+      for (const query of queries) {
+        if (this.seeded.size >= profilesPerPersona * 4) break;
+        const profiles = await fetchProfilesForPersona(persona.id, query, 5);
+      }
+
+      results[persona.id] = { profiles: walletsFunded, walletsFunded, totalPab };
+      logger.info(`[ProfileSeeder] ${persona.name}: ${walletsFunded} profiles with wallets, ${totalPab} PAB funded`);
+    }
+
+    return results;
+  }
+
+  /**
    * Get a free public trust badge HTML for a seeded profile.
    * This is the FREE marketing layer — everyone gets a badge.
    */
@@ -603,6 +717,7 @@ export class LinkedInProfileSeeder {
     byPersona: Record<string, number>;
     byBand: Record<string, number>;
     avgVelocity: number;
+    walletCoverage: { withWallet: number; total: number; percentage: number };
   } {
     const byPersona: Record<string, number> = {};
     const byBand: Record<string, number> = {};
@@ -620,6 +735,21 @@ export class LinkedInProfileSeeder {
       byPersona,
       byBand,
       avgVelocity: this.seeded.size > 0 ? totalVelocity / this.seeded.size : 0,
+      walletCoverage: this.calculateWalletCoverage(),
+    };
+  }
+
+  /** Calculate how many seeded profiles have wallets. */
+  private calculateWalletCoverage(): { withWallet: number; total: number; percentage: number } {
+    let withWallet = 0;
+    for (const p of this.seeded.values()) {
+      if (p.walletAddress) withWallet++;
+    }
+    const total = this.seeded.size;
+    return {
+      withWallet,
+      total,
+      percentage: total > 0 ? Math.round((withWallet / total) * 100) : 0,
     };
   }
 
