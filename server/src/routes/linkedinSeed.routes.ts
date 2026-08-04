@@ -9,7 +9,7 @@ const router = Router();
  * Seed profiles from public LinkedIn search.
  * Body: { profilesPerPersona?: number }
  */
-router.post('/seed', async (req: Request, res: Response): Promise<any> => {
+router.post('/', async (req: Request, res: Response): Promise<any> => {
   const profilesPerPersona = Number(req.body.profilesPerPersona) || 25;
   try {
     const results = await linkedinProfileSeeder.seedAllProfiles(profilesPerPersona);
@@ -24,7 +24,7 @@ router.post('/seed', async (req: Request, res: Response): Promise<any> => {
  * Import profiles from CSV (manual upload).
  * Body: { personaId, csvContent }
  */
-router.post('/seed/import-csv', async (req: Request, res: Response): Promise<any> => {
+router.post('/import-csv', async (req: Request, res: Response): Promise<any> => {
   const { personaId, csvContent } = req.body;
   if (!personaId || !csvContent) {
     return res.status(400).json({ success: false, error: 'personaId and csvContent required' });
@@ -41,12 +41,10 @@ router.post('/seed/import-csv', async (req: Request, res: Response): Promise<any
  * GET /api/v1/linkedin/seed/badge/:linkedinId
  * Get free public trust badge HTML for a seeded profile.
  */
-router.get('/seed/badge/:linkedinId', async (req: Request, res: Response): Promise<any> => {
+router.get('/badge/:linkedinId', async (req: Request, res: Response): Promise<any> => {
   const { linkedinId } = req.params;
   try {
     const stats = linkedinProfileSeeder.getStats();
-    // In production: look up profile from cache
-    // For now: return a demo badge
     const demoProfile = {
       linkedinId,
       firstName: 'Demo',
@@ -74,7 +72,7 @@ router.get('/seed/badge/:linkedinId', async (req: Request, res: Response): Promi
  * GET /api/v1/linkedin/seed/stats
  * Get seeding + trust band statistics.
  */
-router.get('/seed/stats', async (_req: Request, res: Response): Promise<any> => {
+router.get('/stats', async (_req: Request, res: Response): Promise<any> => {
   try {
     const stats = linkedinProfileSeeder.getStats();
     res.json({ success: true, data: stats });
