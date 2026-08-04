@@ -204,6 +204,7 @@ async function fetchFromGitHub(query: string, count: number): Promise<Partial<Se
         profiles.push({
           linkedinId: crypto.createHash('md5').update(user.html_url).digest('hex').substring(0, 12),
           linkedinUrl: '',
+          githubUrl: user.html_url,
           firstName,
           lastName,
           headline,
