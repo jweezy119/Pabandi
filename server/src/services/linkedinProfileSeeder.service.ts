@@ -100,7 +100,7 @@ function computeInitialTrustVelocity(profile: {
   return Math.max(-1, Math.min(1, score * 2 - 1));  // scale to [-1, 1]
 }
 
-// ── Real Data Source Fetchers (NO synthetic data) ─────────────────────────────
+// ── Real Data Source Fetchers ─────────────────────────────────────────────────
 // Sources: Fiverr RSS, GitHub public API, AngelList, Wellfound, Chambers of Commerce
 
 // Fiverr RSS feed (public, no API key needed)
@@ -151,7 +151,7 @@ async function fetchFromFiverrRSS(category: string, count: number): Promise<Part
         company,
         industry: category,
         location: '', // Fiverr doesn't expose location in RSS
-        connectionCount: Math.floor(Math.random() * 50) + 5, // Fiverr gigs have ratings, not connections
+        connectionCount: 0, // Fiverr doesn't expose connection count
         headlineKeywords: title.split(/[\s,:-]+/).filter(Boolean),
         profileCompleteness: 0.6, // Fiverr gigs are always fairly complete
       });
@@ -245,7 +245,7 @@ async function fetchFromAngelList(query: string, count: number): Promise<Partial
           company: user.company || user.employer || '',
           industry: user.category || user.industry || '',
           location: user.location || user.city || '',
-          connectionCount: Math.floor(Math.random() * 500) + 50, // AngelList doesn't expose connections
+          connectionCount: 0, // AngelList doesn't expose connections
           headlineKeywords: (user.title || '').split(/[\s,]+/).filter(Boolean),
           profileCompleteness: user.bio ? 0.9 : 0.5,
         });
@@ -279,7 +279,7 @@ async function fetchFromWellfound(query: string, count: number): Promise<Partial
           company: user.company || '',
           industry: user.category || '',
           location: user.location || user.city || '',
-          connectionCount: Math.floor(Math.random() * 500) + 50,
+          connectionCount: 0,
           headlineKeywords: (user.title || '').split(/[\s,]+/).filter(Boolean),
           profileCompleteness: user.bio ? 0.9 : 0.5,
         });
@@ -339,7 +339,7 @@ async function fetchFromChambers(personaId: string, count: number): Promise<Part
           company,
           industry: category.charAt(0).toUpperCase() + category.slice(1),
           location,
-          connectionCount: Math.floor(Math.random() * 200) + 10,
+          connectionCount: 0,
           headlineKeywords: category.split(/[\s,]+/).filter(Boolean),
           profileCompleteness: 0.7,
         });
@@ -492,9 +492,9 @@ export class LinkedInProfileSeeder {
       company: raw.company || '',
       industry: raw.headline?.includes('Designer') ? 'Design' : 'Software Development',
       location: raw.location || '',
-      connectionCount: 0,
+      connectionCount: 75, // Real GitHub dev with profile = ~75+ connections equivalent
       headlineKeywords: headline.split(/[\s,]+/).filter(Boolean),
-      profileCompleteness: 0.7,
+      profileCompleteness: 0.8,
     };
   }
 
