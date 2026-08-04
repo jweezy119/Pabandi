@@ -17,6 +17,8 @@ import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { LINKEDIN_PERSONAS } from './linkedinLeadGen.service';
+// Import verified real profiles from JSON (compiled alongside TS by tsc)
+import * as seedProfilesData from '../data/seedProfiles.json';
 
 // ── Seed Queries (used for public data source fetches) ─────────────────────────
 // These map persona types to real search queries for each data source
@@ -463,11 +465,9 @@ export class LinkedInProfileSeeder {
   /** Load real profiles from pre-verified JSON seed file. */
   private loadLocalSeedData(): Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }> {
     try {
-      const fs = require('fs');
-      const path = require('path');
-      const dataPath = path.join(__dirname, '../data/seedProfiles.json');
-      const raw = fs.readFileSync(dataPath, 'utf-8');
-      return JSON.parse(raw);
+      // seedProfilesData is the imported JSON (tsc compiles JSON alongside TS)
+      const data = seedProfilesData as unknown as Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }>;
+      return data;
     } catch (err: any) {
       logger.warn(`[ProfileSeeder] Failed to load seedProfiles.json: ${err.message}`);
       return [];
