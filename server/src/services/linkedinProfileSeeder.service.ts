@@ -411,22 +411,45 @@ export class LinkedInProfileSeeder {
   ): Promise<Record<string, number>> {
     const results: Record<string, number> = {};
 
-    for (const persona of LINKEDIN_PERSONAS) {
-      const queries = SEED_QUERIES[persona.id] || [];
-      let totalSeeded = 0;
+    // Load real profiles from local JSON file (verified real GitHub profiles)
+    const realProfiles = this.loadLocalSeedData();
+    const profilesByPersona: Record<string, Array<{ login: string; githubUrl: string; headline: string; company: string; location: string }>> = {
+      'freelance-dev': [],
+      'small-biz-owner': [],
+      'project-owner': [],
+      'solopreneur': [],
+    };
+    for (const p of realProfiles) {
+      if (profilesByPersona[p.category]) {
+        profilesByPersona[p.category].push(p);
+      }
+    }
 
+    for (const persona of LINKEDIN_PERSONAS) {
+      let totalSeeded = 0;
+      const localProfiles = profilesByPersona[persona.id] || [];
+
+      // 1. First, use verified local real profiles
+      for (const raw of localProfiles) {
+        if (totalSeeded >= profilesPerPersona) break;
+        const p = this.prepareProfile(raw);
+        const seeded = await this.seedProfile(p, persona, 'GITHUB');
+        if (seeded) {
+          totalSeeded++;
+        }
+      }
+
+      // 2. Then, attempt live API fetches for additional profiles
+      const queries = SEED_QUERIES[persona.id] || [];
       for (const query of queries) {
         if (totalSeeded >= profilesPerPersona) break;
-
         const remaining = profilesPerPersona - totalSeeded;
         const profiles = await fetchProfilesForPersona(persona.id, query, Math.min(remaining, 10));
-
         for (const p of profiles) {
           await this.seedProfile(p, persona);
           totalSeeded++;
         }
-
-        // Rate-limit: 500ms between batches (frugal but faster)
+        // Rate-limit: 500ms between API batches
         await this.sleep(500);
       }
 
@@ -435,6 +458,42 @@ export class LinkedInProfileSeeder {
     }
 
     return results;
+  }
+
+  /** Load real profiles from pre-verified JSON seed file. */
+  private loadLocalSeedData(): Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const dataPath = path.join(__dirname, '../data/seedProfiles.json');
+      const raw = fs.readFileSync(dataPath, 'utf-8');
+      return JSON.parse(raw);
+    } catch (err: any) {
+      logger.warn(`[ProfileSeeder] Failed to load seedProfiles.json: ${err.message}`);
+      return [];
+    }
+  }
+
+  /** Convert a raw profile object into a Partial<SeedProfile>. */
+  private prepareProfile(raw: { login: string; githubUrl: string; headline: string; company: string; location: string }): Partial<SeedProfile> {
+    const nameParts = raw.login.split(/[-_]/).filter(Boolean);
+    const firstName = nameParts[0] || raw.login;
+    const lastName = nameParts[1] || '';
+    const headline = raw.headline || 'Developer';
+    return {
+      linkedinId: crypto.createHash('md5').update(raw.githubUrl).digest('hex').substring(0, 12),
+      linkedinUrl: '',
+      githubUrl: raw.githubUrl,
+      firstName,
+      lastName,
+      headline,
+      company: raw.company || '',
+      industry: raw.headline?.includes('Designer') ? 'Design' : 'Software Development',
+      location: raw.location || '',
+      connectionCount: 0,
+      headlineKeywords: headline.split(/[\s,]+/).filter(Boolean),
+      profileCompleteness: 0.7,
+    };
   }
 
   /**
