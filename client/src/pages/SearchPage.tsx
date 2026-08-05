@@ -4,7 +4,7 @@ import { useQuery } from 'react-query';
 import { businessService, textSearchService } from '../services/api';
 import { API_HOST } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { Surface, Button, tokens } from '../design-system';
+import { Button, tokens, GlassCard } from '../design-system';
 
 type Business = {
   id: string;
@@ -444,7 +444,7 @@ export default function SearchPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {isLoading && Array.from({ length: 6 }).map((_, idx) => <SkeletonCard key={`skeleton-${idx}`} />)}
           {results.map((biz: any) => (
-            <Surface key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col transition-transform duration-200 hover:-translate-y-[3px] hover:shadow-2xl hover:shadow-indigo-500/10">
+            <GlassCard key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
               <Link to={`/business/${biz.id}`} className="block">
                 <div
                   className="h-36 rounded-t-2xl sm:h-40"
@@ -476,7 +476,7 @@ export default function SearchPage() {
                   {isAuthenticated ? 'Book now' : 'Log in to book'}
                 </Button>
               </div>
-            </Surface>
+            </GlassCard>
           ))}
         </div>
       </div>

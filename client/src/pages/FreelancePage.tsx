@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { textSearchService } from '../services/api';
-import { tokens } from '../design-system';
+import { tokens, GlassCard } from '../design-system';
 import { useAuthStore } from '../store/authStore';
 import profilesJson from '../data/profiles.json';
 
@@ -160,17 +160,19 @@ export default function FreelancePage() {
               const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
               const hue = ['freelance-dev','small-biz-owner','project-owner','solopreneur'].indexOf(p.category) * 90;
               return (
-                <Link key={p.id} to={`/profiles/${p.id}`} className={`flex items-start gap-3 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4 card-lift anim-fade-up ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black shadow" style={{ background: `linear-gradient(135deg, hsl(${hue},70%,55%), hsl(${hue + 40},60%,40%))`, color: 'white' }}>{initials}</div>
-                  <div className="min-w-0">
-                    <p className="font-headline font-bold text-sm truncate">{p.headline}</p>
-                    <p className="text-xs text-on-surface-variant truncate">{`${p.firstName} ${p.lastName}`} · {p.location}</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{CATEGORY_META[p.category]?.label || p.category}</span>
-                      <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{p.company}</span>
+                <GlassCard key={p.id} className={`anim-fade-up ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
+                  <Link to={`/profiles/${p.id}`} className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black shadow" style={{ background: `linear-gradient(135deg, hsl(${hue},70%,55%), hsl(${hue + 40},60%,40%))`, color: 'white' }}>{initials}</div>
+                    <div className="min-w-0">
+                      <p className="font-headline font-bold text-sm truncate">{p.headline}</p>
+                      <p className="text-xs text-on-surface-variant truncate">{`${p.firstName} ${p.lastName}`} · {p.location}</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{CATEGORY_META[p.category]?.label || p.category}</span>
+                        <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{p.company}</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </GlassCard>
               );
             })}
           </div>
