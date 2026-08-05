@@ -29,6 +29,7 @@ import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
+import ProfileDetailPage from './pages/ProfileDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import { WalletPage } from './pages/WalletPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
@@ -140,7 +141,8 @@ function App() {
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
             <Route path="profiles" element={<ProfilesPage />} />
-            <Route path="profiles/:category" element={<ProfilesPage />} />
+            <Route path="profiles/category/:category" element={<ProfilesPage />} />
+            <Route path="profiles/:id" element={<ProfileDetailPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />

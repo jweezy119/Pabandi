@@ -56,6 +56,43 @@ router.post('/import-csv', async (req: Request, res: Response): Promise<any> => 
 });
 
 /**
+ * GET /api/v1/linkedin/seed/profiles
+ * Public list of seeded profiles for the frontend.
+ * Query: ?category=freelance-dev|small-biz-owner|project-owner|solopreneur
+ */
+router.get('/profiles', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const category = String(req.query.category || '').trim();
+    const stats = linkedinProfileSeeder.getStats();
+    const profiles = (linkedinProfileSeeder as any).getProfiles?.() || [];
+    const filtered = category ? profiles.filter((p: any) => p.category === category || p.persona === category) : profiles;
+    res.json({
+      success: true,
+      data: {
+        total: filtered.length,
+        profiles: filtered.map((p: any) => ({
+          linkedinId: p.linkedinId,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          headline: p.headline,
+          company: p.company,
+          location: p.location,
+          category: p.persona || p.category,
+          githubUrl: p.githubUrl,
+          walletAddress: p.walletAddress || null,
+          trustVelocity: p.trustVelocity,
+          connectionCount: p.connectionCount,
+          profileCompleteness: p.profileCompleteness,
+        })),
+        stats,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/v1/linkedin/seed/badge/:linkedinId
  * Get free public trust badge HTML for a seeded profile.
  */

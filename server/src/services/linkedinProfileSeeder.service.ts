@@ -718,6 +718,7 @@ export class LinkedInProfileSeeder {
     byBand: Record<string, number>;
     avgVelocity: number;
     walletCoverage: { withWallet: number; total: number; percentage: number };
+    economy: any;
   } {
     const byPersona: Record<string, number> = {};
     const byBand: Record<string, number> = {};
@@ -736,6 +737,7 @@ export class LinkedInProfileSeeder {
       byBand,
       avgVelocity: this.seeded.size > 0 ? totalVelocity / this.seeded.size : 0,
       walletCoverage: this.calculateWalletCoverage(),
+      economy: (this as any).lastEconomy || null,
     };
   }
 
@@ -751,6 +753,11 @@ export class LinkedInProfileSeeder {
       total,
       percentage: total > 0 ? Math.round((withWallet / total) * 100) : 0,
     };
+  }
+
+  /** Public list of seeded profiles. */
+  public getProfiles(): SeedProfile[] {
+    return Array.from(this.seeded.values());
   }
 
   /**
@@ -854,13 +861,17 @@ export class LinkedInProfileSeeder {
       }
     }
 
-    return {
+    const result = {
       bookingsMade,
       pabRewarded,
       pabFees,
       pabBurned,
       roundsCompleted: rounds,
     };
+    (this as any).lastEconomy = { ...result, lastRunAt: new Date().toISOString() };
+    return result;
+  } catch (err: any) {
+    throw err;
   }
 
   private sleep(ms: number): Promise<void> {
