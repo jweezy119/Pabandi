@@ -64,7 +64,33 @@ router.get('/profiles', async (req: Request, res: Response): Promise<any> => {
   try {
     const category = String(req.query.category || '').trim();
     const stats = linkedinProfileSeeder.getStats();
-    const profiles = (linkedinProfileSeeder as any).getProfiles?.() || [];
+    let profiles = (linkedinProfileSeeder as any).getProfiles?.() || [];
+
+    // Fallback: if in-memory seeder is empty, load from local seed data
+    if (!profiles.length) {
+      try {
+        const local = (linkedinProfileSeeder as any).loadLocalSeedData?.();
+        if (Array.isArray(local) && local.length) {
+          profiles = local.map((raw: any, idx: number) => ({
+            linkedinId: raw.linkedinId || `local-${idx}`,
+            firstName: raw.login?.split(/[-_]/)[0] || 'User',
+            lastName: raw.login?.split(/[-_]/).slice(1).join('-') || '',
+            headline: raw.headline || 'Developer',
+            company: raw.company || '',
+            location: raw.location || '',
+            category: raw.category || 'freelance-dev',
+            githubUrl: raw.githubUrl,
+            walletAddress: null,
+            trustVelocity: 0,
+            connectionCount: raw.connectionCount || 0,
+            profileCompleteness: 0.8,
+          }));
+        }
+      } catch (e) {
+        // ignore fallback errors
+      }
+    }
+
     const filtered = category ? profiles.filter((p: any) => p.category === category || p.persona === category) : profiles;
     res.json({
       success: true,
