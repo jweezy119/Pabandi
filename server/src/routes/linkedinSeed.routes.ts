@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { linkedinProfileSeeder } from '../services/linkedinProfileSeeder.service';
 import { logger } from '../utils/logger';
+import { initLinkedInProfileDb, getLinkedInProfilesFromDb } from '../services/linkedinProfileDb.service';
 
 const router = Router();
 
@@ -10,6 +11,10 @@ if (!linkedinProfileSeeder.getProfiles()?.length) {
     logger.error('[LinkedInSeed] Startup seed failed: ' + e.message);
   });
 }
+
+initLinkedInProfileDb().catch((e: any) => {
+  logger.error('[LinkedInSeed] Profile DB init failed: ' + e.message);
+});
 
 /**
  * POST /api/v1/linkedin/seed
@@ -71,30 +76,40 @@ router.get('/profiles', async (req: Request, res: Response): Promise<any> => {
   try {
     const category = String(req.query.category || '').trim();
     const stats = linkedinProfileSeeder.getStats();
-    let profiles = (linkedinProfileSeeder as any).getProfiles?.() || [];
 
-    // Fallback: if in-memory seeder is empty, load from local seed data
+    // Primary: local SQLite persistence
+    let profiles: any[] = [];
+    try {
+      profiles = await getLinkedInProfilesFromDb(category || undefined);
+    } catch (e) {
+      // ignore DB errors and fall back below
+    }
+
+    // Fallback: in-memory/local JSON
     if (!profiles.length) {
-      try {
-        const local = (linkedinProfileSeeder as any).loadLocalSeedData?.();
-        if (Array.isArray(local) && local.length) {
-          profiles = local.map((raw: any, idx: number) => ({
-            linkedinId: raw.linkedinId || `local-${idx}`,
-            firstName: raw.login?.split(/[-_]/)[0] || 'User',
-            lastName: raw.login?.split(/[-_]/).slice(1).join('-') || '',
-            headline: raw.headline || 'Developer',
-            company: raw.company || '',
-            location: raw.location || '',
-            category: raw.category || 'freelance-dev',
-            githubUrl: raw.githubUrl,
-            walletAddress: null,
-            trustVelocity: 0,
-            connectionCount: raw.connectionCount || 0,
-            profileCompleteness: 0.8,
-          }));
+      profiles = (linkedinProfileSeeder as any).getProfiles?.() || [];
+      if (!profiles.length) {
+        try {
+          const local = (linkedinProfileSeeder as any).loadLocalSeedData?.();
+          if (Array.isArray(local) && local.length) {
+            profiles = local.map((raw: any, idx: number) => ({
+              linkedinId: raw.linkedinId || `local-${idx}`,
+              firstName: raw.login?.split(/[-_]/)[0] || 'User',
+              lastName: raw.login?.split(/[-_]/).slice(1).join('-') || '',
+              headline: raw.headline || 'Developer',
+              company: raw.company || '',
+              location: raw.location || '',
+              category: raw.category || 'freelance-dev',
+              githubUrl: raw.githubUrl,
+              walletAddress: null,
+              trustVelocity: 0,
+              connectionCount: raw.connectionCount || 0,
+              profileCompleteness: 0.8,
+            }));
+          }
+        } catch (e) {
+          // ignore fallback errors
         }
-      } catch (e) {
-        // ignore fallback errors
       }
     }
 
