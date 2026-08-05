@@ -65,7 +65,6 @@ import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { PublicSEO } from './components/PublicSEO';
-
 import { useEffect } from 'react';
 
 function App() {
@@ -82,6 +81,16 @@ function App() {
     if (user?.role === 'ADMIN') return <AdminPanel />;
     if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
     return <Navigate to="/wallet" replace />;
+  };
+
+  const AuthRequiredProfilesPage = () => {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    return <ProfilesPage />;
+  };
+
+  const AuthRequiredProfileDetailPage = () => {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    return <ProfileDetailPage />;
   };
 
   return (
@@ -135,15 +144,15 @@ function App() {
             <Route path="partners/dashboard" element={<PartnerDashboardPage />} />
             <Route path="pricing" element={<PublicSEO seo={{ title: 'Pabandi Pricing | Hospitality & Live Selling Plans', description: 'Explore Pabandi pricing for hospitality properties, live sellers, and freelancers. Free starter plans, escrow-backed deposits, and $PAB rewards.' }}><BusinessModelPage /></PublicSEO>} />
             <Route path="business-model" element={<PublicSEO seo={{ title: 'Pabandi Business Model | Escrow Commissions & Rewards', description: 'Understand Pabandi revenue, escrow commissions, $PAB tokenomics, and trust incentives for sellers, buyers, and hosts.' }}><BusinessModelPage /></PublicSEO>} />
-            <Route path="technology" element={<PublicSEO seo={{ title: 'Pabandi Technology | AI + Web3 Escrow', description: 'How Pabandi uses AI trust scoring, halal escrow, and blockchain-backed commitment to secure bookings for the informal economy.' }}><TechnologyPage /></PublicSEO>} />
+            <Route path="technology" element={<TechnologyPage />} />
             <Route path="web3" element={<Web3Page />} />
             <Route path="hospitality" element={<HospitalityPage />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
-            <Route path="profiles" element={<ProfilesPage />} />
-            <Route path="profiles/category/:category" element={<ProfilesPage />} />
-            <Route path="profiles/:id" element={<ProfileDetailPage />} />
+            <Route path="profiles" element={<AuthRequiredProfilesPage />} />
+            <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
+            <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
             <Route path="economy" element={<EconomyDashboardPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -155,9 +164,9 @@ function App() {
             <Route path="trust/pulse" element={<TrustPulsePage />} />
             <Route path="trust/jury" element={<CommunityJuryPage />} />
             {/* Privacy Policy */}
-            <Route path="privacy" element={<PublicSEO seo={{ title: 'Privacy Policy', description: 'Pabandi privacy policy: data usage, escrow records, review visibility, and seller/customer rights.' }}><PrivacyPolicyPage /></PublicSEO>} />
+            <Route path="privacy" element={<PrivacyPolicyPage />} />
             {/* Terms of Service */}
-            <Route path="terms" element={<PublicSEO seo={{ title: 'Terms of Service', description: 'Pabandi terms of service governing escrow bookings, $PAB rewards, live selling, and platform rules.' }}><TermsOfServicePage /></PublicSEO>} />
+            <Route path="terms" element={<TermsOfServicePage />} />
 
             {/* Shopify Embedded App Route */}
             <Route path="shopify/app" element={<ShopifyAppBridge />} />
