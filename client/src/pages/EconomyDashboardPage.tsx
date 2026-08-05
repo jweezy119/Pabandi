@@ -2,6 +2,7 @@ import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { linkedinSeedService } from '../services/api';
 import { tokens } from '../design-system';
+import PageHeader from '../components/PageHeader';
 
 export default function EconomyDashboardPage() {
   const { data: statsData } = useQuery(['linkedin-seed-stats'], async () => {
@@ -41,20 +42,17 @@ export default function EconomyDashboardPage() {
   return (
     <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
-        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10">
-          <h1 className="font-headline text-2xl sm:text-3xl md:text-4xl font-black">Self-Economy</h1>
-          <p className="mt-2 text-sm sm:text-base text-on-surface-variant max-w-2xl">
-            Autonomous bookings, fees, and $PAB circulation from the seeded network.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link to="/profiles" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 font-headline font-bold text-sm text-white hover:bg-white/10">
-              View Profiles
-            </Link>
-            <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-4 py-2.5 font-headline font-bold text-sm text-white shadow-sm hover:opacity-90">
-              Explore Businesses
-            </Link>
-          </div>
-        </section>
+        <PageHeader
+          title="Self-Economy"
+          description="Autonomous bookings, fees, and $PAB circulation from the seeded network."
+          eyebrow="Economy"
+          actions={
+            <>
+              <Link to="/freelance" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">View Freelancers</Link>
+              <Link to="/search" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 font-headline font-bold text-sm text-white shadow-sm hover:opacity-90">Explore Businesses</Link>
+            </>
+          }
+        />
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
