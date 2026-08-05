@@ -464,7 +464,7 @@ export class LinkedInProfileSeeder {
   }
 
   /** Load real profiles from pre-verified JSON seed file. */
-  private loadLocalSeedData(): Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }> {
+  public loadLocalSeedData(): Array<{ login: string; githubUrl: string; category: string; headline: string; company: string; location: string }> {
     try {
       // seedProfilesData is the imported JSON (tsc compiles JSON alongside TS)
       // When using `import * as`, tsc wraps in { default: [...] }, so handle both
