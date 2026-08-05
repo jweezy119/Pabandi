@@ -46,6 +46,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
+function SkeletonCard() {
+  return (
+    <div className="animate-pulse rounded-3xl border border-white/10 bg-white/5 p-4">
+      <div className="h-36 rounded-t-2xl bg-white/10 sm:h-40" />
+      <div className="mt-3 space-y-2">
+        <div className="h-4 w-3/4 rounded bg-white/10" />
+        <div className="h-3 w-1/2 rounded bg-white/10" />
+        <div className="h-3 w-1/3 rounded bg-white/10" />
+      </div>
+      <div className="mt-4 h-10 rounded-xl bg-white/10" />
+    </div>
+  );
+}
+
 function mapProfileCategoryToBiz(category?: string): string {
   switch (category) {
     case 'freelance-dev':
@@ -428,8 +442,9 @@ export default function SearchPage() {
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {isLoading && Array.from({ length: 6 }).map((_, idx) => <SkeletonCard key={`skeleton-${idx}`} />)}
           {results.map((biz: any) => (
-            <Surface key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
+            <Surface key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col transition-transform duration-200 hover:-translate-y-[3px] hover:shadow-2xl hover:shadow-indigo-500/10">
               <Link to={`/business/${biz.id}`} className="block">
                 <div
                   className="h-36 rounded-t-2xl sm:h-40"
