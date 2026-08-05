@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { textSearchService } from '../services/api';
 import { tokens, GlassCard } from '../design-system';
+import PageHeader from '../components/PageHeader';
 import { useAuthStore } from '../store/authStore';
 import profilesJson from '../data/profiles.json';
 
@@ -67,52 +68,45 @@ export default function FreelancePage() {
         .card-lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.25); }
       `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
-        <section className="relative overflow-hidden rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10 anim-fade-up">
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-60 h-60 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-              <div>
-                <h1 className="font-headline text-2xl sm:text-3xl md:text-4xl font-black">Freelance</h1>
-                <p className="mt-2 text-sm sm:text-base text-on-surface-variant max-w-2xl">
-                  Verified freelancers and independent creators, searchable by skill, rate, and availability. Every profile includes a Pabandi Passport trust score and escrow-backed booking.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {!isAuthenticated && (
-                  <Link to="/login" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">Log in to book</Link>
-                )}
-                <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse freelancers</Link>
-              </div>
-            </div>
+        <PageHeader
+          title="Freelance"
+          description="Verified freelancers and independent creators, searchable by skill, rate, and availability. Every profile includes a Pabandi Passport trust score and escrow-backed booking."
+          eyebrow="Network"
+          actions={
+            <>
+              {!isAuthenticated && <Link to="/login" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">Log in to book</Link>}
+              <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse freelancers</Link>
+            </>
+          }
+        />
 
-            <div className="mt-4">
-              <input
-                value={queryDraft}
-                onChange={(e) => {
-                  setQueryDraft(e.target.value);
-                  setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const q = queryDraft.trim();
-                    if (q) navigate({ pathname: '/search', search: `?category=FREELANCE&q=${encodeURIComponent(q)}` });
-                    else navigate({ pathname: '/search', search: '?category=FREELANCE' });
-                  }
-                }}
-                placeholder="Try: React developer, wedding photographer, tutor"
-                className="w-full p-3 sm:p-4 rounded-2xl bg-surface-container-low/80 border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-              {showDropdown && (
-                <FreelanceSuggestions query={queryDraft} onSelect={(q) => {
-                  navigate({ pathname: '/search', search: `?category=FREELANCE&q=${encodeURIComponent(q)}` });
-                  setQueryDraft(q);
-                  setShowDropdown(false);
-                }} />
-              )}
-            </div>
+        <section className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10 anim-fade-up anim-delay-1">
+          <div className="mt-4">
+            <input
+              value={queryDraft}
+              onChange={(e) => {
+                setQueryDraft(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const q = queryDraft.trim();
+                  if (q) navigate({ pathname: '/search', search: `?category=FREELANCE&q=${encodeURIComponent(q)}` });
+                  else navigate({ pathname: '/search', search: '?category=FREELANCE' });
+                }
+              }}
+              placeholder="Try: React developer, wedding photographer, tutor"
+              className="w-full p-3 sm:p-4 rounded-2xl bg-surface-container-low/80 border border-outline-variant/20 text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            {showDropdown && (
+              <FreelanceSuggestions query={queryDraft} onSelect={(q) => {
+                navigate({ pathname: '/search', search: `?category=FREELANCE&q=${encodeURIComponent(q)}` });
+                setQueryDraft(q);
+                setShowDropdown(false);
+              }} />
+            )}
           </div>
         </section>
 
