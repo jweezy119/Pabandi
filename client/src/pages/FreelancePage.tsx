@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { textSearchService } from '../services/api';
@@ -34,13 +34,65 @@ function getProfiles(category?: string): Profile[] {
   return list.filter(p => p.category === category);
 }
 
+function ProfileSkeletonCard() {
+  return (
+    <GlassCard hover={false} lift={false}>
+      <div className="flex items-start gap-3 p-4">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-white/10" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
+          <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+          <div className="mt-2 flex gap-1">
+            <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+            <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+          </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function FreelanceSuggestions({ query, onSelect }: { query: string; onSelect: (q: string) => void }) {
+  const { data } = useQuery(['freelance-suggestions', query], async () => {
+    if (!query.trim()) return [];
+    const res = await textSearchService.getSuggestions(query);
+    return res.data?.data || [];
+  });
+
+  if (!data || !data.length) return null;
+
+  return (
+    <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface shadow-xl shadow-black/40">
+      {data.map((item: any) => (
+        <button
+          key={item}
+          type="button"
+          className="w-full text-left px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onSelect(item);
+          }}
+        >
+          {item}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function FreelancePage() {
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const [queryDraft, setQueryDraft] = useState<string>('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [profileCategory, setProfileCategory] = useState<string>('all');
   const [profileSearch, setProfileSearch] = useState('');
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setIsReady(true), 120);
+    return () => clearTimeout(t);
+  }, []);
 
   const filteredProfiles = getProfiles(profileCategory).filter((p: Profile) => {
     if (!profileSearch.trim()) return true;
@@ -134,23 +186,30 @@ export default function FreelancePage() {
               className="w-full sm:w-72 rounded-2xl border border-outline-variant/20 bg-surface-container-high p-3 text-sm text-on-surface outline-none focus:border-primary"
             />
           </div>
+
           <div className="mt-4 flex flex-wrap gap-2">
-            {['all', ...categories.map(([k]) => k)].map((cat) => (
+            <button
+              type="button"
+              onClick={() => setProfileCategory('all')}
+              className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === 'all' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'}`}
+            >
+              All
+            </button>
+            {categories.map(([key, { label, emoji }]) => (
               <button
-                key={cat}
-                onClick={() => setProfileCategory(cat)}
-                className={`px-3 py-2 rounded-2xl text-xs font-bold border transition-colors ${
-                  profileCategory === cat
-                    ? 'bg-primary text-on-primary border-primary'
-                    : 'bg-surface-container-low text-on-surface border-outline-variant/20 hover:bg-surface-container-high'
-                }`}
+                key={key}
+                type="button"
+                onClick={() => setProfileCategory(key)}
+                className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === key ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'}`}
               >
-                {cat === 'all' ? 'All' : `${CATEGORY_META[cat]?.emoji || ''} ${CATEGORY_META[cat]?.label || cat}`}
+                {emoji} {label}
               </button>
             ))}
           </div>
+
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredProfiles.map((p, idx) => {
+            {!isReady && Array.from({ length: 6 }).map((_, idx) => <ProfileSkeletonCard key={`skeleton-${idx}`} />)}
+            {isReady && filteredProfiles.map((p, idx) => {
               const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
               const hue = ['freelance-dev','small-biz-owner','project-owner','solopreneur'].indexOf(p.category) * 90;
               return (
@@ -172,35 +231,6 @@ export default function FreelancePage() {
           </div>
         </section>
       </div>
-    </div>
-  );
-}
-
-function FreelanceSuggestions({ query, onSelect }: { query: string; onSelect: (q: string) => void }) {
-  const { data } = useQuery(['freelance-suggestions', query], async () => {
-    const q = String(query || '');
-    if (!q || q.length < 2) return [];
-    const res = await textSearchService.getSuggestions(q);
-    return (((res as any)?.data?.data?.suggestions) as string[]) || [];
-  }, { enabled: query.trim().length >= 2 });
-  const items = (data || []).slice(0, 6);
-  if (!items.length) return null;
-  return (
-    <div className="absolute left-0 right-0 mt-2 rounded-2xl border border-outline-variant/20 bg-surface shadow-xl shadow-black/40 z-30 overflow-hidden">
-      {items.map((suggestion, idx) => (
-        <button
-          key={`${suggestion}-${idx}`}
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onSelect(suggestion);
-          }}
-          className="w-full text-left px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high"
-        >
-          <span className="text-primary mr-2">🔎</span>
-          {suggestion}
-        </button>
-      ))}
     </div>
   );
 }
