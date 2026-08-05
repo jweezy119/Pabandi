@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { linkedinProfileSeeder } from '../services/linkedinProfileSeeder.service';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -45,10 +46,55 @@ router.post('/with-wallets', async (req: Request, res: Response): Promise<any> =
 });
 
 /**
- * POST /api/v1/linkedin/seed/import-csv
- * Import profiles from CSV (manual upload).
- * Body: { personaId, csvContent }
+ * POST /api/v1/linkedin/seed/fund-wallets
+ * Fund additional seeded profile wallets from treasury.
+ * Body: { count?: number, amountUsd?: number }
+ * Defaults: count=100, amountUsd=1 ($1 USDC = 100 PAB at $0.01)
  */
+router.post('/fund-wallets', async (req: Request, res: Response): Promise<any> => {
+  const count = Math.min(Number(req.body.count) || 100, 200); // cap at 200 to limit exposure
+  const amountUsd = Number(req.body.amountUsd) || 1;
+  const pabPerWallet = Math.round(amountUsd / 0.01); // $0.01 = 100 PAB
+
+  try {
+    const profiles = linkedinProfileSeeder.getProfiles();
+    const unfunded = profiles.filter(p => !p.walletAddress).slice(0, count);
+
+    if (unfunded.length === 0) {
+      return res.json({ success: true, data: { funded: 0, message: 'All profiles already have wallets' } });
+    }
+
+    let funded = 0;
+    let totalPab = 0;
+
+    for (const profile of unfunded) {
+      try {
+        const wallet = await linkedinProfileSeeder.generateWalletForProfile(profile);
+        profile.walletAddress = wallet;
+        const result = await linkedinProfileSeeder.fundProfileWallet(wallet, amountUsd);
+        if (result.simulated || result.txHash) {
+          funded++;
+          totalPab += pabPerWallet;
+        }
+      } catch (err: any) {
+        logger.warn(`[FundWallets] Failed to fund ${profile.linkedinId}: ${err.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        funded,
+        totalPab,
+        amountUsd,
+        pabPerWallet,
+        message: `Funded ${funded} wallets with ${pabPerWallet} PAB each ($${amountUsd} USD)`,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 router.post('/import-csv', async (req: Request, res: Response): Promise<any> => {
   const { personaId, csvContent } = req.body;
   if (!personaId || !csvContent) {
@@ -126,7 +172,7 @@ router.get('/profiles', async (req: Request, res: Response): Promise<any> => {
 });
 
 /**
- * GET /api/v1/linkedin/seed/badge/:linkedinId
+ * POST /api/v1/linkedin/seed/badge/:linkedinId
  * Get free public trust badge HTML for a seeded profile.
  */
 router.get('/badge/:linkedinId', async (req: Request, res: Response): Promise<any> => {
@@ -151,6 +197,75 @@ router.get('/badge/:linkedinId', async (req: Request, res: Response): Promise<an
     };
     const badge = linkedinProfileSeeder.getTrustBadge(demoProfile);
     res.json({ success: true, data: { badge, profile: demoProfile, ...stats } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/seed/badge/purchase
+ * Purchase a trust badge for a profile (paid feature).
+ * Body: { linkedinId, badgeType, purchaserWallet }
+ * badgeType: 'genesis-partner' | 'early-adopter' | 'trust-flux'
+ */
+router.post('/badge/purchase', async (req: Request, res: Response): Promise<any> => {
+  const { linkedinId, badgeType, purchaserWallet } = req.body;
+  if (!linkedinId || !badgeType || !purchaserWallet) {
+    return res.status(400).json({ success: false, error: 'linkedinId, badgeType, and purchaserWallet required' });
+  }
+
+  const BADGE_PRICES: Record<string, number> = {
+    'genesis-partner': 50,
+    'early-adopter': 20,
+    'trust-flux': 10,
+  };
+
+  const price = BADGE_PRICES[badgeType];
+  if (!price) {
+    return res.status(400).json({ success: false, error: `Invalid badgeType. Valid: ${Object.keys(BADGE_PRICES).join(', ')}` });
+  }
+
+  try {
+    // Verify purchaser wallet has sufficient balance (simplified: check seeded profile)
+    const purchaser = linkedinProfileSeeder.getProfiles().find(p => p.walletAddress === purchaserWallet);
+    if (!purchaser) {
+      return res.status(404).json({ success: false, error: 'Purchaser wallet not found among seeded profiles' });
+    }
+
+    // Log badge purchase as an agent transaction
+    await prisma.agentTransaction.create({
+      data: {
+        agentId: purchaserWallet,
+        type: 'BADGE_PURCHASE',
+        amount: price,
+        txHash: `badge-${linkedinId}-${badgeType}-${Date.now()}`,
+        fromAddress: purchaserWallet,
+        toAddress: process.env.PABANDI_TREASURY_WALLET || 'F5W934e6qJb8z2GZJj3kGjUfN6xLqK4W7CpHbBvRmN3D',
+      } as any,
+    });
+
+    // Generate badge HTML
+    const profile = linkedinProfileSeeder.getProfiles().find(p => p.linkedinId === linkedinId) || {
+      linkedinId,
+      firstName: 'Verified',
+      lastName: 'Profile',
+      trustVelocity: 0.5,
+      headline: 'Pabandi Verified',
+      company: 'Pabandi Network',
+      location: 'Global',
+    };
+    const badge = linkedinProfileSeeder.getTrustBadge(profile as any);
+
+    res.json({
+      success: true,
+      data: {
+        badge,
+        badgeType,
+        price,
+        purchaserWallet,
+        purchasedAt: new Date().toISOString(),
+      },
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

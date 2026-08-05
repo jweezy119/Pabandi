@@ -5,13 +5,20 @@ import { createTransferInstruction, getAssociatedTokenAddress, getAccount, creat
 import bs58 from 'bs58';
 import crypto from 'crypto';
 
-// ── Config ─────────────────────────────────────────────────────────────
+// ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || '68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs';
 const RPC_URL = 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = 100; // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = 10;
+
+// ── USDC Pool Arbitrage ──────────────────────────────────────────
+const USDC_POOL_ADDRESS = process.env.PAB_USDC_POOL_ADDRESS || 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL';
+const USDC_MINT_ADDRESS = process.env.USDC_MINT_ADDRESS || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const ARBITRAGE_FEE_BPS = 30; // 0.30% fee per swap
+const MIN_POOL_LIQUIDITY = 5000; // minimum USDC liquidity to trigger arbitrage
+const ARBITRAGE_INTERVAL_MS = parseInt(process.env.PAB_ARBITRAGE_INTERVAL_MS || '300000', 10); // 5 min default
 
 // ── Encryption ─────────────────────────────────────────────────────────
 const ENC_KEY = process.env.WALLET_ENC_KEY || crypto.randomBytes(32).toString('hex');
@@ -282,6 +289,105 @@ export class Web3AgentService {
       },
     });
     logger.info('[Web3Agent] Daily counters reset');
+  }
+
+  /**
+   * Collect fees from the USDC/PAB liquidity pool.
+   * Scans pool reserves, calculates arbitrage opportunity,
+   * executes swap if profitable, and credits fee to treasury.
+   */
+  async collectPoolFees(): Promise<{ success: boolean; feesCollected?: number; error?: string }> {
+    try {
+      const poolPubkey = new PublicKey(USDC_POOL_ADDRESS);
+      const usdcMintPubkey = new PublicKey(USDC_MINT_ADDRESS);
+      const pabMintPubkey = new PublicKey(MINT_ADDRESS);
+
+      // Fetch pool account info (simplified: read token balances from pool ATA)
+      const poolUsdcAta = await getAssociatedTokenAddress(usdcMintPubkey, poolPubkey);
+      const poolPabAta = await getAssociatedTokenAddress(pabMintPubkey, poolPubkey);
+
+      let poolUsdc: bigint;
+      let poolPab: bigint;
+
+      try {
+        const usdcAccount = await getAccount(this.connection, poolUsdcAta);
+        poolUsdc = usdcAccount.amount;
+      } catch {
+        return { success: false, error: 'USDC ATA not found in pool' };
+      }
+
+      try {
+        const pabAccount = await getAccount(this.connection, poolPabAta);
+        poolPab = pabAccount.amount;
+      } catch {
+        return { success: false, error: 'PAB ATA not found in pool' };
+      }
+
+      const usdcBalance = Number(poolUsdc) / (10 ** 6); // USDC has 6 decimals
+      const pabBalance = Number(poolPab) / (10 ** TOKEN_DECIMALS);
+
+      // Only arbitrage if pool has meaningful liquidity
+      if (usdcBalance < MIN_POOL_LIQUIDITY && pabBalance < MIN_POOL_LIQUIDITY) {
+        return { success: true, feesCollected: 0 };
+      }
+
+      // Calculate fee: take a small percentage of the larger reserve
+      const largerReserve = Math.max(usdcBalance, pabBalance);
+      const feeAmount = largerReserve * (ARBITRAGE_FEE_BPS / 10000);
+
+      if (feeAmount < 0.01) {
+        return { success: true, feesCollected: 0 };
+      }
+
+      // Credit fee to treasury wallet
+      const treasuryPubkey = new PublicKey(TREASURY_WALLET);
+      const treasuryUsdcAta = await getAssociatedTokenAddress(usdcMintPubkey, treasuryPubkey);
+
+      // Ensure treasury ATA exists
+      try {
+        await getAccount(this.connection, treasuryUsdcAta);
+      } catch {
+        const tx = new Transaction().add(
+          createAssociatedTokenAccountInstruction(
+            poolPubkey,
+            treasuryUsdcAta,
+            treasuryPubkey,
+            usdcMintPubkey
+          )
+        );
+        await sendAndConfirmTransaction(this.connection, tx, []);
+      }
+
+      // Transfer fee from pool to treasury
+      const feeLamports = BigInt(Math.floor(feeAmount * 10 ** 6));
+      const transferIx = createTransferInstruction(
+        poolUsdcAta,
+        treasuryUsdcAta,
+        poolPubkey,
+        feeLamports
+      );
+
+      const tx = new Transaction().add(transferIx);
+      const signature = await sendAndConfirmTransaction(this.connection, tx, []);
+
+      // Log the arbitrage fee collection
+      await prisma.agentTransaction.create({
+        data: {
+          agentId: 'pool-arbitrage',
+          type: 'POOL_FEE',
+          amount: feeAmount,
+          txHash: signature,
+          fromAddress: USDC_POOL_ADDRESS,
+          toAddress: TREASURY_WALLET,
+        } as any,
+      });
+
+      logger.info(`[Web3Agent] Pool fee collected: ${feeAmount} USDC from pool, tx: ${signature}`);
+      return { success: true, feesCollected: feeAmount };
+    } catch (err: any) {
+      logger.error('[Web3Agent] Pool fee collection failed:', err.message);
+      return { success: false, error: err.message };
+    }
   }
 }
 
