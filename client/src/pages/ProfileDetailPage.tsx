@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProfile } from './ProfilesPage';
 import { tokens } from '../design-system';
+import PageHeader from '../components/PageHeader';
 import { useAuthStore } from '../store/authStore';
 
 function Avatar({ initials, category }: { initials: string; category: string }) {
@@ -45,7 +46,11 @@ export default function ProfileDetailPage() {
         .anim-fade-up { animation: fadeUp .45s ease-out both; }
       `}</style>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6">
-        <Link to="/profiles" className="text-primary text-sm font-bold anim-fade-up">← Back to profiles</Link>
+        <PageHeader
+          title={`${profile.firstName} ${profile.lastName}`}
+          description={profile.headline}
+          backTo="/freelance"
+        />
 
         <section className="relative overflow-hidden rounded-3xl border border-outline-variant/20 bg-surface-container-low p-6 sm:p-8 md:p-10 anim-fade-up">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />

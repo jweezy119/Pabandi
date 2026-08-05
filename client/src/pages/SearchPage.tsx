@@ -5,6 +5,7 @@ import { businessService, textSearchService } from '../services/api';
 import { API_HOST } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Button, tokens, GlassCard } from '../design-system';
+import PageHeader from '../components/PageHeader';
 
 type Business = {
   id: string;
@@ -317,12 +318,11 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-headline text-2xl font-black sm:text-3xl">What do you want to book?</h1>
-          <p className="text-sm text-slate-300">
-            Quick actions, smart suggestions, and trusted venues nearby.
-          </p>
-        </div>
+        <PageHeader
+          title="Search"
+          description="Find verified businesses and services nearby. Every listing is tied to a Pabandi Passport trust score and secure booking flow."
+          eyebrow="Discover"
+        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {QUICK_PROMPTS.map((prompt) => (

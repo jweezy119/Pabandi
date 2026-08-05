@@ -653,8 +653,8 @@ export default function HomePage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link to="/profiles" className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline font-bold text-white shadow-sm transition-colors hover:bg-white/10">
-                View Seeded Profiles
+              <Link to="/freelance" className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline font-bold text-white shadow-sm transition-colors hover:bg-white/10">
+                View Freelancers
               </Link>
               <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Explore Businesses

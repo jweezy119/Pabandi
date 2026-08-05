@@ -185,8 +185,7 @@ export default function Layout() {
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
             <DesktopNavLink to="/live-selling" current={location.pathname === '/live-selling'}>Live Selling</DesktopNavLink>
             <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
-            <DesktopNavLink to="/freelance" current={location.pathname === '/freelance'}>Freelance</DesktopNavLink>
-            <DesktopNavLink to="/profiles" current={location.pathname.startsWith('/profiles')}>Profiles</DesktopNavLink>
+            <DesktopNavLink to="/freelance" current={location.pathname.startsWith('/freelance') || location.pathname.startsWith('/profiles')}>Freelancers</DesktopNavLink>
             <DesktopNavLink to="/economy" current={location.pathname === '/economy'}>Economy</DesktopNavLink>
             <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
             <DesktopNavLink to="/sharia-compliance" current={location.pathname === '/sharia-compliance'}>Sharia Compliance</DesktopNavLink>
