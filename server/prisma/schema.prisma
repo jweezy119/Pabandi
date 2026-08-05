@@ -1341,3 +1341,32 @@ model AgentTransaction {
   @@index([agentId, createdAt])
   @@index([txHash])
 }
+
+model LinkedInProfile {
+  id                String    @id @default(cuid())
+  linkedinId        String    @unique
+  firstName         String
+  lastName          String
+  headline          String?
+  company           String?
+  industry          String?
+  location          String?
+  category          String
+  githubUrl         String?
+  linkedinUrl       String?
+  profilePictureUrl String?
+  connectionCount   Int       @default(0)
+  trustVelocity     Float     @default(0)
+  trustBand         String    @default("D")
+  profileCompleteness Float   @default(0.5)
+  walletAddress     String?
+  seedSource        String    @default("LINKEDIN_SEARCH")
+  persona           String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([category])
+  @@index([persona])
+  @@index([linkedinId])
+}

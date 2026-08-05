@@ -4,6 +4,13 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+if (!linkedinProfileSeeder.getProfiles()?.length) {
+  logger.info('[LinkedInSeed] Seeding profiles on startup from local JSON...');
+  linkedinProfileSeeder.seedAllProfiles(25).catch((e: any) => {
+    logger.error('[LinkedInSeed] Startup seed failed: ' + e.message);
+  });
+}
+
 /**
  * POST /api/v1/linkedin/seed
  * Seed profiles from real public sources (GitHub, AngelList, Wellfound, Fiverr RSS, Chambers).
