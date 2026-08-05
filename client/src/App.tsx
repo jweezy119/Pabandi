@@ -80,7 +80,7 @@ function App() {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <AdminPanel />;
     if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
-    return <Navigate to="/wallet" replace />;
+    return <Navigate to="/freelance" replace />;
   };
 
   const AuthRequiredProfilesPage = () => {

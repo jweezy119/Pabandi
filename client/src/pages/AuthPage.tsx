@@ -141,6 +141,12 @@ export default function AuthPage() {
 
   const [oauthLoading, setOauthLoading] = useState<'google' | 'facebook' | 'twitter' | 'linkedin' | 'tiktok' | 'wallet' | null>(null);
 
+  const getPostLoginTarget = () => {
+    const redirect = searchParams.get('redirect');
+    if (redirect && !redirect.includes('/login')) return redirect;
+    return '/freelance';
+  };
+
   const handleWalletAuth = async () => {
     try {
       setOauthLoading('wallet');
@@ -153,7 +159,7 @@ export default function AuthPage() {
       const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${address}\n\nNonce:\n${nonce}`;
       const { signature } = await signMessageWithWallet(message);
       await loginWithWallet(address, signature);
-      navigate('/dashboard');
+      navigate(getPostLoginTarget());
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Wallet authentication failed.');
@@ -233,7 +239,7 @@ export default function AuthPage() {
           refCode: searchParams.get('ref') || undefined,
         } as any);
       }
-      navigate('/dashboard');
+      navigate(getPostLoginTarget());
     } catch (err: any) {
       const data = err.response?.data;
       if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
