@@ -186,7 +186,17 @@ export default function FreelancePage() {
               className="w-full sm:w-72 rounded-2xl border border-outline-variant/20 bg-surface-container-high p-3 text-sm text-on-surface outline-none focus:border-primary"
             />
           </div>
-
+          {!isAuthenticated && (
+            <div className="mt-4 rounded-2xl border border-outline-variant/20 bg-surface-container-high p-4 sm:p-5 anim-fade-up">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-headline font-bold text-sm sm:text-base">Log in to book freelancers with escrow</p>
+                  <p className="mt-1 text-xs text-on-surface-variant">Create an account to access verified profiles, trusted payments, and $PAB rewards.</p>
+                </div>
+                <Link to="/login" className="shrink-0 rounded-2xl bg-primary px-5 py-3 text-center font-headline font-bold text-sm text-on-primary">Log in to book</Link>
+              </div>
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
