@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { businessService, textSearchService, linkedinSeedService } from '../services/api';
+import { businessService, textSearchService } from '../services/api';
+import { API_HOST } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Surface, Button, tokens } from '../design-system';
 
@@ -198,7 +199,7 @@ export default function SearchPage() {
       const profilesQuery = String(q || '').trim();
       if (profilesQuery.length >= 2) {
         try {
-          const profilesJson = await fetch(`${(linkedinSeedService as any).__base || ''}/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`);
+          const profilesJson = await fetch(`${API_HOST}/api/v1/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`);
           const profilesJsonParsed = await profilesJson.json();
           const profiles = (profilesJsonParsed?.data?.profiles || []) as any[];
           const matched = profiles.filter((p) => {
