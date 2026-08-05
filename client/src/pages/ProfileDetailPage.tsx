@@ -1,10 +1,13 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getProfile } from './ProfilesPage';
 import { tokens } from '../design-system';
+import { useAuthStore } from '../store/authStore';
 
 export default function ProfileDetailPage() {
   const { id } = useParams<{ id: string }>();
   const profile = id ? getProfile(id) : undefined;
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
   if (!profile) {
     return (
@@ -50,8 +53,17 @@ export default function ProfileDetailPage() {
               <p className="font-headline font-black text-xs mt-1 break-all">{profile.walletAddress}</p>
             </div>
           </div>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-3">
             <a href={profile.githubUrl} target="_blank" rel="noreferrer" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">View GitHub Profile</a>
+            {isAuthenticated ? (
+              <button onClick={() => navigate(`/search?q=${encodeURIComponent(profile.headline || profile.category)}&category=${encodeURIComponent(profile.category)}`)} className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm text-white hover:bg-surface-container-high/80">
+                Book similar
+              </button>
+            ) : (
+              <Link to={`/login?redirect=${encodeURIComponent(`/search?q=${encodeURIComponent(profile.headline || profile.category)}&category=${encodeURIComponent(profile.category)}`)}`} className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm text-white hover:bg-surface-container-high/80">
+                Log in to book
+              </Link>
+            )}
           </div>
         </section>
       </div>
