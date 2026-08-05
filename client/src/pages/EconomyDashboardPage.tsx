@@ -38,6 +38,9 @@ export default function EconomyDashboardPage() {
   const totalRewards = stats?.economy?.pabRewarded ?? stats?.economy?.totalRewardsPaid ?? 0;
   const totalBurned = stats?.economy?.pabBurned ?? 0;
   const lastRun = stats?.economy?.lastRunAt ?? stats?.economy?.lastRunAt ?? null;
+  const poolFees = stats?.poolFeesCollected ?? 0;
+  const badgesSold = stats?.badgesSold ?? 0;
+  const walletsFunded = stats?.walletsFunded ?? 0;
 
   return (
     <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
@@ -70,6 +73,22 @@ export default function EconomyDashboardPage() {
           <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
             <p className="text-[11px] text-on-surface-variant uppercase tracking-wide font-bold">Burned</p>
             <p className="font-headline font-black text-2xl mt-1">{Number(totalBurned).toLocaleString()} PAB</p>
+          </div>
+        </section>
+
+        {/* Pool fee ticker + badge/wallet stats */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
+            <p className="text-[11px] text-on-surface-variant uppercase tracking-wide font-bold">Pool Fees (USDC)</p>
+            <p className="font-headline font-black text-2xl mt-1">{Number(poolFees).toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
+            <p className="text-[11px] text-on-surface-variant uppercase tracking-wide font-bold">Badges Sold</p>
+            <p className="font-headline font-black text-2xl mt-1">{String(badgesSold)}</p>
+          </div>
+          <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
+            <p className="text-[11px] text-on-surface-variant uppercase tracking-wide font-bold">Wallets Funded</p>
+            <p className="font-headline font-black text-2xl mt-1">{String(walletsFunded)}</p>
           </div>
         </section>
 

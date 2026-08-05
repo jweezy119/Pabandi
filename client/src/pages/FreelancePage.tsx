@@ -21,6 +21,14 @@ type Profile = {
   connectionCount: number;
 };
 
+type BadgeType = 'genesis-partner' | 'early-adopter' | 'trust-flux';
+
+const BADGE_META: Record<BadgeType, { label: string; price: number; color: string; icon: string; desc: string }> = {
+  'genesis-partner': { label: 'Genesis Partner', price: 50, color: 'from-amber-500 to-orange-600', icon: '👑', desc: 'Founding member badge — highest trust weight' },
+  'early-adopter': { label: 'Early Adopter', price: 20, color: 'from-blue-500 to-indigo-600', icon: '⚡', desc: 'Early ecosystem participant — priority access' },
+  'trust-flux': { label: 'Trust Flux', price: 10, color: 'from-emerald-500 to-teal-600', icon: '🔄', desc: 'Trust signal badge — boosted visibility' },
+};
+
 const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
   'freelance-dev': { label: 'Freelance Devs', emoji: '💻' },
   'small-biz-owner': { label: 'Small Business Owners', emoji: '🏪' },
@@ -214,6 +222,41 @@ export default function FreelancePage() {
               >
                 {emoji} {label}
               </button>
+            ))}
+          </div>
+
+          {/* Badge purchase cards */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {(Object.entries(BADGE_META) as [BadgeType, typeof BADGE_META[BadgeType]][]).map(([type, meta]) => (
+              <GlassCard key={type} className="p-4 cursor-pointer card-lift" hover>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl">{meta.icon}</span>
+                  <div>
+                    <p className="font-headline font-bold text-sm">{meta.label}</p>
+                    <p className="text-[11px] text-on-surface-variant">{meta.desc}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-headline font-bold text-lg">{meta.price} PAB</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) { navigate('/login'); return; }
+                      fetch('/api/v1/linkedin/seed/badge/purchase', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ linkedinId: 'self', badgeType: type, purchaserWallet: 'treasury' }),
+                      }).then(r => r.json()).then(res => {
+                        if (res.success) alert(`Badge purchased: ${meta.label} for ${meta.price} PAB`);
+                        else alert(`Purchase failed: ${res.error}`);
+                      }).catch(() => alert('Purchase request failed'));
+                    }}
+                    className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-on-primary hover:bg-primary/80 transition-colors"
+                  >
+                    Buy
+                  </button>
+                </div>
+              </GlassCard>
             ))}
           </div>
 
