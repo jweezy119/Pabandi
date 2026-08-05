@@ -719,25 +719,38 @@ export class LinkedInProfileSeeder {
     avgVelocity: number;
     walletCoverage: { withWallet: number; total: number; percentage: number };
     economy: any;
+    lastEconomy: any;
   } {
     const byPersona: Record<string, number> = {};
     const byBand: Record<string, number> = {};
     let totalVelocity = 0;
+    let totalSeeded = this.seeded.size;
 
-    for (const profile of this.seeded.values()) {
-      byPersona[profile.persona] = (byPersona[profile.persona] || 0) + 1;
-      const band = this.getTrustBand(profile.trustVelocity);
-      byBand[band] = (byBand[band] || 0) + 1;
-      totalVelocity += profile.trustVelocity;
+    if (totalSeeded === 0) {
+      const local = this.loadLocalSeedData();
+      totalSeeded = local.length;
+      for (const raw of local) {
+        const cat = raw.category || 'unknown';
+        byPersona[cat] = (byPersona[cat] || 0) + 1;
+        byBand['D'] = (byBand['D'] || 0) + 1;
+      }
+    } else {
+      for (const profile of this.seeded.values()) {
+        byPersona[profile.persona] = (byPersona[profile.persona] || 0) + 1;
+        const band = this.getTrustBand(profile.trustVelocity);
+        byBand[band] = (byBand[band] || 0) + 1;
+        totalVelocity += profile.trustVelocity;
+      }
     }
 
     return {
-      totalSeeded: this.seeded.size,
+      totalSeeded,
       byPersona,
       byBand,
-      avgVelocity: this.seeded.size > 0 ? totalVelocity / this.seeded.size : 0,
+      avgVelocity: totalSeeded > 0 ? totalVelocity / totalSeeded : 0,
       walletCoverage: this.calculateWalletCoverage(),
       economy: (this as any).lastEconomy || null,
+      lastEconomy: (this as any).lastEconomy || null,
     };
   }
 

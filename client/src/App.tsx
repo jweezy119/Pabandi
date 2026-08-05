@@ -30,6 +30,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
 import ProfileDetailPage from './pages/ProfileDetailPage';
+import EconomyDashboardPage from './pages/EconomyDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import { WalletPage } from './pages/WalletPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
@@ -143,6 +144,7 @@ function App() {
             <Route path="profiles" element={<ProfilesPage />} />
             <Route path="profiles/category/:category" element={<ProfilesPage />} />
             <Route path="profiles/:id" element={<ProfileDetailPage />} />
+            <Route path="economy" element={<EconomyDashboardPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
