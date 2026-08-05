@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { businessService, textSearchService } from '../services/api';
+import { businessService, textSearchService, linkedinSeedService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Surface, Button, tokens } from '../design-system';
 
@@ -44,6 +44,19 @@ const CATEGORY_LABELS: Record<string, string> = {
   FREELANCE: 'Freelance',
   OTHER: 'Other',
 };
+
+function mapProfileCategoryToBiz(category?: string): string {
+  switch (category) {
+    case 'freelance-dev':
+      return 'FREELANCE';
+    case 'small-biz-owner':
+    case 'project-owner':
+    case 'solopreneur':
+      return 'OTHER';
+    default:
+      return 'OTHER';
+  }
+}
 
 const QUICK_PROMPTS = [
   {
@@ -180,6 +193,43 @@ export default function SearchPage() {
         seen.add(key);
         deduped.push(b);
       }
+
+      // Merge seeded profiles as discoverable providers when search is active
+      const profilesQuery = String(q || '').trim();
+      if (profilesQuery.length >= 2) {
+        try {
+          const profilesJson = await fetch(`${(linkedinSeedService as any).__base || ''}/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`);
+          const profilesJsonParsed = await profilesJson.json();
+          const profiles = (profilesJsonParsed?.data?.profiles || []) as any[];
+          const matched = profiles.filter((p) => {
+            const hay = `${p.firstName} ${p.lastName} ${p.headline} ${p.company} ${p.location}`.toLowerCase();
+            return hay.includes(profilesQuery.toLowerCase());
+          });
+          for (const p of matched) {
+            const bizLike: Business = {
+              id: `profile-${p.linkedinId}`,
+              name: `${p.firstName} ${p.lastName}`,
+              category: mapProfileCategoryToBiz(p.category),
+              city: p.location || '',
+              address: p.company || '',
+              description: p.headline || '',
+              coverImageUrl: p.githubUrl ? `https://github.com/${p.githubUrl.split('/').pop()}.png` : null,
+              latitude: null,
+              longitude: null,
+              rating: null,
+              reviewCount: p.connectionCount || null,
+            };
+            const key = bizLike.id;
+            if (!seen.has(key)) {
+              seen.add(key);
+              deduped.push(bizLike);
+            }
+          }
+        } catch (e) {
+          // ignore profile merge errors
+        }
+      }
+
       return deduped;
     },
     { keepPreviousData: true }
