@@ -386,17 +386,49 @@ router.post('/register-agents', async (_req: Request, res: Response): Promise<an
 
 /**
  * POST /api/v1/linkedin/seed/migrate
- * Run Prisma db push to create/update tables on the production database.
+ * Create Web3Agent and AgentTransaction tables if they don't exist.
  */
 router.post('/migrate', async (_req: Request, res: Response): Promise<any> => {
   try {
-    const { execSync } = require('child_process');
-    execSync('npx prisma db push --accept-data-loss', {
-      stdio: 'pipe',
-      timeout: 60000,
-      cwd: __dirname + '/..',
-    });
-    res.json({ success: true, message: 'Database migrated' });
+    // Create Web3Agent table if missing
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Web3Agent" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "profileId" TEXT NOT NULL UNIQUE,
+        "walletAddress" TEXT NOT NULL UNIQUE,
+        "encryptedPrivateKey" TEXT NOT NULL,
+        "category" TEXT NOT NULL,
+        "balancePab" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "dailyOutflow" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "dailyTransactions" INTEGER NOT NULL DEFAULT 0,
+        "lastReset" TIMESTAMP NOT NULL DEFAULT now(),
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+
+    // Create AgentTransaction table if missing
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AgentTransaction" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "agentId" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "txHash" TEXT,
+        "fromAddress" TEXT,
+        "toAddress" TEXT,
+        "metadata" JSONB,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "AgentTransaction_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Web3Agent" ("id") ON DELETE CASCADE
+      )
+    `);
+
+    // Create indexes
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_agentId_createdAt_idx" ON "AgentTransaction" ("agentId", "createdAt")');
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_txHash_idx" ON "AgentTransaction" ("txHash")');
+
+    res.json({ success: true, message: 'Database tables created' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

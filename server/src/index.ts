@@ -257,6 +257,10 @@ app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 
+// ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
+import osintRoutes from './routes/osint.routes';
+app.use(`/api/${API_VERSION}/osint`, osintRoutes);
+
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   try {
