@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { linkedinProfileSeeder } from '../services/linkedinProfileSeeder.service';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
+import { startAgentLoop, stopAgentLoop, getAgentLoopState } from '../services/agentLoop.service';
 
 const router = Router();
 
@@ -295,6 +296,45 @@ router.post('/simulate-economy', async (req: Request, res: Response): Promise<an
   try {
     const result = await linkedinProfileSeeder.simulateSelfEconomy(rounds);
     res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/linkedin/seed/agent-loop/status
+ * Returns the current state of the AI agent loop.
+ */
+router.get('/agent-loop/status', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const state = getAgentLoopState();
+    res.json({ success: true, data: state });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/seed/agent-loop/start
+ * Manually restart the agent loop.
+ */
+router.post('/agent-loop/start', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    startAgentLoop();
+    res.json({ success: true, message: 'Agent loop started' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/seed/agent-loop/stop
+ * Stop the agent loop.
+ */
+router.post('/agent-loop/stop', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    stopAgentLoop();
+    res.json({ success: true, message: 'Agent loop stopped' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
