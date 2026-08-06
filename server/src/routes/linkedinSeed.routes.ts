@@ -384,4 +384,22 @@ router.post('/register-agents', async (_req: Request, res: Response): Promise<an
   }
 });
 
+/**
+ * POST /api/v1/linkedin/seed/migrate
+ * Run Prisma db push to create/update tables on the production database.
+ */
+router.post('/migrate', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const { execSync } = require('child_process');
+    execSync('npx prisma db push --accept-data-loss', {
+      stdio: 'pipe',
+      timeout: 60000,
+      cwd: __dirname + '/..',
+    });
+    res.json({ success: true, message: 'Database migrated' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

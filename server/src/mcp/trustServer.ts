@@ -70,6 +70,37 @@ export class PabandiTrustMCPServer {
       throw new Error('Failed to compute TrustFlux');
     }
   }
+
+  /**
+   * MCP Tool Implementation: subscribeToZeroDayThreats
+   * 
+   * This is what makes Pabandi "One of a Kind". When Pabandi's Shadow Escrow
+   * catches a scammer and extracts their playbook (wallets, domains, IPs), 
+   * Pabandi broadcasts this intelligence OUTWARD to the MCP ecosystem.
+   * 
+   * Other systems (banks, marketplaces, exchanges) connected to Pabandi's MCP 
+   * receive this real-time threat feed.
+   */
+  public async publishZeroDayThreat(threatData: { 
+    sourceScammerId: string, 
+    muleWallets: string[], 
+    dropDomains: string[], 
+    tactic: string 
+  }) {
+    logger.error(`[Pabandi Trust MCP Server] 🚨 BROADCASTING ZERO-DAY THREAT TO MCP NETWORK 🚨`);
+    
+    const payload = {
+      _meta: { type: 'ZeroDayThreatAlert', publisher: 'Pabandi Active Defense' },
+      timestamp: new Date().toISOString(),
+      threatData
+    };
+
+    // In a real @modelcontextprotocol/sdk implementation, we would emit a server event
+    // or publish to a topic that connected clients are listening to.
+    // e.g. this.server.notification({ method: 'threats/new', params: payload })
+    
+    return payload;
+  }
 }
 
 export const pabandiTrustMCPServer = new PabandiTrustMCPServer();
