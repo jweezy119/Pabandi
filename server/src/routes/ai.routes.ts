@@ -170,4 +170,30 @@ router.post('/fraud/analyze', async (req: Request, res: Response, next: NextFunc
   }
 });
 
+// POST /api/v1/ai/fraud/fusion — Full-spectrum Dempster-Shafer threat fusion
+router.post('/fraud/fusion', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId, username, businessName, domain, walletAddress, transactionAmount, ipAddress, deviceFingerprint } = req.body;
+    if (!userId) {
+      res.status(400).json({ success: false, error: 'userId is required for fusion analysis' });
+      return;
+    }
+
+    const { threatFusionEngine } = await import('../services/osint/threatFusion.engine');
+    const verdict = await threatFusionEngine.analyzeFull(userId, {
+      username,
+      businessId: businessName,
+      domain,
+      walletAddress,
+      transactionAmount,
+      ipAddress,
+      deviceFingerprint
+    });
+
+    res.json({ success: true, data: verdict });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
