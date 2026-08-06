@@ -62,6 +62,7 @@ import ebayRoutes from './routes/ebay.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
+import { startAgentLoop } from './services/agentLoop.service';
 
 const app = express();
 const httpServer = createServer(app);
@@ -334,6 +335,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     startTelegramBot();
   } catch (err) {
     logger.warn(`Telegram bot skipped: ${(err as Error).message}`);
+  }
+
+  // Start Agent Loop (badge purchases → bookings → pool fee collection)
+  try {
+    startAgentLoop();
+    logger.info('🤖 AI Agent Loop started');
+  } catch (err) {
+    logger.warn(`Agent loop skipped: ${(err as Error).message}`);
   }
 
   // Start Phase 0 Offramp SLA Sweeper
