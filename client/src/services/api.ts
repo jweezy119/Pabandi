@@ -323,6 +323,7 @@ export const linkedinSeedService = {
   getStats: () => apiClient.get('/linkedin/seed/stats'),
   simulateEconomy: () => apiClient.post('/linkedin/seed/simulate-economy'),
   getBadge: (linkedinId: string) => apiClient.get(`/linkedin/seed/badge/${encodeURIComponent(linkedinId)}`),
+  getAgentLoopStatus: () => apiClient.get('/linkedin/seed/agent-loop/status'),
 };
 
 export const treasuryService = {
