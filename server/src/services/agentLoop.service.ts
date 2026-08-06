@@ -81,7 +81,7 @@ export async function runAgentLoopCycle(): Promise<{
         // Credit treasury (simulated — in production this would be an on-chain transfer)
         await prisma.agentTransaction.create({
           data: {
-            agentId: agent.profileId,
+            agentId: agent.id,
             type: 'BADGE_PURCHASE',
             amount: price,
             fromAddress: agent.walletAddress,
@@ -119,6 +119,9 @@ export async function runAgentLoopCycle(): Promise<{
         if (result.success) {
           bookings++;
           state.totalBookings++;
+          // 5 PAB platform fee per booking goes to treasury
+          state.totalFeesCollected += 5;
+          feesCollected += 5;
           logger.info(`[AgentLoop] Booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB`);
         } else {
           errors.push(`Booking ${fromAgent.profileId}→${toAgent.profileId}: ${result.error}`);

@@ -385,6 +385,23 @@ router.post('/register-agents', async (_req: Request, res: Response): Promise<an
 });
 
 /**
+ * POST /api/v1/linkedin/seed/fund-agents
+ * Credit PAB to all existing agents in the DB (so agent loop has balances to transact).
+ */
+router.post('/fund-agents', async (req: Request, res: Response): Promise<any> => {
+  const amountPab = Number(req.body.amountPab) || 100;
+  try {
+    const result = await prisma.web3Agent.updateMany({
+      where: { isActive: true },
+      data: { balancePab: { increment: amountPab } },
+    });
+    res.json({ success: true, data: { updated: result.count, amountPab } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * POST /api/v1/linkedin/seed/migrate
  * Create Web3Agent and AgentTransaction tables if they don't exist.
  */
