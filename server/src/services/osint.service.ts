@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import { trustScoreService } from './trustScore.service';
+import { osintMCPClient } from './osint/osintMCPClient.service';
 
 export interface SherlockResult {
   site: string;
@@ -181,70 +182,69 @@ export class OsintService {
 
   /**
    * ASYNC QUEUE: The main entry point for the "Verify Quietly" workflow.
-   * Runs in the background (fire and forget) to evaluate a user/business without blocking signup.
+   * Runs in the background (fire and forget) to evaluate a user/business using the MCP OSINT pipeline.
    */
   public async queueOSINTChecks(userId: string, businessId?: string) {
     try {
-      logger.info(`[OSINT Queue] Starting background checks for User ${userId}`);
+      logger.info(`[OSINT Queue] Starting MCP orchestrated checks for User ${userId}`);
       
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) return;
 
-      // 1. Sherlock Check
+      // 1. Maigret MCP - Individual Identity Correlation
       const username = user.email.split('@')[0];
-      const sherlockResults = await this.runSherlock(username);
-      const isSherlockSuspicious = this.hasSuspiciousFootprint(sherlockResults);
+      const maigretResult = await osintMCPClient.queryMaigretMCP(username);
       
-      if (isSherlockSuspicious) {
+      if (maigretResult.isSuspicious) {
         await trustScoreService.processEvent(userId, {
           component: 'OSINT',
-          reason: 'Suspicious footprints found across social platforms',
+          reason: 'Maigret MCP: Suspicious footprints found across social platforms',
           severity: 'negative',
-          osintData: { breachCount: 1 } // Simulated
+          osintData: maigretResult.findings
         });
       } else {
         await trustScoreService.processEvent(userId, {
           component: 'OSINT',
-          reason: 'Clean social footprint',
+          reason: 'Maigret MCP: Clean social footprint',
           severity: 'positive',
-          osintData: { breachCount: 0 }
+          osintData: maigretResult.findings
         });
       }
 
-      // 2. Phone Check
-      if (user.phone) {
-        const phoneRes = await this.validatePhone(user.phone);
-        if (phoneRes.isSuspicious) {
-          await trustScoreService.processEvent(userId, {
-            component: 'OSINT',
-            reason: phoneRes.type === 'voip' ? 'VOIP phone detected' : 'Suspicious phone footprint',
-            severity: 'negative',
-            osintData: { voipLikelihood: phoneRes.type === 'voip' ? 1.0 : 0.5 }
-          });
-        }
-      }
-
-      let isBusinessSuspicious = false;
+      // 2. OpenRegistry & Infrastructure Pipeline (If Business)
       if (businessId) {
         const business = await prisma.business.findUnique({ where: { id: businessId } });
-        if (business && business.website) {
-          const domainRes = await this.verifyBusinessDomain(business.website);
-          isBusinessSuspicious = domainRes.isSuspicious;
-          await trustScoreService.processEvent(userId, {
-            component: 'OSINT',
-            reason: `Domain age is ${domainRes.domainAgeDays} days`,
-            severity: domainRes.isSuspicious ? 'negative' : 'neutral',
-            osintData: { domainAgeDays: domainRes.domainAgeDays }
-          });
-        }
-        if (business && business.logoUrl) {
-          const imgRes = await this.verifyImageTineye(business.logoUrl);
-          if (imgRes.isSuspicious) isBusinessSuspicious = true;
-          // Could log image check as well
+        
+        if (business) {
+          // A. OpenRegistry MCP
+          const registryResult = await osintMCPClient.queryOpenRegistryMCP(business.name);
+          if (registryResult.isSuspicious) {
+            await trustScoreService.processEvent(userId, {
+              component: 'OSINT',
+              reason: 'OpenRegistry MCP: Flagged business directors or entities',
+              severity: 'negative',
+              osintData: registryResult.findings
+            });
+          }
+
+          // B. Infrastructure Pipeline (Shodan, WHOIS, VirusTotal)
+          if (business.website) {
+            const infraResults = await osintMCPClient.queryInfrastructurePipeline(business.website);
+            for (const result of infraResults) {
+              if (result.isSuspicious) {
+                await trustScoreService.processEvent(userId, {
+                  component: 'OSINT',
+                  reason: `${result.source}: High risk infrastructure detected`,
+                  severity: 'negative',
+                  osintData: result.findings
+                });
+              }
+            }
+          }
         }
       }
 
-      logger.info(`[OSINT Queue] Finished for User ${userId}. Events sent to TrustScoreService.`);
+      logger.info(`[OSINT Queue] Finished MCP checks for User ${userId}. Events sent to TrustScoreService.`);
     } catch (e) {
       logger.error(`[OSINT Queue] Failed for User ${userId}`, e);
     }

@@ -3,6 +3,7 @@ import { linkedinProfileSeeder } from '../services/linkedinProfileSeeder.service
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
 import { startAgentLoop, stopAgentLoop, getAgentLoopState } from '../services/agentLoop.service';
+import { web3AgentService } from '../services/web3Agent.service';
 
 const router = Router();
 
@@ -76,6 +77,16 @@ router.post('/fund-wallets', async (req: Request, res: Response): Promise<any> =
         if (result.simulated || result.txHash) {
           funded++;
           totalPab += pabPerWallet;
+
+          // Register as AI agent and credit balance so the agent loop can use it
+          const existing = await prisma.web3Agent.findUnique({ where: { profileId: profile.linkedinId } });
+          if (!existing) {
+            await web3AgentService.createAgent(profile.linkedinId, profile.persona as 'freelance-dev' | 'small-biz-owner' | 'project-owner' | 'solopreneur', profile.firstName);
+          }
+          await prisma.web3Agent.update({
+            where: { profileId: profile.linkedinId },
+            data: { balancePab: { increment: pabPerWallet } },
+          });
         }
       } catch (err: any) {
         logger.warn(`[FundWallets] Failed to fund ${profile.linkedinId}: ${err.message}`);
@@ -335,6 +346,39 @@ router.post('/agent-loop/stop', async (_req: Request, res: Response): Promise<an
   try {
     stopAgentLoop();
     res.json({ success: true, message: 'Agent loop stopped' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/linkedin/seed/register-agents
+ * Register all funded profiles (with wallets) as AI agents in the DB.
+ * This allows the agent loop to load and transact with them.
+ */
+router.post('/register-agents', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const profiles = linkedinProfileSeeder.getProfiles();
+    const withWallet = profiles.filter(p => p.walletAddress);
+    let created = 0;
+    let skipped = 0;
+
+    for (const profile of withWallet) {
+      const existing = await prisma.web3Agent.findUnique({ where: { profileId: profile.linkedinId } });
+      if (existing) {
+        skipped++;
+        continue;
+      }
+      await web3AgentService.createAgent(profile.linkedinId, profile.persona as any, profile.firstName);
+      // Credit initial balance
+      await prisma.web3Agent.update({
+        where: { profileId: profile.linkedinId },
+        data: { balancePab: { increment: 100 } },
+      });
+      created++;
+    }
+
+    res.json({ success: true, data: { created, skipped, totalWithWallet: withWallet.length } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
