@@ -52,6 +52,7 @@ import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
+import rentalDepositRoutes from './routes/rentalDeposit.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
@@ -258,6 +259,7 @@ app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
+app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
 
 // ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
 import osintRoutes from './routes/osint.routes';

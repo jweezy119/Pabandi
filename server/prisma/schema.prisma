@@ -1419,3 +1419,56 @@ model JobApplication {
   @@index([jobId])
   @@index([applicantId])
 }
+
+// ── Pabandi Yield Deposit (PYD) ────────────────────────────────────────────────
+// Non-custodial rental security deposit infrastructure.
+// Pabandi NEVER holds funds — the Solana escrow contract does. Pabandi is the
+// trust layer, agreement layer, and settlement orchestrator only.
+
+model SecurityDeposit {
+  id                 String   @id @default(cuid())
+  tenantId           String
+  landlordId         String
+  rentalType         String   @default("PROPERTY") // PROPERTY | CAR
+  assetDescription   String   // "123 Main St unit 2" or "Tesla Model 3 VIN xyz"
+  requiredAmountUSD  Float
+  tenantRiskBand     String   // A | B | C | D | E (from PTP at booking)
+  depositReductionPct Float   @default(0) // from PTP band (A=50%,B=30%,C=10%)
+  actualDepositUSD   Float    // requiredAmountUSD * (1 - depositReductionPct)
+  yieldOptIn         Boolean  @default(false)
+  yieldAgreementId   String?   @unique
+  escrowContract     String?  // Solana escrow PDA / address (non-custodial)
+  escrowTxHash       String?
+  status             String   @default("PENDING") // PENDING | FUNDED | ACTIVE | RELEASED | DISPUTED | REFUNDED
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  yieldAgreement      YieldAgreement? @relation(fields: [yieldAgreementId], references: [id])
+
+  @@index([tenantId])
+  @@index([landlordId])
+  @@index([status])
+}
+
+model YieldAgreement {
+  id                String   @id @default(cuid())
+  depositId         String   @unique
+  tenantId          String
+  landlordId        String
+  securityDeposit   SecurityDeposit? @relation
+  // Both parties sign — Pabandi is infra, not counterparty
+  tenantSignedAt    DateTime?
+  landlordSignedAt  DateTime?
+  // Yield pool config (tenant opts in; Pabandi takes spread, never principal risk)
+  pool              String   @default("JITO_STSOL") // JITO_STSOL | ONDO_USDC | MAPLE
+  expectedApy       Float    @default(7.0)
+  tenantApy         Float    @default(5.5)  // what tenant receives
+  pabandiSpreadPct  Float    @default(1.5)  // fee taken from yield (NOT from principal)
+  status            String   @default("PROPOSED") // PROPOSED | AGREED | ACTIVE | TERMINATED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([landlordId])
+}
+
