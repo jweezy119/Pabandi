@@ -44,7 +44,9 @@ export async function runAgentLoopCycle(): Promise<{
   const errors: string[] = [];
   let bookings = 0;
   let badgePurchases = 0;
-  let feesCollected = 0;
+  let badgePab = 0;
+  let feesCollected = 0; // PAB booking fees captured this cycle
+  let poolFeesUsdc = 0; // USDC pool fees captured this cycle
 
   try {
     // Step 1: Load active agents
@@ -92,6 +94,7 @@ export async function runAgentLoopCycle(): Promise<{
 
         badgePurchases++;
         state.totalBadgePurchases++;
+        badgePab += price;
         logger.info(`[AgentLoop] Badge purchase: ${agent.profileId} bought ${badgeType} for ${price} PAB`);
       } catch (err: any) {
         errors.push(`Badge purchase for ${agent.profileId}: ${err.message}`);
@@ -136,6 +139,7 @@ export async function runAgentLoopCycle(): Promise<{
       const poolResult = await web3AgentService.collectPoolFees();
       if (poolResult.success && poolResult.feesCollected) {
         feesCollected = poolResult.feesCollected;
+        poolFeesUsdc = poolResult.feesCollected;
         state.totalFeesCollected += feesCollected;
         logger.info(`[AgentLoop] Pool fees collected: ${feesCollected} USDC`);
       }
@@ -144,6 +148,18 @@ export async function runAgentLoopCycle(): Promise<{
     }
 
     state.lastCycleAt = new Date();
+
+    // Step 5: Write combined revenue to the Autonomous Treasury ledger (TreasuryPosition)
+    try {
+      await recordTreasuryRevenue({
+        bookingFeesPab: feesCollected,
+        badgePab,
+        poolFeesUsdc,
+      });
+    } catch (err: any) {
+      errors.push(`Treasury ledger: ${err.message}`);
+    }
+
     logger.info(`[AgentLoop] Cycle complete: ${bookings} bookings, ${feesCollected} fees, ${badgePurchases} badges, ${errors.length} errors`);
   } catch (err: any) {
     errors.push(`Agent loop cycle: ${err.message}`);
@@ -207,6 +223,74 @@ export function stopAgentLoop(): void {
  */
 export function getAgentLoopState(): AgentLoopState {
   return { ...state };
+}
+
+/**
+ * Record combined agent-loop revenue into the Autonomous Treasury ledger
+ * (TreasuryPosition) so the profitability report shows one reconciled number.
+ *
+ * - Booking fees (PAB) + Badge revenue (PAB): captured to treasury
+ * - 10% of PAB revenue is burned (deflation) → recorded as BURN
+ * - Pool fees (USDC): captured to treasury
+ */
+const BOOKING_FEE_BURN_PCT = 0.1;
+
+async function recordTreasuryRevenue(opts: {
+  bookingFeesPab: number;
+  badgePab: number;
+  poolFeesUsdc: number;
+}): Promise<void> {
+  const pabRevenue = (opts.bookingFeesPab || 0) + (opts.badgePab || 0);
+  if (pabRevenue <= 0 && (opts.poolFeesUsdc || 0) <= 0) return;
+
+  if (pabRevenue > 0) {
+    // PAB fees captured to treasury
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'AGENT_REVENUE',
+        amount: pabRevenue,
+        status: 'DEPLOYED',
+        meta: {
+          asset: 'PAB',
+          source: 'agent-loop',
+          bookingFees: opts.bookingFeesPab,
+          badgeRevenue: opts.badgePab,
+          note: 'Agent booking + badge revenue captured to treasury',
+        },
+      },
+    });
+
+    // 10% burn (deflation engine)
+    const burn = +(pabRevenue * BOOKING_FEE_BURN_PCT).toFixed(4);
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'BURN',
+        amount: burn,
+        status: 'DEPLOYED',
+        meta: {
+          asset: 'PAB',
+          source: 'agent-loop',
+          burnedFrom: pabRevenue,
+          note: '10% of agent-loop PAB revenue burned (deflation)',
+        },
+      },
+    });
+  }
+
+  if (opts.poolFeesUsdc > 0) {
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'AGENT_REVENUE',
+        amount: opts.poolFeesUsdc,
+        status: 'DEPLOYED',
+        meta: {
+          asset: 'USDC',
+          source: 'pool-fee',
+          note: 'USDC/PAB pool arbitrage fee captured to treasury',
+        },
+      },
+    });
+  }
 }
 
 /**

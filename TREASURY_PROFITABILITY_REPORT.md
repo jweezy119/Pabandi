@@ -67,6 +67,27 @@ Endpoints exercised (all returning real DB ledger entries):
 - Total USDC swept: **$40,000**
 - Reconciliation: **100% (no leakage)**
 
+### Combined Revenue Ledger (agent loop + treasury, live)
+
+The agent loop now writes its booking fees, badge revenue, pool fees, and the
+10% burn directly into the same `TreasuryPosition` ledger as the fiat sweeps, so
+the profitability report shows **one reconciled number**:
+
+| Bucket | Entries | PAB | USDC |
+|--------|---------|-----|------|
+| FIAT_IN (virtual account wires) | 6 | 0 | $40,000 |
+| SWEEP_OUT (USDC → treasury wallet) | 6 | 0 | $40,000 |
+| AGENT_REVENUE (bookings + badges + pool) | 3 | 175 | $0 |
+| BURN (10% of PAB revenue) | 3 | 17.5 | $0 |
+
+**Totals endpoint** (`GET /treasury/autonomous-summary`):
+- PAB revenue (combined): **40,175 PAB**
+- USDC revenue (combined): **$40,000**
+- PAB burned: **17.5 PAB**
+- Fiat swept to treasury: **$40,000**
+
+These numbers grow live every 5 minutes as the agent loop runs.
+
 ---
 
 ## 5. Architecture (provider-agnostic)
