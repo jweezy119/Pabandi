@@ -109,4 +109,44 @@ router.get('/ledger', authenticate, async (_req: Request, res: Response): Promis
   }
 });
 
+/**
+ * Combined profitability summary across ALL revenue sources.
+ * GET /api/v1/treasury/autonomous-summary
+ * (authenticated users — aggregate read-only reporting)
+ */
+router.get('/autonomous-summary', authenticate, async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const ledger = await treasuryOrchestrator.getLedger(1000);
+    const summary: Record<string, { count: number; pab: number; usdc: number }> = {};
+    for (const row of ledger) {
+      const b = row.bucket;
+      const asset = (row.meta as any)?.asset ?? 'USD';
+      summary[b] = summary[b] ?? { count: 0, pab: 0, usdc: 0 };
+      summary[b].count++;
+      if (asset === 'PAB') summary[b].pab += row.amount;
+      else summary[b].usdc += row.amount;
+    }
+
+    const totalPabRevenue = (summary['AGENT_REVENUE']?.pab ?? 0) + (summary['SWEEP_OUT']?.usdc ?? 0);
+    const totalUsdcRevenue = (summary['AGENT_REVENUE']?.usdc ?? 0) + (summary['SWEEP_OUT']?.usdc ?? 0);
+    const totalBurnedPab = summary['BURN']?.pab ?? 0;
+    const totalFiatSwept = summary['SWEEP_OUT']?.usdc ?? 0;
+
+    res.json({
+      success: true,
+      data: {
+        buckets: summary,
+        totals: {
+          pabRevenue: +totalPabRevenue.toFixed(4),
+          usdcRevenue: +totalUsdcRevenue.toFixed(2),
+          burnedPab: +totalBurnedPab.toFixed(4),
+          fiatSweptUsd: +totalFiatSwept.toFixed(2),
+        },
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

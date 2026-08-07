@@ -1389,3 +1389,33 @@ model LinkedInProfile {
   @@index([persona])
   @@index([linkedinId])
 }
+
+model JobPosting {
+  id              String   @id @default(uuid())
+  title           String
+  companyName     String   @default("Confidential Client via Pabandi")
+  location        String
+  description     String
+  employmentType  String   // CONTRACT, FULL_TIME, FREELANCE
+  remote          Boolean  @default(true)
+  salaryMin       Int?
+  salaryMax       Int?
+  status          String   @default("PUBLISHED")
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  applications    JobApplication[]
+}
+
+model JobApplication {
+  id            String   @id @default(uuid())
+  jobId         String
+  applicantId   String   // Links to the newly created User
+  resumeUrl     String?
+  status        String   @default("SUBMITTED")
+  createdAt     DateTime @default(now())
+
+  job           JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([applicantId])
+}
