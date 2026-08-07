@@ -492,6 +492,51 @@ router.post('/migrate', async (_req: Request, res: Response): Promise<any> => {
     `);
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VirtualAccount_userId_idx" ON "VirtualAccount" ("userId")');
 
+    // Create SecurityDeposit + YieldAgreement tables (Pabandi Yield Deposit / PYD)
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SecurityDeposit" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "tenantId" TEXT NOT NULL,
+        "landlordId" TEXT NOT NULL,
+        "rentalType" TEXT NOT NULL DEFAULT 'PROPERTY',
+        "assetDescription" TEXT NOT NULL,
+        "requiredAmountUSD" DOUBLE PRECISION NOT NULL,
+        "tenantRiskBand" TEXT NOT NULL,
+        "depositReductionPct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "actualDepositUSD" DOUBLE PRECISION NOT NULL,
+        "yieldOptIn" BOOLEAN NOT NULL DEFAULT false,
+        "yieldAgreementId" TEXT UNIQUE,
+        "escrowContract" TEXT,
+        "escrowTxHash" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_tenantId_idx" ON "SecurityDeposit" ("tenantId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_landlordId_idx" ON "SecurityDeposit" ("landlordId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_status_idx" ON "SecurityDeposit" ("status")`);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "YieldAgreement" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "depositId" TEXT NOT NULL UNIQUE,
+        "tenantId" TEXT NOT NULL,
+        "landlordId" TEXT NOT NULL,
+        "tenantSignedAt" TIMESTAMP,
+        "landlordSignedAt" TIMESTAMP,
+        "pool" TEXT NOT NULL DEFAULT 'JITO_STSOL',
+        "expectedApy" DOUBLE PRECISION NOT NULL DEFAULT 7.0,
+        "tenantApy" DOUBLE PRECISION NOT NULL DEFAULT 5.5,
+        "pabandiSpreadPct" DOUBLE PRECISION NOT NULL DEFAULT 1.5,
+        "status" TEXT NOT NULL DEFAULT 'PROPOSED',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "YieldAgreement_tenantId_idx" ON "YieldAgreement" ("tenantId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "YieldAgreement_landlordId_idx" ON "YieldAgreement" ("landlordId")`);
+
     res.json({ success: true, message: 'Database tables created' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
