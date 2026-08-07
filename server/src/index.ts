@@ -51,6 +51,7 @@ import openwaRoutes from './routes/openwa.routes';
 import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
+import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
@@ -256,10 +257,24 @@ app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
+app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
 
 // ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
 import osintRoutes from './routes/osint.routes';
 app.use(`/api/${API_VERSION}/osint`, osintRoutes);
+
+// ── PTP: Pabandi Trust Protocol (Seals, Billing, Discovery) ──────────────────
+import sealRoutes from './routes/seal.routes';
+import billingRoutes from './routes/billing.routes';
+import wellknownRoutes from './routes/wellknown.routes';
+
+app.use(`/api/${API_VERSION}/seal`, sealRoutes);
+app.use(`/api/${API_VERSION}/billing`, billingRoutes);
+app.use('/.well-known/ptp', wellknownRoutes); // Note: standard .well-known structure
+
+// Expose public SDK for trust seals
+import path from 'path';
+app.use('/sdk', express.static(path.join(__dirname, 'public')));
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

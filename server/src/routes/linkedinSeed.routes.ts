@@ -402,6 +402,35 @@ router.post('/fund-agents', async (req: Request, res: Response): Promise<any> =>
 });
 
 /**
+ * POST /api/v1/linkedin/seed/fund-agents-onchain
+ * Fund agents with REAL PAB on-chain from treasury wallet.
+ */
+router.post('/fund-agents-onchain', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const agents = await prisma.web3Agent.findMany({ where: { isActive: true } });
+    let funded = 0;
+    const errors: string[] = [];
+
+    for (const agent of agents) {
+      try {
+        const result = await web3AgentService.fundAgent(agent as any, 100);
+        if (result.success) {
+          funded++;
+        } else {
+          errors.push(`Agent ${agent.profileId}: ${result.error}`);
+        }
+      } catch (err: any) {
+        errors.push(`Agent ${agent.profileId}: ${err.message}`);
+      }
+    }
+
+    res.json({ success: true, data: { funded, total: agents.length, errors: errors.slice(0, 5) } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * POST /api/v1/linkedin/seed/migrate
  * Create Web3Agent and AgentTransaction tables if they don't exist.
  */
@@ -444,6 +473,24 @@ router.post('/migrate', async (_req: Request, res: Response): Promise<any> => {
     // Create indexes
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_agentId_createdAt_idx" ON "AgentTransaction" ("agentId", "createdAt")');
     await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_txHash_idx" ON "AgentTransaction" ("txHash")');
+
+    // Create VirtualAccount table if missing (Autonomous Treasury Orchestrator)
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VirtualAccount" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "userId" TEXT NOT NULL UNIQUE,
+        "routingNumber" TEXT NOT NULL,
+        "accountNumber" TEXT NOT NULL,
+        "bankName" TEXT NOT NULL,
+        "currency" TEXT NOT NULL DEFAULT 'USD',
+        "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+        "provider" TEXT NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "VirtualAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE
+      )
+    `);
+    await prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VirtualAccount_userId_idx" ON "VirtualAccount" ("userId")');
 
     res.json({ success: true, message: 'Database tables created' });
   } catch (err: any) {

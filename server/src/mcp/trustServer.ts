@@ -1,6 +1,8 @@
 import { logger } from '../utils/logger';
 import { trustFluxService } from '../services/trustFlux.service';
 import { trustVeilService } from '../services/trustVeil.service';
+import { ptpEngine } from '../protocol/ptp.spec';
+import { prisma } from '../utils/database';
 
 /**
  * PabandiTrustMCPServer
@@ -21,6 +23,43 @@ export class PabandiTrustMCPServer {
     // In a real implementation:
     // const server = new Server({ name: 'pabandi-trust', version: '1.0.0' });
     // server.setRequestHandler(ListToolsRequestSchema, async () => { ... });
+  }
+
+  /**
+   * MCP Tool Implementation: queryPTPAttestation
+   * Exposes the formal Pabandi Trust Protocol (PTP) attestation to MCP clients.
+   */
+  public async handleQueryPTPAttestation(args: { userId: string, entityType: 'INDIVIDUAL' | 'BUSINESS' }) {
+    logger.info(`[Pabandi Trust MCP Server] External query for PTP Attestation: User ${args.userId}`);
+    
+    try {
+      const user = await prisma.user.findUnique({ where: { id: args.userId }, select: { trustScore: true } });
+      const score = user?.trustScore || 50;
+
+      let flux = { velocity: 0, trend: 'STEADY', confidence: 0.1 };
+      try {
+        flux = await trustFluxService.computeTrustFlux(args.userId);
+      } catch (e) {}
+
+      const attestation = ptpEngine.issueAttestation(
+        args.userId,
+        args.entityType,
+        score,
+        {
+          direction: flux.trend as any,
+          momentum: Math.abs(flux.velocity),
+          confidence: flux.confidence
+        }
+      );
+
+      return {
+        _meta: { type: 'PTPAttestation', version: '1.0' },
+        attestation
+      };
+    } catch (error: any) {
+      logger.error(`[Pabandi Trust MCP Server] PTP query failed`, error);
+      throw new Error('Failed to generate PTP Attestation');
+    }
   }
 
   /**

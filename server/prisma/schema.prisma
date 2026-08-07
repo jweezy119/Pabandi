@@ -56,6 +56,7 @@ model User {
   stakeTransactions      StakeTransaction[]
   stakingPositions       StakingPosition[]
   loans                  Loan[]
+  virtualAccounts        VirtualAccount[]
   disputesAgainst        Dispute[]               @relation("DisputesAgainst")
   disputesFiled          Dispute[]               @relation("DisputesFiled")
   flags                  UserFlag[]
@@ -643,6 +644,24 @@ model TreasuryPosition {
 
   @@index([bucket])
   @@index([status])
+}
+
+model VirtualAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  routingNumber String
+  accountNumber String
+  bankName      String
+  currency      String   @default("USD")
+  status        String   @default("ACTIVE") // ACTIVE, SUSPENDED
+  provider      String   // e.g. "SIMULATOR", "MELD", "STRIPE"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@index([userId])
 }
 
 model Dispute {
