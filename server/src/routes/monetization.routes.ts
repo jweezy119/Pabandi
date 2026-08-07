@@ -51,24 +51,7 @@ router.get('/trust-brokerage/revenue', async (_req: Request, res: Response): Pro
 
 // ── Trust API-as-a-Service ────────────────────────────────────────────────────
 
-/**
- * POST /api/v1/monetization/trust-api/subscribe
- * Create a new API subscription.
- * Body: { buyerId, buyerName, tier, webhookUrl? }
- */
-router.post('/trust-api/subscribe', async (req: Request, res: Response): Promise<any> => {
-  const { buyerId, buyerName, tier = 'STARTER', webhookUrl } = req.body;
-  if (!buyerId || !buyerName) {
-    return res.status(400).json({ success: false, error: 'buyerId and buyerName required' });
-  }
-  try {
-    const { trustApiAsService } = await import('../services/trustApiAsService.service');
-    const subscription = await trustApiAsService.subscribe(buyerId, buyerName, tier as any, webhookUrl);
-    res.json({ success: true, data: subscription });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+// Route removed, handled by billing.routes.ts (/api/v1/billing/subscribe)
 
 /**
  * POST /api/v1/monetization/trust-api/verify
@@ -89,39 +72,7 @@ router.post('/trust-api/verify', async (req: Request, res: Response): Promise<an
   }
 });
 
-/**
- * GET /api/v1/monetization/trust-api/subscription/:apiKey
- * Get subscription usage stats.
- */
-router.get('/trust-api/subscription/:apiKey', async (req: Request, res: Response): Promise<any> => {
-  try {
-    const { trustApiAsService } = await import('../services/trustApiAsService.service');
-    const stats = trustApiAsService.getSubscriptionStats(req.params.apiKey);
-    if (!stats) return res.status(404).json({ success: false, error: 'Subscription not found' });
-    res.json({ success: true, data: stats });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/**
- * POST /api/v1/monetization/trust-api/calculate-cost
- * Calculate subscription cost for a given verification volume.
- * Body: { verifications: number }
- */
-router.post('/trust-api/calculate-cost', async (req: Request, res: Response): Promise<any> => {
-  const { verifications } = req.body;
-  if (!verifications || verifications < 0) {
-    return res.status(400).json({ success: false, error: 'verifications count required' });
-  }
-  try {
-    const { trustApiAsService } = await import('../services/trustApiAsService.service');
-    const cost = trustApiAsService.calculateUsageCost(verifications);
-    res.json({ success: true, data: cost });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+// Stats and pricing handled by billing.routes.ts
 
 // ── Reputation Insurance API ──────────────────────────────────────────────────
 

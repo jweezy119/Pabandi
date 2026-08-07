@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
-import { Keypair, PublicKey, Connection, Transaction, sendAndConfirmTransaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, PublicKey, Connection, Transaction, sendAndConfirmTransaction, LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
 import { createTransferInstruction, getAssociatedTokenAddress, getAccount, createAssociatedTokenAccountInstruction, getMint } from '@solana/spl-token';
 import bs58 from 'bs58';
 import crypto from 'crypto';
@@ -8,7 +8,7 @@ import crypto from 'crypto';
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || '68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs';
-const RPC_URL = 'https://api.mainnet-beta.solana.com';
+const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = 100; // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = 10;
@@ -58,6 +58,8 @@ export interface Web3Agent {
   dailyTransactions: number;
   lastReset: Date;
   isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface TransactionResult {
@@ -76,6 +78,8 @@ export class Web3AgentService {
 
   constructor() {
     this.connection = new Connection(RPC_URL, 'confirmed');
+    // Auto-initialize treasury from env var
+    this.initTreasury();
   }
 
   /** Initialize treasury keypair from env (for funding transfers) */
@@ -151,6 +155,19 @@ export class Web3AgentService {
       const mintPubkey = new PublicKey(MINT_ADDRESS);
       const treasuryPubkey = new PublicKey(TREASURY_WALLET);
       const agentPubkey = new PublicKey(agent.walletAddress);
+
+      // Fund agent with SOL for gas (needed for token account creation + tx fees)
+      const agentBalance = await this.connection.getBalance(agentPubkey);
+      if (agentBalance < LAMPORTS_PER_SOL / 100) { // If less than 0.01 SOL
+        const solIx = SystemProgram.transfer({
+          fromPubkey: treasuryPubkey,
+          toPubkey: agentPubkey,
+          lamports: LAMPORTS_PER_SOL / 100, // 0.01 SOL for gas
+        });
+        const solTx = new Transaction().add(solIx);
+        await sendAndConfirmTransaction(this.connection, solTx, [this.treasuryKeypair]);
+        logger.info(`[Web3Agent] Funded ${agent.walletAddress.substring(0, 8)}... with 0.01 SOL for gas`);
+      }
 
       const treasuryAta = await getAssociatedTokenAddress(mintPubkey, treasuryPubkey);
       const agentAta = await getAssociatedTokenAddress(mintPubkey, agentPubkey);
