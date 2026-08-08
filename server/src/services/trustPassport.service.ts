@@ -68,9 +68,9 @@ export class TrustPassportService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Active protected deposits where this provider is the beneficiary
+    // Active + in-flight protected deposits where this provider is the beneficiary
     const deposits = await prisma.securityDeposit.findMany({
-      where: { landlordId: ref, status: { in: ['FUNDED', 'ACTIVE'] } },
+      where: { landlordId: ref, status: { in: ['PENDING', 'FUNDED', 'ACTIVE'] } },
       include: { milestones: true },
     });
 
@@ -93,8 +93,8 @@ export class TrustPassportService {
       0,
     );
 
-    // Increment claims count (someone looked)
-    await prisma.trustPassport.update({ where: { id: p.id }, data: { claimsCount: { increment: 1 } } });
+    // Increment claims count (someone looked) and capture the new value
+    const updated = await prisma.trustPassport.update({ where: { id: p.id }, data: { claimsCount: { increment: 1 } } });
 
     return {
       public: true,
@@ -103,12 +103,12 @@ export class TrustPassportService {
       category: p.category,
       bio: p.bio,
       walletAddress: p.walletAddress,
-      claimsCount: p.claimsCount,
+      claimsCount: updated.claimsCount,
       trust: agent
         ? {
             trustBand: agent.trustBand,
             trustVelocity: agent.trustVelocity,
-            reliabilityScore: agent.reliabilityScore ?? agent.reliabilityScore,
+            reliabilityScore: agent.reliabilityScore,
             profileCompleteness: agent.profileCompleteness,
             connectionCount: agent.connectionCount,
           }
