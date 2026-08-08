@@ -202,6 +202,8 @@ export const loanService = {
   getPower: () => apiClient.get('/loans/power').then(res => res.data),
   requestLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/request', data).then(res => res.data),
   repayLoan: (loanId: string) => apiClient.post(`/loans/${loanId}/repay`).then(res => res.data),
+  getReputationQuote: () => apiClient.get('/loans/reputation/quote').then(res => res.data),
+  requestReputationLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/reputation/request', data).then(res => res.data),
 };
 
 export const sourcingService = {
