@@ -150,8 +150,11 @@ router.put('/wallet', authenticate, async (req: any, res, next) => {
 // ── Google OAuth ───────────────────────────────────────────────────────────
 
 // Step 1: Redirect to Google, passing role as state
-router.get('/google', (req: Request, res: Response, next: NextFunction) => {
+router.get('/google', oauthSession, (req: Request, res: Response, next: NextFunction) => {
   const role = (req.query.role as string) || 'customer';
+  if (req.query.returnTo) {
+    (req as any).session.returnTo = req.query.returnTo;
+  }
   passport.authenticate('google', {
     scope: ['profile', 'email'],
     state: role,   // pass role through so callback can read it
@@ -161,6 +164,7 @@ router.get('/google', (req: Request, res: Response, next: NextFunction) => {
 // Step 2: Google redirects back here after auth
 router.get(
   '/google/callback',
+  oauthSession,
   passport.authenticate('google', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
   (req: Request, res: Response) => {
     const user = req.user as any;
@@ -174,6 +178,12 @@ router.get(
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
+
+    const returnTo = (req as any).session?.returnTo;
+    if (returnTo) {
+      (req as any).session.returnTo = null; // clear it
+      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+    }
 
     // Redirect with token in query string — frontend will pick it up
     return res.redirect(
@@ -251,8 +261,11 @@ router.get(
 
 // ── LinkedIn OAuth ─────────────────────────────────────────────────────────
 
-router.get('/linkedin', (req: Request, res: Response, next: NextFunction) => {
+router.get('/linkedin', oauthSession, (req: Request, res: Response, next: NextFunction) => {
   const role = (req.query.role as string) || 'customer';
+  if (req.query.returnTo) {
+    (req as any).session.returnTo = req.query.returnTo;
+  }
   passport.authenticate('linkedin', {
     state: role,
   })(req, res, next);
@@ -260,6 +273,7 @@ router.get('/linkedin', (req: Request, res: Response, next: NextFunction) => {
 
 router.get(
   '/linkedin/callback',
+  oauthSession,
   passport.authenticate('linkedin', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=linkedin_failed` }),
   (req: Request, res: Response) => {
     const user = req.user as any;
@@ -271,6 +285,13 @@ router.get(
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
+    
+    const returnTo = (req as any).session?.returnTo;
+    if (returnTo) {
+      (req as any).session.returnTo = null; // clear it
+      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+    }
+
     return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
   }
 );

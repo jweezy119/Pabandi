@@ -28,6 +28,9 @@ import ContactPage from './pages/ContactPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilesPage from './pages/ProfilesPage';
+import ProfileDetailPage from './pages/ProfileDetailPage';
+import EconomyDashboardPage from './pages/EconomyDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import { WalletPage } from './pages/WalletPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
@@ -47,6 +50,15 @@ import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
+import BackgroundCheckPage from './pages/BackgroundCheckPage';
+import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
+import PpdWizardPage from './pages/PpdWizardPage';
+import TrustPassportPage from './pages/TrustPassportPage';
+import PassportDirectoryPage from './pages/PassportDirectoryPage';
+import CashOutPage from './pages/CashOutPage';
+import PayrollPage from './pages/PayrollPage';
+import ArbitrationPage from './pages/ArbitrationPage';
+import TrustBadgeEmbed from './pages/TrustBadgeEmbed';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
@@ -58,11 +70,13 @@ import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { PluginManagerPage } from './pages/PluginManagerPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
+import ActiveJobsPage from './pages/ActiveJobsPage';
+import JobWorkspacePage from './pages/JobWorkspacePage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
+import JobDetailsPage from './pages/JobDetailsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { PublicSEO } from './components/PublicSEO';
-
 import { useEffect } from 'react';
 
 function App() {
@@ -78,7 +92,18 @@ function App() {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <AdminPanel />;
     if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
-    return <Navigate to="/wallet" replace />;
+    if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
+    return <Navigate to="/freelance" replace />; // Default for customers for now
+  };
+
+  const AuthRequiredProfilesPage = () => {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    return <ProfilesPage />;
+  };
+
+  const AuthRequiredProfileDetailPage = () => {
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    return <ProfileDetailPage />;
   };
 
   return (
@@ -126,18 +151,33 @@ function App() {
             <Route path="demo-checkout" element={<DemoCheckoutPage />} />
             {/* Business partner landing page — public */}
             <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
+            <Route path="jobs/:id" element={<JobDetailsPage />} />
             <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/join-claim" element={<PublicSEO seo={{ title: 'Claim Business | Pabandi', description: 'Claim your unclaimed Pabandi business profile with Web3 escrow, AI no-show protection, and Solana $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/activate/:id" element={<PublicSEO seo={{ title: 'Business Setup | Pabandi', description: 'Claim your listing, connect checkout, and become booking-ready on Pabandi.' }}><BusinessActivationPage /></PublicSEO>} />
+            <Route path="/dashboard/jobs" element={<ActiveJobsPage />} />
+            <Route path="/workspace/:id" element={<JobWorkspacePage />} />
             <Route path="partners/dashboard" element={<PartnerDashboardPage />} />
             <Route path="pricing" element={<PublicSEO seo={{ title: 'Pabandi Pricing | Hospitality & Live Selling Plans', description: 'Explore Pabandi pricing for hospitality properties, live sellers, and freelancers. Free starter plans, escrow-backed deposits, and $PAB rewards.' }}><BusinessModelPage /></PublicSEO>} />
             <Route path="business-model" element={<PublicSEO seo={{ title: 'Pabandi Business Model | Escrow Commissions & Rewards', description: 'Understand Pabandi revenue, escrow commissions, $PAB tokenomics, and trust incentives for sellers, buyers, and hosts.' }}><BusinessModelPage /></PublicSEO>} />
-            <Route path="technology" element={<PublicSEO seo={{ title: 'Pabandi Technology | AI + Web3 Escrow', description: 'How Pabandi uses AI trust scoring, halal escrow, and blockchain-backed commitment to secure bookings for the informal economy.' }}><TechnologyPage /></PublicSEO>} />
+            <Route path="technology" element={<TechnologyPage />} />
             <Route path="web3" element={<Web3Page />} />
             <Route path="hospitality" element={<HospitalityPage />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
+            <Route path="background-check" element={<BackgroundCheckPage />} />
+            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
+            <Route path="protected-deposit" element={<PpdWizardPage />} />
+            <Route path="trust/:handle" element={<TrustPassportPage />} />
+            <Route path="trust" element={<PassportDirectoryPage />} />
+            <Route path="cashout" element={<CashOutPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="arbitration" element={<ArbitrationPage />} />
+            <Route path="profiles" element={<AuthRequiredProfilesPage />} />
+            <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
+            <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
+            <Route path="economy" element={<EconomyDashboardPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
@@ -148,9 +188,9 @@ function App() {
             <Route path="trust/pulse" element={<TrustPulsePage />} />
             <Route path="trust/jury" element={<CommunityJuryPage />} />
             {/* Privacy Policy */}
-            <Route path="privacy" element={<PublicSEO seo={{ title: 'Privacy Policy', description: 'Pabandi privacy policy: data usage, escrow records, review visibility, and seller/customer rights.' }}><PrivacyPolicyPage /></PublicSEO>} />
+            <Route path="privacy" element={<PrivacyPolicyPage />} />
             {/* Terms of Service */}
-            <Route path="terms" element={<PublicSEO seo={{ title: 'Terms of Service', description: 'Pabandi terms of service governing escrow bookings, $PAB rewards, live selling, and platform rules.' }}><TermsOfServicePage /></PublicSEO>} />
+            <Route path="terms" element={<TermsOfServicePage />} />
 
             {/* Shopify Embedded App Route */}
             <Route path="shopify/app" element={<ShopifyAppBridge />} />
@@ -217,6 +257,9 @@ function App() {
             />
             <Route path="passport/:sellerId" element={<PublicPassportPage />} />
           </Route>
+
+          {/* Standalone embeddable badge (chrome-free, for iframe embeds) */}
+          <Route path="/badge/:handle" element={<TrustBadgeEmbed />} />
         </Routes>
       </LanguageProvider>
     </HelmetProvider>

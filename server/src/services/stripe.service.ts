@@ -145,7 +145,7 @@ export const stripeService = {
    */
   async createAccountLink(accountId: string): Promise<string> {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    
+
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${frontendUrl}/settings?stripe_refresh=true`,
@@ -154,5 +154,21 @@ export const stripeService = {
     });
 
     return accountLink.url;
-  }
+  },
+
+  /**
+   * REAL off-ramp: push settled USDC to a Stripe Connect account as a transfer.
+   * This is the actual payout rail (vs the simulated fallback). Requires
+   * STRIPE_SECRET_KEY + a connected account id.
+   */
+  async payoutToConnect(amountUsdc: number, connectAccountId: string): Promise<{ id: string; status: string }> {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('Stripe not configured');
+    const transfer = await stripe.transfers.create({
+      amount: Math.round(amountUsdc * 100), // cents
+      currency: 'usd',
+      destination: connectAccountId,
+      transfer_group: `pabandi-payout-${Date.now()}`,
+    });
+    return { id: transfer.id, status: 'paid' };
+  },
 };

@@ -56,6 +56,9 @@ model User {
   stakeTransactions      StakeTransaction[]
   stakingPositions       StakingPosition[]
   loans                  Loan[]
+  payouts                Payout[]
+  workerPayouts         WorkerPayout[]
+  virtualAccounts        VirtualAccount[]
   disputesAgainst        Dispute[]               @relation("DisputesAgainst")
   disputesFiled          Dispute[]               @relation("DisputesFiled")
   flags                  UserFlag[]
@@ -489,6 +492,7 @@ enum UserRole {
   BUSINESS_STAFF
   CUSTOMER
   ADMIN
+  FREELANCER
 }
 
 enum KycStatus {
@@ -645,6 +649,47 @@ model TreasuryPosition {
   @@index([status])
 }
 
+model VirtualAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  routingNumber String
+  accountNumber String
+  bankName      String
+  currency      String   @default("USD")
+  status        String   @default("ACTIVE") // ACTIVE, SUSPENDED
+  provider      String   // e.g. "SIMULATOR", "MELD", "STRIPE"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@index([userId])
+}
+
+// ── Payout (cash-out earned USDC to local bank / Connect account) ──────────────
+// The "remittance killer": a verified worker cashes out instantly at a flat fee
+// (1.5%) vs ~7% traditional remittance. Trust-gated (band E blocked).
+model Payout {
+  id          String   @id @default(cuid())
+  userId      String
+  amountUsdc  Float
+  feeUsdc     Float
+  netUsdc     Float    // amount - fee actually delivered
+  method      String   @default("BANK") // BANK | CONNECT
+  destinationRef String? // VirtualAccount id, Stripe Connect acct, or OFFRAMP:<intentId>
+  offrampIntentId String? // linked OfframpIntent when method=LOCAL
+  status      String   @default("SETTLED") // PENDING | SETTLED | FAILED
+  txHash      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
 model Dispute {
   id               String          @id @default(cuid())
   userId           String?
@@ -659,6 +704,9 @@ model Dispute {
   updatedAt        DateTime        @updatedAt
   stakedAmount     Float           @default(0)
   reservationId    String?         @unique
+  // #3 Dispute Arbitration: attach disputes to paid-work contexts (not just reservations)
+  contextType      String?         // MILESTONE | OFFRAMP | PAYOUT | RESERVATION
+  contextId        String?         // ProjectMilestone.id | OfframpIntent.id | Payout.id
   evidenceUrls     String[]
   user             User?           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
   hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
@@ -670,6 +718,7 @@ model Dispute {
   @@index([userId])
   @@index([hashedIdentityId])
   @@index([apiClientId])
+  @@index([contextType, contextId])
 }
 
 model HashedIdentity {
@@ -910,11 +959,16 @@ model Loan {
   principalUsdc Float
   collateralPab Float
   flatFeeUsdc   Float
+  // Reputation-backed (collateral-FREE) loan fields
+  loanType      String   @default("COLLATERAL") // COLLATERAL | REPUTATION
+  band          String?  // Trust Passport band A-E used for pricing
+  reputationCapUsdc Float @default(0) // cap derived from verified deal history
+  feePct        Float    @default(5) // flat fee % (Sharia-compliant, no interest)
   status        LoanStatus @default(ACTIVE)
   dueDate       DateTime
   txHash        String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -1307,3 +1361,325 @@ model IssuerKey {
   rotatedAt     DateTime @default(now())
   isActive      Boolean  @default(true)
 }
+
+model Web3Agent {
+  id                  String    @id @default(cuid())
+  profileId           String    @unique
+  walletAddress       String    @unique
+  encryptedPrivateKey String    // AES-256-GCM encrypted
+  category            String
+  balancePab          Float     @default(0)
+  dailyOutflow        Float     @default(0)
+  dailyTransactions   Int       @default(0)
+  lastReset           DateTime  @default(now())
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  transactions AgentTransaction[]
+}
+
+model AgentTransaction {
+  id          String   @id @default(cuid())
+  agentId     String
+  type        String   // FUNDING | BOOKING_PAYMENT | STAKE | BADGE_PURCHASE | FEE_COLLECTION
+  amount      Float
+  txHash      String?
+  fromAddress String?
+  toAddress   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  agent Web3Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, createdAt])
+  @@index([txHash])
+}
+
+model LinkedInProfile {
+  id                String    @id @default(cuid())
+  linkedinId        String    @unique
+  firstName         String
+  lastName          String
+  headline          String?
+  company           String?
+  industry          String?
+  location          String?
+  category          String
+  githubUrl         String?
+  linkedinUrl       String?
+  profilePictureUrl String?
+  connectionCount   Int       @default(0)
+  trustVelocity     Float     @default(0)
+  trustBand         String    @default("D")
+  profileCompleteness Float   @default(0.5)
+  walletAddress     String?
+  seedSource        String    @default("LINKEDIN_SEARCH")
+  persona           String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([category])
+  @@index([persona])
+  @@index([linkedinId])
+}
+
+model JobPosting {
+  id              String   @id @default(uuid())
+  title           String
+  companyName     String   @default("Confidential Client via Pabandi")
+  location        String
+  description     String
+  employmentType  String   // CONTRACT, FULL_TIME, FREELANCE
+  remote          Boolean  @default(true)
+  salaryMin       Int?
+  salaryMax       Int?
+  status          String   @default("PUBLISHED")
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  applications    JobApplication[]
+}
+
+model JobApplication {
+  id            String   @id @default(uuid())
+  jobId         String
+  applicantId   String   // Links to the newly created User
+  resumeUrl     String?
+  status        String   @default("SUBMITTED")
+  createdAt     DateTime @default(now())
+
+  job           JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([applicantId])
+}
+
+// ── Pabandi Yield Deposit (PYD) ────────────────────────────────────────────────
+// Non-custodial rental security deposit infrastructure.
+// Pabandi NEVER holds funds — the Solana escrow contract does. Pabandi is the
+// trust layer, agreement layer, and settlement orchestrator only.
+
+model SecurityDeposit {
+  id                 String   @id @default(cuid())
+  tenantId           String   // deposit payer (homeowner / lessee / HOA / resident)
+  landlordId         String   // deposit beneficiary (builder / fleet co / mgmt co / vendor)
+  // Generalized context (was rentalType PROPERTY|CAR)
+  depositContext     String   @default("PROPERTY") // PROPERTY | CAR | BUILDER | FLEET | HOA
+  assetDescription   String   // "123 Main St remodel" | "Fleet unit VIN xyz" | "Sunny Acres HOA repaving"
+  requiredAmountUSD  Float
+  tenantRiskBand     String   // A | B | C | D | E (from PTP at booking)
+  depositReductionPct Float   @default(0) // from PTP band (A=50%,B=30%,C=10%)
+  // Additional reduction from verified BackgroundCheck on the beneficiary
+  bcReductionPct     Float    @default(0) // up to 0.10 when beneficiary passes full BC
+  bcCheckId          String?  // BackgroundCheck.id used for the reduction
+  actualDepositUSD   Float    // requiredAmountUSD * (1 - depositReductionPct - bcReductionPct)
+  yieldOptIn         Boolean  @default(false)
+  communityPoolOptIn Boolean @default(false) // HOA: yield flows to community pool, not payer
+  yieldAgreementId   String?   @unique
+  escrowContract     String?  // Solana escrow PDA / address (non-custodial)
+  escrowTxHash       String?
+  status             String   @default("PENDING") // PENDING | FUNDED | ACTIVE | RELEASED | DISPUTED | REFUNDED
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  yieldAgreement      YieldAgreement? @relation(fields: [yieldAgreementId], references: [id])
+  milestones         ProjectMilestone[]
+
+  @@index([tenantId])
+  @@index([landlordId])
+  @@index([status])
+}
+
+model YieldAgreement {
+  id                String   @id @default(cuid())
+  depositId         String   @unique
+  tenantId          String
+  landlordId        String
+  securityDeposit   SecurityDeposit? @relation
+  // Both parties sign — Pabandi is infra, not counterparty
+  tenantSignedAt    DateTime?
+  landlordSignedAt  DateTime?
+  // Yield pool config (tenant opts in; Pabandi takes spread, never principal risk)
+  pool              String   @default("JITO_STSOL") // JITO_STSOL | ONDO_USDC | MAPLE
+  expectedApy       Float    @default(7.0)
+  tenantApy         Float    @default(5.5)  // what tenant receives
+  pabandiSpreadPct  Float    @default(1.5)  // fee taken from yield (NOT from principal)
+  status            String   @default("PROPOSED") // PROPOSED | AGREED | ACTIVE | TERMINATED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([landlordId])
+}
+
+model BackgroundCheck {
+  id                String              @id @default(cuid())
+  subjectType       String              // FREELANCER | PROPERTY_MANAGER | BUSINESS | GUEST
+  subjectId         String?
+  subjectName       String
+  subjectEmail      String?
+  subjectPhone      String?
+  subjectWallet     String?
+  subjectGithub     String?
+  subjectWebsite    String?
+  subjectCompany    String?
+  requestedBy       String?
+  status            String              @default("PENDING") // PENDING | RUNNING | COMPLETE | FAILED
+  riskScore         Int?
+  riskBand          String?
+  recommendation    String?
+  summary           String?
+  githubResult      Json?
+  domainResult      Json?
+  newsResult        Json?
+  breachResult      Json?
+  sanctionsResult   Json?
+  registryResult    Json?
+  osintResult       Json?
+  trigger           String              @default("MANUAL") // MANUAL | PRE_BOOKING | RECURRING | BATCH
+  webhookUrl        String?
+  pabFee            Float               @default(5)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  completedAt       DateTime?
+
+  @@index([subjectType])
+  @@index([status])
+  @@index([requestedBy])
+}
+
+// ── Milestone Draw model (construction / fleet phased release) ───────────────
+model ProjectMilestone {
+  id            String   @id @default(cuid())
+  depositId     String   // FK to SecurityDeposit (the master escrow)
+  // Phase definition
+  name          String   // "Framing", "Rough-in", "10% Retention"
+  description   String?
+  sequence      Int      @default(0) // draw order
+  amountUSD     Float    // funds released at this milestone
+  // Gating conditions (all must be true to release)
+  requiresLienWaiver  Boolean @default(false)
+  requiresBcRefresh   Boolean @default(false) // re-run BackgroundCheck on beneficiary
+  requiresSignoff     Boolean @default(true)  // payer (homeowner/HOA) approval
+  // Status
+  status        String   @default("PENDING") // PENDING | FUNDED | RELEASED | DISPUTED
+  releasedAt    DateTime?
+  releasedTxHash String?
+  // Pay-on-verified-work: when released, worker is credited instantly
+  creditedUserId String?  // resolved beneficiary wallet owner
+  creditedUsdc   Float?   // net amount credited after settlement bps
+  settlementBps  Float?   // bps taken as Pabandi revenue (vs ~700bps remittance)
+  // Compliance artifacts
+  lienWaiverUrl String?
+  bcCheckId     String?   // BackgroundCheck.id from refresh
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deposit       SecurityDeposit @relation(fields: [depositId], references: [id])
+
+  @@index([depositId])
+  @@index([status])
+}
+
+// ── WorkerPayout (payroll ledger: every milestone release = instant worker pay) ─
+// The "remittance killer" engine: verified-work release -> worker USDC credited
+// same block, settlement bps (0.5%) vs ~7% remittance. Trust-gated (band E blocked).
+model WorkerPayout {
+  id            String   @id @default(cuid())
+  milestoneId   String
+  depositId     String
+  userId        String   // worker who got paid
+  grossUsdc     Float    // milestone amount released
+  settlementBps Float    // bps Pabandi took
+  feeUsdc       Float
+  netUsdc       Float    // credited to worker wallet
+  status        String   @default("PAID") // PAID | REVERSED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([depositId])
+  @@index([milestoneId])
+}
+
+// ── Performance Bond (Pabond-underwritten; replaces/backs a deposit) ──────────
+model PerformanceBond {
+  id            String   @id @default(cuid())
+  depositId     String   // linked master escrow (bond may back the whole project)
+  beneficiaryId String   // builder / fleet co / HOA vendor (who is bonded)
+  payerId       String   // homeowner / lessee / HOA (protected party)
+  depositContext String  @default("BUILDER") // BUILDER | FLEET | HOA
+  coverageUSD   Float    // bond face value
+  // Bond pricing from Pabond reputation curve
+  premiumUSD     Float   // cost of the bond (Pabandi revenue)
+  velocityMult  Float    @default(1.0) // TrustFlux velocity multiplier
+  status        String   @default("PROPOSED") // PROPOSED | ACTIVE | CLAIMED | EXPIRED
+  claimedAt     DateTime?
+  claimReason   String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([depositId])
+  @@index([beneficiaryId])
+  @@index([payerId])
+}
+
+// ── Community Pool (HOA yield → community amenities / reserves) ───────────────
+model CommunityPool {
+  id            String   @id @default(cuid())
+  communityName String   // "Sunny Acres HOA"
+  // Wallet that receives the redirected yield
+  treasuryWallet String?
+  totalDepositsUSD Float @default(0)  // sum of deposits routed here
+  totalYieldUSD     Float @default(0)  // cumulative yield earned
+  totalDistributedUSD Float @default(0) // paid out to community
+  // Governance
+  memberCount   Int      @default(0)
+  publicDashboard Boolean @default(true) // transparency on
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  grants        CommunityGrant[]
+}
+
+// ── Community Grant (yield → community micro-grants / amenities) ─────────────
+model CommunityGrant {
+  id            String   @id @default(cuid())
+  poolId        String
+  title         String
+  description   String?
+  amountUSD     Float
+  status        String   @default("PROPOSED") // PROPOSED | APPROVED | FUNDED | COMPLETE
+  approvedBy    String?  // HOA member / vote
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pool          CommunityPool @relation(fields: [poolId], references: [id])
+
+  @@index([poolId])
+  @@index([status])
+}
+
+// ── Trust Passport (public, portable provider trust identity) ───────────────
+model TrustPassport {
+  id            String   @id @default(cuid())
+  handle        String   @unique // shareable slug, e.g. "apex-builders"
+  agentId       String?  // Web3Agent.id if linked
+  providerRef   String?  // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category      String   @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName   String
+  bio           String?
+  walletAddress String?
+  visibility    String   @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount   Int      @default(0) // times requested/verified
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([handle])
+  @@index([agentId])
+  @@index([providerRef])
+}
+

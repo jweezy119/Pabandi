@@ -223,3 +223,21 @@ export function Badge({ children, tone = 'info', className = '', style }: BadgeP
     </span>
   );
 }
+
+type GlassCardProps = {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  hover?: boolean;
+  lift?: boolean;
+};
+
+export function GlassCard({ children, className = '', style, hover = true, lift = true }: GlassCardProps) {
+  const motion = lift && hover ? 'transition-all duration-200 hover:-translate-y-[3px] hover:shadow-2xl hover:shadow-indigo-500/10' : '';
+  const base = 'rounded-3xl border border-outline-variant/20 bg-surface-container-low';
+  return (
+    <div className={`${base} ${hover ? 'hover:bg-surface-container-high' : ''} ${motion} ${className}`} style={style}>
+      {children}
+    </div>
+  );
+}

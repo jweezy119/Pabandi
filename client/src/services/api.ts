@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 
 // @ts-ignore
 // Strip any trailing /api/v1 from VITE_API_URL then always re-append it.
-const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-backend-97129395003.asia-south1.run.app');
+const _rawBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://pabandi-server-zhopggtwla-uc.a.run.app');
 const _baseHost = _rawBase.replace(/\/api\/v\d+\/?$/, '');
 export const API_HOST = _baseHost;
 const API_BASE_URL = `${_baseHost}/api/v1`;
@@ -183,15 +183,38 @@ export const stakingService = {
   unstakeYield: (positionId: string) => apiClient.post('/staking/pool/unstake', { positionId }),
 };
 
+// $PAB Token Staking for Trust Multipliers
+export const tokenStakingService = {
+  stake: (data: { amount: number; txHash?: string }) => apiClient.post('/token-staking/stake', data).then(res => res.data),
+  unstake: (positionId: string) => apiClient.post('/token-staking/unstake', { positionId }).then(res => res.data),
+  getPositions: () => apiClient.get('/token-staking/positions').then(res => res.data),
+  getMultiplier: (userId: string) => apiClient.get(`/token-staking/multiplier/${userId}`).then(res => res.data),
+  getDepositMultiplier: (userId: string, baseDeposit: number) =>
+    apiClient.get(`/token-staking/deposit-multiplier/${userId}?baseDeposit=${baseDeposit}`).then(res => res.data),
+};
+
 export const disputeService = {
   fileDispute: (data: { reservationId: string; againstId: string; reason: string; stakedAmount: number; evidenceUrls?: string[] }) => apiClient.post('/disputes', data).then(res => res.data),
+  fileContext: (data: { contextType: string; contextId: string; againstId: string; description: string; evidenceUrls?: string[] }) =>
+    apiClient.post('/disputes/context', data).then(res => res.data),
+  list: (status?: string) =>
+    apiClient.get(`/disputes${status ? `?status=${status}` : ''}`).then(res => res.data),
+  get: (id: string) => apiClient.get(`/disputes/${id}`).then(res => res.data),
   vote: (disputeId: string, data: { voteForId: string; reason?: string }) => apiClient.post(`/disputes/${disputeId}/vote`, data).then(res => res.data),
+};
+
+export const payoutService = {
+  quote: (amountUsdc: number) => apiClient.get(`/payouts/quote?amount=${amountUsdc}`).then(res => res.data),
+  request: (data: { amountUsdc: number; method?: string; destinationRef?: string }) => apiClient.post('/payouts/request', data).then(res => res.data),
+  history: () => apiClient.get('/payouts/history').then(res => res.data),
 };
 
 export const loanService = {
   getPower: () => apiClient.get('/loans/power').then(res => res.data),
   requestLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/request', data).then(res => res.data),
   repayLoan: (loanId: string) => apiClient.post(`/loans/${loanId}/repay`).then(res => res.data),
+  getReputationQuote: () => apiClient.get('/loans/reputation/quote').then(res => res.data),
+  requestReputationLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/reputation/request', data).then(res => res.data),
 };
 
 export const sourcingService = {
@@ -305,6 +328,44 @@ export const partnerService = {
 
 export const openwaService = {
   getStatus: () => apiClient.get('/openwa/status'),
+};
+
+export const linkedinSeedService = {
+  seedProfiles: () => apiClient.post('/linkedin/seed'),
+  seedWithWallets: () => apiClient.post('/linkedin/seed/with-wallets'),
+  getStats: () => apiClient.get('/linkedin/seed/stats'),
+  simulateEconomy: () => apiClient.post('/linkedin/seed/simulate-economy'),
+  getBadge: (linkedinId: string) => apiClient.get(`/linkedin/seed/badge/${encodeURIComponent(linkedinId)}`),
+  getAgentLoopStatus: () => apiClient.get('/linkedin/seed/agent-loop/status'),
+};
+
+export const backgroundCheckService = {
+  create: (payload: any) => apiClient.post('/background-check', payload),
+  preBooking: (payload: any) => apiClient.post('/background-check/pre-booking', payload),
+  get: (id: string) => apiClient.get(`/background-check/${id}`),
+  list: (params?: any) => apiClient.get('/background-check', { params }),
+  batch: (requests: any[]) => apiClient.post('/background-check/batch', { requests }),
+  recheckDue: () => apiClient.post('/background-check/recheck-due'),
+};
+
+export const ppdService = {
+  createMilestoneProject: (payload: any) => apiClient.post('/ppd/milestone-project', payload),
+  releaseMilestone: (id: string, payload: any) => apiClient.post(`/ppd/milestone/${id}/release`, payload),
+  underwriteBond: (payload: any) => apiClient.post('/ppd/bond', payload),
+  claimBond: (id: string, payload: any) => apiClient.post(`/ppd/bond/${id}/claim`, payload),
+  createCommunityPool: (payload: any) => apiClient.post('/ppd/community-pool', payload),
+  routeDepositToPool: (poolId: string, payload: any) => apiClient.post(`/ppd/community-pool/${poolId}/route-deposit`, payload),
+  proposeGrant: (poolId: string, payload: any) => apiClient.post(`/ppd/community-pool/${poolId}/grant`, payload),
+  approveGrant: (grantId: string, payload: any) => apiClient.post(`/ppd/community-grant/${grantId}/approve`, payload),
+  getCommunityDashboard: (poolId: string) => apiClient.get(`/ppd/community-pool/${poolId}/dashboard`),
+  getWorkerPayouts: () => apiClient.get('/ppd/worker-payouts').then(res => res.data),
+};
+
+export const trustPassportService = {
+  create: (payload: any) => apiClient.post('/trust-passport', payload),
+  getPublic: (handle: string) => apiClient.get(`/trust-passport/${handle}`),
+  getRequestContext: (handle: string) => apiClient.get(`/trust-passport/${handle}/request`),
+  list: (params?: any) => apiClient.get('/trust-passport/directory', { params }),
 };
 
 export const treasuryService = {

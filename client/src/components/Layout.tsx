@@ -4,12 +4,22 @@ import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
+function useScrolled(threshold = 12) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
+}
+
 function DesktopNavLink({ to, children, current }: { to: string; children: React.ReactNode; current: boolean }) {
   return (
     <Link
       to={to}
-      className={`font-headline text-sm transition-colors relative ${
-        current ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'
+      className={`font-headline text-sm transition-all duration-200 relative ${
+        current ? 'text-primary font-bold scale-[1.02]' : 'text-on-surface-variant hover:text-primary hover:scale-[1.02]'
       }`}
     >
       {children}
@@ -26,18 +36,20 @@ function Dropdown({ label, children, current }: { label: string; children: React
     <div className="relative" ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         onClick={() => setOpen(!open)}
-        className={`font-headline text-sm transition-colors flex items-center gap-1 ${
-          current ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'
+        className={`font-headline text-sm transition-all duration-200 flex items-center gap-1 ${
+          current ? 'text-primary font-bold scale-[1.02]' : 'text-on-surface-variant hover:text-primary hover:scale-[1.02]'
         }`}
       >
         {label}
-        <span className="material-symbols-outlined text-[16px]">{open ? 'expand_less' : 'expand_more'}</span>
+        <span className={`material-symbols-outlined text-[16px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          expand_more
+        </span>
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 pt-2 z-40" onClick={() => setOpen(false)}>
-            <div className="bg-surface-bright border border-outline-variant/20 rounded-xl shadow-xl py-2 min-w-[180px]">
+          <div className="absolute top-full left-0 pt-3 z-40" onClick={() => setOpen(false)}>
+            <div className="bg-surface-bright/90 backdrop-blur-xl border border-outline-variant/20 rounded-2xl shadow-2xl shadow-black/30 py-2 min-w-[180px] transform transition-all duration-200 origin-top">
               {children}
             </div>
           </div>
@@ -51,7 +63,7 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
   return (
     <Link
       to={to}
-      className="block px-4 py-2 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
+      className="block px-4 py-2.5 text-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-low/70 transition-all duration-150"
     >
       {children}
     </Link>
@@ -62,7 +74,7 @@ function MobileTab({ to, icon, label, current }: { to: string; icon: string; lab
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${
+      className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-200 touch-target ${
         current
           ? 'text-primary bg-primary-container/30 scale-[1.05]'
           : 'text-on-surface-variant hover:text-primary active:scale-95'
@@ -141,6 +153,7 @@ export default function Layout() {
   const [searchOpen, setSearchOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
   const isOwnerOrAdmin = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
+  const scrolled = useScrolled();
 
   return (
     <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative w-full overflow-x-hidden">
@@ -152,7 +165,7 @@ export default function Layout() {
       </div>
 
       {!isAuthPage && (
-        <header className="bg-surface/30 backdrop-blur-2xl flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b border-white/5 shadow-2xl transition-all duration-300">
+        <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b shadow-2xl transition-all duration-300 ${scrolled ? 'bg-surface/60 backdrop-blur-2xl border-white/10 scale-[1.01]' : 'bg-surface/30 backdrop-blur-2xl border-white/5 scale-100'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0 touch-target">
@@ -172,7 +185,14 @@ export default function Layout() {
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
             <DesktopNavLink to="/live-selling" current={location.pathname === '/live-selling'}>Live Selling</DesktopNavLink>
             <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
-            <DesktopNavLink to="/freelance" current={location.pathname === '/freelance'}>Freelance</DesktopNavLink>
+            <DesktopNavLink to="/trust" current={location.pathname.startsWith('/trust') || location.pathname.startsWith('/badge')}>Trust Passports</DesktopNavLink>
+            <DesktopNavLink to="/cashout" current={location.pathname.startsWith('/cashout')}>Cash Out</DesktopNavLink>
+            <DesktopNavLink to="/payroll" current={location.pathname.startsWith('/payroll')}>Instant Pay</DesktopNavLink>
+            <DesktopNavLink to="/arbitration" current={location.pathname.startsWith('/arbitration')}>Arbitration</DesktopNavLink>
+            <DesktopNavLink to="/background-check" current={location.pathname.startsWith('/background-check')}>Background Check</DesktopNavLink>
+            <DesktopNavLink to="/protected-deposit" current={location.pathname.startsWith('/protected-deposit')}>Protected Deposit</DesktopNavLink>
+            <DesktopNavLink to="/freelance" current={location.pathname.startsWith('/freelance') || location.pathname.startsWith('/profiles')}>Freelancers</DesktopNavLink>
+            <DesktopNavLink to="/economy" current={location.pathname === '/economy'}>Economy</DesktopNavLink>
             <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
             <DesktopNavLink to="/sharia-compliance" current={location.pathname === '/sharia-compliance'}>Sharia Compliance</DesktopNavLink>
             <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>
@@ -186,7 +206,7 @@ export default function Layout() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => setSearchOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center touch-target">
+            <button onClick={() => setSearchOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-white/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
               <span className="material-symbols-outlined text-[20px]">search</span>
             </button>
             {isAuthenticated ? (
@@ -196,12 +216,12 @@ export default function Layout() {
                 <DropdownItem to="/loans">Halal DeFi</DropdownItem>
                 <DropdownItem to="/account-manager">Partner Portal</DropdownItem>
                 <DropdownItem to="/profile">Profile</DropdownItem>
-                <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-error-container/20 transition-colors">Log Out</button>
+                <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 text-sm text-error hover:bg-error-container/20 transition-all duration-150">Log Out</button>
               </Dropdown>
             ) : (
               <div className="hidden md:flex gap-2">
-                <Link to="/login" className="text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-colors">Sign In</Link>
-                <Link to="/register" className="px-4 py-1.5 rounded-xl bg-primary text-on-primary text-sm font-bold">Sign Up</Link>
+                <Link to="/login" className="text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
+                <Link to="/register" className="px-4 py-1.5 rounded-xl bg-primary text-on-primary text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
               </div>
             )}
           </div>

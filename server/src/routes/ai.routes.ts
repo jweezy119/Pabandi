@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { aiNlpService } from '../services/ai.nlp.service';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
 import { prisma } from '../utils/database';
+import { osintMCPClient } from '../services/osint/osintMCPClient.service';
 
 const router = Router();
 
@@ -111,6 +112,88 @@ router.post('/nlp/generate', async (req: Request, res: Response, next: NextFunct
 router.get('/models', (req: Request, res: Response) => {
   const models = aiNlpService.getEnabledModels();
   res.json({ success: true, data: models });
+});
+
+// POST /api/v1/ai/fraud/analyze
+router.post('/fraud/analyze', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { username, businessName, domain } = req.body;
+    if (!username) {
+      res.status(400).json({ success: false, error: 'username is required for analysis' });
+      return;
+    }
+
+    const report: any = {
+      timestamp: new Date().toISOString(),
+      target: { username, businessName, domain },
+      investigations: [],
+      synthesizedRiskScore: 0,
+      recommendation: 'APPROVE'
+    };
+
+    // 1. Identity correlation via Maigret MCP
+    const maigretResult = await osintMCPClient.queryMaigretMCP(username);
+    report.investigations.push(maigretResult);
+    report.synthesizedRiskScore += maigretResult.riskScoreDelta;
+
+    // 2. Corporate correlation via OpenRegistry MCP
+    if (businessName) {
+      const registryResult = await osintMCPClient.queryOpenRegistryMCP(businessName);
+      report.investigations.push(registryResult);
+      report.synthesizedRiskScore += registryResult.riskScoreDelta;
+    }
+
+    // 3. Infrastructure Pipeline
+    if (domain) {
+      const infraResults = await osintMCPClient.queryInfrastructurePipeline(domain);
+      report.investigations.push(...infraResults);
+      for (const res of infraResults) {
+        report.synthesizedRiskScore += res.riskScoreDelta;
+      }
+    }
+
+    // Agent Synthesis (Mocked LLM Synthesis)
+    if (report.synthesizedRiskScore >= 80) {
+      report.recommendation = 'QUARANTINE_AND_REVIEW';
+      report.summary = `High risk detected. Correlated identity points to threat actor presence or extremely risky infrastructure for ${domain || username}.`;
+    } else if (report.synthesizedRiskScore >= 40) {
+      report.recommendation = 'REQUIRE_ADDITIONAL_KYC';
+      report.summary = `Medium risk detected. Some suspicious findings in corporate registry or social footprint.`;
+    } else {
+      report.recommendation = 'APPROVE';
+      report.summary = `Low risk. Identity and infrastructure appear clean across all queried OSINT sources.`;
+    }
+
+    res.json({ success: true, data: report });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/ai/fraud/fusion — Full-spectrum Dempster-Shafer threat fusion
+router.post('/fraud/fusion', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId, username, businessName, domain, walletAddress, transactionAmount, ipAddress, deviceFingerprint } = req.body;
+    if (!userId) {
+      res.status(400).json({ success: false, error: 'userId is required for fusion analysis' });
+      return;
+    }
+
+    const { threatFusionEngine } = await import('../services/osint/threatFusion.engine');
+    const verdict = await threatFusionEngine.analyzeFull(userId, {
+      username,
+      businessId: businessName,
+      domain,
+      walletAddress,
+      transactionAmount,
+      ipAddress,
+      deviceFingerprint
+    });
+
+    res.json({ success: true, data: verdict });
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;

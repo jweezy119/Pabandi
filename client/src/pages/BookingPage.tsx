@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'react-query';
-import { businessService, reservationService, stakingService, walletService } from '../services/api';
+import { businessService, reservationService, stakingService, tokenStakingService, walletService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import BusinessMap from '../components/BusinessMap';
@@ -9,6 +9,7 @@ import ReviewCarousel from '../components/ReviewCarousel';
 import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
 import { encryptRsa } from '../utils/e2ee';
 import { Button, Chip, Surface, Badge, tokens } from '../design-system';
+import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +62,16 @@ export default function BookingPage() {
 
   const offChainBalance = Number(walletData?.offChainBalance || 0);
   const REQUIRED_STAKE = 50;
+
+  // Fetch user's $PAB staking multiplier for deposit reduction
+  const { data: stakeMultData } = useQuery(
+    ['stake-multiplier', user?.id],
+    () => tokenStakingService.getMultiplier(user!.id),
+    { enabled: isAuthenticated && !!user?.id, retry: false }
+  );
+  const stakeMultiplier = stakeMultData?.data?.multiplier || 1.0;
+  // Effective deposit reduced by staking multiplier
+  const effectiveDeposit = Math.max(0, dynamicDeposit / stakeMultiplier);
 
   const bookingMutation = useMutation(
     (data: any) => reservationService.createReservation(data),
@@ -211,7 +222,18 @@ export default function BookingPage() {
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Chip tone="success">⭐ {googleRating} Rating</Chip>
-                  <Badge tone={trustScore >= 80 ? 'success' : trustScore >= 50 ? 'warning' : 'danger'}>AI Score: {trustScore}% Reliable → ${dynamicDeposit} Deposit</Badge>
+                  <Chip tone="warning" className="flex items-center gap-1">
+                    <ShieldCheckIcon className="h-3.5 w-3.5" />
+                    Trust Score: {trustScore}/100
+                  </Chip>
+                  {stakeMultiplier > 1.0 && (
+                    <Chip tone="success" className="flex items-center gap-1">
+                      💎 {stakeMultiplier.toFixed(1)}x $PAB Boost
+                    </Chip>
+                  )}
+                  <Badge tone={trustScore >= 80 ? 'success' : trustScore >= 50 ? 'warning' : 'danger'}>
+                    Escrow Deposit: ${effectiveDeposit}
+                  </Badge>
                   <Chip tone="info">Premium Partner</Chip>
                 </div>
                 <h2 className="font-headline text-3xl font-bold tracking-tight md:text-[2.75rem]">{business.name}</h2>

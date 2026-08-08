@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircleIcon, ShareIcon, XCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ShareIcon, XCircleIcon, ArrowPathIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { tokens } from '../design-system';
 import api from '../services/api';
 
@@ -111,9 +111,25 @@ export default function CheckoutSuccessPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-400">Status</span>
-                <span className={`font-bold ${isPaid ? 'text-[#14F195]' : isCancelled ? 'text-red-400' : 'text-zinc-300'}`}>{status || 'UNKNOWN'}</span>
+                <span className={`font-bold ${isPaid ? 'text-[#14F195]' : isCancelled ? 'text-red-400' : 'text-zinc-300'}`}>{status || 'UNKNOWN'}
+                </span>
               </div>
             </div>
+
+            {isPaid && (
+              <div className="mt-4 p-4 bg-[#14F195]/5 border border-[#14F195]/20 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <ShieldCheckIcon className="h-5 w-5 text-[#14F195] mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-[#14F195] text-sm">Protected by Pabandi Escrow</p>
+                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                      Your payment of ${amount} is held securely in escrow until you confirm receipt of service from {business}.
+                      If you don't receive what you paid for, your funds are automatically refunded.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 mt-2 pt-6 border-t border-zinc-800 w-full justify-center">
               <img src="/pabandi-logo.svg" alt="Pabandi" className="h-5 opacity-70" onError={(e) => (e.currentTarget.style.display = 'none')} />
@@ -124,13 +140,21 @@ export default function CheckoutSuccessPage() {
 
         <div className="mt-6 flex flex-col gap-3">
           {isPaid && (
-            <button
-              onClick={handleShare}
-              className="w-full py-4 rounded-xl bg-[#25D366] text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-            >
-              <ShareIcon className="w-5 h-5" />
-              Share receipt via WhatsApp
-            </button>
+            <>
+              <button
+                onClick={handleShare}
+                className="w-full py-4 rounded-xl bg-[#25D366] text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+              >
+                <ShareIcon className="w-5 h-5" />
+                Share receipt via WhatsApp
+              </button>
+              <a
+                href={`/passport/verify?ref=${searchParams.get('sessionId') || ''}`}
+                className="w-full py-3 rounded-xl bg-zinc-900 text-center text-zinc-300 font-body text-xs hover:text-white transition-colors border border-zinc-800"
+              >
+                Verify this transaction on the Pabandi Passport
+              </a>
+            </>
           )}
           <Link
             to="/"

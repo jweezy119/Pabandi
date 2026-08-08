@@ -422,10 +422,20 @@ export default function BusinessProfilePage() {
                 const raw = (business?.trustScore ?? business?.reliabilityScore ?? 0) as number;
                 const computed = Math.max(0, Math.min(100, Math.round(raw / 10)));
                 const deposit = computed >= 80 ? 0 : computed >= 50 ? 5 : 15;
+                const isVerified = business?.isVerified || computed >= 80;
+                const badgeColor = isVerified ? 'text-[#14F195]' : computed >= 50 ? 'text-[#fbbf24]' : 'text-[#f87171]';
                 return (
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${computed >= 80 ? 'bg-green-500/20 text-green-300' : computed >= 50 ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'}`}>
-                    {computed}% Reliable → ${deposit} Deposit
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <ShieldCheckIcon className={`h-6 w-6 ${badgeColor}`} />
+                    <span className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
+                      isVerified ? 'bg-[#14F195]/10 text-[#14F195] border border-[#14F195]/30'
+                        : computed >= 50 ? 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/30'
+                        : 'bg-[#f87171]/10 text-[#f87171] border border-[#f87171]/30'
+                    }`}>
+                      Pabandi Trust Score: {computed}/100
+                    </span>
+                    {!isVerified && (<span className="text-xs text-slate-400 font-mono">→ ${deposit} deposit required</span>)}
+                  </div>
                 );
               })()}
               

@@ -51,6 +51,11 @@ import openwaRoutes from './routes/openwa.routes';
 import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
+import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
+import rentalDepositRoutes from './routes/rentalDeposit.routes';
+import ppdRoutes from './routes/ppd.routes';
+import trustPassportRoutes from './routes/trustPassport.routes';
+import payoutRoutes from './routes/payout.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
@@ -59,6 +64,11 @@ import webhookEscrowRoutes from './routes/webhook.escrow.routes';
 import didRoutes from './routes/did.routes';
 import vcRoutes from './routes/vc.routes';
 import ebayRoutes from './routes/ebay.routes';
+import monetizationRoutes from './routes/monetization.routes';
+import linkedinRoutes from './routes/linkedin.routes';
+import linkedinSeedRoutes from './routes/linkedinSeed.routes';
+import backgroundCheckRoutes from './routes/backgroundCheck.routes';
+import { startAgentLoop } from './services/agentLoop.service';
 
 const app = express();
 const httpServer = createServer(app);
@@ -151,6 +161,7 @@ app.use(`/api/${API_VERSION}/businesses`, businessRoutes);
 app.use(`/api/${API_VERSION}/reservations`, reservationRoutes);
 app.use(`/api/${API_VERSION}/disputes`, disputeRoutes);
 app.use(`/api/${API_VERSION}/loans`, loanRoutes);
+app.use(`/api/${API_VERSION}/payouts`, payoutRoutes);
 app.use(`/api/${API_VERSION}/payments`, paymentRoutes);
 import paymentReconciliationRoutes from './routes/payment-reconciliation.routes';
 app.use(`/api/${API_VERSION}/payments`, paymentReconciliationRoutes);
@@ -167,6 +178,10 @@ app.use(`/api/${API_VERSION}/whatsapp/advanced`, whatsappAdvancedRoutes);
 app.use(`/api/${API_VERSION}/admin/api-clients`, apiClientsRoutes);
 app.use(`/api/${API_VERSION}/api-keys`, apiKeyRoutes);
 app.use(`/api/${API_VERSION}/trust`, trustRoutes);
+app.use(`/api/${API_VERSION}/monetization`, monetizationRoutes);
+app.use(`/api/${API_VERSION}/linkedin/seed`, linkedinSeedRoutes);
+app.use(`/api/${API_VERSION}/linkedin`, linkedinRoutes);
+app.use(`/api/${API_VERSION}/background-check`, backgroundCheckRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
 import aiRoutes from './routes/ai.routes';
@@ -191,7 +206,7 @@ import sourcingRoutes from './routes/sourcing.routes';
 app.use(`/api/${API_VERSION}/social`, socialRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
-app.use(`/api/${API_VERSION}/staking`, stakingRoutes);
+app.use(`/api/${API_VERSION}/token-staking`, stakingRoutes);
 app.use(`/api/${API_VERSION}/airdrop`, airdropRoutes);
 app.use(`/api/${API_VERSION}/sourcing`, sourcingRoutes);
 app.use(`/api/${API_VERSION}/waitlist`, waitlistRoutes);
@@ -249,6 +264,31 @@ app.use(`/api/${API_VERSION}/openwa`, openwaRoutes);
 app.use(`/api/${API_VERSION}/openwa/webhook`, openwaWebhookRoutes);
 app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
+app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
+app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
+app.use(`/api/${API_VERSION}/ppd`, ppdRoutes);
+app.use(`/api/${API_VERSION}/trust-passport`, trustPassportRoutes);
+
+// ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
+import osintRoutes from './routes/osint.routes';
+app.use(`/api/${API_VERSION}/osint`, osintRoutes);
+
+// ── PTP: Pabandi Trust Protocol (Seals, Billing, Discovery) ──────────────────
+import sealRoutes from './routes/seal.routes';
+import billingRoutes from './routes/billing.routes';
+import wellknownRoutes from './routes/wellknown.routes';
+import jobsRoutes from './routes/jobs.routes';
+import seedRoutes from './routes/seed.routes';
+
+app.use(`/api/${API_VERSION}/seal`, sealRoutes);
+app.use(`/api/${API_VERSION}/billing`, billingRoutes);
+app.use(`/api/${API_VERSION}/jobs`, jobsRoutes);
+app.use(`/api/${API_VERSION}/seed`, seedRoutes);
+app.use('/.well-known/ptp', wellknownRoutes); // Note: standard .well-known structure
+
+// Expose public SDK for trust seals
+import path from 'path';
+app.use('/sdk', express.static(path.join(__dirname, 'public')));
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
@@ -328,6 +368,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     startTelegramBot();
   } catch (err) {
     logger.warn(`Telegram bot skipped: ${(err as Error).message}`);
+  }
+
+  // Start Agent Loop (badge purchases → bookings → pool fee collection)
+  try {
+    startAgentLoop();
+    logger.info('🤖 AI Agent Loop started');
+  } catch (err) {
+    logger.warn(`Agent loop skipped: ${(err as Error).message}`);
   }
 
   // Start Phase 0 Offramp SLA Sweeper

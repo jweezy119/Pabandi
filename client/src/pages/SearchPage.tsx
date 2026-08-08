@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { businessService, textSearchService } from '../services/api';
+import { API_HOST } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { Surface, Button, tokens } from '../design-system';
+import { Button, tokens, GlassCard } from '../design-system';
+import PageHeader from '../components/PageHeader';
 
 type Business = {
   id: string;
@@ -44,6 +46,33 @@ const CATEGORY_LABELS: Record<string, string> = {
   FREELANCE: 'Freelance',
   OTHER: 'Other',
 };
+
+function SkeletonCard() {
+  return (
+    <div className="animate-pulse rounded-3xl border border-white/10 bg-white/5 p-4">
+      <div className="h-36 rounded-t-2xl bg-white/10 sm:h-40" />
+      <div className="mt-3 space-y-2">
+        <div className="h-4 w-3/4 rounded bg-white/10" />
+        <div className="h-3 w-1/2 rounded bg-white/10" />
+        <div className="h-3 w-1/3 rounded bg-white/10" />
+      </div>
+      <div className="mt-4 h-10 rounded-xl bg-white/10" />
+    </div>
+  );
+}
+
+function mapProfileCategoryToBiz(category?: string): string {
+  switch (category) {
+    case 'freelance-dev':
+      return 'FREELANCE';
+    case 'small-biz-owner':
+    case 'project-owner':
+    case 'solopreneur':
+      return 'OTHER';
+    default:
+      return 'OTHER';
+  }
+}
 
 const QUICK_PROMPTS = [
   {
@@ -180,6 +209,43 @@ export default function SearchPage() {
         seen.add(key);
         deduped.push(b);
       }
+
+      // Merge seeded profiles as discoverable providers when search is active
+      const profilesQuery = String(q || '').trim();
+      if (profilesQuery.length >= 2) {
+        try {
+          const profilesJson = await fetch(`${API_HOST}/api/v1/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`);
+          const profilesJsonParsed = await profilesJson.json();
+          const profiles = (profilesJsonParsed?.data?.profiles || []) as any[];
+          const matched = profiles.filter((p) => {
+            const hay = `${p.firstName} ${p.lastName} ${p.headline} ${p.company} ${p.location}`.toLowerCase();
+            return hay.includes(profilesQuery.toLowerCase());
+          });
+          for (const p of matched) {
+            const bizLike: Business = {
+              id: `profile-${p.linkedinId}`,
+              name: `${p.firstName} ${p.lastName}`,
+              category: mapProfileCategoryToBiz(p.category),
+              city: p.location || '',
+              address: p.company || '',
+              description: p.headline || '',
+              coverImageUrl: p.githubUrl ? `https://github.com/${p.githubUrl.split('/').pop()}.png` : null,
+              latitude: null,
+              longitude: null,
+              rating: null,
+              reviewCount: p.connectionCount || null,
+            };
+            const key = bizLike.id;
+            if (!seen.has(key)) {
+              seen.add(key);
+              deduped.push(bizLike);
+            }
+          }
+        } catch (e) {
+          // ignore profile merge errors
+        }
+      }
+
       return deduped;
     },
     { keepPreviousData: true }
@@ -252,12 +318,11 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="font-headline text-2xl font-black sm:text-3xl">What do you want to book?</h1>
-          <p className="text-sm text-slate-300">
-            Quick actions, smart suggestions, and trusted venues nearby.
-          </p>
-        </div>
+        <PageHeader
+          title="Search"
+          description="Find verified businesses and services nearby. Every listing is tied to a Pabandi Passport trust score and secure booking flow."
+          eyebrow="Discover"
+        />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {QUICK_PROMPTS.map((prompt) => (
@@ -377,8 +442,9 @@ export default function SearchPage() {
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {isLoading && Array.from({ length: 6 }).map((_, idx) => <SkeletonCard key={`skeleton-${idx}`} />)}
           {results.map((biz: any) => (
-            <Surface key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
+            <GlassCard key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
               <Link to={`/business/${biz.id}`} className="block">
                 <div
                   className="h-36 rounded-t-2xl sm:h-40"
@@ -410,7 +476,7 @@ export default function SearchPage() {
                   {isAuthenticated ? 'Book now' : 'Log in to book'}
                 </Button>
               </div>
-            </Surface>
+            </GlassCard>
           ))}
         </div>
       </div>

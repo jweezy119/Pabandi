@@ -8,7 +8,7 @@ import {
   TrophyIcon, FireIcon, CurrencyDollarIcon,
   ArrowPathIcon, InformationCircleIcon,
 } from '@heroicons/react/24/outline';
-import apiClient, { cryptoService, walletService, socialService, stakingService, treasuryService } from '../services/api';
+import apiClient, { cryptoService, walletService, socialService, stakingService, treasuryService, linkedinSeedService } from '../services/api';
 import { executeStellarLiquidityDeposit, executeSolanaLiquidityDeposit } from '../utils/web3';
 import { useAuthStore } from '../store/authStore';
 import { Surface, Button, Badge, tokens } from '../design-system';
@@ -349,6 +349,11 @@ export default function WalletDashboard() {
     const res = await socialService.getMyBadge();
     return res.data?.data;
   }, { retry: false, refetchOnWindowFocus: false });
+
+  const { data: agentLoopStatus } = useQuery('agent-loop-status', async () => {
+    const res = await linkedinSeedService.getAgentLoopStatus();
+    return res.data?.data;
+  }, { refetchInterval: 30000, refetchOnWindowFocus: false });
 
   const { data: userData } = useQuery('auth-me-dashboard', async () => {
     const res = await apiClient.get('/auth/me');
@@ -901,8 +906,10 @@ export default function WalletDashboard() {
         <Surface className="overflow-hidden">
           <div className="flex flex-col gap-4 border-b border-white/10 bg-white/5 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="font-headline font-black text-lg" style={{ color: tokens.color.text }}>Reward History</h3>
-              <p className="mt-0.5 font-body text-[11px] font-medium" style={{ color: tokens.color.muted }}>Every PAB earned, logged on-chain</p>
+              <h3 className="font-headline font-black text-lg" style={{ color: tokens.color.text }}>AI Agent Loop</h3>
+              <p className="mt-0.5 font-body text-[11px] font-medium" style={{ color: tokens.color.muted }}>
+                {agentLoopStatus?.running ? '🟢 Running' : '🔴 Stopped'} · {agentLoopStatus?.totalBookings || 0} bookings · {agentLoopStatus?.totalFeesCollected || 0} PAB fees · {agentLoopStatus?.totalBadgePurchases || 0} badges
+              </p>
             </div>
             <button onClick={() => refetch()} className="flex w-fit items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/5">
               <ArrowPathIcon className="h-5 w-5" style={{ color: tokens.color.muted }} />

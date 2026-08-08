@@ -3,6 +3,8 @@ import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { noShowPredictor } from '../services/ai/noShowPredictor';
+import { pabTokenStakingService } from '../services/pabTokenStaking.service';
+import { pabondService } from '../services/pabond.service';
 import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
@@ -159,7 +161,7 @@ export const createReservation = async (
       },
     });
 
-    if (business.isClaimed && (!businessHour || businessHour.isClosed)) {
+    if (business.isClaimed && (!businessHour || businessHour.isClosed) && !req.body.isFreelanceEscrow) {
       throw new CustomError('Business is closed on this day', 400);
     }
 
@@ -245,30 +247,48 @@ export const createReservation = async (
     // Get AI prediction
     const prediction = await noShowPredictor.predict(features);
 
+    // Apply $PAB staking multiplier to reduce deposit for staked users
+    const { multiplier: stakeMultiplier, totalStaked } = await pabTokenStakingService.getTrustMultiplier(req.user!.id);
+
     // Determine if deposit is required
     const settings = business.settings;
-    const requireDeposit =
-      settings?.autoRequireDeposit &&
-      prediction.riskScore >= (settings.aiRiskThreshold || 70);
-
+    let requireDeposit = false;
     let depositAmount = req.body.depositAmount || null;
-    if (!depositAmount && (requireDeposit || business.requireDeposit)) {
-      if (business.depositPercentage) {
-        depositAmount = 1000 * business.depositPercentage;
-      } else if (business.depositAmount) {
-        depositAmount = business.depositAmount;
-      }
-    }
-
-    const depositDefaultWeb3 = defaultDepositModeWeb3();
-    let depositStatus: 'PAID' | 'PENDING_WEB3' | 'PENDING' | 'NOT_REQUIRED' =
-      !!req.body.transactionHash ? 'PAID'
-      : !!depositAmount ? (depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING')
-      : 'NOT_REQUIRED';
-
+    let depositStatus: 'PAID' | 'PENDING_WEB3' | 'PENDING' | 'NOT_REQUIRED' = 'NOT_REQUIRED';
+    
     // Determine concierge status and initial reservation status
     const isConcierge = !business.isClaimed;
-    const status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
+    let status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
+
+    if (req.body.isFreelanceEscrow) {
+      requireDeposit = true;
+      const subtotal = (req.body.estimatedHours || 1) * (req.body.hourlyRate || 0);
+      depositAmount = subtotal * 1.05; // 5% fee
+      
+      const depositDefaultWeb3 = defaultDepositModeWeb3();
+      depositStatus = depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING';
+      status = 'PENDING';
+    } else {
+      requireDeposit = Boolean(settings?.autoRequireDeposit && prediction.riskScore >= (settings.aiRiskThreshold || 70));
+      
+      if (!depositAmount && (requireDeposit || business.requireDeposit)) {
+        if (business.depositPercentage) {
+          depositAmount = 1000 * business.depositPercentage;
+        } else if (business.depositAmount) {
+          depositAmount = business.depositAmount;
+        }
+      }
+
+      // Reduce deposit by staking multiplier (e.g., 2.5x staker pays 40% of deposit)
+      if (depositAmount && stakeMultiplier > 1.0) {
+        depositAmount = Math.round(depositAmount / stakeMultiplier);
+      }
+
+      const depositDefaultWeb3 = defaultDepositModeWeb3();
+      depositStatus = !!req.body.transactionHash ? 'PAID'
+        : !!depositAmount ? (depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING')
+        : 'NOT_REQUIRED';
+    }
 
     // Calculate total amount from services
     let totalAmount = 0;
@@ -302,7 +322,7 @@ export const createReservation = async (
         checkOutDate: checkOutDate ? moment.tz(checkOutDate, 'YYYY-MM-DD', tz).toDate() : null,
         reservationTime,
         numberOfGuests,
-        status,
+        status: status as any,
         isConcierge,
         customerName,
         customerPhone,
@@ -336,13 +356,33 @@ export const createReservation = async (
     );
 
     let checkoutUrl = null;
-    if (depositAmount && (req.body.paymentMethod === 'safepay' || req.body.paymentMethod === 'paypal')) {
-      const result = await paymentRouter.createCheckoutUrl(
-        depositAmount,
-        business.currency || 'USD',
-        reservation.id
-      );
-      checkoutUrl = result.url;
+    let checkoutSessionId = null;
+    if (depositAmount) {
+      if (req.body.isFreelanceEscrow) {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        const session = await prisma.checkoutSession.create({
+          data: {
+            businessId: business.id,
+            amount: depositAmount,
+            currency: business.currency || 'USD',
+            successUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`,
+            cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`,
+            status: 'PENDING',
+            expiresAt,
+            metadata: { source: 'freelance_escrow', reservationId: reservation.id }
+          }
+        });
+        checkoutSessionId = session.id;
+        checkoutUrl = `/checkout/${session.id}`;
+      } else if (req.body.paymentMethod === 'safepay' || req.body.paymentMethod === 'paypal') {
+        const result = await paymentRouter.createCheckoutUrl(
+          depositAmount,
+          business.currency || 'USD',
+          reservation.id
+        );
+        checkoutUrl = result.url;
+      }
     }
 
     // Trigger Webhook
@@ -451,16 +491,72 @@ export const createReservation = async (
       }
     }
 
+    // ── Pabond: Mint $PAB via bonding curve for completed booking commitment ──
+    // Users earn $PAB proportional to deposit amount, with velocity multiplier
+    // from TrustFlux. Rising-trust users get cheaper $PAB.
+    let pabondResult: { pabTokens: number; velocityMultiplier: number } | null = null;
+    if (depositAmount && req.user?.id) {
+      try {
+        const depositUSD = Number((depositAmount / 100).toFixed(2)); // convert cents to USD
+        const mintResult = await pabondService.mint({
+          userId: req.user.id,
+          amountUSD: depositUSD,
+          source: 'BOOKING_DEPOSIT',
+          metadata: { reservationId: reservation.id, depositAmount },
+        });
+        if (mintResult.success) {
+          pabondResult = {
+            pabTokens: mintResult.pabTokens,
+            velocityMultiplier: mintResult.velocityMultiplier,
+          };
+          logger.info(`[Pabond] Minted ${mintResult.pabTokens} $PAB for deposit on reservation ${reservation.id}`);
+        }
+      } catch (err: any) {
+        logger.error(`[Pabond] Failed to mint $PAB: ${err.message}`);
+      }
+    }
+
+    // ── Reputation Insurance: Underwrite optional coverage ───────────────
+    let insuranceOffer: any = null;
+    try {
+      const { reputationInsuranceService } = await import('../services/reputationInsurance.service');
+      const underwriteResult = await reputationInsuranceService.underwrite(
+        business.id, // provider
+        req.user!.id, // customer
+        reservation.id,
+        requireDeposit ? Number(depositAmount) : 0,
+        'NO_SHOW'
+      );
+      insuranceOffer = {
+        available: underwriteResult.approved,
+        riskBand: underwriteResult.riskBand,
+        premiumUSD: underwriteResult.premiumUSD,
+        premiumPAB: underwriteResult.premiumPAB,
+        coverageAmount: underwriteResult.coverageAmount,
+        reason: underwriteResult.reason,
+      };
+    } catch (err: any) {
+      logger.error(`[Insurance] Failed to underwrite: ${err.message}`);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Reservation created successfully',
       data: {
         reservation,
         checkoutUrl,
+        checkoutSessionId,
         prediction: {
           riskScore: prediction.riskScore,
           requiresDeposit: requireDeposit,
+          stakingMultiplier: stakeMultiplier,
+          totalStakedPab: totalStaked,
+          depositReduction: stakeMultiplier > 1.0
+            ? `${Math.round((1 - 1 / stakeMultiplier) * 100)}% via $PAB staking`
+            : undefined,
         },
+        pabond: pabondResult,
+        insurance: insuranceOffer,
       },
     });
   } catch (error) {
@@ -947,5 +1043,64 @@ export const markNoShow = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+/**
+ * Submit freelance deliverables (Marks milestone as pending approval)
+ */
+export const submitFreelanceWork = async (req: any, res: Response): Promise<void> => {
+  try {
+    const reservationId = req.params.id;
+    const { deliverables } = req.body;
+    
+    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    if (!reservation) {
+      res.status(404).json({ error: 'Reservation not found' });
+      return;
+    }
+    
+    const updated = await prisma.reservation.update({
+      where: { id: reservationId },
+      data: {
+        notes: (reservation.notes ? reservation.notes + '\n\n' : '') + `[DELIVERABLES SUBMITTED]: ${deliverables}`,
+        status: 'CHECKED_IN' // We use CHECKED_IN to signify "In Progress/Delivered"
+      }
+    });
+    
+    res.json({ success: true, reservation: updated });
+  } catch (error) {
+    logger.error('Error submitting work', error);
+    res.status(500).json({ error: 'Failed to submit work' });
+  }
+};
+
+/**
+ * Request AI Arbitration for a freelance job
+ */
+export const arbitrateFreelanceWork = async (req: any, res: Response): Promise<void> => {
+  try {
+    const reservationId = req.params.id;
+    const { reason } = req.body;
+    
+    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    if (!reservation) {
+      res.status(404).json({ error: 'Reservation not found' });
+      return;
+    }
+    
+    const dispute = await prisma.dispute.create({
+      data: {
+        userId: reservation.customerId,
+        reservationId: reservation.id,
+        description: reason || 'Freelancer requested arbitration for unapproved deliverables',
+        type: 'OTHER'
+      }
+    });
+    
+    res.json({ success: true, disputeId: dispute.id });
+  } catch (error) {
+    logger.error('Error requesting arbitration', error);
+    res.status(500).json({ error: 'Failed to request arbitration' });
   }
 };
