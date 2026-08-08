@@ -1,9 +1,10 @@
 /**
  * Trust Passport routes — public portable trust identity.
- *   GET  /api/v1/passport/:handle        -> public snapshot (no auth)
- *   POST /api/v1/passport                -> create/update (auth)
- *   GET  /api/v1/passport/:handle/request -> context for PPD wizard pre-fill
- *   POST /api/v1/passport/migrate        -> create table (Cloud Run FS read-only)
+ *   GET  /api/v1/trust-passport/directory -> public discovery list (no auth)
+ *   GET  /api/v1/trust-passport/:handle    -> public snapshot (no auth)
+ *   POST /api/v1/trust-passport           -> create/update (auth)
+ *   GET  /api/v1/trust-passport/:handle/request -> context for PPD wizard pre-fill
+ *   POST /api/v1/trust-passport/migrate    -> create table (Cloud Run FS read-only)
  */
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
@@ -11,6 +12,19 @@ import { trustPassportService } from '../services/trustPassport.service';
 import { prisma } from '../utils/database';
 
 const router = Router();
+
+router.get('/directory', async (req: Request, res: Response) => {
+  try {
+    const list = await trustPassportService.list({
+      category: req.query.category as string | undefined,
+      search: req.query.search as string | undefined,
+      limit: req.query.limit ? Number(req.query.limit) : 50,
+    });
+    res.json({ success: true, data: list, count: list.length });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 router.post('/', authenticate, async (req: Request, res: Response) => {
   try {

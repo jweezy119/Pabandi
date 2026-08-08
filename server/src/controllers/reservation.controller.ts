@@ -161,7 +161,7 @@ export const createReservation = async (
       },
     });
 
-    if (business.isClaimed && (!businessHour || businessHour.isClosed)) {
+    if (business.isClaimed && (!businessHour || businessHour.isClosed) && !req.body.isFreelanceEscrow) {
       throw new CustomError('Business is closed on this day', 400);
     }
 
@@ -252,33 +252,43 @@ export const createReservation = async (
 
     // Determine if deposit is required
     const settings = business.settings;
-    const requireDeposit =
-      settings?.autoRequireDeposit &&
-      prediction.riskScore >= (settings.aiRiskThreshold || 70);
-
+    let requireDeposit = false;
     let depositAmount = req.body.depositAmount || null;
-    if (!depositAmount && (requireDeposit || business.requireDeposit)) {
-      if (business.depositPercentage) {
-        depositAmount = 1000 * business.depositPercentage;
-      } else if (business.depositAmount) {
-        depositAmount = business.depositAmount;
-      }
-    }
-
-    // Reduce deposit by staking multiplier (e.g., 2.5x staker pays 40% of deposit)
-    if (depositAmount && stakeMultiplier > 1.0) {
-      depositAmount = Math.round(depositAmount / stakeMultiplier);
-    }
-
-    const depositDefaultWeb3 = defaultDepositModeWeb3();
-    let depositStatus: 'PAID' | 'PENDING_WEB3' | 'PENDING' | 'NOT_REQUIRED' =
-      !!req.body.transactionHash ? 'PAID'
-      : !!depositAmount ? (depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING')
-      : 'NOT_REQUIRED';
-
+    let depositStatus: 'PAID' | 'PENDING_WEB3' | 'PENDING' | 'NOT_REQUIRED' = 'NOT_REQUIRED';
+    
     // Determine concierge status and initial reservation status
     const isConcierge = !business.isClaimed;
-    const status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
+    let status = isConcierge ? 'PENDING_CONCIERGE' : (settings?.autoConfirm ? 'CONFIRMED' : 'PENDING');
+
+    if (req.body.isFreelanceEscrow) {
+      requireDeposit = true;
+      const subtotal = (req.body.estimatedHours || 1) * (req.body.hourlyRate || 0);
+      depositAmount = subtotal * 1.05; // 5% fee
+      
+      const depositDefaultWeb3 = defaultDepositModeWeb3();
+      depositStatus = depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING';
+      status = 'PENDING';
+    } else {
+      requireDeposit = Boolean(settings?.autoRequireDeposit && prediction.riskScore >= (settings.aiRiskThreshold || 70));
+      
+      if (!depositAmount && (requireDeposit || business.requireDeposit)) {
+        if (business.depositPercentage) {
+          depositAmount = 1000 * business.depositPercentage;
+        } else if (business.depositAmount) {
+          depositAmount = business.depositAmount;
+        }
+      }
+
+      // Reduce deposit by staking multiplier (e.g., 2.5x staker pays 40% of deposit)
+      if (depositAmount && stakeMultiplier > 1.0) {
+        depositAmount = Math.round(depositAmount / stakeMultiplier);
+      }
+
+      const depositDefaultWeb3 = defaultDepositModeWeb3();
+      depositStatus = !!req.body.transactionHash ? 'PAID'
+        : !!depositAmount ? (depositDefaultWeb3 ? 'PENDING_WEB3' : 'PENDING')
+        : 'NOT_REQUIRED';
+    }
 
     // Calculate total amount from services
     let totalAmount = 0;
@@ -312,7 +322,7 @@ export const createReservation = async (
         checkOutDate: checkOutDate ? moment.tz(checkOutDate, 'YYYY-MM-DD', tz).toDate() : null,
         reservationTime,
         numberOfGuests,
-        status,
+        status: status as any,
         isConcierge,
         customerName,
         customerPhone,
@@ -346,13 +356,33 @@ export const createReservation = async (
     );
 
     let checkoutUrl = null;
-    if (depositAmount && (req.body.paymentMethod === 'safepay' || req.body.paymentMethod === 'paypal')) {
-      const result = await paymentRouter.createCheckoutUrl(
-        depositAmount,
-        business.currency || 'USD',
-        reservation.id
-      );
-      checkoutUrl = result.url;
+    let checkoutSessionId = null;
+    if (depositAmount) {
+      if (req.body.isFreelanceEscrow) {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        const session = await prisma.checkoutSession.create({
+          data: {
+            businessId: business.id,
+            amount: depositAmount,
+            currency: business.currency || 'USD',
+            successUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`,
+            cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`,
+            status: 'PENDING',
+            expiresAt,
+            metadata: { source: 'freelance_escrow', reservationId: reservation.id }
+          }
+        });
+        checkoutSessionId = session.id;
+        checkoutUrl = `/checkout/${session.id}`;
+      } else if (req.body.paymentMethod === 'safepay' || req.body.paymentMethod === 'paypal') {
+        const result = await paymentRouter.createCheckoutUrl(
+          depositAmount,
+          business.currency || 'USD',
+          reservation.id
+        );
+        checkoutUrl = result.url;
+      }
     }
 
     // Trigger Webhook
@@ -515,6 +545,7 @@ export const createReservation = async (
       data: {
         reservation,
         checkoutUrl,
+        checkoutSessionId,
         prediction: {
           riskScore: prediction.riskScore,
           requiresDeposit: requireDeposit,

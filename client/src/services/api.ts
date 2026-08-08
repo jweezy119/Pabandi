@@ -351,6 +351,7 @@ export const trustPassportService = {
   create: (payload: any) => apiClient.post('/trust-passport', payload),
   getPublic: (handle: string) => apiClient.get(`/trust-passport/${handle}`),
   getRequestContext: (handle: string) => apiClient.get(`/trust-passport/${handle}/request`),
+  list: (params?: any) => apiClient.get('/trust-passport/directory', { params }),
 };
 
 export const treasuryService = {

@@ -188,6 +188,7 @@ export default function Layout() {
             <DesktopNavLink to="/freelance" current={location.pathname.startsWith('/freelance') || location.pathname.startsWith('/profiles')}>Freelancers</DesktopNavLink>
             <DesktopNavLink to="/background-check" current={location.pathname.startsWith('/background-check')}>Background Check</DesktopNavLink>
             <DesktopNavLink to="/protected-deposit" current={location.pathname.startsWith('/protected-deposit')}>Protected Deposit</DesktopNavLink>
+            <DesktopNavLink to="/trust" current={location.pathname.startsWith('/trust')}>Trust Directory</DesktopNavLink>
             <DesktopNavLink to="/economy" current={location.pathname === '/economy'}>Economy</DesktopNavLink>
             <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
             <DesktopNavLink to="/sharia-compliance" current={location.pathname === '/sharia-compliance'}>Sharia Compliance</DesktopNavLink>
