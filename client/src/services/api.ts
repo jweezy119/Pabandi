@@ -326,6 +326,15 @@ export const linkedinSeedService = {
   getAgentLoopStatus: () => apiClient.get('/linkedin/seed/agent-loop/status'),
 };
 
+export const backgroundCheckService = {
+  create: (payload: any) => apiClient.post('/background-check', payload),
+  preBooking: (payload: any) => apiClient.post('/background-check/pre-booking', payload),
+  get: (id: string) => apiClient.get(`/background-check/${id}`),
+  list: (params?: any) => apiClient.get('/background-check', { params }),
+  batch: (requests: any[]) => apiClient.post('/background-check/batch', { requests }),
+  recheckDue: () => apiClient.post('/background-check/recheck-due'),
+};
+
 export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
 };

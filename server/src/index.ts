@@ -64,6 +64,7 @@ import ebayRoutes from './routes/ebay.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
+import backgroundCheckRoutes from './routes/backgroundCheck.routes';
 import { startAgentLoop } from './services/agentLoop.service';
 
 const app = express();
@@ -176,6 +177,7 @@ app.use(`/api/${API_VERSION}/trust`, trustRoutes);
 app.use(`/api/${API_VERSION}/monetization`, monetizationRoutes);
 app.use(`/api/${API_VERSION}/linkedin/seed`, linkedinSeedRoutes);
 app.use(`/api/${API_VERSION}/linkedin`, linkedinRoutes);
+app.use(`/api/${API_VERSION}/background-check`, backgroundCheckRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
 import aiRoutes from './routes/ai.routes';
