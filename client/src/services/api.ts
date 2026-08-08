@@ -335,6 +335,18 @@ export const backgroundCheckService = {
   recheckDue: () => apiClient.post('/background-check/recheck-due'),
 };
 
+export const ppdService = {
+  createMilestoneProject: (payload: any) => apiClient.post('/ppd/milestone-project', payload),
+  releaseMilestone: (id: string, payload: any) => apiClient.post(`/ppd/milestone/${id}/release`, payload),
+  underwriteBond: (payload: any) => apiClient.post('/ppd/bond', payload),
+  claimBond: (id: string, payload: any) => apiClient.post(`/ppd/bond/${id}/claim`, payload),
+  createCommunityPool: (payload: any) => apiClient.post('/ppd/community-pool', payload),
+  routeDepositToPool: (poolId: string, payload: any) => apiClient.post(`/ppd/community-pool/${poolId}/route-deposit`, payload),
+  proposeGrant: (poolId: string, payload: any) => apiClient.post(`/ppd/community-pool/${poolId}/grant`, payload),
+  approveGrant: (grantId: string, payload: any) => apiClient.post(`/ppd/community-grant/${grantId}/approve`, payload),
+  getCommunityDashboard: (poolId: string) => apiClient.get(`/ppd/community-pool/${poolId}/dashboard`),
+};
+
 export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
 };
