@@ -55,6 +55,7 @@ import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
+import CashOutPage from './pages/CashOutPage';
 import TrustBadgeEmbed from './pages/TrustBadgeEmbed';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
@@ -164,6 +165,7 @@ function App() {
             <Route path="protected-deposit" element={<PpdWizardPage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />
+            <Route path="cashout" element={<CashOutPage />} />
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
