@@ -49,6 +49,32 @@ export class TrustPassportService {
     });
   }
 
+  /** Public directory of passports (discovery). No auth. */
+  async list(params?: { category?: string; search?: string; limit?: number }): Promise<any[]> {
+    const where: any = { visibility: 'PUBLIC' };
+    if (params?.category && params.category !== 'ALL') where.category = params.category;
+    if (params?.search) {
+      where.OR = [
+        { displayName: { contains: params.search, mode: 'insensitive' } },
+        { handle: { contains: params.search, mode: 'insensitive' } },
+        { bio: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+    const rows = await prisma.trustPassport.findMany({
+      where,
+      orderBy: [{ claimsCount: 'desc' }],
+      take: params?.limit ?? 50,
+    });
+    return rows.map((p: any) => ({
+      handle: p.handle,
+      displayName: p.displayName,
+      category: p.category,
+      bio: p.bio,
+      claimsCount: p.claimsCount,
+      trustBand: 'D',
+    }));
+  }
+
   /** Public aggregation by handle. No auth. Returns a portable trust snapshot. */
   async getPublic(handle: string): Promise<any> {
     const p = await prisma.trustPassport.findUnique({ where: { handle } });

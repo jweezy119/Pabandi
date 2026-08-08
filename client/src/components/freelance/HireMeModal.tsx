@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useNavigate } from 'react-router-dom';
+import { bookingService } from '../../services/booking.service';
 
 interface HireMeModalProps {
   isOpen: boolean;
@@ -10,10 +12,12 @@ interface HireMeModalProps {
   businessId: string;
 }
 
-export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freelancerName, hourlyRate }) => {
+export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freelancerName, hourlyRate, businessId }) => {
   const [estimatedHours, setEstimatedHours] = useState(10);
   const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
@@ -21,18 +25,28 @@ export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freel
   const escrowFee = totalAmount * 0.05; // 5% platform escrow fee
   const grandTotal = totalAmount + escrowFee;
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (!isAuthenticated) {
       // Force login first
       window.location.href = `/api/v1/auth/google?role=customer&returnTo=${window.location.pathname}`;
       return;
     }
 
-    // In a real implementation, we would hit an API to create a Pending Reservation
-    // For now, we mock success and redirect to a checkout session or wallet
-    alert('Booking generated! In production, this redirects to Escrow Checkout.');
-    onClose();
-    // navigate(`/checkout/${mockSessionId}`);
+    setIsSubmitting(true);
+    try {
+      const response = await bookingService.createFreelanceBooking(businessId, estimatedHours, description, hourlyRate);
+      if (response.success && response.data?.checkoutSessionId) {
+        onClose();
+        navigate(`/checkout/${response.data.checkoutSessionId}`);
+      } else {
+        alert('Failed to generate booking session.');
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || 'Failed to connect to Escrow.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -98,10 +112,11 @@ export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freel
         <div className="p-6 border-t border-slate-100 bg-white">
           <button 
             onClick={handleProceed}
+            disabled={isSubmitting}
             className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2 shadow-lg shadow-indigo-200"
           >
             <CreditCard className="w-5 h-5" />
-            Lock Funds in Escrow
+            {isSubmitting ? 'Locking...' : 'Lock Funds in Escrow'}
           </button>
           <p className="text-xs text-center text-slate-400 mt-3">
             Funds are held securely by Pabandi and only released upon milestone completion.

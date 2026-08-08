@@ -303,7 +303,11 @@ export const CheckoutSessionPage = () => {
             {session.business.name}
             {session.business.isVerified && <CheckCircleIcon className="w-5 h-5 text-blue-500" />}
           </h1>
-          <p className="text-zinc-400">Secure Escrow Checkout</p>
+          <p className="text-zinc-400">
+            {(session as any).metadata?.source === 'freelance_escrow' 
+              ? 'Fund Escrow Milestone' 
+              : 'Secure Escrow Checkout'}
+          </p>
         </div>
 
         {/* Amount */}
