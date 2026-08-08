@@ -289,6 +289,30 @@ export class Web3AgentService {
         } as any,
       });
 
+      // Platform fee (5 PAB) + deflationary burn (10% = 0.5 PAB) accounting
+      const BURN_RATE = 0.1;
+      const fee = 5;
+      const burnPab = +(fee * BURN_RATE).toFixed(2);
+      const treasuryPab = +(fee - burnPab).toFixed(2);
+      await prisma.agentTransaction.create({
+        data: {
+          agentId: fromAgent.id,
+          type: 'FEE_COLLECTION',
+          amount: treasuryPab,
+          fromAddress: fromAgent.walletAddress,
+          toAddress: process.env.PABANDI_TREASURY_WALLET || 'treasury',
+        } as any,
+      });
+      await prisma.agentTransaction.create({
+        data: {
+          agentId: fromAgent.id,
+          type: 'BURN',
+          amount: burnPab,
+          fromAddress: fromAgent.walletAddress,
+          toAddress: 'burn',
+        } as any,
+      });
+
       logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
 
       return { success: true, txHash: signature, amount: amountPab, to: toAgent.walletAddress };
@@ -325,14 +349,27 @@ export class Web3AgentService {
         } as any,
       });
 
-      // Log platform fee as FEE_COLLECTION
+      // Log platform fee as FEE_COLLECTION (90% retained) + deflationary BURN (10%)
+      const BURN_RATE = 0.1;
+      const fee = 5; // PAB platform fee (matches on-chain intent)
+      const burnPab = +(fee * BURN_RATE).toFixed(2); // 0.5 PAB burned
+      const treasuryPab = +(fee - burnPab).toFixed(2); // 4.5 PAB to treasury
       await prisma.agentTransaction.create({
         data: {
           agentId: fromAgent.id,
           type: 'FEE_COLLECTION',
-          amount: 5,
+          amount: treasuryPab,
           fromAddress: fromAgent.walletAddress,
           toAddress: process.env.PABANDI_TREASURY_WALLET || 'treasury',
+        } as any,
+      });
+      await prisma.agentTransaction.create({
+        data: {
+          agentId: fromAgent.id,
+          type: 'BURN',
+          amount: burnPab,
+          fromAddress: fromAgent.walletAddress,
+          toAddress: 'burn',
         } as any,
       });
 

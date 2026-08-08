@@ -372,6 +372,10 @@ export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
 };
 
+export const economyService = {
+  getStats: () => apiClient.get('/economy/stats'),
+};
+
 export const accountManagerService = {
   getSummary: () => apiClient.get('/account-manager/summary'),
   getReferrals: () => apiClient.get('/account-manager/referrals'),

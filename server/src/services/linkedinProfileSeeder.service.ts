@@ -839,7 +839,23 @@ export class LinkedInProfileSeeder {
     const businesses = profiles.filter(p => (p.persona === 'project-owner' || p.persona === 'small-biz-owner') && p.walletAddress);
 
     const BOOKING_FEE_PAB = 5;  // Platform fee per booking (5 PAB)
+    const BURN_RATE = 0.1;       // 10% of fee burned (deflationary)
     const PAB_TO_USDC_RATE = 0.01;
+
+    // Ensure a system agent so simulated economy txns persist (AgentTransaction FK)
+    const SYSTEM_PROFILE = '__system_economy__';
+    const treasuryWallet = process.env.PABANDI_TREASURY_WALLET || 'treasury';
+    const systemAgent = await prisma.web3Agent.upsert({
+      where: { profileId: SYSTEM_PROFILE },
+      update: {},
+      create: {
+        profileId: SYSTEM_PROFILE,
+        walletAddress: treasuryWallet,
+        encryptedPrivateKey: 'system',
+        category: 'solopreneur',
+        isActive: false,
+      } as any,
+    });
 
     for (let round = 0; round < rounds; round++) {
       if (freelancers.length === 0 || businesses.length === 0) break;
@@ -856,9 +872,33 @@ export class LinkedInProfileSeeder {
         pabFees += bookingFee;
         pabRewarded += pabReward;
 
-        // Burn 10% of fees as deflationary mechanism
+        // Burn 10% of fees as deflationary mechanism (persisted for the dashboard)
         const burned = Math.floor(bookingFee * 0.1);
         pabBurned += burned;
+
+        // Persist real circulation rows so the Economy dashboard reflects this
+        try {
+          await prisma.agentTransaction.create({
+            data: {
+              agentId: systemAgent.id,
+              type: 'FEE_COLLECTION',
+              amount: bookingFee - burned,
+              fromAddress: freelancer.linkedinId,
+              toAddress: treasuryWallet,
+            } as any,
+          });
+          await prisma.agentTransaction.create({
+            data: {
+              agentId: systemAgent.id,
+              type: 'BURN',
+              amount: burned,
+              fromAddress: freelancer.linkedinId,
+              toAddress: 'burn',
+            } as any,
+          });
+        } catch (e: any) {
+          logger.warn('[ProfileSeeder] economy tx persist skipped:', e.message);
+        }
 
         bookingsMade++;
         logger.info(`[ProfileSeeder] Self-economy booking: ${freelancer.firstName} → ${business.firstName} | fee: ${bookingFee} PAB, reward: ${pabReward} PAB`);
