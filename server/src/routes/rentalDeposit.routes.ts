@@ -9,6 +9,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import { pydService, YieldPoolKey } from '../services/pyd.service';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.post('/deposit', authenticate, async (req: Request, res: Response): Promi
   try {
     const userId = (req as any).user?.id;
     const body = req.body ?? {};
-    const { landlordId, rentalType, assetDescription, requiredAmountUSD, yieldOptIn, pool } = body;
+    const { landlordId, depositContext, assetDescription, requiredAmountUSD, yieldOptIn, communityPoolOptIn, pool, beneficiaryBackgroundCheckId } = body;
 
     if (!landlordId || !assetDescription || !requiredAmountUSD) {
       return res.status(400).json({ success: false, error: 'landlordId, assetDescription, requiredAmountUSD required' });
@@ -29,11 +30,13 @@ router.post('/deposit', authenticate, async (req: Request, res: Response): Promi
     const result = await pydService.createDeposit({
       tenantId: userId,
       landlordId,
-      rentalType,
+      depositContext,
       assetDescription,
       requiredAmountUSD: Number(requiredAmountUSD),
       yieldOptIn,
+      communityPoolOptIn,
       pool: pool as YieldPoolKey,
+      beneficiaryBackgroundCheckId,
     });
     res.json({ success: true, data: result });
   } catch (err: any) {
@@ -132,3 +135,22 @@ router.get('/deposit/:id', authenticate, async (req: Request, res: Response): Pr
 });
 
 export default router;
+
+/**
+ * POST /api/v1/pyd/migrate
+ * Add new SecurityDeposit columns for generalized PPD rail (Cloud Run FS read-only → raw SQL).
+ */
+router.post('/migrate', async (req: Request, res: Response) => {
+  try {
+    const cols = [
+      `ALTER TABLE "SecurityDeposit" ADD COLUMN IF NOT EXISTS "depositContext" TEXT NOT NULL DEFAULT 'PROPERTY'`,
+      `ALTER TABLE "SecurityDeposit" ADD COLUMN IF NOT EXISTS "bcReductionPct" DOUBLE PRECISION NOT NULL DEFAULT 0`,
+      `ALTER TABLE "SecurityDeposit" ADD COLUMN IF NOT EXISTS "bcCheckId" TEXT`,
+      `ALTER TABLE "SecurityDeposit" ADD COLUMN IF NOT EXISTS "communityPoolOptIn" BOOLEAN NOT NULL DEFAULT false`,
+    ];
+    for (const c of cols) await prisma.$executeRawUnsafe(c);
+    res.json({ success: true, message: 'SecurityDeposit columns migrated' });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});

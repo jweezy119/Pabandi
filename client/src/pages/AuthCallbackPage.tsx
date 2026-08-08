@@ -16,6 +16,7 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const error = params.get('error');
+    const returnTo = params.get('returnTo');
 
     if (error || !token) {
       navigate('/login?error=' + (error || 'oauth_failed'));
@@ -38,7 +39,11 @@ export default function AuthCallbackPage() {
         },
         token
       );
-      navigate('/dashboard', { replace: true });
+      if (returnTo) {
+        navigate(returnTo, { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch {
       navigate('/login?error=token_parse_failed');
     }
