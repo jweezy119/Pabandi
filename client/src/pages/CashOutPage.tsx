@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { payoutService } from '../services/api';
 import { tokens } from '../design-system';
+import DisputeButton from '../components/DisputeButton';
 
 export default function CashOutPage() {
   const [amount, setAmount] = useState<number | ''>('');
@@ -103,9 +104,12 @@ export default function CashOutPage() {
         ) : (
           <div className="space-y-2">
             {history.map((p: any) => (
-              <div key={p.id} className="flex justify-between rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span>${p.amountUsdc} → <strong>${p.netUsdc}</strong> ({p.method})</span>
-                <span style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
+              <div key={p.id} className="rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex justify-between">
+                  <span>${p.amountUsdc} → <strong>${p.netUsdc}</strong> ({p.method})</span>
+                  <span style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
+                </div>
+                <DisputeButton contextType="PAYOUT" contextId={p.id} />
               </div>
             ))}
           </div>
