@@ -195,6 +195,11 @@ export const tokenStakingService = {
 
 export const disputeService = {
   fileDispute: (data: { reservationId: string; againstId: string; reason: string; stakedAmount: number; evidenceUrls?: string[] }) => apiClient.post('/disputes', data).then(res => res.data),
+  fileContext: (data: { contextType: string; contextId: string; againstId: string; description: string; evidenceUrls?: string[] }) =>
+    apiClient.post('/disputes/context', data).then(res => res.data),
+  list: (status?: string) =>
+    apiClient.get(`/disputes${status ? `?status=${status}` : ''}`).then(res => res.data),
+  get: (id: string) => apiClient.get(`/disputes/${id}`).then(res => res.data),
   vote: (disputeId: string, data: { voteForId: string; reason?: string }) => apiClient.post(`/disputes/${disputeId}/vote`, data).then(res => res.data),
 };
 

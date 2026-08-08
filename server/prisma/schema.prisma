@@ -704,6 +704,9 @@ model Dispute {
   updatedAt        DateTime        @updatedAt
   stakedAmount     Float           @default(0)
   reservationId    String?         @unique
+  // #3 Dispute Arbitration: attach disputes to paid-work contexts (not just reservations)
+  contextType      String?         // MILESTONE | OFFRAMP | PAYOUT | RESERVATION
+  contextId        String?         // ProjectMilestone.id | OfframpIntent.id | Payout.id
   evidenceUrls     String[]
   user             User?           @relation("DisputesAgainst", fields: [userId], references: [id], onDelete: Cascade)
   hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
@@ -715,6 +718,7 @@ model Dispute {
   @@index([userId])
   @@index([hashedIdentityId])
   @@index([apiClientId])
+  @@index([contextType, contextId])
 }
 
 model HashedIdentity {

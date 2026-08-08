@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import { DisputeService } from '../services/dispute.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { DisputeOutcome } from '@prisma/client';
 
 const router = Router();
 const disputeService = new DisputeService();
 
 /**
  * @route POST /api/v1/disputes
- * @desc File a new peer-jury dispute
+ * @desc File a dispute (legacy reservation-based)
  */
 router.post('/', authenticate, async (req: any, res) => {
   try {
@@ -24,7 +25,7 @@ router.post('/', authenticate, async (req: any, res) => {
       againstId,
       reason,
       evidenceUrls || [],
-      stakedAmount || 10 // default stake
+      stakedAmount || 10
     );
 
     res.status(201).json({ message: 'Dispute filed successfully', dispute });
@@ -34,8 +35,77 @@ router.post('/', authenticate, async (req: any, res) => {
 });
 
 /**
+ * @route POST /api/v1/disputes/context
+ * @desc File a dispute against a paid-work context (milestone release / off-ramp payout).
+ *       This is the #3 "dispute arbitration" entry point for pay-on-verified-work & off-ramp.
+ */
+router.post('/context', authenticate, async (req: any, res) => {
+  try {
+    const { contextType, contextId, againstId, type, description, evidenceUrls, stakedAmount } = req.body;
+    if (!contextType || !contextId || !againstId || !description) {
+      return res.status(400).json({ error: 'contextType, contextId, againstId, and description are required' });
+    }
+    const dispute = await disputeService.fileContextDispute({
+      reportedById: req.user.id,
+      againstId,
+      contextType,
+      contextId,
+      type,
+      description,
+      evidenceUrls: evidenceUrls || [],
+      stakedAmount,
+    });
+    res.status(201).json({ message: 'Dispute filed', dispute });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/v1/disputes
+ * @desc List disputes (open ones for jurors; all for admins). Public-friendly: returns
+ *       enough for the community arbitration board without leaking PII.
+ */
+router.get('/', authenticate, async (req: any, res) => {
+  try {
+    const { status } = req.query;
+    const where: any = {};
+    if (status) where.outcome = status;
+    else where.outcome = { in: [DisputeOutcome.PENDING, (DisputeOutcome as any).VOTING] };
+    const { prisma } = require('../utils/database');
+    const list = await prisma.dispute.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: { votes: true },
+    });
+    res.json({ disputes: list });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/v1/disputes/:id
+ * @desc Dispute detail (public arbitration view).
+ */
+router.get('/:id', async (req: any, res) => {
+  try {
+    const { prisma } = require('../utils/database');
+    const dispute = await prisma.dispute.findUnique({
+      where: { id: req.params.id },
+      include: { votes: true },
+    });
+    if (!dispute) return res.status(404).json({ error: 'Dispute not found' });
+    res.json({ dispute });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
  * @route POST /api/v1/disputes/:id/vote
- * @desc Cast a vote on an active dispute
+ * @desc Cast a vote on an active dispute (peer juror, trust score > 90)
  */
 router.post('/:id/vote', authenticate, async (req: any, res) => {
   try {
@@ -48,10 +118,25 @@ router.post('/:id/vote', authenticate, async (req: any, res) => {
     }
 
     const vote = await disputeService.castVote(disputeId, jurorId, voteForId, reason);
-
     res.status(200).json({ message: 'Vote cast successfully', vote });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/v1/disputes/migrate
+ * @desc Add contextType/contextId columns (Cloud Run FS read-only)
+ */
+router.post('/migrate', async (_req: any, res: any) => {
+  try {
+    const { prisma } = require('../utils/database');
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Dispute" ADD COLUMN IF NOT EXISTS "contextType" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Dispute" ADD COLUMN IF NOT EXISTS "contextId" TEXT`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Dispute_ctx_idx" ON "Dispute"("contextType","contextId")`);
+    res.json({ success: true, message: 'Dispute columns migrated' });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
