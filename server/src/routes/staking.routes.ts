@@ -124,6 +124,59 @@ router.get('/deposit-multiplier/:userId', async (req: Request, res: Response): P
   }
 });
 
+/**
+ * GET /api/v1/staking/me/earnings
+ * Get user's wallet balance, trust multiplier, and recent minting history.
+ */
+router.get('/me/earnings', authenticate, async (req: AuthRequest, res: Response): Promise<any> => {
+  try {
+    const userId = req.user!.id;
+    
+    // 1. Get Wallet Balance
+    let wallet = await prisma.wallet.findUnique({ where: { userId } });
+    if (!wallet) {
+      wallet = await prisma.wallet.create({ data: { userId, balance: 0 } });
+    }
+
+    // 2. Get Trust Multiplier & Velocity
+    const { trustFluxService } = await import('../services/trustFlux.service');
+    
+    const flux = await trustFluxService.computeTrustFlux(userId);
+    const { multiplier, tier, totalStaked } = await pabTokenStakingService.getTrustMultiplier(userId);
+    
+    // Compute the current velocity multiplier they would get if they minted today
+    const MIN_VELOCITY_MULT = 0.5;
+    const MAX_VELOCITY_MULT = 2.0;
+    const velocityMult = MIN_VELOCITY_MULT + ((flux.velocity + 1) / 2) * (MAX_VELOCITY_MULT - MIN_VELOCITY_MULT);
+
+    // 3. Get Recent Earnings History
+    const history = await prisma.trustAuditTrail.findMany({
+      where: { 
+        userId, 
+        changeReason: { startsWith: 'PABOND_MINT_' } 
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        balancePAB: wallet.balance,
+        totalStaked,
+        tier,
+        stakingMultiplier: multiplier,
+        trustVelocity: Math.round(flux.velocity * 1000) / 1000,
+        velocityMultiplier: Math.round(velocityMult * 1000) / 1000,
+        history
+      }
+    });
+  } catch (error: any) {
+    logger.error('[Staking] /me/earnings error:', error.message);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // ── AI Trust Arbitrator Routes ───────────────────────────────────
 
 /**

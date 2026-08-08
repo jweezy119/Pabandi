@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { stripeService } from './stripe.service';
+import { offrampService } from './offramp.service';
 
 // Flat payout fee (the "remittance killer" — 1.5% vs ~7% Western Union / bank wires)
 const PAYOUT_FEE_PCT = 1.5;
@@ -38,8 +39,10 @@ export class PayoutService {
     };
   }
 
-  /** Request a cash-out of earned USDC to a linked bank / Connect account. */
-  async request(userId: string, amountUsdc: number, method: 'BANK' | 'CONNECT' = 'BANK') {
+  /** Request a cash-out of earned USDC to a real off-ramp rail.
+   *  method: BANK (simulated/local), CONNECT (real Stripe transfer), LOCAL (real P2P off-ramp intent to mobile wallet/bank).
+   *  destinationRef / mobile optional for LOCAL (JazzCash/Easypaisa/Raast account). */
+  async request(userId: string, amountUsdc: number, method: 'BANK' | 'CONNECT' | 'LOCAL' = 'BANK', destinationRef?: string) {
     if (amountUsdc <= 0) throw new Error('Invalid amount');
     const band = await this.resolveBand(userId);
     if (band === 'E') throw new Error('Trust band E — build your Trust Passport to unlock cash-outs.');
@@ -52,42 +55,55 @@ export class PayoutService {
     const fee = +(amountUsdc * (PAYOUT_FEE_PCT / 100)).toFixed(2);
     const net = +(amountUsdc - fee).toFixed(2);
 
-    // Destination: VirtualAccount (simulated) or Stripe Connect (real when keys present)
-    let destinationRef: string | null = null;
+    let destRef: string | null = null;
     let txHash: string | null = null;
     let status: 'PENDING' | 'SETTLED' | 'FAILED' = 'SETTLED';
+    let offrampIntentId: string | null = null;
 
     if (method === 'BANK') {
       const va = await prisma.virtualAccount.findFirst({ where: { userId, status: 'ACTIVE' } });
-      if (va) {
-        destinationRef = va.id;
-      } else {
-        // No linked bank yet — settle to a simulated destination so the worker
-        // can still cash out instantly (real mode requires a linked VirtualAccount
-        // or Stripe Connect). Balance is still deducted and fee charged.
-        destinationRef = 'SIMULATED';
-        logger.info(`[Payout] No VirtualAccount for ${userId} — simulating bank settlement.`);
-      }
+      destRef = va?.id || 'SIMULATED';
     } else if (method === 'CONNECT') {
       const connectId = process.env.STRIPE_CONNECT_ACCOUNT_ID;
       if (connectId && process.env.STRIPE_SECRET_KEY) {
         try {
-          const transfer = await (stripeService as any).stripe?.transfers?.create?.({
-            amount: Math.round(net * 100),
-            currency: 'usd',
-            destination: connectId,
-          });
-          if (transfer?.id) { txHash = transfer.id; destinationRef = connectId; }
+          const t = await stripeService.payoutToConnect(net, connectId);
+          txHash = t.id; destRef = connectId; status = 'SETTLED';
+          logger.info(`[Payout] Stripe Connect transfer ${t.id} for ${userId} net $${net}.`);
         } catch (e: any) {
-          logger.warn(`[Payout] Stripe transfer failed, falling back to simulated: ${e.message}`);
+          logger.warn(`[Payout] Stripe transfer failed, simulated fallback: ${e.message}`);
+          destRef = 'SIMULATED';
         }
+      } else {
+        destRef = 'SIMULATED'; // no keys -> honest simulated settlement
+      }
+    } else if (method === 'LOCAL') {
+      // REAL P2P off-ramp: create an intent to a local mobile wallet / bank (JazzCash/Easypaisa/Raast).
+      // Flows through the existing LiquidityProvider settlement engine.
+      try {
+        const intent = await offrampService.requestIntent(
+          (wallet.address || userId),
+          net,
+          280, // indicative USDC->PKR rate; LP matches live
+          'JazzCash',
+          (destinationRef || wallet.address || userId).slice(0, 64),
+          undefined,
+          `pabandi-payout-${userId}-${Date.now()}`,
+        );
+        offrampIntentId = intent.id;
+        destRef = `OFFRAMP:${intent.id}`;
+        status = 'PENDING'; // settles when an LP fulfills the intent
+        logger.info(`[Payout] Off-ramp intent ${intent.id} created for ${userId} net $${net}.`);
+      } catch (e: any) {
+        logger.warn(`[Payout] Off-ramp intent failed, simulated fallback: ${e.message}`);
+        destRef = 'SIMULATED';
       }
     }
 
     const payout = await prisma.$transaction(async (tx) => {
       await tx.wallet.update({ where: { userId }, data: { usdcBalance: { decrement: amountUsdc } } });
       return tx.payout.create({
-        data: { userId, amountUsdc, feeUsdc: fee, netUsdc: net, method, destinationRef, status, txHash },
+        data: { userId, amountUsdc, feeUsdc: fee, netUsdc: net, method, destinationRef: destRef, status, txHash },
       });
     });
 

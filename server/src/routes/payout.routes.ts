@@ -25,8 +25,8 @@ router.get('/quote', authenticate, async (req: any, res) => {
  */
 router.post('/request', authenticate, async (req: any, res) => {
   try {
-    const { amountUsdc, method } = req.body;
-    const p = await payoutService.request(req.user.id, Number(amountUsdc), method || 'BANK');
+    const { amountUsdc, method, destinationRef } = req.body;
+    const p = await payoutService.request(req.user.id, Number(amountUsdc), (method || 'BANK') as any, destinationRef);
     res.status(201).json({ message: 'Cash-out settled', payout: p });
   } catch (e: any) {
     res.status(400).json({ error: e.message });
@@ -59,8 +59,9 @@ router.post('/migrate', async (_req: Request, res: Response) => {
       "txHash" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL,
       CONSTRAINT "Payout_pkey" PRIMARY KEY ("id")
     );`);
-    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Payout_userId_idx" ON "Payout"("userId");`);
-    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Payout_status_idx" ON "Payout"("status");`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Payout" ADD COLUMN IF NOT EXISTS "offrampIntentId" TEXT`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Payout_userId_idx" ON "Payout"("userId")`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Payout_status_idx" ON "Payout"("status")`);
     res.json({ success: true, message: 'Payout table migrated' });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });

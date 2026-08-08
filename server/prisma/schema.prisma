@@ -677,7 +677,8 @@ model Payout {
   feeUsdc     Float
   netUsdc     Float    // amount - fee actually delivered
   method      String   @default("BANK") // BANK | CONNECT
-  destinationRef String? // VirtualAccount id or Stripe Connect account id
+  destinationRef String? // VirtualAccount id, Stripe Connect acct, or OFFRAMP:<intentId>
+  offrampIntentId String? // linked OfframpIntent when method=LOCAL
   status      String   @default("SETTLED") // PENDING | SETTLED | FAILED
   txHash      String?
   createdAt   DateTime @default(now())
