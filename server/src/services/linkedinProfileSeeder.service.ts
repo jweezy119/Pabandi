@@ -16,6 +16,7 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { computeFee, computeBurn, recordBookingEconomics, TOKENOMICS } from '../config/tokenomics';
 import { LINKEDIN_PERSONAS } from './linkedinLeadGen.service';
 // Import verified real profiles from JSON (compiled alongside TS by tsc)
 import * as seedProfilesData from '../data/seedProfiles.json';
@@ -838,11 +839,7 @@ export class LinkedInProfileSeeder {
     const freelancers = profiles.filter(p => p.persona === 'freelance-dev' && p.walletAddress);
     const businesses = profiles.filter(p => (p.persona === 'project-owner' || p.persona === 'small-biz-owner') && p.walletAddress);
 
-    const BOOKING_FEE_PAB = 5;  // Platform fee per booking (5 PAB)
-    const BURN_RATE = 0.1;       // 10% of fee burned (deflationary)
     const PAB_TO_USDC_RATE = 0.01;
-
-    // Ensure a system agent so simulated economy txns persist (AgentTransaction FK)
     const SYSTEM_PROFILE = '__system_economy__';
     const treasuryWallet = process.env.PABANDI_TREASURY_WALLET || 'treasury';
     const systemAgent = await prisma.web3Agent.upsert({
@@ -865,36 +862,20 @@ export class LinkedInProfileSeeder {
         if (freelancers.indexOf(freelancer) >= businesses.length) break;
         const business = businesses[round % businesses.length];
 
-        // Simulate booking: freelancer pays business, platform takes fee
-        const bookingFee = BOOKING_FEE_PAB;
+        // Simulate booking: freelancer pays business, platform takes a value-based fee
+        const bookingFee = computeFee(TOKENOMICS.SIM_BOOKING_VALUE_PAB);
         const pabReward = 10;  // PAB reward for completed booking
 
         pabFees += bookingFee;
         pabRewarded += pabReward;
+        pabBurned += computeBurn(bookingFee);
 
-        // Burn 10% of fees as deflationary mechanism (persisted for the dashboard)
-        const burned = Math.floor(bookingFee * 0.1);
-        pabBurned += burned;
-
-        // Persist real circulation rows so the Economy dashboard reflects this
+        // Persist real circulation + bucket allocation so the Economy dashboard reflects this
         try {
-          await prisma.agentTransaction.create({
-            data: {
-              agentId: systemAgent.id,
-              type: 'FEE_COLLECTION',
-              amount: bookingFee - burned,
-              fromAddress: freelancer.linkedinId,
-              toAddress: treasuryWallet,
-            } as any,
-          });
-          await prisma.agentTransaction.create({
-            data: {
-              agentId: systemAgent.id,
-              type: 'BURN',
-              amount: burned,
-              fromAddress: freelancer.linkedinId,
-              toAddress: 'burn',
-            } as any,
+          await recordBookingEconomics({
+            agentId: systemAgent.id,
+            fromAddress: freelancer.linkedinId,
+            fee: bookingFee,
           });
         } catch (e: any) {
           logger.warn('[ProfileSeeder] economy tx persist skipped:', e.message);
