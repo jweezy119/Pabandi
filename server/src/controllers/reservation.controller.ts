@@ -1045,3 +1045,62 @@ export const markNoShow = async (
     next(error);
   }
 };
+
+/**
+ * Submit freelance deliverables (Marks milestone as pending approval)
+ */
+export const submitFreelanceWork = async (req: any, res: Response): Promise<void> => {
+  try {
+    const reservationId = req.params.id;
+    const { deliverables } = req.body;
+    
+    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    if (!reservation) {
+      res.status(404).json({ error: 'Reservation not found' });
+      return;
+    }
+    
+    const updated = await prisma.reservation.update({
+      where: { id: reservationId },
+      data: {
+        notes: (reservation.notes ? reservation.notes + '\n\n' : '') + `[DELIVERABLES SUBMITTED]: ${deliverables}`,
+        status: 'CHECKED_IN' // We use CHECKED_IN to signify "In Progress/Delivered"
+      }
+    });
+    
+    res.json({ success: true, reservation: updated });
+  } catch (error) {
+    logger.error('Error submitting work', error);
+    res.status(500).json({ error: 'Failed to submit work' });
+  }
+};
+
+/**
+ * Request AI Arbitration for a freelance job
+ */
+export const arbitrateFreelanceWork = async (req: any, res: Response): Promise<void> => {
+  try {
+    const reservationId = req.params.id;
+    const { reason } = req.body;
+    
+    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    if (!reservation) {
+      res.status(404).json({ error: 'Reservation not found' });
+      return;
+    }
+    
+    const dispute = await prisma.dispute.create({
+      data: {
+        userId: reservation.customerId,
+        reservationId: reservation.id,
+        description: reason || 'Freelancer requested arbitration for unapproved deliverables',
+        type: 'OTHER'
+      }
+    });
+    
+    res.json({ success: true, disputeId: dispute.id });
+  } catch (error) {
+    logger.error('Error requesting arbitration', error);
+    res.status(500).json({ error: 'Failed to request arbitration' });
+  }
+};

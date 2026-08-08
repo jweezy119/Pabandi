@@ -8,6 +8,8 @@ import {
   getUserReservations,
   completeReservation,
   markNoShow,
+  submitFreelanceWork,
+  arbitrateFreelanceWork
 } from '../controllers/reservation.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validateRequest } from '../middleware/validateRequest';
@@ -104,5 +106,7 @@ router.put('/:id', updateReservation);
 router.post('/:id/cancel', cancelReservation);
 router.patch('/:id/complete', completeReservation);
 router.patch('/:id/noshow', markNoShow);
+router.post('/:id/submit-work', submitFreelanceWork);
+router.post('/:id/arbitrate', arbitrateFreelanceWork);
 
 export default router;

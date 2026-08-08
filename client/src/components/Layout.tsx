@@ -188,6 +188,7 @@ export default function Layout() {
             <DesktopNavLink to="/trust" current={location.pathname.startsWith('/trust') || location.pathname.startsWith('/badge')}>Trust Passports</DesktopNavLink>
             <DesktopNavLink to="/cashout" current={location.pathname.startsWith('/cashout')}>Cash Out</DesktopNavLink>
             <DesktopNavLink to="/payroll" current={location.pathname.startsWith('/payroll')}>Instant Pay</DesktopNavLink>
+            <DesktopNavLink to="/arbitration" current={location.pathname.startsWith('/arbitration')}>Arbitration</DesktopNavLink>
             <DesktopNavLink to="/background-check" current={location.pathname.startsWith('/background-check')}>Background Check</DesktopNavLink>
             <DesktopNavLink to="/protected-deposit" current={location.pathname.startsWith('/protected-deposit')}>Protected Deposit</DesktopNavLink>
             <DesktopNavLink to="/freelance" current={location.pathname.startsWith('/freelance') || location.pathname.startsWith('/profiles')}>Freelancers</DesktopNavLink>

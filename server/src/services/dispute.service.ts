@@ -140,6 +140,87 @@ export class DisputeService {
   }
 
   /**
+   * File a dispute against a paid-work context (milestone release, off-ramp payout, etc.).
+   * This is the #3 "dispute arbitration" entry point for pay-on-verified-work & off-ramp.
+   * Trust-gated: filer must have a wallet; stake is recorded. Low-value claims auto-arbitrate.
+   */
+  public async fileContextDispute(opts: {
+    reportedById: string;       // the party raising the dispute (payer / customer)
+    againstId: string;          // the party being disputed (worker / beneficiary)
+    contextType: 'MILESTONE' | 'OFFRAMP' | 'PAYOUT' | 'RESERVATION';
+    contextId: string;
+    type?: DisputeType;
+    description: string;
+    evidenceUrls?: string[];
+    stakedAmount?: number;
+  }) {
+    const { reportedById, againstId, contextType, contextId, description, evidenceUrls = [], stakedAmount = 10 } = opts;
+
+    const existing = await prisma.dispute.findFirst({ where: { contextType, contextId } });
+    if (existing) throw new Error('A dispute for this context already exists.');
+
+    const dispute = await prisma.dispute.create({
+      data: {
+        reservationId: contextType === 'RESERVATION' ? contextId : undefined,
+        reportedById,
+        userId: againstId,
+        type: opts.type || DisputeType.QUALITY_ISSUE,
+        description,
+        evidenceUrls,
+        outcome: DisputeOutcome.PENDING,
+        stakedAmount,
+        contextType,
+        contextId,
+      },
+    });
+
+    await this.assignJurors(dispute.id, [reportedById, againstId]);
+
+    // Auto-arbitrate low-value claims (<$500) via AI Trust Arbitrator
+    const claimAmount = await this.resolveClaimAmount(contextType, contextId);
+    if (claimAmount && claimAmount < 500) {
+      const arb = await trustArbitratorService.arbitrate({
+        disputeId: dispute.id,
+        claimAmount,
+        currency: 'USD',
+        customerId: dispute.userId ?? undefined,
+        businessId: dispute.reportedById ?? undefined,
+        customerTrustScore: Number((await prisma.user.findUnique({ where: { id: dispute.userId! }, select: { trustScore: true } }))?.trustScore || 0),
+        businessTrustScore: Number((await prisma.user.findUnique({ where: { id: dispute.reportedById! }, select: { trustScore: true } }))?.trustScore || 0),
+        customerStakedPab: 0,
+        businessStakedPab: 0,
+        messages: [],
+        evidenceImages: evidenceUrls,
+        bookingDetails: { reservationId: contextId, reservationDate: new Date().toISOString(), amount: claimAmount, status: 'DISPUTED', paymentMethod: 'unknown' },
+        initialClaim: description,
+      });
+
+      if (!arb.needsHumanReview) {
+        const outcome =
+          arb.ruling === 'BUYER_WINS' ? DisputeOutcome.UPHELD
+          : arb.ruling === 'SELLER_WINS' ? DisputeOutcome.DISMISSED
+          : DisputeOutcome.RESOLVED;
+        await this.resolveDispute(dispute, outcome);
+      }
+    }
+
+    return dispute;
+  }
+
+  /** Resolve the USD claim amount for a paid-work context. */
+  private async resolveClaimAmount(contextType: string, contextId: string): Promise<number> {
+    if (contextType === 'MILESTONE') {
+      const ms = await prisma.projectMilestone.findUnique({ where: { id: contextId } });
+      return ms?.amountUSD || 0;
+    }
+    if (contextType === 'PAYOUT' || contextType === 'OFFRAMP') {
+      const p = await prisma.payout.findUnique({ where: { id: contextId } });
+      return p?.amountUsdc || 0;
+    }
+    return 0;
+  }
+
+  /**
    * Cast a vote as a Peer Juror.
    * Juror must have a trust score > 90.
    */
@@ -248,6 +329,14 @@ export class DisputeService {
       }
     });
 
+    // #3 Dispute Arbitration: when a paid-work dispute is UPHELD, claw back the
+    // worker's instant pay (the reverse of "no chargeback" — protects the payer
+    // when released work is genuinely defective). DISMISSED = worker keeps pay.
+    if ((dispute.contextType === 'MILESTONE' || dispute.contextType === 'OFFRAMP' || dispute.contextType === 'PAYOUT')
+        && outcome === DisputeOutcome.UPHELD) {
+      await this.clawbackContext(dispute);
+    }
+
     // Apply trust score penalties based on outcome
     if (outcome === DisputeOutcome.UPHELD) {
       // The reporter won. The userId (e.g. the business) maliciously reported/acted.
@@ -270,5 +359,32 @@ export class DisputeService {
     }
 
     // In a full system, we would also reward the winning Jurors with the slashed PAB here.
+  }
+
+  /** Claw back a worker's instant pay when a milestone/off-ramp dispute is upheld. */
+  private async clawbackContext(dispute: any) {
+    try {
+      if (dispute.contextType === 'MILESTONE') {
+        const wp = await prisma.workerPayout.findFirst({ where: { milestoneId: dispute.contextId, status: 'PAID' } });
+        if (wp) {
+          await prisma.$transaction([
+            prisma.workerPayout.update({ where: { id: wp.id }, data: { status: 'REVERSED' } }),
+            prisma.wallet.updateMany({ where: { userId: wp.userId }, data: { usdcBalance: { decrement: wp.netUsdc } } }),
+          ]);
+          logger.info(`[Dispute] UPHELD milestone dispute ${dispute.id} — clawed back $${wp.netUsdc} from worker ${wp.userId}`);
+        }
+      } else if (dispute.contextType === 'OFFRAMP' || dispute.contextType === 'PAYOUT') {
+        const p = await prisma.payout.findUnique({ where: { id: dispute.contextId } });
+        if (p && p.status === 'SETTLED') {
+          await prisma.$transaction([
+            prisma.payout.update({ where: { id: p.id }, data: { status: 'FAILED' } }),
+            prisma.wallet.updateMany({ where: { userId: p.userId }, data: { usdcBalance: { decrement: p.netUsdc } } }),
+          ]);
+          logger.info(`[Dispute] UPHELD payout dispute ${dispute.id} — reversed $${p.netUsdc} payout ${p.id}`);
+        }
+      }
+    } catch (e: any) {
+      logger.error(`[Dispute] clawback failed for ${dispute.id}: ${e.message}`);
+    }
   }
 }

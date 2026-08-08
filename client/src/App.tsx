@@ -57,6 +57,7 @@ import TrustPassportPage from './pages/TrustPassportPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
 import PayrollPage from './pages/PayrollPage';
+import ArbitrationPage from './pages/ArbitrationPage';
 import TrustBadgeEmbed from './pages/TrustBadgeEmbed';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
@@ -69,6 +70,8 @@ import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { PluginManagerPage } from './pages/PluginManagerPage';
 import ShopifyAppBridge from './pages/ShopifyAppBridge';
 import LoanDashboard from './pages/LoanDashboard';
+import ActiveJobsPage from './pages/ActiveJobsPage';
+import JobWorkspacePage from './pages/JobWorkspacePage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import { LanguageProvider } from './context/LanguageContext';
@@ -152,6 +155,8 @@ function App() {
             <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/join-claim" element={<PublicSEO seo={{ title: 'Claim Business | Pabandi', description: 'Claim your unclaimed Pabandi business profile with Web3 escrow, AI no-show protection, and Solana $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
             <Route path="business/activate/:id" element={<PublicSEO seo={{ title: 'Business Setup | Pabandi', description: 'Claim your listing, connect checkout, and become booking-ready on Pabandi.' }}><BusinessActivationPage /></PublicSEO>} />
+            <Route path="/dashboard/jobs" element={<ActiveJobsPage />} />
+            <Route path="/workspace/:id" element={<JobWorkspacePage />} />
             <Route path="partners/dashboard" element={<PartnerDashboardPage />} />
             <Route path="pricing" element={<PublicSEO seo={{ title: 'Pabandi Pricing | Hospitality & Live Selling Plans', description: 'Explore Pabandi pricing for hospitality properties, live sellers, and freelancers. Free starter plans, escrow-backed deposits, and $PAB rewards.' }}><BusinessModelPage /></PublicSEO>} />
             <Route path="business-model" element={<PublicSEO seo={{ title: 'Pabandi Business Model | Escrow Commissions & Rewards', description: 'Understand Pabandi revenue, escrow commissions, $PAB tokenomics, and trust incentives for sellers, buyers, and hosts.' }}><BusinessModelPage /></PublicSEO>} />
@@ -168,6 +173,7 @@ function App() {
             <Route path="trust" element={<PassportDirectoryPage />} />
             <Route path="cashout" element={<CashOutPage />} />
             <Route path="payroll" element={<PayrollPage />} />
+            <Route path="arbitration" element={<ArbitrationPage />} />
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
