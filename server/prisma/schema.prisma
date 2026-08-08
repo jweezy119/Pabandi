@@ -1450,6 +1450,7 @@ model SecurityDeposit {
   updatedAt          DateTime @updatedAt
 
   yieldAgreement      YieldAgreement? @relation(fields: [yieldAgreementId], references: [id])
+  milestones         ProjectMilestone[]
 
   @@index([tenantId])
   @@index([landlordId])
@@ -1512,5 +1513,92 @@ model BackgroundCheck {
   @@index([subjectType])
   @@index([status])
   @@index([requestedBy])
+}
+
+// ── Milestone Draw model (construction / fleet phased release) ───────────────
+model ProjectMilestone {
+  id            String   @id @default(cuid())
+  depositId     String   // FK to SecurityDeposit (the master escrow)
+  // Phase definition
+  name          String   // "Framing", "Rough-in", "10% Retention"
+  description   String?
+  sequence      Int      @default(0) // draw order
+  amountUSD     Float    // funds released at this milestone
+  // Gating conditions (all must be true to release)
+  requiresLienWaiver  Boolean @default(false)
+  requiresBcRefresh   Boolean @default(false) // re-run BackgroundCheck on beneficiary
+  requiresSignoff     Boolean @default(true)  // payer (homeowner/HOA) approval
+  // Status
+  status        String   @default("PENDING") // PENDING | FUNDED | RELEASED | DISPUTED
+  releasedAt    DateTime?
+  releasedTxHash String?
+  // Compliance artifacts
+  lienWaiverUrl String?
+  bcCheckId     String?   // BackgroundCheck.id from refresh
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deposit       SecurityDeposit @relation(fields: [depositId], references: [id])
+
+  @@index([depositId])
+  @@index([status])
+}
+
+// ── Performance Bond (Pabond-underwritten; replaces/backs a deposit) ──────────
+model PerformanceBond {
+  id            String   @id @default(cuid())
+  depositId     String   // linked master escrow (bond may back the whole project)
+  beneficiaryId String   // builder / fleet co / HOA vendor (who is bonded)
+  payerId       String   // homeowner / lessee / HOA (protected party)
+  depositContext String  @default("BUILDER") // BUILDER | FLEET | HOA
+  coverageUSD   Float    // bond face value
+  // Bond pricing from Pabond reputation curve
+  premiumUSD     Float   // cost of the bond (Pabandi revenue)
+  velocityMult  Float    @default(1.0) // TrustFlux velocity multiplier
+  status        String   @default("PROPOSED") // PROPOSED | ACTIVE | CLAIMED | EXPIRED
+  claimedAt     DateTime?
+  claimReason   String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([depositId])
+  @@index([beneficiaryId])
+  @@index([payerId])
+}
+
+// ── Community Pool (HOA yield → community amenities / reserves) ───────────────
+model CommunityPool {
+  id            String   @id @default(cuid())
+  communityName String   // "Sunny Acres HOA"
+  // Wallet that receives the redirected yield
+  treasuryWallet String?
+  totalDepositsUSD Float @default(0)  // sum of deposits routed here
+  totalYieldUSD     Float @default(0)  // cumulative yield earned
+  totalDistributedUSD Float @default(0) // paid out to community
+  // Governance
+  memberCount   Int      @default(0)
+  publicDashboard Boolean @default(true) // transparency on
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  grants        CommunityGrant[]
+}
+
+// ── Community Grant (yield → community micro-grants / amenities) ─────────────
+model CommunityGrant {
+  id            String   @id @default(cuid())
+  poolId        String
+  title         String
+  description   String?
+  amountUSD     Float
+  status        String   @default("PROPOSED") // PROPOSED | APPROVED | FUNDED | COMPLETE
+  approvedBy    String?  // HOA member / vote
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pool          CommunityPool @relation(fields: [poolId], references: [id])
+
+  @@index([poolId])
+  @@index([status])
 }
 
