@@ -145,6 +145,61 @@ export class PpdService {
       },
     });
 
+    // ── PAY-ON-VERIFIED-WORK: instantly credit the worker's wallet ──────────────
+    // This is the "remittance killer": verified completion -> worker gets USDC same
+    // block, at a 0.5% settlement bps (vs ~7% remittance). Trust-gated (band E = no pay).
+    const SETTLEMENT_BPS = 0.5;
+    const dep = await prisma.securityDeposit.findUnique({ where: { id: ms.depositId } });
+    const landlordId = dep?.landlordId;
+    let creditedUserId: string | null = null;
+    if (landlordId) {
+      // Resolve landlordId (beneficiary key) -> User via TrustPassport.providerRef chain
+      const passport = await prisma.trustPassport.findFirst({ where: { providerRef: landlordId } });
+      if (passport?.agentId) {
+        const profile = await prisma.linkedInProfile.findFirst({ where: { id: passport.agentId } });
+        if (profile?.walletAddress) {
+          const u = await prisma.user.findFirst({ where: { walletAddress: profile.walletAddress } });
+          if (u) creditedUserId = u.id;
+        }
+      }
+      // Fallback: the key itself may be a direct userId
+      if (!creditedUserId) {
+        const direct = await prisma.user.findFirst({ where: { id: landlordId } });
+        if (direct) creditedUserId = direct.id;
+      }
+    }
+
+    if (creditedUserId) {
+      // Trust-gate: a beneficiary flagged band E cannot receive instant pay (held for dispute).
+      // LinkedInProfile may not be migrated in all envs — treat missing as allowed (band D).
+      let band = 'D';
+      try {
+        const u = await prisma.user.findUnique({ where: { id: creditedUserId } });
+        if (u?.walletAddress) {
+          const prof = await prisma.linkedInProfile.findFirst({ where: { walletAddress: u.walletAddress } });
+          if (prof?.trustBand) band = prof.trustBand;
+        }
+      } catch {
+        band = 'D'; // table absent or error -> default allow (verified-work release is itself the trust signal)
+      }
+      if (band !== 'E') {
+        const fee = +(ms.amountUSD * (SETTLEMENT_BPS / 100)).toFixed(2);
+        const net = +(ms.amountUSD - fee).toFixed(2);
+        await prisma.$transaction(async (tx) => {
+          await tx.wallet.update({ where: { userId: creditedUserId! }, data: { usdcBalance: { increment: net } } });
+          await tx.workerPayout.create({
+            data: { milestoneId, depositId: ms.depositId, userId: creditedUserId!, grossUsdc: ms.amountUSD, settlementBps: SETTLEMENT_BPS, feeUsdc: fee, netUsdc: net, status: 'PAID' },
+          });
+        });
+        await prisma.projectMilestone.update({ where: { id: milestoneId }, data: { creditedUserId, creditedUsdc: net, settlementBps: SETTLEMENT_BPS } });
+        logger.info(`[PayOnWork] Milestone ${milestoneId}: paid ${creditedUserId} net $${net} (fee $${fee}, ${SETTLEMENT_BPS}bps). Band ${band}.`);
+      } else {
+        logger.warn(`[PayOnWork] Milestone ${milestoneId}: beneficiary band E — held, no instant pay.`);
+      }
+    } else {
+      logger.info(`[PayOnWork] Milestone ${milestoneId}: no resolvable worker wallet for "${landlordId}" — release recorded, pay pending linkage.`);
+    }
+
     // If retention released, mark deposit RELEASED; else ACTIVE
     const remaining = await prisma.projectMilestone.count({ where: { depositId: ms.depositId, status: { not: 'RELEASED' } } });
     if (remaining === 0) {

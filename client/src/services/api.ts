@@ -353,6 +353,7 @@ export const ppdService = {
   proposeGrant: (poolId: string, payload: any) => apiClient.post(`/ppd/community-pool/${poolId}/grant`, payload),
   approveGrant: (grantId: string, payload: any) => apiClient.post(`/ppd/community-grant/${grantId}/approve`, payload),
   getCommunityDashboard: (poolId: string) => apiClient.get(`/ppd/community-pool/${poolId}/dashboard`),
+  getWorkerPayouts: () => apiClient.get('/ppd/worker-payouts').then(res => res.data),
 };
 
 export const trustPassportService = {
