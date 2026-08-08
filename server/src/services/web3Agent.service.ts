@@ -4,6 +4,7 @@ import { Keypair, PublicKey, Connection, Transaction, sendAndConfirmTransaction,
 import { createTransferInstruction, getAssociatedTokenAddress, getAccount, createAssociatedTokenAccountInstruction, getMint } from '@solana/spl-token';
 import bs58 from 'bs58';
 import crypto from 'crypto';
+import { computeFee, recordBookingEconomics } from '../config/tokenomics';
 
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
@@ -284,36 +285,16 @@ export class Web3AgentService {
           type: 'BOOKING_PAYMENT',
           amount: amountPab,
           txHash: signature,
-          fromAddress: fromAgent.walletAddress,
+          fromAddress: fromAgent.walletAddress ?? 'treasury',
           toAddress: toAgent.walletAddress,
         } as any,
       });
 
-      // Platform fee (5 PAB) + deflationary burn (10% = 0.5 PAB) accounting
-      const BURN_RATE = 0.1;
-      const fee = 5;
-      const burnPab = +(fee * BURN_RATE).toFixed(2);
-      const treasuryPab = +(fee - burnPab).toFixed(2);
-      await prisma.agentTransaction.create({
-        data: {
-          agentId: fromAgent.id,
-          type: 'FEE_COLLECTION',
-          amount: treasuryPab,
-          fromAddress: fromAgent.walletAddress,
-          toAddress: process.env.PABANDI_TREASURY_WALLET || 'treasury',
-        } as any,
-      });
-      await prisma.agentTransaction.create({
-        data: {
-          agentId: fromAgent.id,
-          type: 'BURN',
-          amount: burnPab,
-          fromAddress: fromAgent.walletAddress,
-          toAddress: 'burn',
-        } as any,
-      });
-
       logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
+
+      // Value-based platform fee + deflationary burn + bucket allocation
+      const fee = computeFee(amountPab);
+      await recordBookingEconomics({ agentId: fromAgent.id!, fromAddress: fromAgent.profileId, fee });
 
       return { success: true, txHash: signature, amount: amountPab, to: toAgent.walletAddress };
     } catch (err: any) {
@@ -338,42 +319,22 @@ export class Web3AgentService {
         data: { balancePab: { increment: amountPab } },
       });
 
-      // Log booking payment
+      // Log booking payment (actual transfer value, fee recorded separately)
       await prisma.agentTransaction.create({
         data: {
           agentId: fromAgent.id,
           type: 'BOOKING_PAYMENT',
-          amount: price,
-          fromAddress: fromAgent.walletAddress,
+          amount: amountPab,
+          fromAddress: fromAgent.walletAddress ?? 'treasury',
           toAddress: toAgent.walletAddress,
         } as any,
       });
 
-      // Log platform fee as FEE_COLLECTION (90% retained) + deflationary BURN (10%)
-      const BURN_RATE = 0.1;
-      const fee = 5; // PAB platform fee (matches on-chain intent)
-      const burnPab = +(fee * BURN_RATE).toFixed(2); // 0.5 PAB burned
-      const treasuryPab = +(fee - burnPab).toFixed(2); // 4.5 PAB to treasury
-      await prisma.agentTransaction.create({
-        data: {
-          agentId: fromAgent.id,
-          type: 'FEE_COLLECTION',
-          amount: treasuryPab,
-          fromAddress: fromAgent.walletAddress,
-          toAddress: process.env.PABANDI_TREASURY_WALLET || 'treasury',
-        } as any,
-      });
-      await prisma.agentTransaction.create({
-        data: {
-          agentId: fromAgent.id,
-          type: 'BURN',
-          amount: burnPab,
-          fromAddress: fromAgent.walletAddress,
-          toAddress: 'burn',
-        } as any,
-      });
+      // Value-based platform fee + deflationary burn + bucket allocation
+      const fee = computeFee(amountPab);
+      await recordBookingEconomics({ agentId: fromAgent.id!, fromAddress: fromAgent.profileId, fee });
 
-      logger.info(`[Web3Agent] Simulated booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${amountPab} PAB + 5 PAB fee`);
+      logger.info(`[Web3Agent] Simulated booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${amountPab} PAB + ${fee} PAB fee`);
       return { success: true, simulated: true, amount: amountPab, to: toAgent.walletAddress };
     }
   }
