@@ -55,6 +55,7 @@ import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
+import TrustBadgeEmbed from './pages/TrustBadgeEmbed';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
@@ -246,6 +247,9 @@ function App() {
             />
             <Route path="passport/:sellerId" element={<PublicPassportPage />} />
           </Route>
+
+          {/* Standalone embeddable badge (chrome-free, for iframe embeds) */}
+          <Route path="/badge/:handle" element={<TrustBadgeEmbed />} />
         </Routes>
       </LanguageProvider>
     </HelmetProvider>

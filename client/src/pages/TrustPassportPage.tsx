@@ -12,6 +12,8 @@ export default function TrustPassportPage() {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [embedCode, setEmbedCode] = useState('');
+  const [embedCopied, setEmbedCopied] = useState(false);
 
   useEffect(() => {
     if (!handle) return;
@@ -109,7 +111,26 @@ export default function TrustPassportPage() {
             <button className="btn-ghost" onClick={share} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '11px 18px', color: 'inherit', cursor: 'pointer' }}>
               {copied ? 'Link copied!' : 'Share'}
             </button>
+            <button className="btn-ghost" onClick={() => setEmbedCode(`<iframe src="${window.location.origin}/badge/${handle}" width="300" height="56" frameborder="0" style="border:0;border-radius:12px;overflow:hidden" title="Pabandi Trust Badge"></iframe>`)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '11px 18px', color: 'inherit', cursor: 'pointer' }}>
+              Embed badge
+            </button>
           </div>
+
+          {embedCode && (
+            <div className="mt-3">
+              <p className="text-xs opacity-60 mb-1">Paste this on your site / WhatsApp bio:</p>
+              <div className="flex gap-2 items-start">
+                <code className="text-xs opacity-80 rounded-xl p-3 block" style={{ background: 'rgba(0,0,0,0.25)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', flex: 1 }}>{embedCode}</code>
+                <button className="btn-pab text-xs" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 1500); } catch { /* ignore */ } }} style={{ background: tokens.color.primary, color: '#0a0a0a', borderRadius: 12, padding: '8px 12px', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                  {embedCopied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <p className="text-xs opacity-60 mb-1">Preview:</p>
+                <iframe src={`/badge/${handle}`} width={300} height={56} style={{ border: 0, borderRadius: 12, overflow: 'hidden' }} title="Pabandi Trust Badge preview" />
+              </div>
+            </div>
+          )}
           <p className="text-xs opacity-50 mt-4 text-center">Verified by Pabandi · {data.issuedAt && new Date(data.issuedAt).toLocaleString()}</p>
         </div>
       )}
