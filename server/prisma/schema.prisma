@@ -57,6 +57,7 @@ model User {
   stakingPositions       StakingPosition[]
   loans                  Loan[]
   payouts                Payout[]
+  workerPayouts         WorkerPayout[]
   virtualAccounts        VirtualAccount[]
   disputesAgainst        Dispute[]               @relation("DisputesAgainst")
   disputesFiled          Dispute[]               @relation("DisputesFiled")
@@ -1560,6 +1561,10 @@ model ProjectMilestone {
   status        String   @default("PENDING") // PENDING | FUNDED | RELEASED | DISPUTED
   releasedAt    DateTime?
   releasedTxHash String?
+  // Pay-on-verified-work: when released, worker is credited instantly
+  creditedUserId String?  // resolved beneficiary wallet owner
+  creditedUsdc   Float?   // net amount credited after settlement bps
+  settlementBps  Float?   // bps taken as Pabandi revenue (vs ~700bps remittance)
   // Compliance artifacts
   lienWaiverUrl String?
   bcCheckId     String?   // BackgroundCheck.id from refresh
@@ -1570,6 +1575,29 @@ model ProjectMilestone {
 
   @@index([depositId])
   @@index([status])
+}
+
+// ── WorkerPayout (payroll ledger: every milestone release = instant worker pay) ─
+// The "remittance killer" engine: verified-work release -> worker USDC credited
+// same block, settlement bps (0.5%) vs ~7% remittance. Trust-gated (band E blocked).
+model WorkerPayout {
+  id            String   @id @default(cuid())
+  milestoneId   String
+  depositId     String
+  userId        String   // worker who got paid
+  grossUsdc     Float    // milestone amount released
+  settlementBps Float    // bps Pabandi took
+  feeUsdc       Float
+  netUsdc       Float    // credited to worker wallet
+  status        String   @default("PAID") // PAID | REVERSED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([depositId])
+  @@index([milestoneId])
 }
 
 // ── Performance Bond (Pabond-underwritten; replaces/backs a deposit) ──────────

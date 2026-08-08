@@ -49,6 +49,21 @@ router.post('/milestone/:id/release', authenticate, async (req: Request, res: Re
   }
 });
 
+// Worker instant-pay ledger (pay-on-verified-work)
+router.get('/worker-payouts', authenticate, async (req: Request, res: Response) => {
+  try {
+    const rows = await prisma.workerPayout.findMany({
+      where: { userId: (req as any).user?.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    const total = rows.reduce((s: number, r: any) => s + (r.netUsdc || 0), 0);
+    const fees = rows.reduce((s: number, r: any) => s + (r.feeUsdc || 0), 0);
+    res.json({ success: true, data: { payouts: rows, totalNetUsdc: +total.toFixed(2), totalFeesUsdc: +fees.toFixed(2), count: rows.length } });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── B. Performance bond ────────────────────────────────────────────────────
 router.post('/bond', authenticate, async (req: Request, res: Response) => {
   try {
@@ -142,6 +157,10 @@ router.post('/migrate', async (req: Request, res: Response) => {
       `CREATE TABLE IF NOT EXISTS "PerformanceBond" ("id" TEXT NOT NULL PRIMARY KEY, "depositId" TEXT NOT NULL, "beneficiaryId" TEXT NOT NULL, "payerId" TEXT NOT NULL, "depositContext" TEXT NOT NULL DEFAULT 'BUILDER', "coverageUSD" DOUBLE PRECISION NOT NULL, "premiumUSD" DOUBLE PRECISION NOT NULL, "velocityMult" DOUBLE PRECISION NOT NULL DEFAULT 1.0, "status" TEXT NOT NULL DEFAULT 'PROPOSED', "claimedAt" TIMESTAMP(3), "claimReason" TEXT, "expiresAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
       `CREATE TABLE IF NOT EXISTS "CommunityPool" ("id" TEXT NOT NULL PRIMARY KEY, "communityName" TEXT NOT NULL, "treasuryWallet" TEXT, "totalDepositsUSD" DOUBLE PRECISION NOT NULL DEFAULT 0, "totalYieldUSD" DOUBLE PRECISION NOT NULL DEFAULT 0, "totalDistributedUSD" DOUBLE PRECISION NOT NULL DEFAULT 0, "memberCount" INTEGER NOT NULL DEFAULT 0, "publicDashboard" BOOLEAN NOT NULL DEFAULT true, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
       `CREATE TABLE IF NOT EXISTS "CommunityGrant" ("id" TEXT NOT NULL PRIMARY KEY, "poolId" TEXT NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "amountUSD" DOUBLE PRECISION NOT NULL, "status" TEXT NOT NULL DEFAULT 'PROPOSED', "approvedBy" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+      `CREATE TABLE IF NOT EXISTS "WorkerPayout" ("id" TEXT NOT NULL PRIMARY KEY, "milestoneId" TEXT NOT NULL, "depositId" TEXT NOT NULL, "userId" TEXT NOT NULL, "grossUsdc" DOUBLE PRECISION NOT NULL, "settlementBps" DOUBLE PRECISION NOT NULL, "feeUsdc" DOUBLE PRECISION NOT NULL, "netUsdc" DOUBLE PRECISION NOT NULL, "status" TEXT NOT NULL DEFAULT 'PAID', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+      `ALTER TABLE "ProjectMilestone" ADD COLUMN IF NOT EXISTS "creditedUserId" TEXT`,
+      `ALTER TABLE "ProjectMilestone" ADD COLUMN IF NOT EXISTS "creditedUsdc" DOUBLE PRECISION`,
+      `ALTER TABLE "ProjectMilestone" ADD COLUMN IF NOT EXISTS "settlementBps" DOUBLE PRECISION`,
       `CREATE INDEX IF NOT EXISTS "ProjectMilestone_depositId_idx" ON "ProjectMilestone"("depositId")`,
       `CREATE INDEX IF NOT EXISTS "ProjectMilestone_status_idx" ON "ProjectMilestone"("status")`,
       `CREATE INDEX IF NOT EXISTS "PerformanceBond_depositId_idx" ON "PerformanceBond"("depositId")`,
