@@ -3,12 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { userService } from '../services/api';
 import toast from 'react-hot-toast';
 import { tokens } from '../design-system';
+import { HireMeModal } from '../components/freelance/HireMeModal';
+import { Briefcase, DollarSign } from 'lucide-react';
 
 export const PublicCustomerProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -40,6 +43,11 @@ export const PublicCustomerProfilePage: React.FC = () => {
   const scoreColor = 
     user.reliabilityScore >= 800 ? 'text-primary' : 
     user.reliabilityScore >= 600 ? 'text-[#D97706]' : 'text-error';
+
+  const isFreelancer = user.role === 'FREELANCER';
+  const freelanceBusiness = isFreelancer && user.businesses && user.businesses.length > 0 ? user.businesses[0] : null;
+  const hourlyRate = freelanceBusiness?.externalDetails?.hourlyRate || 50;
+  const skills = freelanceBusiness?.externalDetails?.skills || [];
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
@@ -73,8 +81,29 @@ export const PublicCustomerProfilePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Stats */}
+            {/* Stats & Hire Me */}
             <div className="flex-grow w-full space-y-6">
+              
+              {isFreelancer && freelanceBusiness && (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <div>
+                    <h3 className="text-indigo-900 font-bold text-lg flex items-center gap-2">
+                      <Briefcase className="w-5 h-5" />
+                      Freelance Professional
+                    </h3>
+                    <div className="flex items-center gap-1 text-indigo-700 font-medium mt-1">
+                      <DollarSign className="w-4 h-4" /> {hourlyRate}/hr
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsHireModalOpen(true)}
+                    className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                  >
+                    Hire Me
+                  </button>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-surface-container-low p-4 rounded-2xl flex flex-col items-center justify-center text-center">
                   <span className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold mb-1">Trust Score</span>
@@ -111,6 +140,23 @@ export const PublicCustomerProfilePage: React.FC = () => {
                   <p className="text-sm text-on-surface-variant/70 italic">No public social identities linked.</p>
                 )}
               </div>
+
+              {/* Skills (If Freelancer) */}
+              {isFreelancer && skills.length > 0 && (
+                <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 mt-6">
+                  <h3 className="text-sm font-semibold mb-4 text-on-surface-variant flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px]">psychology</span>
+                    Professional Skills
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {skills.map((skill: string) => (
+                      <span key={skill} className="px-3 py-1.5 bg-indigo-100 text-indigo-800 rounded-lg text-sm font-medium">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -143,6 +189,16 @@ export const PublicCustomerProfilePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {isFreelancer && freelanceBusiness && (
+        <HireMeModal 
+          isOpen={isHireModalOpen} 
+          onClose={() => setIsHireModalOpen(false)} 
+          freelancerName={user.firstName}
+          hourlyRate={hourlyRate}
+          businessId={freelanceBusiness.id}
+        />
+      )}
     </div>
   );
 };
