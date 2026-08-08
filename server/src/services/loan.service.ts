@@ -130,9 +130,20 @@ export class LoanService {
   async quoteReputationLoan(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
-    // Derive passport-style band from the user's trust score (legacy 0-100 field)
-    const ts = user.trustScore || 50;
-    const band = ts >= 90 ? 'A' : ts >= 70 ? 'B' : ts >= 50 ? 'C' : ts >= 30 ? 'D' : 'E';
+
+    // Resolve the REAL Trust Passport band, if the user has a linked profile.
+    // Chain: User.walletAddress -> LinkedInProfile.walletAddress -> trustBand
+    let band: string | null = null;
+    if (user.walletAddress) {
+      const profile = await prisma.linkedInProfile.findFirst({ where: { walletAddress: user.walletAddress } });
+      if (profile?.trustBand) band = profile.trustBand;
+    }
+    // Fallback: derive a passport-style band from the legacy trust score (0-100)
+    if (!band) {
+      const ts = user.trustScore || 50;
+      band = ts >= 90 ? 'A' : ts >= 70 ? 'B' : ts >= 50 ? 'C' : ts >= 30 ? 'D' : 'E';
+    }
+
     const BAND_TABLE: Record<string, { feePct: number; capUsdc: number; eligible: boolean }> = {
       A: { feePct: 8, capUsdc: 5000, eligible: true },
       B: { feePct: 10, capUsdc: 3000, eligible: true },
@@ -143,7 +154,8 @@ export class LoanService {
     const t = BAND_TABLE[band] || BAND_TABLE.D;
     return {
       band,
-      trustScore: ts,
+      source: user.walletAddress ? 'PASSPORT' : 'TRUSTSCORE',
+      trustScore: user.trustScore,
       eligible: t.eligible,
       feePct: t.feePct,
       maxBorrowUsdc: t.eligible ? t.capUsdc : 0,
