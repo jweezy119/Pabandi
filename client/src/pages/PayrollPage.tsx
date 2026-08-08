@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { ppdService } from '../services/api';
 import { tokens } from '../design-system';
+import DisputeButton from '../components/DisputeButton';
 
 export default function PayrollPage() {
   const { data, isLoading } = useQuery('workerPayouts', ppdService.getWorkerPayouts, { refetchInterval: 30000 });
@@ -41,15 +42,20 @@ export default function PayrollPage() {
         ) : (
           <div className="space-y-2">
             {d.payouts.map((p: any) => (
-              <div key={p.id} className="flex justify-between items-center rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div>
-                  <span className="font-bold">${p.grossUsdc}</span> released
-                  <span className="ml-2 text-xs" style={{ color: tokens.color.muted }}>fee ${p.feeUsdc} ({p.settlementBps}bps)</span>
+              <div key={p.id} className="rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-bold">${p.grossUsdc}</span> released
+                    <span className="ml-2 text-xs" style={{ color: tokens.color.muted }}>fee ${p.feeUsdc} ({p.settlementBps}bps)</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-green-400">+${p.netUsdc}</span>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()}</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-bold text-green-400">+${p.netUsdc}</span>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()}</div>
-                </div>
+                {p.milestoneId && (
+                  <DisputeButton contextType="MILESTONE" contextId={p.milestoneId} />
+                )}
               </div>
             ))}
           </div>
