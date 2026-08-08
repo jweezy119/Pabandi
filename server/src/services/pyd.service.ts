@@ -28,11 +28,13 @@ export type YieldPoolKey = keyof typeof YIELD_POOLS;
 export interface CreateDepositInput {
   tenantId: string;
   landlordId: string;
-  rentalType?: 'PROPERTY' | 'CAR';
+  depositContext?: 'PROPERTY' | 'CAR' | 'BUILDER' | 'FLEET' | 'HOA';
   assetDescription: string;
   requiredAmountUSD: number;
   yieldOptIn?: boolean;
+  communityPoolOptIn?: boolean; // HOA: yield → community pool
   pool?: YieldPoolKey;
+  beneficiaryBackgroundCheckId?: string; // BackgroundCheck.id of the builder/fleet/HOA vendor
 }
 
 export class PydService {
@@ -47,25 +49,42 @@ export class PydService {
     const riskBand: PTPRiskBand = ptpEngine.scoreToRiskBand(tenant.trustScore ?? 50);
     const bandSpec = PTP_RISK_BANDS[riskBand];
     const depositReductionPct = bandSpec.depositReduction; // 0.50 / 0.30 / 0.10 / 0
-    const actualDepositUSD = +(input.requiredAmountUSD * (1 - depositReductionPct)).toFixed(2);
+
+    // BackgroundCheck reduction lever: a verified PASS on the beneficiary
+    // (builder / fleet co / HOA vendor) earns up to +10% off the deposit.
+    let bcReductionPct = 0;
+    let bcCheckId: string | undefined = input.beneficiaryBackgroundCheckId;
+    if (bcCheckId) {
+      const bc = await prisma.backgroundCheck.findUnique({ where: { id: bcCheckId } });
+      if (bc && bc.recommendation === 'PASS' && (bc.riskScore ?? 100) <= 30) {
+        bcReductionPct = 0.10;
+      }
+    }
+
+    const totalReduction = Math.min(0.6, depositReductionPct + bcReductionPct);
+    const actualDepositUSD = +(input.requiredAmountUSD * (1 - totalReduction)).toFixed(2);
 
     const deposit = await prisma.securityDeposit.create({
       data: {
         tenantId: input.tenantId,
         landlordId: input.landlordId,
-        rentalType: input.rentalType ?? 'PROPERTY',
+        depositContext: input.depositContext ?? 'PROPERTY',
         assetDescription: input.assetDescription,
         requiredAmountUSD: input.requiredAmountUSD,
         tenantRiskBand: riskBand,
         depositReductionPct,
+        bcReductionPct,
+        bcCheckId: bcCheckId ?? null,
         actualDepositUSD,
         yieldOptIn: !!input.yieldOptIn,
+        communityPoolOptIn: !!input.communityPoolOptIn,
         status: 'PENDING',
       },
     });
 
     logger.info(
-      `[PYD] Deposit ${deposit.id}: tenant Band ${riskBand} → ${depositReductionPct * 100}% reduction, ` +
+      `[PYD] Deposit ${deposit.id} (${input.depositContext ?? 'PROPERTY'}): payer Band ${riskBand} → ` +
+      `${depositReductionPct * 100}% PTP + ${bcReductionPct * 100}% BC = ${totalReduction * 100}% total, ` +
       `actual deposit $${actualDepositUSD} (was $${input.requiredAmountUSD})`
     );
 

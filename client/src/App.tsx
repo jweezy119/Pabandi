@@ -83,7 +83,8 @@ function App() {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <AdminPanel />;
     if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
-    return <Navigate to="/freelance" replace />;
+    if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
+    return <Navigate to="/freelance" replace />; // Default for customers for now
   };
 
   const AuthRequiredProfilesPage = () => {

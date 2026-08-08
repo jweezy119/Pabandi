@@ -272,10 +272,12 @@ import sealRoutes from './routes/seal.routes';
 import billingRoutes from './routes/billing.routes';
 import wellknownRoutes from './routes/wellknown.routes';
 import jobsRoutes from './routes/jobs.routes';
+import seedRoutes from './routes/seed.routes';
 
 app.use(`/api/${API_VERSION}/seal`, sealRoutes);
 app.use(`/api/${API_VERSION}/billing`, billingRoutes);
 app.use(`/api/${API_VERSION}/jobs`, jobsRoutes);
+app.use(`/api/${API_VERSION}/seed`, seedRoutes);
 app.use('/.well-known/ptp', wellknownRoutes); // Note: standard .well-known structure
 
 // Expose public SDK for trust seals

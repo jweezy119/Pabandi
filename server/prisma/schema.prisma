@@ -490,6 +490,7 @@ enum UserRole {
   BUSINESS_STAFF
   CUSTOMER
   ADMIN
+  FREELANCER
 }
 
 enum KycStatus {
@@ -1427,15 +1428,20 @@ model JobApplication {
 
 model SecurityDeposit {
   id                 String   @id @default(cuid())
-  tenantId           String
-  landlordId         String
-  rentalType         String   @default("PROPERTY") // PROPERTY | CAR
-  assetDescription   String   // "123 Main St unit 2" or "Tesla Model 3 VIN xyz"
+  tenantId           String   // deposit payer (homeowner / lessee / HOA / resident)
+  landlordId         String   // deposit beneficiary (builder / fleet co / mgmt co / vendor)
+  // Generalized context (was rentalType PROPERTY|CAR)
+  depositContext     String   @default("PROPERTY") // PROPERTY | CAR | BUILDER | FLEET | HOA
+  assetDescription   String   // "123 Main St remodel" | "Fleet unit VIN xyz" | "Sunny Acres HOA repaving"
   requiredAmountUSD  Float
   tenantRiskBand     String   // A | B | C | D | E (from PTP at booking)
   depositReductionPct Float   @default(0) // from PTP band (A=50%,B=30%,C=10%)
-  actualDepositUSD   Float    // requiredAmountUSD * (1 - depositReductionPct)
+  // Additional reduction from verified BackgroundCheck on the beneficiary
+  bcReductionPct     Float    @default(0) // up to 0.10 when beneficiary passes full BC
+  bcCheckId          String?  // BackgroundCheck.id used for the reduction
+  actualDepositUSD   Float    // requiredAmountUSD * (1 - depositReductionPct - bcReductionPct)
   yieldOptIn         Boolean  @default(false)
+  communityPoolOptIn Boolean @default(false) // HOA: yield flows to community pool, not payer
   yieldAgreementId   String?   @unique
   escrowContract     String?  // Solana escrow PDA / address (non-custodial)
   escrowTxHash       String?
