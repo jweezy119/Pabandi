@@ -200,7 +200,7 @@ export const disputeService = {
 
 export const payoutService = {
   quote: (amountUsdc: number) => apiClient.get(`/payouts/quote?amount=${amountUsdc}`).then(res => res.data),
-  request: (data: { amountUsdc: number; method?: string }) => apiClient.post('/payouts/request', data).then(res => res.data),
+  request: (data: { amountUsdc: number; method?: string; destinationRef?: string }) => apiClient.post('/payouts/request', data).then(res => res.data),
   history: () => apiClient.get('/payouts/history').then(res => res.data),
 };
 

@@ -5,7 +5,8 @@ import { tokens } from '../design-system';
 
 export default function CashOutPage() {
   const [amount, setAmount] = useState<number | ''>('');
-  const [method, setMethod] = useState<'BANK' | 'CONNECT'>('BANK');
+  const [method, setMethod] = useState<'BANK' | 'CONNECT' | 'LOCAL'>('BANK');
+  const [destination, setDestination] = useState('');
 
   const { data: quote, refetch } = useQuery(
     ['payoutQuote', amount],
@@ -15,9 +16,9 @@ export default function CashOutPage() {
   const { data: history } = useQuery('payoutHistory', payoutService.history, { refetchInterval: 30000 });
 
   const mutation = useMutation(
-    (amt: number) => payoutService.request({ amountUsdc: amt, method }),
+    (amt: number) => payoutService.request({ amountUsdc: amt, method, destinationRef: method === 'LOCAL' ? destination : undefined }),
     {
-      onSuccess: () => { alert('Cash-out settled. Funds on the way at 1.5% (vs ~7% remittance).'); setAmount(''); refetch(); },
+      onSuccess: () => { alert('Cash-out settled. Funds on the way at 1.5% (vs ~7% remittance).'); setAmount(''); setDestination(''); refetch(); },
       onError: (err: any) => alert(`Error: ${err.response?.data?.error || err.message}`),
     }
   );
@@ -43,7 +44,7 @@ export default function CashOutPage() {
         />
 
         <div className="mt-4 flex gap-3">
-          {(['BANK', 'CONNECT'] as const).map(m => (
+          {(['BANK', 'CONNECT', 'LOCAL'] as const).map(m => (
             <button
               key={m}
               onClick={() => setMethod(m)}
@@ -54,10 +55,25 @@ export default function CashOutPage() {
                 border: `1px solid ${method === m ? tokens.color.primary : 'rgba(255,255,255,0.15)'}`,
               }}
             >
-              {m === 'BANK' ? 'Linked Bank' : 'Stripe Connect'}
+              {m === 'BANK' ? 'Linked Bank' : m === 'CONNECT' ? 'Stripe Connect' : 'Local Wallet'}
             </button>
           ))}
         </div>
+
+        {method === 'LOCAL' && (
+          <div className="mt-4">
+            <label className="block text-sm font-bold mb-2" style={{ color: tokens.color.text }}>Mobile wallet / bank account (JazzCash, Easypaisa, Raast)</label>
+            <input
+              type="text"
+              value={destination}
+              onChange={e => setDestination(e.target.value)}
+              placeholder="e.g. 0300-1234567"
+              className="w-full px-4 py-3 rounded-xl font-body"
+              style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', color: tokens.color.text }}
+            />
+            <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Routes through Pabandi's P2P off-ramp — a local liquidity provider settles PKR to your account in minutes.</p>
+          </div>
+        )}
 
         {quote && Number(amount) > 0 && (
           <div className="mt-4 rounded-2xl p-4" style={{ background: 'rgba(0,0,0,0.25)' }}>
