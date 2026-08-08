@@ -347,6 +347,12 @@ export const ppdService = {
   getCommunityDashboard: (poolId: string) => apiClient.get(`/ppd/community-pool/${poolId}/dashboard`),
 };
 
+export const trustPassportService = {
+  create: (payload: any) => apiClient.post('/trust-passport', payload),
+  getPublic: (handle: string) => apiClient.get(`/trust-passport/${handle}`),
+  getRequestContext: (handle: string) => apiClient.get(`/trust-passport/${handle}/request`),
+};
+
 export const treasuryService = {
   getSummary: () => apiClient.get('/treasury/summary'),
 };

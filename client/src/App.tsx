@@ -53,6 +53,7 @@ import FreelancePage from './pages/FreelancePage';
 import BackgroundCheckPage from './pages/BackgroundCheckPage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PpdWizardPage from './pages/PpdWizardPage';
+import TrustPassportPage from './pages/TrustPassportPage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
@@ -159,6 +160,7 @@ function App() {
             <Route path="background-check" element={<BackgroundCheckPage />} />
             <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
             <Route path="protected-deposit" element={<PpdWizardPage />} />
+            <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { ppdService, backgroundCheckService } from '../services/api';
+import { ppdService, backgroundCheckService, trustPassportService } from '../services/api';
 import { tokens } from '../design-system';
 
 type Tab = 'BUILDER' | 'HOA';
@@ -33,6 +33,8 @@ export default function PpdWizardPage() {
     { name: 'Finish & Punch', amountUSD: 20000, sequence: 4, requiresLienWaiver: false },
   ]);
   const [result, setResult] = useState<any>(null);
+  const [passportHandle, setPassportHandle] = useState('');
+  const [passportUrl, setPassportUrl] = useState('');
 
   // HOA form
   const [communityName, setCommunityName] = useState('');
@@ -100,6 +102,27 @@ export default function PpdWizardPage() {
       });
       setResult((r: any) => ({ ...r, bond: bond.data?.data }));
       setMsg('Performance bond underwritten — capital freed from deposit.');
+    } catch (e: any) {
+      setErr(e.response?.data?.error || e.message);
+    } finally { setLoading(false); }
+  };
+
+  const mintPassport = async () => {
+    if (!result?.deposit?.id) { setErr('Create the project first'); return; }
+    if (!passportHandle) { setErr('Enter a passport handle'); return; }
+    setLoading(true);
+    try {
+      const ref = beneficiaryId || beneficiaryName.replace(/\s/g, '_').toLowerCase();
+      await trustPassportService.create({
+        handle: passportHandle,
+        displayName: beneficiaryName,
+        category: 'BUILDER',
+        providerRef: ref,
+        bio: assetDesc,
+      });
+      const url = `${window.location.origin}/trust/${passportHandle}`;
+      setPassportUrl(url);
+      setMsg('Trust Passport live — share the link with clients.');
     } catch (e: any) {
       setErr(e.response?.data?.error || e.message);
     } finally { setLoading(false); }
@@ -219,6 +242,18 @@ export default function PpdWizardPage() {
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={yieldOptIn} onChange={(e) => setYieldOptIn(e.target.checked)} /> Route idle deposit into yield (lower net cost)
             </label>
+
+            {/* Mint passport */}
+            <div className="rounded-2xl p-4 mt-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-sm font-semibold">Trust Passport</p>
+              <p className="text-xs opacity-60 mt-1">Turn this provider's verified trust into a shareable link. Counterparties verify with one click — no login.</p>
+              <div className="flex gap-2 mt-3 items-end">
+                <div className="flex-1"><label className="text-xs uppercase opacity-60">Passport handle</label>
+                  <input className="input-pab mt-1" placeholder="apex-builders" value={passportHandle} onChange={(e) => setPassportHandle(e.target.value)} /></div>
+                <button className="btn-ghost text-sm" onClick={mintPassport} disabled={loading || !result}>{result ? 'Create Passport' : 'Create Escrow First'}</button>
+              </div>
+              {passportUrl && <p className="text-xs text-green-400 mt-2">Passport live: <a href={passportUrl} className="underline">{passportUrl}</a></p>}
+            </div>
 
             <div className="flex gap-3">
               <button className="btn-pab" onClick={runBuilder} disabled={loading}>{loading ? 'Working…' : 'Create Protected Escrow'}</button>
