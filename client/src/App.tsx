@@ -50,6 +50,8 @@ import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
+import BackgroundCheckPage from './pages/BackgroundCheckPage';
+import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
@@ -152,6 +154,8 @@ function App() {
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
+            <Route path="background-check" element={<BackgroundCheckPage />} />
+            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />

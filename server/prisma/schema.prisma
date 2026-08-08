@@ -1472,3 +1472,39 @@ model YieldAgreement {
   @@index([landlordId])
 }
 
+model BackgroundCheck {
+  id                String              @id @default(cuid())
+  subjectType       String              // FREELANCER | PROPERTY_MANAGER | BUSINESS | GUEST
+  subjectId         String?
+  subjectName       String
+  subjectEmail      String?
+  subjectPhone      String?
+  subjectWallet     String?
+  subjectGithub     String?
+  subjectWebsite    String?
+  subjectCompany    String?
+  requestedBy       String?
+  status            String              @default("PENDING") // PENDING | RUNNING | COMPLETE | FAILED
+  riskScore         Int?
+  riskBand          String?
+  recommendation    String?
+  summary           String?
+  githubResult      Json?
+  domainResult      Json?
+  newsResult        Json?
+  breachResult      Json?
+  sanctionsResult   Json?
+  registryResult    Json?
+  osintResult       Json?
+  trigger           String              @default("MANUAL") // MANUAL | PRE_BOOKING | RECURRING | BATCH
+  webhookUrl        String?
+  pabFee            Float               @default(5)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  completedAt       DateTime?
+
+  @@index([subjectType])
+  @@index([status])
+  @@index([requestedBy])
+}
+

@@ -204,6 +204,18 @@ export function startAgentLoop(): void {
     }
   }, POOL_FEE_INTERVAL_MS);
 
+  // Recurring background-check re-screening (30d stale → recheck) every 24h
+  const BG_RECHECK_MS = 24 * 60 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      const { backgroundCheckService } = await import('./backgroundCheck.service');
+      const n = await backgroundCheckService.recheckDue();
+      if (n > 0) logger.info(`[AgentLoop] Re-screening ${n} stale background checks`);
+    } catch (err: any) {
+      logger.error('[AgentLoop] BG recheck error:', err.message);
+    }
+  }, BG_RECHECK_MS);
+
   // Run initial cycle immediately
   runAgentLoopCycle().catch((err: any) => {
     logger.error('[AgentLoop] Initial cycle error:', err.message);
