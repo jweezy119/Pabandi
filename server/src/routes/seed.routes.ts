@@ -20,44 +20,48 @@ router.post('/freelancers', async (req: Request, res: Response): Promise<any> =>
 
     for (let i = 0; i < count; i++) {
       const idx = i % mockTitles.length;
-      const email = `mock_freelancer_${Date.now()}_${i}@pabandi.local`;
+      const email = `mock_juror_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}@pabandi.local`;
       const passwordHash = await bcrypt.hash('password123', 10);
       
       const user = await prisma.user.create({
         data: {
           email,
           passwordHash,
-          firstName: `Alex${i}`,
-          lastName: `Pro${i}`,
-          role: UserRole.FREELANCER,
+          firstName: `Juror${i}`,
+          lastName: `Trust${i}`,
+          role: UserRole.CUSTOMER, // DB enum lacks FREELANCER; juror eligibility is trustScore-based only
           isEmailVerified: true,
-          trustScore: 85 + Math.random() * 10, // High trust score for seeded profiles
-          freelanceScore: 90 + Math.random() * 8,
+          trustScore: Math.floor(92 + Math.random() * 6), // 92-97 int — eligible as peer juror (>= 90)
+          freelanceScore: Math.floor(90 + Math.random() * 8),
           verificationTier: "VERIFIED",
         }
       });
 
-      // We associate a "Business" profile with the freelancer so they can accept bookings/reservations
-      const business = await prisma.business.create({
-        data: {
-          ownerId: user.id,
-          name: `${user.firstName} ${user.lastName} - ${mockTitles[idx]}`,
-          category: 'FREELANCE',
-          address: 'Remote',
-          phone: `+1555000${i.toString().padStart(4, '0')}`,
-          email: user.email,
-          description: `I am a highly rated ${mockTitles[idx]} with 5+ years of experience. Skills: ${mockSkills[idx]}. I deliver exceptional results on time.`,
-          isVerified: true,
-          isActive: true,
-          trustScore: user.trustScore,
-          externalDetails: {
-            hourlyRate: 50 + (i * 10),
-            skills: mockSkills[idx].split(', ')
-          }
-        }
-      });
+      // Optional business profile (non-fatal if it fails)
+      try {
+        await prisma.business.create({
+          data: {
+            ownerId: user.id,
+            name: `${user.firstName} ${user.lastName} - ${mockTitles[idx]}`,
+            category: 'FREELANCE',
+            address: 'Remote',
+            phone: `+1****00${i.toString().padStart(4, '0')}`,
+            email: user.email,
+            description: `High-trust ${mockTitles[idx]} for peer-jury arbitration.`,
+            isVerified: true,
+            isActive: true,
+            trustScore: user.trustScore,
+            externalDetails: {
+              hourlyRate: 50 + (i * 10),
+              skills: mockSkills[idx].split(', '),
+            },
+          },
+        });
+      } catch (bErr: any) {
+        logger.warn(`[Seed] business profile skipped for ${user.id}: ${bErr.message}`);
+      }
 
-      generatedProfiles.push({ user, business });
+      generatedProfiles.push({ user });
     }
 
     res.json({ success: true, count, data: generatedProfiles });
