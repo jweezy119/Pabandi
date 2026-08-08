@@ -122,14 +122,14 @@ function DisputeCard({ d }: { d: any }) {
         <span className="text-xs" style={{ color: tokens.color.muted }}>{new Date(d.createdAt).toLocaleDateString()}</span>
       </div>
       <p className="text-sm mt-2" style={{ color: tokens.color.text }}>{d.description}</p>
-      <div className="flex gap-4 mt-2 text-xs" style={{ color: tokens.color.muted }}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style={{ color: tokens.color.muted }}>
         <span>Staked: {d.stakedAmount} PAB</span>
         <span>Votes: {d.votes?.length || 0}</span>
         {d.contextId && <span>Ref: {d.contextId.slice(0, 12)}…</span>}
       </div>
 
       {d.outcome === 'PENDING' && d.userId && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex flex-wrap gap-2 mt-3">
           <button
             onClick={() => voteMutation.mutate(d.userId)}
             disabled={voteMutation.isLoading}

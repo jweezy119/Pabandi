@@ -70,6 +70,47 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
   );
 }
 
+function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname: string }) {
+  const items = [
+    { to: '/freelance', icon: 'group', label: 'Freelancers' },
+    { to: '/trust', icon: 'verified', label: 'Trust Passports' },
+    { to: '/cashout', icon: 'payments', label: 'Cash Out' },
+    { to: '/payroll', icon: 'account_balance_wallet', label: 'Instant Pay' },
+    { to: '/arbitration', icon: 'gavel', label: 'Arbitration' },
+    { to: '/protected-deposit', icon: 'shield', label: 'Protected Deposit' },
+    { to: '/background-check', icon: 'fact_check', label: 'Background Check' },
+    { to: '/economy', icon: 'trending_up', label: 'Economy' },
+  ];
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-lg bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-headline font-bold text-base">Explore Pabandi</p>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center touch-target">
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {items.map((it) => {
+            const current = pathname.startsWith(it.to);
+            return (
+              <Link
+                key={it.to}
+                to={it.to}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition-all touch-target ${current ? 'bg-primary-container/40 text-primary' : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'}`}
+              >
+                <span className="material-symbols-outlined text-[20px]">{it.icon}</span>
+                <span className="font-body text-sm font-semibold">{it.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MobileTab({ to, icon, label, current }: { to: string; icon: string; label: string; current: boolean }) {
   return (
     <Link
@@ -151,6 +192,7 @@ export default function Layout() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
   const isDetailScreen = location.pathname.includes('/book') || location.pathname.includes('/new');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
   const isOwnerOrAdmin = user?.role === 'BUSINESS_OWNER' || user?.role === 'ADMIN';
   const scrolled = useScrolled();
@@ -251,11 +293,19 @@ export default function Layout() {
               current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}
             />
             <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
+            <button
+              onClick={() => setMoreOpen(true)}
+              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
+            >
+              <span className="material-symbols-outlined text-[24px]">apps</span>
+              <span className="font-body text-[11px] font-semibold tracking-wide">More</span>
+            </button>
           </div>
         </nav>
       )}
 
       {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}
+      {moreOpen && <MobileMoreSheet onClose={() => setMoreOpen(false)} pathname={location.pathname} />}
     </div>
   );
 }

@@ -43,7 +43,7 @@ export default function PayrollPage() {
           <div className="space-y-2">
             {d.payouts.map((p: any) => (
               <div key={p.id} className="rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap gap-2 justify-between items-center sm:flex-nowrap">
                   <div>
                     <span className="font-bold">${p.grossUsdc}</span> released
                     <span className="ml-2 text-xs" style={{ color: tokens.color.muted }}>fee ${p.feeUsdc} ({p.settlementBps}bps)</span>
