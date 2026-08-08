@@ -198,6 +198,12 @@ export const disputeService = {
   vote: (disputeId: string, data: { voteForId: string; reason?: string }) => apiClient.post(`/disputes/${disputeId}/vote`, data).then(res => res.data),
 };
 
+export const payoutService = {
+  quote: (amountUsdc: number) => apiClient.get(`/payouts/quote?amount=${amountUsdc}`).then(res => res.data),
+  request: (data: { amountUsdc: number; method?: string }) => apiClient.post('/payouts/request', data).then(res => res.data),
+  history: () => apiClient.get('/payouts/history').then(res => res.data),
+};
+
 export const loanService = {
   getPower: () => apiClient.get('/loans/power').then(res => res.data),
   requestLoan: (data: { usdcAmount: number }) => apiClient.post('/loans/request', data).then(res => res.data),
