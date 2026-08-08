@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { useNavigate } from 'react-router-dom';
 
 interface HireMeModalProps {
   isOpen: boolean;
@@ -11,11 +10,10 @@ interface HireMeModalProps {
   businessId: string;
 }
 
-export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freelancerName, hourlyRate, businessId }) => {
+export const HireMeModal: React.FC<HireMeModalProps> = ({ isOpen, onClose, freelancerName, hourlyRate }) => {
   const [estimatedHours, setEstimatedHours] = useState(10);
   const [description, setDescription] = useState('');
   const { isAuthenticated } = useAuthStore();
-  const navigate = useNavigate();
 
   if (!isOpen) return null;
 

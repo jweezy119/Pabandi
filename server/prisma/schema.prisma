@@ -1602,3 +1602,23 @@ model CommunityGrant {
   @@index([status])
 }
 
+// ── Trust Passport (public, portable provider trust identity) ───────────────
+model TrustPassport {
+  id            String   @id @default(cuid())
+  handle        String   @unique // shareable slug, e.g. "apex-builders"
+  agentId       String?  // Web3Agent.id if linked
+  providerRef   String?  // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category      String   @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName   String
+  bio           String?
+  walletAddress String?
+  visibility    String   @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount   Int      @default(0) // times requested/verified
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([handle])
+  @@index([agentId])
+  @@index([providerRef])
+}
+

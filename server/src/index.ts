@@ -54,6 +54,7 @@ import treasuryRoutes from './routes/treasury.routes';
 import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
 import rentalDepositRoutes from './routes/rentalDeposit.routes';
 import ppdRoutes from './routes/ppd.routes';
+import trustPassportRoutes from './routes/trustPassport.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
 import offrampRoutes from './routes/offramp.routes';
 import offrampWebhookRoutes from './routes/offramp-webhook.routes';
@@ -264,6 +265,7 @@ app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
 app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
 app.use(`/api/${API_VERSION}/ppd`, ppdRoutes);
+app.use(`/api/${API_VERSION}/trust-passport`, trustPassportRoutes);
 
 // ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
 import osintRoutes from './routes/osint.routes';
