@@ -123,6 +123,72 @@ export class LoanService {
   }
 
   /**
+   * Quote a REPUTATION-backed (collateral-FREE) loan priced off the Trust Passport band.
+   * No PAB lock required — credit is extended on verified trust + deal history.
+   * Sharia-compliant: a flat processing fee (no compounding interest).
+   */
+  async quoteReputationLoan(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+    // Derive passport-style band from the user's trust score (legacy 0-100 field)
+    const ts = user.trustScore || 50;
+    const band = ts >= 90 ? 'A' : ts >= 70 ? 'B' : ts >= 50 ? 'C' : ts >= 30 ? 'D' : 'E';
+    const BAND_TABLE: Record<string, { feePct: number; capUsdc: number; eligible: boolean }> = {
+      A: { feePct: 8, capUsdc: 5000, eligible: true },
+      B: { feePct: 10, capUsdc: 3000, eligible: true },
+      C: { feePct: 12, capUsdc: 1500, eligible: true },
+      D: { feePct: 15, capUsdc: 500, eligible: true },
+      E: { feePct: 0, capUsdc: 0, eligible: false },
+    };
+    const t = BAND_TABLE[band] || BAND_TABLE.D;
+    return {
+      band,
+      trustScore: ts,
+      eligible: t.eligible,
+      feePct: t.feePct,
+      maxBorrowUsdc: t.eligible ? t.capUsdc : 0,
+      loanType: 'REPUTATION',
+      note: t.eligible ? 'Priced on your Trust Passport band. No collateral locked.' : 'Build trust to qualify.',
+    };
+  }
+
+  async requestReputationLoan(userId: string, usdcAmount: number) {
+    if (usdcAmount <= 0) throw new Error('Invalid loan amount');
+    const quote = await this.quoteReputationLoan(userId);
+    if (!quote.eligible) throw new Error('Not eligible for reputation credit (band E).');
+    if (usdcAmount > quote.maxBorrowUsdc) throw new Error(`Exceeds reputation cap of $${quote.maxBorrowUsdc}.`);
+
+    const flatFeeUsdc = +(usdcAmount * (quote.feePct / 100)).toFixed(2);
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    // No collateral lock. Credit the USDC to the user wallet directly.
+    const loan = await prisma.$transaction(async (tx) => {
+      await tx.wallet.update({
+        where: { userId },
+        data: { usdcBalance: { increment: usdcAmount } },
+      });
+      return tx.loan.create({
+        data: {
+          userId,
+          principalUsdc: usdcAmount,
+          collateralPab: 0,
+          flatFeeUsdc,
+          loanType: 'REPUTATION',
+          band: quote.band,
+          reputationCapUsdc: quote.maxBorrowUsdc,
+          feePct: quote.feePct,
+          dueDate,
+          status: LoanStatus.ACTIVE,
+        },
+      });
+    });
+
+    logger.info(`[ReputationLoan] Issued $${usdcAmount} USDC to ${userId} (band ${quote.band}, fee ${quote.feePct}%). No collateral locked.`);
+    return loan;
+  }
+
+  /**
    * Repay the loan + flat fee to unlock PAB
    */
   async repayLoan(userId: string, loanId: string) {

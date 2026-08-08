@@ -121,6 +121,62 @@ export default function LoanDashboard() {
           </p>
         </div>
       )}
+
+      {/* Reputation-backed (collateral-FREE) loan */}
+      <ReputationLoanPanel />
+    </div>
+  );
+}
+
+function ReputationLoanPanel() {
+  const [amount, setAmount] = useState<number | ''>('');
+  const { data: quote, isLoading, refetch } = useQuery('reputationQuote', loanService.getReputationQuote, { refetchInterval: 60000 });
+  const mutation = useMutation(
+    (amt: number) => loanService.requestReputationLoan({ usdcAmount: amt }),
+    {
+      onSuccess: () => { alert('Reputation loan issued — no collateral locked. USDC credited.'); setAmount(''); refetch(); },
+      onError: (err: any) => alert(`Error: ${err.response?.data?.error || err.message}`),
+    }
+  );
+  if (isLoading) return null;
+  const band = (quote?.band || 'D') as 'A' | 'B' | 'C' | 'D' | 'E';
+  const bandColor = { A: '#22c55e', B: '#84cc16', C: '#eab308', D: '#f97316', E: '#ef4444' }[band] || '#888';
+  return (
+    <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-8 shadow-sm">
+      <div className="flex items-center gap-3 mb-2">
+        <span className="w-9 h-9 rounded-full flex items-center justify-center font-black text-on-primary" style={{ background: bandColor }}>{band}</span>
+        <h2 className="text-xl font-black text-on-surface font-headline">Reputation Loan — No Collateral</h2>
+      </div>
+      <p className="text-sm text-on-surface-variant mb-4">
+        Priced on your Trust Passport band. We extend credit on your verified track record — no PAB lock required.
+        Flat {quote?.feePct}% processing fee (no interest).
+      </p>
+      {!quote?.eligible ? (
+        <div className="bg-error/10 border border-error/20 rounded-2xl p-4 text-center text-sm text-error">
+          Band {band} — build your trust passport to qualify.
+        </div>
+      ) : (
+        <>
+          <p className="text-sm font-bold text-primary mb-3">Max borrow: ${(quote?.maxBorrowUsdc || 0).toLocaleString()} USDC</p>
+          <form onSubmit={(e) => { e.preventDefault(); if (amount && Number(amount) > 0) mutation.mutate(Number(amount)); }} className="space-y-3 max-w-md">
+            <input
+              type="number" min="1" max={quote?.maxBorrowUsdc || 0} value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="w-full px-4 py-3 rounded-xl bg-surface-container border border-outline-variant focus:border-primary transition-all font-body text-on-surface"
+              placeholder="USDC amount"
+            />
+            {amount && (
+              <p className="text-xs text-on-surface-variant">
+                Fee ({quote?.feePct}%): ${(Number(amount) * (quote?.feePct / 100)).toFixed(2)} · Repay: ${(Number(amount) * (1 + quote?.feePct / 100)).toFixed(2)}
+              </p>
+            )}
+            <button type="submit" disabled={mutation.isLoading || !amount || Number(amount) > (quote?.maxBorrowUsdc || 0)}
+              className="w-full py-3 px-4 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50">
+              {mutation.isLoading ? 'Issuing…' : 'Borrow on Reputation'}
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
 }

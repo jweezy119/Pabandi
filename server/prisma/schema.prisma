@@ -930,11 +930,16 @@ model Loan {
   principalUsdc Float
   collateralPab Float
   flatFeeUsdc   Float
+  // Reputation-backed (collateral-FREE) loan fields
+  loanType      String   @default("COLLATERAL") // COLLATERAL | REPUTATION
+  band          String?  // Trust Passport band A-E used for pricing
+  reputationCapUsdc Float @default(0) // cap derived from verified deal history
+  feePct        Float    @default(5) // flat fee % (Sharia-compliant, no interest)
   status        LoanStatus @default(ACTIVE)
   dueDate       DateTime
   txHash        String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
