@@ -44,7 +44,7 @@ export default function CashOutPage() {
           style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', color: tokens.color.text }}
         />
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
           {(['BANK', 'CONNECT', 'LOCAL'] as const).map(m => (
             <button
               key={m}
@@ -105,9 +105,9 @@ export default function CashOutPage() {
           <div className="space-y-2">
             {history.map((p: any) => (
               <div key={p.id} className="rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="flex justify-between">
-                  <span>${p.amountUsdc} → <strong>${p.netUsdc}</strong> ({p.method})</span>
-                  <span style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
+                <div className="flex flex-wrap gap-2 justify-between items-center sm:flex-nowrap">
+                  <span className="font-semibold">${p.amountUsdc} → <strong>${p.netUsdc}</strong> ({p.method})</span>
+                  <span className="shrink-0" style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
                 </div>
                 <DisputeButton contextType="PAYOUT" contextId={p.id} />
               </div>
