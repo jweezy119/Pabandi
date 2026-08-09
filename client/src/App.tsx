@@ -132,7 +132,6 @@ function App() {
             <Route path="/wallet" element={<WalletDashboard />} />
             <Route path="/loans" element={<LoanDashboard />} />
             <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
-            <Route path="/social-graph" element={<div className="p-8">Social Graph Content Here</div>} />
 
             <Route path="/waitlist" element={<WaitlistPage />} />
             <Route path="/shopify-app" element={<ShopifyAppBridge />} />
