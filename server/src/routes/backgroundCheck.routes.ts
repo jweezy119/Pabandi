@@ -183,6 +183,7 @@ router.post('/migrate', async (req: Request, res: Response) => {
     await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "identityConfidence" INTEGER`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "competenceConfidence" INTEGER`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "integrityConfidence" INTEGER`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "solanaAttestationId" TEXT`);
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "TrustPassport" ("id" TEXT NOT NULL PRIMARY KEY, "handle" TEXT NOT NULL, "agentId" TEXT, "providerRef" TEXT, "category" TEXT NOT NULL, "displayName" TEXT NOT NULL, "bio" TEXT, "walletAddress" TEXT, "visibility" TEXT NOT NULL, "claimsCount" INTEGER NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL, "updatedAt" TIMESTAMP(3) NOT NULL)`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "TrustPassport" ADD COLUMN IF NOT EXISTS "riskScore" INTEGER`);
     await prisma.$executeRawUnsafe(`ALTER TABLE "TrustPassport" ADD COLUMN IF NOT EXISTS "riskBand" TEXT`);
