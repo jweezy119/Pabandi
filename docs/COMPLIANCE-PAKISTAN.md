@@ -202,9 +202,21 @@ un-launched). The following guardrails are now built into the codebase:
 
 > Still TODO (not yet built): FMU goAML reporting, NADRA CNIC e-verification, LOP/NOC
 > collection UI, automated retention/deletion. These are the remaining gaps before a
-> fully audit-ready launch.
+5. **TrustPassport gate on escrow (Protected Deposit)`** — `ppd.service.ts#
+   createMilestoneProject` now asserts `assertCompliantPkrSettlement()` at entry AND
+   looks up the beneficiary builder's latest COMPLETE `BackgroundCheck` (by
+   `subjectId = landlordId`); REJECT/REVIEW → throws before the escrow agreement is
+   recorded. Band E (from TrustPassport) also blocks instant pay in `releaseMilestone`.
+6. **Booking hard gate** — `reservation.controller.ts#createReservation` screens the
+   seller on every booking (reuse fresh verdict, else auto-run; fail-open on check
+   error); REJECT/REVIEW → HTTP 403.
 
----
+> Engineering has made the product compliant-by-design for the partner-escrow + tradable
+> VASP posture. The remaining items are **licensing + counsel + reporting integrations**
+> (FMU goAML, NADRA/CNIC, LOP/NOC collection UI, automated retention/deletion), which are
+> your external actions, not code. (v2: guardrails #1 and #4 above are now enforced in
+> `ppd.service.ts`; #2–#3 are gated at the service entry. Not yet wired: `pabTransferAllowed()`
+> guard on actual on-chain routes and FMU report-on-flag submission.)
 
 ## 10. Locked decisions & your action items (US founder)
 
