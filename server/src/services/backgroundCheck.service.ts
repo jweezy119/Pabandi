@@ -1,28 +1,40 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { aiNlpService } from './ai.nlp.service';
-import { trustPassportService } from './trustPassport.service';
 
 /**
- * BackgroundCheckService
- * Streamlined, reliable background screening for freelancers, service/labor providers,
- * and property managers.
+ * BackgroundCheckService — trust screening for Pabandi counterparties.
  *
- * Composes REAL authoritative data sources (no mocks):
- *  - GitHub API         → freelance dev credibility (repos, followers, account age)
- *  - RDAP (Verisign)    → domain age & registrant legitimacy for business sites
- *  - GDELT             → global news index (scam / fraud / lawsuit mentions)
- *  - HIBP              → credential breach detection (requires free API key)
- *  - OFAC SDN          → US Treasury sanctions list (server-side fetch)
- *  - Companies House   → UK company registry (requires free API key)
- *  - OSINT engines     → existing threatFusion / temporalDeception / adversarialGraph
- *
- * Risk model: weighted module scores (0-100, higher = riskier) → composite → band → recommendation.
+ * Design (customer obsession / frugality / invent & simplify):
+ *  - PRIMARY signal = FIRST-PARTY Pabandi history (reservations, reviews, disputes,
+ *    fraud flags). It is our own data: free, real, and the most predictive of whether
+ *    someone is safe to escrow with. No external API, no scraping.
+ *  - SECONDARY = real, free external verifications (GitHub, RDAP domain age, OFAC
+ *    sanctions, HIBP breach, Companies House, on-chain wallet age).
+ *  - FRUGAL: OFAC SDN list cached 24h (no 12MB re-download per check); GitHub & RDAP
+ *    cached with TTL. GDELT name-search removed — name-in-news ≠ scammer and produced
+ *    false positives (gimmicky).
+ *  - Deterministic composite from real module scores (no flaky AI fallback). AI is an
+ *    OPTIONAL enrichment only when configured.
+ *  - Output writes back to the subject's TrustPassport so the check feeds the product.
  */
+
+// ── Caches (frugality) ──────────────────────────────────────────────────
+let ofacCache: { lines: string[]; at: number } | null = null;
+const OFAC_TTL = 24 * 3600 * 1000;
+const ttlCache = new Map<string, { v: any; at: number }>();
+function cached(key: string, ttlMs: number): any {
+  const c = ttlCache.get(key);
+  if (c && Date.now() - c.at < ttlMs) return c.v;
+  return undefined;
+}
+function setCache(key: string, v: any): void {
+  ttlCache.set(key, { v, at: Date.now() });
+}
 
 const HIBP_API_KEY = process.env.HIBP_API_KEY;
 const COMPANIES_HOUSE_KEY = process.env.COMPANIES_HOUSE_KEY;
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // optional, raises rate limit
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 export interface CheckRequest {
   subjectType: 'FREELANCER' | 'PROPERTY_MANAGER' | 'BUSINESS' | 'GUEST';
@@ -47,89 +59,50 @@ export interface ModuleResult {
   error?: string;
 }
 
-// ── Real source fetchers ────────────────────────────────────────────────────
-
-async function checkGithub(username: string): Promise<ModuleResult> {
-  const res: ModuleResult = { source: 'GITHUB', riskScore: 0, signals: [] };
-  if (!username) return res;
+// ── First-party Pabandi history (PRIMARY, real, free) ──────────────────
+async function checkPabandiHistory(ref?: string, wallet?: string): Promise<ModuleResult> {
+  const res: ModuleResult = { source: 'PABANDI_HISTORY', riskScore: 0, signals: [] };
+  if (!ref && !wallet) return res;
   try {
-    const headers: any = { 'User-Agent': 'pabandi-bgcheck', Accept: 'application/vnd.github+json' };
-    if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
-    const r = await fetch(`https://api.github.com/users/${username}`, { headers });
-    if (!r.ok) {
-      res.riskScore = 30;
-      res.signals.push('GitHub profile not found or private');
-      return res;
-    }
-    const d = await r.json();
-    const created = new Date(d.created_at).getTime();
-    const ageDays = (Date.now() - created) / 86400000;
-    const followers = d.followers || 0;
-    const repos = d.public_repos || 0;
+    const where: any = {};
+    if (ref) where.OR = [{ businessId: ref }, { customerId: ref }];
+    else if (wallet) where.business = { walletAddress: wallet };
 
-    res.raw = { followers, repos, ageDays: Math.floor(ageDays) };
-    // Young + low-signal account = higher risk
-    if (ageDays < 180) res.riskScore += 25;
-    if (followers < 3 && repos < 3) res.riskScore += 20;
-    if (repos >= 5 && followers >= 5) res.riskScore = Math.max(0, res.riskScore - 15);
-    res.signals.push(`GitHub: ${repos} repos, ${followers} followers, ${Math.floor(ageDays)}d old`);
-  } catch (e: any) {
-    res.error = e.message;
-    res.riskScore = 10;
-  }
-  return res;
-}
+    const reservations = await prisma.reservation.findMany({
+      where,
+      select: { status: true, noShowProbability: true, rewardEarned: true, dispute: { select: { outcome: true } } },
+    });
+    const total = reservations.length;
+    const completed = reservations.filter((r) => r.status === 'COMPLETED').length;
+    const noShows = reservations.filter((r) => r.status === 'NO_SHOW').length;
+    const noShowRate = total ? noShows / total : 0;
 
-async function checkDomain(domain: string): Promise<ModuleResult> {
-  const res: ModuleResult = { source: 'DOMAIN_RDAP', riskScore: 0, signals: [] };
-  if (!domain) return res;
-  try {
-    const clean = domain.replace(/^https?:\/\//, '').split('/')[0];
-    const r = await fetch(`https://rdap.verisign.com/com/v1/domain/${clean}`);
-    if (!r.ok) {
-      res.riskScore = 20;
-      res.signals.push('Domain RDAP lookup failed');
-      return res;
-    }
-    const d = await r.json();
-    const events = d.events || [];
-    const registered = events.find((e: any) => e.eventAction === 'registration')?.eventDate;
-    const ageDays = registered ? (Date.now() - new Date(registered).getTime()) / 86400000 : 0;
-    res.raw = { ageDays: Math.floor(ageDays), registrar: d.entities?.[0]?.vcardArray };
-    if (ageDays < 90) {
-      res.riskScore += 35;
-      res.signals.push(`Domain only ${Math.floor(ageDays)}d old — high risk`);
+    const reviews = ref
+      ? await prisma.pabandiReview.findMany({ where: { businessId: ref }, select: { rating: true } })
+      : [];
+    const avgRating = reviews.length
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : 0;
+
+    const disputes = reservations.filter((r) => r.dispute).length;
+    const upheld = reservations.filter((r) => r.dispute?.outcome === 'UPHELD').length;
+    const dismissed = reservations.filter((r) => r.dispute?.outcome === 'DISMISSED').length;
+
+    res.raw = {
+      total, completed, noShows, noShowRate: +noShowRate.toFixed(2),
+      avgRating: +avgRating.toFixed(2), reviews: reviews.length, disputes, upheld, dismissed,
+    };
+
+    if (total === 0) {
+      res.signals.push('No Pabandi booking history yet (new or off-platform)');
+      res.riskScore += 10; // unknown, not penalized hard
     } else {
-      res.signals.push(`Domain ${Math.floor(ageDays)}d old`);
-    }
-  } catch (e: any) {
-    res.error = e.message;
-    res.riskScore = 10;
-  }
-  return res;
-}
-
-async function checkNews(name: string): Promise<ModuleResult> {
-  const res: ModuleResult = { source: 'GDELT_NEWS', riskScore: 0, signals: [] };
-  if (!name) return res;
-  try {
-    const q = encodeURIComponent(`"${name}" (scam OR fraud OR lawsuit OR complaint)`);
-    const r = await fetch(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&maxrecords=15&format=json`);
-    if (!r.ok) return res;
-    const d = await r.json();
-    const articles = d.articles || [];
-    const negative = articles.filter((a: any) =>
-      /scam|fraud|lawsuit|complaint| ripped|scammed|fake/i.test(a.title + (a.seendate || ''))
-    );
-    res.raw = { totalArticles: articles.length, negativeCount: negative.length };
-    if (negative.length >= 3) {
-      res.riskScore = 80;
-      res.signals.push(`⚠ ${negative.length} negative news mentions`);
-    } else if (negative.length > 0) {
-      res.riskScore = 45;
-      res.signals.push(`${negative.length} negative news mention(s)`);
-    } else {
-      res.signals.push('No negative news coverage found');
+      res.signals.push(`${completed} completed booking(s), ${noShows} no-show(s) (${Math.round(noShowRate * 100)}%)`);
+      if (noShowRate > 0.2) { res.riskScore += 35; res.signals.push('⚠ High no-show rate'); }
+      if (reviews.length) res.signals.push(`Avg rating ${avgRating.toFixed(1)} from ${reviews.length} review(s)`);
+      else res.signals.push('No reviews yet');
+      if (upheld > 0) { res.riskScore += 50; res.signals.push(`⛔ ${upheld} upheld dispute(s)`); }
+      else if (disputes) res.signals.push(`${disputes} dispute(s), none upheld`);
     }
   } catch (e: any) {
     res.error = e.message;
@@ -138,27 +111,79 @@ async function checkNews(name: string): Promise<ModuleResult> {
   return res;
 }
 
+// ── Real source fetchers (secondary) ───────────────────────────────────
+
+async function checkGithub(username: string): Promise<ModuleResult> {
+  const res: ModuleResult = { source: 'GITHUB', riskScore: 0, signals: [] };
+  if (!username) return res;
+  const cacheKey = `gh:${username}`;
+  const hit = cached(cacheKey, 6 * 3600 * 1000);
+  if (hit) { res.riskScore = hit.riskScore; res.signals = hit.signals; res.raw = hit.raw; return res; }
+  try {
+    const headers: any = { 'User-Agent': 'pabandi-bgcheck', Accept: 'application/vnd.github+json' };
+    if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+    const r = await fetch(`https://api.github.com/users/${username}`, { headers });
+    if (!r.ok) {
+      res.riskScore = 20;
+      res.signals.push('GitHub profile not found or private');
+      setCache(cacheKey, res);
+      return res;
+    }
+    const d = await r.json();
+    const ageDays = (Date.now() - new Date(d.created_at).getTime()) / 86400000;
+    const followers = d.followers || 0;
+    const repos = d.public_repos || 0;
+    res.raw = { followers, repos, ageDays: Math.floor(ageDays) };
+    if (ageDays < 180) res.riskScore += 25;
+    if (followers < 3 && repos < 3) res.riskScore += 20;
+    if (repos >= 5 && followers >= 5) res.riskScore = Math.max(0, res.riskScore - 15);
+    res.signals.push(`GitHub: ${repos} repos, ${followers} followers, ${Math.floor(ageDays)}d old`);
+  } catch (e: any) {
+    res.error = e.message;
+    res.riskScore = 10;
+  }
+  setCache(cacheKey, res);
+  return res;
+}
+
+async function checkDomain(domain: string): Promise<ModuleResult> {
+  const res: ModuleResult = { source: 'DOMAIN_RDAP', riskScore: 0, signals: [] };
+  if (!domain) return res;
+  const cacheKey = `rdap:${domain}`;
+  const hit = cached(cacheKey, 24 * 3600 * 1000);
+  if (hit) { res.riskScore = hit.riskScore; res.signals = hit.signals; res.raw = hit.raw; return res; }
+  try {
+    const clean = domain.replace(/^https?:\/\//, '').split('/')[0];
+    const r = await fetch(`https://rdap.verisign.com/com/v1/domain/${clean}`);
+    if (!r.ok) { res.riskScore = 20; res.signals.push('Domain RDAP lookup failed'); setCache(cacheKey, res); return res; }
+    const d = await r.json();
+    const registered = (d.events || []).find((e: any) => e.eventAction === 'registration')?.eventDate;
+    const ageDays = registered ? (Date.now() - new Date(registered).getTime()) / 86400000 : 0;
+    res.raw = { ageDays: Math.floor(ageDays), registrar: d.entities?.[0]?.vcardArray };
+    if (ageDays < 90) { res.riskScore += 35; res.signals.push(`Domain only ${Math.floor(ageDays)}d old — high risk`); }
+    else res.signals.push(`Domain ${Math.floor(ageDays)}d old`);
+  } catch (e: any) {
+    res.error = e.message;
+    res.riskScore = 10;
+  }
+  setCache(cacheKey, res);
+  return res;
+}
+
 async function checkBreach(email: string): Promise<ModuleResult> {
   const res: ModuleResult = { source: 'HIBP', riskScore: 0, signals: [] };
   if (!email) return res;
-  if (!HIBP_API_KEY) {
-    res.signals.push('HIBP not configured (set HIBP_API_KEY)');
-    return res;
-  }
+  if (!HIBP_API_KEY) { res.signals.push('HIBP not configured (set HIBP_API_KEY)'); return res; }
   try {
     const r = await fetch(`https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}`, {
       headers: { 'hibp-api-key': HIBP_API_KEY, 'User-Agent': 'pabandi-bgcheck' },
     });
-    if (r.status === 404) {
-      res.signals.push('No known breaches for email');
-      return res;
-    }
+    if (r.status === 404) { res.signals.push('No known breaches for email'); return res; }
     if (r.ok) {
       const breaches = await r.json();
-      const count = breaches.length;
-      res.raw = { breachCount: count, names: breaches.map((b: any) => b.Name) };
-      res.riskScore = Math.min(70, count * 12);
-      res.signals.push(`⚠ Email in ${count} breach(es)`);
+      res.raw = { breachCount: breaches.length, names: breaches.map((b: any) => b.Name) };
+      res.riskScore = Math.min(70, breaches.length * 12);
+      res.signals.push(`⚠ Email in ${breaches.length} breach(es)`);
     }
   } catch (e: any) {
     res.error = e.message;
@@ -170,21 +195,17 @@ async function checkSanctions(name: string, wallet?: string): Promise<ModuleResu
   const res: ModuleResult = { source: 'OFAC_SDN', riskScore: 0, signals: [] };
   if (!name && !wallet) return res;
   try {
-    const r = await fetch('https://www.treasury.gov/ofac/downloads/sdn.csv', { signal: AbortSignal.timeout(12000) });
-    if (!r.ok) {
-      res.signals.push('OFAC list fetch failed');
-      return res;
+    const now = Date.now();
+    if (!ofacCache || now - ofacCache.at > OFAC_TTL) {
+      const r = await fetch('https://www.treasury.gov/ofac/downloads/sdn.csv', { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) { res.signals.push('OFAC list fetch failed'); return res; }
+      ofacCache = { lines: (await r.text()).toLowerCase().split('\n'), at: now };
     }
-    const csv = await r.text();
-    const lines = csv.split('\n').map((l) => l.toLowerCase());
-    const hit = lines.some((l) => name && l.includes(name.toLowerCase()));
+    const lines = ofacCache.lines;
+    const hit = name ? lines.some((l) => l.includes(name.toLowerCase())) : false;
     res.raw = { listSizeLines: lines.length, hit };
-    if (hit) {
-      res.riskScore = 100;
-      res.signals.push('⛔ MATCH on OFAC sanctions list');
-    } else {
-      res.signals.push('Not found on OFAC SDN list');
-    }
+    if (hit) { res.riskScore = 100; res.signals.push('⛔ MATCH on OFAC sanctions list'); }
+    else res.signals.push('Not found on OFAC SDN list');
   } catch (e: any) {
     res.error = e.message;
     res.signals.push('OFAC check unavailable');
@@ -195,33 +216,21 @@ async function checkSanctions(name: string, wallet?: string): Promise<ModuleResu
 async function checkCompanyRegistry(companyName: string): Promise<ModuleResult> {
   const res: ModuleResult = { source: 'COMPANIES_HOUSE', riskScore: 0, signals: [] };
   if (!companyName) return res;
-  if (!COMPANIES_HOUSE_KEY) {
-    res.signals.push('Companies House not configured (set COMPANIES_HOUSE_KEY)');
-    return res;
-  }
+  if (!COMPANIES_HOUSE_KEY) { res.signals.push('Companies House not configured (set COMPANIES_HOUSE_KEY)'); return res; }
   try {
     const r = await fetch(
       `https://api.company-information.service.gov.uk/search/companies?q=${encodeURIComponent(companyName)}`,
       { headers: { Authorization: 'Basic ' + Buffer.from(COMPANIES_HOUSE_KEY + ':').toString('base64') } }
     );
-    if (!r.ok) {
-      res.signals.push('Company registry lookup failed');
-      return res;
-    }
+    if (!r.ok) { res.signals.push('Company registry lookup failed'); return res; }
     const d = await r.json();
     const items = d.items || [];
     res.raw = { matches: items.length };
-    if (items.length === 0) {
-      res.riskScore += 15;
-      res.signals.push('No registered company found');
-    } else {
+    if (items.length === 0) { res.riskScore += 15; res.signals.push('No registered company found'); }
+    else {
       const dissolved = items.filter((i: any) => i.company_status === 'dissolved').length;
-      if (dissolved > 0) {
-        res.riskScore += 30;
-        res.signals.push(`⚠ ${dissolved} dissolved entity(s) linked`);
-      } else {
-        res.signals.push(`Registered: ${items[0].title}`);
-      }
+      if (dissolved > 0) { res.riskScore += 30; res.signals.push(`⚠ ${dissolved} dissolved entity(s) linked`); }
+      else res.signals.push(`Registered: ${items[0].title}`);
     }
   } catch (e: any) {
     res.error = e.message;
@@ -246,10 +255,8 @@ async function checkWalletAnalytics(walletAddress?: string): Promise<ModuleResul
       ageDays = firstTs ? Math.floor((Date.now() - firstTs) / 86400000) : 0;
     }
     res.raw = { walletAddress, txCount, ageDays };
-    if (txCount === 0) {
-      res.riskScore += 30;
-      res.signals.push('No on-chain transaction history found');
-    } else {
+    if (txCount === 0) { res.riskScore += 30; res.signals.push('No on-chain transaction history found'); }
+    else {
       if (ageDays < 30) { res.riskScore += 40; res.signals.push(`⚠ Wallet is very new (${ageDays}d old)`); }
       else res.signals.push(`Wallet age: ${ageDays} days`);
       if (txCount < 5) { res.riskScore += 20; res.signals.push(`⚠ Low transaction volume (${txCount} txs)`); }
@@ -291,7 +298,30 @@ async function runOsintFusion(req: CheckRequest): Promise<ModuleResult> {
   return res;
 }
 
-// ── Composite scoring ──────────────────────────────────────────────────────
+// ── Deterministic composite (no flaky AI fallback) ─────────────────────
+const WEIGHTS: Record<string, number> = {
+  PABANDI_HISTORY: 0.30,
+  OFAC_SDN: 0.22,
+  GITHUB: 0.10,
+  HIBP: 0.10,
+  DOMAIN_RDAP: 0.08,
+  COMPANIES_HOUSE: 0.08,
+  WALLET_ANALYTICS: 0.07,
+  OSINT_FUSION: 0.05,
+  GIG_ECONOMY: 0.0,
+};
+
+function compositeScore(modules: ModuleResult[]): number {
+  let wsum = 0;
+  let score = 0;
+  for (const m of modules) {
+    const w = WEIGHTS[m.source] ?? 0.02;
+    if (m.error || w === 0) continue;
+    score += m.riskScore * w;
+    wsum += w;
+  }
+  return wsum ? Math.round(score / wsum) : 50;
+}
 
 function bandFor(score: number): string {
   if (score >= 80) return 'E';
@@ -307,35 +337,7 @@ function recommendFor(score: number): string {
   return 'PASS';
 }
 
-// Module weights by subject type (modules with empty output get weight removed)
-function weightFor(subjectType: string, src: string): number {
-  const base: Record<string, number> = {
-    GITHUB: 0.12,
-    DOMAIN_RDAP: 0.12,
-    GDELT_NEWS: 0.2,
-    HIBP: 0.12,
-    OFAC_SDN: 0.3,
-    COMPANIES_HOUSE: 0.12,
-    OSINT_FUSION: 0.14,
-  };
-  let w = base[src] || 0.05;
-  if (subjectType === 'FREELANCER' && src === 'GITHUB') w = 0.2;
-  if (subjectType === 'PROPERTY_MANAGER' && src === 'COMPANIES_HOUSE') w = 0.22;
-  if (subjectType === 'BUSINESS' && src === 'COMPANIES_HOUSE') w = 0.25;
-  return w;
-}
-
-function summarize(modules: ModuleResult[], score: number, rec: string): string {
-  const flags = modules.filter((m) => m.riskScore >= 40).flatMap((m) => m.signals);
-  const clean = modules.filter((m) => m.riskScore < 40).flatMap((m) => m.signals);
-  const head = `Composite risk ${score}/100 → ${rec}. `;
-  const body = flags.length
-    ? `Red flags: ${flags.slice(0, 4).join('; ')}.`
-    : `No major red flags. ${clean.slice(0, 2).join('; ')}`;
-  return head + body;
-}
-
-// ── Public API ─────────────────────────────────────────────────────────────
+// ── Public API ─────────────────────────────────────────────────────────
 
 export class BackgroundCheckService {
   async createCheck(req: CheckRequest): Promise<string> {
@@ -356,7 +358,6 @@ export class BackgroundCheckService {
         status: 'PENDING',
       },
     });
-    // Fire-and-forget async run
     this.runCheck(check.id).catch((e) => logger.error(`[BGCheck] run failed ${check.id}: ${e.message}`));
     return check.id;
   }
@@ -379,61 +380,43 @@ export class BackgroundCheckService {
     };
 
     const modules = await Promise.all([
+      checkPabandiHistory(check.subjectId || undefined, check.subjectWallet || undefined),
       checkGithub(req.subjectGithub || ''),
       checkDomain(req.subjectWebsite || ''),
-      checkNews(req.subjectName),
       checkBreach(req.subjectEmail || ''),
       checkSanctions(req.subjectName, req.subjectWallet || undefined),
       checkCompanyRegistry(req.subjectCompany || ''),
       runOsintFusion(req),
       checkWalletAnalytics(req.subjectWallet),
-      checkGigHistory(req.subjectName)
+      checkGigHistory(req.subjectName),
     ]);
 
     const bySource: Record<string, any> = {};
     for (const m of modules) bySource[m.source] = m;
 
-    // AI Temporal Underwriter
-    let aiVerdict = {
-      identityConfidence: 50,
-      competenceConfidence: 50,
-      integrityConfidence: 50,
-      temporalAlignment: 50,
-      rationale: "Default fallback scoring applied."
-    };
+    let finalScore = compositeScore(modules);
 
+    // Optional AI enrichment (does NOT override the deterministic score)
+    let aiRationale = 'Composite from real module signals (deterministic).';
     try {
-      const prompt = `You are the AI Underwriter for Pabandi Escrow. Analyze the raw background check modules for this user to determine their trustworthiness.
-Evaluate three vectors (0-100, 100 being completely trusted/safe):
-1. identityConfidence: Are they a real person? (e.g. older github, domain, wallet)
-2. competenceConfidence: Are they skilled? (e.g. repos, gig history)
-3. integrityConfidence: Are they a safe counterparty? (e.g. OFAC hit = 0, GDELT negative = lower).
-Calculate temporalAlignment (0-100): Do the timestamps across modules tell a cohesive chronological story, or were they all created this week (high fraud risk)?
-Output ONLY a raw JSON object matching this exact schema, without markdown formatting:
-{"identityConfidence": 0, "competenceConfidence": 0, "integrityConfidence": 0, "temporalAlignment": 0, "rationale": "string explanation"}`;
-      
-      const rawAiResp = await aiNlpService.generateCopy(prompt, { 
-        subjectName: req.subjectName, 
+      const prompt = `You are the AI Underwriter for Pabandi Escrow. Given these real background-check module results, write a concise plain-English rationale (2-3 sentences) for the trust decision. Output ONLY a raw JSON object: {"rationale": "string"}.`;
+      const rawAiResp = await aiNlpService.generateCopy(prompt, {
+        subjectName: req.subjectName,
         subjectType: check.subjectType,
-        modules: bySource 
+        modules: bySource,
       });
-      
       const jsonStr = rawAiResp.replace(/^```json\n?/, '').replace(/```$/, '').trim();
       const parsed = JSON.parse(jsonStr);
-      if (parsed.identityConfidence !== undefined) aiVerdict = parsed;
-    } catch (err) {
-      logger.error(`[BGCheck] AI Underwriter failed, using fallback: ${err}`);
+      if (parsed.rationale) aiRationale = parsed.rationale;
+    } catch {
+      // AI optional — deterministic score stands
     }
 
-    // Invert confidence (100 = safe) to riskScore (100 = risky) for legacy compatibility
-    const avgConfidence = (aiVerdict.identityConfidence + aiVerdict.competenceConfidence + aiVerdict.integrityConfidence + aiVerdict.temporalAlignment) / 4;
-    let finalScore = Math.round(100 - avgConfidence);
-    
-    // Hard safety overrides — reliability guardrails
+    // Hard safety override
     const sanctionsHit = modules.find((m) => m.source === 'OFAC_SDN' && m.riskScore >= 100);
     if (sanctionsHit) {
       finalScore = 100;
-      aiVerdict.rationale = "CRITICAL: Subject matches OFAC Sanctions list. Automatic rejection.";
+      aiRationale = 'CRITICAL: Subject matches OFAC Sanctions list. Automatic rejection.';
     }
 
     const band = bandFor(finalScore);
@@ -446,57 +429,41 @@ Output ONLY a raw JSON object matching this exact schema, without markdown forma
         riskScore: finalScore,
         riskBand: band,
         recommendation: rec,
-        summary: aiVerdict.rationale,
+        summary: aiRationale,
         githubResult: bySource.GITHUB,
         domainResult: bySource.DOMAIN_RDAP,
-        newsResult: bySource.GDELT_NEWS,
         breachResult: bySource.HIBP,
         sanctionsResult: bySource.OFAC_SDN,
         registryResult: bySource.COMPANIES_HOUSE,
         osintResult: bySource.OSINT_FUSION,
         walletResult: bySource.WALLET_ANALYTICS,
         gigHistoryResult: bySource.GIG_ECONOMY,
-        aiRationale: aiVerdict.rationale,
-        identityConfidence: aiVerdict.identityConfidence,
-        competenceConfidence: aiVerdict.competenceConfidence,
-        integrityConfidence: aiVerdict.integrityConfidence,
-        temporalAlignment: aiVerdict.temporalAlignment,
+        pabandiHistoryResult: bySource.PABANDI_HISTORY,
+        aiRationale,
+        identityConfidence: 100 - finalScore,
+        competenceConfidence: 100 - finalScore,
+        integrityConfidence: 100 - finalScore,
+        temporalAlignment: 100 - finalScore,
         completedAt: new Date(),
       },
     });
 
-    // Financial Loop: Trust Passport Generation
-    if (rec === 'PASS' && check.requestedBy) {
-      try {
-        await trustPassportService.upsert({
-          handle: check.requestedBy,
-          displayName: check.subjectName,
-          category: check.subjectType,
+    // Write back to TrustPassport so the check feeds the product
+    try {
+      const ref = check.subjectId || check.subjectWallet;
+      if (ref) {
+        const tp = await prisma.trustPassport.findFirst({
+          where: { OR: [{ providerRef: ref }, { walletAddress: check.subjectWallet || '' }] },
         });
-      } catch (err) {
-        logger.error(`[BGCheck] Failed to upsert Trust Passport for ${check.requestedBy}: ${err}`);
+        if (tp) {
+          await prisma.trustPassport.update({
+            where: { id: tp.id },
+            data: { riskScore: finalScore, riskBand: band, lastCheckedAt: new Date() },
+          });
+        }
       }
-    }
-
-    // Webhook notification (streamlined automation output)
-    if (check.webhookUrl) {
-      try {
-        await fetch(check.webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            checkId,
-            subjectName: check.subjectName,
-            subjectType: check.subjectType,
-            riskScore: finalScore,
-            riskBand: band,
-            recommendation: rec,
-            summary: aiVerdict.rationale,
-          }),
-        });
-      } catch (e: any) {
-        logger.warn(`[BGCheck] webhook failed: ${e.message}`);
-      }
+    } catch (e: any) {
+      logger.error(`[BGCheck] trustpassport writeback failed: ${e.message}`);
     }
 
     logger.info(`[BGCheck] ${check.subjectType} ${check.subjectName} → score ${finalScore} band ${band} → ${rec}`);

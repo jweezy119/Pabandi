@@ -1539,6 +1539,7 @@ model BackgroundCheck {
   osintResult          Json?
   gigHistoryResult     Json?
   walletResult         Json?
+  pabandiHistoryResult Json?
   temporalAlignment    Int?
   aiRationale          String?
   identityConfidence   Int?
@@ -1682,6 +1683,9 @@ model TrustPassport {
   walletAddress String?
   visibility    String   @default("PUBLIC") // PUBLIC | PRIVATE
   claimsCount   Int      @default(0) // times requested/verified
+  riskScore     Int?
+  riskBand      String?
+  lastCheckedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
