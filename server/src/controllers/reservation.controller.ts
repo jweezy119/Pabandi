@@ -160,6 +160,8 @@ export const createReservation = async (
           subjectWebsite: business.website || undefined,
           requestedBy: req.user?.id,
           trigger: 'PRE_BOOKING',
+          consent: true,
+          consentPurpose: 'Seller trust verification required to create a booking (Pabandi ToS + PECA/PDPA). Retention: 30d.',
         });
         for (let i = 0; i < 25; i++) {
           const c = await backgroundCheckService.getCheck(cid);

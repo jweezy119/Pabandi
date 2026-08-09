@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { aiNlpService } from './ai.nlp.service';
+import { isRegulated } from '../config/compliance';
 
 /**
  * BackgroundCheckService — trust screening for Pabandi counterparties.
@@ -48,6 +49,10 @@ export interface CheckRequest {
   subjectCompany?: string;
   requestedBy?: string;
   trigger?: 'MANUAL' | 'PRE_BOOKING' | 'RECURRING' | 'BATCH';
+  /** PECA / PDPA-ready: explicit consent to run identity/OSINT/wallet screening. Required in REGULATED mode. */
+  consent?: boolean;
+  /** Purpose + retention shown to the subject at consent time (audit). */
+  consentPurpose?: string;
   webhookUrl?: string;
 }
 
@@ -341,6 +346,11 @@ function recommendFor(score: number): string {
 
 export class BackgroundCheckService {
   async createCheck(req: CheckRequest): Promise<string> {
+    // PECA / PDPA-ready: in REGULATED mode, explicit consent is required before
+    // running identity / OSINT / wallet screening. Fail closed (no consent = no check).
+    if (isRegulated() && !req.consent) {
+      throw new Error('Consent required to run a background check (PECA/PDPA).');
+    }
     const check = await prisma.backgroundCheck.create({
       data: {
         subjectType: req.subjectType,
