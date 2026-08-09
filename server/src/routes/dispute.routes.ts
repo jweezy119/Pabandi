@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { prisma } from '../utils/database';
 import { DisputeService } from '../services/dispute.service';
 import { authenticate } from '../middleware/auth.middleware';
 import { DisputeOutcome } from '@prisma/client';
@@ -72,14 +73,28 @@ router.get('/', authenticate, async (req: any, res) => {
     const where: any = {};
     if (status) where.outcome = status;
     else where.outcome = { in: [DisputeOutcome.PENDING, (DisputeOutcome as any).VOTING] };
-    const { prisma } = require('../utils/database');
     const list = await prisma.dispute.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 50,
       include: { votes: true },
     });
-    res.json({ disputes: list });
+    // Attach each disputed party's (userId) latest background-check verdict
+    // so jurors see the real trust signal while voting. Disputed party = userId.
+    const userIds = [...new Set(list.map((d: any) => d.userId as string).filter(Boolean))];
+    const checksByUser: Record<string, any> = {};
+    if (userIds.length) {
+      const rs = await prisma.backgroundCheck.findMany({
+        where: { subjectId: { in: userIds }, status: 'COMPLETE', recommendation: { in: ['PASS', 'REVIEW', 'REJECT'] } },
+        orderBy: { updatedAt: 'desc' },
+      });
+      for (const c of rs) { const sid = c.subjectId as string; if (sid && !checksByUser[sid]) { checksByUser[sid] = c; } }
+    }
+    const disputes = list.map((d: any) => ({
+      ...d,
+      check: d.userId ? checksByUser[d.userId] ?? null : null,
+    }));
+    res.json({ disputes });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -97,7 +112,15 @@ router.get('/:id', async (req: any, res) => {
       include: { votes: true },
     });
     if (!dispute) return res.status(404).json({ error: 'Dispute not found' });
-    res.json({ dispute });
+    // Attach the disputed party's latest background-check verdict (real signal).
+    let check: any = null;
+    if (dispute.userId) {
+      check = await prisma.backgroundCheck.findFirst({
+        where: { subjectId: dispute.userId, status: 'COMPLETE', recommendation: { in: ['PASS', 'REVIEW', 'REJECT'] } },
+        orderBy: { updatedAt: 'desc' },
+      });
+    }
+    res.json({ dispute: { ...dispute, check: check ?? null } });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

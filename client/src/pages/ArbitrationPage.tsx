@@ -122,6 +122,30 @@ function DisputeCard({ d }: { d: any }) {
         <span className="text-xs" style={{ color: tokens.color.muted }}>{new Date(d.createdAt).toLocaleDateString()}</span>
       </div>
       <p className="text-sm mt-2" style={{ color: tokens.color.text }}>{d.description}</p>
+      {/* Real trust signal: disputed party's latest background-check verdict */}
+      {d.userId && (
+        <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: tokens.color.muted }}>
+          <span className="material-symbols-outlined text-[14px]" style={{ color: tokens.color.primary }}>fact_check</span>
+          <span>Counterparty: </span>
+          {d.check ? (
+            <>
+              <span className="font-semibold">Background check:</span>
+              <span
+                className="px-1.5 py-0.25 rounded text-[10px] font-bold"
+                style={{
+                  background: d.check.recommendation === 'REJECT' ? 'rgba(239,63,63,0.2)' : d.check.recommendation === 'REVIEW' ? 'rgba(245,158,11,0.2)' : 'rgba(34,197,94,0.2)',
+                  color: d.check.recommendation === 'REJECT' ? '#fca5a5' : d.check.recommendation === 'REVIEW' ? '#fcd34d' : '#86efac',
+                }}
+              >
+                {d.check.riskBand ? `Band ${d.check.riskBand}` : 'Checked'} · {d.check.recommendation}
+              </span>
+              {d.check.riskScore != null && <span>({d.check.riskScore}/100)</span>}
+            </>
+          ) : (
+            <span style={{ color: tokens.color.muted }}>No recent verification on file</span>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style={{ color: tokens.color.muted }}>
         <span>Staked: {d.stakedAmount} PAB</span>
         <span>Votes: {d.votes?.length || 0}</span>
