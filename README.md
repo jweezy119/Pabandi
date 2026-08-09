@@ -24,10 +24,11 @@ Pabandi operates on three core pillars:
 ### 1. Escrow Smart Contract (Multi-chain)
 The core of Pabandi is a lightning-fast, gas-efficient escrow mechanism built on multi-chain infrastructure (BTC, Solana, BNB, ETH, Stellar). When a customer books a service or buys a product, their funds are locked securely in an un-upgradable smart contract. Funds are released automatically only upon successful mutual fulfillment. This instantly eliminates no-shows for service providers and eliminates product fraud for e-commerce buyers.
 
-### 2. Multi-Vertical Trust Protocol (Passport V2)
-Pabandi assigns every user and business a dynamic Trust Score (Pabandi Passport) based on their historical behavior across the network.
-- **Vertical-Specific Scoring:** A user might have a 95 Trust Score in Hospitality but a 40 in E-Commerce. Scores are siloed to reflect contextual reliability.
-- **Asymmetric Decay:** Trust takes months of successful transactions to build, but is lost rapidly upon a single dispute or scam attempt. This ensures the Passport remains a highly reliable indicator of consumer and merchant intent.
+### 2. OSINT AI Trust Oracle & Soulbound Passports
+Pabandi assigns every user and business a dynamic, Soulbound Trust Passport based on deep, cross-platform intelligence rather than just basic KYC.
+- **On-Chain Wallet Analytics:** Verifies a user's true Web3 footprint (wallet age, transaction velocity) to prevent Sybil attacks and bot farms.
+- **Gig Economy Aggregation:** Parses verified, real-world work history from platforms like Upwork, Fiverr, and Field Nation to establish Proof of Competence.
+- **AI Temporal Alignment:** An integrated LLM (Qwen) evaluates the chronological consistency of a user's entire digital footprint (GitHub, Domains, Wallet) to calculate Identity, Competence, and Integrity vectors. High scores automatically drop platform fees and unlock instant payouts.
 
 ### 3. Decentralized Peer Jury (Dispute Resolution)
 If an escrow transaction goes wrong (e.g., the product was broken, or the buyer is attempting friendly fraud), Pabandi leverages a decentralized Peer Jury system rather than centralized support agents.
@@ -56,10 +57,10 @@ A multimodal, context-aware AI widget designed for custom business websites.
 - **Voice & Chat:** Handles inbound customer inquiries 24/7 using advanced, human-like voice synthesis and conversational AI.
 - **Direct Booking Routing:** The AI understands the customer's scheduling needs, checks availability, and routes them directly to a secure Pabandi escrow checkout link.
 
-### 8. Collateralized Micro-Loans
-Because Pabandi Trust Scores are highly accurate predictors of reliability, the platform offers 0-interest, flat-fee micro-loans.
-- Loans are strictly collateralized against locked platform tokens (`$PAB`).
-- Loan-to-Value (LTV) limits are dictated dynamically by the user's Pabandi Trust Score (e.g., a 90+ score unlocks an 80% LTV).
+### 8. Zero-Fee Meld Off-Ramp (API Aggregation)
+Built to save freelancers in emerging markets (Pakistan, MENA, LATAM) from the predatory 7-10% fees charged by legacy remittance tools.
+- **Smart Routing:** Integrates directly with Meld's unified API to route users to the best local fiat off-ramp (e.g., JazzCash, Easypaisa).
+- **Sub-2% Cash Outs:** Freelancers can withdraw their USDC/USDT earnings straight to their local bank accounts for a ~1.5% fee.
 
 ### 9. Token Liquidity & DEX Integration
 Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
