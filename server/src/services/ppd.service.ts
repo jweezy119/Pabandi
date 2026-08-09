@@ -18,6 +18,7 @@ import { logger } from '../utils/logger';
 import { pydService } from './pyd.service';
 import { backgroundCheckService } from './backgroundCheck.service';
 import { pabondService } from './pabond.service';
+import { assertCompliantPkrSettlement } from '../config/compliance';
 
 // ── A. MILESTONE DRAWS ──────────────────────────────────────────────────────
 
@@ -51,6 +52,26 @@ export class PpdService {
    * Splits requiredAmountUSD across milestones + a retention draw.
    */
   async createMilestoneProject(input: CreateMilestoneProjectInput): Promise<any> {
+    // GUARDRAIL #1 — PKR custody boundary. In REGULATED mode, Pabandi must never
+    // open a PKR escrow agreement unless a licensed partner rail is configured.
+    // Pabandi is the trust/orchestration layer, not a deposit-taker (no SECP NBFC).
+    assertCompliantPkrSettlement();
+
+    // GUARDRAIL #4 — TrustPassport gate for the beneficiary builder. A beneficiary whose
+    // latest background check is REJECT/REVIEW (or band E) cannot receive escrow funds.
+    // Uses real first-party data: BackgroundCheck by subjectId = landlordId.
+    const beneficiaryCheck = await prisma.backgroundCheck.findFirst({
+      where: { subjectId: input.landlordId, status: 'COMPLETE' },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (beneficiaryCheck && (beneficiaryCheck.recommendation === 'REJECT' || beneficiaryCheck.recommendation === 'REVIEW')) {
+      throw new Error(
+        `Escrow blocked: beneficiary failed background verification ` +
+        `(band ${beneficiaryCheck.riskBand}, ${beneficiaryCheck.recommendation}). ` +
+        `Resolve before opening an escrow project.`
+      );
+    }
+
     const retentionPct = input.retentionPct ?? 0.1;
     const milestoneTotal = input.milestones.reduce((s, m) => s + m.amountUSD, 0);
     const retentionUSD = +(input.requiredAmountUSD * retentionPct).toFixed(2);
@@ -125,6 +146,8 @@ export class PpdService {
         subjectType: dep?.depositContext === 'FLEET' ? 'BUSINESS' : 'BUSINESS',
         subjectName: dep?.landlordId || 'beneficiary',
         subjectId: dep?.landlordId,
+        consent: true,
+        consentPurpose: 'Milestone release verification (Pabandi ToS + PECA/PDPA). Retention 30d.',
       });
       opts = { ...opts, bcCheckId: bcId };
     }
