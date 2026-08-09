@@ -129,7 +129,15 @@ router.post('/migrate', async (req: Request, res: Response) => {
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "BackgroundCheck_subjectType_idx" ON "BackgroundCheck"("subjectType")`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "BackgroundCheck_status_idx" ON "BackgroundCheck"("status")`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "BackgroundCheck_requestedBy_idx" ON "BackgroundCheck"("requestedBy")`);
-    res.json({ success: true, message: 'BackgroundCheck table created' });
+    // Self-healing: add any columns the schema gained after the table was first created.
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "walletResult" JSONB`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "gigHistoryResult" JSONB`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "temporalAlignment" INTEGER`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "aiRationale" TEXT`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "identityConfidence" INTEGER`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "competenceConfidence" INTEGER`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "BackgroundCheck" ADD COLUMN IF NOT EXISTS "integrityConfidence" INTEGER`);
+    res.json({ success: true, message: 'BackgroundCheck table created/upgraded' });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }
