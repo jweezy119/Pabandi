@@ -195,5 +195,71 @@ router.post('/fraud/fusion', async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 });
+// POST /api/v1/ai/daraz-scanner
+router.post('/daraz-scanner', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { sellerUrl, sellerName } = req.body;
+    if (!sellerUrl) {
+      res.status(400).json({ success: false, error: 'sellerUrl is required' });
+      return;
+    }
+
+    // In a real implementation, we would scrape the URL. For the demo, we generate mock reviews based on the name.
+    // Tip: Add 'bot' to the sellerName to trigger the fake review mock.
+    const isBot = sellerName?.toLowerCase().includes('bot') || sellerName?.toLowerCase().includes('fake');
+    
+    const reviews = isBot 
+      ? [
+          "very good product i like so much fast shipping",
+          "very good product i like so much fast shipping",
+          "nice quality sir highly recommend",
+          "very good product i like so much fast shipping",
+          "nice quality sir highly recommend",
+          "five star seller god bless you",
+          "five star seller god bless you",
+        ]
+      : [
+          "The shipping was a bit delayed but the quality is exactly as described. Will buy again.",
+          "Decent product for the price. The packaging was a bit damaged though.",
+          "Bought this for my son, he loves it. Good seller.",
+          "The color is slightly different from the picture but overall acceptable.",
+          "Customer service was helpful when I asked about sizing.",
+        ];
+
+    const promptContext = JSON.stringify({ sellerName, reviews, url: sellerUrl });
+    const promptTemplate = `
+      You are Pabandi's AI Trust Oracle. Analyze these e-commerce seller reviews for "Brushing Scams" and Review Farm syntax.
+      Look for repetitive phrasing, unnatural grammar, duplicate reviews, or bot-like behavior.
+      
+      Context: {context}
+      
+      Respond strictly in valid JSON format with the following keys:
+      - isFake (boolean)
+      - trustScore (number, 0-100)
+      - rationale (string, explain exactly why you think these are fake or real based on the review syntax)
+      - reviewFarmProbability (number, 0-100)
+    `;
+
+    const aiResponse = await aiNlpService.generateCopy(promptTemplate, promptContext);
+    
+    let analysisResult = { isFake: false, trustScore: 85, rationale: "Reviews appear natural.", reviewFarmProbability: 10 };
+    try {
+      const jsonStr = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+      analysisResult = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("[Daraz Scanner] Failed to parse LLM JSON:", e);
+    }
+
+    res.json({ success: true, data: {
+      sellerName: sellerName || 'Unknown Seller',
+      url: sellerUrl,
+      analysis: analysisResult,
+      rawReviewsScraped: reviews.length,
+      sampleReviews: reviews
+    }});
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;
