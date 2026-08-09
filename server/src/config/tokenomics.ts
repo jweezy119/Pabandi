@@ -27,7 +27,12 @@ export const TOKENOMICS = {
   },
   /** Notional PAB value of one simulated self-economy booking (demo visibility). */
   SIM_BOOKING_VALUE_PAB: 1000,
+  /** Flat $PAB fee to run one background check (anti-abuse monetization). */
+  PAB_FEE_PER_CHECK: 5,
 } as const;
+
+/** Flat $PAB fee to run one background check (anti-abuse monetization). */
+export const PAB_FEE_PER_CHECK = 5;
 
 /** Fee for a booking of `amountPab` (value-based, with floor). */
 export const computeFee = (amountPab: number): number => {

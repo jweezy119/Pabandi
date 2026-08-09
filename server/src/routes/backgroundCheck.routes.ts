@@ -1,20 +1,58 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { backgroundCheckService, CheckRequest } from '../services/backgroundCheck.service';
 import { authenticate } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
+import { PAB_FEE_PER_CHECK } from '../config/tokenomics';
 
 const router = Router();
+
+/**
+ * Monetization + anti-abuse guards for background checks:
+ *  - `bgCheckLimiter`: 5 screening requests / 5 min / IP (tighter than global 100)
+ *    to stop hammering + reputation-mining.
+ *  - `requirePabFee`: debit the authenticated user's $PAB balance before the check
+ *    runs. Returns 402 if insufficient. Fee is configurable (PAB_FEE_PER_CHECK) so
+ *    users must hold/buy $PAB first — no free abuse.
+ */
+const bgCheckLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req: any) => req.ip,
+  handler: (_req: any, res: any) => res.status(429).json({ success: false, error: 'Rate limit exceeded for background checks. Max 5 per 5 minutes — buy a higher tier or wait.' }),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+async function requirePabFee(userId: string, fee = PAB_FEE_PER_CHECK): Promise<string | null> {
+  // Atomically debit the user's wallet ONLY if it covers the fee; otherwise
+  // reject with 402. No free reputation-mining: each check costs real $PAB that
+  // the user must hold or buy. Wallet balance debits are the same pattern used
+  // elsewhere (staking/crypto controllers).
+  const result = await prisma.wallet.updateMany({
+    where: { userId: userId, balance: { gte: fee } },
+    data: { balance: { decrement: fee } },
+  });
+  if (result.count === 0) {
+    const w = await prisma.wallet.findUnique({ where: { userId }, select: { balance: true } });
+    return `'Insufficient $PAB balance (have ${w?.balance ?? 0}, need ${fee}). Buy $PAB or top up first — background checks are paid so scammers can't hammer real-source APIs for free.'`;
+  }
+  return null; // debit succeeded
+}
 
 /**
  * POST /api/v1/background-check
  * Streamlined single-subject screening. All fields optional except subjectType + subjectName.
  */
-router.post('/', authenticate, async (req: Request, res: Response) => {
+router.post('/', authenticate, bgCheckLimiter, async (req: Request, res: Response) => {
   try {
     const body = req.body as CheckRequest;
     if (!body.subjectType || !body.subjectName) {
       return res.status(400).json({ success: false, error: 'subjectType and subjectName required' });
     }
+    // Monetization gate: debit $PAB before running (no free reputation-mining).
+    const feeDeclined = await requirePabFee((req as any).userId, body.pabFee ?? PAB_FEE_PER_CHECK);
+    if (feeDeclined) return res.status(402).json({ success: false, error: feeDeclined });
     body.requestedBy = (req as any).userId;
     const id = await backgroundCheckService.createCheck(body);
     res.json({ success: true, data: { checkId: id, status: 'PENDING' } });
@@ -59,14 +97,18 @@ router.get('/', async (req: Request, res: Response) => {
  * POST /api/v1/background-check/batch
  * Bulk screening for funnel automation.
  */
-router.post('/batch', authenticate, async (req: Request, res: Response) => {
+router.post('/batch', authenticate, bgCheckLimiter, async (req: Request, res: Response) => {
   try {
     const requests = (req.body.requests || []) as CheckRequest[];
     if (!Array.isArray(requests) || requests.length === 0) {
       return res.status(400).json({ success: false, error: 'requests[] required' });
     }
+    // Monetization gate: one $PAB debit per check in the batch (atomic total).
+    const totalFee = requests.reduce((sum, r) => sum + (r.pabFee ?? PAB_FEE_PER_CHECK), 0);
+    const feeDeclined = await requirePabFee((req as any).userId, totalFee);
+    if (feeDeclined) return res.status(402).json({ success: false, error: feeDeclined });
     const ids = await backgroundCheckService.batchScreen(requests);
-    res.json({ success: true, data: { queued: ids.length, checkIds: ids } });
+    res.json({ success: true, data: { queued: ids.length, checkIds: ids, feeCharged: totalFee } });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }
@@ -77,9 +119,12 @@ router.post('/batch', authenticate, async (req: Request, res: Response) => {
  * Hook for pre-transaction screening — called before a booking is finalized.
  * Auto-creates + runs, returns recommendation inline.
  */
-router.post('/pre-booking', authenticate, async (req: Request, res: Response) => {
+router.post('/pre-booking', authenticate, bgCheckLimiter, async (req: Request, res: Response) => {
   try {
     const body = req.body as CheckRequest & { bookingId?: string };
+    // Monetization gate: debit $PAB before running (pre-booking screening is not free).
+    const feeDeclined = await requirePabFee((req as any).userId, body.pabFee ?? PAB_FEE_PER_CHECK);
+    if (feeDeclined) return res.status(402).json({ success: false, error: feeDeclined });
     body.requestedBy = (req as any).userId;
     body.trigger = 'PRE_BOOKING';
     const id = await backgroundCheckService.createCheck(body);

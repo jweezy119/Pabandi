@@ -25,6 +25,7 @@ export default function BackgroundCheckPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState<number | null>(null);
   const [recent, setRecent] = useState<any[]>([]);
   const [consent, setConsent] = useState<boolean>(false);
 
@@ -61,6 +62,7 @@ export default function BackgroundCheckPage() {
       loadRecent();
     } catch (e: any) {
       setError(e.response?.data?.error || e.message || 'Check failed');
+      setErrorCode(e.response?.status ?? null);
     } finally {
       setLoading(false);
     }
@@ -154,7 +156,19 @@ export default function BackgroundCheckPage() {
               <input className="input-pab mt-1" placeholder="Company Ltd" value={company} onChange={(e) => setCompany(e.target.value)} />
             </div>
           </div>
-          {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+          {error && (
+            <div className="text-red-400 text-sm mt-3">
+              <p>{error}</p>
+              {errorCode === 402 && (
+                <a
+                  href="/business-model"
+                  className="inline-block mt-2 text-xs font-medium text-brand hover:underline bg-brand/10 px-3 py-1 rounded"
+                >
+                  Buy $PAB →
+                </a>
+              )}
+            </div>
+          )}
           <label className="flex items-center gap-2 mt-3 text-sm opacity-80">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
             I consent to background screening (identity, OSINT, wallet analytics) per Pabandi ToS &amp; PECA/PDPA. Data retained 30 days.
