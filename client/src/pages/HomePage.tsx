@@ -301,10 +301,13 @@ export default function HomePage() {
 
             {/* About Me */}
             <div className="mt-8 max-w-lg border-t border-white/5 pt-8 text-white delay-3 stagger-item">
-              <h2 className="mb-2 font-headline text-lg font-bold text-indigo-300">About Me</h2>
-              <p className="max-w-prose text-sm leading-relaxed text-slate-300">
-                Built for people who value commitment. Pabandi turns bookings into trusted relationships, with AI-guided recommendations and verifiable reliability.
+              <h2 className="mb-2 font-headline text-lg font-bold text-indigo-300">Why I Built Pabandi</h2>
+              <p className="max-w-prose text-sm leading-relaxed text-slate-300 mb-2">
+                I spent 8 years as the "IT Guy" fixing systems for honest, hardworking people. But I realized the biggest problem they faced wasn't a broken computer—it was getting scammed, ghosted, and overcharged by the internet.
               </p>
+              <Link to="/about" className="text-sm font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
+                Read the full story →
+              </Link>
             </div>
           </div>
 

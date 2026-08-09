@@ -37,28 +37,28 @@ export default function AboutPage() {
           <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
             <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
               <span className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl border border-indigo-500/30">
-                🚀
+                👋
               </span>
-              Why are you the right founder for this?
+              Who is behind Pabandi?
             </h2>
             <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light">
               <p>
-                I'm not a traditional startup founder. I'm an IT specialist with 8+ years of experience solving real problems for real people — one desk, one ticket, one frustrated user at a time. That's my superpower.
+                Hi, I'm Syed. I'm not a Silicon Valley insider or a serial entrepreneur. For the last 8 years, I've been the IT guy. The person you call when things break, when systems fail, and when you're just incredibly frustrated.
               </p>
               <p>
-                My career has been built on three things: <strong className="text-white font-medium">deep technical troubleshooting, automation, and customer obsession.</strong> I've managed Microsoft 365 environments, automated workflows with PowerShell and REST APIs, handled identity and access management, and supported everything from dusty desktops to hybrid cloud infrastructure. In lean teams, I'm the person who bridges the gap between a user's pain and a working solution. That's exactly the muscle Pabandi needs.
+                My entire career has been built on a very simple premise: <strong className="text-white font-medium">listening to people's problems and fixing them.</strong> Whether I was untangling messy networks or automating workflows, my favorite part of the job was always that moment of relief on someone's face when their problem finally went away.
               </p>
               <p>
-                I kept running into the same problem: service providers losing trust, revenue, and repeat customers to no-shows and unenforced commitments. It's not just a local issue; it's a global reliability gap. That's when the IT side of my brain recognized the pattern: <span className="text-emerald-400 font-medium">this is a process problem that automation and trust mechanics can fix.</span>
+                But a few years ago, I started noticing a problem I couldn't just fix with a simple IT ticket. I saw incredibly hardworking people—freelancers hustling to make rent, local salon owners, small clinic managers—quietly losing their livelihoods. They were losing money to scammers, to no-shows, and to massive platforms taking 20% of their paychecks. 
               </p>
               <p>
-                So I taught myself what I didn't know. I learned about ensemble ML models, Solana smart contracts, and token economics. I used AI coding agents (Gemini, DeepSeek, Hermes) to accelerate development. I built a working web app, designed the escrow architecture, and ran a pilot that cut no-shows by 67%. 
+                It broke my heart to watch honest people get taken advantage of just because the internet doesn't inherently have a "trust" layer.
               </p>
               <p className="text-xl font-medium text-white italic border-l-4 border-indigo-500 pl-4 py-2 my-8">
-                "I'm not a career founder — I'm a builder who saw a problem, felt it personally, and refused to walk away."
+                "I realized that being the 'IT guy' wasn't enough anymore. Some systems are so fundamentally broken, you can't just troubleshoot them—you have to rebuild them."
               </p>
               <p>
-                That tenacity, combined with my IT roots and customer-first wiring, makes me the right person to turn Pabandi into the trust layer the service economy desperately needs.
+                So, I spent my nights and weekends teaching myself things I had no business knowing. I dove into Solana smart contracts, AI ensemble models, and Web3 tokenomics. I used AI coding assistants to help me translate the vision in my head into reality. I built Pabandi because I genuinely believe that keeping your word should mean something, and honest work deserves honest protection.
               </p>
             </div>
           </div>
@@ -69,25 +69,25 @@ export default function AboutPage() {
           <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
             <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
               <span className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl border border-emerald-500/30">
-                💡
+                ❤️
               </span>
-              Why did you pick this idea to work on?
+              Why does this matter so much?
             </h2>
             <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light">
               <p>
-                I didn't pick this idea from a pitch competition. I picked it from real conversations with local business owners who were quietly losing revenue every single day to no-shows. While supporting clients through IT work, I watched salons, clinics, and studios miss their targets by choosing the wrong reservation and payment solutions. Their existing tools were too expensive, often non-existent, and didn't understand the reliability problem at the center of every booking.
+                Because trust is the most expensive thing in the world, especially for people who don't have a lot of money to spare.
               </p>
               <p>
-                I'm an IT specialist with 8+ years of experience solving real problems for real people — one desk, one ticket, one frustrated user at a time. I've managed Microsoft 365 environments, automated workflows, and supported everything from small checkout systems to corporate networks. In lean operations, I'm the person who turns a messy process into a reliable system. That's exactly why Pabandi was born.
+                When a freelancer in an emerging market finishes a job and gets ghosted by a client, it's not just an inconvenience—it's groceries they can't buy. When a local barber has three no-shows on a Saturday morning, they can't make rent. The current system punishes the people who are trying the hardest.
               </p>
               <p>
-                So I built something to fix it: a trust layer that protects business time, guarantees deposits when plans change, and rewards customers when they follow through. Reliability is real and measurable, and with today's infrastructure, it can be made transparent and equitable. This problem is repeatable from a downtown clinic to a salon, restaurant, or apartment complex.
+                Pabandi is my love letter to the builders, the creators, and the service providers of the world. It’s an ecosystem designed to protect you. By using smart escrows, the money is guaranteed. By using our AI Trust Oracle, you finally get rewarded for being a reliable human being. And by integrating zero-fee off-ramps, you get to keep the money you actually earned.
               </p>
               <p className="text-xl font-medium text-white italic border-l-4 border-emerald-500 pl-4 py-2 my-8">
-                "I stayed because I had the technical skills to build the solution, and the customer obsession to make it actually useful."
+                "We aren't just building an app. We are trying to restore humanity and accountability to the digital economy."
               </p>
               <p>
-                Pabandi is what happens when an IT-first builder meets a universal service-economy problem. Every check-in, every protected deposit, and every earned reward is part of a simpler truth: keeping your word should be worth something.
+                I might not have started as a typical tech founder, but I have something stronger: a deep, unwavering empathy for the people this is built for. Welcome to Pabandi. We have your back.
               </p>
             </div>
           </div>
