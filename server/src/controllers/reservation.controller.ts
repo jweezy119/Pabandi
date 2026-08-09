@@ -22,6 +22,7 @@ import { channexService } from '../services/channex.service';
 import moment from 'moment-timezone';
 import { ReferralService } from '../services/referral.service';
 import { defaultDepositModeWeb3 } from '../utils/env';
+import { backgroundCheckService } from '../services/backgroundCheck.service';
 
 const referralService = new ReferralService();
 
@@ -136,6 +137,44 @@ export const createReservation = async (
           throw new CustomError(`This business does not meet your minimum trust score requirement (${customer.minimumSellerTrustScore}).`, 403);
         }
       }
+    }
+
+    // ── HARD GATE: trust-gated escrow rails ──
+    // Every booking screens the SELLER. Reuse a fresh (<=30d) completed verdict if
+    // present; otherwise run one synchronously. REJECT or REVIEW blocks the booking.
+    // Fails OPEN on check errors — a flaky external source must never block a legit user.
+    let sellerCheck = await prisma.backgroundCheck.findFirst({
+      where: {
+        subjectId: business.id,
+        status: 'COMPLETE',
+        updatedAt: { gte: new Date(Date.now() - 30 * 86400000) },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!sellerCheck) {
+      try {
+        const cid = await backgroundCheckService.createCheck({
+          subjectType: 'BUSINESS',
+          subjectName: business.name,
+          subjectId: business.id,
+          subjectWebsite: business.website || undefined,
+          requestedBy: req.user?.id,
+          trigger: 'PRE_BOOKING',
+        });
+        for (let i = 0; i < 25; i++) {
+          const c = await backgroundCheckService.getCheck(cid);
+          if (c?.status === 'COMPLETE' || c?.status === 'FAILED') { sellerCheck = c; break; }
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      } catch (e: any) {
+        logger.warn(`[Gate] seller background check failed, fail-open: ${e.message}`);
+      }
+    }
+    if (sellerCheck && (sellerCheck.recommendation === 'REJECT' || sellerCheck.recommendation === 'REVIEW')) {
+      throw new CustomError(
+        `Booking blocked: seller failed background verification (band ${sellerCheck.riskBand}, ${sellerCheck.recommendation}). Resolve flags before booking.`,
+        403
+      );
     }
 
     // Parse reservation date and time
