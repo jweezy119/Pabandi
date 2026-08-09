@@ -1,9 +1,53 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { tokens } from '../design-system';
+import api from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function FreelanceStorefrontPage() {
   const [activeApp, setActiveApp] = useState<'checkout' | 'portfolio' | 'chat'>('checkout');
+  const { user } = useAuthStore();
+  
+  // Chat State
+  const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
+    { role: 'assistant', content: "Hi! I'm the AI assistant for Syed. He is currently asleep (Chicago time). I can answer questions about his React & Web3 services, negotiate a custom scope, and generate a secure Escrow checkout link for you. What do you need built?" }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput;
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setChatInput('');
+    setIsTyping(true);
+
+    try {
+      const response = await api.post('/ai/nlp/generate', {
+        template: `You are an AI sales concierge for a freelance Web3 developer named Syed.
+        The user said: {userMessage}. 
+        Respond professionally, keep it short, and try to negotiate or guide them towards opening an escrow contract.
+        If they ask for pricing, reference the Custom Web App ($1500) or Smart Contract Audit ($800).`,
+        context: JSON.stringify({ userMessage })
+      });
+      
+      const aiResponse = response.data.data.copy;
+      setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I am having trouble connecting to my brain right now. Please try again later." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
   
   // Mock data for the storefront
   const freelancer = {
@@ -27,8 +71,17 @@ export default function FreelanceStorefrontPage() {
     <div className="min-h-screen bg-slate-900 pb-24 font-body" style={{ color: tokens.color.text }}>
       
       {/* STOREFRONT HEADER - The "Whop" equivalent profile banner */}
-      <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-indigo-900 via-slate-800 to-indigo-950 overflow-hidden">
+      <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-indigo-900 via-slate-800 to-indigo-950 overflow-hidden group">
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000')] bg-cover bg-center mix-blend-overlay"></div>
+        
+        {/* Owner Edit Ability */}
+        {user && (
+          <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button className="bg-black/50 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/70">
+              <span>✏️</span> Edit Storefront Banner
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative -mt-24">
@@ -137,22 +190,50 @@ export default function FreelanceStorefrontPage() {
                     <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Online</p>
                   </div>
                 </div>
-                <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                  <div className="flex gap-3 max-w-[80%]">
-                    <div className="w-8 h-8 bg-indigo-500/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
-                    <div className="bg-indigo-500/10 border border-indigo-500/20 text-slate-300 text-sm p-3 rounded-2xl rounded-tl-none">
-                      Hi! I'm the AI assistant for Syed. He is currently asleep (Chicago time). I can answer questions about his React & Web3 services, negotiate a custom scope, and generate a secure Escrow checkout link for you. What do you need built?
+                
+                <div className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
+                  {messages.map((msg, i) => (
+                    <div key={i} className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'user' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                        {msg.role === 'user' ? '👤' : '🤖'}
+                      </div>
+                      <div className={`text-sm p-3 rounded-2xl ${msg.role === 'user' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-tr-none' : 'bg-indigo-500/10 border border-indigo-500/20 text-slate-300 rounded-tl-none'}`}>
+                        {msg.content}
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex gap-3 max-w-[80%]">
+                      <div className="w-8 h-8 bg-indigo-500/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
+                      <div className="bg-indigo-500/10 border border-indigo-500/20 text-slate-300 text-sm p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-                <div className="p-4 bg-black/20 border-t border-white/5">
-                  <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-2">
-                    <input type="text" placeholder="I need a custom crypto wallet built..." className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-white placeholder-slate-500" />
-                    <button className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-400 transition-colors">
+
+                <form onSubmit={handleChatSubmit} className="p-4 bg-black/20 border-t border-white/5">
+                  <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-2 focus-within:border-indigo-500/50 transition-colors">
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="I need a custom crypto wallet built..." 
+                      className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-white placeholder-slate-500" 
+                      disabled={isTyping}
+                    />
+                    <button 
+                      type="submit"
+                      disabled={isTyping || !chatInput.trim()}
+                      className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     </button>
                   </div>
-                </div>
+                </form>
               </div>
             )}
 
