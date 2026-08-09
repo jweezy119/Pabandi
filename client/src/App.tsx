@@ -63,6 +63,7 @@ import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import DarazScannerPage from './pages/DarazScannerPage';
+import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
@@ -166,6 +167,7 @@ function App() {
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
+            <Route path="storefront" element={<FreelanceStorefrontPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
             <Route path="background-check" element={<BackgroundCheckPage />} />
             <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
