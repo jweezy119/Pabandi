@@ -54,6 +54,9 @@ export interface CheckRequest {
   /** Purpose + retention shown to the subject at consent time (audit). */
   consentPurpose?: string;
   webhookUrl?: string;
+  /** Optional custom fee (defaults to PAB_FEE_PER_CHECK). Lets the caller pay a */
+  /** custom rate or waive for whitelisted/bulk tiers. */
+  pabFee?: number;
 }
 
 export interface ModuleResult {
