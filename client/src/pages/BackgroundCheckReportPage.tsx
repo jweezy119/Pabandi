@@ -27,6 +27,8 @@ export default function BackgroundCheckReportPage() {
   const recColor: Record<string, string> = { PASS: '#16a34a', REVIEW: '#ca8a04', REJECT: '#dc2626' };
 
   const modules = [
+    { key: 'gigHistoryResult', label: 'Gig Economy History (Upwork/Fiverr/FieldNation)' },
+    { key: 'walletResult', label: 'On-Chain Wallet Analytics' },
     { key: 'githubResult', label: 'GitHub Credibility' },
     { key: 'domainResult', label: 'Domain Age (RDAP)' },
     { key: 'newsResult', label: 'News Index (GDELT)' },
@@ -64,11 +66,36 @@ export default function BackgroundCheckReportPage() {
             </span>
           </div>
           {check.summary && (
-            <p className="mt-4 text-sm opacity-80" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12 }}>
-              {check.summary}
-            </p>
+            <div className="mt-6 p-4 rounded-xl" style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+              <p className="text-xs uppercase tracking-wide text-indigo-400 mb-2 font-bold">🧠 AI Underwriter Rationale</p>
+              <p className="text-sm opacity-90 leading-relaxed">{check.summary}</p>
+            </div>
           )}
         </div>
+
+        {check.identityConfidence !== null && check.identityConfidence !== undefined && (
+          <div>
+            <h2 className="font-headline text-xl font-bold mb-3">AI Trust Vectors</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="text-xs uppercase opacity-60 mb-1">Identity/Liveness</p>
+                <p className="text-2xl font-bold" style={{ color: check.identityConfidence >= 70 ? '#16a34a' : check.identityConfidence >= 40 ? '#ca8a04' : '#dc2626' }}>{check.identityConfidence}%</p>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="text-xs uppercase opacity-60 mb-1">Competence</p>
+                <p className="text-2xl font-bold" style={{ color: check.competenceConfidence >= 70 ? '#16a34a' : check.competenceConfidence >= 40 ? '#ca8a04' : '#dc2626' }}>{check.competenceConfidence}%</p>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="text-xs uppercase opacity-60 mb-1">Integrity</p>
+                <p className="text-2xl font-bold" style={{ color: check.integrityConfidence >= 70 ? '#16a34a' : check.integrityConfidence >= 40 ? '#ca8a04' : '#dc2626' }}>{check.integrityConfidence}%</p>
+              </div>
+              <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                <p className="text-xs uppercase text-indigo-400 mb-1 font-bold">Temporal Alignment</p>
+                <p className="text-2xl font-bold text-indigo-300">{check.temporalAlignment}%</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <h2 className="font-headline text-xl font-bold mb-3">Module Breakdown</h2>
