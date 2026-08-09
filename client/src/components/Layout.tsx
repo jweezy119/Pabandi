@@ -71,40 +71,63 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
 }
 
 function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname: string }) {
-  const items = [
-    { to: '/freelance', icon: 'group', label: 'Freelancers' },
-    { to: '/trust', icon: 'verified', label: 'Trust Passports' },
-    { to: '/cashout', icon: 'payments', label: 'Cash Out' },
-    { to: '/payroll', icon: 'account_balance_wallet', label: 'Instant Pay' },
-    { to: '/arbitration', icon: 'gavel', label: 'Arbitration' },
-    { to: '/protected-deposit', icon: 'shield', label: 'Protected Deposit' },
-    { to: '/background-check', icon: 'fact_check', label: 'Background Check' },
-    { to: '/economy', icon: 'trending_up', label: 'Economy' },
+  const sections = [
+    { title: 'Marketplace', items: [
+      { to: '/live-selling', icon: 'videocam', label: 'Live Selling' },
+      { to: '/hospitality', icon: 'hotel', label: 'Hospitality' },
+      { to: '/freelance', icon: 'group', label: 'Freelancers' },
+    ]},
+    { title: 'Trust & Safety', items: [
+      { to: '/trust', icon: 'verified', label: 'Trust Passports' },
+      { to: '/background-check', icon: 'fact_check', label: 'Background Check' },
+      { to: '/protected-deposit', icon: 'shield', label: 'Protected Deposit' },
+      { to: '/arbitration', icon: 'gavel', label: 'Arbitration' },
+    ]},
+    { title: 'Money', items: [
+      { to: '/cashout', icon: 'payments', label: 'Cash Out' },
+      { to: '/payroll', icon: 'account_balance_wallet', label: 'Instant Pay' },
+      { to: '/economy', icon: 'trending_up', label: 'Economy' },
+      { to: '/web3', icon: 'token', label: 'Web3' },
+    ]},
+    { title: 'Company', items: [
+      { to: '/about', icon: 'info', label: 'About' },
+      { to: '/sharia-compliance', icon: 'menu_book', label: 'Sharia Compliance' },
+      { to: '/technology', icon: 'memory', label: 'Technology' },
+      { to: '/join', icon: 'storefront', label: 'List Business' },
+      { to: '/developer', icon: 'code', label: 'API Docs' },
+    ]},
   ];
   return (
     <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-end justify-center p-4" onClick={onClose}>
-      <div className="w-full max-w-lg bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto bg-surface-bright border border-outline-variant/20 rounded-3xl p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <p className="font-headline font-bold text-base">Explore Pabandi</p>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center touch-target">
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {items.map((it) => {
-            const current = pathname.startsWith(it.to);
-            return (
-              <Link
-                key={it.to}
-                to={it.to}
-                onClick={onClose}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition-all touch-target ${current ? 'bg-primary-container/40 text-primary' : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'}`}
-              >
-                <span className="material-symbols-outlined text-[20px]">{it.icon}</span>
-                <span className="font-body text-sm font-semibold">{it.label}</span>
-              </Link>
-            );
-          })}
+        <div className="space-y-4">
+          {sections.map((sec) => (
+            <div key={sec.title}>
+              <p className="text-[11px] uppercase tracking-widest opacity-50 px-1 mb-1.5">{sec.title}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {sec.items.map((it) => {
+                  const current = pathname.startsWith(it.to);
+                  return (
+                    <Link
+                      key={it.to}
+                      to={it.to}
+                      onClick={onClose}
+                      className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition-all touch-target ${current ? 'bg-primary-container/40 text-primary' : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'}`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">{it.icon}</span>
+                      <span className="font-body text-sm font-semibold">{it.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -223,27 +246,31 @@ export default function Layout() {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 font-headline text-sm">
+          <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <DesktopNavLink to="/live-selling" current={location.pathname === '/live-selling'}>Live Selling</DesktopNavLink>
-            <DesktopNavLink to="/hospitality" current={location.pathname === '/hospitality'}>Hospitality</DesktopNavLink>
-            <DesktopNavLink to="/trust" current={location.pathname.startsWith('/trust') || location.pathname.startsWith('/badge')}>Trust Passports</DesktopNavLink>
-            <DesktopNavLink to="/cashout" current={location.pathname.startsWith('/cashout')}>Cash Out</DesktopNavLink>
-            <DesktopNavLink to="/payroll" current={location.pathname.startsWith('/payroll')}>Instant Pay</DesktopNavLink>
-            <DesktopNavLink to="/arbitration" current={location.pathname.startsWith('/arbitration')}>Arbitration</DesktopNavLink>
-            <DesktopNavLink to="/background-check" current={location.pathname.startsWith('/background-check')}>Background Check</DesktopNavLink>
-            <DesktopNavLink to="/protected-deposit" current={location.pathname.startsWith('/protected-deposit')}>Protected Deposit</DesktopNavLink>
-            <DesktopNavLink to="/freelance" current={location.pathname.startsWith('/freelance') || location.pathname.startsWith('/profiles')}>Freelancers</DesktopNavLink>
-            <DesktopNavLink to="/economy" current={location.pathname === '/economy'}>Economy</DesktopNavLink>
-            <DesktopNavLink to="/web3" current={location.pathname === '/web3'}>Web3</DesktopNavLink>
-            <DesktopNavLink to="/sharia-compliance" current={location.pathname === '/sharia-compliance'}>Sharia Compliance</DesktopNavLink>
-            <DesktopNavLink to="/about" current={location.pathname === '/about'}>About</DesktopNavLink>
-            <Dropdown label="More" current={['/technology'].includes(location.pathname)}>
+            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/profiles'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/live-selling">Live Selling</DropdownItem>
+              <DropdownItem to="/hospitality">Hospitality</DropdownItem>
+              <DropdownItem to="/freelance">Freelancers</DropdownItem>
+            </Dropdown>
+            <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/trust">Trust Passports</DropdownItem>
+              <DropdownItem to="/background-check">Background Check</DropdownItem>
+              <DropdownItem to="/protected-deposit">Protected Deposit</DropdownItem>
+              <DropdownItem to="/arbitration">Arbitration</DropdownItem>
+            </Dropdown>
+            <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/cashout">Cash Out</DropdownItem>
+              <DropdownItem to="/payroll">Instant Pay</DropdownItem>
+              <DropdownItem to="/economy">Economy</DropdownItem>
+              <DropdownItem to="/web3">Web3</DropdownItem>
+            </Dropdown>
+            <Dropdown label="Company" current={['/about', '/sharia-compliance', '/technology', '/join', '/developer'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/about">About</DropdownItem>
+              <DropdownItem to="/sharia-compliance">Sharia Compliance</DropdownItem>
               <DropdownItem to="/technology">Technology</DropdownItem>
-
               <DropdownItem to="/join">List Business</DropdownItem>
               <DropdownItem to="/developer">API Docs</DropdownItem>
-              <DropdownItem to="/trust">Trust Layer</DropdownItem>
             </Dropdown>
           </nav>
 
