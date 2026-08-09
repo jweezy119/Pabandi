@@ -26,6 +26,7 @@ export default function BackgroundCheckPage() {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [error, setError] = useState('');
   const [recent, setRecent] = useState<any[]>([]);
+  const [consent, setConsent] = useState<boolean>(false);
 
   // Allow deep-linking a subject (e.g. ?subjectId=<businessId>) so a check is
   // tied to a real entity and can hard-gate bookings.
@@ -52,6 +53,8 @@ export default function BackgroundCheckPage() {
         subjectWebsite: website || undefined,
         subjectEmail: email || undefined,
         subjectCompany: company || undefined,
+        consent: consent,
+        consentPurpose: 'Background screening (identity, OSINT, wallet) per Pabandi ToS + PECA/PDPA. Retention 30d.',
       });
       const data = res.data?.data;
       setResult(data);
@@ -152,8 +155,12 @@ export default function BackgroundCheckPage() {
             </div>
           </div>
           {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+          <label className="flex items-center gap-2 mt-3 text-sm opacity-80">
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+            I consent to background screening (identity, OSINT, wallet analytics) per Pabandi ToS &amp; PECA/PDPA. Data retained 30 days.
+          </label>
           <div className="mt-5">
-            <button className="btn-pab" onClick={runCheck} disabled={loading}>
+            <button className="btn-pab" onClick={runCheck} disabled={loading || !consent}>
               {loading ? 'Running checks…' : 'Run Background Check'}
             </button>
           </div>

@@ -178,27 +178,63 @@ Beyond payments, builders/property owners in Pakistan carry their own compliance
 
 ---
 
-## 9. Engineering guardrails (so the product stays compliant by design)
+## 9. Engineering guardrails — IMPLEMENTED
 
-1. **`SETTLEMENT_PROVIDER` abstraction** — PKR settles in licensed escrow; chain is
-   attestation only in `REGULATED_MODE`. Never let the app move PKR off a licensed rail.
-2. **`REGULATED_MODE` flag** — gates $PAB transferability/trading in Pakistan; closed-loop
-   incentive token by default.
-3. **Consent gate** before any `BackgroundCheck` / `TrustPassport` write (purpose + retention).
-4. **Verdict → STR hook** — REJECT/REVIEW on a builder raises a reviewable flag for FMU.
-5. **LOP/NOC document hash** stored as a trust stamp before a developer can raise escrow.
-6. **Retention & deletion** jobs for personal data (PDPA-ready).
+Decisions locked (founder, 2026): **partner for PKR escrow** (avoid SECP NBFC) and
+**$PAB is tradable → PVARA VASP license required** (coin already launched; cannot be
+un-launched). The following guardrails are now built into the codebase:
+
+1. **`config/compliance.ts`** — single source of truth. `REGULATED_MODE` (env),
+   `SETTLEMENT_PARTNER` (default `safepay`), `VASP_LICENSED` (env), `JURISDICTION=PK`,
+   and the `$PAB disclaimer` string ("utility & incentive token, NOT an investment").
+   Guards: `assertCompliantPkrSettlement()` (throws if REGULATED but no partner rail),
+   `canMoveValueOnChain()` (false in REGULATED mode unless VASP-licensed → fail open).
+2. **`services/settlement.service.ts`** — settlement-provider abstraction. PKR is
+   collected/released ONLY via the licensed partner (Safepay → SBP-approved bank escrow).
+   Pabandi never custodies PKR. $PAB transfers gated by `pabTransferAllowed()`.
+3. **Consent gate on `BackgroundCheck`** — in REGULATED mode, `createCheck` requires
+   `consent: true` (PECA/PDPA). The booking hard-gate passes `consent: true` with purpose
+   + 30d retention; the client UI has an explicit consent checkbox (Run disabled until checked).
+4. **(TODO) Verdict → STR hook** — REJECT/REVIEW on a builder should raise a reviewable
+   flag for FMU goAML. Plumbing exists (verdict stored + hard-gate); wire to FMU next.
+5. **(TODO) LOP/NOC document hash** stored as a trust stamp before a developer raises escrow.
+6. **(TODO) Retention & deletion** jobs for personal data (PDPA-ready).
+
+> Still TODO (not yet built): FMU goAML reporting, NADRA CNIC e-verification, LOP/NOC
+> collection UI, automated retention/deletion. These are the remaining gaps before a
+> fully audit-ready launch.
 
 ---
 
-## 10. Open questions to resolve with counsel
+## 10. Locked decisions & your action items (US founder)
 
-1. Is Pabandi's PKR escrow better run via a **SBP-approved escrow bank partner** (faster,
-   lower risk) or as a licensed **NBFC** (more control, more capital)?
-2. Is $PAB a **closed-loop incentive token** (lower VASP scope) or a **tradable asset**
-   (full PVARA VASP license required)?
-3. Which province(s) first — LOP/NOC + stamp-duty rules differ (Sindh vs Islamabad etc.)?
-4. NADRA e-verification availability for your onboarding flow?
+**Decisions made:**
+- PKR escrow → **licensed partner** (Safepay / SBP-approved bank escrow). No self-custody.
+- $PAB → **tradable utility token** → requires **PVARA VASP license** (or licensed VASP partner).
+- Not "closed-loop only" — the coin is live and tradability is a deliberate selling point.
+
+**What YOU need to do (you live in the USA):**
+1. **Engage Pakistan-qualified counsel** (SECP/SBP-licensed firm) to (a) confirm the
+   partner-escrow structure keeps Pabandi out of NBFC scope, and (b) plan the **PVARA VASP
+   license** application for the token entity. This is the gating legal step.
+2. **Entity structure**: the token/$PAB entity likely needs a Pakistan presence/agent for
+   PVARA (VASP licensing is PK-jurisdiction). Decide: PK subsidiary, or license via a
+   Pakistani VASP partner who lists/operates $PAB. Your US entity can own it but the VASP
+   authorization is local.
+3. **US side (you)**: if $PAB is offered/sold to US persons, that triggers **US securities
+   (Howey) + FinCEN MSB + possibly a state money-transmitter** analysis. Keep $PAB marketed
+   as utility, not investment, to US users; get US counsel on the token memo.
+   (Your existing `COMPLIANCE.md` covers US consumer/CCPA; add a token-specific US memo.)
+4. **FMU goAML + Travel Rule**: once VASP-licensed, stand up FMU reporting + Travel Rule
+   (FATF). Engineering hook `#4` above is the start.
+5. **NDRA / NADRA**: plan CNIC e-verification for Pakistani builders/property owners
+   (highest-trust identity anchor). Engage a NADRA-approved verifier.
+6. **Insurance**: E&O / escrow-failure cover for the partner-escrow model (satisfies
+   provincial consumer-protection expectations).
+
+> Engineering has made the product compliant-by-design for the partner-escrow + tradable
+> VASP posture. The remaining items are **licensing + counsel + reporting integrations**,
+> which are your external actions, not code.
 
 ---
 
