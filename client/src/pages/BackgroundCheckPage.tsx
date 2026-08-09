@@ -16,6 +16,7 @@ interface CheckResult {
 export default function BackgroundCheckPage() {
   const { isAuthenticated } = useAuthStore();
   const [subjectType, setSubjectType] = useState<SubjectType>('FREELANCER');
+  const [subjectId, setSubjectId] = useState<string>('');
   const [name, setName] = useState('');
   const [github, setGithub] = useState('');
   const [website, setWebsite] = useState('');
@@ -25,6 +26,14 @@ export default function BackgroundCheckPage() {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [error, setError] = useState('');
   const [recent, setRecent] = useState<any[]>([]);
+
+  // Allow deep-linking a subject (e.g. ?subjectId=<businessId>) so a check is
+  // tied to a real entity and can hard-gate bookings.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('subjectId');
+    if (sid) setSubjectId(sid);
+  }, []);
 
   const runCheck = async () => {
     if (!name.trim()) {
@@ -38,6 +47,7 @@ export default function BackgroundCheckPage() {
       const res = await backgroundCheckService.preBooking({
         subjectType,
         subjectName: name,
+        subjectId: subjectId || undefined,
         subjectGithub: github || undefined,
         subjectWebsite: website || undefined,
         subjectEmail: email || undefined,
@@ -107,6 +117,10 @@ export default function BackgroundCheckPage() {
         {/* Input form */}
         <div className="anim-fade-up anim-delay-1 card-lift rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="text-xs uppercase tracking-wide opacity-60">Subject ID (optional — business/user id to hard-gate bookings)</label>
+              <input className="input-pab mt-1" placeholder="e.g. business id from profile URL" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
+            </div>
             <div>
               <label className="text-xs uppercase tracking-wide opacity-60">Subject Type</label>
               <select className="input-pab mt-1" value={subjectType} onChange={(e) => setSubjectType(e.target.value as SubjectType)}>
