@@ -13,7 +13,7 @@
  */
 
 export const PABANDI_VOICE = {
-  persona: 'Desi-diaspora cynic who explains web3 like it's a family drama at Sunday lunch',
+  persona: 'Desi-diaspora cynic who explains web3 like it\'s a family drama at Sunday lunch',
   codeSwitch: true, // mix Hindi/Urdu + Hinglish + English freely
   references: [
     'aunty WhatsApp forwards (the "invest in Bitcoin" one)',
