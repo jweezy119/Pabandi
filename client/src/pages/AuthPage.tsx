@@ -262,7 +262,7 @@ export default function AuthPage() {
       <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-indigo-500/10 blur-3xl mix-blend-multiply" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:40px_40px]" />
 
-      <div className="relative z-10 w-full max-w-md">
+      <div className="relative z-10 w-full max-w-md reveal">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 group">
@@ -338,7 +338,7 @@ export default function AuthPage() {
               )}
             </button>
             <button onClick={handleGoogleAuth} type="button"
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 py-3.5 text-sm font-semibold text-white transition-colors shadow-sm touch-target sm:py-2.5"
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 py-3.5 text-sm font-semibold text-white shadow-sm touch-target sm:py-2.5 transition-all duration-150 active:scale-[0.98] hover:-translate-y-px hover:border-white/20 hover:bg-white/[0.07] disabled:opacity-60 disabled:active:scale-100"
               disabled={!!oauthLoading}>
               {oauthLoading === 'google' ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
