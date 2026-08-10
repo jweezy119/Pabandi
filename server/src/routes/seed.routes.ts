@@ -441,6 +441,8 @@ router.post('/real-businesses', async (_req: Request, res: Response): Promise<an
         }
       } catch (e: any) {
         // One bad profile shouldn't abort the whole batch.
+        const firstProfileError = (summary as any).firstError || e.message;
+        (summary as any).firstError = firstProfileError;
         logger.warn(`[Seed] real-businesses skip for ${raw.githubUrl}: ${e.message}`);
         summary.businessesSkipped++;
       }
