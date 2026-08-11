@@ -1,25 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { textSearchService } from '../services/api';
+import { textSearchService, businessService } from '../services/api';
 import { tokens, GlassCard } from '../design-system';
 import PageHeader from '../components/PageHeader';
 import { useAuthStore } from '../store/authStore';
-import profilesJson from '../data/profiles.json';
-
-type Profile = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  headline: string;
-  company: string;
-  location: string;
-  category: string;
-  githubUrl: string;
-  walletAddress: string;
-  trustVelocity: number;
-  connectionCount: number;
-};
 
 type BadgeType = 'genesis-partner' | 'early-adopter' | 'trust-flux';
 
@@ -35,12 +20,6 @@ const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
   'project-owner': { label: 'Project Owners', emoji: '🏗️' },
   'solopreneur': { label: 'Solopreneurs', emoji: '🚀' },
 };
-
-function getProfiles(category?: string): Profile[] {
-  const list = profilesJson as Profile[];
-  if (!category || category === 'all') return list;
-  return list.filter(p => p.category === category);
-}
 
 function ProfileSkeletonCard() {
   return (
@@ -102,15 +81,26 @@ export default function FreelancePage() {
     return () => clearTimeout(t);
   }, []);
 
-  const filteredProfiles = getProfiles(profileCategory).filter((p: Profile) => {
+  // Live data: pull real FREELANCE businesses from the backend (same source as /search).
+  const { data: freelanceBiz = [] } = useQuery(['freelance-businesses'], async () => {
+    const res = await businessService.getPublicBusinesses({ category: 'FREELANCE', limit: 60 });
+    return (res?.data?.data?.businesses || []) as any[];
+  });
+  const toProfile = (b: any) => ({
+    id: b.id,
+    firstName: (b.name || '').split(' ')[0] || 'Pro',
+    lastName: (b.name || '').split(' ').slice(1).join(' ') || '',
+    headline: b.description || b.category,
+    company: b.city || '',
+    location: b.city || '',
+    category: b.category,
+    githubUrl: '', walletAddress: '', trustVelocity: 0, connectionCount: 0,
+  });
+  const filteredProfiles = (freelanceBiz as any[]).map(toProfile).filter((p: any) => {
     if (!profileSearch.trim()) return true;
     const q = profileSearch.toLowerCase();
     return (
-      p.firstName.toLowerCase().includes(q) ||
-      p.lastName.toLowerCase().includes(q) ||
-      p.headline.toLowerCase().includes(q) ||
-      p.company.toLowerCase().includes(q) ||
-      p.location.toLowerCase().includes(q)
+      (p.firstName + ' ' + p.lastName + ' ' + p.headline + ' ' + p.company + ' ' + p.location).toLowerCase().includes(q)
     );
   });
 
@@ -267,7 +257,7 @@ export default function FreelancePage() {
               const hue = ['freelance-dev','small-biz-owner','project-owner','solopreneur'].indexOf(p.category) * 90;
               return (
                 <GlassCard key={p.id} className={`anim-fade-up ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
-                  <Link to={`/profiles/${p.id}`} className="flex items-start gap-3">
+                  <Link to={`/business/${p.id}`} className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black shadow" style={{ background: `linear-gradient(135deg, hsl(${hue},70%,55%), hsl(${hue + 40},60%,40%))`, color: 'white' }}>{initials}</div>
                     <div className="min-w-0">
                       <p className="font-headline font-bold text-sm truncate">{p.headline}</p>
