@@ -291,6 +291,11 @@ app.use(`/api/${API_VERSION}/billing`, billingRoutes);
 app.use(`/api/${API_VERSION}/jobs`, jobsRoutes);
 app.use(`/api/${API_VERSION}/seed`, seedRoutes);
 app.use('/.well-known/ptp', wellknownRoutes); // Note: standard .well-known structure
+app.get('/.well-known/ptp.json', async (req, res) => {
+  const { ptpEngine } = await import('./protocol/ptp.spec');
+  const base = `${req.protocol}://${req.get('host')}`;
+  res.json(ptpEngine.getDiscoveryDocument(base));
+});
 app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
 
 // Expose public SDK for trust seals
