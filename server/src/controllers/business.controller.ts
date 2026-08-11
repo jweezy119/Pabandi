@@ -220,7 +220,7 @@ export const getBusiness = async (
           console.error('Failed to fetch business from OSM:', osmErr.message);
         }
       } else {
-        const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+        const apiKey = '' /* Google Maps removed: use free OpenStreetMap enrichment instead */;
         if (apiKey) {
           try {
             const googleRes = await axios.get(
@@ -686,7 +686,7 @@ export const getBusinessReviews = async (
       throw new CustomError('Business not found', 404);
     }
 
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = '' /* Google Maps removed: use free OpenStreetMap enrichment instead */;
 
     // If business has a Google Place ID, fetch latest reviews from Google
     if (business.googlePlaceId && apiKey) {

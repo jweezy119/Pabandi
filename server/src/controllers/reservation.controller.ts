@@ -60,7 +60,7 @@ export const createReservation = async (
 
     // If not found in database, dynamically import from Google Places
     if (!business) {
-      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const apiKey = '' /* Google Maps removed: free OSM enrichment instead */;
       if (apiKey) {
         try {
           const axios = (await import('axios')).default;
