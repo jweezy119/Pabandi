@@ -7,7 +7,7 @@ export class ReviewService {
      */
     async syncBusinessReviews(businessId: string, googlePlaceId: string): Promise<void> {
         try {
-            const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+            const apiKey = '' /* Google Maps removed: DB reviews only, no paid Places API */;
             
             if (!apiKey) {
                 logger.warn('GOOGLE_MAPS_API_KEY not found. Skipping real API call; validation state is provisional.');
