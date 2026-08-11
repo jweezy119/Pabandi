@@ -89,84 +89,73 @@ export const PTP_RISK_BANDS: Record<PTPRiskBand, {
     depositReduction: 0,
     guaranteeMaxUSD: 0,
     guaranteeFeePercent: 0,
-    sealColor: '#F97316',    // Orange
+    sealColor: '#EF4444',    // Red
   },
   E: {
-    label: 'High Risk',
-    description: 'Significant risk. OSINT flags, poor history, or declining trust.',
-    fraudProbability: 0.20,
-    noShowProbability: 0.25,
+    label: 'Restricted',
+    description: 'High risk. Flagged for review or recent adverse signals.',
+    fraudProbability: 0.25,
+    noShowProbability: 0.30,
     depositReduction: 0,
     guaranteeMaxUSD: 0,
     guaranteeFeePercent: 0,
-    sealColor: '#EF4444',    // Red
+    sealColor: '#6B7280',    // Gray
   },
 };
 
-// ── PTP Attestation Document ──────────────────────────────────────────────────
+// Signing secret — in production, load from KMS/HSM, never hardcode.
+const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET || 'dev-ptp-signing-secret-change-me';
+const PTP_PUBLIC_KEY_ID = 'ptp-pabandi-2024';
+
+// Core attestation shape (entity: individual/business)
 export interface PTPAttestation {
-  // Protocol metadata
-  protocol: typeof PTP_PROTOCOL_NAME;
-  version: typeof PTP_VERSION;
-
-  // Subject (anonymized)
-  subject: {
-    id: string;              // SHA-256 hash of the real ID
-    type: 'INDIVIDUAL' | 'BUSINESS';
-  };
-
-  // Trust Assessment
+  protocol: string;
+  version: string;
+  subject: { id: string; type: 'INDIVIDUAL' | 'BUSINESS' | 'AGENT' };
   assessment: {
     riskBand: PTPRiskBand;
-    guarantees: {
-      fraudProbability: number;     // e.g. 0.005 (0.5%)
-      noShowProbability: number;    // e.g. 0.01 (1%)
-      depositReduction: number;     // e.g. 0.50 (50% less deposit needed)
-    };
-    velocity: {
-      direction: 'RISING' | 'STEADY' | 'DECLINING' | 'VOLATILE';
-      momentum: number;             // [0, 1] — strength of the direction
-      confidence: number;           // [0, 1] — data sufficiency
-    };
+    guarantees: { fraudProbability: number; noShowProbability: number; depositReduction: number };
+    velocity: { direction: string; momentum: number; confidence: number };
   };
-
-  // Zero-Knowledge Proof (score ≥ threshold without revealing score)
-  zkProof: {
-    commitment: string;            // cryptographic commitment
-    threshold: number;             // proven minimum score
-    verified: boolean;             // proof validity
-  };
-
-  // Financial Guarantee (if eligible)
-  guarantee?: {
-    maxAmountUSD: number;          // maximum covered per transaction
-    feePercent: number;            // fee for the guarantee
-    coverageType: 'FRAUD' | 'NO_SHOW' | 'BOTH';
-    claimEndpoint: string;         // URL to file a guarantee claim
-  };
-
-  // Attestation metadata
-  issuedAt: number;                // Unix ms
-  expiresAt: number;               // Unix ms
-  nonce: string;                   // replay protection
-  issuer: string;                  // "pabandi.com"
-
-  // Cryptographic signature (Ed25519-style via HMAC-SHA512 for now)
-  signature: string;               // hex-encoded signature of the attestation body
-  publicKeyId: string;             // key ID for key rotation support
+  zkProof?: { commitment: string; threshold: number; verified: boolean };
+  guarantee?: { maxAmountUSD: number; feePercent: number; coverageType: string; claimEndpoint: string };
+  issuedAt: number;
+  expiresAt: number;
+  nonce: string;
+  issuer: string;
+  publicKeyId: string;
+  signature: string;
 }
 
-// ── PTP Verification Result ───────────────────────────────────────────────────
+export interface PTPAgentAttestation {
+  protocol: string;
+  version: string;
+  subject: { id: string; type: 'AGENT' };
+  ownerUserId: string;
+  capabilities: string[];
+  assessment: {
+    riskBand: PTPRiskBand;
+    guarantees: { fraudProbability: number; noShowProbability: number; depositReduction: number };
+    velocity: { direction: string; momentum: number; confidence: number };
+  };
+  guarantee?: { maxAmountUSD: number; feePercent: number; coverageType: string; claimEndpoint: string };
+  issuedAt: number;
+  expiresAt: number;
+  nonce: string;
+  issuer: string;
+  publicKeyId: string;
+  signature: string;
+}
+
 export interface PTPVerificationResult {
   valid: boolean;
   expired: boolean;
   signatureValid: boolean;
-  attestation: PTPAttestation | null;
+  attestation?: PTPAttestation;
   verifiedAt: number;
   error?: string;
 }
 
-// ── PTP Discovery Document ────────────────────────────────────────────────────
 export interface PTPDiscoveryDocument {
   protocol: string;
   version: string;
@@ -178,23 +167,18 @@ export interface PTPDiscoveryDocument {
   billing_endpoint: string;
   public_key_endpoint: string;
   public_key: string;
-  supported_risk_bands: PTPRiskBand[];
+  supported_risk_bands: string[];
   supported_entity_types: string[];
   documentation_url: string;
   contact: string;
 }
 
-// ── PTP Attestation Engine ────────────────────────────────────────────────────
-
-// Signing key (in production: HSM or KMS-backed Ed25519 key)
-const PTP_SIGNING_SECRET = process.env.PTP_SIGNING_SECRET || crypto.randomBytes(64).toString('hex');
-const PTP_PUBLIC_KEY_ID = 'ptp-key-v1-2026';
-
+/**
+ * The PTP Engine issues and verifies portable trust attestations.
+ */
 export class PTPEngine {
-
   /**
-   * Issue a PTP Attestation for an entity.
-   * This is the core revenue-generating operation — every attestation is a billable event.
+   * Issue a PTP Attestation for an individual or business.
    */
   public issueAttestation(
     entityId: string,
@@ -204,14 +188,9 @@ export class PTPEngine {
     zkCommitment?: string,
     zkThreshold?: number
   ): PTPAttestation {
-    // 1. Determine risk band from trust score
     const riskBand = this.scoreToRiskBand(trustScore);
     const bandSpec = PTP_RISK_BANDS[riskBand];
-
-    // 2. Generate nonce for replay protection
     const nonce = crypto.randomBytes(16).toString('hex');
-
-    // 3. Build the attestation body
     const now = Date.now();
     const attestation: PTPAttestation = {
       protocol: PTP_PROTOCOL_NAME,
@@ -242,11 +221,10 @@ export class PTPEngine {
       expiresAt: now + PTP_ATTESTATION_TTL_MS,
       nonce,
       issuer: 'pabandi.com',
-      signature: '', // Will be set below
+      signature: '',
       publicKeyId: PTP_PUBLIC_KEY_ID,
     };
 
-    // 4. Add financial guarantee for Band A/B
     if (bandSpec.guaranteeMaxUSD > 0) {
       attestation.guarantee = {
         maxAmountUSD: bandSpec.guaranteeMaxUSD,
@@ -256,81 +234,32 @@ export class PTPEngine {
       };
     }
 
-    // 5. Sign the attestation
     attestation.signature = this.signAttestation(attestation);
-
     logger.info(`[PTP] Attestation issued: ${attestation.subject.id.substring(0, 8)}... → Band ${riskBand} (${bandSpec.label})`);
-
     return attestation;
   }
 
   /**
-   * Verify a PTP Attestation.
-   * Can be performed OFFLINE using Pabandi's published public key.
-   * This is how third parties validate trust without calling our API.
+   * Verify a PTP Attestation. Can be performed OFFLINE using Pabandi's public key.
    */
   public verifyAttestation(attestation: PTPAttestation): PTPVerificationResult {
     const now = Date.now();
-
-    // 1. Check expiration
     if (now > attestation.expiresAt) {
-      return {
-        valid: false,
-        expired: true,
-        signatureValid: false,
-        attestation,
-        verifiedAt: now,
-        error: 'Attestation has expired',
-      };
+      return { valid: false, expired: true, signatureValid: false, attestation, verifiedAt: now, error: 'Attestation has expired' };
     }
-
-    // 2. Check protocol version
     if (attestation.version !== PTP_VERSION) {
-      return {
-        valid: false,
-        expired: false,
-        signatureValid: false,
-        attestation,
-        verifiedAt: now,
-        error: `Unsupported protocol version: ${attestation.version}`,
-      };
+      return { valid: false, expired: false, signatureValid: false, attestation, verifiedAt: now, error: `Unsupported protocol version: ${attestation.version}` };
     }
-
-    // 3. Verify signature
     const expectedSignature = this.signAttestation(attestation);
     const signatureValid = attestation.signature === expectedSignature;
-
     if (!signatureValid) {
-      return {
-        valid: false,
-        expired: false,
-        signatureValid: false,
-        attestation,
-        verifiedAt: now,
-        error: 'Invalid signature — attestation may have been tampered with',
-      };
+      return { valid: false, expired: false, signatureValid: false, attestation, verifiedAt: now, error: 'Invalid signature — attestation may have been tampered with' };
     }
-
-    // 4. Verify risk band consistency
     const bandSpec = PTP_RISK_BANDS[attestation.assessment.riskBand];
     if (!bandSpec) {
-      return {
-        valid: false,
-        expired: false,
-        signatureValid: true,
-        attestation,
-        verifiedAt: now,
-        error: `Unknown risk band: ${attestation.assessment.riskBand}`,
-      };
+      return { valid: false, expired: false, signatureValid: true, attestation, verifiedAt: now, error: `Unknown risk band: ${attestation.assessment.riskBand}` };
     }
-
-    return {
-      valid: true,
-      expired: false,
-      signatureValid: true,
-      attestation,
-      verifiedAt: now,
-    };
+    return { valid: true, expired: false, signatureValid: true, attestation, verifiedAt: now };
   }
 
   /**
@@ -341,23 +270,20 @@ export class PTPEngine {
       protocol: PTP_PROTOCOL_NAME,
       version: PTP_VERSION,
       issuer: 'pabandi.com',
-      verification_endpoint: `${baseUrl}/api/v1/ptp/verify`,
-      attestation_endpoint: `${baseUrl}/api/v1/ptp/attest`,
+      verification_endpoint: `${baseUrl}/api/v1/agent-passport/verify`,
+      attestation_endpoint: `${baseUrl}/api/v1/agent-passport/issue`,
       seal_endpoint: `${baseUrl}/api/v1/seal`,
       guarantee_claim_endpoint: `${baseUrl}/api/v1/guarantee/claim`,
       billing_endpoint: `${baseUrl}/api/v1/billing`,
       public_key_endpoint: `${baseUrl}/.well-known/ptp-key.pem`,
       public_key: this.getPublicKeyPEM(),
       supported_risk_bands: ['A', 'B', 'C', 'D', 'E'],
-      supported_entity_types: ['INDIVIDUAL', 'BUSINESS'],
+      supported_entity_types: ['INDIVIDUAL', 'BUSINESS', 'AGENT'],
       documentation_url: 'https://docs.pabandi.com/ptp',
       contact: 'api@pabandi.com',
     };
   }
 
-  /**
-   * Issue attestations in batch for high-volume API customers.
-   */
   public issueBatch(
     entities: Array<{
       entityId: string;
@@ -369,11 +295,73 @@ export class PTPEngine {
     return entities.map(e => this.issueAttestation(e.entityId, e.entityType, e.trustScore, e.velocity));
   }
 
-  // ── Internal Methods ──────────────────────────────────────────────────
+  // ── Agent Capability Passport (ACP) ──────────────────────────────────────
+  /**
+   * Issue a PTP attestation to an AI AGENT carrying scoped, signed `capabilities`
+   * (e.g. "act:book", "act:transfer:under:100USD", "scope:user:123"). Any third
+   * party can verify, OFFLINE and WITHOUT calling Pabandi, that the agent is
+   * permitted to perform a given action. This is the primitive that makes
+   * "present your Pabandi Passport" the standard pre-action check for agents.
+   */
+  public issueAgentPassport(input: {
+    agentId: string;
+    ownerUserId: string;
+    capabilities: string[];
+    trustScore: number;
+    velocity: { direction: 'RISING' | 'STEADY' | 'DECLINING' | 'VOLATILE'; momentum: number; confidence: number };
+  }): PTPAgentAttestation {
+    const riskBand = this.scoreToRiskBand(input.trustScore);
+    const bandSpec = PTP_RISK_BANDS[riskBand];
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const now = Date.now();
+    const att: PTPAgentAttestation = {
+      protocol: PTP_PROTOCOL_NAME,
+      version: PTP_VERSION,
+      subject: { id: crypto.createHash('sha256').update(input.agentId).digest('hex'), type: 'AGENT' },
+      ownerUserId: input.ownerUserId,
+      capabilities: input.capabilities,
+      assessment: {
+        riskBand,
+        guarantees: { fraudProbability: bandSpec.fraudProbability, noShowProbability: bandSpec.noShowProbability, depositReduction: bandSpec.depositReduction },
+        velocity: { direction: input.velocity.direction, momentum: Math.round(input.velocity.momentum * 1000) / 1000, confidence: Math.round(input.velocity.confidence * 1000) / 1000 },
+      },
+      issuedAt: now,
+      expiresAt: now + PTP_ATTESTATION_TTL_MS,
+      nonce,
+      issuer: 'pabandi.com',
+      publicKeyId: PTP_PUBLIC_KEY_ID,
+      signature: '',
+    };
+    if (bandSpec.guaranteeMaxUSD > 0) {
+      att.guarantee = { maxAmountUSD: bandSpec.guaranteeMaxUSD, feePercent: bandSpec.guaranteeFeePercent, coverageType: 'BOTH', claimEndpoint: 'https://api.pabandi.com/api/v1/guarantee/claim' };
+    }
+    att.signature = this.signAgentAttestation(att);
+    logger.info(`[PTP] Agent passport issued: ${att.subject.id.substring(0, 8)}... caps=${input.capabilities.length} band=${riskBand}`);
+    return att;
+  }
 
   /**
-   * Map a trust score (0-100) to a PTP Risk Band.
+   * Verify an Agent Capability Passport. Self-contained. If `requireCapability` is
+   * given, also confirms that capability is granted (prefix match: "act:transfer"
+   * satisfies "act:transfer:under:100USD").
    */
+  public verifyAgentPassport(att: PTPAgentAttestation, requireCapability?: string): any {
+    const now = Date.now();
+    if (!att || typeof att !== 'object') return { valid: false, expired: false, signatureValid: false, error: 'malformed attestation', grantedCapabilities: [] };
+    if (now > att.expiresAt) return { valid: false, expired: true, signatureValid: false, error: 'Agent passport expired', grantedCapabilities: [] };
+    if (att.version !== PTP_VERSION) return { valid: false, expired: false, signatureValid: false, error: `Unsupported protocol version: ${att.version}`, grantedCapabilities: [] };
+    const expected = this.signAgentAttestation(att);
+    if (att.signature !== expected) return { valid: false, expired: false, signatureValid: false, error: 'Invalid signature — agent passport tampered', grantedCapabilities: [] };
+    if (att.subject?.type !== 'AGENT') return { valid: false, expired: false, signatureValid: true, error: 'Not an agent attestation', grantedCapabilities: [] };
+    const granted = att.capabilities || [];
+    if (requireCapability) {
+      const ok = granted.some((c: string) => c === '*' || c === requireCapability || requireCapability.startsWith(c + ':'));
+      if (!ok) return { valid: false, expired: false, signatureValid: true, error: `Capability '${requireCapability}' not granted`, grantedCapabilities: granted, verifiedAt: now };
+    }
+    return { valid: true, expired: false, signatureValid: true, grantedCapabilities: granted, verifiedAt: now };
+  }
+
+  // ── Internal Methods ──────────────────────────────────────────────────
   public scoreToRiskBand(score: number): PTPRiskBand {
     if (score >= 85) return 'A';
     if (score >= 70) return 'B';
@@ -392,10 +380,6 @@ export class PTPEngine {
     }
   }
 
-  /**
-   * Sign an attestation using HMAC-SHA512.
-   * In production, this would use Ed25519 via a KMS/HSM.
-   */
   private signAttestation(attestation: PTPAttestation): string {
     const body = {
       protocol: attestation.protocol,
@@ -410,19 +394,28 @@ export class PTPEngine {
       issuer: attestation.issuer,
       publicKeyId: attestation.publicKeyId,
     };
-
-    return crypto
-      .createHmac('sha512', PTP_SIGNING_SECRET)
-      .update(JSON.stringify(body))
-      .digest('hex');
+    return crypto.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
   }
 
-  /**
-   * Get the public key in PEM format for offline verification.
-   * In production: actual Ed25519 public key.
-   */
+  private signAgentAttestation(att: PTPAgentAttestation): string {
+    const body = {
+      protocol: att.protocol,
+      version: att.version,
+      subject: att.subject,
+      ownerUserId: att.ownerUserId,
+      capabilities: att.capabilities,
+      assessment: att.assessment,
+      guarantee: att.guarantee,
+      issuedAt: att.issuedAt,
+      expiresAt: att.expiresAt,
+      nonce: att.nonce,
+      issuer: att.issuer,
+      publicKeyId: att.publicKeyId,
+    };
+    return crypto.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
+  }
+
   public getPublicKeyPEM(): string {
-    // Derive a deterministic "public key" from the signing secret for demo
     const pubKeyHash = crypto.createHash('sha256').update(PTP_SIGNING_SECRET).digest('base64');
     return `-----BEGIN PTP PUBLIC KEY-----\nVersion: PTP/1.0\nKeyID: ${PTP_PUBLIC_KEY_ID}\nKey: ${pubKeyHash}\n-----END PTP PUBLIC KEY-----`;
   }

@@ -188,6 +188,9 @@ app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 import aiRoutes from './routes/ai.routes';
 app.use(`/api/${API_VERSION}/ai`, aiRoutes);
 
+import bestFitRoutes from './routes/bestFit.routes';
+app.use(`/api/${API_VERSION}/best-fit`, bestFitRoutes);
+
 import web3Routes from './routes/web3.routes';
 app.use(`/api/${API_VERSION}/web3`, web3Routes);
 
@@ -279,6 +282,7 @@ app.use(`/api/${API_VERSION}/osint`, osintRoutes);
 import sealRoutes from './routes/seal.routes';
 import billingRoutes from './routes/billing.routes';
 import wellknownRoutes from './routes/wellknown.routes';
+import agentPassportRoutes from './routes/agentPassport.routes';
 import jobsRoutes from './routes/jobs.routes';
 import seedRoutes from './routes/seed.routes';
 
@@ -287,6 +291,7 @@ app.use(`/api/${API_VERSION}/billing`, billingRoutes);
 app.use(`/api/${API_VERSION}/jobs`, jobsRoutes);
 app.use(`/api/${API_VERSION}/seed`, seedRoutes);
 app.use('/.well-known/ptp', wellknownRoutes); // Note: standard .well-known structure
+app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
 
 // Expose public SDK for trust seals
 import path from 'path';

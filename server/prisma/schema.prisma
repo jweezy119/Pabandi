@@ -1689,7 +1689,64 @@ model TrustPassport {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  gigHistory    PassportGigHistory[]
+  endorsements  SkillEndorsement[]
+  vector        PassportVector?
+
   @@index([handle])
   @@index([agentId])
   @@index([providerRef])
+}
+
+// ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
+
+model PassportGigHistory {
+  id             String        @id @default(cuid())
+  passportId     String
+  gigId          String?       // Optional reference to external gig system
+  title          String
+  description    String?
+  scheduledDate  DateTime
+  locationHash   String?       // Geohash (4+ chars) for privacy-preserving location
+  zipCode        String?
+  timeBucket     String        // e.g., "0-6", "6-12", "12-18", "18-24"
+  dayOfWeek      Int           // 0-6 (Sunday-Saturday)
+  status         String        @default("COMPLETED") // COMPLETED | CANCELLED | NO_SHOW
+  clientRating   Int?          // 1-5 stars
+  leadTimeHours  Float?        // Hours between gig creation and acceptance
+  cancellationReason String?   // Context for cancellations
+  createdAt      DateTime      @default(now())
+
+  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+
+  @@index([passportId])
+  @@index([locationHash])
+  @@index([timeBucket])
+}
+
+model SkillEndorsement {
+  id             String        @id @default(cuid())
+  passportId     String
+  skillName      String        // e.g., "Plumbing", "Catering", "ReactJS"
+  endorsedBy     String?       // Client or other verified user ID
+  rating         Int           @default(5) // Quality rating of the skill
+  weight         Float         @default(1.0) // Endorsement strength
+  createdAt      DateTime      @default(now())
+
+  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+
+  @@index([passportId])
+  @@index([skillName])
+}
+
+model PassportVector {
+  id             String        @id @default(cuid())
+  passportId     String        @unique
+  // TODO: migrate to pgvector when cosine similarity searches exceed 100ms or dataset > 50k vectors.
+  // Stores a 1D array of floats representing temporal, spatial, and behavioral tendencies.
+  behaviorVector Json          @default("[]") 
+  sampleCount    Int           @default(0) // Number of gigs used to build the vector
+  lastUpdated    DateTime      @updatedAt
+
+  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 }
