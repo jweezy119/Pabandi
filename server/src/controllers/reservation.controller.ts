@@ -961,28 +961,40 @@ export const completeReservation = async (
       await cryptoService.triggerConciergeCashback(reservation.customerId, reservation.id);
     }
 
-    // Escrow Integration: Release funds to business with platform fee (UNIFIED SOL rail)
-    if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
-      try {
-        const depositAmount = reservation.depositAmount || 0;
-        const platformFeeUsd = depositAmount * 0.015; // 1.5% platform fee
+    // ── UNIFIED SOL PLATFORM FEE (same ledger as agents) ──────────────────────
+    // Fire on EVERY completed booking to maximize captured monetary value. The fee is
+    // recorded in the single SOL ledger; onChain=true only when an on-chain release
+    // actually executed (escrow oracle key present + real deposit tx).
+    try {
+      const bookingValueUsd = (reservation.totalAmount || reservation.depositAmount || 0);
+      const platformFeeUsd = bookingValueUsd * 0.015; // 1.5% platform fee
+      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
 
-        if (platformFeeUsd > 0) {
-          // Single canonical collector — humans and agents share this exact ledger.
-          const fee = await collectPlatformFee({
-            bookingRef: `human:${reservation.id}`,
-            usdValue: platformFeeUsd,
-            amountSol: platformFeeUsd / SOL_USD_PRICE,
-            source: 'HUMAN_BOOKING',
-            payerAddress: (await prisma.wallet.findUnique({ where: { userId: reservation.customerId } }))?.address || undefined,
-            txHash: reservation.cryptoDepositTxHash || undefined,
-          });
-          logger.info(`[Escrow] Platform fee ${platformFeeUsd} USD (${fee.usdValue}) recorded for ${reservation.id}`);
+      // Determine if an on-chain release happened (real deposit tx + oracle key set).
+      let onChain = false;
+      if (reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
+        try {
+          await cryptoService.releaseEscrowToBusiness(reservation.id);
+          onChain = true; // best-effort: oracle release executed on-chain
+        } catch (relErr) {
+          logger.warn(`[Escrow] Release skipped/failed for ${reservation.id}: ${relErr}`);
         }
-        await cryptoService.releaseEscrowToBusiness(reservation.id);
-      } catch (err) {
-        logger.error(`Failed to process escrow release or fee: ${err}`);
       }
+
+      if (platformFeeUsd > 0) {
+        const fee = await collectPlatformFee({
+          bookingRef: `human:${reservation.id}`,
+          usdValue: platformFeeUsd,
+          amountSol: platformFeeUsd / SOL_USD_PRICE,
+          source: 'HUMAN_BOOKING',
+          payerAddress: customerWallet?.address || undefined,
+          txHash: reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK' ? reservation.cryptoDepositTxHash : undefined,
+          onChain,
+        });
+        logger.info(`[Escrow] Platform fee ${platformFeeUsd} USD (${fee.usdValue}) recorded for ${reservation.id} onChain=${onChain}`);
+      }
+    } catch (err) {
+      logger.error(`Failed to process unified platform fee: ${err}`);
     }
 
     // Proof of Visit SBT Minting

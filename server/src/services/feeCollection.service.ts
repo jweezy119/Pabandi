@@ -22,6 +22,7 @@ export interface SolFeeInput {
   txHash?: string;           // on-chain tx (omit only for notional/sim accounting)
   source: 'AGENT_BOOKING' | 'HUMAN_BOOKING' | 'ESCROW_RELEASE';
   payerAddress?: string;
+  onChain?: boolean;         // true = SOL actually moved on-chain; false = accrued receivable
 }
 
 export class FeeCollectionService {
@@ -42,6 +43,7 @@ export class FeeCollectionService {
           bookingRef: input.bookingRef,
           payerAddress: input.payerAddress || null,
           note: 'On-chain SOL platform fee',
+          onChain: input.onChain ?? !!input.txHash,
         },
       },
     });
@@ -50,14 +52,24 @@ export class FeeCollectionService {
   }
 
   /** Total SOL platform fees collected (optionally since a date), with USD value. */
-  async totalSolFees(sinceDays = 30): Promise<{ totalSol: number; totalUsd: number; count: number }> {
+  async totalSolFees(sinceDays = 30): Promise<{ totalSol: number; totalUsd: number; count: number; onChainSol: number; onChainUsd: number; accruedSol: number; accruedUsd: number }> {
     const since = new Date(Date.now() - sinceDays * 86400_000);
     const rows: any[] = await prisma.treasuryPosition.findMany({
       where: { meta: { path: ['source'], equals: 'PLATFORM_FEE' }, createdAt: { gte: since } },
     });
-    const totalSol = rows.reduce((s, r) => s + (r.amount || 0), 0);
-    const totalUsd = rows.reduce((s, r) => s + ((r.meta as any)?.usdValue || 0), 0);
-    return { totalSol: +totalSol.toFixed(6), totalUsd: +totalUsd.toFixed(2), count: rows.length };
+    let totalSol = 0, totalUsd = 0, onChainSol = 0, onChainUsd = 0, accruedSol = 0, accruedUsd = 0;
+    for (const r of rows) {
+      const amt = r.amount || 0;
+      const usd = (r.meta as any)?.usdValue || 0;
+      const on = (r.meta as any)?.onChain === true;
+      totalSol += amt; totalUsd += usd;
+      if (on) { onChainSol += amt; onChainUsd += usd; } else { accruedSol += amt; accruedUsd += usd; }
+    }
+    return {
+      totalSol: +totalSol.toFixed(6), totalUsd: +totalUsd.toFixed(2), count: rows.length,
+      onChainSol: +onChainSol.toFixed(6), onChainUsd: +onChainUsd.toFixed(2),
+      accruedSol: +accruedSol.toFixed(6), accruedUsd: +accruedUsd.toFixed(2),
+    };
   }
 }
 
