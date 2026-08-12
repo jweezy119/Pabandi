@@ -40,6 +40,12 @@ export const PAB_FEE_PER_PASSPORT = 2;
 /** Foolproof abuse cap: max Agent Passport issues per owner per day. */
 export const PASSPORT_MAX_ISSUES_PER_DAY = 50;
 
+/** Reference USD price of 1 SOL for USD-denominated fee reporting (configurable). */
+export const SOL_USD_PRICE = Number(process.env.SOL_USD_PRICE || 140);
+
+/** Reference USD price of 1 $PAB for USD-denominated fee reporting. */
+export const PAB_USD_PRICE = 0.10;
+
 /** Fee for a booking of `amountPab` (value-based, with floor). */
 export const computeFee = (amountPab: number): number => {
   const raw = amountPab * TOKENOMICS.FEE_RATE;

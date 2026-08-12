@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../utils/database';
 import { getEconomyStats } from '../services/economy.service';
 import { web3AgentService } from '../services/web3Agent.service';
+import { feeCollectionService } from '../services/feeCollection.service';
 import { computeFee, computeBurn, TOKENOMICS } from '../config/tokenomics';
 import { requirePassport } from '../middleware/requirePassport.middleware';
 
@@ -150,6 +151,19 @@ router.post('/demo-booking', requirePassport('act:book'), async (req: any, res: 
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Demo booking failed' });
+  }
+});
+
+/**
+ * Public: SOL platform-fee totals (on-chain fee collector).
+ * Reports real USD-denominated fee revenue regardless of collection token.
+ */
+router.get('/fees/sol', async (_req: any, res: any) => {
+  try {
+    const totals = await feeCollectionService.totalSolFees(30);
+    res.json({ success: true, data: totals });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to load SOL fees' });
   }
 });
 
