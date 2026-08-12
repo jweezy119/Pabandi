@@ -11,8 +11,8 @@ const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || '68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs';
 const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
-const MAX_DAILY_OUTFLOW = 100; // PAB per agent per day (compliance limit)
-const MAX_TRANSACTIONS_PER_DAY = 10;
+const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
+const MAX_TRANSACTIONS_PER_DAY = parseInt(process.env.MAX_TX_PER_DAY || (process.env.LIVE_BOOKINGS === 'true' ? '500' : '10'), 10);
 
 // ── USDC Pool Arbitrage ──────────────────────────────────────────
 const USDC_POOL_ADDRESS = process.env.PAB_USDC_POOL_ADDRESS || 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL';
