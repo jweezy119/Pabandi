@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { getEconomyStats } from '../services/economy.service';
 import { web3AgentService } from '../services/web3Agent.service';
 import { computeFee, computeBurn, TOKENOMICS } from '../config/tokenomics';
+import { requirePassport } from '../middleware/requirePassport.middleware';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/stats', async (_req: any, res: any) => {
  * On-chain transfer is skipped (no funded treasury on demo), so the simulated fallback
  * records the fee/burn/buckets purely in the DB — exactly what the dashboard shows.
  */
-router.post('/demo-booking', async (req: any, res: any) => {
+router.post('/demo-booking', requirePassport('act:book'), async (req: any, res: any) => {
   try {
     // Cap at the per-agent daily outflow compliance limit (100 PAB) so the demo
     // booking always clears the guard and records fee/burn/buckets.
