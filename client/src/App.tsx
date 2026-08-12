@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import OAuthConsentPage from './pages/OAuthConsentPage';
 import BusinessDashboard from './pages/BusinessDashboard';
 import BusinessRegister from './pages/BusinessRegister';
 import ReservationsPage from './pages/ReservationsPage';
