@@ -77,22 +77,24 @@ export const recordBookingEconomics = async (params: {
     // Deflationary burn
     await prisma.agentTransaction.create({
       data: {
-        agentId,
+        agentId: null,
         type: 'BURN',
         amount: burnPab,
         fromAddress,
         toAddress: 'burn',
+        metadata: { agentId } as any,
       } as any,
     });
 
     // Fee collected (net of burn) — feeds /economy/stats feesCollected
     await prisma.agentTransaction.create({
       data: {
-        agentId,
+        agentId: null,
         type: 'FEE_COLLECTION',
         amount: netFee,
         fromAddress,
         toAddress: process.env.PABANDI_TREASURY_WALLET || 'treasury',
+        metadata: { agentId } as any,
       } as any,
     });
 
