@@ -19,6 +19,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { passportEconomy, validateCapabilities, PTPRiskBand } from '../services/passportEconomy.service';
 import { PAB_FEE_PER_PASSPORT } from '../config/tokenomics';
+import { optionalAuthenticate } from '../middleware/auth.middleware';
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
@@ -71,7 +72,7 @@ function jsonRpc(id: any, result?: any, error?: any) {
   return { jsonrpc: '2.0', id, result, error };
 }
 
-async function dispatch(method: string, params: any, id: any): Promise<any> {
+async function dispatch(method: string, params: any, id: any, req?: Request): Promise<any> {
   switch (method) {
     case 'initialize':
       return jsonRpc(id, {
@@ -87,7 +88,7 @@ async function dispatch(method: string, params: any, id: any): Promise<any> {
       const name = params?.name;
       const args = params?.arguments || {};
       try {
-        const out = await callTool(name, args);
+        const out = await callTool(name, args, req);
         return jsonRpc(id, { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }], isError: false });
       } catch (e: any) {
         return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
@@ -99,7 +100,7 @@ async function dispatch(method: string, params: any, id: any): Promise<any> {
   }
 }
 
-async function callTool(name: string, args: any): Promise<any> {
+async function callTool(name: string, args: any, req?: Request): Promise<any> {
   switch (name) {
     case 'pabandi_verify_passport': {
       if (!args.token) throw new Error('token (base64 attestation) required');
@@ -123,12 +124,18 @@ async function callTool(name: string, args: any): Promise<any> {
     }
 
     case 'pabandi_issue_passport': {
-      const { ownerUserId, agentId, capabilities, idempotencyKey } = args;
-      if (!ownerUserId || !agentId || !Array.isArray(capabilities) || !capabilities.length) {
-        throw new Error('ownerUserId, agentId, and non-empty capabilities[] required');
+      // SECURITY: the owner must authenticate. The JWT subject defines who may
+      // issue passports — a client-supplied ownerUserId is never trusted.
+      const authUser = (req as any)?.user;
+      if (!authUser?.id) throw new Error('authentication required: pass a Bearer token for the passport owner');
+      const ownerUserId = authUser.id;
+      const { agentId, capabilities, idempotencyKey } = args;
+      if (!agentId || !Array.isArray(capabilities) || !capabilities.length) {
+        throw new Error('agentId and non-empty capabilities[] required');
       }
       const user = await prisma.user.findUnique({ where: { id: ownerUserId }, select: { trustScore: true } });
-      const score = user?.trustScore || 70;
+      if (!user) throw new Error('owner user not found');
+      const score = user.trustScore || 70;
       const band = ptpEngine.scoreToRiskBand(score) as PTPRiskBand;
       const capCheck = validateCapabilities(band, capabilities);
       if (!capCheck.ok) throw new Error(`capability rejected: ${capCheck.reason}`);
@@ -159,22 +166,24 @@ async function callTool(name: string, args: any): Promise<any> {
 
 /** Express handler for POST /mcp (MCP Streamable HTTP). */
 export const mcpHandler = async (req: Request, res: Response) => {
-  const body = req.body;
-  // MCP Streamable HTTP may send a bare notification (no id) — ack with 202.
-  if (!body || body.jsonrpc !== '2.0') {
-    return res.status(400).json({ error: 'Invalid JSON-RPC 2.0 request' });
-  }
-  if (body.method === 'notifications/initialized' || body.id === undefined) {
-    return res.status(202).end();
-  }
-  try {
-    const result = await dispatch(body.method, body.params || {}, body.id);
-    res.setHeader('Content-Type', 'application/json');
-    return res.json(result);
-  } catch (e: any) {
-    logger.error('[MCP] dispatch error', e);
-    return res.json(jsonRpc(body.id, undefined, { code: -32603, message: e.message }));
-  }
+  // Optional auth: public tools work without a token; the issue tool reads req.user.
+  optionalAuthenticate(req, res, async () => {
+    const body = req.body;
+    if (!body || body.jsonrpc !== '2.0') {
+      return res.status(400).json({ error: 'Invalid JSON-RPC 2.0 request' });
+    }
+    if (body.method === 'notifications/initialized' || body.id === undefined) {
+      return res.status(202).end();
+    }
+    try {
+      const result = await dispatch(body.method, body.params || {}, body.id, req);
+      res.setHeader('Content-Type', 'application/json');
+      return res.json(result);
+    } catch (e: any) {
+      logger.error('[MCP] dispatch error', e);
+      return res.json(jsonRpc(body.id, undefined, { code: -32603, message: e.message }));
+    }
+  });
 };
 
 export const pabandiMcpServer = { TOOLS, dispatch };
