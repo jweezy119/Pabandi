@@ -34,6 +34,12 @@ export const TOKENOMICS = {
 /** Flat $PAB fee to run one background check (anti-abuse monetization). */
 export const PAB_FEE_PER_CHECK = 5;
 
+/** Flat $PAB fee to issue one Agent Capability Passport (the metered economic event). */
+export const PAB_FEE_PER_PASSPORT = 2;
+
+/** Foolproof abuse cap: max Agent Passport issues per owner per day. */
+export const PASSPORT_MAX_ISSUES_PER_DAY = 50;
+
 /** Fee for a booking of `amountPab` (value-based, with floor). */
 export const computeFee = (amountPab: number): number => {
   const raw = amountPab * TOKENOMICS.FEE_RATE;

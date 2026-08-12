@@ -231,6 +231,38 @@ export class PpdService {
       await prisma.securityDeposit.update({ where: { id: ms.depositId }, data: { status: 'ACTIVE' } });
     }
 
+    // Ingest into Best Fit Engine if a Trust Passport is found for this provider
+    try {
+      if (landlordId) {
+        // Find passport by providerRef OR handle just in case
+        const passport = await prisma.trustPassport.findFirst({ 
+          where: { 
+            OR: [
+              { providerRef: landlordId },
+              { handle: landlordId }
+            ]
+          } 
+        });
+        if (passport) {
+          const { bestFitEngineService } = await import('./ai/bestFitEngine.service');
+          await bestFitEngineService.ingestGigOutcome({
+            passportId: passport.id,
+            gigId: milestoneId,
+            title: ms.name || 'Milestone Release',
+            description: ms.description || undefined,
+            scheduledDate: new Date(), // using release time as completion time
+            status: 'COMPLETED',
+            clientRating: 5, // successful releases default to 5-star equivalent
+            leadTimeHours: 24, // placeholder 
+            zipCode: '00000', // placeholder
+          });
+          logger.info(`[PPD] Milestone ${milestoneId} ingested into Best Fit Engine for Passport ${passport.id}`);
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`[PPD] Failed to ingest gig outcome for Best Fit Engine: ${err.message}`);
+    }
+
     logger.info(`[PPD] Milestone ${milestoneId} released: $${ms.amountUSD}`);
     return { released: true, milestone: updated };
   }
