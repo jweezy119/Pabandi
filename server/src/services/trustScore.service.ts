@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { trustAuditWriter } from './trustAuditWriter';
+import { webhookService } from './webhook.service';
 
 export interface TrustInputs {
   reliability: { completed: number; noShows: number; cancellations: number };
@@ -270,6 +271,39 @@ export class TrustScoreService {
       }
     } catch (err: any) {
       logger.error(`[TrustScoreService] VC Auto-issue/revoke failed: ${err.message}`);
+    }
+
+    // 8. Event Webhooks for OAuth Clients
+    if (newScore !== previousScore) {
+      const getBand = (s: number) => {
+        if (s >= 90) return 'A';
+        if (s >= 70) return 'B';
+        if (s >= 50) return 'C';
+        if (s >= 30) return 'D';
+        return 'E';
+      };
+      
+      const oldBand = getBand(previousScore);
+      const currentBand = getBand(newScore);
+
+      if (newScore < previousScore) {
+        webhookService.dispatchToOAuthClients(userId, 'passport.score_dropped', {
+          userId,
+          oldScore: previousScore,
+          newScore,
+          reason: event.reason
+        });
+      }
+
+      if (oldBand !== currentBand) {
+        webhookService.dispatchToOAuthClients(userId, 'passport.band_changed', {
+          userId,
+          oldBand,
+          newBand: currentBand,
+          newScore,
+          reason: event.reason
+        });
+      }
     }
   }
 

@@ -1762,6 +1762,8 @@ model OAuthClient {
   name         String             // Display name (e.g., "Rozee.pk", "Daraz")
   logoUrl      String?
   redirectUris String[]           // Allowed callback URLs
+  webhookUrl   String?
+  webhookSecret String?
   isActive     Boolean            @default(true)
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
