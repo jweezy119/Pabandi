@@ -1,0 +1,73 @@
+{
+  "generatedAt": "2026-08-12T17:15:40.341Z",
+  "population": {
+    "landlords": 5,
+    "tenants": 500,
+    "contracts": 2500
+  },
+  "scenarios": [
+    {
+      "scenario": "Bear",
+      "tenants": 500,
+      "landlords": 5,
+      "avgBaseRent": 1428,
+      "avgAdjustedRent": 1431.02,
+      "rentPremiumFromRisk": 76742.76,
+      "rentDiscountFromTrust": 69183.2,
+      "depositsTotalUSD": 7140000,
+      "depositReductionTotalUSD": 511751,
+      "yieldToTenantsUSD": 218732.22,
+      "pabandiSpreadUSD": 59654.24,
+      "predictedDefaults": 484,
+      "bandMix": {
+        "A": 85,
+        "B": 330,
+        "C": 840,
+        "D": 885,
+        "E": 360
+      }
+    },
+    {
+      "scenario": "Base",
+      "tenants": 500,
+      "landlords": 5,
+      "avgBaseRent": 1680,
+      "avgAdjustedRent": 1683.56,
+      "rentPremiumFromRisk": 90285.6,
+      "rentDiscountFromTrust": 81391.8,
+      "depositsTotalUSD": 8400000,
+      "depositReductionTotalUSD": 602060,
+      "yieldToTenantsUSD": 428886.7,
+      "pabandiSpreadUSD": 116969.1,
+      "predictedDefaults": 251,
+      "bandMix": {
+        "A": 85,
+        "B": 330,
+        "C": 840,
+        "D": 885,
+        "E": 360
+      }
+    },
+    {
+      "scenario": "Bull",
+      "tenants": 500,
+      "landlords": 5,
+      "avgBaseRent": 1932,
+      "avgAdjustedRent": 1936.09,
+      "rentPremiumFromRisk": 103828.44,
+      "rentDiscountFromTrust": 93601.59,
+      "depositsTotalUSD": 9660000,
+      "depositReductionTotalUSD": 692369,
+      "yieldToTenantsUSD": 690507.59,
+      "pabandiSpreadUSD": 188320.25,
+      "predictedDefaults": 125,
+      "bandMix": {
+        "A": 85,
+        "B": 330,
+        "C": 840,
+        "D": 885,
+        "E": 360
+      }
+    }
+  ]
+}

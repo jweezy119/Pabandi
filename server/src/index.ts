@@ -286,6 +286,7 @@ import sealRoutes from './routes/seal.routes';
 import billingRoutes from './routes/billing.routes';
 import wellknownRoutes from './routes/wellknown.routes';
 import agentPassportRoutes from './routes/agentPassport.routes';
+import geoRiskRoutes from './routes/geoRisk.routes';
 import { mcpHandler } from './mcp/pabandiMcpServer';
 import jobsRoutes from './routes/jobs.routes';
 import seedRoutes from './routes/seed.routes';
@@ -301,6 +302,7 @@ app.get('/.well-known/ptp.json', async (req, res) => {
   res.json(ptpEngine.getDiscoveryDocument(base));
 });
 app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
+app.use(`/api/${API_VERSION}/geo`, geoRiskRoutes); // Geospatial Risk Oracle (property + dual-risk pricing)
 app.post('/mcp', mcpHandler); // Model Context Protocol — Pabandi Agent Passport distribution layer
 app.post(`/api/${API_VERSION}/mcp`, mcpHandler); // alias for path-prefixed clients
 
