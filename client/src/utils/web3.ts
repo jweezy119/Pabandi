@@ -6,6 +6,11 @@ import { isConnected, isAllowed, setAllowed, getAddress, signTransaction } from 
 // The address of our deployed Escrow Contract (BSC Testnet)
 export const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
 export const PABANDI_TREASURY_SOLANA = 'PABANDi111111111111111111111111111111111111'; // Placeholder
+// Platform-fee treasury (SOL). Defaults to the same treasury; set to a dedicated
+// wallet via env to separate fee revenue from escrow deposits.
+export const PABANDI_FEE_TREASURY_SOLANA = (import.meta as any)?.env?.VITE_FEE_TREASURY_SOLANA || PABANDI_TREASURY_SOLANA;
+// Platform fee rate (SOL deposit value → SOL fee). Mirrors backend 1.5% / 0.015.
+export const SOL_PLATFORM_FEE_RATE = 0.015;
 
 // BSC Testnet chain config
 export const BSC_TESTNET_CHAIN_ID = 97;    // 0x61
@@ -132,9 +137,10 @@ const checkSolBalance = async (requiredSol: number): Promise<{ sufficient: boole
   const balance = await connection.getBalance(publicKey);
   const balanceSol = balance / LAMPORTS_PER_SOL;
   const feeBuffer = 0.01; // ~0.01 SOL for tx fee
+  const platformFee = requiredSol * SOL_PLATFORM_FEE_RATE; // 1.5% platform fee collected with deposit
 
   return {
-    sufficient: balanceSol >= requiredSol + feeBuffer,
+    sufficient: balanceSol >= requiredSol + platformFee + feeBuffer,
     balance: balanceSol,
   };
 };
@@ -268,7 +274,9 @@ export const executeSolanaDeposit = async (amountInSol: number, _businessWalletA
     const treasuryPublicKey = new PublicKey(targetAddress);
     const connection = new Connection("https://api.devnet.solana.com", "confirmed");
 
-    // Step 2: Build and sign transaction
+    // Step 2: Build and sign transaction (deposit + platform fee in ONE signed tx)
+    const feeSol = +(amountInSol * SOL_PLATFORM_FEE_RATE).toFixed(6);
+    const feeTreasury = new PublicKey(PABANDI_FEE_TREASURY_SOLANA);
     const transaction = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: userPublicKey,
@@ -276,6 +284,17 @@ export const executeSolanaDeposit = async (amountInSol: number, _businessWalletA
         lamports: Math.round(amountInSol * LAMPORTS_PER_SOL),
       })
     );
+    // SOL platform fee — collected atomically with the deposit (1.5% of deposit value).
+    // Same ledger/rate as the agent rail; customer signs once, single confirmation.
+    if (feeSol > 0 && !SOLANA_PLACEHOLDER_ADDRESSES.includes(PABANDI_FEE_TREASURY_SOLANA)) {
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: userPublicKey,
+          toPubkey: feeTreasury,
+          lamports: Math.round(feeSol * LAMPORTS_PER_SOL),
+        })
+      );
+    }
 
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
