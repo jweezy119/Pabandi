@@ -74,11 +74,17 @@ export class ReputationInsuranceService {
     coverageType: 'NO_SHOW' | 'CANCELLATION' | 'SERVICE_FAILURE'
   ): Promise<UnderwritingResult> {
     try {
-      // 1. Compute TrustFlux for the provider
-      const flux = await trustFluxService.computeTrustFlux(providerId);
+      // 1. Compute TrustFlux for the provider (default to MODERATE if no history/lookup fails)
+      let flux: any;
+      try {
+        flux = await trustFluxService.computeTrustFlux(providerId);
+      } catch (fluxErr: any) {
+        logger.warn(`[ReputationInsurance] TrustFlux unavailable for ${providerId}, defaulting to MODERATE: ${fluxErr?.message}`);
+        flux = { velocity: 0, peerNormalizedVelocity: 0, confidence: 0.5, trend: 'STABLE' };
+      }
 
       // 2. Compute peer-normalized velocity
-      const peerVelocity = await flux.peerNormalizedVelocity ?? flux.velocity;
+      const peerVelocity = flux.peerNormalizedVelocity ?? flux.velocity ?? 0;
 
       // 3. Calculate risk multiplier from velocity + confidence
       let riskMultiplier: number;
