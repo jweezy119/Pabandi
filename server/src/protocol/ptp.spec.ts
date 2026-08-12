@@ -393,6 +393,11 @@ export class PTPEngine {
       nonce: attestation.nonce,
       issuer: attestation.issuer,
       publicKeyId: attestation.publicKeyId,
+      // Foolproof: capabilities + owner are core claims — MUST be covered by the
+      // signature, otherwise an agent could tamper its granted capabilities after
+      // signing and the verify step would still pass.
+      capabilities: (attestation as any).capabilities ?? null,
+      ownerUserId: (attestation as any).ownerUserId ?? null,
     };
     return crypto.createHmac('sha512', PTP_SIGNING_SECRET).update(JSON.stringify(body)).digest('hex');
   }
