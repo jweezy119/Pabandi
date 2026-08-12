@@ -209,26 +209,30 @@ export class ReputationInsuranceService {
           };
         }
 
-        // Record in audit trail
-        await prisma.trustAuditTrail.create({
-          data: {
-            userId: providerId,
-            previousScore: 0,
-            newScore: 0,
-            changeReason: 'INSURANCE_PREMIUM',
-            component: 'REPUTATION_INSURANCE',
-            severity: 'positive',
-            metadata: {
-              policyId: policy.policyId,
-              premiumUSD,
-              premiumPAB: policy.premiumPAB,
-              riskMultiplier,
-              riskBand,
-              coverageAmount,
-              coverageType,
+        // Record in audit trail (non-fatal — must not block premium capture)
+        try {
+          await prisma.trustAuditTrail.create({
+            data: {
+              userId: providerId,
+              previousScore: 0,
+              newScore: 0,
+              changeReason: 'INSURANCE_PREMIUM',
+              component: 'REPUTATION_INSURANCE',
+              severity: 'positive',
+              metadata: {
+                policyId: policy.policyId,
+                premiumUSD,
+                premiumPAB: policy.premiumPAB,
+                riskMultiplier,
+                riskBand,
+                coverageAmount,
+                coverageType,
+              } as any,
             } as any,
-          } as any,
-        });
+          });
+        } catch (auditErr: any) {
+          logger.warn(`[ReputationInsurance] audit trail skipped: ${auditErr?.message}`);
+        }
 
         logger.info(`[ReputationInsurance] Policy ${policy.policyId} issued — $${premiumUSD} premium (${riskBand}, {riskMultiplier}x)`);
       }
@@ -290,23 +294,27 @@ export class ReputationInsuranceService {
     policy.isActive = false;
     policy.payoutTxHash = `claim_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    await prisma.trustAuditTrail.create({
-      data: {
-        userId: policy.customerId,
-        previousScore: 0,
-        newScore: 0,
-        changeReason: 'INSURANCE_PAYOUT',
-        component: 'REPUTATION_INSURANCE',
-        severity: 'positive',
-        metadata: {
-          policyId,
-          payoutAmount,
-          reason,
-          wasPredictable,
-          txHash: policy.payoutTxHash,
+    try {
+      await prisma.trustAuditTrail.create({
+        data: {
+          userId: policy.customerId,
+          previousScore: 0,
+          newScore: 0,
+          changeReason: 'INSURANCE_PAYOUT',
+          component: 'REPUTATION_INSURANCE',
+          severity: 'positive',
+          metadata: {
+            policyId,
+            payoutAmount,
+            reason,
+            wasPredictable,
+            txHash: policy.payoutTxHash,
+          } as any,
         } as any,
-      } as any,
-    });
+      });
+    } catch (auditErr: any) {
+      logger.warn(`[ReputationInsurance] payout audit trail skipped: ${auditErr?.message}`);
+    }
 
     logger.info(`[ReputationInsurance] Claim ${policyId} ${wasPredictable ? 'approved' : 'processed'} — $${payoutAmount} payout`);
     return {
