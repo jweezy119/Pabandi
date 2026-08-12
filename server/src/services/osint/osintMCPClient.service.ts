@@ -1,4 +1,5 @@
 import { logger } from '../../utils/logger';
+import { courtListenerService } from './courtListener.service';
 
 export interface MCPInvestigationResult {
   source: string;
@@ -123,6 +124,38 @@ export class OsintMCPClientService {
       findings: {
         mentionsOnDarkWeb: 0,
         scrapedProfiles: []
+      }
+    };
+  }
+
+  /**
+   * 5. CourtListener MCP - Civil Litigation & Eviction Checks (Property Vertical)
+   */
+  public async queryCourtListenerMCP(name: string, state?: string): Promise<MCPInvestigationResult> {
+    logger.info(`[MCP Client] Querying CourtListener MCP for entity: ${name}`);
+    
+    const clData = await courtListenerService.searchCivilLitigation(name, state);
+    
+    // Analyze findings
+    const evictionMatches = clData.results.filter(r => 
+      r.natureOfSuit?.toLowerCase().includes('evict') || 
+      r.caseName?.toLowerCase().includes('evict')
+    );
+    
+    const isSuspicious = clData.count > 0;
+    
+    // Base risk penalty for having litigation history, massive penalty for specific eviction cases
+    const riskScoreDelta = (clData.count > 0 ? 20 : 0) + (evictionMatches.length * 50);
+
+    return {
+      source: 'CourtListener MCP',
+      query: name,
+      isSuspicious,
+      riskScoreDelta,
+      findings: {
+        totalCases: clData.count,
+        evictionRelatedCases: evictionMatches.length,
+        recentCases: clData.results.slice(0, 3) // Preview of most recent cases
       }
     };
   }
