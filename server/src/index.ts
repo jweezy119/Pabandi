@@ -288,6 +288,7 @@ import wellknownRoutes from './routes/wellknown.routes';
 import agentPassportRoutes from './routes/agentPassport.routes';
 import geoRiskRoutes from './routes/geoRisk.routes';
 import protocolV2Routes from './routes/protocolV2.routes';
+import agentLoopRoutes from './routes/agentLoop.routes';
 import { mcpHandler } from './mcp/pabandiMcpServer';
 import jobsRoutes from './routes/jobs.routes';
 import seedRoutes from './routes/seed.routes';
@@ -305,6 +306,7 @@ app.get('/.well-known/ptp.json', async (req, res) => {
 app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
 app.use(`/api/${API_VERSION}/geo`, geoRiskRoutes); // Geospatial Risk Oracle (property + dual-risk pricing)
 app.use(`/api/${API_VERSION}/v2`, protocolV2Routes); // Pabandi Protocol v2.0: ZK / ACTUS / Kleros / Aragon / Mesh
+app.use(`/api/${API_VERSION}/agent-loop`, agentLoopRoutes); // AI-agent booking loop control (live/sim)
 app.post('/mcp', mcpHandler); // Model Context Protocol — Pabandi Agent Passport distribution layer
 app.post(`/api/${API_VERSION}/mcp`, mcpHandler); // alias for path-prefixed clients
 

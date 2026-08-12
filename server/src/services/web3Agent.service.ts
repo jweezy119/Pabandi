@@ -76,6 +76,8 @@ export interface TransactionResult {
 export class Web3AgentService {
   private connection: Connection;
   private treasuryKeypair: Keypair | null = null;
+  /** Set true after prepareLiveBookingRails() — live sends then skip ATA creation (saves SOL). */
+  private prepared = false;
 
   constructor() {
     this.connection = new Connection(RPC_URL, 'confirmed');
@@ -228,6 +230,16 @@ export class Web3AgentService {
     amountPab: number
   ): Promise<TransactionResult> {
     try {
+      // SOL guard: if the funded wallet is low on SOL, fall back to simulated to
+      // protect the operator's balance (e.g. 0.6 SOL budget). Live sends need rent + fee.
+      if (this.treasuryKeypair) {
+        const sol = await this.connection.getBalance(this.treasuryKeypair.publicKey);
+        const RENT_AND_FEE = 0.003 * LAMPORTS_PER_SOL; // generous per-send buffer
+        if (sol < RENT_AND_FEE) {
+          throw new Error(`SOL buffer low (${(sol / LAMPORTS_PER_SOL).toFixed(4)} SOL) — using simulated fallback`);
+        }
+      }
+
       // Compliance checks
       if (fromAgent.dailyOutflow + amountPab > MAX_DAILY_OUTFLOW) {
         return { success: false, error: 'Daily outflow limit exceeded' };
@@ -247,19 +259,29 @@ export class Web3AgentService {
       const senderAta = await getAssociatedTokenAddress(mintPubkey, senderPubkey);
       const recipientAta = await getAssociatedTokenAddress(mintPubkey, recipientPubkey);
 
-      // Ensure recipient ATA exists
-      try {
-        await getAccount(this.connection, recipientAta);
-      } catch (err) {
-        const tx = new Transaction().add(
-          createAssociatedTokenAccountInstruction(
-            senderPubkey,
-            recipientAta,
-            recipientPubkey,
-            mintPubkey
-          )
-        );
-        await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
+      // Ensure recipient ATA exists. After prepareLiveBookingRails() all agent ATAs are
+      // pre-created, so we skip this (saves ~0.002 SOL rent per send).
+      if (!this.prepared) {
+        try {
+          await getAccount(this.connection, recipientAta);
+        } catch (err) {
+          const tx = new Transaction().add(
+            createAssociatedTokenAccountInstruction(
+              senderPubkey,
+              recipientAta,
+              recipientPubkey,
+              mintPubkey
+            )
+          );
+          await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
+        }
+      } else {
+        // Lightweight existence probe; if missing (e.g. a brand-new agent), create once.
+        try { await getAccount(this.connection, recipientAta); }
+        catch { try {
+          const tx = new Transaction().add(createAssociatedTokenAccountInstruction(senderPubkey, recipientAta, recipientPubkey, mintPubkey));
+          await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
+        } catch {} }
       }
 
       // Transfer PAB
@@ -349,6 +371,76 @@ export class Web3AgentService {
       },
     });
     logger.info('[Web3Agent] Daily counters reset');
+  }
+
+  /**
+   * Prepare LIVE booking rails within a SOL budget (default 0.5 SOL).
+   * One-time cost: creates a PAB ATA for every agent wallet (~0.002 SOL each) and
+   * distributes a small slice of SOL to each agent so it can pay its own tx fees.
+   * After this runs, live PAB sends cost only ~0.000005 SOL, so even 0.5 SOL funds
+   * tens of thousands of bookings. Idempotent: skips agents already prepared.
+   *
+   * This is what makes a small SOL balance (e.g. 0.6) viable for live on-chain bookings.
+   */
+  async prepareLiveBookingRails(opts?: { solBudget?: number; perAgentSol?: number }): Promise<{
+    prepared: number; fundedSol: number; ataCreated: number; solSpent: number; error?: string;
+  }> {
+    if (!this.treasuryKeypair) {
+      const ok = this.initTreasury();
+      if (!ok) return { prepared: 0, fundedSol: 0, ataCreated: 0, solSpent: 0, error: 'SOLANA_PRIVATE_KEY not set — cannot fund rails' };
+    }
+    const kp = this.treasuryKeypair!;
+    const solBudget = (opts?.solBudget ?? 0.5) * LAMPORTS_PER_SOL;
+    const perAgentSol = (opts?.perAgentSol ?? 0.005) * LAMPORTS_PER_SOL;
+    const startBal = await this.connection.getBalance(kp.publicKey);
+    if (startBal < solBudget) {
+      return { prepared: 0, fundedSol: 0, ataCreated: 0, solSpent: 0, error: `Funded wallet has ${(startBal/LAMPORTS_PER_SOL).toFixed(4)} SOL, need >= ${(solBudget/LAMPORTS_PER_SOL).toFixed(4)}` };
+    }
+
+    const agents = await this.loadAgents();
+    let ataCreated = 0, fundedCount = 0;
+    const mintPubkey = new PublicKey(MINT_ADDRESS);
+    for (const a of agents) {
+      try {
+        const pub = new PublicKey(a.walletAddress);
+        const ata = await getAssociatedTokenAddress(mintPubkey, pub);
+        try { await getAccount(this.connection, ata); } // already exists
+        catch {
+          const tx = new Transaction().add(createAssociatedTokenAccountInstruction(kp.publicKey, ata, pub, mintPubkey));
+          await sendAndConfirmTransaction(this.connection, tx, [kp]);
+          ataCreated++;
+        }
+        // Fund agent with SOL for tx fees (only if below threshold).
+        const ab = await this.connection.getBalance(pub);
+        if (ab < perAgentSol) {
+          const need = perAgentSol - ab;
+          await sendAndConfirmTransaction(
+            this.connection,
+            new Transaction().add(SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: pub, lamports: need })),
+            [kp]
+          );
+          fundedCount++;
+        }
+      } catch (e: any) {
+        logger.warn(`[Web3Agent] prepare skip ${a.profileId}: ${e.message}`);
+      }
+    }
+    const endBal = await this.connection.getBalance(kp.publicKey);
+    this.prepared = true;
+    logger.info(`[Web3Agent] Live rails prepared: ${ataCreated} ATAs created, ${fundedCount} agents funded SOL. Spent ${(startBal-endBal)/LAMPORTS_PER_SOL} SOL`);
+    return { prepared: agents.length, fundedSol: fundedCount, ataCreated, solSpent: +(startBal-endBal)/LAMPORTS_PER_SOL };
+  }
+
+  /** Probe whether the funded wallet has enough SOL to keep doing live sends. */
+  async liveSolBuffer(): Promise<{ sol: number; agentsFunded: number }> {
+    if (!this.treasuryKeypair) this.initTreasury();
+    const kp = this.treasuryKeypair;
+    if (!kp) return { sol: 0, agentsFunded: 0 };
+    const sol = (await this.connection.getBalance(kp.publicKey)) / LAMPORTS_PER_SOL;
+    const agents = await this.loadAgents();
+    let funded = 0;
+    for (const a of agents) { try { if (await this.connection.getBalance(new PublicKey(a.walletAddress)) > 0) funded++; } catch {} }
+    return { sol, agentsFunded: funded };
   }
 
   /**

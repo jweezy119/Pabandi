@@ -1,0 +1,6 @@
+[package]
+name = "proof_of_rent"
+type = "bin"
+authors = [""]
+
+[dependencies]
