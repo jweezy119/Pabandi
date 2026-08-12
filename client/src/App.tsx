@@ -147,6 +147,7 @@ function App() {
             <Route path="b/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/:id/book" element={<BookingPage />} />
             <Route path="auth/callback" element={<AuthCallbackPage />} />
+            <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
             <Route path="demo-checkout" element={<DemoCheckoutPage />} />
