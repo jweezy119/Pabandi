@@ -37,7 +37,10 @@ router.get('/state', (_req: Request, res: Response): any => {
 
 router.get('/bookings', async (_req: Request, res: Response): Promise<any> => {
   try {
-    const rows = await prisma.agentBooking.findMany({ orderBy: { createdAt: 'desc' }, take: 50 });
+    // Raw SQL — resilient if the generated @prisma/client is stale (predates AgentBooking).
+    const rows = await prisma.$queryRawUnsafe(
+      'SELECT * FROM "AgentBooking" ORDER BY "createdAt" DESC LIMIT 50'
+    );
     res.json({ success: true, data: rows });
   } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
 });

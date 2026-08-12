@@ -278,8 +278,13 @@ export async function getAgentLoopHealth(): Promise<{
   const feeWalletSet = !!process.env.FEE_TREASURY_WALLET && !process.env.FEE_TREASURY_WALLET.startsWith('PABANDi');
   const oracleKeySet = !!process.env.SOLANA_ORACLE_SECRET_KEY;
 
-  const agents = await prisma.web3Agent.findMany({ where: { isActive: true }, select: { id: true, prepared: true } });
-  const agentsPrepared = agents.filter(a => a.prepared).length;
+  // Raw SQL so this health check works even if the generated @prisma/client is
+  // stale (Render build-cache can serve a client predating AgentBooking/prepared).
+  const agentStats: any[] = await prisma.$queryRawUnsafe(
+    'SELECT COUNT(*)::int AS total, COALESCE(SUM(CASE WHEN "prepared" THEN 1 ELSE 0 END),0)::int AS prepared FROM "Web3Agent" WHERE "isActive" = true'
+  );
+  const agentsLoaded = agentStats[0]?.total || 0;
+  const agentsPrepared = agentStats[0]?.prepared || 0;
 
   const warnings: string[] = [];
   if (!solanaPrivateKeySet) warnings.push('SOLANA_PRIVATE_KEY is NOT set — live rail cannot send on-chain SOL/PAB.');
@@ -296,7 +301,7 @@ export async function getAgentLoopHealth(): Promise<{
     treasuryWalletSet,
     feeWalletSet,
     oracleKeySet,
-    agentsLoaded: agents.length,
+    agentsLoaded,
     agentsPrepared,
     ready,
     warnings,
