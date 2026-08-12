@@ -111,8 +111,13 @@ export class ReputationInsuranceService {
       premiumUSD = Math.max(MIN_PREMIUM, premiumUSD);
 
       // 5. $PAB payment option (15% discount)
-      const stakeResult = await pabTokenStakingService.getTrustMultiplier(providerId);
-      const pabDiscount = stakeResult.multiplier > 1 ? PAB_PREMIUM_DISCOUNT * stakeResult.multiplier : 0;
+      let stakeResult: any = { multiplier: 1 };
+      try {
+        stakeResult = await pabTokenStakingService.getTrustMultiplier(providerId);
+      } catch (e: any) {
+        logger.warn(`[ReputationInsurance] stake multiplier unavailable for ${providerId}, default 1x: ${e?.message}`);
+      }
+      const pabDiscount = (stakeResult?.multiplier || 1) > 1 ? PAB_PREMIUM_DISCOUNT * stakeResult.multiplier : 0;
       const premiumPAB = premiumUSD * (1 - pabDiscount);
 
       // 6. Determine risk band
