@@ -259,6 +259,51 @@ export function getAgentLoopState(): AgentLoopState {
 }
 
 /**
+ * Loud self-check of the live on-chain rail. Returns a clear status so operators
+ * can see at a glance what is armed vs missing — the loop fails SILENTLY otherwise.
+ */
+export async function getAgentLoopHealth(): Promise<{
+  liveMode: boolean;
+  solanaPrivateKeySet: boolean;
+  treasuryWalletSet: boolean;
+  feeWalletSet: boolean;
+  oracleKeySet: boolean;
+  agentsLoaded: number;
+  agentsPrepared: number;
+  ready: boolean;          // true only when live mode can actually send on-chain
+  warnings: string[];
+}> {
+  const solanaPrivateKeySet = !!process.env.SOLANA_PRIVATE_KEY;
+  const treasuryWalletSet = !!process.env.TREASURY_WALLET && !process.env.TREASURY_WALLET.startsWith('PABANDi');
+  const feeWalletSet = !!process.env.FEE_TREASURY_WALLET && !process.env.FEE_TREASURY_WALLET.startsWith('PABANDi');
+  const oracleKeySet = !!process.env.SOLANA_ORACLE_SECRET_KEY;
+
+  const agents = await prisma.web3Agent.findMany({ where: { isActive: true }, select: { id: true, prepared: true } });
+  const agentsPrepared = agents.filter(a => a.prepared).length;
+
+  const warnings: string[] = [];
+  if (!solanaPrivateKeySet) warnings.push('SOLANA_PRIVATE_KEY is NOT set — live rail cannot send on-chain SOL/PAB.');
+  if (LIVE_BOOKINGS && !solanaPrivateKeySet) warnings.push('LIVE_BOOKINGS=true but wallet missing → loop will fall back to simulated (no real transfers).');
+  if (!treasuryWalletSet) warnings.push('TREASURY_WALLET not set/placeholder — fee receives go to a placeholder address.');
+  if (!feeWalletSet) warnings.push('FEE_TREASURY_WALLET not set — human SOL fees route to placeholder.');
+  if (LIVE_BOOKINGS && agentsPrepared === 0) warnings.push('No agents prepared (ATAs not created). Run POST /agent-loop/prepare-live after funding the wallet.');
+
+  const ready = LIVE_BOOKINGS && solanaPrivateKeySet && treasuryWalletSet && agentsPrepared > 0;
+
+  return {
+    liveMode: LIVE_BOOKINGS,
+    solanaPrivateKeySet,
+    treasuryWalletSet,
+    feeWalletSet,
+    oracleKeySet,
+    agentsLoaded: agents.length,
+    agentsPrepared,
+    ready,
+    warnings,
+  };
+}
+
+/**
  * Record combined agent-loop revenue into the Autonomous Treasury ledger
  * (TreasuryPosition) so the profitability report shows one reconciled number.
  *

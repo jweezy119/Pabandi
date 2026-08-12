@@ -454,6 +454,8 @@ export class Web3AgentService {
     }
     const endBal = await this.connection.getBalance(kp.publicKey);
     this.prepared = true;
+    // Persist prepared state so health checks / restarts know rails are armed.
+    await prisma.web3Agent.updateMany({ where: { isActive: true }, data: { prepared: true } }).catch(() => {});
     logger.info(`[Web3Agent] Live rails prepared: ${ataCreated} ATAs created, ${fundedCount} agents funded SOL. Spent ${(startBal-endBal)/LAMPORTS_PER_SOL} SOL`);
     return { prepared: agents.length, fundedSol: fundedCount, ataCreated, solSpent: +(startBal-endBal)/LAMPORTS_PER_SOL };
   }

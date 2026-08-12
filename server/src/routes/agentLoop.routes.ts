@@ -9,7 +9,7 @@
  *  GET  /sol-buffer     Funded-wallet SOL balance + how many agents hold SOL.
  */
 import { Router, Request, Response } from 'express';
-import { runAgentLoopCycle, prepareLiveRails, getAgentLoopState, startAgentLoop, stopAgentLoop } from '../services/agentLoop.service';
+import { runAgentLoopCycle, prepareLiveRails, getAgentLoopState, startAgentLoop, stopAgentLoop, getAgentLoopHealth } from '../services/agentLoop.service';
 import { web3AgentService } from '../services/web3Agent.service';
 import { prisma } from '../utils/database';
 
@@ -49,5 +49,10 @@ router.get('/sol-buffer', async (_req: Request, res: Response): Promise<any> => 
 
 router.post('/start', (_req: Request, res: Response): any => { startAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
 router.post('/stop', (_req: Request, res: Response): any => { stopAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
+
+router.get('/health', async (_req: Request, res: Response): Promise<any> => {
+  try { res.json({ success: true, data: await getAgentLoopHealth() }); }
+  catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
+});
 
 export default router;
