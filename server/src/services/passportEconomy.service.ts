@@ -150,7 +150,7 @@ export const passportEconomy = {
     const id = `pis_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await prisma.$executeRawUnsafe(
       `INSERT INTO "${LEDGER_TABLE}" ("id","idempotencyKey","ownerUserId","agentId","riskBand","capabilities","feePab","chargedAt")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,now())`,
+       VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,now())`,
       id, idempotencyKey, params.ownerUserId, params.agentId, params.riskBand,
       JSON.stringify(params.capabilities), PAB_FEE_PER_PASSPORT
     );
