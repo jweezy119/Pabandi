@@ -14,6 +14,7 @@ import {
   getPropertyAvailability,
   simulateBooking,
 } from '../controllers/hospitality.controller';
+import { requirePassport } from '../middleware/requirePassport.middleware';
 
 const router = Router();
 
@@ -39,6 +40,6 @@ router.get('/property/:id/availability', getPropertyAvailability);
  * POST /api/hospitality/test-booking
  * Simulate a test booking event — for onboarding and demos.
  */
-router.post('/test-booking', simulateBooking);
+router.post('/test-booking', requirePassport('act:book'), simulateBooking);
 
 export default router;

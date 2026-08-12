@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authenticate } from '../middleware/auth.middleware';
+import { requirePassport } from '../middleware/requirePassport.middleware';
 import {
   getMyWallet,
   getBusinessRewards,
@@ -32,7 +33,7 @@ const withdrawalLimiter = rateLimit({
 });
 
 router.put('/wallet/solana',    authenticate, connectSolanaWallet);
-router.post('/wallet/solana/transfer', authenticate, withdrawalLimiter, requestSolanaTransfer);
+router.post('/wallet/solana/transfer', authenticate, withdrawalLimiter, requirePassport('act:transfer'), requestSolanaTransfer);
 
 // ── Staking ───────────────────────────────────────────────────────────────────
 router.post('/wallet/stake', authenticate, stakeTokens);
