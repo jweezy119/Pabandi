@@ -286,6 +286,7 @@ import sealRoutes from './routes/seal.routes';
 import billingRoutes from './routes/billing.routes';
 import wellknownRoutes from './routes/wellknown.routes';
 import agentPassportRoutes from './routes/agentPassport.routes';
+import { mcpHandler } from './mcp/pabandiMcpServer';
 import jobsRoutes from './routes/jobs.routes';
 import seedRoutes from './routes/seed.routes';
 
@@ -300,6 +301,8 @@ app.get('/.well-known/ptp.json', async (req, res) => {
   res.json(ptpEngine.getDiscoveryDocument(base));
 });
 app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
+app.post('/mcp', mcpHandler); // Model Context Protocol — Pabandi Agent Passport distribution layer
+app.post(`/api/${API_VERSION}/mcp`, mcpHandler); // alias for path-prefixed clients
 
 // Expose public SDK for trust seals
 import path from 'path';
