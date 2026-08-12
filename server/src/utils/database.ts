@@ -1,3 +1,6 @@
+// Regenerate the Prisma client at runtime BEFORE the @prisma/client singleton
+// is constructed (must be the first import). See file for why.
+import './ensurePrisma';
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
 
