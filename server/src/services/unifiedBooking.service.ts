@@ -26,6 +26,7 @@ export interface UnifiedFeeInput {
   source: 'HUMAN_BOOKING' | 'AGENT_BOOKING' | 'ESCROW_RELEASE';
   payerAddress?: string;
   txHash?: string;
+  onChain?: boolean;      // true when SOL actually moved on-chain
 }
 
 /**
@@ -39,6 +40,7 @@ export async function collectPlatformFee(input: UnifiedFeeInput) {
     source: input.source as any,
     payerAddress: input.payerAddress,
     txHash: input.txHash,
+    onChain: input.onChain,
   });
 }
 
@@ -77,6 +79,7 @@ export async function createAgentBooking(params: {
     source: 'AGENT_BOOKING',
     payerAddress: fromAgent.walletAddress,
     txHash: feeTx,
+    onChain: !transfer.simulated && !!transfer.txHash, // live PAB transfer ⇒ fee moved on-chain
   });
 
   // 3) Persist the booking on the unified rail (AgentBooking entity).
