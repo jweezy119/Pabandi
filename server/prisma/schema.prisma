@@ -58,6 +58,8 @@ model User {
   loans                   Loan[]
   payouts                 Payout[]
   workerPayouts           WorkerPayout[]
+  oauthAuthCodes          OAuthAuthCode[]
+  oauthTokens             OAuthToken[]
   virtualAccounts         VirtualAccount[]
   disputesAgainst         Dispute[]               @relation("DisputesAgainst")
   disputesFiled           Dispute[]               @relation("DisputesFiled")

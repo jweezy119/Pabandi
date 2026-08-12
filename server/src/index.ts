@@ -242,6 +242,9 @@ app.use(`/api/${API_VERSION}/passport/public`, publicPassportRoutes);
 import textSearchRoutes from './routes/textSearch.routes';
 app.use(`/api/${API_VERSION}/text-search`, textSearchRoutes);
 
+import oauthRoutes from './routes/oauth.routes';
+app.use(`/api/${API_VERSION}/oauth`, oauthRoutes);
+
 // ── Pabandi Reliability Passport API (Public, API-key gated) ─────────────────
 import passportRoutes from './routes/passport.routes';
 app.use(`/api/${API_VERSION}/passport`, passportRoutes);
