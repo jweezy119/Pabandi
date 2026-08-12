@@ -4,7 +4,7 @@ import { Keypair, PublicKey, Connection, Transaction, sendAndConfirmTransaction,
 import { createTransferInstruction, getAssociatedTokenAddress, getAccount, createAssociatedTokenAccountInstruction, getMint } from '@solana/spl-token';
 import bs58 from 'bs58';
 import crypto from 'crypto';
-import { computeFee, recordBookingEconomics } from '../config/tokenomics';
+import { feeCollectionService } from './feeCollection.service';
 
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
@@ -13,6 +13,8 @@ const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.
 const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = parseInt(process.env.MAX_TX_PER_DAY || (process.env.LIVE_BOOKINGS === 'true' ? '500' : '10'), 10);
+// On-chain SOL platform fee per booking (gas + fee are both SOL). Default 0.0005 SOL (~$0.07 @ $140/SOL).
+const SOL_FEE_PER_BOOKING = Number(process.env.SOL_FEE_PER_BOOKING || 0.0005);
 
 // ── USDC Pool Arbitrage ──────────────────────────────────────────
 const USDC_POOL_ADDRESS = process.env.PAB_USDC_POOL_ADDRESS || 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL';
@@ -314,9 +316,26 @@ export class Web3AgentService {
 
       logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
 
-      // Value-based platform fee + deflationary burn + bucket allocation
-      const fee = computeFee(amountPab);
-      await recordBookingEconomics({ agentId: fromAgent.id!, fromAddress: fromAgent.profileId, fee });
+      // On-chain SOL platform fee (gas + fee are both SOL). Sent payer → treasury.
+      try {
+        const treasuryPubkey = new PublicKey(TREASURY_WALLET);
+        const feeLamports = Math.floor(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
+        const solTx = new Transaction().add(
+          SystemProgram.transfer({ fromPubkey: senderPubkey, toPubkey: treasuryPubkey, lamports: feeLamports })
+        );
+        const solSig = await sendAndConfirmTransaction(this.connection, solTx, [senderKeypair]);
+        await feeCollectionService.recordSolFee({
+          bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
+          amountSol: SOL_FEE_PER_BOOKING, txHash: solSig, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+        });
+      } catch (feeErr: any) {
+        // Fee is non-fatal to the booking, but we MUST record it (fail-closed accounting).
+        logger.warn(`[Web3Agent] SOL fee transfer failed: ${feeErr.message} — recording notional`);
+        await feeCollectionService.recordSolFee({
+          bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
+          amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+        });
+      }
 
       return { success: true, txHash: signature, amount: amountPab, to: toAgent.walletAddress };
     } catch (err: any) {
@@ -352,11 +371,13 @@ export class Web3AgentService {
         } as any,
       });
 
-      // Value-based platform fee + deflationary burn + bucket allocation
-      const fee = computeFee(amountPab);
-      await recordBookingEconomics({ agentId: fromAgent.id!, fromAddress: fromAgent.profileId, fee });
+      // On-chain SOL platform fee (recorded notionally in sim mode so accounting matches live)
+      await feeCollectionService.recordSolFee({
+        bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
+        amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+      }).catch(() => {});
 
-      logger.info(`[Web3Agent] Simulated booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${amountPab} PAB + ${fee} PAB fee`);
+      logger.info(`[Web3Agent] Simulated booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${amountPab} PAB + ${SOL_FEE_PER_BOOKING} SOL fee`);
       return { success: true, simulated: true, amount: amountPab, to: toAgent.walletAddress };
     }
   }

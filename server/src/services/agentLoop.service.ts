@@ -17,7 +17,8 @@ interface AgentLoopState {
   lastCycleAt: Date | null;
   lastPoolFeeAt: Date | null;
   totalBookings: number;
-  totalFeesCollected: number;
+  totalFeesCollected: number;     // legacy PAB/USDC (deprecated by SOL fees)
+  totalSolFeesCollected: number;  // SOL platform fees actually collected
   totalBadgePurchases: number;
 }
 
@@ -28,6 +29,7 @@ let state: AgentLoopState = {
   lastPoolFeeAt: null,
   totalBookings: 0,
   totalFeesCollected: 0,
+  totalSolFeesCollected: 0,
   totalBadgePurchases: 0,
 };
 
@@ -42,6 +44,7 @@ let state: AgentLoopState = {
 export async function runAgentLoopCycle(): Promise<{
   bookings: number;
   feesCollected: number;
+  solFeesCollected: number;
   badgePurchases: number;
   errors: string[];
 }> {
@@ -49,7 +52,8 @@ export async function runAgentLoopCycle(): Promise<{
   let bookings = 0;
   let badgePurchases = 0;
   let badgePab = 0;
-  let feesCollected = 0; // PAB booking fees captured this cycle
+  let feesCollected = 0; // PAB booking fees captured this cycle (legacy)
+  let solFeesCollected = 0; // SOL platform fees captured this cycle
   let poolFeesUsdc = 0; // USDC pool fees captured this cycle
 
   try {
@@ -57,7 +61,7 @@ export async function runAgentLoopCycle(): Promise<{
     const agents = await web3AgentService.loadAgents();
     if (agents.length === 0) {
       logger.info('[AgentLoop] No active agents — skipping cycle');
-      return { bookings: 0, feesCollected: 0, badgePurchases: 0, errors: ['No active agents'] };
+      return { bookings: 0, feesCollected: 0, solFeesCollected: 0, badgePurchases: 0, errors: ['No active agents'] };
     }
 
     // Step 2: Simulated badge purchases (agents buy badges from treasury)
@@ -126,10 +130,11 @@ export async function runAgentLoopCycle(): Promise<{
         if (result.success) {
           bookings++;
           state.totalBookings++;
-          // 5 PAB platform fee per booking goes to treasury
-          state.totalFeesCollected += 5;
-          feesCollected += 5;
-          logger.info(`[AgentLoop] Booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB`);
+          // On-chain SOL platform fee (gas + fee are SOL) is recorded inside executeBookingPayment.
+          const solFee = Number(process.env.SOL_FEE_PER_BOOKING || 0.0005);
+          state.totalSolFeesCollected += solFee;
+          solFeesCollected += solFee;
+          logger.info(`[AgentLoop] Booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB + ${solFee} SOL fee`);
         } else {
           errors.push(`Booking ${fromAgent.profileId}→${toAgent.profileId}: ${result.error}`);
         }
@@ -170,7 +175,7 @@ export async function runAgentLoopCycle(): Promise<{
     logger.error('[AgentLoop] Cycle failed:', err.message);
   }
 
-  return { bookings, feesCollected, badgePurchases, errors };
+  return { bookings, feesCollected, solFeesCollected, badgePurchases, errors };
 }
 
 /**
