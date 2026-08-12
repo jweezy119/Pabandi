@@ -51,6 +51,8 @@ import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
 import BackgroundCheckPage from './pages/BackgroundCheckPage';
+import AgentPassportPage from './pages/AgentPassportPage';
+import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import TrustPassportPage from './pages/TrustPassportPage';
@@ -175,6 +177,8 @@ function App() {
             <Route path="protected-deposit" element={<PpdWizardPage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />
+            <Route path="agent-passport" element={<AgentPassportPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
             <Route path="cashout" element={<CashOutPage />} />
             <Route path="payroll" element={<PayrollPage />} />
             <Route path="arbitration" element={<ArbitrationPage />} />

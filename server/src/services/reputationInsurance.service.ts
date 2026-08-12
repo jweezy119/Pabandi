@@ -145,6 +145,59 @@ export class ReputationInsuranceService {
         this.activePolicies.set(policy.policyId, policy);
         this.totalPremiums += premiumUSD;
 
+        // ── REAL REVENUE CAPTURE ──────────────────────────────────────────────
+        // Debit the premium in $PAB from the provider's Web3Agent balance, fail-closed
+        // (atomic conditional decrement). If the provider can't pay, the policy isn't
+        // issued — no free coverage. Revenue is recorded as INSURANCE_PREMIUM.
+        try {
+          const agent = await prisma.web3Agent.findUnique({ where: { profileId: providerId } });
+          if (!agent || (agent.balancePab || 0) < (policy.premiumPAB ?? premiumPAB)) {
+            // Lazily create/permit a 0-balance agent but in that case the premium can't be
+            // collected → reject the policy rather than grant free coverage.
+            logger.warn(`[ReputationInsurance] Provider ${providerId} cannot pay premium ${policy.premiumPAB} PAB — policy not issued`);
+            this.activePolicies.delete(policy.policyId);
+            this.totalPremiums -= premiumUSD;
+            return {
+              approved: false,
+              premiumUSD: Math.round(premiumUSD * 100) / 100,
+              premiumPAB: Math.round(premiumPAB * 100) / 100,
+              riskMultiplier,
+              riskBand,
+              reason: `Insufficient $PAB balance to pay insurance premium (need ${policy.premiumPAB} PAB)`,
+              coverageAmount,
+            };
+          }
+          const premium = policy.premiumPAB ?? premiumPAB;
+          await prisma.$transaction([
+            prisma.web3Agent.updateMany({
+              where: { profileId: providerId, balancePab: { gte: premium } },
+              data: { balancePab: { decrement: premium } } as any,
+            }),
+            prisma.treasuryPosition.create({
+              data: {
+                bucket: 'OPERATING',
+                amount: premium,
+                status: 'DEPLOYED',
+                meta: { source: 'INSURANCE_PREMIUM', policyId: policy.policyId, reservationId, coverageAmount, riskBand } as any,
+              } as any,
+            }),
+          ]);
+          logger.info(`[ReputationInsurance] Premium ${policy.premiumPAB} PAB captured for policy ${policy.policyId}`);
+        } catch (e: any) {
+          logger.error(`[ReputationInsurance] Premium capture failed: ${e.message}`);
+          this.activePolicies.delete(policy.policyId);
+          this.totalPremiums -= premiumUSD;
+          return {
+            approved: false,
+            premiumUSD: Math.round(premiumUSD * 100) / 100,
+            premiumPAB: Math.round(premiumPAB * 100) / 100,
+            riskMultiplier,
+            riskBand,
+            reason: `Premium capture failed: ${e.message}`,
+            coverageAmount,
+          };
+        }
+
         // Record in audit trail
         await prisma.trustAuditTrail.create({
           data: {
@@ -157,6 +210,7 @@ export class ReputationInsuranceService {
             metadata: {
               policyId: policy.policyId,
               premiumUSD,
+              premiumPAB: policy.premiumPAB,
               riskMultiplier,
               riskBand,
               coverageAmount,
