@@ -402,6 +402,21 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.warn(`Agent loop skipped: ${(err as Error).message}`);
   }
 
+  // ── LIVE RAIL SELF-CHECK (fails LOUD, not silent) ───────────────────────────
+  if (process.env.LIVE_BOOKINGS === 'true') {
+    if (!process.env.SOLANA_PRIVATE_KEY) {
+      logger.error('🚨 LIVE_BOOKINGS=true but SOLANA_PRIVATE_KEY is MISSING — the loop will run in SIMULATED mode (no real on-chain transfers). Add SOLANA_PRIVATE_KEY to Render and restart to go live.');
+    } else {
+      logger.info('✅ LIVE_BOOKINGS=true and SOLANA_PRIVATE_KEY present — live on-chain rail armed. Run POST /api/v1/agent-loop/prepare-live once the wallet is funded.');
+    }
+    if (!process.env.TREASURY_WALLET || process.env.TREASURY_WALLET.startsWith('PABANDi')) {
+      logger.error('🚨 TREASURY_WALLET is not set / is a placeholder — agent SOL fees would route to a non-real address.');
+    }
+    if (!process.env.FEE_TREASURY_WALLET || process.env.FEE_TREASURY_WALLET.startsWith('PABANDi')) {
+      logger.error('🚨 FEE_TREASURY_WALLET is not set — human SOL fees route to placeholder. Set FEE_TREASURY_WALLET.');
+    }
+  }
+
   // Start Phase 0 Offramp SLA Sweeper
   setInterval(() => {
     import('./services/offramp.service').then(({ offrampService }) => {

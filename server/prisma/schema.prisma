@@ -1378,6 +1378,7 @@ model Web3Agent {
   dailyTransactions   Int      @default(0)
   lastReset           DateTime @default(now())
   isActive            Boolean  @default(true)
+  prepared            Boolean  @default(false) // live rails (ATA + SOL) prepared on-chain
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
