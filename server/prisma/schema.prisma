@@ -1386,8 +1386,8 @@ model Web3Agent {
 
 model AgentTransaction {
   id          String   @id @default(cuid())
-  agentId     String
-  type        String // FUNDING | BOOKING_PAYMENT | STAKE | BADGE_PURCHASE | FEE_COLLECTION
+  agentId     String?  // nullable: pool/arbitrage fees aren't tied to one agent
+  type        String // FUNDING | BOOKING_PAYMENT | STAKE | BADGE_PURCHASE | FEE_COLLECTION | POOL_FEE
   amount      Float
   txHash      String?
   fromAddress String?
@@ -1395,7 +1395,7 @@ model AgentTransaction {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  agent Web3Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent Web3Agent? @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId, createdAt])
   @@index([txHash])

@@ -552,12 +552,13 @@ export class Web3AgentService {
       // Log the arbitrage fee collection
       await prisma.agentTransaction.create({
         data: {
-          agentId: 'pool-arbitrage',
+          agentId: null,
           type: 'POOL_FEE',
           amount: feeAmount,
           txHash: signature,
           fromAddress: USDC_POOL_ADDRESS,
           toAddress: TREASURY_WALLET,
+          metadata: { source: 'pool-arbitrage' } as any,
         } as any,
       });
 
@@ -570,11 +571,12 @@ export class Web3AgentService {
       const feeAmount = 0.5; // Simulated pool fee (0.5 USDC per collection)
       await prisma.agentTransaction.create({
         data: {
-          agentId: 'pool-arbitrage',
+          agentId: null,
           type: 'POOL_FEE',
           amount: feeAmount,
           fromAddress: USDC_POOL_ADDRESS,
           toAddress: TREASURY_WALLET,
+          metadata: { source: 'pool-arbitrage' } as any,
         } as any,
       });
 
