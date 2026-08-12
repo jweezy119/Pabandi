@@ -1401,6 +1401,25 @@ model AgentTransaction {
   @@index([txHash])
 }
 
+model AgentBooking {
+  id            String   @id @default(cuid())
+  fromAgentId   String   // payer agent (the "customer" on this rail)
+  toAgentId     String   // payee agent (the "merchant/asset" on this rail)
+  amountPab     Float    // value transferred (the asset value)
+  feeSol        Float    @default(0) // SOL platform fee collected
+  status        String   @default("PENDING") // PENDING | COMPLETED | CANCELLED | NO_SHOW
+  txHash        String?  // on-chain value-transfer tx (if live)
+  simulated     Boolean  @default(false)
+  bookingRef    String?  // human-readable ref
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([fromAgentId])
+  @@index([toAgentId])
+  @@index([status])
+}
+
 model LinkedInProfile {
   id                  String   @id @default(cuid())
   linkedinId          String   @unique

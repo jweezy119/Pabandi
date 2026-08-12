@@ -11,6 +11,7 @@
 import { Router, Request, Response } from 'express';
 import { runAgentLoopCycle, prepareLiveRails, getAgentLoopState, startAgentLoop, stopAgentLoop } from '../services/agentLoop.service';
 import { web3AgentService } from '../services/web3Agent.service';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -32,6 +33,13 @@ router.post('/run-once', async (_req: Request, res: Response): Promise<any> => {
 
 router.get('/state', (_req: Request, res: Response): any => {
   res.json({ success: true, data: getAgentLoopState() });
+});
+
+router.get('/bookings', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const rows = await prisma.agentBooking.findMany({ orderBy: { createdAt: 'desc' }, take: 50 });
+    res.json({ success: true, data: rows });
+  } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 router.get('/sol-buffer', async (_req: Request, res: Response): Promise<any> => {

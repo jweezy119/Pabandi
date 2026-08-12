@@ -46,6 +46,9 @@ export const SOL_USD_PRICE = Number(process.env.SOL_USD_PRICE || 140);
 /** Reference USD price of 1 $PAB for USD-denominated fee reporting. */
 export const PAB_USD_PRICE = 0.10;
 
+/** On-chain SOL platform fee per booking (gas + fee are both SOL). */
+export const SOL_FEE_PER_BOOKING = Number(process.env.SOL_FEE_PER_BOOKING || 0.0005);
+
 /** Fee for a booking of `amountPab` (value-based, with floor). */
 export const computeFee = (amountPab: number): number => {
   const raw = amountPab * TOKENOMICS.FEE_RATE;

@@ -5,6 +5,7 @@ import { createTransferInstruction, getAssociatedTokenAddress, getAccount, creat
 import bs58 from 'bs58';
 import crypto from 'crypto';
 import { feeCollectionService } from './feeCollection.service';
+import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
 
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
@@ -14,7 +15,6 @@ const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = parseInt(process.env.MAX_TX_PER_DAY || (process.env.LIVE_BOOKINGS === 'true' ? '500' : '10'), 10);
 // On-chain SOL platform fee per booking (gas + fee are both SOL). Default 0.0005 SOL (~$0.07 @ $140/SOL).
-const SOL_FEE_PER_BOOKING = Number(process.env.SOL_FEE_PER_BOOKING || 0.0005);
 
 // ── USDC Pool Arbitrage ──────────────────────────────────────────
 const USDC_POOL_ADDRESS = process.env.PAB_USDC_POOL_ADDRESS || 'GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL';
@@ -136,6 +136,12 @@ export class Web3AgentService {
   async loadAgents(): Promise<Web3Agent[]> {
     const agents = await prisma.web3Agent.findMany({ where: { isActive: true } });
     return agents as Web3Agent[];
+  }
+
+  /** Fetch one agent by its profileId (used by the unified booking rail). */
+  async getAgentByProfileId(profileId: string): Promise<Web3Agent | null> {
+    const agent = await prisma.web3Agent.findUnique({ where: { profileId } });
+    return (agent as Web3Agent) || null;
   }
 
   /** Get agent balance on-chain */
