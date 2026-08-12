@@ -395,6 +395,45 @@ export class PpdService {
       memberCount: pool.memberCount,
       grants: pool.grants,
     };
+  // ── D. PROOF OF RENT (ZK-SNARK) ──────────────────────────────────────────────
+
+  /**
+   * Generates a Zero-Knowledge Proof (simulated) of on-time rent payment.
+   * Proves "Tenant has X consecutive on-time payments" without revealing rent amount,
+   * landlord identity, or property address.
+   */
+  async generateProofOfRent(tenantId: string, depositId: string, consecutiveMonths: number): Promise<any> {
+    const deposit = await prisma.securityDeposit.findUnique({ where: { id: depositId } });
+    if (!deposit || deposit.tenantId !== tenantId) {
+      throw new Error('Deposit not found or unauthorized');
+    }
+
+    // In production, this would call a Noir/UltraPlonk prover microservice.
+    // We mock the cryptographic proof generation here.
+    const mockZkProof = {
+      pi_a: ["0x" + Math.random().toString(16).slice(2), "0x" + Math.random().toString(16).slice(2)],
+      pi_b: [
+        ["0x" + Math.random().toString(16).slice(2), "0x" + Math.random().toString(16).slice(2)],
+        ["0x" + Math.random().toString(16).slice(2), "0x" + Math.random().toString(16).slice(2)]
+      ],
+      pi_c: ["0x" + Math.random().toString(16).slice(2), "0x" + Math.random().toString(16).slice(2)],
+      protocol: "groth16",
+      curve: "bn128"
+    };
+
+    const publicSignals = [
+      consecutiveMonths.toString(), // Signal 1: Number of consecutive payments
+      Math.floor(Date.now() / 1000).toString(), // Signal 2: Timestamp
+    ];
+
+    logger.info(`[PPD-ZK] Generated Proof of Rent for Tenant ${tenantId}: ${consecutiveMonths} consecutive months.`);
+
+    return {
+      proof: mockZkProof,
+      publicSignals,
+      verificationKeyId: 'vk_por_v1',
+      description: `Cryptographic proof of ${consecutiveMonths} consecutive on-time rent payments.`
+    };
   }
 }
 

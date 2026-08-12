@@ -69,6 +69,63 @@ export class VCService {
     return vcRecord;
   }
 
+  async issuePropertyCredential(userId: string, propertyId: string, credentialType: CredentialType, claims: any) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+
+    const activeKey = await prisma.issuerKey.findFirst({
+      where: { isActive: true },
+      orderBy: { rotatedAt: 'desc' }
+    });
+
+    if (!activeKey) throw new Error('Active issuer key not found');
+
+    // Issue to the property itself (Self-Sovereign Property)
+    const subjectDid = `did:web:pabandi.local:property:${propertyId}`;
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + (365 * 24 * 60 * 60);
+
+    const credentialSubject = {
+      id: subjectDid,
+      ownerDid: `did:web:pabandi.local:user:${user.id}`,
+      ...claims
+    };
+
+    const payload = {
+      iss: this.issuerDid,
+      sub: subjectDid,
+      nbf: iat,
+      exp: exp,
+      vc: {
+        '@context': [
+          'https://www.w3.org/2018/credentials/v1'
+        ],
+        type: ['VerifiableCredential', 'PropertyCredential'],
+        issuer: { id: this.issuerDid },
+        issuanceDate: new Date(iat * 1000).toISOString(),
+        credentialSubject
+      }
+    };
+
+    const jwtProof = jwt.sign(payload, activeKey.privateKeyPem, {
+      algorithm: 'ES256',
+      keyid: `${this.issuerDid}#${activeKey.kid}`
+    });
+
+    const vcRecord = await prisma.verifiableCredential.create({
+      data: {
+        userId: user.id, // Store under the owner's userId for DB tracking
+        credentialType,
+        jwtProof,
+        statusListIndex: Math.floor(Math.random() * 100000),
+        expiresAt: new Date(exp * 1000),
+        subject: credentialSubject,
+      }
+    });
+
+    return vcRecord;
+  }
+
   async createSelectiveDisclosurePresentation(vcId: string, userId: string, disclosedFields: string[], nonce?: string) {
     const vcRecord = await prisma.verifiableCredential.findUnique({
       where: { id: vcId },
