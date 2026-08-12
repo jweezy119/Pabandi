@@ -971,13 +971,17 @@ export const completeReservation = async (
       const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
 
       // Determine if an on-chain release happened (real deposit tx + oracle key set).
+      // NOTE: the SOL platform fee is collected CLIENT-SIDE at deposit time (the customer
+      // signs it atomically with the deposit in client/src/utils/web3.ts). So once a real
+      // deposit tx exists, the fee is on-chain regardless of the oracle release.
       let onChain = false;
-      if (reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
+      const hasRealDeposit = !!reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK';
+      if (hasRealDeposit) {
+        onChain = true; // SOL fee already transferred client-side in the deposit tx
         try {
           await cryptoService.releaseEscrowToBusiness(reservation.id);
-          onChain = true; // best-effort: oracle release executed on-chain
         } catch (relErr) {
-          logger.warn(`[Escrow] Release skipped/failed for ${reservation.id}: ${relErr}`);
+          logger.warn(`[Escrow] Value release skipped/failed for ${reservation.id}: ${relErr}`);
         }
       }
 
