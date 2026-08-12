@@ -8,7 +8,7 @@ export const PABANDI_ESCROW_BSC = '0x6a05D28525b6422F09BB93f9cFB5E3e070c7937A';
 export const PABANDI_TREASURY_SOLANA = 'PABANDi111111111111111111111111111111111111'; // Placeholder
 // Platform-fee treasury (SOL). Defaults to the same treasury; set to a dedicated
 // wallet via env to separate fee revenue from escrow deposits.
-export const PABANDI_FEE_TREASURY_SOLANA = (import.meta as any)?.env?.VITE_FEE_TREASURY_SOLANA || PABANDI_TREASURY_SOLANA;
+export const PABANDI_FEE_TREASURY_SOLANA = (import.meta.env.VITE_FEE_TREASURY_SOLANA as string) || PABANDI_TREASURY_SOLANA;
 // Platform fee rate (SOL deposit value → SOL fee). Mirrors backend 1.5% / 0.015.
 export const SOL_PLATFORM_FEE_RATE = 0.015;
 
