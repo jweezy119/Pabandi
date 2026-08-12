@@ -1750,3 +1750,55 @@ model PassportVector {
 
   passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 }
+
+// ── OAuth-Like Delegated Access ("Sign in with Pabandi") ─────────────
+
+model OAuthClient {
+  id           String             @id @default(cuid())
+  clientId     String             @unique // The public identifier for the app
+  clientSecret String             // The hashed secret for back-channel calls
+  name         String             // Display name (e.g., "Rozee.pk", "Daraz")
+  logoUrl      String?
+  redirectUris String[]           // Allowed callback URLs
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  authCodes    OAuthAuthCode[]
+  tokens       OAuthToken[]
+}
+
+model OAuthAuthCode {
+  id           String      @id @default(cuid())
+  code         String      @unique
+  clientId     String
+  userId       String
+  redirectUri  String
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  used         Boolean     @default(false)
+
+  client       OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+model OAuthToken {
+  id           String      @id @default(cuid())
+  accessToken  String      @unique
+  refreshToken String?     @unique
+  clientId     String
+  userId       String
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  revoked      Boolean     @default(false)
+
+  client       OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([accessToken])
+}
