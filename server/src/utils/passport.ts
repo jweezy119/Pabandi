@@ -30,7 +30,7 @@ export function configurePassport() {
         {
           clientID: GOOGLE_CLIENT_ID,
           clientSecret: GOOGLE_CLIENT_SECRET,
-          callbackURL: `${BACKEND_URL}/api/v1/auth/google/callback`,
+          callbackURL: '/api/v1/auth/google/callback',
           passReqToCallback: true,
         },
         async (req: any, _accessToken, _refreshToken, profile, done) => {
@@ -81,7 +81,7 @@ export function configurePassport() {
         {
           clientID: FACEBOOK_APP_ID,
           clientSecret: FACEBOOK_APP_SECRET,
-          callbackURL: `${BACKEND_URL}/api/v1/auth/facebook/callback`,
+          callbackURL: '/api/v1/auth/facebook/callback',
           profileFields: ['id', 'emails', 'name', 'picture.type(large)'],
           passReqToCallback: true,
         },
@@ -134,7 +134,7 @@ export function configurePassport() {
         {
           consumerKey: TWITTER_CONSUMER_KEY,
           consumerSecret: TWITTER_CONSUMER_SECRET,
-          callbackURL: `${BACKEND_URL}/api/v1/auth/twitter/callback`,
+          callbackURL: '/api/v1/auth/twitter/callback',
           passReqToCallback: true,
           includeEmail: true,
         },
@@ -183,7 +183,7 @@ export function configurePassport() {
         {
           clientID: LINKEDIN_CLIENT_ID,
           clientSecret: LINKEDIN_CLIENT_SECRET,
-          callbackURL: `${BACKEND_URL}/api/v1/auth/linkedin/callback`,
+          callbackURL: '/api/v1/auth/linkedin/callback',
           scope: ['r_emailaddress', 'r_liteprofile'],
           passReqToCallback: true,
         },
@@ -233,7 +233,7 @@ export function configurePassport() {
         {
           clientID: TIKTOK_CLIENT_KEY,
           clientSecret: TIKTOK_CLIENT_SECRET,
-          callbackURL: `${BACKEND_URL}/api/v1/auth/tiktok/callback`,
+          callbackURL: '/api/v1/auth/tiktok/callback',
           scope: ['user.info.basic'],
           passReqToCallback: true,
         },
@@ -281,7 +281,7 @@ export function configurePassport() {
     passport.use('facebook-connect', new FacebookStrategy({
       clientID: FACEBOOK_APP_ID,
       clientSecret: FACEBOOK_APP_SECRET,
-      callbackURL: `${BACKEND_URL}/api/v1/social/connect/facebook/callback`,
+      callbackURL: '/api/v1/social/connect/facebook/callback',
       profileFields: ['id', 'emails', 'name', 'picture.type(large)']
     }, (_accessToken, _refreshToken, profile, done) => {
       return done(null, profile);
@@ -292,7 +292,7 @@ export function configurePassport() {
     passport.use('linkedin-connect', new LinkedInStrategy({
       clientID: LINKEDIN_CLIENT_ID,
       clientSecret: LINKEDIN_CLIENT_SECRET,
-      callbackURL: `${BACKEND_URL}/api/v1/social/connect/linkedin/callback`,
+      callbackURL: '/api/v1/social/connect/linkedin/callback',
       scope: ['r_emailaddress', 'r_liteprofile']
     }, (_accessToken, _refreshToken, profile, done) => {
       return done(null, profile);
