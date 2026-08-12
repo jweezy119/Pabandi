@@ -15,6 +15,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { ptpEngine, PTP_RISK_BANDS, PTPRiskBand } from '../protocol/ptp.spec';
 import { web3AgentService } from './web3Agent.service';
+import { geoRiskOracle, RiskBand } from './geoRiskOracle.service';
 
 // Non-custodial yield pools (tenant opts in; Pabandi spreads the yield)
 export const YIELD_POOLS = {
@@ -35,6 +36,43 @@ export interface CreateDepositInput {
   communityPoolOptIn?: boolean; // HOA: yield → community pool
   pool?: YieldPoolKey;
   beneficiaryBackgroundCheckId?: string; // BackgroundCheck.id of the builder/fleet/HOA vendor
+  /** Optional intrinsic property risk (from GeoRiskOracle). Riskier asset trims the tenant discount. */
+  geoRiskBand?: RiskBand;
+  /** Optional pre-supplied tenant trust score (skips the DB user lookup — used by sims/tests). */
+  tenantTrustScore?: number;
+}
+
+/**
+ * PURE deposit-pricing math (no DB, no side effects).
+ * Applies the tenant's PTP risk-band reduction + optional background-check reduction,
+ * then the dual-risk property-trim, and returns the final deposit terms.
+ * Reused by createDeposit AND by the Hyper-Pilot simulation (which can't afford 2500 DB writes).
+ */
+export function computeDepositTerms(input: {
+  requiredAmountUSD: number;
+  tenantTrustScore: number;
+  geoRiskBand?: RiskBand;
+  beneficiaryBackgroundCheckPass?: boolean;
+}): {
+  riskBand: PTPRiskBand;
+  depositReductionPct: number;
+  bcReductionPct: number;
+  propertyRiskTrim: number;
+  finalReduction: number;
+  actualDepositUSD: number;
+} {
+  const riskBand: PTPRiskBand = ptpEngine.scoreToRiskBand(input.tenantTrustScore ?? 50);
+  const bandSpec = PTP_RISK_BANDS[riskBand];
+  const depositReductionPct = bandSpec.depositReduction;
+  const bcReductionPct = input.beneficiaryBackgroundCheckPass ? 0.10 : 0;
+  const totalReduction = Math.min(0.6, depositReductionPct + bcReductionPct);
+  const geoRiskBand = input.geoRiskBand;
+  let propertyRiskTrim = 0;
+  if (geoRiskBand === 'D') propertyRiskTrim = 0.05;
+  else if (geoRiskBand === 'E') propertyRiskTrim = 0.10;
+  const finalReduction = +(Math.max(0, totalReduction - propertyRiskTrim)).toFixed(3);
+  const actualDepositUSD = +(input.requiredAmountUSD * (1 - finalReduction)).toFixed(2);
+  return { riskBand, depositReductionPct, bcReductionPct, propertyRiskTrim, finalReduction, actualDepositUSD };
 }
 
 export class PydService {
@@ -46,23 +84,16 @@ export class PydService {
     const tenant = await prisma.user.findUnique({ where: { id: input.tenantId } });
     if (!tenant) throw new Error('Tenant not found');
 
-    const riskBand: PTPRiskBand = ptpEngine.scoreToRiskBand(tenant.trustScore ?? 50);
-    const bandSpec = PTP_RISK_BANDS[riskBand];
-    const depositReductionPct = bandSpec.depositReduction; // 0.50 / 0.30 / 0.10 / 0
+    const terms = computeDepositTerms({
+      requiredAmountUSD: input.requiredAmountUSD,
+      tenantTrustScore: input.tenantTrustScore ?? (tenant.trustScore ?? 50),
+      geoRiskBand: input.geoRiskBand,
+      beneficiaryBackgroundCheckPass: !!input.beneficiaryBackgroundCheckId,
+    });
+    const { riskBand, depositReductionPct, bcReductionPct, propertyRiskTrim, finalReduction, actualDepositUSD } = terms;
 
-    // BackgroundCheck reduction lever: a verified PASS on the beneficiary
-    // (builder / fleet co / HOA vendor) earns up to +10% off the deposit.
-    let bcReductionPct = 0;
+    // BackgroundCheck lever (verified PASS on beneficiary) — only affects the record.
     let bcCheckId: string | undefined = input.beneficiaryBackgroundCheckId;
-    if (bcCheckId) {
-      const bc = await prisma.backgroundCheck.findUnique({ where: { id: bcCheckId } });
-      if (bc && bc.recommendation === 'PASS' && (bc.riskScore ?? 100) <= 30) {
-        bcReductionPct = 0.10;
-      }
-    }
-
-    const totalReduction = Math.min(0.6, depositReductionPct + bcReductionPct);
-    const actualDepositUSD = +(input.requiredAmountUSD * (1 - totalReduction)).toFixed(2);
 
     const deposit = await prisma.securityDeposit.create({
       data: {
@@ -84,7 +115,8 @@ export class PydService {
 
     logger.info(
       `[PYD] Deposit ${deposit.id} (${input.depositContext ?? 'PROPERTY'}): payer Band ${riskBand} → ` +
-      `${depositReductionPct * 100}% PTP + ${bcReductionPct * 100}% BC = ${totalReduction * 100}% total, ` +
+      `${depositReductionPct * 100}% PTP + ${bcReductionPct * 100}% BC = ${finalReduction * 100}% total` +
+      (propertyRiskTrim ? `, -${propertyRiskTrim * 100}% property-risk trim` : '') + `, ` +
       `actual deposit $${actualDepositUSD} (was $${input.requiredAmountUSD})`
     );
 
@@ -93,7 +125,7 @@ export class PydService {
       yieldAgreement = await this.proposeYieldAgreement(deposit.id, input.tenantId, input.landlordId, input.pool);
     }
 
-    return { deposit, yieldAgreement };
+    return { deposit, yieldAgreement, geoRiskBand: input.geoRiskBand ?? null, propertyRiskTrim, finalReduction };
   }
 
   /**
@@ -214,6 +246,16 @@ export class PydService {
       where: { id: depositId },
       include: { yieldAgreement: true },
     });
+  }
+
+  /**
+   * DUAL-RISK RENT PRICING (Geospatial Risk Oracle)
+   * Given a base rent, a property's intrinsic risk band, and the tenant's PTP trust band,
+   * compute the dynamically adjusted monthly rent. Property risk adds a premium; tenant
+   * trust gives a discount. Pure function over geoRiskOracle — no side effects.
+   */
+  priceRent(baseRentUSD: number, geoRiskBand: RiskBand, tenantTrustBand: RiskBand) {
+    return geoRiskOracle.priceWithDualRisk({ baseRentUSD, geoRiskBand, tenantTrustBand });
   }
 
   // ── TOKENIZED RENT STREAMS (Ondo USDY / DeFi Primitive) ─────────────────────

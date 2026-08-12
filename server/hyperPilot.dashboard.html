@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8">
+  <title>Pabandi Hyper-Pilot — Dual-Risk Actuarial Simulation</title>
+  <style>body{font-family:system-ui;background:#0f1220;color:#e6e6e6;margin:0;padding:32px}
+  h1{color:#7c5cff}table{border-collapse:collapse;width:100%;margin-top:16px}
+  th,td{border:1px solid #2a2f45;padding:8px 10px;text-align:right;font-size:13px}
+  th{background:#1a1f35;color:#9aa4ff}td:first-child,th:first-child{text-align:left}
+  .note{color:#8a90b0;margin-top:18px;font-size:13px;max-width:760px}</style></head>
+  <body><h1>Pabandi Protocol v2.0 — Hyper-Pilot Simulation</h1>
+  <p class="note">Dual-risk actuarial engine (property location risk + tenant PTP trust) driven over the
+  REAL pydService. 5 landlords (diverse property risk) × 500 tenants (diverse trust). Monte-Carlo Bear/Base/Bull.
+  Off-chain (Solana infra untouched). Pabandi spread column = protocol revenue from yield.</p>
+  <table><thead><tr>
+    <th>Scenario</th><th>Contracts</th><th>Avg Base</th><th>Avg Adj</th>
+    <th>Risk Premium</th><th>Trust Discount</th><th>Deposits</th><th>Deposit Cut</th>
+    <th>Yield→Tenant</th><th>Pabandi Spread</th><th>Pred. Defaults</th>
+  </tr></thead><tbody>
+    <tr>
+      <td><b>Bear</b></td>
+      <td>2500</td>
+      <td>$1428</td>
+      <td>$1431.02</td>
+      <td style="color:#c0392b">+$76742.76</td>
+      <td style="color:#27ae60">-$69183.2</td>
+      <td>$7,140,000</td>
+      <td>$511,751</td>
+      <td>$218,732.22</td>
+      <td><b>$59,654.24</b></td>
+      <td>484</td>
+    </tr>
+    <tr>
+      <td><b>Base</b></td>
+      <td>2500</td>
+      <td>$1680</td>
+      <td>$1683.56</td>
+      <td style="color:#c0392b">+$90285.6</td>
+      <td style="color:#27ae60">-$81391.8</td>
+      <td>$8,400,000</td>
+      <td>$602,060</td>
+      <td>$428,886.7</td>
+      <td><b>$116,969.1</b></td>
+      <td>251</td>
+    </tr>
+    <tr>
+      <td><b>Bull</b></td>
+      <td>2500</td>
+      <td>$1932</td>
+      <td>$1936.09</td>
+      <td style="color:#c0392b">+$103828.44</td>
+      <td style="color:#27ae60">-$93601.59</td>
+      <td>$9,660,000</td>
+      <td>$692,369</td>
+      <td>$690,507.59</td>
+      <td><b>$188,320.25</b></td>
+      <td>125</td>
+    </tr></tbody></table>
+  <p class="note">Generated 2026-08-12T17:15:40.362Z · reproducible seed · simulated external OSINT (flagged).</p>
+  </body></html>

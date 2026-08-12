@@ -395,6 +395,8 @@ export class PpdService {
       memberCount: pool.memberCount,
       grants: pool.grants,
     };
+  }
+
   // ── D. PROOF OF RENT (ZK-SNARK) ──────────────────────────────────────────────
 
   /**
