@@ -9,6 +9,7 @@
     "build": "prisma generate && tsc",
     "zk:build": "ts-node src/zk/buildZk.ts",
     "start": "node dist/src/index.js",
+    "prestart": "prisma generate",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "seed": "ts-node prisma/seed.ts",
@@ -67,6 +68,7 @@
     "passport-linkedin-oauth2": "^2.0.0",
     "passport-tiktok-auth": "^1.0.12",
     "passport-twitter": "^1.0.4",
+    "prisma": "^5.22.0",
     "redis": "^4.6.12",
     "snarkjs": "^0.7.6",
     "stripe": "^22.3.2",
@@ -95,7 +97,6 @@
     "chokidar": "^5.0.0",
     "nodemon": "^3.1.14",
     "picomatch": "^4.0.4",
-    "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
