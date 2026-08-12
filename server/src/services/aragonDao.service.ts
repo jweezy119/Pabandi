@@ -56,18 +56,20 @@ export class AragonStyleDao {
     return p;
   }
 
-  /** Bicameral check: >50% unique wallets AND >50% trust-weighted power must be FOR. */
+  /** Bicameral check: >50% unique wallets AND >50% trust-weighted power must be FOR.
+   *  Requires a minimum quorum (>=2 distinct wallets) so a single vote can't auto-pass. */
   private async maybeFinalize(proposalId: string) {
     const p = this.proposals.get(proposalId);
     const totalWallets = p.walletsFor.size + p.walletsAgainst.size;
+    if (totalWallets < 2) return; // quorum not met — stay OPEN
     const walletPctFor = totalWallets ? p.walletsFor.size / totalWallets : 0;
     const powerPctFor = p.tally.FOR / (p.tally.FOR + p.tally.AGAINST || 1);
     if (walletPctFor > 0.5 && powerPctFor > 0.5) {
       p.status = 'PASSED';
-    } else if (p.walletsAgainst.size > 0 && walletPctFor < 0.5) {
+    } else if (walletPctFor < 0.5) {
       p.status = 'REJECTED';
     } else {
-      return; // still open
+      return; // still open (e.g. 50/50 or awaiting more votes)
     }
     p.finalizedAt = new Date().toISOString();
     p.anchor = await solanaAnchor.anchorOnSolana('ARAGON_PROPOSAL', {
