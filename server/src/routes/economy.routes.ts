@@ -18,6 +18,54 @@ router.get('/stats', async (_req: any, res: any) => {
 });
 
 /**
+ * Public: live tally of REVENUE actually captured (not simulated).
+ * Sums treasuryPositions by source:
+ *   - INSURANCE_PREMIUM : reputation-insurance premiums (real $PAB)
+ *   - ESCROW_FACILITATION_FEE / platform fees : booking/deposit facilitation
+ * Plus metered $PAB fees from passport issuance + background checks ledgers.
+ */
+router.get('/revenue', async (_req: any, res: any) => {
+  try {
+    const positions = await prisma.treasuryPosition.findMany({
+      where: { status: 'DEPLOYED' },
+    });
+    const bySource: Record<string, number> = {};
+    for (const p of positions as any[]) {
+      const src = (p.meta as any)?.source;
+      if (!src || (src !== 'INSURANCE_PREMIUM' && src !== 'ESCROW_FACILITATION_FEE')) continue;
+      bySource[src] = +(bySource[src] || 0) + (p.amount || 0);
+    }
+    const insurancePAB = bySource['INSURANCE_PREMIUM'] || 0;
+    const platformFeesPAB = bySource['ESCROW_FACILITATION_FEE'] || 0;
+
+    // Metered $PAB fees (passport issuance ledger + background checks)
+    let passportFees = 0;
+    try {
+      const rows: any = await prisma.$queryRawUnsafe(
+        `SELECT COALESCE(SUM("feePab"),0)::float AS s FROM "PassportIssuance"`
+      );
+      passportFees = rows?.[0]?.s || 0;
+    } catch { /* ledger may not exist yet */ }
+
+    const totalPAB = +(insurancePAB + platformFeesPAB + passportFees).toFixed(2);
+    res.json({
+      success: true,
+      data: {
+        insurancePAB,
+        platformFeesPAB,
+        passportFeesPAB: +passportFees.toFixed(2),
+        totalPAB,
+        // Notional USD value at $PAB peg (100 $PAB = $1)
+        totalUSD: +(totalPAB / 100).toFixed(2),
+        positions: bySource,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to load revenue' });
+  }
+});
+
+/**
  * Public: deterministic one-command demo booking.
  * Creates two idempotent demo agents (funded in DB), runs a real executeBookingPayment,
  * and returns the value-based fee, deflationary burn, bucket allocation, and the

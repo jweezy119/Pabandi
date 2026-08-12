@@ -112,6 +112,30 @@ export const businessService = {
     apiClient.get(`/businesses/${businessId}/payouts/raast`, { params: { payoutReference } }),
 };
 
+export const agentPassportService = {
+  /** Issue a scoped Agent Capability Passport for one of the user's agents. Requires auth. */
+  issue: (data: { agentId: string; capabilities: string[]; ownerUserId?: string }) =>
+    apiClient.post('/agent-passport/issue', data),
+  /** Public verify of any passport token, optionally checking a required capability. */
+  verify: (token: string, need?: string) =>
+    apiClient.get('/agent-passport/verify', { params: { token, need } }),
+  /** Public audit of a passport-issuance charge by idempotency key. */
+  ledger: (idempotencyKey: string) =>
+    apiClient.get(`/agent-passport/ledger/${idempotencyKey}`),
+  /** Discovery doc (public key + capability vocabulary). */
+  discover: () => apiClient.get('/agent-passport/.well-known/ptp.json'),
+};
+
+export const revenueService = {
+  /** Underwrite a reputation-insurance policy for a booking (captures $PAB premium). */
+  underwriteInsurance: (data: { providerId: string; customerId: string; reservationId: string; coverageAmount: number; coverageType?: string }) =>
+    apiClient.post('/monetization/insurance/underwrite', data),
+  /** Live tally of captured revenue (insurance premiums + platform/escrow fees). */
+  captured: () => apiClient.get('/economy/revenue'),
+  /** Actuarial stats for the insurance book. */
+  insuranceStats: () => apiClient.get('/monetization/insurance/stats'),
+};
+
 export const reservationService = {
   createReservation: (data: any) =>
     apiClient.post('/reservations', data),

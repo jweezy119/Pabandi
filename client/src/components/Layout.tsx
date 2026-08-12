@@ -277,16 +277,18 @@ export default function Layout() {
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>
             </Dropdown>
-            <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>
+              <DropdownItem to="/agent-passport">Agent Passport</DropdownItem>
               <DropdownItem to="/background-check">Background Check</DropdownItem>
               <DropdownItem to="/protected-deposit">Protected Deposit</DropdownItem>
               <DropdownItem to="/arbitration">Arbitration</DropdownItem>
             </Dropdown>
-            <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3', '/revenue', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/cashout">Cash Out</DropdownItem>
               <DropdownItem to="/payroll">Instant Pay</DropdownItem>
               <DropdownItem to="/economy">Economy</DropdownItem>
+              <DropdownItem to="/revenue">Revenue</DropdownItem>
               <DropdownItem to="/web3">Web3</DropdownItem>
             </Dropdown>
             <Dropdown label="Company" current={['/about', '/sharia-compliance', '/technology', '/join', '/developer'].some((p) => location.pathname.startsWith(p))}>
