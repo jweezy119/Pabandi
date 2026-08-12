@@ -8,9 +8,12 @@ const BOOKING_AMOUNT = parseInt(process.env.AGENT_BOOKING_AMOUNT || '1', 10); //
 const POOL_FEE_INTERVAL_MS = parseInt(process.env.POOL_FEE_INTERVAL_MS || '600000', 10); // 10 min default
 const MAX_BOOKINGS_PER_CYCLE = parseInt(process.env.MAX_BOOKINGS_PER_CYCLE || '10', 10);
 const MIN_OUTFLOW_PAB = parseInt(process.env.MIN_OUTFLOW_PAB || '1', 10);
+// Live on-chain bookings (real PAB transfers). OFF by default → simulated (DB-only) to protect SOL.
+const LIVE_BOOKINGS = process.env.LIVE_BOOKINGS === 'true';
 
 interface AgentLoopState {
   running: boolean;
+  live: boolean;
   lastCycleAt: Date | null;
   lastPoolFeeAt: Date | null;
   totalBookings: number;
@@ -20,6 +23,7 @@ interface AgentLoopState {
 
 let state: AgentLoopState = {
   running: false,
+  live: LIVE_BOOKINGS,
   lastCycleAt: null,
   lastPoolFeeAt: null,
   totalBookings: 0,
@@ -228,6 +232,15 @@ export function startAgentLoop(): void {
 export function stopAgentLoop(): void {
   state.running = false;
   logger.info('[AgentLoop] Stopped');
+}
+
+/**
+ * Prepare LIVE booking rails (pre-create agent ATAs + fund SOL for tx fees).
+ * Calls web3AgentService.prepareLiveBookingRails. Safe to call once before
+ * enabling LIVE_BOOKINGS=true. Returns SOL spent so the operator can verify budget.
+ */
+export async function prepareLiveRails(opts?: { solBudget?: number; perAgentSol?: number }) {
+  return web3AgentService.prepareLiveBookingRails(opts);
 }
 
 /**

@@ -31,10 +31,11 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
     let onChainBalance = 0;
 
     // 2. Get On-Chain (Solana) Balance if they have linked a wallet
-    if (user.wallet?.address && process.env.SOLANA_PAB_MINT_ADDRESS) {
+    const mintAddress = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
+    if (user.wallet?.address && mintAddress) {
       try {
         const userPubKey = new PublicKey(user.wallet.address);
-        const mintPubKey = new PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS);
+        const mintPubKey = new PublicKey(mintAddress);
 
         const ata = await getAssociatedTokenAddress(mintPubKey, userPubKey);
         
@@ -56,7 +57,7 @@ export const getBalances = async (req: AuthRequest, res: Response) => {
         totalStaked,
         totalBalance: offChainBalance + onChainBalance + totalStaked,
         solanaWalletAddress: user.wallet?.address || null,
-        mintAddress: process.env.SOLANA_PAB_MINT_ADDRESS || null
+        mintAddress: mintAddress
       }
     });
 
