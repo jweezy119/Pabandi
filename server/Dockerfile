@@ -11,17 +11,16 @@ COPY package.json package-lock.json ./
 # Install all dependencies (including devDependencies like typescript and prisma)
 RUN npm install
 
-# Copy Prisma schema and generate client
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-# Copy the rest of the source code
+# Copy ALL source (including prisma/) up front so the final generate/build layer
+# always runs against the current schema and is never served a stale cached client.
 COPY . .
 
-# Ensure a clean build and avoid stale cached typings/dist from partial builds
-RUN rm -rf dist .tsbuildinfo node_modules/.cache
-# Build TypeScript
-RUN npm run build
+# Ensure a clean build and avoid stale cached typings/dist from partial builds.
+# Regenerate the Prisma client here (in the same non-cached layer as the build)
+# so the deployed @prisma/client always matches schema.prisma (agentBooking, prepared, etc).
+RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache \
+ && npx prisma generate \
+ && npm run build
 
 # Start the server
 CMD ["npm", "start"]
