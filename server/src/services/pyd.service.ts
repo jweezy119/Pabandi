@@ -215,6 +215,63 @@ export class PydService {
       include: { yieldAgreement: true },
     });
   }
+
+  // ── TOKENIZED RENT STREAMS (Ondo USDY / DeFi Primitive) ─────────────────────
+
+  /**
+   * Process a tokenized rent payment.
+   * Instead of a sunk cost, rent is held in a yield-bearing RWA (e.g., Ondo USDY) 
+   * for a short duration (e.g., paid on the 1st, settles on the 5th).
+   * The generated yield is split 50/50 using O(1) distribution logic.
+   */
+  async processTokenizedRent(tenantId: string, landlordId: string, rentAmountUSD: number, holdingDays: number): Promise<any> {
+    const APY = YIELD_POOLS.ONDO_USDC.expectedApy; // e.g., 4.5%
+    
+    // Calculate total yield generated during the holding period
+    const totalYieldUSD = rentAmountUSD * (APY / 100) * (holdingDays / 365);
+    
+    // 50/50 split
+    const tenantEquityUSD = +(totalYieldUSD / 2).toFixed(4);
+    const landlordBonusUSD = +(totalYieldUSD / 2).toFixed(4);
+
+    // In a real implementation, this would trigger an on-chain O(1) reward distribution 
+    // where the total yield is minted as ERC-20 tokens or credited to the respective wallets
+    // without iterating through arrays (saving gas).
+
+    logger.info(
+      `[PYD-TokenizedRent] Processed $${rentAmountUSD} rent held for ${holdingDays} days in Ondo USDY. ` +
+      `Yield generated: $${totalYieldUSD.toFixed(4)}. Tenant Equity: $${tenantEquityUSD} | Landlord Bonus: $${landlordBonusUSD}`
+    );
+
+    // Simulate updating the tenant's Renter Equity Wallet
+    await prisma.$transaction(async (tx) => {
+      // Find or create wallet (simplified for this walkthrough)
+      const wallet = await tx.wallet.findFirst({ where: { userId: tenantId } });
+      if (wallet) {
+        await tx.wallet.update({
+          where: { id: wallet.id },
+          data: { usdcBalance: { increment: tenantEquityUSD } }
+        });
+      }
+      
+      const landlordWallet = await tx.wallet.findFirst({ where: { userId: landlordId } });
+      if (landlordWallet) {
+        await tx.wallet.update({
+          where: { id: landlordWallet.id },
+          data: { usdcBalance: { increment: rentAmountUSD + landlordBonusUSD } }
+        });
+      }
+    });
+
+    return {
+      rentAmountUSD,
+      holdingDays,
+      totalYieldUSD: +totalYieldUSD.toFixed(4),
+      tenantEquityUSD,
+      landlordSettlementUSD: +(rentAmountUSD + landlordBonusUSD).toFixed(4),
+      asset: 'Ondo USDY'
+    };
+  }
 }
 
 export const pydService = new PydService();
