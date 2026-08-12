@@ -8,6 +8,8 @@ import { pabondService } from '../services/pabond.service';
 import { logger } from '../utils/logger';
 import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
+import { collectPlatformFee } from '../services/unifiedBooking.service';
+import { SOL_USD_PRICE } from '../config/tokenomics';
 import { ethers } from 'ethers';
 import { reliabilityService } from '../services/reliability.service';
 import { paymentRouter } from '../services/payment.router';
@@ -959,21 +961,23 @@ export const completeReservation = async (
       await cryptoService.triggerConciergeCashback(reservation.customerId, reservation.id);
     }
 
-    // Escrow Integration: Release funds to business with 1.5% Platform Fee
+    // Escrow Integration: Release funds to business with platform fee (UNIFIED SOL rail)
     if (reservation.depositRequired && reservation.cryptoDepositTxHash && reservation.cryptoDepositTxHash !== 'WEB3_TX_MOCK') {
       try {
         const depositAmount = reservation.depositAmount || 0;
-        const platformFee = depositAmount * 0.015;
-        
-        if (platformFee > 0) {
-          await prisma.treasuryPosition.create({
-            data: {
-              bucket: 'OPERATING',
-              amount: platformFee,
-              status: 'DEPLOYED',
-              meta: { source: 'ESCROW_FACILITATION_FEE', reservationId: reservation.id }
-            }
+        const platformFeeUsd = depositAmount * 0.015; // 1.5% platform fee
+
+        if (platformFeeUsd > 0) {
+          // Single canonical collector — humans and agents share this exact ledger.
+          const fee = await collectPlatformFee({
+            bookingRef: `human:${reservation.id}`,
+            usdValue: platformFeeUsd,
+            amountSol: platformFeeUsd / SOL_USD_PRICE,
+            source: 'HUMAN_BOOKING',
+            payerAddress: (await prisma.wallet.findUnique({ where: { userId: reservation.customerId } }))?.address || undefined,
+            txHash: reservation.cryptoDepositTxHash || undefined,
           });
+          logger.info(`[Escrow] Platform fee ${platformFeeUsd} USD (${fee.usdValue}) recorded for ${reservation.id}`);
         }
         await cryptoService.releaseEscrowToBusiness(reservation.id);
       } catch (err) {

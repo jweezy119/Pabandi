@@ -33,11 +33,14 @@ router.get('/revenue', async (_req: any, res: any) => {
     const bySource: Record<string, number> = {};
     for (const p of positions as any[]) {
       const src = (p.meta as any)?.source;
-      if (!src || (src !== 'INSURANCE_PREMIUM' && src !== 'ESCROW_FACILITATION_FEE')) continue;
-      bySource[src] = +(bySource[src] || 0) + (p.amount || 0);
+      if (!src) continue;
+      // Unified platform-fee ledger (humans + agents) + insurance premium
+      if (src === 'PLATFORM_FEE' || src === 'INSURANCE_PREMIUM') {
+        bySource[src] = +(bySource[src] || 0) + (p.amount || 0);
+      }
     }
     const insurancePAB = bySource['INSURANCE_PREMIUM'] || 0;
-    const platformFeesPAB = bySource['ESCROW_FACILITATION_FEE'] || 0;
+    const platformFeesSOL = bySource['PLATFORM_FEE'] || 0;
 
     // Metered $PAB fees (passport issuance ledger + background checks)
     let passportFees = 0;
@@ -48,12 +51,12 @@ router.get('/revenue', async (_req: any, res: any) => {
       passportFees = rows?.[0]?.s || 0;
     } catch { /* ledger may not exist yet */ }
 
-    const totalPAB = +(insurancePAB + platformFeesPAB + passportFees).toFixed(2);
+    const totalPAB = +(insurancePAB + passportFees).toFixed(2);
     res.json({
       success: true,
       data: {
         insurancePAB,
-        platformFeesPAB,
+        platformFeesSOL,
         passportFeesPAB: +passportFees.toFixed(2),
         totalPAB,
         // Notional USD value at $PAB peg (100 $PAB = $1)

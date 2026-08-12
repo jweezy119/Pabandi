@@ -1,4 +1,6 @@
 import { web3AgentService } from './web3Agent.service';
+import { createAgentBooking } from './unifiedBooking.service';
+import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -121,20 +123,21 @@ export async function runAgentLoopCycle(): Promise<{
       if (fromAgent.balancePab < BOOKING_AMOUNT + MIN_OUTFLOW_PAB) continue;
 
       try {
-        const result = await web3AgentService.executeBookingPayment(
-          fromAgent,
-          toAgent,
-          BOOKING_AMOUNT
-        );
+        // Unified rail: agent bookings flow through the SAME fee ledger + completion
+        // logic as human bookings (agents treated as humans/assets on one chain/rail).
+        const result = await createAgentBooking({
+          fromAgentId: fromAgent.profileId,
+          toAgentId: toAgent.profileId,
+          amountPab: BOOKING_AMOUNT,
+        });
 
         if (result.success) {
           bookings++;
           state.totalBookings++;
-          // On-chain SOL platform fee (gas + fee are SOL) is recorded inside executeBookingPayment.
-          const solFee = Number(process.env.SOL_FEE_PER_BOOKING || 0.0005);
+          const solFee = SOL_FEE_PER_BOOKING;
           state.totalSolFeesCollected += solFee;
           solFeesCollected += solFee;
-          logger.info(`[AgentLoop] Booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB + ${solFee} SOL fee`);
+          logger.info(`[AgentLoop] Unified booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB + ${solFee} SOL fee`);
         } else {
           errors.push(`Booking ${fromAgent.profileId}→${toAgent.profileId}: ${result.error}`);
         }
