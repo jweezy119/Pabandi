@@ -9,6 +9,7 @@ import { cryptoService } from '../services/cryptoService';
 import jwt from 'jsonwebtoken';
 import type { Secret, JwtPayload } from 'jsonwebtoken';
 import cookieSession from 'cookie-session';
+import { jwtSecret, jwtExpiresIn } from '../utils/jwtSecrets';
 
 const router = Router();
 
@@ -19,8 +20,7 @@ const oauthSession = cookieSession({
   maxAge: 10 * 60 * 1000, // 10 minutes is enough for OAuth flow
 });
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = jwtExpiresIn();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 
@@ -175,7 +175,7 @@ router.get(
     // Issue a JWT and redirect to the frontend with it
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
@@ -219,7 +219,7 @@ router.get(
     // Issue a JWT and redirect to the frontend with it
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
@@ -252,7 +252,7 @@ router.get(
     }
     const token = jwt.sign(
       { id: user.id, email: user.email, role: storedRole, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
     return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${storedRole}`);
@@ -282,7 +282,7 @@ router.get(
     }
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
     
@@ -315,7 +315,7 @@ router.get(
     }
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
     return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);

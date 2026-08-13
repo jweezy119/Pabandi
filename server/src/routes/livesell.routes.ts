@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
+import { jwtSecret } from '../utils/jwtSecrets';
 import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '../utils/database';
@@ -10,7 +11,7 @@ import { fail, ok } from '../utils/apiResponse';
 import { importEbay, dropWhatsApp } from '../controllers/livesell.controller';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = jwtSecret();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 async function requireBusiness(req: AuthRequest, res: any) {

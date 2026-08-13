@@ -10,11 +10,10 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { odooService } from '../services/odoo.service';
 import { osintService } from '../services/osint.service';
+import { jwtSecret, jwtRefreshSecret, jwtExpiresIn, jwtRefreshExpiresIn } from '../utils/jwtSecrets';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+const JWT_EXPIRES_IN = jwtExpiresIn();
+const JWT_REFRESH_EXPIRES_IN = jwtRefreshExpiresIn();
 
 interface RegisterBody {
   email: string;
@@ -182,13 +181,13 @@ export const register = async (
     // Generate tokens
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id } as JwtPayload,
-      JWT_REFRESH_SECRET as Secret,
+      jwtRefreshSecret() as Secret,
       { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
     );
 
@@ -231,8 +230,8 @@ export const login = async (
     const demoAdminEmail = process.env.DEMO_ADMIN_EMAIL;
     const demoAdminPassword = process.env.DEMO_ADMIN_PASSWORD;
     if (demoAdminEmail && email === demoAdminEmail && password === demoAdminPassword) {
-      const token = jwt.sign({ id: 'admin', email, role: 'ADMIN' } as JwtPayload, JWT_SECRET as Secret, { expiresIn: JWT_EXPIRES_IN as any });
-      const refreshToken = jwt.sign({ id: 'admin' } as any, JWT_REFRESH_SECRET as Secret, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
+      const token = jwt.sign({ id: 'admin', email, role: 'ADMIN' } as JwtPayload, jwtSecret() as Secret, { expiresIn: JWT_EXPIRES_IN as any });
+      const refreshToken = jwt.sign({ id: 'admin' } as any, jwtRefreshSecret() as Secret, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
       return res.json({ success: true, token, refreshToken, data: { user: { id: 'admin', email, role: 'ADMIN' } } });
     }
 
@@ -287,13 +286,13 @@ export const login = async (
     // Generate tokens
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id } as JwtPayload,
-      JWT_REFRESH_SECRET as Secret,
+      jwtRefreshSecret() as Secret,
       { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
     );
 
@@ -340,7 +339,7 @@ export const refreshToken = async (
       throw new CustomError('Refresh token is required', 400);
     }
 
-    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as {
+    const decoded = jwt.verify(refreshToken, jwtRefreshSecret()) as {
       id: string;
     };
 
@@ -359,7 +358,7 @@ export const refreshToken = async (
 
     const newToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
@@ -680,13 +679,13 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
     // Generate tokens
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role } as JwtPayload,
-      JWT_SECRET as Secret,
+      jwtSecret() as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
     const refreshToken = jwt.sign(
       { id: user.id } as JwtPayload,
-      JWT_REFRESH_SECRET as Secret,
+      jwtRefreshSecret() as Secret,
       { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
     );
 
