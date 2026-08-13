@@ -61,6 +61,7 @@ export interface Web3Agent {
   dailyTransactions: number;
   lastReset: Date;
   isActive: boolean;
+  prepared?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -409,7 +410,7 @@ export class Web3AgentService {
    *
    * This is what makes a small SOL balance (e.g. 0.6) viable for live on-chain bookings.
    */
-  async prepareLiveBookingRails(opts?: { solBudget?: number; perAgentSol?: number }): Promise<{
+  async prepareLiveBookingRails(opts?: { solBudget?: number; perAgentSol?: number; perCallCap?: number }): Promise<{
     prepared: number; fundedSol: number; ataCreated: number; solSpent: number; error?: string;
   }> {
     if (!this.treasuryKeypair) {
@@ -424,10 +425,13 @@ export class Web3AgentService {
       return { prepared: 0, fundedSol: 0, ataCreated: 0, solSpent: 0, error: `Funded wallet has ${(startBal/LAMPORTS_PER_SOL).toFixed(4)} SOL, need >= ${(solBudget/LAMPORTS_PER_SOL).toFixed(4)}` };
     }
 
-    const agents = await this.loadAgents();
-    let ataCreated = 0, fundedCount = 0;
+    const agents = (await this.loadAgents()).filter((a) => !a.prepared);
+    // Cap work per invocation (Render Free gateway times out ~60-120s). Progress
+    // persists per-agent, so repeated calls finish the job incrementally.
+    const perCallCap = opts?.perCallCap ?? 12;
+    let ataCreated = 0, fundedCount = 0, done = 0;
     const mintPubkey = new PublicKey(MINT_ADDRESS);
-    for (const a of agents) {
+    for (const a of agents.slice(0, perCallCap)) {
       try {
         const pub = new PublicKey(a.walletAddress);
         const ata = await getAssociatedTokenAddress(mintPubkey, pub);
@@ -448,16 +452,19 @@ export class Web3AgentService {
           );
           fundedCount++;
         }
+        // Persist progress immediately so an interrupted call doesn't lose work.
+        await prisma.web3Agent.update({ where: { id: a.id }, data: { prepared: true } }).catch(() => {});
+        done++;
       } catch (e: any) {
         logger.warn(`[Web3Agent] prepare skip ${a.profileId}: ${e.message}`);
       }
     }
     const endBal = await this.connection.getBalance(kp.publicKey);
-    this.prepared = true;
-    // Persist prepared state so health checks / restarts know rails are armed.
-    await prisma.web3Agent.updateMany({ where: { isActive: true }, data: { prepared: true } }).catch(() => {});
-    logger.info(`[Web3Agent] Live rails prepared: ${ataCreated} ATAs created, ${fundedCount} agents funded SOL. Spent ${(startBal-endBal)/LAMPORTS_PER_SOL} SOL`);
-    return { prepared: agents.length, fundedSol: fundedCount, ataCreated, solSpent: +(startBal-endBal)/LAMPORTS_PER_SOL };
+    if (done > 0) this.prepared = true;
+    // NOTE: no blanket updateMany here — progress is persisted per-agent inside the
+    // loop so an interrupted call leaves already-prepared agents marked correctly.
+    logger.info(`[Web3Agent] Live rails prepared: ${ataCreated} ATAs created, ${fundedCount} agents funded SOL (${done} marked prepared this call). Spent ${(startBal-endBal)/LAMPORTS_PER_SOL} SOL`);
+    return { prepared: done, fundedSol: fundedCount, ataCreated, solSpent: +(startBal-endBal)/LAMPORTS_PER_SOL };
   }
 
   /** Probe whether the funded wallet has enough SOL to keep doing live sends. */
