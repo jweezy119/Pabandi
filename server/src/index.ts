@@ -156,6 +156,14 @@ app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// TEMP debug: report env var lengths (no secret values) to diagnose missing vars.
+app.get('/debug/env', (_req, res) => {
+  const keys = ['DATABASE_URL','JWT_SECRET','PTP_SIGNING_SECRET','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','TREASURY_WALLET','FEE_TREASURY_WALLET','LIVE_BOOKINGS','SOLANA_PRIVATE_KEY','SOL_USD_PRICE'];
+  const out: Record<string, number | boolean> = {};
+  for (const k of keys) out[k] = process.env[k] ? process.env[k]!.length : false;
+  res.json({ env: out, nodeEnv: process.env.NODE_ENV });
+});
+
 // API Routes
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/businesses`, businessRoutes);
