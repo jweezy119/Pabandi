@@ -5,7 +5,7 @@ import { createTransferInstruction, getAssociatedTokenAddress, getAccount, creat
 import bs58 from 'bs58';
 import crypto from 'crypto';
 import { feeCollectionService } from './feeCollection.service';
-import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
+import { SOL_FEE_PER_BOOKING, recordBookingEconomics, TOKENOMICS } from '../config/tokenomics';
 
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
@@ -293,16 +293,25 @@ export class Web3AgentService {
         } catch {} }
       }
 
-      // Transfer PAB
-      const amountLamports = amountPab * (10 ** TOKEN_DECIMALS);
-      const transferIx = createTransferInstruction(
-        senderAta,
-        recipientAta,
-        senderPubkey,
-        amountLamports
-      );
-
-      const tx = new Transaction().add(transferIx);
+      // ── Platform fee (EQUAL to human deposits): skim PAB from the transfer ──
+      // Humans pay a 2% PAB platform fee (1 PAB floor) skimmed from their deposit.
+      // Agents (treated identically) pay the SAME fee, skimmed from the PAB they move.
+      // This is profitable: gas is ~0.000005 SOL, the fee is real PAB income. No SOL subsidy.
+      const feePab = Math.max(TOKENOMICS.MIN_FEE_PAB, Math.round(amountPab * TOKENOMICS.FEE_RATE));
+      const netAmount = amountPab - feePab;
+      const transferLamports = netAmount * (10 ** TOKEN_DECIMALS);
+      const feeLamports = feePab * (10 ** TOKEN_DECIMALS);
+      const tx = new Transaction();
+      if (netAmount > 0) {
+        tx.add(createTransferInstruction(senderAta, recipientAta, senderPubkey, transferLamports));
+      }
+      // Route the platform fee PAB to the PAB treasury wallet (same destination as human fees).
+      const treasuryPubkey = new PublicKey(TREASURY_WALLET);
+      const treasuryAta = await getAssociatedTokenAddress(mintPubkey, treasuryPubkey);
+      try { await getAccount(this.connection, treasuryAta); } catch {
+        tx.add(createAssociatedTokenAccountInstruction(senderPubkey, treasuryAta, treasuryPubkey, mintPubkey));
+      }
+      tx.add(createTransferInstruction(senderAta, treasuryAta, senderPubkey, feeLamports));
       const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
 
       // Update daily counters
@@ -314,37 +323,26 @@ export class Web3AgentService {
         data: {
           agentId: fromAgent.id,
           type: 'BOOKING_PAYMENT',
-          amount: amountPab,
+          amount: netAmount,
           txHash: signature,
           fromAddress: fromAgent.walletAddress ?? 'treasury',
           toAddress: toAgent.walletAddress,
         } as any,
       });
+      // Fee collected (same path as human deposits: FEE_COLLECTION + bucket allocation).
+      await recordBookingEconomics({ fee: feePab, fromAddress: fromAgent.walletAddress ?? 'agent', agentId: fromAgent.id ?? 'agent' }).catch((e) => logger.warn('[Web3Agent] fee record skipped: ' + e.message));
 
-      logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
+      logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${netAmount} PAB (fee ${feePab} PAB)`);
 
-      // On-chain SOL platform fee (gas + fee are both SOL). Sent payer → treasury.
-      try {
-        const treasuryPubkey = new PublicKey(TREASURY_WALLET);
-        const feeLamports = Math.floor(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
-        const solTx = new Transaction().add(
-          SystemProgram.transfer({ fromPubkey: senderPubkey, toPubkey: treasuryPubkey, lamports: feeLamports })
-        );
-        const solSig = await sendAndConfirmTransaction(this.connection, solTx, [senderKeypair]);
-        await feeCollectionService.recordSolFee({
-          bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
-          amountSol: SOL_FEE_PER_BOOKING, txHash: solSig, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
-        });
-      } catch (feeErr: any) {
-        // Fee is non-fatal to the booking, but we MUST record it (fail-closed accounting).
-        logger.warn(`[Web3Agent] SOL fee transfer failed: ${feeErr.message} — recording notional`);
-        await feeCollectionService.recordSolFee({
-          bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
-          amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
-        });
-      }
+      // SOL platform fee: ACCRUED only (not sent) — equality is preserved via the PAB fee above,
+      // and we must not drain the operator wallet subsidizing agent SOL. Recorded for accounting.
+      await feeCollectionService.recordSolFee({
+        bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
+        amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+        onChain: false,
+      }).catch(() => {});
 
-      return { success: true, txHash: signature, amount: amountPab, to: toAgent.walletAddress };
+      return { success: true, txHash: signature, amount: netAmount, to: toAgent.walletAddress };
     } catch (err: any) {
       logger.warn(`[Web3Agent] Booking payment on-chain failed, falling back to simulated: ${err.message}`);
 
