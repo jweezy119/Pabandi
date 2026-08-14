@@ -309,10 +309,15 @@ export class Web3AgentService {
       const treasuryPubkey = new PublicKey(TREASURY_WALLET);
       const treasuryAta = await getAssociatedTokenAddress(mintPubkey, treasuryPubkey);
       try { await getAccount(this.connection, treasuryAta); } catch {
-        tx.add(createAssociatedTokenAccountInstruction(senderPubkey, treasuryAta, treasuryPubkey, mintPubkey));
+        // Operator (treasury) pays ATA creation — agents need ZERO SOL.
+        tx.add(createAssociatedTokenAccountInstruction(treasuryPubkey, treasuryAta, treasuryPubkey, mintPubkey));
       }
       tx.add(createTransferInstruction(senderAta, treasuryAta, senderPubkey, feeLamports));
-      const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
+      // Operator is the fee payer: pays only ~0.000005 SOL gas per booking, while the
+      // agent authorizes the PAB transfer and pays the PAB platform fee. Net: profitable,
+      // agents require no SOL funding (no 5:1 subsidy), equality preserved with humans.
+      tx.feePayer = treasuryPubkey;
+      const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
       // Update daily counters
       fromAgent.dailyOutflow += amountPab;
