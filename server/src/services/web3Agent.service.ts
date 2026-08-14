@@ -128,8 +128,11 @@ export class Web3AgentService {
 
   /** Create a new agent wallet for a profile */
   async createAgent(profileId: string, category: Web3Agent['category'], firstName: string): Promise<Web3Agent> {
-    const seed = crypto.createHash('sha256').update(profileId + firstName).digest();
-    const keypair = Keypair.fromSeed(seed.slice(0, 32));
+    // Use Keypair.generate() (pure Ed25519) so the 64-byte secretKey round-trips through
+    // Keypair.fromSecretKey at decrypt/sign time. The previous fromSeed() approach stored a
+    // BIP32 (seed, chainCode) buffer that does NOT round-trip via fromSecretKey, which
+    // silently produced a wrong keypair -> all on-chain agent sends failed -> sim fallback.
+    const keypair = Keypair.generate();
     const publicKey = keypair.publicKey.toBase58();
     const privateKey = bs58.encode(keypair.secretKey);
 
