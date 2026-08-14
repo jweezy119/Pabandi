@@ -85,11 +85,28 @@ export class Web3AgentService {
   private treasuryKeypair: Keypair | null = null;
   /** Set true after prepareLiveBookingRails() — live sends then skip ATA creation (saves SOL). */
   private prepared = false;
+  private preparedBooted = false;
 
   constructor() {
     this.connection = new Connection(RPC_URL, 'confirmed');
     // Auto-initialize treasury from env var
     this.initTreasury();
+    // Recover in-memory prepared state from the DB so a restart/scale-to-zero on Render
+    // (Free tier) doesn't silently revert bookings to simulated fallback.
+    this.recoverPreparedState();
+  }
+
+  /** Restore `prepared` from DB `prepared` column so restarts don't reset the live rail. */
+  private async recoverPreparedState() {
+    if (this.preparedBooted) return;
+    try {
+      const preparedCount = await prisma.web3Agent.count({ where: { isActive: true, prepared: true } });
+      this.prepared = preparedCount > 0;
+      this.preparedBooted = true;
+      logger.info(`[Web3Agent] Recovered prepared state: ${preparedCount} agents prepared (${this.prepared ? 'live' : 'simulated fallback'})`);
+    } catch (e) {
+      logger.warn('[Web3Agent] Could not recover prepared state:', (e as any).message);
+    }
   }
 
   /** Initialize treasury keypair from env (for funding transfers) */
