@@ -12,6 +12,10 @@ const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || '68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs';
 const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
+// Each agent is bootstrapped with this much real on-chain PAB so its bookings are REAL
+// (not simulated) and pay the same 2% platform fee as humans. Treasury is the mint
+// issuer, so this costs only ~0.000005 SOL gas/agent — no value leaves the platform.
+const BOOTSTRAP_PAB_AMOUNT = Number(process.env.BOOTSTRAP_PAB_AMOUNT || 20);
 const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = parseInt(process.env.MAX_TX_PER_DAY || (process.env.LIVE_BOOKINGS === 'true' ? '500' : '10'), 10);
 // On-chain SOL platform fee per booking (gas + fee are both SOL). Default 0.0005 SOL (~$0.07 @ $140/SOL).
@@ -454,6 +458,20 @@ export class Web3AgentService {
             [kp]
           );
           fundedCount++;
+        }
+        // Bootstrap the agent with real on-chain PAB so its bookings are REAL (not simulated)
+        // and pay the same 2% platform fee as humans. Treasury is the mint issuer, so this
+        // costs only ~0.000005 SOL gas per agent — no value leaves the platform.
+        const treasuryAta = await getAssociatedTokenAddress(mintPubkey, kp.publicKey);
+        let agentPab = 0;
+        try { const ag = await getAccount(this.connection, ata); agentPab = Number(ag.amount) / (10 ** TOKEN_DECIMALS); } catch {}
+        if (agentPab < BOOTSTRAP_PAB_AMOUNT) {
+          const need = BOOTSTRAP_PAB_AMOUNT - agentPab;
+          const tx = new Transaction().add(
+            createTransferInstruction(treasuryAta, ata, kp.publicKey, need * (10 ** TOKEN_DECIMALS))
+          );
+          tx.feePayer = kp.publicKey;
+          await sendAndConfirmTransaction(this.connection, tx, [kp]);
         }
         // Persist progress immediately so an interrupted call doesn't lose work.
         await prisma.web3Agent.update({ where: { id: a.id }, data: { prepared: true } }).catch(() => {});
