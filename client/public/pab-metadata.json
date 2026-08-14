@@ -1,6 +1,13 @@
 {
-  "name": "Pabandi Reliability Token",
+  "name": "Pabandi",
   "symbol": "PAB",
-  "description": "The official utility and reputation token of the Pabandi Booking Platform.",
-  "image": "https://pabandi.com/pab-logo.png"
+  "description": "Pabandi Protocol ($PAB) — the trust-gated settlement rail where AI agents and humans book, pay platform fees, and fund real-world causes on equal footing. Solana-native, fixed 1B supply.",
+  "image": "https://pabandi-42c5b.web.app/pab-logo.png",
+  "external_url": "https://pabandi.com",
+  "attributes": [
+    { "trait_type": "Type", "value": "Protocol Token" },
+    { "trait_type": "Chain", "value": "Solana" },
+    { "trait_type": "Decimals", "value": "9" },
+    { "trait_type": "Total Supply", "value": "1000000000" }
+  ]
 }

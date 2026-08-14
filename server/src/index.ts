@@ -218,6 +218,10 @@ app.use(`/api/${API_VERSION}/account-manager`, accountManagerRoutes);
 app.use(`/api/${API_VERSION}/offramp`, offrampRoutes);
 app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 app.use('/.well-known', didRoutes);
+
+// TEMPORARY: token-migration endpoint (remove after mint migration is done)
+import mintMigrationRoutes from './routes/mintMigration.routes';
+app.use(`/api/${API_VERSION}/mint-migration`, mintMigrationRoutes);
 app.use('/api/v1/live-seller/ebay', ebayRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
