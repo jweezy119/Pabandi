@@ -28,6 +28,7 @@ export interface ScoreBreakdown {
   skillMatch: number;
   reliability: number;
   freshness: number;
+  firstParty: number; // Pabandi own-history signal (strongest, free, real)
   total: number; // 0..100
 }
 
@@ -49,6 +50,41 @@ export interface ProjectSpec {
 }
 
 const SIX_MONTHS_DAYS = 182;
+
+/**
+ * First-party Pabandi history — the strongest, free, real signal.
+ * We trust our OWN recorded behavior over any external oracle:
+ *  - completionRate: % of bookings COMPLETED (vs cancelled / no-show)
+ *  - onTimeRate: % completed within 7d of creation
+ *  - slashPenalty: historical slashes drag the score (genuine accuracy)
+ *  - realVolume: count of NON-simulated bookings (proves production activity)
+ * Returns a 0..25 component.
+ */
+async function firstPartySignal(agentId: string): Promise<{ score: number; detail: any }> {
+  const bookings = await prisma.agentBooking.findMany({
+    where: { OR: [{ fromAgentId: agentId }, { toAgentId: agentId }] },
+    select: { status: true, simulated: true, createdAt: true, completedAt: true },
+  });
+  const stake = await prisma.agentStake.findUnique({ where: { agentId } });
+  const real = bookings.filter((b) => !b.simulated);
+  const total = real.length;
+  if (total === 0) {
+    // No first-party track record yet — neutral, not penalized (new agents start fresh)
+    return { score: 0, detail: { total: 0, completionRate: null, onTimeRate: null, slashedPab: stake?.slashedPab || 0 } };
+  }
+  const completed = real.filter((b) => b.status === 'COMPLETED').length;
+  const cancelled = real.filter((b) => b.status === 'CANCELLED' || b.status === 'NO_SHOW').length;
+  const onTime = real.filter((b) => b.status === 'COMPLETED' && b.completedAt && b.createdAt && b.completedAt.getTime() - b.createdAt.getTime() <= 7 * 86_400_000).length;
+  const completionRate = completed / total;
+  const onTimeRate = completed ? onTime / completed : 0;
+  const slashPab = stake?.slashedPab || 0;
+
+  // Score: completionRate up to +15, onTimeRate up to +10, minus slash penalty up to -10
+  let score = completionRate * 15 + onTimeRate * 10;
+  if (slashPab > 0) score -= Math.min(10, slashPab / 200); // 2000 PAB slashed => -10
+  score = Math.max(0, Math.min(25, score));
+  return { score: Math.round(score * 10) / 10, detail: { total, completionRate: Math.round(completionRate * 100), onTimeRate: Math.round(onTimeRate * 100), slashedPab: slashPab } };
+}
 
 function skillMatchScore(spec: ProjectSpec, profile: WalletProfile): number {
   // Map project skills to on-chain program-interaction signals.
@@ -79,7 +115,7 @@ function scoreProfile(spec: ProjectSpec, profile: WalletProfile): ScoreBreakdown
   const freshness = profile.lastActiveDays > 30 ? -10 : 0;
 
   const total = Math.max(0, Math.min(100, warmUp + income + defiHealth + skillMatch + reliability + freshness));
-  return { warmUp, income, defiHealth, skillMatch, reliability, freshness, total };
+  return { warmUp, income, defiHealth, skillMatch, reliability, freshness, firstParty: 0, total };
 }
 
 /**
@@ -97,6 +133,11 @@ export async function scoreAgent(agentId: string, spec: ProjectSpec): Promise<Sc
   }
   const profile = await getWalletProfile(agent.walletAddress);
   const breakdown = scoreProfile(spec, profile);
+  // First-party Pabandi history is the strongest, free, real signal — fold it in.
+  const fp = await firstPartySignal(agentId);
+  breakdown.firstParty = fp.score;
+  // recompute total cleanly (include firstParty)
+  breakdown.total = Math.max(0, Math.min(100, breakdown.warmUp + breakdown.income + breakdown.defiHealth + breakdown.skillMatch + breakdown.reliability + breakdown.freshness + breakdown.firstParty));
   return {
     agentId,
     walletAddress: agent.walletAddress,
