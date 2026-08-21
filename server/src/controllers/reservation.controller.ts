@@ -1120,6 +1120,10 @@ export const submitFreelanceWork = async (req: any, res: Response): Promise<void
       res.status(404).json({ error: 'Reservation not found' });
       return;
     }
+    if (req.user!.role !== 'ADMIN' && req.user!.id !== reservation.customerId) {
+      res.status(403).json({ error: 'Unauthorized to submit work for this reservation' });
+      return;
+    }
     
     const updated = await prisma.reservation.update({
       where: { id: reservationId },
@@ -1144,9 +1148,13 @@ export const arbitrateFreelanceWork = async (req: any, res: Response): Promise<v
     const reservationId = req.params.id;
     const { reason } = req.body;
     
-    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
+    const reservation = await prisma.reservation.findUnique({ where: { id: reservationId }, include: { business: true } });
     if (!reservation) {
       res.status(404).json({ error: 'Reservation not found' });
+      return;
+    }
+    if (req.user!.role !== 'ADMIN' && req.user!.id !== reservation.customerId && req.user!.id !== reservation.business.ownerId) {
+      res.status(403).json({ error: 'Unauthorized to request arbitration for this reservation' });
       return;
     }
     
