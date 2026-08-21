@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, getCheckoutReceipt, createDemoCheckoutSession } from '../controllers/checkout.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
 const router = Router();
@@ -19,9 +19,9 @@ router.post('/session/:id/complete', completeCheckoutSession);
 router.post('/embed-checkout', createEmbedCheckoutSession);
 router.post('/embed-checkout/public', apiKeyAuth, createPartnerEmbedCheckoutSession);
 
-router.post('/session/:id/stripe', authenticate, apiKeyAuth, initiateStripeCheckout);
-router.post('/session/:id/crypto', authenticate, apiKeyAuth, initiateCryptoCheckout);
-router.post('/session/:id/escrow', authenticate, apiKeyAuth, initiateEscrowCheckout);
+router.post('/session/:id/stripe', optionalAuthenticate, initiateStripeCheckout);
+router.post('/session/:id/crypto', optionalAuthenticate, initiateCryptoCheckout);
+router.post('/session/:id/escrow', optionalAuthenticate, initiateEscrowCheckout);
 
 // Deterministic ops/checkout receipt for buyer and seller views
 router.get('/session/:id/receipt', getCheckoutReceipt);

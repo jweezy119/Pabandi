@@ -25,7 +25,7 @@ const ActiveJobsPage: React.FC = () => {
     const fetchJobs = async () => {
       try {
         // Fetch all reservations where user is customer (or freelancer acting as provider if schema differs)
-        const res = await api.get('/api/v1/reservations/user');
+        const res = await api.get('/reservations/user');
         
         // Filter for active freelance jobs (Escrow Funded)
         // In this implementation, the freelancer acts as the 'customer' booking the gig, 

@@ -28,7 +28,7 @@ const JobWorkspacePage: React.FC = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await api.get(`/api/v1/reservations/${id}`);
+        const res = await api.get(`/reservations/${id}`);
         setJob(res.data.data.reservation);
       } catch (err) {
         setMessage({ text: 'Failed to load workspace.', type: 'error' });
@@ -44,7 +44,7 @@ const JobWorkspacePage: React.FC = () => {
     setSubmitting(true);
     setMessage(null);
     try {
-      await api.post(`/api/v1/reservations/${id}/submit-work`, { deliverables });
+      await api.post(`/reservations/${id}/submit-work`, { deliverables });
       setMessage({ text: 'Deliverables submitted. Awaiting client approval.', type: 'success' });
       setJob(prev => prev ? { ...prev, status: 'CHECKED_IN' } : null);
     } catch (err: any) {
@@ -59,7 +59,7 @@ const JobWorkspacePage: React.FC = () => {
     setArbitrating(true);
     setMessage(null);
     try {
-      await api.post(`/api/v1/reservations/${id}/arbitrate`, { reason: 'Client unresponsive after work delivery' });
+      await api.post(`/reservations/${id}/arbitrate`, { reason: 'Client unresponsive after work delivery' });
       setMessage({ text: 'AI Arbitrator summoned. The case is now under review.', type: 'success' });
     } catch (err: any) {
       setMessage({ text: err.response?.data?.error || 'Failed to request arbitration.', type: 'error' });
