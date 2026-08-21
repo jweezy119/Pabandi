@@ -1383,6 +1383,7 @@ model Web3Agent {
   updatedAt           DateTime @updatedAt
 
   transactions AgentTransaction[]
+  stakes       AgentStake[]
 }
 
 model AgentTransaction {
@@ -1828,4 +1829,65 @@ model OAuthToken {
   @@index([clientId])
   @@index([userId])
   @@index([accessToken])
+}
+
+// ── AgentStake (skin-in-the-game gate for the recommendation engine) ────────────
+// Agents must stake >= STAKE_REQUIRED_PAB to be indexed by agentScorer. Slashing
+// decrements amountPab + increments slashedPab. On-chain lock/burn handled by the
+// stakeSlashing service; this is the ledger source of truth.
+model AgentStake {
+  id         String   @id @default(cuid())
+  agentId    String   @unique
+  amountPab  Float    @default(0)
+  slashedPab Float    @default(0)
+  vault      String // protocol stake vault (PAB treasury)
+  indexed    Boolean  @default(false) // true once stake >= required
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  agent Web3Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([indexed])
+}
+
+// ── Project (autogen pipeline → posted project with idle-yield vault) ─────────────
+model Project {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  requiredSkills String[] // e.g. ["Rust","Anchor"]
+  budgetUsd     Float
+  estimatedHours Int    @default(0)
+  demandGrowthPct Float @default(0)
+  status        String   @default("OPEN") // OPEN | IN_PROGRESS | DELIVERED | CANCELLED
+  vaultUsdc     Float    @default(0) // idle capital routed to Kamino Lend (phase 2)
+  yieldEarnedUsdc Float  @default(0) // accrued float yield (phase 2)
+  bestAgentId   String? // chosen by recommendation engine
+  bestConfidence Float?  // confidence % of the recommendation
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bids ProjectBid[]
+
+  @@index([status])
+  @@index([category])
+}
+
+// ── ProjectBid (agent auto-bid on a project) ─────────────────────────────────────
+model ProjectBid {
+  id          String   @id @default(cuid())
+  projectId   String
+  agentId     String
+  confidencePct Float // scorer output at bid time
+  quoteUsd    Float
+  status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  breakdown   Json? // scorer ScoreBreakdown for transparency
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([agentId])
 }
