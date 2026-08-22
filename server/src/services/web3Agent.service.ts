@@ -8,8 +8,8 @@ import { feeCollectionService } from './feeCollection.service';
 import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
 
 // ── Config ─────────────────────────────────────────────────────
-const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || 'Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ';
-const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || '68AQPHecjT3Fjy1i6R7W2xpxajj2ZfDbHZvRmX2MwPKs';
+const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || '4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ';
+const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || 'GBMhejbFVGQB7yXYxHpXCmcjWL7xk17FgyPCvPo2uSQH';
 const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
