@@ -545,7 +545,7 @@ export default function WalletDashboard() {
                   </div>
                   <p className="mt-1 font-body text-xs" style={{ color: tokens.color.muted }}>Self-Custodial Balance</p>
                   <div className="mt-2 w-fit select-all cursor-copy border border-white/10 bg-white/5 px-2 py-1 rounded text-[9px] font-mono" style={{ color: tokens.color.muted }} title="Copy Contract Address">
-                    CA: Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ
+                    CA: 4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ
                   </div>
                   <div className="mt-4 flex gap-2">
                     <span className="rounded border border-[#14F195]/20 bg-[#14F195]/10 px-2 py-1 text-[9px] font-bold text-[#14F195]">Solana</span>

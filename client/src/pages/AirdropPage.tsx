@@ -241,7 +241,7 @@ export const AirdropPage: React.FC = () => {
         {/* Fine print */}
         <p className="mt-16 text-center text-xs text-white/20">
           Airdrop tokens are credited to your off-chain Pabandi Vault. On-chain withdrawal to your Solana wallet will be enabled when the Raydium liquidity pool goes live.<br />
-          $PAB Contract: <span className="font-mono">Cc2nwBNc8Zo5e6QwmtV3JQfEi2gTfEYNrDGgxPmGaZLZ</span>
+          $PAB Contract: <span className="font-mono">4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ</span>
         </p>
       </div>
     </div>
