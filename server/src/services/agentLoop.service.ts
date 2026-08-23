@@ -1,6 +1,7 @@
 import { web3AgentService } from './web3Agent.service';
 import { createAgentBooking } from './unifiedBooking.service';
 import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
+import { profitEngine } from './profitEngine.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -57,6 +58,7 @@ export async function runAgentLoopCycle(): Promise<{
   let feesCollected = 0; // PAB booking fees captured this cycle (legacy)
   let solFeesCollected = 0; // SOL platform fees captured this cycle
   let poolFeesUsdc = 0; // USDC pool fees captured this cycle
+  let cycleFeePab = 0; // agentic variable PAB platform fee captured this cycle
 
   try {
     // Step 1: Load active agents
@@ -123,6 +125,8 @@ export async function runAgentLoopCycle(): Promise<{
       if (fromAgent.balancePab < BOOKING_AMOUNT + MIN_OUTFLOW_PAB) continue;
 
       try {
+        // Value-progressive fee: bigger bookings pay a higher rate (profit maximization)
+        const feeQuote = profitEngine.quoteFee(BOOKING_AMOUNT);
         // Unified rail: agent bookings flow through the SAME fee ledger + completion
         // logic as human bookings (agents treated as humans/assets on one chain/rail).
         const result = await createAgentBooking({
@@ -137,7 +141,8 @@ export async function runAgentLoopCycle(): Promise<{
           const solFee = SOL_FEE_PER_BOOKING;
           state.totalSolFeesCollected += solFee;
           solFeesCollected += solFee;
-          logger.info(`[AgentLoop] Unified booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB + ${solFee} SOL fee`);
+          cycleFeePab += feeQuote.feePab; // agentic variable fee accrues to platform
+          logger.info(`[AgentLoop] Unified booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${BOOKING_AMOUNT} PAB + ${solFee} SOL fee (platform fee ${feeQuote.feePab} PAB @ ${(feeQuote.rate*100).toFixed(1)}%)`);
         } else {
           errors.push(`Booking ${fromAgent.profileId}→${toAgent.profileId}: ${result.error}`);
         }
@@ -170,6 +175,32 @@ export async function runAgentLoopCycle(): Promise<{
       });
     } catch (err: any) {
       errors.push(`Treasury ledger: ${err.message}`);
+    }
+
+    // Step 6: AGENTIC PROFIT LOOP — reinvest collected fees to fund FUTURE bookings
+    // (self-sustaining: platform profit compounds instead of treasury being a faucet).
+    try {
+      const collectedPab = cycleFeePab + badgePab; // platform PAB fee this cycle
+      const collectedSol = solFeesCollected;       // platform SOL fee this cycle
+      if (collectedPab > 0 || collectedSol > 0) {
+        const avgPool = (await prisma.web3Agent.aggregate({ _avg: { balancePab: true }, where: { isActive: true } }))._avg.balancePab || 0;
+        const treasSol = 0.05; // from env/config; floor-guarded inside policy
+        const decision = profitEngine.decideReinvestment({
+          collectedPab, collectedSol,
+          agentPabPoolAvg: avgPool,
+          treasurySol: treasSol,
+          avgBookingPab: BOOKING_AMOUNT,
+        });
+        await profitEngine.applyReinvestmentCycle({
+          collectedPab, collectedSol,
+          reinvestPab: decision.reinvestPab,
+          reinvestSol: decision.reinvestSol,
+          cycle: state.totalBookings,
+        });
+        logger.info(`[ProfitEngine] ${decision.reason} | retain ${decision.retainPab} PAB / ${decision.retainSol} SOL profit`);
+      }
+    } catch (err: any) {
+      errors.push(`Profit loop: ${err.message}`);
     }
 
     logger.info(`[AgentLoop] Cycle complete: ${bookings} bookings, ${feesCollected} fees, ${badgePurchases} badges, ${errors.length} errors`);
