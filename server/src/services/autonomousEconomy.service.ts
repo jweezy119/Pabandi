@@ -140,7 +140,8 @@ export class AutonomousEconomyService {
     tx.feePayer = userPub;
     const { blockhash } = await conn.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
-    tx.partialSign(kp);
+    // User is the sole signer/feePayer (pays fee + stake legs). Treasury signs nothing —
+    // it neither pays nor receives here, so it must not be a declared signer.
     await prisma.treasuryPosition.create({
       data: {
         bucket: 'PENDING_CHARGE',
