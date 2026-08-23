@@ -49,6 +49,33 @@ function decryptPrivateKey(encrypted: string): string {
   return decrypted;
 }
 
+/** sendAndConfirm with retry/backoff for transient RPC blips (prevents silent simulated fallback). */
+async function sendWithRetry(
+  connection: Connection,
+  tx: Transaction,
+  signers: Keypair[],
+  tries = 5,
+): Promise<string> {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const { blockhash } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = signers[0].publicKey;
+      tx.sign(...signers);
+      const sig = await connection.sendRawTransaction(tx.serialize());
+      await connection.confirmTransaction(sig, 'confirmed');
+      return sig;
+    } catch (e: any) {
+      if (i < tries - 1 && /429|Too many|blockhash|simulation|timeout|reset|0x1|0x0/i.test(e.message)) {
+        await new Promise((r) => setTimeout(r, 1200 * (i + 1)));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('sendWithRetry exhausted attempts');
+}
+
 // ── Agent Types ────────────────────────────────────────────────────────
 export interface Web3Agent {
   id?: string;
@@ -324,9 +351,21 @@ export class Web3AgentService {
         lamports: solFeeLamports,
       });
 
-      const tx = new Transaction().add(transferIx).add(feeIx).add(solFeeIx);
+      const tx = new Transaction().add(transferIx).add(feeIx);
       tx.feePayer = this.treasuryKeypair!.publicKey;
-      const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
+      const signature = await sendWithRetry(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
+
+      // Best-effort on-chain SOL platform fee: separate tx so it can NEVER break the PAB booking.
+      try {
+        const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
+        const solFeeLamports = Math.round(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
+        const solTx = new Transaction().add(
+          SystemProgram.transfer({ fromPubkey: this.treasuryKeypair!.publicKey, toPubkey: feeWallet, lamports: solFeeLamports })
+        );
+        await sendWithRetry(this.connection, solTx, [this.treasuryKeypair!]);
+      } catch (solErr: any) {
+        logger.warn(`[Web3Agent] SOL fee transfer skipped (non-fatal): ${solErr.message}`);
+      }
 
       // Update daily counters
       fromAgent.dailyOutflow += amountPab;
