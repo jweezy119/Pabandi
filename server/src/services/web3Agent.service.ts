@@ -5,7 +5,7 @@ import { createTransferInstruction, getAssociatedTokenAddress, getAccount, creat
 import bs58 from 'bs58';
 import crypto from 'crypto';
 import { feeCollectionService } from './feeCollection.service';
-import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
+import { SOL_FEE_PER_BOOKING, computeFee } from '../config/tokenomics';
 
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || '4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ';
@@ -301,7 +301,19 @@ export class Web3AgentService {
         amountLamports
       );
 
-      const tx = new Transaction().add(transferIx);
+      // On-chain PAB platform fee — collected from the agent to the TREASURY $PAB ATA.
+      // This is REAL revenue, not accounting. value-progressive rate from the profit engine.
+      const feePab = Math.max(1, Math.round(amountPab * 0.02)); // 2% floor; profit engine can override higher
+      const mintPub = new PublicKey(MINT_ADDRESS);
+      const treasuryPabAta = await getAssociatedTokenAddress(mintPub, this.treasuryKeypair!.publicKey);
+      const feeIx = createTransferInstruction(
+        senderAta,
+        treasuryPabAta,
+        senderPubkey,
+        feePab * (10 ** TOKEN_DECIMALS)
+      );
+
+      const tx = new Transaction().add(transferIx).add(feeIx);
       tx.feePayer = this.treasuryKeypair!.publicKey;
       const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
