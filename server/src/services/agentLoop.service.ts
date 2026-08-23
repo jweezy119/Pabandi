@@ -1,6 +1,5 @@
 import { web3AgentService } from './web3Agent.service';
 import { createAgentBooking } from './unifiedBooking.service';
-import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
 import { profitEngine } from './profitEngine.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -138,7 +137,7 @@ export async function runAgentLoopCycle(): Promise<{
         if (result.success) {
           bookings++;
           state.totalBookings++;
-          const solFee = SOL_FEE_PER_BOOKING;
+          const solFee = Number(process.env.SOL_FEE_BASE || 0.0003) + BOOKING_AMOUNT * Number(process.env.SOL_FEE_RATE || 0.00001);
           state.totalSolFeesCollected += solFee;
           solFeesCollected += solFee;
           cycleFeePab += feeQuote.feePab; // agentic variable fee accrues to platform
