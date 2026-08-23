@@ -46,6 +46,12 @@ async function run(){
         for(const d of e.decisions){
           html+=`<div class="row"><span class="tag engage">ENGAGE</span> ${d.kind} on "${d.matched}"<div class="cmd">X: ${d.xCmd}<br>FC: ${d.fcCmd}</div></div>`;
         }
+      } else if(e.type==='REFERRAL_CONVERT'){
+        html+=`<div class="row"><span class="tag conv">CONVERT</span> referral <b>${e.code}</b> earned <b style="color:var(--ok)">${e.amountSol} SOL</b> (demo)<div class="meta">→ written to live ledger → leaderboard updates</div></div>`;
+      } else if(e.type==='LEADERBOARD'){
+        const lb=e.data||{referrers:[],partners:[]};
+        const rows=(lb.referrers||[]).map((x,i)=>`<div class="row"><span class="rank">#${i+1}</span><span class="code">${x.code}</span><span><span class="val">${x.earnedSol} SOL</span> · ${x.claims} claims</span></div>`).join('')||'<div class="meta">no referrers yet</div>';
+        html+=`<div class="row" style="border-color:#2a3447"><span class="tag post">LEADERBOARD</span><br>${rows}</div>`;
       }
     }
     document.getElementById('out').innerHTML=html||'<div class="meta">No output.</div>';

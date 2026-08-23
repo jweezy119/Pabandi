@@ -140,7 +140,7 @@ function logDemo(entry: any) {
   } catch { /* best-effort */ }
 }
 
-export async function runDemo(): Promise<{ transcript: any[] }> {
+export async function runDemo(): Promise<{ transcript: any[]; leaderboard: any }> {
   const transcript: any[] = [];
   // 1) Compose + "publish" a post (same composePost as live)
   const text = await composePost();
@@ -169,7 +169,33 @@ export async function runDemo(): Promise<{ transcript: any[] }> {
   });
   transcript.push({ type: 'ENGAGE', decisions });
 
-  return { transcript };
+  // 3) FULL-LOOP VIZ: simulate referral conversions landing as revenue + leaderboard.
+  //    This writes to the SAME ledger the live rail uses, so the public leaderboard
+  //    updates for real. Mock amounts only (clearly labeled), zero SOL moved.
+  const demoRefs = ['ALI123', 'PABANDI', 'FRIEND9'];
+  for (const code of demoRefs) {
+    const amount = +(Math.random() * 0.02 + 0.002).toFixed(6); // 0.2% of a ~0.1-0.3 SOL booking
+    try {
+      await prisma.treasuryPosition.create({
+        data: {
+          bucket: 'REFERRAL_EARNED',
+          amount,
+          status: 'PENDING',
+          txHash: `demo:${code}:${Date.now()}`,
+          meta: { asset: 'SOL', source: 'REFERRAL', referralCode: code, demo: true, note: 'Simulated referral conversion (demo only)' },
+        },
+      });
+      logDemo({ type: 'REFERRAL_CONVERT', code, amountSol: amount, demo: true });
+      transcript.push({ type: 'REFERRAL_CONVERT', code, amountSol: amount });
+    } catch { /* best-effort */ }
+  }
+
+  // 4) Read the live leaderboard (now reflects the demo conversions)
+  let lb: any = { referrers: [], partners: [] };
+  try { lb = await autonomousEconomyService.leaderboard(); } catch { /* ignore */ }
+  transcript.push({ type: 'LEADERBOARD', data: lb });
+
+  return { transcript, leaderboard: lb };
 }
 
 export const marketingAgent = { generateAndPost, runEngagementSweep, composePost, generateAndPostFarcaster, runFarcasterSweep, runDemo };
