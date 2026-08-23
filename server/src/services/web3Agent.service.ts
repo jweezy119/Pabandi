@@ -292,7 +292,7 @@ export class Web3AgentService {
         } catch {} }
       }
 
-      // Transfer PAB
+      // Transfer PAB — agent signs, TREASURY pays the gas (operator-funded, sustainable)
       const amountLamports = amountPab * (10 ** TOKEN_DECIMALS);
       const transferIx = createTransferInstruction(
         senderAta,
@@ -302,7 +302,8 @@ export class Web3AgentService {
       );
 
       const tx = new Transaction().add(transferIx);
-      const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair]);
+      tx.feePayer = this.treasuryKeypair!.publicKey;
+      const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
       // Update daily counters
       fromAgent.dailyOutflow += amountPab;
@@ -322,25 +323,17 @@ export class Web3AgentService {
 
       logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
 
-      // On-chain SOL platform fee (gas + fee are both SOL). Sent payer → treasury.
+      // On-chain SOL platform fee — recorded for accounting. The gas for this booking was
+      // already paid by the treasury (feePayer above), so the fee is operator-collected.
+      // We record it against the booking ref without draining the agent's SOL.
       try {
-        const treasuryPubkey = new PublicKey(TREASURY_WALLET);
-        const feeLamports = Math.floor(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
-        const solTx = new Transaction().add(
-          SystemProgram.transfer({ fromPubkey: senderPubkey, toPubkey: treasuryPubkey, lamports: feeLamports })
-        );
-        const solSig = await sendAndConfirmTransaction(this.connection, solTx, [senderKeypair]);
-        await feeCollectionService.recordSolFee({
-          bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
-          amountSol: SOL_FEE_PER_BOOKING, txHash: solSig, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
-        });
-      } catch (feeErr: any) {
-        // Fee is non-fatal to the booking, but we MUST record it (fail-closed accounting).
-        logger.warn(`[Web3Agent] SOL fee transfer failed: ${feeErr.message} — recording notional`);
         await feeCollectionService.recordSolFee({
           bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
           amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+          txHash: signature,
         });
+      } catch (feeErr: any) {
+        logger.warn(`[Web3Agent] SOL fee record failed: ${feeErr.message}`);
       }
 
       return { success: true, txHash: signature, amount: amountPab, to: toAgent.walletAddress };

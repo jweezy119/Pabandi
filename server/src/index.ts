@@ -49,6 +49,7 @@ import escrowRoutes from './routes/escrow.routes';
 import loanRoutes from './routes/loan.routes';
 import shopifyIntegrationRoutes from './routes/shopify-integration.routes';
 import openwaRoutes from './routes/openwa.routes';
+import autonomousEconomyRoutes from './routes/autonomousEconomy.routes';
 import openwaWebhookRoutes from './routes/openwa.webhook.routes';
 import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
@@ -309,6 +310,7 @@ app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent 
 app.use(`/api/${API_VERSION}/geo`, geoRiskRoutes); // Geospatial Risk Oracle (property + dual-risk pricing)
 app.use(`/api/${API_VERSION}/v2`, protocolV2Routes); // Pabandi Protocol v2.0: ZK / ACTUS / Kleros / Aragon / Mesh
 app.use(`/api/${API_VERSION}/agent-loop`, agentLoopRoutes); // AI-agent booking loop control (live/sim)
+app.use(`/api/${API_VERSION}/economy`, autonomousEconomyRoutes); // Autonomous treasury merchant (buy/sell $PAB, net SOL revenue)
 app.post('/mcp', mcpHandler); // Model Context Protocol — Pabandi Agent Passport distribution layer
 app.post(`/api/${API_VERSION}/mcp`, mcpHandler); // alias for path-prefixed clients
 
