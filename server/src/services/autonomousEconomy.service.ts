@@ -235,6 +235,31 @@ export class AutonomousEconomyService {
     return { partnerId, earnedSol: +earned.toFixed(6), bookings: rows.length };
   }
 
+  /** Public leaderboard (social proof): top referrers + partners by SOL earned. */
+  async leaderboard(limit = 10): Promise<{ referrers: { code: string; earnedSol: number; claims: number }[]; partners: { partnerId: string; earnedSol: number; bookings: number }[] }> {
+    const [refRows, partRows] = await Promise.all([
+      prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED' } }),
+      prisma.treasuryPosition.findMany({ where: { bucket: 'PARTNER_FEE' } }),
+    ]);
+    const refMap = new Map<string, { earnedSol: number; claims: number }>();
+    for (const r of refRows) {
+      const code = (r.meta as any)?.referralCode || 'unknown';
+      const e = refMap.get(code) || { earnedSol: 0, claims: 0 };
+      e.earnedSol += r.amount || 0; e.claims += 1; refMap.set(code, e);
+    }
+    const partMap = new Map<string, { earnedSol: number; bookings: number }>();
+    for (const r of partRows) {
+      const pid = (r.meta as any)?.partnerId || 'unknown';
+      const e = partMap.get(pid) || { earnedSol: 0, bookings: 0 };
+      e.earnedSol += r.amount || 0; e.bookings += 1; partMap.set(pid, e);
+    }
+    const referrers = [...refMap.entries()].map(([code, v]) => ({ code, earnedSol: +v.earnedSol.toFixed(6), claims: v.claims }))
+      .sort((a, b) => b.earnedSol - a.earnedSol).slice(0, limit);
+    const partners = [...partMap.entries()].map(([partnerId, v]) => ({ partnerId, earnedSol: +v.earnedSol.toFixed(6), bookings: v.bookings }))
+      .sort((a, b) => b.earnedSol - a.earnedSol).slice(0, limit);
+    return { referrers, partners };
+  }
+
   async autonomousReinvest(): Promise<{ stakedSol: number; note: string }> {
     const conn = this.conn();
     const kp = this.treasury();

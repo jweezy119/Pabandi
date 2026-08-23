@@ -109,4 +109,14 @@ router.get('/partner/:id', async (req, res) => {
   }
 });
 
+// Public leaderboard (social proof): top referrers + partners by SOL earned
+router.get('/leaderboard', async (_req, res) => {
+  try {
+    const r = await autonomousEconomyService.leaderboard();
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 export default router;
