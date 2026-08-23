@@ -53,10 +53,11 @@ export class AutonomousEconomyService {
   /**
    * HUMAN SOL rake — the real external inflow. A human (or any external wallet) sends
    * `solAmount` SOL; we take a 1% platform rake on-chain into the FEE wallet and route
-   * the rest into the protocol (treasury). Returns the serialized tx for the payer to sign.
+   * the rest into the protocol (treasury). The payer signs + broadcasts the returned
+   * base64 tx. Returns { serializedTx, rakeSol, netToProtocol, bookingRef }.
    * This is genuine profit: external SOL in, 1% skimmed, rest settles the booking.
    */
-  async chargeRake(payer: string, solAmount: number): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number }> {
+  async chargeRake(payer: string, solAmount: number, bookingRef?: string): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number; bookingRef: string }> {
     const conn = this.conn();
     const kp = this.treasury();
     if (!kp) throw new Error('SOLANA_PRIVATE_KEY not set');
@@ -64,6 +65,7 @@ export class AutonomousEconomyService {
     const payerPub = new PublicKey(payer);
     const rake = +(solAmount * 0.01).toFixed(6);
     const net = +(solAmount - rake).toFixed(6);
+    const ref = bookingRef || `human:${payer.slice(0, 8)}:${Date.now()}`;
     const tx = new Transaction().add(
       SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: feeWallet, lamports: Math.round(rake * LAMPORTS_PER_SOL) }),
       SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: kp.publicKey, lamports: Math.round(net * LAMPORTS_PER_SOL) })
@@ -72,7 +74,41 @@ export class AutonomousEconomyService {
     const { blockhash } = await conn.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.partialSign(kp); // treasury pre-signs its receive leg; payer signs + broadcasts
-    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), rakeSol: rake, netToProtocol: net };
+    // Persist a pending charge so confirm-rake can reconcile.
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'PENDING_CHARGE',
+        amount: rake,
+        status: 'PENDING',
+        txHash: ref,
+        meta: { asset: 'SOL', source: 'HUMAN_RAKE', payer, solAmount, rakeSol: rake, netToProtocol: net, bookingRef: ref },
+      },
+    }).catch(() => {});
+    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), rakeSol: rake, netToProtocol: net, bookingRef: ref };
+  }
+
+  /**
+   * Confirm a human rake: verify the tx landed on-chain, mark the pending charge
+   * DEPLOYED, and record the SOL revenue. `txHash` is the broadcasted signature.
+   */
+  async confirmRake(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; rakeSol: number }> {
+    const conn = this.conn();
+    const pending = await prisma.treasuryPosition.findFirst({
+      where: { txHash: bookingRef, bucket: 'PENDING_CHARGE', status: 'PENDING' },
+    });
+    if (!pending) return { confirmed: false, rakeSol: 0 };
+    try {
+      const info = await conn.getTransaction(txHash, { commitment: 'confirmed' });
+      if (!info) return { confirmed: false, rakeSol: 0 };
+    } catch {
+      return { confirmed: false, rakeSol: 0 };
+    }
+    const rake = (pending.meta as any)?.rakeSol || 0;
+    await prisma.treasuryPosition.update({
+      where: { id: pending.id },
+      data: { status: 'DEPLOYED', meta: { ...(pending.meta as any), txHash, source: 'PLATFORM_FEE', confirmedAt: new Date().toISOString() } },
+    });
+    return { confirmed: true, rakeSol: rake };
   }
 
   /**

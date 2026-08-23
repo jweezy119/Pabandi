@@ -165,13 +165,9 @@ export async function runAgentLoopCycle(): Promise<{
 
     state.lastCycleAt = new Date();
 
-    // Step 5: Write combined revenue to the Autonomous Treasury ledger (TreasuryPosition)
+    // Step 5: Snapshot the cycle's REAL SOL profit to the treasury ledger
     try {
-      await recordTreasuryRevenue({
-        bookingFeesPab: feesCollected,
-        badgePab,
-        poolFeesUsdc,
-      });
+      await recordTreasuryRevenue({ solRevenue: solFeesCollected });
     } catch (err: any) {
       errors.push(`Treasury ledger: ${err.message}`);
     }
@@ -347,71 +343,28 @@ export async function getAgentLoopHealth(): Promise<{
 }
 
 /**
- * Record combined agent-loop revenue into the Autonomous Treasury ledger
- * (TreasuryPosition) so the profitability report shows one reconciled number.
- *
- * - Booking fees (PAB) + Badge revenue (PAB): captured to treasury
- * - 10% of PAB revenue is burned (deflation) → recorded as BURN
- * - Pool fees (USDC): captured to treasury
+ * Record the agent-loop's REAL platform revenue (SOL only — PAB is just the booking
+ * medium now). The SOL rake already flows on-chain to the FEE wallet via recordSolFee
+ * (source PLATFORM_FEE); here we snapshot the cycle's SOL profit to the treasury ledger
+ * so the profitability report shows one reconciled number. PAB/burn artifacts removed.
  */
-const BOOKING_FEE_BURN_PCT = 0.1;
-
 async function recordTreasuryRevenue(opts: {
-  bookingFeesPab: number;
-  badgePab: number;
-  poolFeesUsdc: number;
+  solRevenue: number;
 }): Promise<void> {
-  const pabRevenue = (opts.bookingFeesPab || 0) + (opts.badgePab || 0);
-  if (pabRevenue <= 0 && (opts.poolFeesUsdc || 0) <= 0) return;
-
-  if (pabRevenue > 0) {
-    // PAB fees captured to treasury
-    await prisma.treasuryPosition.create({
-      data: {
-        bucket: 'AGENT_REVENUE',
-        amount: pabRevenue,
-        status: 'DEPLOYED',
-        meta: {
-          asset: 'PAB',
-          source: 'agent-loop',
-          bookingFees: opts.bookingFeesPab,
-          badgeRevenue: opts.badgePab,
-          note: 'Agent booking + badge revenue captured to treasury',
-        },
+  const sol = opts.solRevenue || 0;
+  if (sol <= 0) return;
+  await prisma.treasuryPosition.create({
+    data: {
+      bucket: 'PROFIT_RETAINED',
+      amount: sol,
+      status: 'DEPLOYED',
+      meta: {
+        asset: 'SOL',
+        source: 'PLATFORM_FEE',
+        note: 'Agent-loop SOL rake retained as platform profit (SOL-only settlement)',
       },
-    });
-
-    // 10% burn (deflation engine)
-    const burn = +(pabRevenue * BOOKING_FEE_BURN_PCT).toFixed(4);
-    await prisma.treasuryPosition.create({
-      data: {
-        bucket: 'BURN',
-        amount: burn,
-        status: 'DEPLOYED',
-        meta: {
-          asset: 'PAB',
-          source: 'agent-loop',
-          burnedFrom: pabRevenue,
-          note: '10% of agent-loop PAB revenue burned (deflation)',
-        },
-      },
-    });
-  }
-
-  if (opts.poolFeesUsdc > 0) {
-    await prisma.treasuryPosition.create({
-      data: {
-        bucket: 'AGENT_REVENUE',
-        amount: opts.poolFeesUsdc,
-        status: 'DEPLOYED',
-        meta: {
-          asset: 'USDC',
-          source: 'pool-fee',
-          note: 'USDC/PAB pool arbitrage fee captured to treasury',
-        },
-      },
-    });
-  }
+    },
+  });
 }
 
 /**

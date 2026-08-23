@@ -28,9 +28,21 @@ router.post('/quote-rake', async (req, res) => {
 // Charge a human SOL rake — returns a base64 tx for the payer to sign + broadcast
 router.post('/charge-rake', async (req, res) => {
   try {
-    const { payer, solAmount } = req.body || {};
+    const { payer, solAmount, bookingRef } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
-    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount));
+    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Confirm a human rake after the payer broadcasts the tx
+router.post('/confirm-rake', async (req, res) => {
+  try {
+    const { bookingRef, txHash } = req.body || {};
+    if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
+    const r = await autonomousEconomyService.confirmRake(bookingRef, txHash);
     res.json({ success: true, data: r });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
