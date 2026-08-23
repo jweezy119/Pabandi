@@ -57,6 +57,15 @@ const conn = new Connection(RPC, 'confirmed');
 const $ = id => document.getElementById(id);
 function setStatus(msg, cls){ $('status').className = 'status ' + (cls||'mut'); $('status').textContent = msg; }
 
+// Deep-link support: /pay-in-sol.html#amount=0.1&agent=agent:dev-001
+(function applyHash(){
+  const h = location.hash.replace(/^#/, '');
+  const p = new URLSearchParams(h);
+  if (p.get('amount')) $('amount').value = p.get('amount');
+  if (p.get('agent')) $('agent').value = p.get('agent');
+  updateFee();
+})();
+
 $('amount').addEventListener('input', updateFee);
 $('agent').addEventListener('change', updateFee);
 function updateFee(){

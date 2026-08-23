@@ -113,6 +113,15 @@ export default function BookingPage() {
       } else if (formData.paymentMethod === 'stellar-franklin') {
         web3Result = await executeStellarFranklinDeposit('10.00', business.walletAddress || '');
         if (!web3Result.success) throw new Error(web3Result.error || 'Stellar deposit failed');
+      } else if (formData.paymentMethod === 'sol-checkout') {
+        // LIVE SOL rail: open the standalone pay-in-SOL flow (charges 1% rake on-chain).
+        // The backend endpoint is POST /api/v1/economy/sol-checkout; the hosted page handles
+        // wallet connect, signing, broadcast, and confirm-rake. No GCP/Firebase redeploy needed.
+        const amount = reservation.depositAmount ? Number(reservation.depositAmount) : 0.05;
+        const url = `https://pabandi.onrender.com/sdk/pay-in-sol.html#amount=${amount}&agent=${business?.id || 'agent:demo'}`;
+        window.open(url, '_blank', 'noopener');
+        setIsProcessingWeb3(false);
+        return;
       } else if (formData.paymentMethod === 'stake') {
         await stakingService.stake({ reservationId: reservation.id, amount: REQUIRED_STAKE });
       }
@@ -342,6 +351,7 @@ export default function BookingPage() {
                         { value: 'safepay', label: 'Safepay', sub: 'Fiat' },
                         { value: 'bsc', label: 'Web3 BSC', sub: 'BNB / USDT' },
                         { value: 'solana', label: 'Web3 Solana', sub: 'SOL / USDC' },
+                        { value: 'sol-checkout', label: 'Pay in SOL', sub: '1% rake · LIVE' },
                         { value: 'stellar-franklin', label: 'Web3 Stellar', sub: 'BENJI / FOBXX' },
                         { value: 'stake', label: 'Stake PAB', sub: `${REQUIRED_STAKE} PAB required`, disabled: offChainBalance < REQUIRED_STAKE },
                       ].map((option) => {
