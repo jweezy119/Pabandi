@@ -319,7 +319,8 @@ export class Web3AgentService {
         } catch {} }
       }
 
-      // Transfer PAB — agent signs, TREASURY pays the gas (operator-funded, sustainable)
+      // Transfer PAB value — agent signs, TREASURY pays the gas (operator-funded, sustainable).
+      // PAB is the booking medium; the platform's REVENUE is settled in SOL (liquid, USD-valued).
       const amountLamports = amountPab * (10 ** TOKEN_DECIMALS);
       const transferIx = createTransferInstruction(
         senderAta,
@@ -328,37 +329,20 @@ export class Web3AgentService {
         amountLamports
       );
 
-      // On-chain PAB platform fee — collected from the agent to the TREASURY $PAB ATA.
-      // This is REAL revenue, not accounting. value-progressive rate from the profit engine.
-      const feePab = Math.max(1, Math.round(amountPab * 0.02)); // 2% floor; profit engine can override higher
-      const mintPub = new PublicKey(MINT_ADDRESS);
-      const treasuryPabAta = await getAssociatedTokenAddress(mintPub, this.treasuryKeypair!.publicKey);
-      const feeIx = createTransferInstruction(
-        senderAta,
-        treasuryPabAta,
-        senderPubkey,
-        feePab * (10 ** TOKEN_DECIMALS)
-      );
-
-      // On-chain SOL platform fee — REAL transfer from the (feePaying) treasury to the
-      // FEE treasury wallet. Net SOL is unchanged for the platform, but this produces a
-      // verifiable on-chain ledger entry of the SOL fee captured per booking.
-      const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
-      const solFeeLamports = Math.round(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
-      const solFeeIx = SystemProgram.transfer({
-        fromPubkey: this.treasuryKeypair!.publicKey,
-        toPubkey: feeWallet,
-        lamports: solFeeLamports,
-      });
-
-      const tx = new Transaction().add(transferIx).add(feeIx);
+      const tx = new Transaction().add(transferIx);
       tx.feePayer = this.treasuryKeypair!.publicKey;
       const signature = await sendWithRetry(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
-      // Best-effort on-chain SOL platform fee: separate tx so it can NEVER break the PAB booking.
+      // On-chain SOL platform fee — the SOLE settlement currency. Value-progressive:
+      // bigger bookings pay more SOL (base + per-PAB rate), matched to your mandate that
+      // higher-value bookings carry a higher fee. Real transfer from the feePaying
+      // treasury to the FEE treasury wallet. Best-effort so it can NEVER break the PAB booking.
       try {
         const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
-        const solFeeLamports = Math.round(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
+        const SOL_FEE_BASE = Number(process.env.SOL_FEE_BASE || 0.0003);     // floor per booking
+        const SOL_FEE_RATE = Number(process.env.SOL_FEE_RATE || 0.00001);    // per-PAB of booking value
+        const solFee = SOL_FEE_BASE + amountPab * SOL_FEE_RATE;              // e.g. 50 PAB => 0.0008 SOL
+        const solFeeLamports = Math.round(solFee * LAMPORTS_PER_SOL);
         const solTx = new Transaction().add(
           SystemProgram.transfer({ fromPubkey: this.treasuryKeypair!.publicKey, toPubkey: feeWallet, lamports: solFeeLamports })
         );
@@ -388,9 +372,10 @@ export class Web3AgentService {
       // On-chain SOL platform fee — now a REAL on-chain transfer (see solFeeIx above).
       // Treasury pays the gas AND moves the fee to the FEE treasury wallet on-chain.
       try {
+        const solFee = Number(process.env.SOL_FEE_BASE || 0.0003) + amountPab * Number(process.env.SOL_FEE_RATE || 0.00001);
         await feeCollectionService.recordSolFee({
           bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
-          amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+          amountSol: solFee, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
           txHash: signature, onChain: true,
         });
       } catch (feeErr: any) {
@@ -432,9 +417,10 @@ export class Web3AgentService {
       });
 
       // On-chain SOL platform fee (recorded notionally in sim mode so accounting matches live)
+      const simSolFee = Number(process.env.SOL_FEE_BASE || 0.0003) + amountPab * Number(process.env.SOL_FEE_RATE || 0.00001);
       await feeCollectionService.recordSolFee({
         bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
-        amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
+        amountSol: simSolFee, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
       }).catch(() => {});
 
       logger.info(`[Web3Agent] Simulated booking: ${fromAgent.profileId} → ${toAgent.profileId} | ${amountPab} PAB + ${SOL_FEE_PER_BOOKING} SOL fee`);
