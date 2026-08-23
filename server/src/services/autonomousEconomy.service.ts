@@ -63,41 +63,46 @@ export class AutonomousEconomyService {
    * base64 tx. Returns { serializedTx, rakeSol, netToProtocol, bookingRef }.
    * This is genuine profit: external SOL in, 1% skimmed, rest settles the booking.
    */
-  async chargeRake(payer: string, solAmount: number, bookingRef?: string): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number; bookingRef: string }> {
+  async chargeRake(payer: string, solAmount: number, bookingRef?: string, opts?: { referralCode?: string; partnerId?: string }): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number; bookingRef: string; referralSol: number; partnerSol: number }> {
     const conn = this.conn();
     const kp = this.treasury();
     if (!kp) throw new Error('SOLANA_PRIVATE_KEY not set');
     const feeWallet = this.feeWallet();
     const payerPub = new PublicKey(payer);
     const rake = +(solAmount * 0.01).toFixed(6);
-    const net = +(solAmount - rake).toFixed(6);
+    // Tier-2 levers: referral kickback (0.2% of rake) + partner infra fee (0.1% of volume)
+    const referralSol = opts?.referralCode ? +(rake * 0.2).toFixed(6) : 0;
+    const partnerSol = opts?.partnerId ? +(solAmount * 0.001).toFixed(6) : 0;
+    const net = +(solAmount - rake - partnerSol).toFixed(6);
     const ref = bookingRef || `human:${payer.slice(0, 8)}:${Date.now()}`;
-    const tx = new Transaction().add(
+    const ixs = [
       SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: feeWallet, lamports: Math.round(rake * LAMPORTS_PER_SOL) }),
-      SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: kp.publicKey, lamports: Math.round(net * LAMPORTS_PER_SOL) })
-    );
+      SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: kp.publicKey, lamports: Math.round(net * LAMPORTS_PER_SOL) }),
+    ];
+    if (partnerSol > 0) ixs.push(SystemProgram.transfer({ fromPubkey: payerPub, toPubkey: feeWallet, lamports: Math.round(partnerSol * LAMPORTS_PER_SOL) }));
+    const tx = new Transaction().add(...ixs);
     tx.feePayer = payerPub;
     const { blockhash } = await conn.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.partialSign(kp); // treasury pre-signs its receive leg; payer signs + broadcasts
-    // Persist a pending charge so confirm-rake can reconcile.
+    // Persist a pending charge so confirm-rake can reconcile + credit referral/partner.
     await prisma.treasuryPosition.create({
       data: {
         bucket: 'PENDING_CHARGE',
         amount: rake,
         status: 'PENDING',
         txHash: ref,
-        meta: { asset: 'SOL', source: 'HUMAN_RAKE', payer, solAmount, rakeSol: rake, netToProtocol: net, bookingRef: ref },
+        meta: { asset: 'SOL', source: 'HUMAN_RAKE', payer, solAmount, rakeSol: rake, netToProtocol: net, bookingRef: ref, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol },
       },
     }).catch(() => {});
-    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), rakeSol: rake, netToProtocol: net, bookingRef: ref };
+    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), rakeSol: rake, netToProtocol: net, bookingRef: ref, referralSol, partnerSol };
   }
 
   /**
    * Confirm a human rake: verify the tx landed on-chain, mark the pending charge
    * DEPLOYED, and record the SOL revenue. `txHash` is the broadcasted signature.
    */
-  async confirmRake(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; rakeSol: number }> {
+  async confirmRake(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; rakeSol: number; referralSol?: number; partnerSol?: number }> {
     const conn = this.conn();
     const pending = await prisma.treasuryPosition.findFirst({
       where: { txHash: bookingRef, bucket: 'PENDING_CHARGE', status: 'PENDING' },
@@ -110,11 +115,27 @@ export class AutonomousEconomyService {
       return { confirmed: false, rakeSol: 0 };
     }
     const rake = (pending.meta as any)?.rakeSol || 0;
+    const referralCode = (pending.meta as any)?.referralCode;
+    const referralSol = (pending.meta as any)?.referralSol || 0;
+    const partnerId = (pending.meta as any)?.partnerId;
+    const partnerSol = (pending.meta as any)?.partnerSol || 0;
     await prisma.treasuryPosition.update({
       where: { id: pending.id },
       data: { status: 'DEPLOYED', meta: { ...(pending.meta as any), txHash, source: 'PLATFORM_FEE', confirmedAt: new Date().toISOString() } },
     });
-    return { confirmed: true, rakeSol: rake };
+    // Tier-2: credit referral kickback (off-chain ledger; claimable later, zero treasury risk)
+    if (referralCode && referralSol > 0) {
+      await prisma.treasuryPosition.create({
+        data: { bucket: 'REFERRAL_EARNED', amount: referralSol, status: 'PENDING', txHash: `${bookingRef}:ref`, meta: { asset: 'SOL', source: 'REFERRAL', referralCode, fromBooking: bookingRef, note: '0.2% rake kickback (claimable)' } },
+      }).catch(() => {});
+    }
+    // Tier-2: record partner infra fee earned
+    if (partnerId && partnerSol > 0) {
+      await prisma.treasuryPosition.create({
+        data: { bucket: 'PARTNER_FEE', amount: partnerSol, status: 'DEPLOYED', txHash: `${bookingRef}:partner`, meta: { asset: 'SOL', source: 'PARTNER_FEE', partnerId, fromBooking: bookingRef } },
+      }).catch(() => {});
+    }
+    return { confirmed: true, rakeSol: rake, referralSol, partnerSol };
   }
 
   /**
@@ -128,21 +149,23 @@ export class AutonomousEconomyService {
    * fee leg; the stake leg is a Jito pool SOL->JitoSOL swap (simplified transfer to the
    * Jito pool's deposit; full stake-pool ix is wired for mainnet when volume justifies).
    */
-  async routeToYield(user: string, solAmount: number, bookingRef?: string): Promise<{ serializedTx: string; platformFeeSol: number; estJitosol: number; bookingRef: string }> {
+  async routeToYield(user: string, solAmount: number, bookingRef?: string, opts?: { partnerId?: string }): Promise<{ serializedTx: string; platformFeeSol: number; estJitosol: number; bookingRef: string; partnerSol: number }> {
     const conn = this.conn();
     const kp = this.treasury();
     if (!kp) throw new Error('SOLANA_PRIVATE_KEY not set');
     const feeWallet = this.feeWallet();
     const userPub = new PublicKey(user);
     const fee = +(solAmount * Number(process.env.PLATFORM_YIELD_FEE || 0.005)).toFixed(6);
-    const stakeAmt = +(solAmount - fee).toFixed(6);
-    // JitoSOL ~= SOL (slightly >1 due to accrued yield). Use 1.0 for quote; on-chain rate via pool.
+    const partnerSol = opts?.partnerId ? +(solAmount * 0.001).toFixed(6) : 0; // 0.1% infra fee
+    const stakeAmt = +(solAmount - fee - partnerSol).toFixed(6);
     const estJitosol = +stakeAmt.toFixed(6);
     const ref = bookingRef || `yield:${user.slice(0, 8)}:${Date.now()}`;
-    const tx = new Transaction().add(
+    const ixs = [
       SystemProgram.transfer({ fromPubkey: userPub, toPubkey: feeWallet, lamports: Math.round(fee * LAMPORTS_PER_SOL) }),
-      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: this.yieldVault(), lamports: Math.round(stakeAmt * LAMPORTS_PER_SOL) })
-    );
+      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: this.yieldVault(), lamports: Math.round(stakeAmt * LAMPORTS_PER_SOL) }),
+    ];
+    if (partnerSol > 0) ixs.push(SystemProgram.transfer({ fromPubkey: userPub, toPubkey: feeWallet, lamports: Math.round(partnerSol * LAMPORTS_PER_SOL) }));
+    const tx = new Transaction().add(...ixs);
     tx.feePayer = userPub;
     const { blockhash } = await conn.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
@@ -154,10 +177,10 @@ export class AutonomousEconomyService {
         amount: fee,
         status: 'PENDING',
         txHash: ref,
-        meta: { asset: 'SOL', source: 'YIELD_FEE', user, solAmount, feeSol: fee, stakeAmt, estJitosol, bookingRef: ref },
+        meta: { asset: 'SOL', source: 'YIELD_FEE', user, solAmount, feeSol: fee, stakeAmt, estJitosol, bookingRef: ref, partnerId: opts?.partnerId, partnerSol },
       },
     }).catch(() => {});
-    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), platformFeeSol: fee, estJitosol, bookingRef: ref };
+    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), platformFeeSol: fee, estJitosol, bookingRef: ref, partnerSol };
   }
 
   /** Quote the yield route without signing: expected platform fee + JitoSOL out. */
@@ -167,7 +190,7 @@ export class AutonomousEconomyService {
   }
 
   /** Confirm a yield route: verify on-chain, mark the pending fee DEPLOYED as revenue. */
-  async confirmYield(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; platformFeeSol: number }> {
+  async confirmYield(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; platformFeeSol: number; partnerSol?: number }> {
     const conn = this.conn();
     const pending = await prisma.treasuryPosition.findFirst({
       where: { txHash: bookingRef, bucket: 'PENDING_CHARGE', status: 'PENDING' },
@@ -178,11 +201,38 @@ export class AutonomousEconomyService {
       if (!info) return { confirmed: false, platformFeeSol: 0 };
     } catch { return { confirmed: false, platformFeeSol: 0 }; }
     const fee = (pending.meta as any)?.feeSol || 0;
+    const partnerId = (pending.meta as any)?.partnerId;
+    const partnerSol = (pending.meta as any)?.partnerSol || 0;
     await prisma.treasuryPosition.update({
       where: { id: pending.id },
       data: { status: 'DEPLOYED', meta: { ...(pending.meta as any), txHash, source: 'PLATFORM_FEE', confirmedAt: new Date().toISOString() } },
     });
-    return { confirmed: true, platformFeeSol: fee };
+    if (partnerId && partnerSol > 0) {
+      await prisma.treasuryPosition.create({
+        data: { bucket: 'PARTNER_FEE', amount: partnerSol, status: 'DEPLOYED', txHash: `${bookingRef}:partner`, meta: { asset: 'SOL', source: 'PARTNER_FEE', partnerId, fromBooking: bookingRef } },
+      }).catch(() => {});
+    }
+    return { confirmed: true, platformFeeSol: fee, partnerSol };
+  }
+
+  /** Referral earnings (Tier-2 idea 5): total claimable SOL for a referral code. */
+  async referralStats(referralCode: string): Promise<{ code: string; earnedSol: number; claims: number }> {
+    const rows = await prisma.treasuryPosition.findMany({
+      where: { bucket: 'REFERRAL_EARNED', meta: { path: ['referralCode'], equals: referralCode } },
+    });
+    let earned = 0;
+    for (const r of rows) earned += r.amount || 0;
+    return { code: referralCode, earnedSol: +earned.toFixed(6), claims: rows.length };
+  }
+
+  /** Partner infra-fee earnings (Tier-2 idea 6): total SOL skimmed for a partner. */
+  async partnerStats(partnerId: string): Promise<{ partnerId: string; earnedSol: number; bookings: number }> {
+    const rows = await prisma.treasuryPosition.findMany({
+      where: { bucket: 'PARTNER_FEE', meta: { path: ['partnerId'], equals: partnerId } },
+    });
+    let earned = 0;
+    for (const r of rows) earned += r.amount || 0;
+    return { partnerId, earnedSol: +earned.toFixed(6), bookings: rows.length };
   }
 
   async autonomousReinvest(): Promise<{ stakedSol: number; note: string }> {

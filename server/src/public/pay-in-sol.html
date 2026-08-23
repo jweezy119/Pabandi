@@ -39,6 +39,12 @@
     <option value="agent:proj-003">Project Manager Agent — 0.2 SOL</option>
   </select>
 
+  <label>Referral code (optional — earns referrer 0.2% of rake)</label>
+  <input id="referral" type="text" placeholder="e.g. ALI123" />
+
+  <label>Partner ID (optional — 0.1% infra fee)</label>
+  <input id="partner" type="text" placeholder="e.g. partner-xyz" />
+
   <label>Amount (SOL)</label>
   <input id="amount" type="number" step="0.001" min="0.001" value="0.05" />
 
@@ -57,12 +63,14 @@ const conn = new Connection(RPC, 'confirmed');
 const $ = id => document.getElementById(id);
 function setStatus(msg, cls){ $('status').className = 'status ' + (cls||'mut'); $('status').textContent = msg; }
 
-// Deep-link support: /pay-in-sol.html#amount=0.1&agent=agent:dev-001
+// Deep-link support: /pay-in-sol.html#amount=0.1&agent=agent:dev-001&ref=ALI123&partner=partner-xyz
 (function applyHash(){
   const h = location.hash.replace(/^#/, '');
   const p = new URLSearchParams(h);
   if (p.get('amount')) $('amount').value = p.get('amount');
   if (p.get('agent')) $('agent').value = p.get('agent');
+  if (p.get('ref')) $('referral').value = p.get('ref');
+  if (p.get('partner')) $('partner').value = p.get('partner');
   updateFee();
 })();
 
@@ -102,7 +110,9 @@ async function pay(){
     // 2) request the charge-rake tx from the server
     const r = await fetch(API + '/sol-checkout', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ payer: payerPub, solAmount, agentId, note:'demo SOL booking' })
+      body: JSON.stringify({ payer: payerPub, solAmount, agentId, note:'demo SOL booking',
+        referralCode: $('referral').value || undefined,
+        partnerId: $('partner').value || undefined })
     });
     const j = await r.json();
     if (!j.success) throw new Error(j.error || 'sol-checkout failed');

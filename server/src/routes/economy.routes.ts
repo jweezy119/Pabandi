@@ -28,9 +28,9 @@ router.post('/quote-rake', async (req, res) => {
 // Charge a human SOL rake — returns a base64 tx for the payer to sign + broadcast
 router.post('/charge-rake', async (req, res) => {
   try {
-    const { payer, solAmount, bookingRef } = req.body || {};
+    const { payer, solAmount, bookingRef, referralCode, partnerId } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
-    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef);
+    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef, { referralCode, partnerId });
     res.json({ success: true, data: r });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
@@ -43,9 +43,9 @@ router.post('/charge-rake', async (req, res) => {
 // PENDING_CHARGE so confirm-rake can close the booking on broadcast.
 router.post('/sol-checkout', async (req, res) => {
   try {
-    const { payer, solAmount, bookingRef, agentId, note } = req.body || {};
+    const { payer, solAmount, bookingRef, agentId, note, referralCode, partnerId } = req.body || {};
     if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
-    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef);
+    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef, { referralCode, partnerId });
     res.json({ success: true, data: { ...r, feeWallet: process.env.FEE_TREASURY_WALLET, agentId: agentId || null, note: note || 'SOL checkout' } });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
@@ -68,9 +68,9 @@ router.post('/quote-yield', async (req, res) => {
 // Route a user's SOL into JitoSOL — returns a base64 tx for the user to sign + broadcast
 router.post('/route-yield', async (req, res) => {
   try {
-    const { user, solAmount, bookingRef } = req.body || {};
+    const { user, solAmount, bookingRef, partnerId } = req.body || {};
     if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
-    const r = await autonomousEconomyService.routeToYield(user, Number(solAmount), bookingRef);
+    const r = await autonomousEconomyService.routeToYield(user, Number(solAmount), bookingRef, { partnerId });
     res.json({ success: true, data: r });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
@@ -89,5 +89,24 @@ router.post('/confirm-yield', async (req, res) => {
   }
 });
 
+
+// ── Tier-2: referral + partner stats (read-only, zero treasury cost) ──
+router.get('/referral/:code', async (req, res) => {
+  try {
+    const r = await autonomousEconomyService.referralStats(req.params.code);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+router.get('/partner/:id', async (req, res) => {
+  try {
+    const r = await autonomousEconomyService.partnerStats(req.params.id);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 export default router;
