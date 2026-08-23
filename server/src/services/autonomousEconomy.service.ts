@@ -27,6 +27,12 @@ export class AutonomousEconomyService {
   private feeWallet(): PublicKey {
     return new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
   }
+  private yieldVault(): PublicKey {
+    // Protocol-owned stake custodian. SEPARATE from the operational treasury so user
+    // staked SOL never mixes with operating capital. In prod this is a dedicated vault
+    // that later converts to JitoSOL (guarded). Defaults to the fee wallet for the demo.
+    return new PublicKey(process.env.YIELD_VAULT_WALLET || process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
+  }
 
   /** Net on-chain SOL revenue (fee wallet inflow) for the profitability report. */
   async netSolRevenue(sinceDays = 30): Promise<{ inSol: number; outSol: number; netSol: number; usd: number }> {
@@ -135,7 +141,7 @@ export class AutonomousEconomyService {
     const ref = bookingRef || `yield:${user.slice(0, 8)}:${Date.now()}`;
     const tx = new Transaction().add(
       SystemProgram.transfer({ fromPubkey: userPub, toPubkey: feeWallet, lamports: Math.round(fee * LAMPORTS_PER_SOL) }),
-      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: JITOSOL_MINT, lamports: Math.round(stakeAmt * LAMPORTS_PER_SOL) })
+      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: this.yieldVault(), lamports: Math.round(stakeAmt * LAMPORTS_PER_SOL) })
     );
     tx.feePayer = userPub;
     const { blockhash } = await conn.getLatestBlockhash();
