@@ -139,18 +139,27 @@ export class AutonomousEconomy {
     return sig;
   }
 
-  /** Net on-chain SOL revenue (inflow - outflow) for the profitability report. */
-  async netSolRevenue(sinceDays = 30): Promise<{ inSol: number; outSol: number; netSol: number; usd: number }> {
+  /** Net platform revenue (SOL + PAB) for the profitability report, incl. bookings + merchant. */
+  async netSolRevenue(sinceDays = 30): Promise<{ inSol: number; outSol: number; netSol: number; usd: number; pabIn: number; pabOut: number; netPab: number }> {
     const since = new Date(Date.now() - sinceDays * 86400_000);
     const rows: any[] = await prisma.treasuryPosition.findMany({
-      where: { createdAt: { gte: since }, OR: [{ meta: { path: ['source'], equals: 'PAB_SALE' } }, { meta: { path: ['source'], equals: 'PAB_BUYBACK' } }] },
+      where: {
+        createdAt: { gte: since },
+        OR: [{ meta: { path: ['source'], equals: 'PAB_SALE' } }, { meta: { path: ['source'], equals: 'PAB_BUYBACK' } }, { meta: { path: ['source'], equals: 'PLATFORM_FEE' } }, { meta: { path: ['source'], equals: 'BOOKING_FEE' } }],
+      },
     });
-    let inSol = 0, outSol = 0;
+    let inSol = 0, outSol = 0, pabIn = 0, pabOut = 0;
     for (const r of rows) {
       const s = (r.meta as any)?.source;
-      if (s === 'PAB_SALE') inSol += r.amount; else outSol += r.amount;
+      const isSol = (r.meta as any)?.asset === 'SOL';
+      if (s === 'PAB_SALE' || s === 'BOOKING_FEE') { if (isSol) inSol += r.amount; else pabIn += r.amount; }
+      if (s === 'PAB_BUYBACK' || s === 'PLATFORM_FEE') { if (isSol) outSol += r.amount; else pabOut += r.amount; }
     }
-    return { inSol: +inSol.toFixed(6), outSol: +outSol.toFixed(6), netSol: +(inSol - outSol).toFixed(6), usd: +((inSol - outSol) * SOL_USD_PRICE).toFixed(2) };
+    return {
+      inSol: +inSol.toFixed(6), outSol: +outSol.toFixed(6), netSol: +(inSol - outSol).toFixed(6),
+      usd: +((inSol - outSol) * SOL_USD_PRICE).toFixed(2),
+      pabIn: +pabIn.toFixed(2), pabOut: +pabOut.toFixed(2), netPab: +(pabIn - pabOut).toFixed(2),
+    };
   }
 }
 

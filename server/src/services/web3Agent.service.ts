@@ -313,7 +313,18 @@ export class Web3AgentService {
         feePab * (10 ** TOKEN_DECIMALS)
       );
 
-      const tx = new Transaction().add(transferIx).add(feeIx);
+      // On-chain SOL platform fee — REAL transfer from the (feePaying) treasury to the
+      // FEE treasury wallet. Net SOL is unchanged for the platform, but this produces a
+      // verifiable on-chain ledger entry of the SOL fee captured per booking.
+      const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
+      const solFeeLamports = Math.round(SOL_FEE_PER_BOOKING * LAMPORTS_PER_SOL);
+      const solFeeIx = SystemProgram.transfer({
+        fromPubkey: this.treasuryKeypair!.publicKey,
+        toPubkey: feeWallet,
+        lamports: solFeeLamports,
+      });
+
+      const tx = new Transaction().add(transferIx).add(feeIx).add(solFeeIx);
       tx.feePayer = this.treasuryKeypair!.publicKey;
       const signature = await sendAndConfirmTransaction(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
@@ -335,14 +346,13 @@ export class Web3AgentService {
 
       logger.info(`[Web3Agent] Booking payment: ${fromAgent.walletAddress.substring(0, 8)}... → ${toAgent.walletAddress.substring(0, 8)}... | ${amountPab} PAB`);
 
-      // On-chain SOL platform fee — recorded for accounting. The gas for this booking was
-      // already paid by the treasury (feePayer above), so the fee is operator-collected.
-      // We record it against the booking ref without draining the agent's SOL.
+      // On-chain SOL platform fee — now a REAL on-chain transfer (see solFeeIx above).
+      // Treasury pays the gas AND moves the fee to the FEE treasury wallet on-chain.
       try {
         await feeCollectionService.recordSolFee({
           bookingRef: `booking:${fromAgent.profileId}->${toAgent.profileId}`,
           amountSol: SOL_FEE_PER_BOOKING, source: 'AGENT_BOOKING', payerAddress: fromAgent.walletAddress,
-          txHash: signature,
+          txHash: signature, onChain: true,
         });
       } catch (feeErr: any) {
         logger.warn(`[Web3Agent] SOL fee record failed: ${feeErr.message}`);
