@@ -10,7 +10,7 @@ import { SOL_FEE_PER_BOOKING } from '../config/tokenomics';
 // ── Config ─────────────────────────────────────────────────────
 const MINT_ADDRESS = process.env.SOLANA_PAB_MINT_ADDRESS || '4MLskKmcnz8bVaPfEuVbhZGsbeUMZqKjQYQQDEX6WQcQ';
 const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || 'GBMhejbFVGQB7yXYxHpXCmcjWL7xk17FgyPCvPo2uSQH';
-const RPC_URL = process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_URL = process.env.SOLANA_RPC_URL || process.env.ALCHEMY_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_DECIMALS = 9;
 const MAX_DAILY_OUTFLOW = parseInt(process.env.MAX_DAILY_OUTFLOW_PAB || '100', 10); // PAB per agent per day (compliance limit)
 const MAX_TRANSACTIONS_PER_DAY = parseInt(process.env.MAX_TX_PER_DAY || (process.env.LIVE_BOOKINGS === 'true' ? '500' : '10'), 10);
