@@ -54,6 +54,7 @@ import evolutionWebhookRoutes from './routes/evolution.webhook.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
 import economyRoutes from './routes/economy.routes';
+import marketingRoutes from './routes/marketing.routes';
 import rentalDepositRoutes from './routes/rentalDeposit.routes';
 import ppdRoutes from './routes/ppd.routes';
 import trustPassportRoutes from './routes/trustPassport.routes';
@@ -275,6 +276,7 @@ app.use(`/api/${API_VERSION}/evolution`, evolutionWebhookRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryRoutes);
 app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
 app.use(`/api/${API_VERSION}/economy`, economyRoutes);
+app.use(`/api/${API_VERSION}/marketing`, marketingRoutes);
 app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
 app.use(`/api/${API_VERSION}/ppd`, ppdRoutes);
 app.use(`/api/${API_VERSION}/trust-passport`, trustPassportRoutes);
@@ -402,6 +404,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     logger.info('🤖 AI Agent Loop started');
   } catch (err) {
     logger.warn(`Agent loop skipped: ${(err as Error).message}`);
+  }
+
+  // Start Autonomous Marketing Agent (DRY_RUN by default; opt-in LIVE via SOCIAL_LIVE + MARKETING_AUTONOMOUS)
+  try {
+    const { startAutonomousMarketing } = await import('./services/marketingAgent.service');
+    startAutonomousMarketing();
+  } catch (err) {
+    logger.warn(`Marketing agent skipped: ${(err as Error).message}`);
   }
 
   // ── LIVE RAIL SELF-CHECK (fails LOUD, not silent) ───────────────────────────
