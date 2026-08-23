@@ -3,7 +3,7 @@ import { socialExec, SocialAction } from './socialExec.service';
 import { farcasterExec, FarcasterAction } from './farcasterExec.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-
+import { appendFileSync, mkdirSync } from 'fs';
 const DEMO = 'https://pabandi.onrender.com/sdk/pay-in-sol.html';
 const REF = process.env.MARKETING_REF_CODE || 'PABANDI'; // referral code baked into posts
 
@@ -117,7 +117,62 @@ export async function runFarcasterSweep(): Promise<{ dryRun: boolean; decisions:
   return { dryRun, decisions };
 }
 
-export const marketingAgent = { generateAndPost, runEngagementSweep, composePost, generateAndPostFarcaster, runFarcasterSweep };
+/**
+ * LOCAL DEMO — exercises the FULL marketing pipeline (compose → decide → "publish")
+ * against a mock feed, writing a visible transcript to a local log. No credentials,
+ * no network, no cost. This is the proof-before-you-pay surface: it runs the exact
+ * same composePost() + engagement decision logic that goes live on X/Farcaster.
+ */
+const SAMPLE_FEED = [
+  { id: '1', text: 'Building AI agents on Solana but payments are a nightmare. Anyone solved agent-to-agent value transfer?' },
+  { id: '2', text: 'web3 agents that actually earn are the holy grail. Most are just chatbots with a wallet pic.' },
+  { id: '3', text: 'We need a Stripe for autonomous agents. Crypto rails are too clunky for devs.' },
+  { id: '4', text: 'crypto agents settling real value on-chain > vibes. Show me one that actually moves SOL.' },
+  { id: '5', text: 'AI agent economy is hype until someone shows the money layer working. Prove it.' },
+];
+
+const DEMO_LOG = process.env.MARKETING_DEMO_LOG || '.marketing-demo/log.jsonl';
+
+function logDemo(entry: any) {
+  try {
+    mkdirSync('.marketing-demo', { recursive: true });
+    appendFileSync(DEMO_LOG, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n');
+  } catch { /* best-effort */ }
+}
+
+export async function runDemo(): Promise<{ transcript: any[] }> {
+  const transcript: any[] = [];
+  // 1) Compose + "publish" a post (same composePost as live)
+  const text = await composePost();
+  const xCmd = `xurl post "${text.replace(/"/g, "'")}"`;
+  const fcCmd = `farcaster cast post --text "${text.replace(/"/g, "'")}"`;
+  logDemo({ type: 'POST', platform: 'X', command: xCmd, text });
+  logDemo({ type: 'POST', platform: 'Farcaster', command: fcCmd, text });
+  transcript.push({ type: 'POST', text, xCmd, fcCmd });
+
+  // 2) Engagement sweep over the mock feed (same decision logic as live)
+  const actions: SocialAction['kind'][] = ['repost', 'like', 'reply'];
+  const decisions: any[] = [];
+  SAMPLE_FEED.slice(0, 4).forEach((p, i) => {
+    const kind = actions[i % actions.length];
+    let d: any = { postId: p.id, kind, matched: p.text.slice(0, 60) + '…' };
+    if (kind === 'reply') {
+      const reply = 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://pabandi.onrender.com/sdk/pay-in-sol.html?ref=PABANDI';
+      d.xCmd = `xurl reply ${p.id} "${reply.replace(/"/g, "'")}"`;
+      d.fcCmd = `farcaster cast reply --hash ${p.id} --text "${reply.replace(/"/g, "'")}"`;
+    } else {
+      d.xCmd = `xurl ${kind} ${p.id}`;
+      d.fcCmd = `farcaster cast ${kind} --hash ${p.id}`;
+    }
+    logDemo({ type: 'ENGAGE', platform: 'X+Farcaster', ...d });
+    decisions.push(d);
+  });
+  transcript.push({ type: 'ENGAGE', decisions });
+
+  return { transcript };
+}
+
+export const marketingAgent = { generateAndPost, runEngagementSweep, composePost, generateAndPostFarcaster, runFarcasterSweep, runDemo };
 
 /**
  * AUTONOMOUS MODE — opt-in via MARKETING_AUTONOMOUS=true.

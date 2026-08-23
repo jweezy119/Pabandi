@@ -75,4 +75,16 @@ router.post('/farcaster/engage', async (_req: Request, res: Response, next: Next
   } catch (e) { next(e); }
 });
 
+/**
+ * POST /api/v1/marketing/demo
+ * Run the full pipeline locally (compose + engage) against a mock feed and write a
+ * visible transcript. Proof-before-you-pay: same logic as live, zero cost, no creds.
+ */
+router.post('/demo', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const r = await marketingAgent.runDemo();
+    res.json({ success: true, data: { transcript: r.transcript, log: process.env.MARKETING_DEMO_LOG || '.marketing-demo/log.jsonl' } });
+  } catch (e) { next(e); }
+});
+
 export default router;
