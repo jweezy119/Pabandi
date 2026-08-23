@@ -331,25 +331,20 @@ export class Web3AgentService {
 
       const tx = new Transaction().add(transferIx);
       tx.feePayer = this.treasuryKeypair!.publicKey;
-      const signature = await sendWithRetry(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
-      // On-chain SOL platform fee — the SOLE settlement currency. Value-progressive:
-      // bigger bookings pay more SOL (base + per-PAB rate), matched to your mandate that
-      // higher-value bookings carry a higher fee. Real transfer from the feePaying
-      // treasury to the FEE treasury wallet. Best-effort so it can NEVER break the PAB booking.
-      try {
-        const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
-        const SOL_FEE_BASE = Number(process.env.SOL_FEE_BASE || 0.0003);     // floor per booking
-        const SOL_FEE_RATE = Number(process.env.SOL_FEE_RATE || 0.00001);    // per-PAB of booking value
-        const solFee = SOL_FEE_BASE + amountPab * SOL_FEE_RATE;              // e.g. 50 PAB => 0.0008 SOL
-        const solFeeLamports = Math.round(solFee * LAMPORTS_PER_SOL);
-        const solTx = new Transaction().add(
-          SystemProgram.transfer({ fromPubkey: this.treasuryKeypair!.publicKey, toPubkey: feeWallet, lamports: solFeeLamports })
-        );
-        await sendWithRetry(this.connection, solTx, [this.treasuryKeypair!]);
-      } catch (solErr: any) {
-        logger.warn(`[Web3Agent] SOL fee transfer skipped (non-fatal): ${solErr.message}`);
-      }
+      // SOL platform rake — ATOMIC with the booking (same tx, signed by treasury).
+      // Cannot be skipped: if the rake fails, the whole booking reverts to fallback.
+      // This is the SOLE settlement currency and the platform's profit per transaction.
+      const feeWallet = new PublicKey(process.env.FEE_TREASURY_WALLET || '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG');
+      const SOL_FEE_BASE = Number(process.env.SOL_FEE_BASE || 0.0003);     // floor per booking
+      const SOL_FEE_RATE = Number(process.env.SOL_FEE_RATE || 0.00001);    // per-PAB of booking value
+      const solFee = SOL_FEE_BASE + amountPab * SOL_FEE_RATE;              // e.g. 50 PAB => 0.0008 SOL
+      tx.add(SystemProgram.transfer({
+        fromPubkey: this.treasuryKeypair!.publicKey, toPubkey: feeWallet,
+        lamports: Math.round(solFee * LAMPORTS_PER_SOL),
+      }));
+
+      const signature = await sendWithRetry(this.connection, tx, [senderKeypair, this.treasuryKeypair!]);
 
       // Update daily counters
       fromAgent.dailyOutflow += amountPab;

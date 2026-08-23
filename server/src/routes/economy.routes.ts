@@ -1,172 +1,49 @@
 import { Router } from 'express';
-import { prisma } from '../utils/database';
-import { getEconomyStats } from '../services/economy.service';
-import { web3AgentService } from '../services/web3Agent.service';
-import { feeCollectionService } from '../services/feeCollection.service';
-import { computeFee, computeBurn, TOKENOMICS } from '../config/tokenomics';
-import { requirePassport } from '../middleware/requirePassport.middleware';
+import { autonomousEconomyService } from '../services/autonomousEconomy.service';
 
 const router = Router();
 
-// Public: real-time $PAB circulation (burn, accrual, fees) for the Economy dashboard.
-router.get('/stats', async (_req: any, res: any) => {
+// Net platform SOL revenue (profitability report)
+router.get('/net-revenue', async (_req, res) => {
   try {
-    const stats = await getEconomyStats();
-    res.json({ success: true, data: stats });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'Failed to load economy stats' });
+    const r = await autonomousEconomyService.netSolRevenue();
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-/**
- * Public: live tally of REVENUE actually captured (not simulated).
- * Sums treasuryPositions by source:
- *   - INSURANCE_PREMIUM : reputation-insurance premiums (real $PAB)
- *   - ESCROW_FACILITATION_FEE / platform fees : booking/deposit facilitation
- * Plus metered $PAB fees from passport issuance + background checks ledgers.
- */
-router.get('/revenue', async (_req: any, res: any) => {
+// Quote a human SOL rake (no on-chain action)
+router.post('/quote-rake', async (req, res) => {
   try {
-    const positions = await prisma.treasuryPosition.findMany({
-      where: { status: 'DEPLOYED' },
-    });
-    const bySource: Record<string, number> = {};
-    for (const p of positions as any[]) {
-      const src = (p.meta as any)?.source;
-      if (!src) continue;
-      // Unified platform-fee ledger (humans + agents) + insurance premium
-      if (src === 'PLATFORM_FEE' || src === 'INSURANCE_PREMIUM') {
-        bySource[src] = +(bySource[src] || 0) + (p.amount || 0);
-      }
-    }
-    const insurancePAB = bySource['INSURANCE_PREMIUM'] || 0;
-    const platformFeesSOL = bySource['PLATFORM_FEE'] || 0;
-
-    // Metered $PAB fees (passport issuance ledger + background checks)
-    let passportFees = 0;
-    try {
-      const rows: any = await prisma.$queryRawUnsafe(
-        `SELECT COALESCE(SUM("feePab"),0)::float AS s FROM "PassportIssuance"`
-      );
-      passportFees = rows?.[0]?.s || 0;
-    } catch { /* ledger may not exist yet */ }
-
-    const totalPAB = +(insurancePAB + passportFees).toFixed(2);
-    res.json({
-      success: true,
-      data: {
-        insurancePAB,
-        platformFeesSOL,
-        passportFeesPAB: +passportFees.toFixed(2),
-        totalPAB,
-        // Notional USD value at $PAB peg (100 $PAB = $1)
-        totalUSD: +(totalPAB / 100).toFixed(2),
-        positions: bySource,
-      },
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'Failed to load revenue' });
+    const { payer, solAmount } = req.body || {};
+    if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
+    const q = await autonomousEconomyService.quoteRake(payer, Number(solAmount));
+    res.json({ success: true, data: q });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-/**
- * Public: deterministic one-command demo booking.
- * Creates two idempotent demo agents (funded in DB), runs a real executeBookingPayment,
- * and returns the value-based fee, deflationary burn, bucket allocation, and the
- * before/after delta on /economy/stats. Proves the tokenomics loop end-to-end on demand.
- *
- * On-chain transfer is skipped (no funded treasury on demo), so the simulated fallback
- * records the fee/burn/buckets purely in the DB — exactly what the dashboard shows.
- */
-router.post('/demo-booking', requirePassport('act:book'), async (req: any, res: any) => {
+// Charge a human SOL rake — returns a base64 tx for the payer to sign + broadcast
+router.post('/charge-rake', async (req, res) => {
   try {
-    // Cap at the per-agent daily outflow compliance limit (100 PAB) so the demo
-    // booking always clears the guard and records fee/burn/buckets.
-    const amountPab = Math.min(100, Math.max(1, Math.round(Number(req.body?.amountPab) || 100)));
-    const fee = computeFee(amountPab);
-    const burn = computeBurn(fee);
-    const net = +(fee - burn).toFixed(2);
-    const allocation = {
-      LP_PROVISION: +(net * TOKENOMICS.ALLOCATION.LP_PROVISION).toFixed(2),
-      OPERATING: +(net * TOKENOMICS.ALLOCATION.OPERATING).toFixed(2),
-      YIELD_REINVEST: +(net * TOKENOMICS.ALLOCATION.YIELD_REINVEST).toFixed(2),
-      EMERGENCY: +(net * TOKENOMICS.ALLOCATION.EMERGENCY).toFixed(2),
-    };
-
-    // Idempotent demo agents (deterministic profileIds)
-    const fromProfile = '__demo_payer__';
-    const toProfile = '__demo_payee__';
-    const topUp = amountPab + fee + 10;
-    const fromAgent = await prisma.web3Agent.upsert({
-      where: { profileId: fromProfile },
-      update: { balancePab: { increment: topUp }, dailyOutflow: 0, dailyTransactions: 0, isActive: true },
-      create: {
-        profileId: fromProfile,
-        walletAddress: 'demo-payer',
-        encryptedPrivateKey: 'demo',
-        category: 'solopreneur',
-        balancePab: topUp,
-        dailyOutflow: 0,
-        dailyTransactions: 0,
-        lastReset: new Date(),
-        isActive: true,
-      } as any,
-    });
-    const toAgent = await prisma.web3Agent.upsert({
-      where: { profileId: toProfile },
-      update: { dailyOutflow: 0, dailyTransactions: 0, isActive: true },
-      create: {
-        profileId: toProfile,
-        walletAddress: 'demo-payee',
-        encryptedPrivateKey: 'demo',
-        category: 'solopreneur',
-        balancePab: 0,
-        dailyOutflow: 0,
-        dailyTransactions: 0,
-        lastReset: new Date(),
-        isActive: true,
-      } as any,
-    });
-
-    const before = await getEconomyStats();
-    const result = await web3AgentService.executeBookingPayment(fromAgent as any, toAgent as any, amountPab);
-    if (!result.success) {
-      return res.status(200).json({ success: false, error: result.error || 'Booking failed', simulated: false, amountPab });
-    }
-    const after = await getEconomyStats();
-
-    res.json({
-      success: true,
-      data: {
-        simulated: !!result.simulated,
-        amountPab,
-        feePab: fee,
-        burnPab: burn,
-        allocation,
-        delta: {
-          bookings: after.bookings - before.bookings,
-          feesCollected: +(after.feesCollected - before.feesCollected).toFixed(2),
-          burned: +((after.burned ?? 0) - (before.burned ?? 0)).toFixed(2),
-          accrualTotal: +((after.accrual.total ?? 0) - (before.accrual.total ?? 0)).toFixed(2),
-        },
-        stats: after,
-      },
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'Demo booking failed' });
+    const { payer, solAmount } = req.body || {};
+    if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
+    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount));
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-/**
- * Public: SOL platform-fee totals (on-chain fee collector).
- * Reports real USD-denominated fee revenue regardless of collection token.
- */
-router.get('/fees/sol', async (_req: any, res: any) => {
+// Autonomous reinvestment gate (JitoSOL stake when balance justifies)
+router.post('/reinvest', async (_req, res) => {
   try {
-    const totals = await feeCollectionService.totalSolFees(30);
-    res.json({ success: true, data: totals });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'Failed to load SOL fees' });
+    const r = await autonomousEconomyService.autonomousReinvest();
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 

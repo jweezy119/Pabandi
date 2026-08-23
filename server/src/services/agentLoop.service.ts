@@ -176,7 +176,15 @@ export async function runAgentLoopCycle(): Promise<{
       errors.push(`Treasury ledger: ${err.message}`);
     }
 
-    // Step 6: AGENTIC PROFIT LOOP — reinvest collected fees to fund FUTURE bookings
+    // Step 6b: AUTONOMOUS SOL reinvestment — guarded JitoSOL stake when accrued SOL
+    // crosses the safe threshold. No-op at our current ~0.01 SOL (will NOT break treasury).
+    try {
+      const { autonomousEconomyService } = await import('./autonomousEconomy.service');
+      const reinvest = await autonomousEconomyService.autonomousReinvest();
+      logger.info(`[AutoEcon] ${reinvest.note}`);
+    } catch (err: any) {
+      errors.push(`AutoEcon reinvest: ${err.message}`);
+    }
     // (self-sustaining: platform profit compounds instead of treasury being a faucet).
     try {
       const collectedPab = cycleFeePab + badgePab; // platform PAB fee this cycle
