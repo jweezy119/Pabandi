@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "gcp-build": "prisma generate && tsc",
-    "build": "prisma generate && tsc",
+    "build": "prisma generate && tsc && node -e \"require('fs').cpSync('src/public','dist/src/public',{recursive:true})\"",
     "zk:build": "ts-node src/zk/buildZk.ts",
     "start": "node dist/src/index.js",
     "prestart": "prisma generate",
