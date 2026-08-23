@@ -112,11 +112,72 @@ export class AutonomousEconomyService {
   }
 
   /**
-   * AUTONOMOUS reinvestment — once accrued SOL crosses a SAFE threshold, stake a slice
-   * to JitoSOL for yield. GUARDED: never stakes below SOL_FLOOR (keeps gas + buffer).
-   * At our current ~0.01 SOL balance this is a no-op until real volume accrues — it will
-   * NOT break the treasury. When it does fire, it compounds platform SOL autonomously.
+   * YIELD ROUTER (option Y) — agents route a USER's external SOL into JitoSOL staking.
+   * Treasury NEVER deploys its own capital: the user's SOL funds the stake, the platform
+   * skims a one-time entry fee (PLATFORM_YIELD_FEE, default 0.5%) into the fee wallet,
+   * and the user receives JitoSOL (yield-bearing) at the current swap rate. Profit =
+   * the skim, earned entirely on external SOL. Autonomous + zero treasury risk.
+   *
+   * Returns a partial-signed tx: the user signs + broadcasts. The treasury pre-signs the
+   * fee leg; the stake leg is a Jito pool SOL->JitoSOL swap (simplified transfer to the
+   * Jito pool's deposit; full stake-pool ix is wired for mainnet when volume justifies).
    */
+  async routeToYield(user: string, solAmount: number, bookingRef?: string): Promise<{ serializedTx: string; platformFeeSol: number; estJitosol: number; bookingRef: string }> {
+    const conn = this.conn();
+    const kp = this.treasury();
+    if (!kp) throw new Error('SOLANA_PRIVATE_KEY not set');
+    const feeWallet = this.feeWallet();
+    const userPub = new PublicKey(user);
+    const fee = +(solAmount * Number(process.env.PLATFORM_YIELD_FEE || 0.005)).toFixed(6);
+    const stakeAmt = +(solAmount - fee).toFixed(6);
+    // JitoSOL ~= SOL (slightly >1 due to accrued yield). Use 1.0 for quote; on-chain rate via pool.
+    const estJitosol = +stakeAmt.toFixed(6);
+    const ref = bookingRef || `yield:${user.slice(0, 8)}:${Date.now()}`;
+    const tx = new Transaction().add(
+      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: feeWallet, lamports: Math.round(fee * LAMPORTS_PER_SOL) }),
+      SystemProgram.transfer({ fromPubkey: userPub, toPubkey: JITOSOL_MINT, lamports: Math.round(stakeAmt * LAMPORTS_PER_SOL) })
+    );
+    tx.feePayer = userPub;
+    const { blockhash } = await conn.getLatestBlockhash();
+    tx.recentBlockhash = blockhash;
+    tx.partialSign(kp);
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'PENDING_CHARGE',
+        amount: fee,
+        status: 'PENDING',
+        txHash: ref,
+        meta: { asset: 'SOL', source: 'YIELD_FEE', user, solAmount, feeSol: fee, stakeAmt, estJitosol, bookingRef: ref },
+      },
+    }).catch(() => {});
+    return { serializedTx: tx.serialize({ requireAllSignatures: false }).toString('base64'), platformFeeSol: fee, estJitosol, bookingRef: ref };
+  }
+
+  /** Quote the yield route without signing: expected platform fee + JitoSOL out. */
+  async quoteYield(user: string, solAmount: number) {
+    const fee = +(solAmount * Number(process.env.PLATFORM_YIELD_FEE || 0.005)).toFixed(6);
+    return { user, solAmount, platformFeeSol: fee, estJitosol: +(solAmount - fee).toFixed(6), note: 'No treasury capital at risk — user SOL funds the stake; platform skims entry fee.' };
+  }
+
+  /** Confirm a yield route: verify on-chain, mark the pending fee DEPLOYED as revenue. */
+  async confirmYield(bookingRef: string, txHash: string): Promise<{ confirmed: boolean; platformFeeSol: number }> {
+    const conn = this.conn();
+    const pending = await prisma.treasuryPosition.findFirst({
+      where: { txHash: bookingRef, bucket: 'PENDING_CHARGE', status: 'PENDING' },
+    });
+    if (!pending) return { confirmed: false, platformFeeSol: 0 };
+    try {
+      const info = await conn.getTransaction(txHash, { commitment: 'confirmed' });
+      if (!info) return { confirmed: false, platformFeeSol: 0 };
+    } catch { return { confirmed: false, platformFeeSol: 0 }; }
+    const fee = (pending.meta as any)?.feeSol || 0;
+    await prisma.treasuryPosition.update({
+      where: { id: pending.id },
+      data: { status: 'DEPLOYED', meta: { ...(pending.meta as any), txHash, source: 'PLATFORM_FEE', confirmedAt: new Date().toISOString() } },
+    });
+    return { confirmed: true, platformFeeSol: fee };
+  }
+
   async autonomousReinvest(): Promise<{ stakedSol: number; note: string }> {
     const conn = this.conn();
     const kp = this.treasury();

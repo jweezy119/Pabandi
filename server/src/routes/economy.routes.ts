@@ -49,14 +49,42 @@ router.post('/confirm-rake', async (req, res) => {
   }
 });
 
-// Autonomous reinvestment gate (JitoSOL stake when balance justifies)
-router.post('/reinvest', async (_req, res) => {
+// ── Yield router (option Y): route USER external SOL → JitoSOL, platform skims entry fee ──
+// Quote a yield route (no on-chain action)
+router.post('/quote-yield', async (req, res) => {
   try {
-    const r = await autonomousEconomyService.autonomousReinvest();
+    const { user, solAmount } = req.body || {};
+    if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
+    const q = await autonomousEconomyService.quoteYield(user, Number(solAmount));
+    res.json({ success: true, data: q });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Route a user's SOL into JitoSOL — returns a base64 tx for the user to sign + broadcast
+router.post('/route-yield', async (req, res) => {
+  try {
+    const { user, solAmount, bookingRef } = req.body || {};
+    if (!user || !solAmount) return res.status(400).json({ success: false, error: 'user + solAmount required' });
+    const r = await autonomousEconomyService.routeToYield(user, Number(solAmount), bookingRef);
     res.json({ success: true, data: r });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }
 });
+
+// Confirm a yield route after the user broadcasts the tx
+router.post('/confirm-yield', async (req, res) => {
+  try {
+    const { bookingRef, txHash } = req.body || {};
+    if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
+    const r = await autonomousEconomyService.confirmYield(bookingRef, txHash);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 
 export default router;
