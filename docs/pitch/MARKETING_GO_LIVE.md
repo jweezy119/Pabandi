@@ -66,6 +66,9 @@ curl -X POST https://pabandi.onrender.com/api/v1/marketing/engage
 - Rate limits: X write endpoints are throttled; the 6h cadence stays well under limits.
 
 ## Going further (optional)
-- **Interact smarter:** extend `runEngagementSweep` to reply/like (currently reposts only).
-- **Multi-platform:** add a Farcaster/LinkedIn executor alongside `socialExec` (same DRY_RUN pattern).
+- **Interact smarter on X:** the engagement sweep already varies repost/like/reply (conservative, no spam).
+- **Add Farcaster:** the agent has a parallel `farcasterExec` (DRY_RUN-safe). To go live, run an
+  authorized Farcaster signer (hub + approved signer key) and expose a CLI as `FARCASTER_CLI`
+  (default `farcaster`), then set `FARCASTER_LIVE=true`. Same DRY_RUN-then-live pattern as X.
+  Endpoints: `/marketing/farcaster/post-now` + `/marketing/farcaster/engage`.
 - **Leaderboard loop:** the marketing posts already link to `/sdk/leaderboard.html` for social proof.

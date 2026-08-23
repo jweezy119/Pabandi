@@ -1,5 +1,6 @@
 import { autonomousEconomyService } from './autonomousEconomy.service';
 import { socialExec, SocialAction } from './socialExec.service';
+import { farcasterExec, FarcasterAction } from './farcasterExec.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -54,30 +55,69 @@ export async function generateAndPost(): Promise<MarketingPost> {
 
 /**
  * Autonomous engagement: search X for relevant conversations and decide a safe action.
- * DRY_RUN logs the decision; LIVE executes via xurl (like/reply/repost).
- * Kept conservative: only engage with clearly on-topic posts; never spam.
+ * DRY_RUN logs the decision; LIVE executes via xurl (repost/reply/like).
+ * Conservative: only engage clearly on-topic posts, never our own, varied actions.
  */
 export async function runEngagementSweep(): Promise<{ dryRun: boolean; decisions: any[] }> {
   const queries = ['Solana AI agents', 'agent payments crypto', 'AI agent economy', 'web3 agent economy'];
   const q = queries[Math.floor(Math.random() * queries.length)];
-  const { posts, dryRun } = await socialExec.search(q, 8);
+  const { posts, dryRun } = await socialExec.search(q, 10);
   const decisions: any[] = [];
-  for (const p of posts.slice(0, 3)) {
+  const actions: SocialAction['kind'][] = ['repost', 'like', 'reply'];
+  let ai = 0;
+  for (const p of posts.slice(0, 4)) {
     const id = p.id || p.data?.id;
     const txt = (p.text || p.data?.text || '').toLowerCase();
     if (!id) continue;
     // Only engage if clearly relevant + not our own post
     if (/solana|agent|web3|crypto|ai/.test(txt) && !txt.includes('pabandi')) {
-      const action: SocialAction = { kind: 'repost', postId: id };
+      const kind: SocialAction['kind'] = actions[ai % actions.length];
+      let action: SocialAction;
+      if (kind === 'reply') {
+        action = { kind: 'reply', postId: id, text: 'This is exactly the gap Pabandi fills — agents that actually settle value in SOL, on-chain. Live demo: https://pabandi.onrender.com/sdk/pay-in-sol.html?ref=PABANDI' };
+      } else {
+        action = { kind: kind as 'repost' | 'like', postId: id };
+      }
       const res = await socialExec.run(action);
-      decisions.push({ postId: id, action: 'repost', command: res.command, dryRun });
+      decisions.push({ postId: id, action: kind, command: res.command, dryRun });
+      ai++;
     }
   }
   logger.info(`[MarketingAgent] engagement sweep on "${q}": ${decisions.length} decisions (${dryRun ? 'DRY_RUN' : 'LIVE'})`);
   return { dryRun, decisions };
 }
 
-export const marketingAgent = { generateAndPost, runEngagementSweep, composePost };
+/**
+ * Generate + post a marketing update to Farcaster (DRY_RUN-safe, same pattern as X).
+ */
+export async function generateAndPostFarcaster(): Promise<MarketingPost> {
+  const text = await composePost();
+  const action: FarcasterAction = { kind: 'post', text };
+  const res = await farcasterExec.run(action);
+  logger.info(`[MarketingAgent] farcaster post ${res.dryRun ? '(DRY_RUN)' : '(LIVE)'}`);
+  return { text, action: { kind: 'post', text } as SocialAction, dryRun: res.dryRun };
+}
+
+/**
+ * Autonomous Farcaster engagement sweep (DRY_RUN logs decisions; LIVE executes).
+ */
+export async function runFarcasterSweep(): Promise<{ dryRun: boolean; decisions: any[] }> {
+  const queries = ['solana ai agents', 'agent economy', 'web3 agents'];
+  const q = queries[Math.floor(Math.random() * queries.length)];
+  const { casts, dryRun } = await farcasterExec.search(q, 8);
+  const decisions: any[] = [];
+  for (const c of casts.slice(0, 3)) {
+    const hash = c.hash || c.id;
+    if (!hash) continue;
+    const action: FarcasterAction = { kind: 'repost', castHash: hash };
+    const res = await farcasterExec.run(action);
+    decisions.push({ castHash: hash, action: 'repost', command: res.command, dryRun });
+  }
+  logger.info(`[MarketingAgent] farcaster sweep on "${q}": ${decisions.length} decisions (${dryRun ? 'DRY_RUN' : 'LIVE'})`);
+  return { dryRun, decisions };
+}
+
+export const marketingAgent = { generateAndPost, runEngagementSweep, composePost, generateAndPostFarcaster, runFarcasterSweep };
 
 /**
  * AUTONOMOUS MODE — opt-in via MARKETING_AUTONOMOUS=true.
@@ -95,6 +135,8 @@ export function startAutonomousMarketing(intervalMs = 6 * 60 * 60 * 1000) { // d
     try {
       await generateAndPost();
       await runEngagementSweep();
+      await generateAndPostFarcaster();
+      await runFarcasterSweep();
     } catch (e) { logger.error('[MarketingAgent] autonomous tick failed', e); }
   };
   timer = setInterval(tick, intervalMs);
