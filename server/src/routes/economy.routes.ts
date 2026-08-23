@@ -37,13 +37,16 @@ router.post('/charge-rake', async (req, res) => {
   }
 });
 
-// Confirm a human rake after the payer broadcasts the tx
-router.post('/confirm-rake', async (req, res) => {
+// ── SOL checkout (wires the human rake into the real product flow) ──
+// A human booking an agent pays in SOL; 1% skims to the fee wallet, rest settles.
+// Returns a partial-signed tx for the payer to broadcast. chargeRake already persists a
+// PENDING_CHARGE so confirm-rake can close the booking on broadcast.
+router.post('/sol-checkout', async (req, res) => {
   try {
-    const { bookingRef, txHash } = req.body || {};
-    if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
-    const r = await autonomousEconomyService.confirmRake(bookingRef, txHash);
-    res.json({ success: true, data: r });
+    const { payer, solAmount, bookingRef, agentId, note } = req.body || {};
+    if (!payer || !solAmount) return res.status(400).json({ success: false, error: 'payer + solAmount required' });
+    const r = await autonomousEconomyService.chargeRake(payer, Number(solAmount), bookingRef);
+    res.json({ success: true, data: { ...r, feeWallet: process.env.FEE_TREASURY_WALLET, agentId: agentId || null, note: note || 'SOL checkout' } });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
   }
