@@ -235,7 +235,8 @@ export class AutonomousEconomyService {
     return { partnerId, earnedSol: +earned.toFixed(6), bookings: rows.length };
   }
 
-  /** Public leaderboard (social proof): top referrers + partners by SOL earned. */
+  /** Public leaderboard (social proof): top referrers + partners by SOL earned.
+   *  Demo rows (meta.demo === true) are excluded so the public view stays real. */
   async leaderboard(limit = 10): Promise<{ referrers: { code: string; earnedSol: number; claims: number }[]; partners: { partnerId: string; earnedSol: number; bookings: number }[] }> {
     const [refRows, partRows] = await Promise.all([
       prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED' } }),
@@ -243,6 +244,7 @@ export class AutonomousEconomyService {
     ]);
     const refMap = new Map<string, { earnedSol: number; claims: number }>();
     for (const r of refRows) {
+      if ((r.meta as any)?.demo) continue; // exclude demo conversions from public board
       const code = (r.meta as any)?.referralCode || 'unknown';
       const e = refMap.get(code) || { earnedSol: 0, claims: 0 };
       e.earnedSol += r.amount || 0; e.claims += 1; refMap.set(code, e);
