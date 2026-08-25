@@ -170,7 +170,7 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.claimedBy = claimerLabel; ex.claimedAt = new Date().toISOString(); saveStore();
 
-  gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: claimerLabel, by: opts.passportToken ? 'passport' : (opts.claimerWallet ? 'wallet' : 'human') });
+  gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: claimerLabel, by: opts.passportToken ? 'passport' : (opts.claimerWallet ? 'wallet' : 'human'), source: 'human' });
 
   if (assignedAgentId) {
     await prisma.projectBid.create({
@@ -208,7 +208,7 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
 
   await prisma.project.update({ where: { id: gigId }, data: { status: 'COMPLETED' } });
   meta.rakeSol = rakeSol; meta.helperSol = helperSol; meta.completedTx = txHash || null; saveStore();
-  gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null });
+  gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: 'human' });
 
   logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}`);
   return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null };

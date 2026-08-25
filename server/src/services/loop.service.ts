@@ -50,7 +50,7 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
     try {
       const g = await gigService.createGigFromSme({ skill: s.skill, referralCode });
       out.push(g.gigId);
-      logActivity({ kind: 'POST', role: 'project-owner', gigId: g.gigId, skill: s.skill, budgetUsd: g.budgetUsd, category: g.category });
+      logActivity({ kind: 'POST', role: 'project-owner', gigId: g.gigId, skill: s.skill, budgetUsd: g.budgetUsd, category: g.category, source: 'ai-loop' });
       // Broadcast the new gig as a marketing post (DRY_RUN-safe; flips LIVE with SOCIAL_LIVE).
       try {
         const { marketingAgent } = await import('./marketingAgent.service');
@@ -77,7 +77,7 @@ export async function runFreelancerLoop(limit = 10): Promise<any[]> {
       const claim = await gigService.claimGig(g.gigId, rec.best ? { agentId: rec.best.agentId } : {});
       const done = await gigService.completeGig(g.gigId);
       out.push({ gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol });
-      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol });
+      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol, source: 'ai-loop' });
       state.freelancers.completed += 1;
     } catch (e) { logger.warn('[loop:freelancers] claim/complete failed', e); }
   }

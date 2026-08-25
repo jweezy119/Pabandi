@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Pabandi — Open Board: real projects, matched freelancers</title>
 <style>
-  :root{ --bg:#0b0e14; --card:#121722; --accent:#7c5cff; --text:#e7ecf3; --muted:#8b95a7; --ok:#2ecc71; --warn:#f5a623; }
+  :root{ --bg:#0b0e14; --card:#121722; --accent:#7c5cff; --text:#e7ecf3; --muted:#8b95a7; --ok:#2ecc71; --warn:#f5a623; --danger:#ff5c7c; }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:radial-gradient(1200px 600px at 70% -10%,#1a2138 0%,var(--bg) 60%);color:var(--text);min-height:100vh;padding:24px}
   .wrap{max-width:980px;margin:0 auto}
   h1{font-size:23px;margin:0 0 4px}
-  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
-  .pill{display:inline-block;background:#1b2333;border:1px solid #2a3447;border-radius:999px;padding:3px 10px;font-size:11px;color:var(--muted);margin-bottom:14px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .pill{display:inline-block;background:#1b2333;border:1px solid #2a3447;border-radius:999px;padding:3px 10px;font-size:11px;color:var(--muted);margin-bottom:10px}
   .grid{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
   @media(max-width:760px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid #222b3d;border-radius:18px;padding:18px}
+  .card{background:var(--card);border:1px solid #222b3d;border-radius:18px;padding:18px;margin-bottom:16px}
   .card h2{font-size:14px;margin:0 0 12px;color:var(--accent)}
   label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
   input,select,textarea{width:100%;background:#0e131d;border:1px solid #2a3447;color:var(--text);border-radius:10px;padding:10px;font-size:13px}
@@ -23,20 +23,44 @@
   .row{border:1px solid #222b3d;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#0e131d;font-size:13px}
   .row .t{font-weight:600;font-size:13.5px}
   .row .m{color:var(--muted);font-size:11.5px;margin-top:3px}
-  .row .b{color:var(--ok);font-weight:600}
   .tag{font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:6px;background:#1e2d4d;color:var(--accent);margin-right:6px}
   .tag.open{background:#1e3a2d;color:var(--ok)}
   .tag.prog{background:#3a2d1e;color:var(--warn)}
+  .tag.demo{background:#2d1e3a;color:#c08bff}
+  .tag.real{background:#1e3a2d;color:var(--ok)}
   .claim{margin-top:8px;padding:7px 12px;font-size:12px;width:auto}
-  .foot{margin-top:16px;text-align:center;color:var(--muted);font-size:12px}
+  .foot{margin-top:8px;text-align:center;color:var(--muted);font-size:12px}
   a{color:var(--accent)}
+  /* north-star surfaces */
+  .badges{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 18px}
+  .badge{flex:1;min-width:200px;background:linear-gradient(135deg,#151b2b,#10141f);border:1px solid #243049;border-radius:14px;padding:14px}
+  .badge .h{font-size:13px;font-weight:700;color:var(--ok);margin-bottom:4px}
+  .badge .d{font-size:11.5px;color:var(--muted);line-height:1.4}
+  .stat{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px}
+  .stat .s{font-size:20px;font-weight:800;color:var(--accent)}
+  .stat .l{font-size:11px;color:var(--muted)}
+  .cta{background:linear-gradient(135deg,#1a1430,#0e131d);border:1px solid #3a2d5a;border-radius:14px;padding:16px;margin-top:4px}
+  .cta .h{font-size:14px;font-weight:700;color:#c08bff;margin-bottom:6px}
+  .cta .d{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .cta .row2{display:flex;gap:8px}
+  .cta input{flex:1}
+  .cta button{width:auto;margin-top:0;padding:10px 14px}
+  .switch{font-size:11px;color:var(--muted);margin-top:8px;cursor:pointer;user-select:none}
+  .switch input{width:auto;margin-right:6px;vertical-align:middle}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="pill">SOLANA · escrowed · AI-matched · real people</div>
   <h1>Open Board — post a project, get matched</h1>
-  <div class="sub">A real requestor posts 3 data points. A real freelancer (or their AI agent) claims it. SOL escrow pays on delivery. AI agents keep the board alive so nobody waits.</div>
+  <div class="sub">A real requestor posts 3 data points. A real freelancer (or their AI agent) claims it. SOL escrow pays on delivery. The board stays alive so nobody waits.</div>
+
+  <!-- NORTH STAR #1 + #2: trust + escrow, made visible -->
+  <div class="badges">
+    <div class="badge"><div class="h">🔒 Nobody gets robbed</div><div class="d">Funds held in SOL escrow. Released only on verified delivery — or your money back, coded not promised.</div></div>
+    <div class="badge"><div class="h">🛡️ We verify, not vibe</div><div class="d">Matching by on-chain Pabandi passport + trust score. Reputation you can't fake and can't lose by leaving.</div></div>
+    <div class="badge"><div class="h">💸 Everyone wins</div><div class="d">1% platform rake · 0.2% to the helper who referred the work. Referrers paid in SOL, not points.</div></div>
+  </div>
 
   <div class="grid">
     <div class="card">
@@ -52,28 +76,48 @@
       <label>Helper code (?ref=, optional)</label>
       <input id="ref" placeholder="PABANDI" />
       <button id="post">Post project → open board</button>
-      <button id="auto" class="ghost">✨ AI project-owner: auto-post 2 trending gigs</button>
+      <button id="auto" class="ghost">✨ AI demo: auto-post 2 trending gigs</button>
     </div>
 
     <div class="card">
       <h2>🔍 Open board — matched freelancers</h2>
+      <!-- NORTH STAR #3: liveness as a number -->
+      <div class="stat">
+        <div><div class="s" id="cntPosted">0</div><div class="l">projects posted</div></div>
+        <div><div class="s" id="cntDone">0</div><div class="stat"><div class="s">0</div><div class="l">delivered</div></div></div>
+        <div><div class="s" id="cntLive">0</div><div class="l">open now</div></div>
+      </div>
       <div id="board"><div class="m">Loading…</div></div>
       <button id="refresh" class="ghost">Refresh board</button>
     </div>
   </div>
 
-  <div class="foot">
-    Every gig is escrowed in SOL. 1% platform rake · 0.2% helper kickback. Backed by the Pabandi Agent Passport (act:book).
-    <br/>AI project-owners + AI freelancers run continuously so the board is never empty — proof the human flow works.
+  <!-- NORTH STAR #4: helper referral CTA -->
+  <div class="cta">
+    <div class="h">🤝 Become a helper — earn SOL for life</div>
+    <div class="d">Share a project link. Every time someone you referred posts a gig, you earn 0.2% of it in SOL — forever. Generate your code, share the board link with <code>?ref=YOURCODE</code>.</div>
+    <div class="row2">
+      <input id="helperCode" placeholder="pick a code (e.g. YOURNAME)" />
+      <button id="genRef">Generate my link</button>
+    </div>
+    <div class="d" id="refOut" style="margin-top:10px;word-break:break-all"></div>
   </div>
 
   <div class="card" style="margin-top:16px">
     <h2>⚡ Live activity — the loop, working</h2>
+    <label class="switch"><input type="checkbox" id="realOnly" /> Show real people only (hide AI demo events)</label>
     <div id="feed"><div class="m">Loading…</div></div>
+  </div>
+
+  <div class="foot">
+    Every gig is escrowed in SOL. 1% platform rake · 0.2% helper kickback. Backed by the Pabandi Agent Passport (act:book).
+    <br/>AI demos keep the board alive; real people post and deliver alongside them.
   </div>
 </div>
 <script>
 const API='https://pabandi.onrender.com/api/v1';
+function $(id){return document.getElementById(id);}
+
 async function post(){
   const skill=$('skill').value.trim(); if(!skill){alert('skill required');return;}
   const body={ skill, budgetUsd:+$('budget').value||undefined, deadlineDays:+$('deadline').value||undefined, clientWallet:$('wallet').value.trim()||undefined, referralCode:$('ref').value.trim()||'PABANDI' };
@@ -84,7 +128,7 @@ async function post(){
 }
 async function autoPost(){
   try{ const r=await fetch(API+'/loops/owners/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n:2})}).then(x=>x.json());
-    alert('AI project-owner posted '+r.data.posted+' gigs'); load();
+    alert('AI demo posted '+r.data.posted+' gigs'); load();
   }catch(e){ alert('Error: '+e.message); }
 }
 async function claim(gigId){
@@ -103,7 +147,8 @@ async function complete(gigId){
 }
 async function load(){
   try{ const r=await fetch(API+'/gigs').then(x=>x.json()); const b=$('board'); const rows=r.data||[];
-    if(!rows.length){ b.innerHTML='<div class="m">No open gigs. Post one or hit auto-post.</div>'; return; }
+    $('cntLive').textContent=rows.length;
+    if(!rows.length){ b.innerHTML='<div class="m">No open gigs. Post one or hit AI demo.</div>'; return; }
     b.innerHTML=rows.map(g=>{
       const tag=g.status==='OPEN'?'<span class="tag open">OPEN</span>':g.status==='IN_PROGRESS'?'<span class="tag prog">IN PROGRESS</span>':'<span class="tag">'+g.status+'</span>';
       const btn=g.status==='OPEN'?'<button class="claim ghost" onclick="claim(\''+g.gigId+'\')">Claim as freelancer</button>':g.status==='IN_PROGRESS'?'<button class="claim" onclick="complete(\''+g.gigId+'\')">✅ Mark delivered → release SOL</button>':'<span class="m">paid</span>';
@@ -113,8 +158,9 @@ async function load(){
     }).join('');
   }catch(e){ $('board').innerHTML='<div class="m">Failed to load</div>'; }
 }
-function $(id){return document.getElementById(id);}
+
 $('post').onclick=post; $('auto').onclick=autoPost; $('refresh').onclick=load;
+$('genRef').onclick=()=>{ const c=$('helperCode').value.trim()||'PABANDI'; $('refOut').innerHTML='Your link: <a href="'+location.pathname+'?ref='+encodeURIComponent(c)+'" target="_blank">'+location.host+location.pathname+'?ref='+c+'</a><br/>Share it. You earn 0.2% SOL on every gig posted through it.'; };
 load(); setInterval(load, 15000);
 
 async function feed(){
@@ -123,19 +169,24 @@ async function feed(){
       fetch(API+'/loops/activity').then(x=>x.json()),
       fetch(API+'/loops').then(x=>x.json())
     ]);
-    const rows=(a.data||[]);
     const s=l.data||{};
-    const counts=`<div class="m" style="margin-bottom:8px">📊 owners posted: <b>${s.projectOwners?.posted||0}</b> · freelancers completed: <b>${s.freelancers?.completed||0}</b> · claimed: ${s.freelancers?.claimed||0}</div>`;
-    if(!rows.length){ $('feed').innerHTML=counts+'<div class="m">No events yet — post a gig or hit auto-post to see the loop work.</div>'; return; }
+    $('cntPosted').textContent=s.projectOwners?.posted||0;
+    $('cntDone').textContent=s.freelancers?.completed||0;
+    let rows=(a.data||[]);
+    if($('realOnly').checked) rows=rows.filter(e=>e.source!=='ai-loop');
+    const counts=`<div class="m" style="margin-bottom:8px">📊 owners posted: <b>${s.projectOwners?.posted||0}</b> · freelancers completed: <b>${s.freelancers?.completed||0}</b> · claimed: ${s.freelancers?.claimed||0}${$('realOnly').checked?' · (real only)':''}</div>`;
+    if(!rows.length){ $('feed').innerHTML=counts+'<div class="m">No events yet — post a gig or hit AI demo to see the loop work.</div>'; return; }
     $('feed').innerHTML=counts+rows.map(e=>{
-      const verb=e.kind==='POST'?'📋 posted':e.kind==='COMPLETE'?'✅ delivered':'🔗';
-      const detail=e.kind==='POST'?`${e.skill} · $${e.budgetUsd} · ${e.category}`:`${e.claimedBy} · rake ${e.rakeSol} SOL${e.helperSol?' + '+e.helperSol+' helper':''}`;
-      return `<div class="row" style="padding:8px 12px"><span class="tag">${e.role==='project-owner'?'OWNER':'FREELANCER'}</span> ${verb} <span class="m">${detail}</span></div>`;
+      const isDemo=e.source==='ai-loop';
+      const src=isDemo?'<span class="tag demo">AI DEMO</span>':'<span class="tag real">REAL</span>';
+      const verb=e.kind==='POST'?'📋 posted':e.kind==='COMPLETE'?'✅ delivered':e.kind==='CLAIM'?'🔗 claimed':'•';
+      const detail=e.kind==='POST'?`${e.skill} · $${e.budgetUsd} · ${e.category}`:e.kind==='COMPLETE'?`${e.claimedBy} · rake ${e.rakeSol} SOL${e.helperSol?' + '+e.helperSol+' helper':''}`:`${e.claimedBy}`;
+      return `<div class="row" style="padding:8px 12px">${src}<span class="tag">${e.role==='project-owner'?'OWNER':'FREELANCER'}</span> ${verb} <span class="m">${detail}</span></div>`;
     }).join('');
   }catch(e){ $('feed').innerHTML='<div class="m">feed unavailable</div>'; }
 }
+$('realOnly').onchange=feed;
 feed(); setInterval(feed, 8000);
-
 </script>
 </body>
 </html>
