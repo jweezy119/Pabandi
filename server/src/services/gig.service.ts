@@ -3,7 +3,12 @@ import { logger } from '../utils/logger';
 import { generateProject, topDemandSkills } from './recommendation/autogen.service';
 import { recommendBestAgent, ProjectSpec } from './recommendation/agentScorer.service';
 import { ptpEngine } from '../protocol/ptp.spec';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
+
+const GIG_ACTIVITY = process.env.GIG_ACTIVITY || '.data/activity.jsonl';
+function gigActivity(entry: any) {
+  try { mkdirSync('.data', { recursive: true }); appendFileSync(GIG_ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
+}
 
 /**
  * gig.service — the THREE-SIDED HELPING LOOP, on the existing rail.
@@ -165,6 +170,8 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.claimedBy = claimerLabel; ex.claimedAt = new Date().toISOString(); saveStore();
 
+  gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: claimerLabel, by: opts.passportToken ? 'passport' : (opts.claimerWallet ? 'wallet' : 'human') });
+
   if (assignedAgentId) {
     await prisma.projectBid.create({
       data: { projectId: gigId, agentId: assignedAgentId, confidencePct: 90, quoteUsd: gig.budgetUsd, status: 'ACCEPTED', breakdown: { auto: true } as any },
@@ -201,6 +208,7 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
 
   await prisma.project.update({ where: { id: gigId }, data: { status: 'COMPLETED' } });
   meta.rakeSol = rakeSol; meta.helperSol = helperSol; meta.completedTx = txHash || null; saveStore();
+  gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null });
 
   logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}`);
   return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null };
