@@ -8,6 +8,15 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } fr
 const GIG_ACTIVITY = process.env.GIG_ACTIVITY || '.data/activity.jsonl';
 function gigActivity(entry: any) {
   try { mkdirSync('.data', { recursive: true }); appendFileSync(GIG_ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
+  // Durable: also write to DB so counters/feed survive cold starts.
+  try {
+    prisma.gigEvent.create({ data: {
+      kind: entry.kind, role: entry.role, gigId: entry.gigId, source: entry.source || 'human',
+      skill: entry.skill ?? null, budgetUsd: entry.budgetUsd ?? null, category: entry.category ?? null,
+      claimedBy: entry.claimedBy ?? null, rakeSol: entry.rakeSol ?? null, helperSol: entry.helperSol ?? null,
+      referralCode: entry.referralCode ?? null,
+    } });
+  } catch { /* non-fatal */ }
 }
 
 /**

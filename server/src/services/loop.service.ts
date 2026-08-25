@@ -39,6 +39,14 @@ function readState(): SegState {
 function saveState(s: SegState) { try { mkdirSync('.data', { recursive: true }); writeFileSync(STORE, JSON.stringify(s, null, 2)); } catch { /* */ } }
 function logActivity(entry: any) {
   try { mkdirSync('.data', { recursive: true }); appendFileSync(ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
+  try {
+    prisma.gigEvent.create({ data: {
+      kind: entry.kind, role: entry.role, gigId: entry.gigId, source: entry.source || 'ai-loop',
+      skill: entry.skill ?? null, budgetUsd: entry.budgetUsd ?? null, category: entry.category ?? null,
+      claimedBy: entry.claimedBy ?? null, rakeSol: entry.rakeSol ?? null, helperSol: entry.helperSol ?? null,
+      referralCode: entry.referralCode ?? null,
+    } });
+  } catch { /* non-fatal */ }
 }
 let state: SegState = readState();
 
@@ -100,13 +108,26 @@ export function startLoops(ownerMs = 3_600_000, freelancerMs = 1_800_000) {
 }
 export function stopLoops() { timers.forEach((t) => clearInterval(t)); timers = []; }
 
-export const loopService = { runProjectOwnerLoop, runFreelancerLoop, startLoops, stopLoops, state: () => state, recentActivity };
+export const loopService = { runProjectOwnerLoop, runFreelancerLoop, startLoops, stopLoops, state: () => state, recentActivity, loopStats };
 
-/** Live activity feed (last N events) for the board's "never empty, always working" proof. */
-export function recentActivity(n = 20): any[] {
+/** Live activity feed (last N events) — reads durable DB so it survives cold starts. */
+export async function recentActivity(n = 20): Promise<any[]> {
   try {
-    if (!existsSync(ACTIVITY)) return [];
-    const lines = readFileSync(ACTIVITY, 'utf-8').trim().split('\n').filter(Boolean);
-    return lines.slice(-n).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean).reverse();
-  } catch { return []; }
+    const rows = await prisma.gigEvent.findMany({ orderBy: { createdAt: 'desc' }, take: n });
+    if (rows.length) return rows.map((r: any) => ({ ts: r.createdAt, kind: r.kind, role: r.role, gigId: r.gigId, source: r.source, skill: r.skill, budgetUsd: r.budgetUsd, category: r.category, claimedBy: r.claimedBy, rakeSol: r.rakeSol, helperSol: r.helperSol, referralCode: r.referralCode }));
+  } catch { /* fall back to file */ }
+  try { if (!existsSync(ACTIVITY)) return []; const lines = readFileSync(ACTIVITY, 'utf-8').trim().split('\n').filter(Boolean); return lines.slice(-n).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean).reverse(); } catch { return []; }
+}
+/** Durable cumulative counters from the DB (survive cold starts). */
+export async function loopStats(): Promise<{ posted: number; completed: number; claimed: number; open: number; rakeSol: number }> {
+  try {
+    const [posted, completed, claimed, open, agg] = await Promise.all([
+      prisma.gigEvent.count({ where: { kind: 'POST' } }),
+      prisma.gigEvent.count({ where: { kind: 'COMPLETE' } }),
+      prisma.gigEvent.count({ where: { kind: 'CLAIM' } }),
+      prisma.project.count({ where: { status: 'OPEN' } }),
+      prisma.gigEvent.aggregate({ where: { kind: 'COMPLETE' }, _sum: { rakeSol: true } }),
+    ]);
+    return { posted, completed, claimed, open, rakeSol: agg._sum.rakeSol || 0 };
+  } catch { return { posted: 0, completed: 0, claimed: 0, open: 0, rakeSol: 0 }; }
 }

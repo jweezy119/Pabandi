@@ -3,9 +3,22 @@ import { loopService } from '../services/loop.service';
 
 const router = Router();
 
-/** GET /api/v1/loops — segment state (the "db folder" view: owners vs freelancers). */
-router.get('/', (_req: Request, res: Response) => {
-  res.json({ success: true, data: loopService.state() });
+/** GET /api/v1/loops — segment state + durable cumulative stats. */
+router.get('/', async (_req: Request, res: Response) => {
+  const stats = await loopService.loopStats().catch(() => ({ posted: 0, completed: 0, claimed: 0, open: 0 }));
+  res.json({ success: true, data: { ...loopService.state(), stats } });
+});
+
+/** GET /api/v1/loops/activity — live feed of recent post/claim/complete events (durable DB). */
+router.get('/activity', async (_req: Request, res: Response) => {
+  const rows = await loopService.recentActivity(20).catch(() => []);
+  res.json({ success: true, data: rows });
+});
+
+/** GET /api/v1/loops/stats — durable counters (survive cold starts). */
+router.get('/stats', async (_req: Request, res: Response) => {
+  const stats = await loopService.loopStats().catch(() => ({ posted: 0, completed: 0, claimed: 0, open: 0 }));
+  res.json({ success: true, data: stats });
 });
 
 /** POST /api/v1/loops/owners/run — manually trigger the project-owner (requestor) loop. */
@@ -23,11 +36,6 @@ router.post('/freelancers/run', async (req: Request, res: Response, next: NextFu
     const out = await loopService.runFreelancerLoop((req.body || {}).limit || 10);
     res.json({ success: true, data: { worked: out.length, results: out } });
   } catch (e: any) { next(e); }
-});
-
-/** GET /api/v1/loops/activity — live feed of recent post/claim/complete events. */
-router.get('/activity', (_req: Request, res: Response) => {
-  res.json({ success: true, data: loopService.recentActivity(20) });
 });
 
 export default router;

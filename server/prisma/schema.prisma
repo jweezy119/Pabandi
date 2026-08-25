@@ -1891,3 +1891,24 @@ model ProjectBid {
   @@index([projectId])
   @@index([agentId])
 }
+
+// ── GigEvent (durable activity ledger: survives cold starts; powers board counters/feed) ──
+model GigEvent {
+  id          String   @id @default(cuid())
+  kind        String   // POST | CLAIM | COMPLETE
+  role        String   // project-owner | freelancer
+  gigId       String
+  source      String   @default("human") // human | ai-loop
+  skill       String?
+  budgetUsd   Float?
+  category    String?
+  claimedBy   String?
+  rakeSol     Float?
+  helperSol   Float?
+  referralCode String?
+  createdAt   DateTime @default(now())
+
+  @@index([gigId])
+  @@index([kind])
+  @@index([source])
+}
