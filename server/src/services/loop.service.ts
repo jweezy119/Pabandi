@@ -3,7 +3,7 @@ import { logger } from '../utils/logger';
 import { gigService } from './gig.service';
 import { topDemandSkills } from './recommendation/autogen.service';
 import { recommendBestAgent, ProjectSpec } from './recommendation/agentScorer.service';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 
 /**
  * loop.service — SEGMENTED autonomous AI-agent economy.
@@ -28,21 +28,29 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
  */
 
 const STORE = process.env.LOOP_STORE || '.data/loops.json';
+const ACTIVITY = process.env.LOOP_ACTIVITY || '.data/activity.jsonl';
 type SegState = { projectOwners: { lastRun: string; posted: number; running: boolean }; freelancers: { lastRun: string; claimed: number; completed: number; running: boolean } };
-let state: SegState = load();
-function load(): SegState {
+// PERSIST across cold starts: always re-read the file at the start of each run so a Render
+// restart resumes cumulative counters instead of zeroing them.
+function readState(): SegState {
   try { if (existsSync(STORE)) return JSON.parse(readFileSync(STORE, 'utf-8')); } catch { /* */ }
   return { projectOwners: { lastRun: '', posted: 0, running: false }, freelancers: { lastRun: '', claimed: 0, completed: 0, running: false } };
 }
-function save() { try { mkdirSync('.data', { recursive: true }); writeFileSync(STORE, JSON.stringify(state, null, 2)); } catch { /* */ } }
+function saveState(s: SegState) { try { mkdirSync('.data', { recursive: true }); writeFileSync(STORE, JSON.stringify(s, null, 2)); } catch { /* */ } }
+function logActivity(entry: any) {
+  try { mkdirSync('.data', { recursive: true }); appendFileSync(ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
+}
+let state: SegState = readState();
 
 /** PROJECT OWNERS loop: post N demand-driven gigs from the autogen seed. */
 export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Promise<any[]> {
+  state = readState(); // resume cumulative counters after a cold start
   const out: any[] = [];
   for (const s of topDemandSkills(n)) {
     try {
       const g = await gigService.createGigFromSme({ skill: s.skill, referralCode });
       out.push(g.gigId);
+      logActivity({ kind: 'POST', role: 'project-owner', gigId: g.gigId, skill: s.skill, budgetUsd: g.budgetUsd, category: g.category });
       // Broadcast the new gig as a marketing post (DRY_RUN-safe; flips LIVE with SOCIAL_LIVE).
       try {
         const { marketingAgent } = await import('./marketingAgent.service');
@@ -51,13 +59,14 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
     } catch (e) { logger.warn('[loop:owners] post failed', e); }
   }
   state.projectOwners = { lastRun: new Date().toISOString(), posted: state.projectOwners.posted + out.length, running: false };
-  save();
+  saveState(state);
   logger.info(`[loop:owners] posted ${out.length} gigs`);
   return out;
 }
 
 /** FREELANCER loop: scan OPEN board, claim + deliver best-fit gigs (autonomous booking+completion). */
 export async function runFreelancerLoop(limit = 10): Promise<any[]> {
+  state = readState(); // resume cumulative counters after a cold start
   const board = await gigService.openBoard(limit);
   const out: any[] = [];
   for (const g of board) {
@@ -66,14 +75,14 @@ export async function runFreelancerLoop(limit = 10): Promise<any[]> {
         title: g.title, description: '', category: g.category, requiredSkills: g.requiredSkills, budgetUsd: g.budgetUsd,
       } as ProjectSpec);
       const claim = await gigService.claimGig(g.gigId, rec.best ? { agentId: rec.best.agentId } : {});
-      // Autonomous delivery: record completion (real delivery is the agent's work; we record the event)
       const done = await gigService.completeGig(g.gigId);
       out.push({ gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol });
+      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol });
       state.freelancers.completed += 1;
     } catch (e) { logger.warn('[loop:freelancers] claim/complete failed', e); }
   }
   state.freelancers = { lastRun: new Date().toISOString(), claimed: state.freelancers.claimed + board.length, completed: state.freelancers.completed, running: false };
-  save();
+  saveState(state);
   logger.info(`[loop:freelancers] worked ${out.length} gigs`);
   return out;
 }
@@ -91,4 +100,13 @@ export function startLoops(ownerMs = 3_600_000, freelancerMs = 1_800_000) {
 }
 export function stopLoops() { timers.forEach((t) => clearInterval(t)); timers = []; }
 
-export const loopService = { runProjectOwnerLoop, runFreelancerLoop, startLoops, stopLoops, state: () => state };
+export const loopService = { runProjectOwnerLoop, runFreelancerLoop, startLoops, stopLoops, state: () => state, recentActivity };
+
+/** Live activity feed (last N events) for the board's "never empty, always working" proof. */
+export function recentActivity(n = 20): any[] {
+  try {
+    if (!existsSync(ACTIVITY)) return [];
+    const lines = readFileSync(ACTIVITY, 'utf-8').trim().split('\n').filter(Boolean);
+    return lines.slice(-n).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean).reverse();
+  } catch { return []; }
+}

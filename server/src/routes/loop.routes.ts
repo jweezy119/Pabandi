@@ -25,4 +25,9 @@ router.post('/freelancers/run', async (req: Request, res: Response, next: NextFu
   } catch (e: any) { next(e); }
 });
 
+/** GET /api/v1/loops/activity — live feed of recent post/claim/complete events. */
+router.get('/activity', (_req: Request, res: Response) => {
+  res.json({ success: true, data: loopService.recentActivity(20) });
+});
+
 export default router;
