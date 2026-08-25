@@ -56,6 +56,7 @@ import treasuryAutonomousRoutes from './routes/treasury.autonomous.routes';
 import economyRoutes from './routes/economy.routes';
 import marketingRoutes from './routes/marketing.routes';
 import gigRoutes from './routes/gig.routes';
+import loopRoutes from './routes/loop.routes';
 import rentalDepositRoutes from './routes/rentalDeposit.routes';
 import ppdRoutes from './routes/ppd.routes';
 import trustPassportRoutes from './routes/trustPassport.routes';
@@ -279,6 +280,7 @@ app.use(`/api/${API_VERSION}/treasury`, treasuryAutonomousRoutes);
 app.use(`/api/${API_VERSION}/economy`, economyRoutes);
 app.use(`/api/${API_VERSION}/marketing`, marketingRoutes);
 app.use(`/api/${API_VERSION}/gigs`, gigRoutes);
+app.use(`/api/${API_VERSION}/loops`, loopRoutes);
 app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
 app.use(`/api/${API_VERSION}/ppd`, ppdRoutes);
 app.use(`/api/${API_VERSION}/trust-passport`, trustPassportRoutes);
@@ -414,6 +416,16 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     startAutonomousMarketing();
   } catch (err) {
     logger.warn(`Marketing agent skipped: ${(err as Error).message}`);
+  }
+
+  // Start SEGMENTED autonomous loops: project owners (post gigs) + freelancers (book+complete).
+  // Opt-in via AUTONOMOUS_LOOPS=true (off by default so nothing surprises you).
+  try {
+    const { startLoops } = await import('./services/loop.service');
+    startLoops();
+    logger.info('🔁 Segmented loops registered (project-owners + freelancers)');
+  } catch (err) {
+    logger.warn(`Loops skipped: ${(err as Error).message}`);
   }
 
   // ── LIVE RAIL SELF-CHECK (fails LOUD, not silent) ───────────────────────────
