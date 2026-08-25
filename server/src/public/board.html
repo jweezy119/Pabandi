@@ -83,20 +83,29 @@ async function autoPost(){
   }catch(e){ alert('Error: '+e.message); }
 }
 async function claim(gigId){
-  // Real freelancer claims. If they have a passport token, pass it; else claim as human wallet.
   const wallet=prompt('Your SOL wallet (escrow receiver), or leave blank to claim as human:','');
   const body= wallet?{claimerWallet:wallet}:{};
   try{ const r=await fetch(API+'/gigs/'+gigId+'/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(x=>x.json());
-    alert('Claimed by '+r.data.claimedBy+'\nNow deliver, then mark complete.'); load();
+    alert('Claimed by '+r.data.claimedBy+'\nNow deliver the work, then mark complete to release SOL escrow.'); load();
+  }catch(e){ alert('Error: '+e.message); }
+}
+async function complete(gigId){
+  if(!confirm('Mark this gig delivered? SOL escrow releases, 1% rake + 0.2% helper cut recorded.')) return;
+  try{ const r=await fetch(API+'/gigs/'+gigId+'/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(x=>x.json());
+    alert('Completed ✅\nRake to treasury: '+r.data.rakeSol+' SOL\nHelper kickback: '+(r.data.helperSol||0)+' SOL'+(r.data.referralCode?' ('+r.data.referralCode+')':''));
+    load();
   }catch(e){ alert('Error: '+e.message); }
 }
 async function load(){
   try{ const r=await fetch(API+'/gigs').then(x=>x.json()); const b=$('board'); const rows=r.data||[];
     if(!rows.length){ b.innerHTML='<div class="m">No open gigs. Post one or hit auto-post.</div>'; return; }
-    b.innerHTML=rows.map(g=>`<div class="row"><span class="tag open">OPEN</span><span class="t">${g.title}</span>
+    b.innerHTML=rows.map(g=>{
+      const tag=g.status==='OPEN'?'<span class="tag open">OPEN</span>':g.status==='IN_PROGRESS'?'<span class="tag prog">IN PROGRESS</span>':'<span class="tag">'+g.status+'</span>';
+      const btn=g.status==='OPEN'?'<button class="claim ghost" onclick="claim(\''+g.gigId+'\')">Claim as freelancer</button>':g.status==='IN_PROGRESS'?'<button class="claim" onclick="complete(\''+g.gigId+'\')">✅ Mark delivered → release SOL</button>':'<span class="m">paid</span>';
+      return `<div class="row">${tag}<span class="t">${g.title}</span>
       <div class="m">${g.category} · $${g.budgetUsd} · demand +${g.demandGrowthPct}%</div>
-      <div class="m">skills: ${g.requiredSkills.join(', ')}</div>
-      <button class="claim ghost" onclick="claim('${g.gigId}')">Claim as freelancer</button></div>`).join('');
+      <div class="m">skills: ${g.requiredSkills.join(', ')}</div>${btn}</div>`;
+    }).join('');
   }catch(e){ $('board').innerHTML='<div class="m">Failed to load</div>'; }
 }
 function $(id){return document.getElementById(id);}

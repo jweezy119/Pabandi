@@ -43,6 +43,11 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
     try {
       const g = await gigService.createGigFromSme({ skill: s.skill, referralCode });
       out.push(g.gigId);
+      // Broadcast the new gig as a marketing post (DRY_RUN-safe; flips LIVE with SOCIAL_LIVE).
+      try {
+        const { marketingAgent } = await import('./marketingAgent.service');
+        await marketingAgent.generateAndPost().catch(() => {});
+      } catch { /* marketing optional */ }
     } catch (e) { logger.warn('[loop:owners] post failed', e); }
   }
   state.projectOwners = { lastRun: new Date().toISOString(), posted: state.projectOwners.posted + out.length, running: false };
