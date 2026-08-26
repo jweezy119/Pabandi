@@ -151,6 +151,9 @@ router.put('/wallet', authenticate, async (req: any, res, next) => {
 
 // Step 1: Redirect to Google, passing role as state
 router.get('/google', oauthSession, (req: Request, res: Response, next: NextFunction) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.redirect(`${FRONTEND_URL}/login?error=google_not_configured`);
+  }
   const role = (req.query.role as string) || 'customer';
   if (req.query.returnTo) {
     (req as any).session.returnTo = req.query.returnTo;
