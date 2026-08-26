@@ -1913,3 +1913,39 @@ model GigEvent {
   @@index([kind])
   @@index([source])
 }
+
+// ── Program: a long, multi-task engagement (up to a year) decomposed + budgeted into tasks ──
+//  Each task becomes a budgeted mini-gig with its own milestone escrow, so no single party
+//  carries full-program risk and the "right freelancer" is matched per task.
+model Program {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  clientWallet  String?
+  referralCode  String?
+  durationWeeks Int      @default(52)
+  totalBudgetUsd Float
+  taskCount     Int
+  status        String   @default("PLANNED") // PLANNED | ACTIVE | COMPLETED
+  createdAt     DateTime @default(now())
+  tasks         ProgramTask[]
+}
+
+model ProgramTask {
+  id           String   @id @default(cuid())
+  programId    String
+  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  seq          Int // 1..N order
+  title        String
+  skill        String
+  category     String
+  budgetUsd    Float
+  estimatedHours Int
+  gigId        String? // the resulting gig once staffed
+  assignedAgentId String?
+  status       String   @default("PLANNED") // PLANNED | OPEN | IN_PROGRESS | COMPLETED
+  createdAt    DateTime @default(now())
+
+  @@index([programId])
+  @@index([status])
+}
