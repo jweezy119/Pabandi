@@ -37,16 +37,16 @@ function readState(): SegState {
   return { projectOwners: { lastRun: '', posted: 0, running: false }, freelancers: { lastRun: '', claimed: 0, completed: 0, running: false } };
 }
 function saveState(s: SegState) { try { mkdirSync('.data', { recursive: true }); writeFileSync(STORE, JSON.stringify(s, null, 2)); } catch { /* */ } }
-function logActivity(entry: any) {
+async function logActivity(entry: any) {
   try { mkdirSync('.data', { recursive: true }); appendFileSync(ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
   try {
-    prisma.gigEvent.create({ data: {
+    await prisma.gigEvent.create({ data: {
       kind: entry.kind, role: entry.role, gigId: entry.gigId, source: entry.source || 'ai-loop',
       skill: entry.skill ?? null, budgetUsd: entry.budgetUsd ?? null, category: entry.category ?? null,
       claimedBy: entry.claimedBy ?? null, rakeSol: entry.rakeSol ?? null, helperSol: entry.helperSol ?? null,
       referralCode: entry.referralCode ?? null,
     } });
-  } catch { /* non-fatal */ }
+  } catch (e: any) { logger.warn('[gigEvent] write failed', e.message); }
 }
 let state: SegState = readState();
 
@@ -58,7 +58,7 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
     try {
       const g = await gigService.createGigFromSme({ skill: s.skill, referralCode });
       out.push(g.gigId);
-      logActivity({ kind: 'POST', role: 'project-owner', gigId: g.gigId, skill: s.skill, budgetUsd: g.budgetUsd, category: g.category, source: 'ai-loop' });
+      await logActivity({ kind: 'POST', role: 'project-owner', gigId: g.gigId, skill: s.skill, budgetUsd: g.budgetUsd, category: g.category, source: 'ai-loop' });
       // Broadcast the new gig as a marketing post (DRY_RUN-safe; flips LIVE with SOCIAL_LIVE).
       try {
         const { marketingAgent } = await import('./marketingAgent.service');
@@ -101,7 +101,7 @@ export async function runFreelancerLoop(limit = 10): Promise<any[]> {
       const winner = roster.find(r => r.id === accept.agentId) || roster[0];
       const done = await gigService.completeGig(g.gigId);
       out.push({ gigId: g.gigId, competingBids: bids.length, winner: accept.agentId, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
-      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${accept.agentId}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
+      await logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${accept.agentId}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
       state.freelancers.completed += 1;
     } catch (e: any) { logger.warn('[loop:freelancers] compete/accept/complete failed', e.message); }
   }

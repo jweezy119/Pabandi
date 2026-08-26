@@ -49,16 +49,16 @@ function loadStore(): Record<string, GigExtra> {
   return {};
 }
 function saveStore() { try { mkdirSync('.data', { recursive: true }); writeFileSync(STORE, JSON.stringify(extras, null, 2)); } catch { /* */ } }
-function gigActivity(entry: any) {
+async function gigActivity(entry: any) {
   try { mkdirSync('.data', { recursive: true }); appendFileSync(GIG_ACTIVITY, JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n'); } catch { /* */ }
   try {
-    prisma.gigEvent.create({ data: {
+    await prisma.gigEvent.create({ data: {
       kind: entry.kind, role: entry.role, gigId: entry.gigId, source: entry.source || 'human',
       skill: entry.skill ?? null, budgetUsd: entry.budgetUsd ?? null, category: entry.category ?? null,
       claimedBy: entry.claimedBy ?? null, rakeSol: entry.rakeSol ?? null, helperSol: entry.helperSol ?? null,
       referralCode: entry.referralCode ?? null,
     } });
-  } catch { /* non-fatal */ }
+  } catch (e: any) { logger.warn('[gigEvent] write failed', e.message); }
 }
 
 /** Programmatic SOL escrow deposit. Real on-chain transfer when payer key + SOL exist. */
@@ -121,7 +121,7 @@ export async function createGigFromSme(input: SmeInput): Promise<any> {
   saveStore();
 
   logger.info(`[gig] OWNER posted OPEN gig ${project.id} (${spec.category}, $${budgetUsd}) skill="${input.skill}"`);
-  gigActivity({ kind: 'POST', role: 'project-owner', gigId: project.id, skill: input.skill, budgetUsd, category: spec.category, source: input.payerSecretB64 ? 'ai-loop' : 'human' });
+  await gigActivity({ kind: 'POST', role: 'project-owner', gigId: project.id, skill: input.skill, budgetUsd, category: spec.category, source: input.payerSecretB64 ? 'ai-loop' : 'human' });
   return {
     gigId: project.id, title: project.title, category: project.category, budgetUsd, estimatedHours: project.estimatedHours,
     requiredSkills: project.requiredSkills, demandGrowthPct: project.demandGrowthPct, confidenceNote: spec.confidenceNote,
@@ -197,7 +197,7 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.escrow = { funded: true, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
   ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; saveStore();
-  gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
+  await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
 
   logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId}; escrow funded (simulated=${dep.simulated})`);
   return { gigId, acceptedBidId: best.id, agentId: best.agentId, escrowFunded: true, simulated: dep.simulated, txHash: dep.txHash };
@@ -245,7 +245,7 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
     } catch (e: any) { logger.warn('[gig] referral PAB skip', e.message); }
   }
 
-  gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: meta.escrow?.simulated ? 'ai-loop' : 'human' });
+  await gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: meta.escrow?.simulated ? 'ai-loop' : 'human' });
   logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}; PAB stake +${stakeReturned + deliveryBonus}, ref +${referralPab}`);
   return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab };
 }
@@ -294,7 +294,7 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   await prisma.project.update({ where: { id: gigId }, data: { status: 'IN_PROGRESS', bestAgentId: assignedAgentId, bestConfidence: assignedAgentId ? 90 : null } });
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.claimedBy = claimerLabel; ex.claimedAt = new Date().toISOString(); saveStore();
-  gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: claimerLabel, by: opts.passportToken ? 'passport' : (opts.claimerWallet ? 'wallet' : 'human'), source: 'human' });
+  await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: claimerLabel, by: opts.passportToken ? 'passport' : (opts.claimerWallet ? 'wallet' : 'human'), source: 'human' });
   if (assignedAgentId) { await prisma.projectBid.create({ data: { projectId: gigId, agentId: assignedAgentId, confidencePct: 90, quoteUsd: gig.budgetUsd, status: 'ACCEPTED', breakdown: { auto: true } as any } }); }
   logger.info(`[gig] ${claimerLabel} claimed gig ${gigId}`);
   return { gigId, claimedBy: claimerLabel, assignedAgentId, status: 'IN_PROGRESS' };
