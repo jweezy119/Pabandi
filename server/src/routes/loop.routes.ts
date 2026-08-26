@@ -15,6 +15,15 @@ router.get('/activity', async (_req: Request, res: Response) => {
   res.json({ success: true, data: rows });
 });
 
+/** GET /api/v1/loops/agent — the autonomous freelancer agent's live PAB trust state. */
+router.get('/agent', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const agent = await (await import('../utils/database')).prisma.web3Agent.findFirst({ where: { isActive: true }, orderBy: { balancePab: 'desc' } });
+    if (!agent) return res.json({ success: true, data: null });
+    res.json({ success: true, data: { agentId: agent.id, category: agent.category, balancePab: agent.balancePab, walletAddress: agent.walletAddress } });
+  } catch (e: any) { next(e); }
+});
+
 /** GET /api/v1/loops/stats — durable counters (survive cold starts). */
 router.get('/stats', async (_req: Request, res: Response) => {
   const stats = await loopService.loopStats().catch(() => ({ posted: 0, completed: 0, claimed: 0, open: 0 }));

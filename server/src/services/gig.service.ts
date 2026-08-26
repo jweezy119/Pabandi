@@ -250,6 +250,22 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
   return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab };
 }
 
+export async function agentBalance(agentId: string): Promise<any> {
+  const a = await prisma.web3Agent.findUnique({ where: { id: agentId }, select: { id: true, walletAddress: true, category: true, balancePab: true, isActive: true } });
+  if (!a) throw new Error('Agent not found');
+  return a;
+}
+
+/** Controlled PAB faucet — tops up an agent's trust stake (treasury-funded; simulates mint from reserve). */
+export async function agentFaucet(agentId: string, amountPab: number): Promise<any> {
+  if (amountPab <= 0 || amountPab > 10000) throw new Error('Faucet amount must be 1..10000 PAB');
+  const a = await prisma.web3Agent.findUnique({ where: { id: agentId } });
+  if (!a) throw new Error('Agent not found');
+  const updated = await prisma.web3Agent.update({ where: { id: agentId }, data: { balancePab: { increment: amountPab } } });
+  logger.info(`[faucet] +${amountPab} PAB → agent ${agentId} (now ${updated.balancePab})`);
+  return { agentId, addedPab: amountPab, balancePab: updated.balancePab };
+}
+
 export async function openBoard(limit = 50): Promise<any[]> {
   const rows = await prisma.project.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'desc' }, take: limit });
   return rows.map((r) => ({
@@ -284,4 +300,4 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   return { gigId, claimedBy: claimerLabel, assignedAgentId, status: 'IN_PROGRESS' };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, openBoard, claimGig, completeGig };
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, openBoard, claimGig, completeGig };

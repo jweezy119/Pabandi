@@ -30,6 +30,23 @@ router.post('/agents/register', async (req: Request, res: Response, next: NextFu
 });
 
 /**
+ * GET /api/v1/gigs/agents/:id/balance — live PAB trust-stake balance.
+ */
+router.get('/agents/:id/balance', async (req: Request, res: Response, next: NextFunction) => {
+  try { const r = await gigService.agentBalance(req.params.id); res.json({ success: true, data: r }); }
+  catch (e: any) { res.status(404).json({ success: false, error: e.message }); }
+});
+
+/**
+ * POST /api/v1/gigs/agents/:id/faucet — controlled PAB top-up (treasury reserve).
+ * Body: { amountPab }
+ */
+router.post('/agents/:id/faucet', async (req: Request, res: Response, next: NextFunction) => {
+  try { const r = await gigService.agentFaucet(req.params.id, Number((req.body || {}).amountPab) || 0); res.json({ success: true, data: r }); }
+  catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
+});
+
+/**
  * GET /api/v1/gigs — the OPEN BOARD any worker (human or AI agent) can browse + bid.
  */
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {

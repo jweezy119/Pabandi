@@ -72,26 +72,38 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
   return out;
 }
 
-/** FREELANCER loop: scan OPEN board, claim + deliver best-fit gigs (autonomous booking+completion). */
+/** FREELANCER loop: scan OPEN board → AI agent BIDS (stakes PAB) → owner accepts → deliver.
+ *  This is the full PAB trust economy in autonomous motion (not first-come claim). */
 export async function runFreelancerLoop(limit = 10): Promise<any[]> {
   state = readState(); // resume cumulative counters after a cold start
   const board = await gigService.openBoard(limit);
+  if (!board.length) { logger.info('[loop:freelancers] board empty'); return []; }
+
+  // Pick (or create) an autonomous freelancer agent with PAB to stake.
+  let agent = await prisma.web3Agent.findFirst({ where: { isActive: true, category: board[0].category }, orderBy: { balancePab: 'desc' } });
+  if (!agent) agent = await prisma.web3Agent.findFirst({ where: { isActive: true }, orderBy: { balancePab: 'desc' } });
+  if (!agent) {
+    const reg = await gigService.registerAgent({ profileId: 'loop-freelancer', walletAddress: '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG', encryptedPrivateKey: 'demo', category: board[0].category, startingPab: 100 });
+    agent = await prisma.web3Agent.findUnique({ where: { id: reg.agentId } });
+  }
+  if (!agent) { logger.warn('[loop:freelancers] no agent available'); return []; }
+  // Top up if low on PAB so it can keep staking.
+  if ((agent.balancePab || 0) < 20) { await gigService.agentFaucet(agent.id, 100); }
+
   const out: any[] = [];
   for (const g of board) {
     try {
-      const rec = await recommendBestAgent({
-        title: g.title, description: '', category: g.category, requiredSkills: g.requiredSkills, budgetUsd: g.budgetUsd,
-      } as ProjectSpec);
-      const claim = await gigService.claimGig(g.gigId, rec.best ? { agentId: rec.best.agentId } : {});
+      const bid = await gigService.bidOnGig(g.gigId, { agentId: agent.id, quoteUsd: Math.round(g.budgetUsd * 0.95), stakePab: 10 });
+      const accept = await gigService.acceptBestBid(g.gigId);
       const done = await gigService.completeGig(g.gigId);
-      out.push({ gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol });
-      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: claim.claimedBy, rakeSol: done.rakeSol, helperSol: done.helperSol, source: 'ai-loop' });
+      out.push({ gigId: g.gigId, agentId: agent.id, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
+      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${agent.id}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
       state.freelancers.completed += 1;
-    } catch (e) { logger.warn('[loop:freelancers] claim/complete failed', e); }
+    } catch (e: any) { logger.warn('[loop:freelancers] bid/accept/complete failed', e.message); }
   }
   state.freelancers = { lastRun: new Date().toISOString(), claimed: state.freelancers.claimed + board.length, completed: state.freelancers.completed, running: false };
   saveState(state);
-  logger.info(`[loop:freelancers] worked ${out.length} gigs`);
+  logger.info(`[loop:freelancers] bid+delivered ${out.length} gigs (agent ${agent.id})`);
   return out;
 }
 

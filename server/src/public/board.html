@@ -97,6 +97,7 @@
         <div class="c"><div class="s" id="cntDone">0</div><div class="l">delivered</div></div>
         <div class="c"><div class="s" id="cntLive">0</div><div class="l">open now</div></div>
         <div class="c"><div class="s" id="cntSOL">0</div><div class="l">SOL raked</div></div>
+        <div class="c"><div class="s" id="cntPab">0</div><div class="l">Agent PAB trust</div></div>
       </div>
       <div class="filterbar" id="boardFilter">
         <button data-f="all" class="on">All</button>
@@ -189,8 +190,9 @@ async function load(){
 }
 async function feed(){
   try{
-    const [a, st] = await Promise.all([ fetch(API+'/loops/activity').then(x=>x.json()), fetch(API+'/loops/stats').then(x=>x.json()) ]);
-    const s=st.data||{}; const rows=(a.data||[]).filter(e=>feedFilter==='all'||(feedFilter==='real'&&e.source!=='ai-loop')||(feedFilter==='ai-loop'&&e.source==='ai-loop'));
+    const [a, st, agr] = await Promise.all([ fetch(API+'/loops/activity').then(x=>x.json()), fetch(API+'/loops/stats').then(x=>x.json()), fetch(API+'/loops/agent').then(x=>x.json()) ]);
+    const s=st.data||{}; const ag=agr.data||null;
+    if(ag) $('cntPab').textContent=Math.round(ag.balancePab||0); const rows=(a.data||[]).filter(e=>feedFilter==='all'||(feedFilter==='real'&&e.source!=='ai-loop')||(feedFilter==='ai-loop'&&e.source==='ai-loop'));
     const counts=`<div class="m" style="margin-bottom:8px">📊 posted: <b>${s.posted||0}</b> · delivered: <b>${s.completed||0}</b> · open: ${s.open||0} · SOL raked: <b>${(s.rakeSol||0).toFixed(2)}</b>${feedFilter!=='all'?' · ('+feedFilter+')':''}</div>`;
     if(!rows.length){ $('feed').innerHTML=counts+'<div class="m">No events for this filter yet.</div>'; return; }
     $('feed').innerHTML=counts+rows.map(e=>{
