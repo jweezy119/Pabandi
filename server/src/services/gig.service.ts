@@ -268,9 +268,13 @@ export async function agentFaucet(agentId: string, amountPab: number): Promise<a
 
 export async function openBoard(limit = 50): Promise<any[]> {
   const rows = await prisma.project.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'desc' }, take: limit });
-  return rows.map((r) => ({
+  const ids = rows.map((r: any) => r.id);
+  const bids = ids.length ? await prisma.projectBid.groupBy({ by: ['projectId'], where: { projectId: { in: ids }, status: 'PENDING' }, _count: { _all: true }, _min: { quoteUsd: true } }) : [];
+  const bidMap = Object.fromEntries(bids.map((b: any) => [b.projectId, { count: b._count._all, minQuote: b._min.quoteUsd }]));
+  return rows.map((r: any) => ({
     gigId: r.id, title: r.title, category: r.category, budgetUsd: r.budgetUsd,
     requiredSkills: r.requiredSkills, demandGrowthPct: r.demandGrowthPct, referralCode: extras[r.id]?.referralCode || null,
+    competingBids: bidMap[r.id]?.count || 0, lowestQuote: bidMap[r.id]?.minQuote || null,
   }));
 }
 

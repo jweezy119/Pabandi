@@ -72,42 +72,56 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
   return out;
 }
 
-/** FREELANCER loop: scan OPEN board → MULTIPLE AI agents COMPETE (bid + stake PAB) →
- *  owner accepts the best bid (lowest quote, highest trust) → agent delivers.
- *  This is the full PAB trust economy in autonomous, competitive motion. */
+/** FREELANCER loop (BID phase): scan OPEN board → MULTIPLE AI agents COMPETE (bid + stake PAB).
+ *  Gigs are LEFT OPEN with their competing bids visible on the board — a living marketplace. */
 export async function runFreelancerLoop(limit = 10): Promise<any[]> {
-  state = readState(); // resume cumulative counters after a cold start
+  state = readState();
   const board = await gigService.openBoard(limit);
   if (!board.length) { logger.info('[loop:freelancers] board empty'); return []; }
 
-  // Ensure a roster of competing autonomous agents exists (distinct profiles so they bid against each other).
   const roster = await ensureRoster(board[0].category);
   if (!roster.length) { logger.warn('[loop:freelancers] no agents available'); return []; }
 
   const out: any[] = [];
   for (const g of board) {
     try {
-      // Each competing agent bids with its own quote + PAB stake (price competition).
+      // Skip gigs that already have a full competing set of bids.
+      const existing = await prisma.projectBid.count({ where: { projectId: g.gigId, status: 'PENDING' } });
+      if (existing >= roster.length) { out.push({ gigId: g.gigId, note: 'already competing', bids: existing }); continue; }
       const bids = [];
       for (const a of roster) {
-        if ((a.balancePab || 0) < 20) await gigService.agentFaucet(a.id, 100); // keep them funded to stake
-        const quote = Math.round(g.budgetUsd * (0.88 + Math.random() * 0.12)); // 0.88–1.0x → real price competition
-        const stake = 10;
-        const b = await gigService.bidOnGig(g.gigId, { agentId: a.id, quoteUsd: quote, stakePab: stake });
+        if ((a.balancePab || 0) < 20) await gigService.agentFaucet(a.id, 100);
+        const quote = Math.round(g.budgetUsd * (0.88 + Math.random() * 0.12));
+        const b = await gigService.bidOnGig(g.gigId, { agentId: a.id, quoteUsd: quote, stakePab: 10 });
         bids.push(b);
       }
-      // Owner accepts the BEST bid (acceptBestBid sorts by lowest quote).
-      const accept = await gigService.acceptBestBid(g.gigId);
-      const winner = roster.find(r => r.id === accept.agentId) || roster[0];
-      const done = await gigService.completeGig(g.gigId);
-      out.push({ gigId: g.gigId, competingBids: bids.length, winner: accept.agentId, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
-      await logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${accept.agentId}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
-      state.freelancers.completed += 1;
-    } catch (e: any) { logger.warn('[loop:freelancers] compete/accept/complete failed', e.message); }
+      await logActivity({ kind: 'BID', role: 'freelancer', gigId: g.gigId, claimedBy: `agents:${roster.length}`, source: 'ai-loop' });
+      out.push({ gigId: g.gigId, competingBids: bids.length });
+    } catch (e: any) { logger.warn('[loop:freelancers] bid failed', e.message); }
   }
-  state.freelancers = { lastRun: new Date().toISOString(), claimed: state.freelancers.claimed + board.length, completed: state.freelancers.completed, running: false };
   saveState(state);
-  logger.info(`[loop:freelancers] ${out.length} gigs worked by ${roster.length} competing agents`);
+  logger.info(`[loop:freelancers] ${out.length} gigs now have competing bids`);
+  return out;
+}
+
+/** FREELANCER loop (DELIVER phase): accept best bid + deliver a limited number of OPEN gigs,
+ *  so the board shows live deliveries in the feed WITHOUT emptying (keeps a healthy pipeline). */
+export async function runFreelancerDeliver(limit = 2): Promise<any[]> {
+  state = readState();
+  const open = await prisma.project.findMany({ where: { status: 'OPEN' }, orderBy: { createdAt: 'asc' }, take: limit });
+  const out: any[] = [];
+  for (const g of open) {
+    try {
+      const accept = await gigService.acceptBestBid(g.id);
+      const done = await gigService.completeGig(g.id);
+      await logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.id, claimedBy: `agent:${accept.agentId}`, rakeSol: done.rakeSol, helperSol: done.helperSol, source: 'ai-loop' });
+      state.freelancers.completed += 1;
+      out.push({ gigId: g.id, winner: accept.agentId, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
+    } catch (e: any) { logger.warn('[loop:freelancers] deliver failed', e.message); }
+  }
+  state.freelancers = { lastRun: new Date().toISOString(), claimed: state.freelancers.claimed, completed: state.freelancers.completed, running: false };
+  saveState(state);
+  logger.info(`[loop:freelancers] delivered ${out.length} gigs`);
   return out;
 }
 
@@ -138,7 +152,7 @@ export function startLoops(ownerMs = 3_600_000, freelancerMs = 1_800_000) {
 }
 export function stopLoops() { timers.forEach((t) => clearInterval(t)); timers = []; }
 
-export const loopService = { runProjectOwnerLoop, runFreelancerLoop, startLoops, stopLoops, state: () => state, recentActivity, loopStats };
+export const loopService = { runProjectOwnerLoop, runFreelancerLoop, runFreelancerDeliver, startLoops, stopLoops, state: () => state, recentActivity, loopStats };
 
 /** Live activity feed (last N events) — reads durable DB so it survives cold starts. */
 export async function recentActivity(n = 20): Promise<any[]> {

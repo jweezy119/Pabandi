@@ -172,7 +172,8 @@ function gigRow(g){
   if(boardFilter!=='all' && g._source!==boardFilter && !(boardFilter==='real'&&g._source!=='ai-loop')) return '';
   const tag=g.status==='OPEN'?'<span class="tag open">OPEN</span>':g.status==='IN_PROGRESS'?'<span class="tag prog">IN PROGRESS</span>':'<span class="tag">'+g.status+'</span>';
   const btn=g.status==='OPEN'?'<button class="claim ghost" onclick="claim(\''+g.gigId+'\')">Claim as freelancer</button>':g.status==='IN_PROGRESS'?'<button class="claim" onclick="complete(\''+g.gigId+'\')">✅ Mark delivered → release SOL</button>':'<span class="m">paid</span>';
-  return `<div class="row">${tag}<span class="t">${g.title}</span>
+  const bidInfo = g.competingBids ? `<span class="tag real" style="background:#2d1e3a;color:#c08bff">⚔️ ${g.competingBids} agents bidding${g.lowestQuote?` · from $${g.lowestQuote}`:''}</span>` : '';
+  return `<div class="row">${tag}${bidInfo}<span class="t">${g.title}</span>
     <div class="m">${g.category} · $${g.budgetUsd} · demand +${g.demandGrowthPct}%</div>
     <div class="m">skills: ${g.requiredSkills.join(', ')}</div>${btn}</div>`;
 }

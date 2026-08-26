@@ -60,12 +60,21 @@ router.post('/freelancers/run', async (req: Request, res: Response, next: NextFu
 });
 
 /** POST /api/v1/loops/wake — fire both loops once (catch-up). Called by the board/launch page on load
- *  so the open board is never empty when a human visits, even on Render Free (which sleeps when idle). */
+ *  so the open board is never empty when a human visits, even on Render Free (which sleeps when idle).
+ *  Phases: owner posts gigs → agents bid (competition, gigs stay OPEN) → deliver a few (feed shows delivery). */
 router.post('/wake', async (_req: Request, res: Response) => {
   res.json({ success: true, data: { triggered: true, note: 'loops running in background' } });
-  // fire-and-forget (don't block the response)
   loopService.runProjectOwnerLoop(2).catch(() => {});
-  setTimeout(() => loopService.runFreelancerLoop(5).catch(() => {}), 1500);
+  setTimeout(() => loopService.runFreelancerLoop(5).catch(() => {}), 1200);   // bid phase: gigs stay OPEN w/ competing bids
+  setTimeout(() => loopService.runFreelancerDeliver(2).catch(() => {}), 4000); // deliver phase: a few complete → feed shows delivery
+});
+
+/** POST /api/v1/loops/freelancers/deliver — accept best bid + deliver a limited number of open gigs. */
+router.post('/freelancers/deliver', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const out = await loopService.runFreelancerDeliver((req.body || {}).limit || 2);
+    res.json({ success: true, data: { delivered: out.length, results: out } });
+  } catch (e: any) { next(e); }
 });
 
 export default router;
