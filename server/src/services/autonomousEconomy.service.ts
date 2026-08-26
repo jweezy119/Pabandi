@@ -215,14 +215,16 @@ export class AutonomousEconomyService {
     return { confirmed: true, platformFeeSol: fee, partnerSol };
   }
 
-  /** Referral earnings (Tier-2 idea 5): total claimable SOL for a referral code. */
-  async referralStats(referralCode: string): Promise<{ code: string; earnedSol: number; claims: number }> {
+  /** Referral earnings (Tier-2 idea 5): total claimable SOL + $PAB for a referral code. */
+  async referralStats(referralCode: string): Promise<{ code: string; earnedSol: number; earnedPab: number; claims: number }> {
     const rows = await prisma.treasuryPosition.findMany({
       where: { bucket: 'REFERRAL_EARNED', meta: { path: ['referralCode'], equals: referralCode } },
     });
-    let earned = 0;
-    for (const r of rows) earned += r.amount || 0;
-    return { code: referralCode, earnedSol: +earned.toFixed(6), claims: rows.length };
+    let earnedSol = 0, earnedPab = 0;
+    for (const r of rows) {
+      if ((r.meta as any)?.asset === 'PAB') earnedPab += r.amount || 0; else earnedSol += r.amount || 0;
+    }
+    return { code: referralCode, earnedSol: +earnedSol.toFixed(6), earnedPab: +earnedPab.toFixed(2), claims: rows.length };
   }
 
   /** Partner infra-fee earnings (Tier-2 idea 6): total SOL skimmed for a partner. */
@@ -237,17 +239,18 @@ export class AutonomousEconomyService {
 
   /** Public leaderboard (social proof): top referrers + partners by SOL earned.
    *  Demo rows (meta.demo === true) are excluded so the public view stays real. */
-  async leaderboard(limit = 10): Promise<{ referrers: { code: string; earnedSol: number; claims: number }[]; partners: { partnerId: string; earnedSol: number; bookings: number }[] }> {
+  async leaderboard(limit = 10): Promise<{ referrers: { code: string; earnedSol: number; earnedPab: number; claims: number }[]; partners: { partnerId: string; earnedSol: number; bookings: number }[] }> {
     const [refRows, partRows] = await Promise.all([
       prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED' } }),
       prisma.treasuryPosition.findMany({ where: { bucket: 'PARTNER_FEE' } }),
     ]);
-    const refMap = new Map<string, { earnedSol: number; claims: number }>();
+    const refMap = new Map<string, { earnedSol: number; earnedPab: number; claims: number }>();
     for (const r of refRows) {
       if ((r.meta as any)?.demo) continue; // exclude demo conversions from public board
       const code = (r.meta as any)?.referralCode || 'unknown';
-      const e = refMap.get(code) || { earnedSol: 0, claims: 0 };
-      e.earnedSol += r.amount || 0; e.claims += 1; refMap.set(code, e);
+      const e = refMap.get(code) || { earnedSol: 0, earnedPab: 0, claims: 0 };
+      if ((r.meta as any)?.asset === 'PAB') e.earnedPab += r.amount || 0; else e.earnedSol += r.amount || 0;
+      e.claims += 1; refMap.set(code, e);
     }
     const partMap = new Map<string, { earnedSol: number; bookings: number }>();
     for (const r of partRows) {
@@ -255,7 +258,7 @@ export class AutonomousEconomyService {
       const e = partMap.get(pid) || { earnedSol: 0, bookings: 0 };
       e.earnedSol += r.amount || 0; e.bookings += 1; partMap.set(pid, e);
     }
-    const referrers = [...refMap.entries()].map(([code, v]) => ({ code, earnedSol: +v.earnedSol.toFixed(6), claims: v.claims }))
+    const referrers = [...refMap.entries()].map(([code, v]) => ({ code, earnedSol: +v.earnedSol.toFixed(6), earnedPab: +v.earnedPab.toFixed(2), claims: v.claims }))
       .sort((a, b) => b.earnedSol - a.earnedSol).slice(0, limit);
     const partners = [...partMap.entries()].map(([partnerId, v]) => ({ partnerId, earnedSol: +v.earnedSol.toFixed(6), bookings: v.bookings }))
       .sort((a, b) => b.earnedSol - a.earnedSol).slice(0, limit);

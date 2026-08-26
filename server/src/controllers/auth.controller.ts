@@ -174,6 +174,18 @@ export const register = async (
       }
     });
 
+    // PAB referral fuel: a human signing up through a helper's code earns that helper $PAB.
+    // Completes the human<->agent PAB loop (agents already earn PAB on referred gig completion).
+    if (refCode) {
+      try {
+        const SIGNUP_REFERRAL_PAB = 25; // incentive fuel for bringing a real person in
+        await prisma.treasuryPosition.create({
+          data: { bucket: 'REFERRAL_EARNED', amount: SIGNUP_REFERRAL_PAB, status: 'PENDING', txHash: `signup:${user.id}`, meta: { asset: 'PAB', source: 'REFERRAL_PAB_SIGNUP', referralCode: refCode, userId: user.id } },
+        });
+        logger.info(`[referral] helper ${refCode} earned ${SIGNUP_REFERRAL_PAB} PAB for signup of ${user.email}`);
+      } catch (e: any) { logger.warn('[referral] PAB signup credit skipped', e.message); }
+    }
+
     // Fire off async OSINT checks (background)
     osintService.queueOSINTChecks(user.id, user.business?.id).catch(err => {
       logger.error('Background OSINT check failed', err);
