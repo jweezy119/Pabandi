@@ -40,6 +40,7 @@ type GigExtra = {
   helperSol?: number;
   completedTx?: string | null;
   acceptedBidId?: string | null;
+  stakePab?: number;
 };
 const extras: Record<string, GigExtra> = loadStore();
 
@@ -132,13 +133,13 @@ export async function createGigFromSme(input: SmeInput): Promise<any> {
 // ── 2. AI AGENT SELF-REGISTRATION ────────────────────────────────────────────
 export interface AgentSignup {
   profileId: string; walletAddress: string; encryptedPrivateKey: string;
-  category: string; skills?: string[]; ownerUserId?: string; trustScore?: number;
+  category: string; skills?: string[]; ownerUserId?: string; trustScore?: number; startingPab?: number;
 }
 export async function registerAgent(input: AgentSignup): Promise<any> {
   const agent = await prisma.web3Agent.create({
     data: {
       profileId: input.profileId, walletAddress: input.walletAddress, encryptedPrivateKey: input.encryptedPrivateKey,
-      category: input.category, isActive: true, prepared: true,
+      category: input.category, isActive: true, prepared: true, balancePab: input.startingPab ?? 100,
     },
   });
   // Issue a Pabandi Agent Passport with act:book so it can claim/bid gigs.
@@ -151,11 +152,12 @@ export async function registerAgent(input: AgentSignup): Promise<any> {
   return { agentId: agent.id, walletAddress: agent.walletAddress, passport: Buffer.from(JSON.stringify(passport)).toString('base64'), category: agent.category };
 }
 
-// ── 3. AI AGENT BIDS on an open gig ─────────────────────────────────────────
-export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?: number; passportToken?: string }): Promise<any> {
+// ── 3. AI AGENT BIDS on an open gig (with PAB trust stake) ──────────────────
+export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?: number; passportToken?: string; stakePab?: number }): Promise<any> {
   const gig = await prisma.project.findUnique({ where: { id: gigId } });
   if (!gig) throw new Error('Gig not found');
   if (gig.status !== 'OPEN') throw new Error(`Gig is ${gig.status}, not accepting bids`);
+  const stakePab = Math.max(0, opts.stakePab ?? 10); // default 10 PAB skin-in-the-game
   if (opts.passportToken) {
     let att: any;
     try { att = JSON.parse(Buffer.from(opts.passportToken, 'base64').toString('utf-8')); } catch { throw new Error('Passport token invalid'); }
@@ -164,12 +166,15 @@ export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?
   }
   const agent = await prisma.web3Agent.findUnique({ where: { id: opts.agentId } });
   if (!agent) throw new Error('Agent not found');
+  if ((agent.balancePab || 0) < stakePab) throw new Error(`Agent needs ${stakePab} PAB to bid (has ${agent.balancePab || 0})`);
+  // Hold the stake (debit now; returned+bonus on delivery, slashed on no-show).
+  await prisma.web3Agent.update({ where: { id: agent.id }, data: { balancePab: { decrement: stakePab } } });
   const quoteUsd = opts.quoteUsd ?? gig.budgetUsd;
   const bid = await prisma.projectBid.create({
-    data: { projectId: gigId, agentId: opts.agentId, quoteUsd, confidencePct: 85, status: 'PENDING', breakdown: { skillMatch: agent.category === gig.category } as any },
+    data: { projectId: gigId, agentId: opts.agentId, quoteUsd, confidencePct: 85, status: 'PENDING', stakePab, breakdown: { skillMatch: agent.category === gig.category } as any },
   });
-  logger.info(`[bid] agent ${opts.agentId} bid $${quoteUsd} on ${gigId}`);
-  return { bidId: bid.id, gigId, agentId: opts.agentId, quoteUsd, status: 'PENDING' };
+  logger.info(`[bid] agent ${opts.agentId} bid $${quoteUsd} on ${gigId} (staked ${stakePab} PAB)`);
+  return { bidId: bid.id, gigId, agentId: opts.agentId, quoteUsd, stakePab, status: 'PENDING' };
 }
 
 // ── 4. ACCEPT BEST BID → deposit budget into escrow ─────────────────────────
@@ -191,7 +196,7 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
 
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.escrow = { funded: true, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
-  ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; saveStore();
+  ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; saveStore();
   gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
 
   logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId}; escrow funded (simulated=${dep.simulated})`);
@@ -215,9 +220,34 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
   } catch (e) { logger.warn('[gig] ledger write skipped', e); }
   await prisma.project.update({ where: { id: gigId }, data: { status: 'COMPLETED' } });
   meta.rakeSol = rakeSol; meta.helperSol = helperSol; meta.completedTx = txHash || null; saveStore();
+
+  // ── A. PAB trust stake: return stake + delivery bonus to the winning agent ──
+  let stakeReturned = 0, deliveryBonus = 0;
+  if (meta.stakePab && meta.claimedBy?.startsWith('agent:')) {
+    const winnerId = meta.claimedBy.replace('agent:', '');
+    stakeReturned = meta.stakePab;
+    deliveryBonus = +(meta.stakePab * 0.2).toFixed(2); // +20% reward for trustworthy delivery
+    try {
+      await prisma.web3Agent.update({ where: { id: winnerId }, data: { balancePab: { increment: stakeReturned + deliveryBonus } } });
+      logger.info(`[gig] PAB stake returned+bonus: agent ${winnerId} +${(stakeReturned + deliveryBonus)} PAB`);
+    } catch (e: any) { logger.warn('[gig] stake return skipped', e.message); }
+  }
+
+  // ── B. PAB referral fuel: helper earns PAB alongside the 0.2% SOL cut ──────
+  let referralPab = 0;
+  if (meta.referralCode) {
+    referralPab = +(budgetUsd * 0.5).toFixed(2); // 0.5 PAB per $1 referred (incentive fuel)
+    try {
+      await prisma.treasuryPosition.create({
+        data: { bucket: 'REFERRAL_EARNED', amount: referralPab, status: 'PENDING', txHash: `gig:${gigId}`, meta: { asset: 'PAB', source: 'REFERRAL_PAB', referralCode: meta.referralCode, gigId } },
+      });
+      logger.info(`[gig] helper ${meta.referralCode} earned ${referralPab} PAB (referral fuel)`);
+    } catch (e: any) { logger.warn('[gig] referral PAB skip', e.message); }
+  }
+
   gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: meta.escrow?.simulated ? 'ai-loop' : 'human' });
-  logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}`);
-  return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null };
+  logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}; PAB stake +${stakeReturned + deliveryBonus}, ref +${referralPab}`);
+  return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab };
 }
 
 export async function openBoard(limit = 50): Promise<any[]> {

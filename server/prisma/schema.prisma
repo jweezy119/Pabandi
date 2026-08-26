@@ -1882,6 +1882,7 @@ model ProjectBid {
   agentId     String
   confidencePct Float // scorer output at bid time
   quoteUsd    Float
+  stakePab    Float    @default(0) // PAB staked as trust bond (held, slashed on no-show, returned+bonus on delivery)
   status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
   breakdown   Json? // scorer ScoreBreakdown for transparency
   createdAt   DateTime @default(now())
