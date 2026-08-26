@@ -104,6 +104,7 @@
         <button data-f="all" class="on">All</button>
         <button data-f="real">Real people</button>
         <button data-f="ai-loop">AI demo</button>
+      <select id="catFilter" style="background:#1b2333;border:1px solid #2a3447;color:var(--muted);border-radius:999px;padding:6px 10px;font-size:11.5px;margin-left:auto"><option value="">All categories</option></select>
       </div>
       <div id="board"><div class="m">Loading…</div></div>
       <button id="refresh" class="ghost">Refresh board</button>
@@ -138,7 +139,7 @@
 <script>
 const API='https://pabandi.onrender.com/api/v1';
 function $(id){return document.getElementById(id);}
-let boardFilter='all', feedFilter='all';
+let boardFilter='all', feedFilter='all', catFilter='';
 
 async function post(){
   const skill=$('skill').value.trim(); if(!skill){alert('skill required');return;}
@@ -181,10 +182,15 @@ async function load(){
     const rows=b.data||[]; const s=st.data||{};
     $('cntPosted').textContent=s.posted||0; $('cntDone').textContent=s.completed||0;
     $('cntLive').textContent=s.open||0; $('cntSOL').textContent=(s.rakeSol||0).toFixed(1);
+    // populate category select
+    const cats=[...new Set(rows.map(r=>r.category).filter(Boolean))].sort();
+    const sel=$('catFilter'); const cur=sel.value; sel.innerHTML='<option value="">All categories</option>'+cats.map(c=>'<option value="'+c+'">'+c+'</option>').join(''); if(cats.includes(cur)) sel.value=cur;
     // tag board rows with source by matching open gigs to recent activity (best-effort)
     const feed=(await fetch(API+'/loops/activity').then(x=>x.json())).data||[];
     const srcByGig={}; feed.forEach(e=>{ if(e.gigId) srcByGig[e.gigId]=e.source||'human'; });
-    const view=rows.map(g=>({...g,_source:srcByGig[g.gigId]||'human'})).filter(g=>boardFilter==='all'||(boardFilter==='real'&&g._source!=='ai-loop')||(boardFilter==='ai-loop'&&g._source==='ai-loop'));
+    const view=rows.map(g=>({...g,_source:srcByGig[g.gigId]||'human'}))
+      .filter(g=>boardFilter==='all'||(boardFilter==='real'&&g._source!=='ai-loop')||(boardFilter==='ai-loop'&&g._source==='ai-loop'))
+      .filter(g=>!catFilter||g.category===catFilter);
     if(!view.length){ $('board').innerHTML='<div class="m">No gigs match this filter. Post one or hit AI demo.</div>'; return; }
     $('board').innerHTML=view.map(gigRow).join('');
   }catch(e){ $('board').innerHTML='<div class="m">Failed to load</div>'; }
@@ -210,6 +216,7 @@ async function feed(){
 function wireFilters(id, setter){ const bar=$(id); bar.querySelectorAll('button').forEach(b=>b.onclick=()=>{ bar.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setter(b.dataset.f); if(id==='boardFilter') load(); else feed(); }); }
 wireFilters('boardFilter', v=>boardFilter=v);
 wireFilters('feedFilter', v=>feedFilter=v);
+$('catFilter').onchange=()=>{ catFilter=$('catFilter').value; load(); };
 
 $('post').onclick=post; $('auto').onclick=autoPost; $('refresh').onclick=load;
 $('genRef').onclick=()=>{ const c=$('helperCode').value.trim()||'PABANDI'; $('refOut').innerHTML='Your link: <a href="'+location.pathname+'?ref='+encodeURIComponent(c)+'" target="_blank">'+location.host+location.pathname+'?ref='+c+'</a><br/>Share it. You earn 0.2% SOL on every gig posted through it.'; };

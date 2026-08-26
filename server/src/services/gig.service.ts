@@ -300,4 +300,24 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   return { gigId, claimedBy: claimerLabel, assignedAgentId, status: 'IN_PROGRESS' };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, openBoard, claimGig, completeGig };
+export async function pabStats(): Promise<any> {
+  const [agentAgg, pendingBids, referralPab] = await Promise.all([
+    prisma.web3Agent.aggregate({ _sum: { balancePab: true }, _count: { id: true } }),
+    prisma.projectBid.aggregate({ where: { status: 'PENDING' }, _sum: { stakePab: true } }),
+    prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED', meta: { path: ['asset'], equals: 'PAB' } } }),
+  ]);
+  const distributed = agentAgg._sum.balancePab || 0;
+  const staked = pendingBids._sum.stakePab || 0;
+  const referralEarned = referralPab.reduce((s: number, r: any) => s + (r.amount || 0), 0);
+  const SUPPLY = 1_000_000_000; // total $PAB minted
+  return {
+    supply: SUPPLY,
+    distributed: +distributed.toFixed(2),
+    circulatingPct: +((distributed / SUPPLY) * 100).toFixed(6),
+    stakedInBids: +staked.toFixed(2),
+    referralEarnedPab: +referralEarned.toFixed(2),
+    activeAgents: agentAgg._count.id || 0,
+  };
+}
+
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig };

@@ -46,9 +46,11 @@ router.post('/agents/:id/faucet', async (req: Request, res: Response, next: Next
   catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
 });
 
-/**
- * GET /api/v1/gigs — the OPEN BOARD any worker (human or AI agent) can browse + bid.
- */
+/** GET /api/v1/gigs/pab-stats — $PAB tokenomic dashboard (supply, distributed, staked, referral). */
+router.get('/pab-stats', async (_req: Request, res: Response, next: NextFunction) => {
+  try { const r = await gigService.pabStats(); res.json({ success: true, data: r }); }
+  catch (e: any) { next(e); }
+});
 router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const board = await gigService.openBoard();

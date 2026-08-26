@@ -72,39 +72,57 @@ export async function runProjectOwnerLoop(n = 3, referralCode = 'PABANDI'): Prom
   return out;
 }
 
-/** FREELANCER loop: scan OPEN board → AI agent BIDS (stakes PAB) → owner accepts → deliver.
- *  This is the full PAB trust economy in autonomous motion (not first-come claim). */
+/** FREELANCER loop: scan OPEN board → MULTIPLE AI agents COMPETE (bid + stake PAB) →
+ *  owner accepts the best bid (lowest quote, highest trust) → agent delivers.
+ *  This is the full PAB trust economy in autonomous, competitive motion. */
 export async function runFreelancerLoop(limit = 10): Promise<any[]> {
   state = readState(); // resume cumulative counters after a cold start
   const board = await gigService.openBoard(limit);
   if (!board.length) { logger.info('[loop:freelancers] board empty'); return []; }
 
-  // Pick (or create) an autonomous freelancer agent with PAB to stake.
-  let agent = await prisma.web3Agent.findFirst({ where: { isActive: true, category: board[0].category }, orderBy: { balancePab: 'desc' } });
-  if (!agent) agent = await prisma.web3Agent.findFirst({ where: { isActive: true }, orderBy: { balancePab: 'desc' } });
-  if (!agent) {
-    const reg = await gigService.registerAgent({ profileId: 'loop-freelancer', walletAddress: '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG', encryptedPrivateKey: 'demo', category: board[0].category, startingPab: 100 });
-    agent = await prisma.web3Agent.findUnique({ where: { id: reg.agentId } });
-  }
-  if (!agent) { logger.warn('[loop:freelancers] no agent available'); return []; }
-  // Top up if low on PAB so it can keep staking.
-  if ((agent.balancePab || 0) < 20) { await gigService.agentFaucet(agent.id, 100); }
+  // Ensure a roster of competing autonomous agents exists (distinct profiles so they bid against each other).
+  const roster = await ensureRoster(board[0].category);
+  if (!roster.length) { logger.warn('[loop:freelancers] no agents available'); return []; }
 
   const out: any[] = [];
   for (const g of board) {
     try {
-      const bid = await gigService.bidOnGig(g.gigId, { agentId: agent.id, quoteUsd: Math.round(g.budgetUsd * 0.95), stakePab: 10 });
+      // Each competing agent bids with its own quote + PAB stake (price competition).
+      const bids = [];
+      for (const a of roster) {
+        if ((a.balancePab || 0) < 20) await gigService.agentFaucet(a.id, 100); // keep them funded to stake
+        const quote = Math.round(g.budgetUsd * (0.88 + Math.random() * 0.12)); // 0.88–1.0x → real price competition
+        const stake = 10;
+        const b = await gigService.bidOnGig(g.gigId, { agentId: a.id, quoteUsd: quote, stakePab: stake });
+        bids.push(b);
+      }
+      // Owner accepts the BEST bid (acceptBestBid sorts by lowest quote).
       const accept = await gigService.acceptBestBid(g.gigId);
+      const winner = roster.find(r => r.id === accept.agentId) || roster[0];
       const done = await gigService.completeGig(g.gigId);
-      out.push({ gigId: g.gigId, agentId: agent.id, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
-      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${agent.id}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
+      out.push({ gigId: g.gigId, competingBids: bids.length, winner: accept.agentId, stakeReturned: done.stakeReturned, deliveryBonus: done.deliveryBonus, referralPab: done.referralPab, rakeSol: done.rakeSol });
+      logActivity({ kind: 'COMPLETE', role: 'freelancer', gigId: g.gigId, claimedBy: `agent:${accept.agentId}`, rakeSol: done.rakeSol, helperSol: done.helperSol, referralCode: g.referralCode, source: 'ai-loop' });
       state.freelancers.completed += 1;
-    } catch (e: any) { logger.warn('[loop:freelancers] bid/accept/complete failed', e.message); }
+    } catch (e: any) { logger.warn('[loop:freelancers] compete/accept/complete failed', e.message); }
   }
   state.freelancers = { lastRun: new Date().toISOString(), claimed: state.freelancers.claimed + board.length, completed: state.freelancers.completed, running: false };
   saveState(state);
-  logger.info(`[loop:freelancers] bid+delivered ${out.length} gigs (agent ${agent.id})`);
+  logger.info(`[loop:freelancers] ${out.length} gigs worked by ${roster.length} competing agents`);
   return out;
+}
+
+/** Ensure a roster of N competing autonomous agents exists for a category. */
+async function ensureRoster(category: string, n = 3): Promise<any[]> {
+  let agents = await prisma.web3Agent.findMany({ where: { isActive: true }, orderBy: { balancePab: 'desc' }, take: n });
+  while (agents.length < n) {
+    const reg = await gigService.registerAgent({
+      profileId: `loop-agent-${agents.length + 1}-${Date.now()}`, walletAddress: '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG',
+      encryptedPrivateKey: 'demo', category, startingPab: 100,
+    });
+    const a = await prisma.web3Agent.findUnique({ where: { id: reg.agentId } });
+    if (a) agents.push(a);
+  }
+  return agents;
 }
 
 let timers: NodeJS.Timeout[] = [];
