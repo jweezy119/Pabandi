@@ -37,7 +37,7 @@ function encryptPrivateKey(privateKey: string): string {
   return iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
 }
 
-function decryptPrivateKey(encrypted: string): string {
+export function decryptPrivateKey(encrypted: string): string {
   const [ivHex, tagHex, encryptedHex] = encrypted.split(':');
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');
