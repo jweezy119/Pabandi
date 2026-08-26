@@ -222,6 +222,8 @@ $('post').onclick=post; $('auto').onclick=autoPost; $('refresh').onclick=load;
 $('genRef').onclick=()=>{ const c=$('helperCode').value.trim()||'PABANDI'; $('refOut').innerHTML='Your link: <a href="'+location.pathname+'?ref='+encodeURIComponent(c)+'" target="_blank">'+location.host+location.pathname+'?ref='+c+'</a><br/>Share it. You earn 0.2% SOL on every gig posted through it.'; };
 load(); setInterval(load, 15000);
 feed(); setInterval(feed, 8000);
+// Wake the autonomous loops on visit (so the board is never empty). Fire-and-forget.
+fetch(API+'/loops/wake',{method:'POST'}).catch(()=>{});
 </script>
 </body>
 </html>

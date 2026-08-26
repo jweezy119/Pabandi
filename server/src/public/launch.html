@@ -184,6 +184,8 @@ $('lpPost').onclick=async()=>{
 };
 $('genRef').onclick=()=>{ const c=$('helperCode').value.trim()||'PABANDI'; $('refOut').innerHTML='Your link: <a href="https://pabandi.onrender.com/sdk/board.html?ref='+encodeURIComponent(c)+'" target="_blank">pabandi.onrender.com/sdk/board.html?ref='+c+'</a>'; };
 refresh(); pabDash(); setInterval(refresh, 8000); setInterval(pabDash, 12000);
+// Wake the autonomous loops on visit (so the board/feed is never empty). Fire-and-forget.
+fetch(API+'/loops/wake',{method:'POST'}).catch(()=>{});
 </script>
 </body>
 </html>

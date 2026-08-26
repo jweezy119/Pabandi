@@ -1,7 +1,19 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { loopService } from '../services/loop.service';
+import { prisma } from '../utils/database';
 
 const router = Router();
+
+/** GET /api/v1/loops/selfcheck — proves the live Prisma client can write+read GigEvent (cache-bust verification). */
+router.get('/selfcheck', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const before = await prisma.gigEvent.count();
+    const row = await prisma.gigEvent.create({ data: { kind: 'SELFCHECK', role: 'system', gigId: 'selfcheck', source: 'ai-loop' } });
+    const after = await prisma.gigEvent.count();
+    await prisma.gigEvent.delete({ where: { id: row.id } });
+    res.json({ success: true, data: { clientLive: true, before, after, wrote: after === before + 1 } });
+  } catch (e: any) { res.status(500).json({ success: false, error: e.message, clientLive: false }); }
+});
 
 /** GET /api/v1/loops — segment state + durable cumulative stats. */
 router.get('/', async (_req: Request, res: Response) => {
@@ -45,6 +57,15 @@ router.post('/freelancers/run', async (req: Request, res: Response, next: NextFu
     const out = await loopService.runFreelancerLoop((req.body || {}).limit || 10);
     res.json({ success: true, data: { worked: out.length, results: out } });
   } catch (e: any) { next(e); }
+});
+
+/** POST /api/v1/loops/wake — fire both loops once (catch-up). Called by the board/launch page on load
+ *  so the open board is never empty when a human visits, even on Render Free (which sleeps when idle). */
+router.post('/wake', async (_req: Request, res: Response) => {
+  res.json({ success: true, data: { triggered: true, note: 'loops running in background' } });
+  // fire-and-forget (don't block the response)
+  loopService.runProjectOwnerLoop(2).catch(() => {});
+  setTimeout(() => loopService.runFreelancerLoop(5).catch(() => {}), 1500);
 });
 
 export default router;
