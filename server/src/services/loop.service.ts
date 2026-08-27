@@ -1,6 +1,7 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { gigService } from './gig.service';
+import { programService } from './program.service';
 import { topDemandSkills } from './recommendation/autogen.service';
 import { recommendBestAgent, ProjectSpec } from './recommendation/agentScorer.service';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
@@ -149,14 +150,16 @@ export function startLoops(ownerMs = 3_600_000, freelancerMs = 1_800_000) {
     logger.info('[loop] autonomous loops OFF (set AUTONOMOUS_LOOPS=true to enable)');
     return;
   }
-  // Owner posts up to pipeline target; freelancers bid (open) + deliver a few (slow cadence).
+  // Owner posts up to pipeline target; freelancers bid (open) + deliver a few (slow cadence);
+  // programs advance (staff next task / complete finished ones).
   // Runs only while the process is awake; the external 24/7 pinger (POST /loops/heartbeat) covers idle gaps.
   timers.push(setInterval(() => {
     runProjectOwnerLoop(2, 'PABANDI', 6).catch(() => {});
     setTimeout(() => runFreelancerLoop(10).catch(() => {}), 1500);
     setTimeout(() => runFreelancerDeliver(2).catch(() => {}), 5000);
+    setTimeout(() => programService.runAllPrograms().catch(() => {}), 6000);
   }, ownerMs));
-  logger.info('[loop] autonomous segments started (project-owners + freelancers bid+deliver)');
+  logger.info('[loop] autonomous segments started (project-owners + freelancers bid+deliver + programs)');
 }
 export function stopLoops() { timers.forEach((t) => clearInterval(t)); timers = []; }
 

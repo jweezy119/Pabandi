@@ -125,4 +125,65 @@ export async function programStatus(programId: string): Promise<any> {
   };
 }
 
-export const programService = { createProgram, staffNextTask, programStatus };
+export const programService = { createProgram, staffNextTask, programStatus, runProgramLoop, runAllPrograms, listPrograms };
+
+/** List all programs with per-phase breakdown + live progress (for the public UI). */
+export async function listPrograms(): Promise<any[]> {
+  const programs = await prisma.program.findMany({ orderBy: { createdAt: 'desc' }, include: { tasks: { orderBy: { seq: 'asc' } } } });
+  const PHASES = ['Discovery & Spec', 'Build & Core', 'Integrate & Harden', 'Scale & Handoff'];
+  return programs.map((p) => {
+    const done = p.tasks.filter((t) => t.status === 'COMPLETED').length;
+    return {
+      programId: p.id, title: p.title, durationWeeks: p.durationWeeks, status: p.status,
+      totalBudgetUsd: p.totalBudgetUsd, taskCount: p.taskCount, completed: done,
+      progressPct: +((done / p.taskCount) * 100).toFixed(1),
+      perPhase: PHASES.map((ph) => ({
+        phase: ph,
+        tasks: p.tasks.filter((t) => t.title.startsWith(ph)).map((t) => ({ skill: t.skill, status: t.status, budgetUsd: t.budgetUsd })),
+      })).filter((ph) => ph.tasks.length),
+    };
+  });
+}
+
+/**
+ * Autonomous program loop: advance ONE program toward completion.
+ *  - If the current OPEN task's gig is delivered (COMPLETED), mark the task done and staff the next.
+ *  - If no task is OPEN, staff the next PLANNED task (creates its gig on the board).
+ *  - When all tasks are COMPLETED, mark the program COMPLETED.
+ * This lets a whole year-long, multi-task engagement run itself through the autonomous economy.
+ */
+export async function runProgramLoop(programId: string): Promise<any> {
+  const p = await prisma.program.findUnique({ where: { id: programId }, include: { tasks: { orderBy: { seq: 'asc' } } } });
+  if (!p) return { programId, error: 'not found' };
+  if (p.status === 'COMPLETED') return { programId, status: 'COMPLETED' };
+
+  const open = p.tasks.find((t) => t.status === 'OPEN');
+  if (open && open.gigId) {
+    const gig = await prisma.project.findUnique({ where: { id: open.gigId } });
+    if (gig && gig.status === 'COMPLETED') {
+      await prisma.programTask.update({ where: { id: open.id }, data: { status: 'COMPLETED', assignedAgentId: gig.bestAgentId || null } });
+      await prisma.gigEvent.create({ data: { kind: 'PROGRAM_TASK_DONE', role: 'freelancer', gigId: open.gigId, source: 'ai-loop', skill: open.skill, budgetUsd: open.budgetUsd } }).catch(() => {});
+    }
+  }
+  // Staff the next planned task (if pipeline has room on the open board).
+  const pending = p.tasks.find((t) => t.status === 'PLANNED');
+  let staffed: any = null;
+  if (pending) staffed = await staffNextTask(programId);
+
+  const refreshed = await prisma.program.findUnique({ where: { id: programId }, include: { tasks: true } });
+  const done = refreshed!.tasks.filter((t) => t.status === 'COMPLETED').length;
+  if (done === refreshed!.taskCount) {
+    await prisma.program.update({ where: { id: programId }, data: { status: 'COMPLETED' } });
+  }
+  return { programId, status: refreshed!.status, completed: done, total: refreshed!.taskCount, staffed: staffed?.staffed || false };
+}
+
+/** Run the autonomous loop across every ACTIVE/PLANNED program (used by heartbeat + startLoops). */
+export async function runAllPrograms(): Promise<any[]> {
+  const programs = await prisma.program.findMany({ where: { status: { in: ['PLANNED', 'ACTIVE'] } } });
+  const out: any[] = [];
+  for (const p of programs) {
+    try { out.push(await runProgramLoop(p.id)); } catch (e: any) { /* keep going */ }
+  }
+  return out;
+}

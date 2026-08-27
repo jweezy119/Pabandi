@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { loopService } from '../services/loop.service';
+import { programService } from '../services/program.service';
 import { prisma } from '../utils/database';
 
 const router = Router();
@@ -70,12 +71,13 @@ router.post('/wake', async (_req: Request, res: Response) => {
   setTimeout(() => loopService.runFreelancerLoop(10).catch(() => {}), 1200); // bid phase: gigs stay OPEN w/ competing bids
 });
 
-/** POST /api/v1/loops/heartbeat — full cycle including delivery. Used by the 24/7 external pinger (slow cadence). */
+/** POST /api/v1/loops/heartbeat — full cycle including delivery + program advancement. Used by the 24/7 external pinger (slow cadence). */
 router.post('/heartbeat', async (_req: Request, res: Response) => {
-  res.json({ success: true, data: { triggered: true, note: 'full cycle incl. delivery' } });
+  res.json({ success: true, data: { triggered: true, note: 'full cycle incl. delivery + programs' } });
   loopService.runProjectOwnerLoop(2, 'PABANDI', 6).catch(() => {});
   setTimeout(() => loopService.runFreelancerLoop(10).catch(() => {}), 1200);
   setTimeout(() => loopService.runFreelancerDeliver(2).catch(() => {}), 5000); // deliver a few → feed shows delivery
+  setTimeout(() => programService.runAllPrograms().catch(() => {}), 6000); // advance any active programs
 });
 
 /** POST /api/v1/loops/freelancers/deliver — accept best bid + deliver a limited number of open gigs. */
