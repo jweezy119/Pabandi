@@ -129,13 +129,17 @@ export async function runFreelancerDeliver(limit = 2): Promise<any[]> {
   return out;
 }
 
-/** Ensure a roster of N competing autonomous agents exists for a category. */
+/** Ensure a roster of N competing autonomous agents exists for a category.
+ *  Each gets a DISTINCT trust stake so capability-weighting is meaningful: a proven "veteran"
+ *  (high stake) beats a no-name undercutter — exactly the "right freelancer" guarantee. */
 async function ensureRoster(category: string, n = 3): Promise<any[]> {
   let agents = await prisma.web3Agent.findMany({ where: { isActive: true }, orderBy: { balancePab: 'desc' }, take: n });
+  const stakes = [5000, 2500, 800]; // veteran, mid, junior — varies the trust signal on purpose
   while (agents.length < n) {
+    const slot = agents.length;
     const reg = await gigService.registerAgent({
-      profileId: `loop-agent-${agents.length + 1}-${Date.now()}`, walletAddress: '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG',
-      encryptedPrivateKey: 'demo', category, startingPab: 100,
+      profileId: `loop-agent-${slot + 1}-${Date.now()}`, walletAddress: '5AR6fsezB8NTYQWwP1DxysuKPZAEY12yeVt22hL6FvdG',
+      encryptedPrivateKey: 'demo', category, startingPab: stakes[slot] ?? 500,
     });
     const a = await prisma.web3Agent.findUnique({ where: { id: reg.agentId } });
     if (a) agents.push(a);

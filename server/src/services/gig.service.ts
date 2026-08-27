@@ -153,6 +153,15 @@ export async function registerAgent(input: AgentSignup): Promise<any> {
       category: input.category, isActive: true, prepared: true, balancePab: input.startingPab ?? 100,
     },
   });
+  // A PAB trust stake is the agent's skin-in-the-game. Record it so the capability scorer can
+  // differentiate a proven stakeholder from a no-name — this is what makes "the right freelancer"
+  // a real, auditable decision rather than a coin-flip.
+  const stakePab = input.startingPab ?? 100;
+  await prisma.agentStake.upsert({
+    where: { agentId: agent.id },
+    create: { agentId: agent.id, amountPab: stakePab, vault: process.env.PABANDI_TREASURY_WALLET || 'PABANDI_TREASURY', indexed: stakePab >= 2000 },
+    update: { amountPab: { increment: stakePab }, indexed: stakePab >= 2000 },
+  });
   // Issue a Pabandi Agent Passport with act:book so it can claim/bid gigs.
   const passport = ptpEngine.issueAgentPassport({
     agentId: agent.id, ownerUserId: input.ownerUserId || agent.id,
