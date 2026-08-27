@@ -157,15 +157,29 @@ export async function runProgramLoop(programId: string): Promise<any> {
   if (!p) return { programId, error: 'not found' };
   if (p.status === 'COMPLETED') return { programId, status: 'COMPLETED' };
 
-  const open = p.tasks.find((t) => t.status === 'OPEN');
-  if (open && open.gigId) {
-    const gig = await prisma.project.findUnique({ where: { id: open.gigId } });
-    if (gig && gig.status === 'COMPLETED') {
-      await prisma.programTask.update({ where: { id: open.id }, data: { status: 'COMPLETED', assignedAgentId: gig.bestAgentId || null } });
-      await prisma.gigEvent.create({ data: { kind: 'PROGRAM_TASK_DONE', role: 'freelancer', gigId: open.gigId, source: 'ai-loop', skill: open.skill, budgetUsd: open.budgetUsd } }).catch(() => {});
+  // 1) Complete any OPEN task whose gig has already been delivered by the freelancer economy.
+  for (const t of p.tasks) {
+    if (t.status === 'OPEN' && t.gigId) {
+      const gig = await prisma.project.findUnique({ where: { id: t.gigId } });
+      if (gig && gig.status === 'COMPLETED') {
+        await prisma.programTask.update({ where: { id: t.id }, data: { status: 'COMPLETED', assignedAgentId: gig.bestAgentId || null } });
+        await prisma.gigEvent.create({ data: { kind: 'PROGRAM_TASK_DONE', role: 'freelancer', gigId: t.gigId, source: 'ai-loop', skill: t.skill, budgetUsd: t.budgetUsd } }).catch(() => {});
+      }
     }
   }
-  // Staff the next planned task (if pipeline has room on the open board).
+  // 2) Drive delivery of the earliest still-OPEN task (accept best bid + release). Bids land via the
+  //    freelancer loop; if none yet, this is a no-op and the next advance delivers it.
+  const openTask = p.tasks.find((t) => t.status === 'OPEN' && t.gigId);
+  if (openTask && openTask.gigId) {
+    try {
+      const gid = openTask.gigId;
+      await gigService.acceptBestBid(gid);
+      const done = await gigService.completeGig(gid);
+      await prisma.programTask.update({ where: { id: openTask.id }, data: { status: 'COMPLETED' } });
+      await prisma.gigEvent.create({ data: { kind: 'PROGRAM_TASK_DONE', role: 'freelancer', gigId: gid, source: 'ai-loop', skill: openTask.skill, budgetUsd: openTask.budgetUsd, rakeSol: (done as any).rakeSol } }).catch(() => {});
+    } catch { /* no bids yet, or already delivered — next advance handles it */ }
+  }
+  // 3) Staff the next PLANNED task (creates its gig on the open board).
   const pending = p.tasks.find((t) => t.status === 'PLANNED');
   let staffed: any = null;
   if (pending) staffed = await staffNextTask(programId);
