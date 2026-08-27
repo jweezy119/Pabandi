@@ -92,7 +92,7 @@
     </div>
 
     <div class="card">
-      <h2>🔍 Open board <span class="live-dot"></span></h2>
+      <h2>🔍 Open board <span class="live-dot"></span> <span id="upd" style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px"></span></h2>
       <div class="stat">
         <div class="c"><div class="s" id="cntPosted">0</div><div class="l">posted</div></div>
         <div class="c"><div class="s" id="cntDone">0</div><div class="l">delivered</div></div>
@@ -161,6 +161,14 @@ async function claim(gigId){
     alert('Claimed by '+r.data.claimedBy+'\nNow deliver the work, then mark complete to release SOL escrow.'); load();
   }catch(e){ alert('Error: '+e.message); }
 }
+async function bookGig(gigId, budgetUsd){
+  try{
+    const solAmount = +(budgetUsd/800).toFixed(4) || 1; // book at ~$800/gig scale, min 1 SOL demo
+    const r=await fetch(API+'/economy/demo-book',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ gigId, solAmount, referralCode:$('ref').value.trim()||undefined })}).then(x=>x.json());
+    if(!r.success) throw new Error(r.error||'booking failed');
+    alert('✅ Booking complete!\nGig: '+gigId+'\nPlatform rake: '+r.data.rakeSol+' SOL'+(r.data.referralSol?'\nReferral kickback: '+r.data.referralSol+' SOL':'')+'\n(simulated — connect a wallet to settle on-chain)');
+  }catch(e){ alert('Error: '+e.message); }
+}
 async function complete(gigId){
   if(!confirm('Mark this gig delivered? SOL escrow releases, 1% rake + 0.2% helper cut recorded.')) return;
   try{ const r=await fetch(API+'/gigs/'+gigId+'/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(x=>x.json());
@@ -171,7 +179,7 @@ async function complete(gigId){
 function gigRow(g){
   if(boardFilter!=='all' && g._source!==boardFilter && !(boardFilter==='real'&&g._source!=='ai-loop')) return '';
   const tag=g.status==='OPEN'?'<span class="tag open">OPEN</span>':g.status==='IN_PROGRESS'?'<span class="tag prog">IN PROGRESS</span>':'<span class="tag">'+g.status+'</span>';
-  const btn=g.status==='OPEN'?'<button class="claim ghost" onclick="claim(\''+g.gigId+'\')">Claim as freelancer</button>':g.status==='IN_PROGRESS'?'<button class="claim" onclick="complete(\''+g.gigId+'\')">✅ Mark delivered → release SOL</button>':'<span class="m">paid</span>';
+  const btn=g.status==='OPEN'?'<button class="claim ghost" onclick="claim(\''+g.gigId+'\')">Claim as freelancer</button>'+'<button class="claim" onclick="bookGig(\''+g.gigId+'\','+(g.budgetUsd||0)+')">💳 Book this agent →</button>':g.status==='IN_PROGRESS'?'<button class="claim" onclick="complete(\''+g.gigId+'\')">✅ Mark delivered → release SOL</button>':'<span class="m">paid</span>';
   const bidInfo = g.competingBids ? `<span class="tag real" style="background:#2d1e3a;color:#c08bff">⚔️ ${g.competingBids} agents bidding${g.lowestQuote?` · from $${g.lowestQuote}`:''}</span>` : '';
   return `<div class="row">${tag}${bidInfo}<span class="t">${g.title}</span>
     <div class="m">${g.category} · $${g.budgetUsd} · demand +${g.demandGrowthPct}%</div>
@@ -194,6 +202,7 @@ async function load(){
       .filter(g=>!catFilter||g.category===catFilter);
     if(!view.length){ $('board').innerHTML='<div class="m">No gigs match this filter. Post one or hit AI demo.</div>'; return; }
     $('board').innerHTML=view.map(gigRow).join('');
+    $('upd').textContent='· live · '+new Date().toLocaleTimeString();
   }catch(e){ $('board').innerHTML='<div class="m">Failed to load</div>'; }
 }
 async function feed(){
@@ -221,8 +230,8 @@ $('catFilter').onchange=()=>{ catFilter=$('catFilter').value; load(); };
 
 $('post').onclick=post; $('auto').onclick=autoPost; $('refresh').onclick=load;
 $('genRef').onclick=()=>{ const c=$('helperCode').value.trim()||'PABANDI'; $('refOut').innerHTML='Your link: <a href="'+location.pathname+'?ref='+encodeURIComponent(c)+'" target="_blank">'+location.host+location.pathname+'?ref='+c+'</a><br/>Share it. You earn 0.2% SOL on every gig posted through it.'; };
-load(); setInterval(load, 15000);
-feed(); setInterval(feed, 8000);
+load(); setInterval(load, 5000);
+feed(); setInterval(feed, 5000);
 // Wake the autonomous loops on visit (so the board is never empty). Fire-and-forget.
 fetch(API+'/loops/wake',{method:'POST'}).catch(()=>{});
 </script>

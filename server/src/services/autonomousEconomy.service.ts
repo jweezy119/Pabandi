@@ -63,13 +63,13 @@ export class AutonomousEconomyService {
    * base64 tx. Returns { serializedTx, rakeSol, netToProtocol, bookingRef }.
    * This is genuine profit: external SOL in, 1% skimmed, rest settles the booking.
    */
-  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; solAmount?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; simulated: true }> {
+  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; gigId?: string; solAmount?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; simulated: true }> {
     const solAmount = opts?.solAmount ?? 1.0;
     const rake = +(solAmount * 0.01).toFixed(6);
     const referralSol = opts?.referralCode ? +(rake * 0.2).toFixed(6) : 0;
     const partnerSol = opts?.partnerId ? +(solAmount * 0.001).toFixed(6) : 0;
     const ref = `demo:${Date.now()}`;
-    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, note: 'demo booking' } } }).catch(() => {});
+    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, gigId: opts?.gigId, note: 'demo booking' } } }).catch(() => {});
     if (referralSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'REFERRAL_EARNED', amount: referralSol, status: 'PENDING', txHash: `${ref}:ref`, meta: { asset: 'SOL', source: 'REFERRAL', referralCode: opts?.referralCode, simulated: true } } }).catch(() => {});
     if (partnerSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'PARTNER_FEE', amount: partnerSol, status: 'DEPLOYED', txHash: `${ref}:partner`, meta: { asset: 'SOL', source: 'PARTNER_FEE', partnerId: opts?.partnerId, simulated: true } } }).catch(() => {});
     return { bookingRef: ref, rakeSol: rake, referralSol, partnerSol, simulated: true };
