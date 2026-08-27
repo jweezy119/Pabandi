@@ -27,6 +27,16 @@ import { Keypair, LAMPORTS_PER_SOL, SystemProgram, Transaction, Connection, Publ
 const STORE = process.env.GIG_STORE || '.data/gigs.json';
 const GIG_ACTIVITY = process.env.GIG_ACTIVITY || '.data/activity.jsonl';
 const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const TREASURY_WALLET = process.env.PABANDI_TREASURY_WALLET || process.env.SOLANA_PUBKEY || '';
+
+/** Live SOL buffer in the treasury wallet. Returns 0 on any error (keeps autonomous reinvest dormant + honest). */
+async function treasurySolBuffer(): Promise<number> {
+  if (!TREASURY_WALLET) return 0;
+  try {
+    const conn = new Connection(SOLANA_RPC, 'confirmed');
+    return (await conn.getBalance(new PublicKey(TREASURY_WALLET))) / LAMPORTS_PER_SOL;
+  } catch { return 0; }
+}
 
 type GigExtra = {
   referralCode?: string | null;
@@ -41,6 +51,7 @@ type GigExtra = {
   completedTx?: string | null;
   acceptedBidId?: string | null;
   stakePab?: number;
+  bidRanking?: { agentId: string; trust: number; value: number; quote: number }[];
 };
 const extras: Record<string, GigExtra> = loadStore();
 
@@ -178,29 +189,61 @@ export async function bidOnGig(gigId: string, opts: { agentId: string; quoteUsd?
 }
 
 // ── 4. ACCEPT BEST BID → deposit budget into escrow ─────────────────────────
+/**
+ * Capability-weighted bid selection: we don't just take the cheapest quote. We score every
+ * bidder on DEPTH, not price:
+ *   trust   = PAB stake held (skin-in-the-game)        → up to +40
+ *   track   = first-party completion rate (real history)→ up to +35
+ *   skill   = category/skill match to the gig          → up to +25
+ * Then we pick the best VALUE = trustScore normalized by quote (cheaper for equal trust wins,
+ * but a trusted veteran beats a no-name undercutter). This is what makes "the right freelancer
+ * per task" a real, auditable decision — not a race to the bottom.
+ */
+async function scoreBidder(bid: any, gig: any): Promise<{ agentId: string; trust: number; value: number; quote: number }> {
+  const agent = await prisma.web3Agent.findUnique({ where: { id: bid.agentId } });
+  if (!agent) return { agentId: bid.agentId, trust: 0, value: 0, quote: bid.quoteUsd };
+  const stake = await prisma.agentStake.findUnique({ where: { agentId: bid.agentId } });
+  const trust = Math.min(40, ((stake?.amountPab || 0) / 2000) * 40); // 2000 PAB stake = full trust pts
+  // first-party completion history (real, free signal)
+  const bookings = await prisma.agentBooking.findMany({ where: { OR: [{ fromAgentId: bid.agentId }, { toAgentId: bid.agentId }] }, select: { status: true, simulated: true } });
+  const real = bookings.filter((b) => !b.simulated);
+  const completionRate = real.length ? real.filter((b) => b.status === 'COMPLETED').length / real.length : 0;
+  const track = completionRate * 35;
+  const skill = agent.category === gig.category ? 25 : 0;
+  const totalTrust = Math.min(100, trust + track + skill);
+  // value = trust per $1000 of quote (higher = more trust for the money). Floor quote to avoid div0.
+  const value = totalTrust / Math.max(200, bid.quoteUsd) * 1000;
+  return { agentId: bid.agentId, trust: Math.round(totalTrust), value: +value.toFixed(2), quote: bid.quoteUsd };
+}
+
 export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: string; clientWallet?: string } = {}): Promise<any> {
   const gig = await prisma.project.findUnique({ where: { id: gigId } });
   if (!gig) throw new Error('Gig not found');
   if (gig.status !== 'OPEN') throw new Error(`Gig is ${gig.status}`);
-  const bids = await prisma.projectBid.findMany({ where: { projectId: gigId, status: 'PENDING' }, orderBy: { quoteUsd: 'asc' } });
+  const bids = await prisma.projectBid.findMany({ where: { projectId: gigId, status: 'PENDING' } });
   if (!bids.length) throw new Error('No bids to accept — agents must bid first');
-  const best = bids[0];
+  // Score every bidder; pick highest VALUE (trust per dollar). Surface the ranking for transparency.
+  const scored = [];
+  for (const b of bids) scored.push(await scoreBidder(b, gig));
+  scored.sort((a, b) => b.value - a.value);
+  const pick = scored[0];
+  const best = bids.find((x) => x.agentId === pick.agentId)!;
   const agent = await prisma.web3Agent.findUnique({ where: { id: best.agentId } });
 
   // Deposit the project-owner budget into escrow (on-chain when possible).
   const escrowSol = +(gig.budgetUsd * 0.01).toFixed(6); // escrow float = 1% rake buffer; full budget is off-chain USD
   const dep = await depositToEscrow(opts.payerSecretB64 || agent?.encryptedPrivateKey || '', escrowSol, `escrow:${gigId}`);
 
-  await prisma.project.update({ where: { id: gigId }, data: { status: 'IN_PROGRESS', bestAgentId: best.agentId, bestConfidence: best.confidencePct } });
-  await prisma.projectBid.update({ where: { id: best.id }, data: { status: 'ACCEPTED' } });
+  await prisma.project.update({ where: { id: gigId }, data: { status: 'IN_PROGRESS', bestAgentId: best.agentId, bestConfidence: pick.trust } });
+  await prisma.projectBid.update({ where: { id: best.id }, data: { status: 'ACCEPTED', confidencePct: pick.trust } });
 
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
   ex.escrow = { funded: true, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
-  ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; saveStore();
+  ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; ex.bidRanking = scored; saveStore();
   await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
 
-  logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId}; escrow funded (simulated=${dep.simulated})`);
-  return { gigId, acceptedBidId: best.id, agentId: best.agentId, escrowFunded: true, simulated: dep.simulated, txHash: dep.txHash };
+  logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId} (trust ${pick.trust}, value ${pick.value}); escrow funded (simulated=${dep.simulated})`);
+  return { gigId, acceptedBidId: best.id, agentId: best.agentId, trustScore: pick.trust, bidRanking: scored, escrowFunded: true, simulated: dep.simulated, txHash: dep.txHash };
 }
 
 // ── 5. DELIVER → release escrow + rake ──────────────────────────────────────
@@ -216,6 +259,16 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
     await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rakeSol, status: 'DEPLOYED', txHash: txHash || `gig:${gigId}`, meta: { asset: 'SOL', source: 'GIG_RAKE', gigId, simulated: meta.escrow?.simulated || false } } });
     if (helperSol > 0 && meta.referralCode) {
       await prisma.treasuryPosition.create({ data: { bucket: 'REFERRAL_EARNED', amount: helperSol, status: 'PENDING', txHash: `gig:${gigId}`, meta: { asset: 'SOL', source: 'REFERRAL', referralCode: meta.referralCode, gigId } } });
+    }
+    // ── C. AUTONOMOUS REINVESTMENT ── the platform's cut (rake) becomes future fuel.
+    //  When the treasury SOL buffer is above the safety floor, a slice is earmarked to fund the
+    //  next bookings' PAB trust stakes + agent seeding, so the autonomous economy compounds itself.
+    //  Treasury is currently below SOL_FLOOR (0.05), so this stays dormant and honest — no fake yield.
+    const SOL_FLOOR = Number(process.env.SOL_FLOOR || 0.05);
+    if (rakeSol > 0 && (await treasurySolBuffer()) > SOL_FLOOR) {
+      const reinvest = +(rakeSol * 0.5).toFixed(6); // 50% of rake reinvested into the loop
+      await prisma.treasuryPosition.create({ data: { bucket: 'REINVEST', amount: reinvest, status: 'DEPLOYED', txHash: `gig:${gigId}`, meta: { asset: 'SOL', source: 'AUTONOMOUS_REINVEST', gigId } } });
+      logger.info(`[gig] autonomous reinvest ${reinvest} SOL back into booking engine`);
     }
   } catch (e) { logger.warn('[gig] ledger write skipped', e); }
   await prisma.project.update({ where: { id: gigId }, data: { status: 'COMPLETED' } });
@@ -324,4 +377,19 @@ export async function pabStats(): Promise<any> {
   };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig };
+/** Transparent bid ranking for a gig — "why this agent won", surfaced to the public explainer. */
+export async function bidRanking(gigId: string): Promise<any> {
+  const gig = await prisma.project.findUnique({ where: { id: gigId } });
+  if (!gig) throw new Error('Gig not found');
+  const stored = extras[gigId]?.bidRanking;
+  if (stored) return { gigId, winner: extras[gigId]?.claimedBy || null, ranked: stored };
+  // Recompute on demand if not yet accepted.
+  const bids = await prisma.projectBid.findMany({ where: { projectId: gigId, status: 'PENDING' } });
+  if (!bids.length) return { gigId, ranked: [] };
+  const scored = [];
+  for (const b of bids) scored.push(await scoreBidder(b, gig));
+  scored.sort((a, b) => b.value - a.value);
+  return { gigId, ranked: scored };
+}
+
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking };

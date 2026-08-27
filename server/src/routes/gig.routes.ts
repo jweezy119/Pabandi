@@ -81,6 +81,14 @@ router.post('/:id/accept-bid', async (req: Request, res: Response, next: NextFun
   } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
 });
 
+/** GET /api/v1/gigs/:id/bid-ranking — transparent "why this agent won" breakdown (trust/skill/value per bidder). */
+router.get('/:id/bid-ranking', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const r = await gigService.bidRanking(req.params.id);
+    res.json({ success: true, data: r });
+  } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
+});
+
 /** POST /api/v1/gigs/:id/claim — (legacy first-come claim; bidding is preferred). */
 router.post('/:id/claim', async (req: Request, res: Response, next: NextFunction) => {
   try {
