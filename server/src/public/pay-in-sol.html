@@ -86,68 +86,60 @@ $('pay').addEventListener('click', pay);
 
 async function pay(){
   $('pay').disabled = true;
+  const solAmount = parseFloat($('amount').value);
+  const agentId = $('agent').value;
+  if (!(solAmount > 0)) { setStatus('Enter a valid SOL amount', 'err'); $('pay').disabled = false; return; }
   try {
-    const solAmount = parseFloat($('amount').value);
-    const agentId = $('agent').value;
-    if (!(solAmount > 0)) throw new Error('Enter a valid SOL amount');
-
-    // 1) get the payer pubkey
-    let payerPub;
-    if (window.solana && window.solana.isPhantom) {
-      await window.solana.connect();
-      payerPub = window.solana.publicKey.toString();
-    } else {
-      const k = prompt('No Phantom detected. Paste your base58 private key to sign (demo only):');
-      if (!k) throw new Error('Cancelled');
-      const { Keypair } = solanaWeb3;
-      const bs58 = await import('https://esm.run/bs58');
-      const kp = Keypair.fromSecretKey(bs58.default.decode(k));
-      payerPub = kp.publicKey.toString();
-      window.__kp = kp;
+    // Preferred path: real wallet (Phantom). Falls back to a server-side demo booking
+    // (simulated:true, honest) so ANY visitor — business or customer — completes a booking
+    // even with no SOL/wallet. Both record the same platform rake + referral + partner flow.
+    const wantRealWallet = (window.solana && window.solana.isPhantom);
+    if (wantRealWallet) {
+      try {
+        await realWalletBooking(solAmount, agentId);
+        return;
+      } catch (we) {
+        setStatus('Wallet booking failed (' + we.message + '). Falling back to demo booking…', 'mut');
+      }
     }
-    setStatus('Wallet: ' + payerPub.slice(0,8) + '…\nRequesting SOL checkout…');
-
-    // 2) request the charge-rake tx from the server
-    const r = await fetch(API + '/sol-checkout', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ payer: payerPub, solAmount, agentId, note:'demo SOL booking',
-        referralCode: $('referral').value || undefined,
-        partnerId: $('partner').value || undefined })
-    });
-    const j = await r.json();
-    if (!j.success) throw new Error(j.error || 'sol-checkout failed');
-    const { serializedTx, bookingRef, rakeSol } = j.data;
-    setStatus('Checkout ready.\nRake: ' + rakeSol + ' SOL\nBroadcasting transaction…');
-
-    // 3) sign + broadcast
-    const tx = Transaction.from(Buffer.from(serializedTx, 'base64'));
-    let sig;
-    if (window.solana && window.solana.isPhantom) {
-      sig = await window.solana.signAndSendTransaction(tx);
-      sig = sig.signature;
-    } else {
-      tx.partialSign(window.__kp);
-      sig = await conn.sendRawTransaction(tx.serialize(), { skipPreflight:false });
-    }
-    await conn.confirmTransaction(sig, 'confirmed');
-    setStatus('Tx broadcast: ' + sig.slice(0,12) + '…\nConfirming revenue on server…', 'ok');
-
-    // 4) confirm rake (records platform revenue)
-    const c = await fetch(API + '/confirm-rake', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ bookingRef, txHash: sig })
-    });
-    const cj = await c.json();
-    if (cj.success && cj.data.confirmed) {
-      setStatus('✅ Booking paid on-chain.\nPlatform rake collected: ' + cj.data.rakeSol + ' SOL\nTx: ' + sig, 'ok');
-    } else {
-      setStatus('Paid on-chain but server confirm pending.\nTx: ' + sig, 'mut');
-    }
+    await demoBooking(solAmount, agentId);
   } catch (e) {
     setStatus('Error: ' + e.message, 'err');
   } finally {
     $('pay').disabled = false;
   }
+}
+
+// Real on-chain booking via Phantom.
+async function realWalletBooking(solAmount, agentId){
+  await window.solana.connect();
+  const payerPub = window.solana.publicKey.toString();
+  setStatus('Wallet: ' + payerPub.slice(0,8) + '…\\nRequesting SOL checkout…');
+  const r = await fetch(API + '/sol-checkout', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ payer: payerPub, solAmount, agentId, note:'SOL booking', referralCode: $('referral').value || undefined, partnerId: $('partner').value || undefined }) });
+  const j = await r.json();
+  if (!j.success) throw new Error(j.error || 'sol-checkout failed');
+  const { serializedTx, bookingRef, rakeSol } = j.data;
+  setStatus('Checkout ready.\\nRake: ' + rakeSol + ' SOL\\nBroadcasting…');
+  const tx = Transaction.from(Buffer.from(serializedTx, 'base64'));
+  let sig = (await window.solana.signAndSendTransaction(tx)).signature;
+  await conn.confirmTransaction(sig, 'confirmed');
+  setStatus('Tx broadcast: ' + sig.slice(0,12) + '…\\nConfirming…', 'ok');
+  const c = await fetch(API + '/confirm-rake', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bookingRef, txHash: sig }) });
+  const cj = await c.json();
+  if (cj.success && cj.data.confirmed) setStatus('✅ Booking paid on-chain.\\nPlatform rake: ' + cj.data.rakeSol + ' SOL\\nTx: ' + sig, 'ok');
+  else setStatus('Paid on-chain; server confirm pending.\\nTx: ' + sig, 'mut');
+}
+
+// Server-side demo booking — completes for any visitor, no wallet/SOL needed (simulated:true).
+async function demoBooking(solAmount, agentId){
+  setStatus('Running booking (no wallet needed)…');
+  const r = await fetch(API + '/demo-book', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ solAmount, agentId, referralCode: $('referral').value || undefined, partnerId: $('partner').value || undefined }) });
+  const j = await r.json();
+  if (!j.success) throw new Error(j.error || 'demo-book failed');
+  const d = j.data;
+  setStatus('✅ Booking complete.\\nPlatform rake: ' + d.rakeSol + ' SOL' + (d.referralSol ? '\\nReferral kickback: ' + d.referralSol + ' SOL' : '') + (d.partnerSol ? '\\nPartner fee: ' + d.partnerSol + ' SOL' : '') + '\\n(simulated — connect Phantom to settle on-chain)', 'ok');
 }
 </script>
 </body>

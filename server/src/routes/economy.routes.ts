@@ -52,6 +52,29 @@ router.post('/sol-checkout', async (req, res) => {
   }
 });
 
+// ── Demo booking (no wallet): full booking cycle server-side, simulated:true ──
+router.post('/demo-book', async (req, res) => {
+  try {
+    const { referralCode, partnerId, agentId, solAmount } = req.body || {};
+    const r = await autonomousEconomyService.demoBook({ referralCode, partnerId, agentId, solAmount: solAmount ? Number(solAmount) : undefined });
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── Confirm human rake (closes the booking after the payer broadcasts) ──
+router.post('/confirm-rake', async (req, res) => {
+  try {
+    const { bookingRef, txHash } = req.body || {};
+    if (!bookingRef || !txHash) return res.status(400).json({ success: false, error: 'bookingRef + txHash required' });
+    const r = await autonomousEconomyService.confirmRake(bookingRef, txHash);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── Yield router (option Y): route USER external SOL → JitoSOL, platform skims entry fee ──
 // Quote a yield route (no on-chain action)
 router.post('/quote-yield', async (req, res) => {
