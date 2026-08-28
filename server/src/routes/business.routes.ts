@@ -67,7 +67,9 @@ router.get('/', rateLimiter, async (req, res, next) => {
 
       // Real DB-level text search (open-source Postgres `contains`, no external API).
       // When the user typed something, we filter at the database layer by name /
-      // description / city / category so genuine matches rank first.
+      // description / city / address so genuine matches rank first.
+      // NOTE: `category` is a Prisma ENUM — `contains`/insensitive is unsupported on
+      // enums, so category matching stays as an exact filter (handled above).
       if (cleanSearch) {
         const terms = String(cleanSearch).trim().split(/\s+/).filter((t) => t.length > 1);
         if (terms.length > 0) {
@@ -76,7 +78,6 @@ router.get('/', rateLimiter, async (req, res, next) => {
               { name: { contains: t, mode: 'insensitive' } },
               { description: { contains: t, mode: 'insensitive' } },
               { city: { contains: t, mode: 'insensitive' } },
-              { category: { contains: t, mode: 'insensitive' } },
               { address: { contains: t, mode: 'insensitive' } },
             ],
           }));
