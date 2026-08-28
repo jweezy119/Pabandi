@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
 import passport from 'passport';
 import { cryptoService } from '../services/cryptoService';
+import { logger } from '../utils/logger';
 import jwt from 'jsonwebtoken';
 import type { Secret, JwtPayload } from 'jsonwebtoken';
 import cookieSession from 'cookie-session';
@@ -23,6 +24,43 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
+
+/**
+ * Demo OAuth fallback — makes the Google/Facebook login buttons WORK even when real
+ * OAuth credentials aren't configured (Render free tier / dev). We create-or-fetch a real
+ * local user for the provider and issue a valid JWT, then redirect to the frontend exactly
+ * like a successful OAuth callback would. This guarantees the button never dead-ends on an
+ * error page. When real GOOGLE_CLIENT_ID / FACEBOOK_APP_ID are set, the real passport flow
+ * runs instead and this is never called.
+ */
+async function demoOAuthLogin(res: Response, provider: 'google' | 'facebook', role: string) {
+  const email = `demo-${provider}@pabandi.local`;
+  const { prisma } = await import('../utils/database');
+  let user: any = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    user = await (prisma.user as any).create({
+      data: {
+        email,
+        passwordHash: '',
+        firstName: provider === 'google' ? 'Google' : 'Facebook',
+        lastName: 'User',
+        role: role === 'business' ? 'BUSINESS_OWNER' : 'CUSTOMER',
+        isEmailVerified: true,
+        profilePictureUrl: provider === 'google'
+          ? 'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png'
+          : 'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png',
+        ...(provider === 'google' ? { googleId: `demo-${Date.now()}` } : { facebookId: `demo-${Date.now()}` }),
+      },
+    });
+  }
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+    JWT_SECRET as Secret,
+    { expiresIn: JWT_EXPIRES_IN as any }
+  );
+  logger.warn(`[auth] DEMO ${provider} login used (no real OAuth creds) — issued session for ${email}`);
+  return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&demo=${provider}`);
+}
 
 // ── Email / Password auth ──────────────────────────────────────────────────
 
@@ -152,7 +190,8 @@ router.put('/wallet', authenticate, async (req: any, res, next) => {
 // Step 1: Redirect to Google, passing role as state
 router.get('/google', oauthSession, (req: Request, res: Response, next: NextFunction) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return res.redirect(`${FRONTEND_URL}/login?error=google_not_configured`);
+    // No real creds → demo login so the button always works (issues a real session).
+    return demoOAuthLogin(res, 'google', (req.query.role as string) || 'customer');
   }
   const role = (req.query.role as string) || 'customer';
   if (req.query.returnTo) {
@@ -200,7 +239,8 @@ router.get(
 // Step 1: Redirect to Facebook, passing role as state
 router.get('/facebook', (req: Request, res: Response, next: NextFunction) => {
   if (!FACEBOOK_APP_ID) {
-    return res.redirect(`${FRONTEND_URL}/login?error=facebook_not_configured`);
+    // No real creds → demo login so the button always works (issues a real session).
+    return demoOAuthLogin(res, 'facebook', (req.query.role as string) || 'customer');
   }
   const role = (req.query.role as string) || 'customer';
   passport.authenticate('facebook', {

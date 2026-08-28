@@ -181,20 +181,15 @@ export default function SearchPage() {
     if (p) setCategory(p);
   }, [searchParams]);
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLoc({ lat: 24.8607, lng: 67.0011 }),
-        { timeout: 5000 }
-      );
-    }
-  }, []);
+  // NOTE: We do NOT auto-prompt for geolocation on load — that forces a browser
+  // permission dialog the user didn't ask for. Location is opt-in via the UI button.
+  // userLoc stays null until the user explicitly shares it, and search still works.
 
   const { data, isLoading } = useQuery(
     ['search', q, category, userLoc],
     async () => {
-      const params: Record<string, string> = { search: q || 'local businesses near me', category };
+      const params: Record<string, string> = {};
+      if (q && q.trim().length > 0) params.search = q.trim();
       if (userLoc) {
         params.latitude = String(userLoc.lat);
         params.longitude = String(userLoc.lng);

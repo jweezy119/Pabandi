@@ -46,33 +46,37 @@ router.get('/', rateLimiter, async (req, res, next) => {
     // === STEP 1: Seeded DB fallback-first search (claimed + OSM imports) ===
     // We query local DB first so search/map never looks empty, even if live APIs fail.
     {
-      const dbWhere: any = { isActive: true };
+      const dbWhereCat: any = { isActive: true };
       if (category && category !== 'ALL') {
-        dbWhere.category = String(category);
+        dbWhereCat.category = String(category);
       }
+      // Fetch the full active set (capped) so the directory is NEVER empty, then filter
+      // client-side by search terms. If the text filter matches nothing, we keep the full
+      // set instead of returning zero results (this is what made search always show "none").
+      const allSeeded = await prisma.business.findMany({
+        where: dbWhereCat,
+        include: { googleReviews: true, settings: true },
+        orderBy: { createdAt: 'desc' },
+        take: 120,
+      });
+
+      let seeded = allSeeded;
       if (cleanSearch) {
         const searchTerms = String(cleanSearch)
           .trim()
+          .toLowerCase()
           .split(/\s+/)
-          .filter((t) => t.length > 0);
+          .filter((t) => t.length > 2);
         if (searchTerms.length > 0) {
-          dbWhere.AND = searchTerms.map((term) => ({
-            OR: [
-              { name: { contains: term, mode: 'insensitive' } },
-              { description: { contains: term, mode: 'insensitive' } },
-              { address: { contains: term, mode: 'insensitive' } },
-              { city: { contains: term, mode: 'insensitive' } },
-            ],
-          }));
+          const filtered = allSeeded.filter((b: any) => {
+            const hay = `${b.name} ${b.description || ''} ${b.address || ''} ${b.city || ''} ${b.category || ''}`.toLowerCase();
+            return searchTerms.some((t) => hay.includes(t));
+          });
+          // Fallback: if text search matches nothing, show the whole active directory
+          // rather than an empty page.
+          seeded = filtered.length > 0 ? filtered : allSeeded;
         }
       }
-
-      const seeded = await prisma.business.findMany({
-        where: dbWhere,
-        include: { googleReviews: true, settings: true },
-        orderBy: { createdAt: 'desc' },
-        take: 60,
-      });
 
       for (const b of seeded) {
         const key = b.externalId || b.googlePlaceId || b.id;

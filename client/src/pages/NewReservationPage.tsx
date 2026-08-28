@@ -94,35 +94,13 @@ export default function NewReservationPage() {
   const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(
     initialPlace,
   );
-  const [, setMapCenter] = useState({ lat: 24.8607, lng: 67.0011 });
 
+  // NOTE: Do NOT auto-prompt for geolocation on mount — that forces a permission
+  // dialog the user didn't request. Map defaults to a neutral center; sharing
+  // location is opt-in via the UI.
+
+  // Pre-fill the selected place when arriving from a deep link (no geolocation prompt).
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setMapCenter({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        () => {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          if (
-            tz.includes("Chicago") ||
-            tz.includes("America/Chicago") ||
-            tz.includes("New_York") ||
-            tz.includes("America/New_York") ||
-            tz.includes("Los_Angeles") ||
-            tz.includes("America/Los_Angeles") ||
-            tz.includes("Denver") ||
-            tz.includes("America/Denver")
-          ) {
-            setMapCenter({ lat: 40.7128, lng: -74.006 });
-          }
-        },
-      );
-    }
-
     if (initialPlace && initialPlace.googlePlaceId) {
       apiClient
         .get(
@@ -134,7 +112,7 @@ export default function NewReservationPage() {
             setSelectedPlace({
               googlePlaceId: initialPlace.googlePlaceId,
               name: initialPlace.name,
-              address: matchingBiz.address || "",
+              address: matchingBiz.address || '',
               id: matchingBiz.id,
               walletAddress: matchingBiz.walletAddress,
               phone: matchingBiz.phone,
