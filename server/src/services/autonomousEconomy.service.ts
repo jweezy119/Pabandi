@@ -75,8 +75,8 @@ export class AutonomousEconomyService {
         const gig = await prisma.project.findUnique({ where: { id: opts.gigId } });
         if (gig?.bestAgentId) agentId = gig.bestAgentId;
         else {
-          const bid = await prisma.projectBid.findFirst({ where: { projectId: opts.gigId, status: 'PENDING' } });
-          if (bid) agentId = bid.agentId;
+          const bids = await prisma.projectBid.findMany({ where: { projectId: opts.gigId, status: 'PENDING' }, take: 1 });
+          if (bids[0]) agentId = bids[0].agentId;
         }
       } catch { /* ignore */ }
     }
