@@ -1,27 +1,17 @@
 /**
- * pabandiMcpServer.ts — the Model Context Protocol (MCP) distribution layer that
- * makes the Pabandi Platform THE trust standard agents use.
+ * pabandiMcpServer.ts — MCP distribution layer.
  *
- * MCP tools (JSON-RPC 2.0, no external SDK dep — builds & runs anywhere):
+ * Tools:
+ *   1. pabandi_verify_passport     — verify PTP attestation (public)
+ *   2. pabandi_discover             — PTP discovery doc (public)
+ *   3. pabandi_get_ledger           — audit passport issuance charge (public)
+ *   4. pabandi_issue_passport       — issue scoped metered passport (owner/auth)
+ *   5. pabandi_discover_platform    — full Pabandi Platform doc
+ *   6. pabandi_platform_access      — check caller access to a given tool
+ *   7..N pabandi_<short>            — REAL platform HTTP proxy (calls canonical
+ *                                     /api/v1/... endpoints server-side)
  *
- *   1.  pabandi_verify_passport     — verify a PTP attestation + capability (public)
- *   2.  pabandi_discover             — discovery doc (verify URL + public key) (public)
- *   3.  pabandi_get_ledger           — audit a passport issuance charge (public)
- *   4.  pabandi_issue_passport       — issue a scoped, metered passport (owner/auth)
- *   5.  pabandi_discover_platform    — the full Pabandi Platform doc (tools, spec, PTP, SDK, tiers)
- *   6.  pabandi_platform_access      — check whether the caller can call a given tool (access gating)
- *   7.  pabandi_search               — search the dir (JSONSchema input + sample)
- *   8.  pabandi_hospitality_book     — book a stay w/ guest-deposit escrow (JSONSchema + access)
- *   9.  pabandi_predictive_booking   — forecast no-show/completion (JSONSchema + access)
- *   10. pabandi_zk_realestate        — issue a ZK proof of escrow split (JSONSchema + access)
- *
- * Mounted at POST /mcp (Streamable HTTP). Any MCP client (Claude Desktop, LangChain,
- * AutoGPT, custom agents) connects and discovers the whole platform.
- *
- * Arch note: MCP is the DISCOVERY + TRUST layer. The MCP client (an LLM agent) gets the
- * full platform tool list with inputSchema, then calls the real platform tools via HTTP
- * (the OpenAPI/spec route at /api/v1/pabandi/spec) — because MCP clients have network
- * access and the OpenAPI spec is the canonical "how to call each tool" machine-readable doc.
+ * Mounted at POST /mcp (Streamable HTTP).
  */
 import { Request, Response } from 'express';
 import { ptpEngine } from '../protocol/ptp.spec';
@@ -34,64 +24,61 @@ import { pabandiToolsRegistry, pabandiPlatformDoc, toolAccessOk } from '../servi
 
 const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
+const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
 
-// ── Real engine-backed MCP tools (the "trust engine") ──────────────────────────
+// ── Engine tools ──────────────────────────────────────────────────────────────
 const ENGINE_TOOLS = [
   {
     name: 'pabandi_verify_passport',
-    description: 'Verify a Pabandi PTP attestation (agent, business, individual, or trust rail). Input a base64-encoded attestation and optionally require a capability (e.g. "act:book"). Returns valid, granted capabilities, risk band, expiry. This is the core trust check any agent performs before trusting another agent or action. Offline-verifiable: re-executes the HMAC-SHA512 signature over a fixed field subset.',
+    description: 'Verify a Pabandi PTP attestation (agent, business, individual, or trust rail). Input a base64-encoded attestation and optionally require a capability (e.g. "act:book"). Returns valid, granted capabilities, risk band, expiry. Offline-verifiable: re-executes HMAC-SHA512 over a fixed field subset.',
     inputSchema: {
       type: 'object',
       properties: {
         token: { type: 'string', description: 'Base64-encoded PTPAttestation or PTPAgentAttestation' },
-        need: { type: 'string', description: 'Optional capability the subject must hold, e.g. "act:book" or "act:transfer:under:100USD"' },
+        need: { type: 'string', description: 'Optional capability the subject must hold, e.g. "act:book"' },
       },
       required: ['token'],
     },
   },
   {
     name: 'pabandi_discover',
-    description: 'Return the Pabandi Trust Protocol discovery document: the public verify endpoint URL, the protocol public key, the issue endpoint, and the supported risk bands/entity types. Use this to bootstrap trust with Pabandi.',
+    description: 'Return the Pabandi Trust Protocol discovery document: public verify endpoint URL, protocol public key, issue endpoint, supported risk bands/entity types.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
     name: 'pabandi_get_ledger',
-    description: 'Public audit lookup of a passport issuance charge by its idempotency key. Returns the fee (in $PAB), owner, agent, risk band and capabilities granted.',
-    inputSchema: {
-      type: 'object',
-      properties: { idempotencyKey: { type: 'string' } },
-      required: ['idempotencyKey'],
-    },
+    description: 'Public audit lookup of a passport issuance charge by idempotency key. Returns fee ($PAB), owner, agent, risk band, capabilities.',
+    inputSchema: { type: 'object', properties: { idempotencyKey: { type: 'string' } }, required: ['idempotencyKey'] },
   },
   {
     name: 'pabandi_issue_passport',
-    description: 'Issue a scoped Agent Capability Passport for one of your agents. Capabilities are validated against your trust band (foolproof: low-trust owners cannot get dangerous capabilities). Metered at PAB_FEE_PER_PASSPORT $PAB per issue (idempotent). Authentication required: the JWT subject is the passport owner.',
+    description: 'Issue a scoped Agent Capability Passport. Capabilities are validated against owner trust band. Metered at PAB_FEE_PER_PASSPORT $PAB per issue (idempotent). Authentication required.',
     inputSchema: {
       type: 'object',
       properties: {
         agentId: { type: 'string', description: 'Unique id of the agent this passport is for' },
         capabilities: { type: 'array', items: { type: 'string' }, description: 'e.g. ["act:book","read"]' },
-        idempotencyKey: { type: 'string', description: 'Optional; retries with the same key are not double-charged' },
+        idempotencyKey: { type: 'string', description: 'Optional; retries with same key are not double-charged' },
       },
       required: ['agentId', 'capabilities'],
     },
   },
 ];
 
-// ── Platform tools: discovery + access + curated surface (LLM-friendly) ─────────
+// ── Platform tools (real HTTP proxy) ─────────────────────────────────────────
 const discoverPlatformTool = {
   name: 'pabandi_discover_platform',
-  description: 'Discover the full Pabandi Platform: every tool (search, hospitality, escrow, financing, predictive, ZK, trust), the OpenAPI/spec URL, the MCP endpoint, the PTP verify/issue/ledger endpoints, the SDK info, the access tiers (public / owner / verified / exclusive), and live status. This is the single entry point any LLM or third-party app uses to learn what Pabandi can do and how to call it. Returns a PabandiPlatformDoc you should keep and use to call tools via HTTP.',
+  description: 'Discover the full Pabandi Platform: every tool, OpenAPI/spec URL, MCP endpoint, PTP endpoints, SDK info, access tiers, and live status.',
   inputSchema: { type: 'object', properties: {} },
   handler: () => pabandiPlatformDoc(),
 };
 
 const platformAccessTool = {
   name: 'pabandi_platform_access',
-  description: 'Check whether the caller can access a given Pabandi platform tool (by MCP tool name, e.g. "pabandi_search" or "pabandi_hospitality_book"). Returns ok + note (the reason/authorization). Use this before calling a tool the LLM knows requires owner/verified/exclusive access.',
+  description: 'Check whether the caller can access a given Pabandi platform tool (by MCP tool name). Returns ok + note.',
   inputSchema: {
     type: 'object',
-    properties: { toolName: { type: 'string', description: 'MCP tool name, e.g. pabandi_search, pabandi_hospitality_book, pabandi_predictive_booking, pabandi_zk_realestate' } },
+    properties: { toolName: { type: 'string', description: 'MCP tool name, e.g. pabandi_search' } },
     required: ['toolName'],
   },
   handler: async (_args: any, req?: Request) => {
@@ -101,38 +88,86 @@ const platformAccessTool = {
   },
 };
 
-// ── Curated platform tool definitions (the LLM learns HOW to call each) ─────────
-// Each has an inputSchema (JSON-Schema) so an LLM knows how to call it via HTTP,
-// plus an access note so the LLM knows what auth/rails it needs. The LLM then calls
-// the canonical /api/v1/... endpoint (the OpenAPI/spec doc is the machine-readable map).
-function inputSchemaFor(tool: any) {
+function jsonRpc(id: any, result?: any, error?: any) {
+  return { jsonrpc: '2.0', id, result, error };
+}
+
+// ── Real HTTP proxy ───────────────────────────────────────────────────────────
+async function callPlatformHttp(def: any, args: any, req?: Request): Promise<any> {
+  const ep = def.endpoints[0];
+  if (!ep) throw new Error(`no endpoint mapped for ${def.name}`);
+
+  // 1) enforce structural access FIRST
+  const accessResult = await toolAccessOk(def.name, req, {
+    ownerUserId: (req as any)?.user?.id,
+    businessId: args?.businessId,
+    verifiedRail: false,
+  });
+  if (!accessResult.ok) {
+    throw new Error(`access denied: ${accessResult.reason}`);
+  }
+
+  const method = ep.method.toUpperCase();
+  const needsAuth = def.access !== 'public';
+  let url = `${BACKEND}${ep.path}`;
+
+  // Replace path params like :id or :businessId
+  for (const [k, v] of Object.entries(args)) {
+    url = url.replace(`:${k}`, String(v));
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (needsAuth) {
+    const authHeader = (req as any)?.headers?.authorization;
+    if (authHeader) headers['Authorization'] = authHeader;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+
+  try {
+    const fetchOpts: any = { method, headers, signal: controller.signal };
+    if (!['GET', 'HEAD'].includes(method) && args && Object.keys(args).length) {
+      fetchOpts.body = JSON.stringify(args);
+    }
+    const resp = await fetch(url, fetchOpts);
+    const text = await resp.text();
+    let data: any;
+    try { data = JSON.parse(text); } catch { data = text; }
+    return { status: resp.status, ok: resp.ok, data, calledVia: 'mcp_proxy', endpoint: { method, path: ep.path, url } };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── Per-tool proxy handlers ───────────────────────────────────────────────────
+function buildPlatformToolDef(t: any) {
+  const shortSlug = t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^pabandi_/, '');
   return {
-    type: 'object',
-    properties: Object.fromEntries(Object.entries(tool.inputs).map(([k, desc]) => [k, { type: 'string', description: desc }])),
-    required: Object.keys(tool.inputs).filter(() => true), // placeholder; real required varies
+    name: `pabandi_${shortSlug}`,
+    description: (t.exclusiveNote ? t.description + ` [${t.access}] ${t.exclusiveNote}` : t.description) + ' This MCP tool makes a real HTTP call to the canonical Pabandi endpoint and returns the actual platform response.',
+    inputSchema: {
+      type: 'object',
+      properties: Object.fromEntries(
+        Object.entries(t.inputs).map(([k, desc]) => [k, { type: 'string', description: desc }]),
+      ),
+      required: Object.keys(t.inputs),
+    },
+    access: t.access,
+    endpoints: t.endpoints,
+    handler: async (args: any, req?: Request) => callPlatformHttp({ name: `pabandi_${shortSlug}`, access: t.access, endpoints: t.endpoints }, args, req),
   };
 }
 
 const PLATFORM_TOOL_DEFS = pabandiToolsRegistry
-  .filter((t) => t.category !== 'sdk' && t.access !== 'exclusive' && t.access !== 'verified')
-  .map((t) => ({
-    name: `pabandi_${t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/:/g, '_')}`,
-    description: t.description + (t.exclusiveNote ? ` (currently ${t.access})` : ''),
-    inputSchema: inputSchemaFor(t),
-    access: t.access,
-    endpoints: t.endpoints,
-  }));
+  .filter((t: any) => t.category !== 'sdk')
+  .map((t: any) => buildPlatformToolDef(t));
 
-// Owners can discover + call owner-gated tools
 const OWNER_TOOL_DEFS = pabandiToolsRegistry
-  .filter((t) => t.access === 'owner')
-  .map((t) => ({
-    name: `pabandi_${t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/:/g, '_')}`,
-    description: t.description + ` (owner access: authenticated own account. Connect an open-finance rail + get PTP Band A/B to unlock verified/exclusive rails.)`,
-    inputSchema: inputSchemaFor(t),
-    access: t.access,
-    endpoints: t.endpoints,
-  }));
+  .filter((t: any) => t.access === 'owner' || t.access === 'verified' || t.access === 'exclusive')
+  .map((t: any) => buildPlatformToolDef(t));
 
 export const TOOLS = [
   ...ENGINE_TOOLS,
@@ -142,10 +177,7 @@ export const TOOLS = [
   ...OWNER_TOOL_DEFS,
 ];
 
-function jsonRpc(id: any, result?: any, error?: any) {
-  return { jsonrpc: '2.0', id, result, error };
-}
-
+// ── Dispatch ──────────────────────────────────────────────────────────────────
 async function dispatch(method: string, params: any, id: any, req?: Request): Promise<any> {
   switch (method) {
     case 'initialize':
@@ -175,7 +207,7 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
 }
 
 async function callTool(name: string, args: any, req?: Request): Promise<any> {
-  // 1. Engine-backed tools
+  // Engine-backed tools
   if (ENGINE_TOOLS.some((t) => t.name === name)) {
     switch (name) {
       case 'pabandi_verify_passport': {
@@ -184,9 +216,8 @@ async function callTool(name: string, args: any, req?: Request): Promise<any> {
         try { att = JSON.parse(Buffer.from(args.token, 'base64').toString('utf-8')); } catch { throw new Error('token is not valid base64 JSON'); }
         return ptpEngine.verifyAgentPassport(att, args.need);
       }
-      case 'pabandi_discover': {
+      case 'pabandi_discover':
         return ptpEngine.getDiscoveryDocument(`${process.env.BACKEND_URL || ''}`);
-      }
       case 'pabandi_get_ledger': {
         if (!args.idempotencyKey) throw new Error('idempotencyKey required');
         const rec = await passportEconomy.lookup(args.idempotencyKey);
@@ -226,60 +257,22 @@ async function callTool(name: string, args: any, req?: Request): Promise<any> {
     }
   }
 
-  // 2. Platform discovery + access tools
-  if (name === 'pabandi_discover_platform') {
-    return discoverPlatformTool.handler();
-  }
-  if (name === 'pabandi_platform_access') {
-    return platformAccessTool.handler(args, req);
-  }
+  // Platform discovery + access tools
+  if (name === 'pabandi_discover_platform') return discoverPlatformTool.handler();
+  if (name === 'pabandi_platform_access') return platformAccessTool.handler(args, req);
 
-  // 3. Curated platform tool definitions — the LLM learned HOW to call these via the
-  //    discovery doc (inputSchema + endpoints). We route the call to the canonical HTTP
-  //    endpoint here for agents that lack direct HTTP, but MOST agents should just GET/POST
-  //    to the spec'd endpoint (so the OpenAPI doc stays the single source of truth).
+  // Curated platform tool — proxy the real HTTP call server-side with inline access enforcement
   const def = PLATFORM_TOOL_DEFS.find((t) => t.name === name) || OWNER_TOOL_DEFS.find((t) => t.name === name);
-  if (!def) throw new Error(`Unknown MCP tool: ${name} (run pabandi_discover_platform to see available tools)`);
+  if (!def) throw new Error(`Unknown MCP tool: ${name}. Run pabandi_discover_platform to see available tools.`);
 
-  // Access check FIRST (so the LLM is told precisely why a call would fail).
-  const accessResult = await toolAccessOk(name, req, {
-    ownerUserId: (req as any)?.user?.id,
-    businessId: (args as any)?.businessId,
-    verifiedRail: false,
-  });
-  if (!accessResult.ok && def.access !== 'public') {
-    // public tools can still be called; otherwise return the precise denial.
-    throw new Error(`access denied: ${accessResult.note}`);
+  if (typeof (def as any).handler === 'function') {
+    return (def as any).handler(args, req);
   }
 
-  // Delegate to the real endpoint. Agents without direct HTTP can use this; those with
-  // HTTP should call /api/v1/... directly (OpenAPI/spec is the canonical doc).
-  const ep = def.endpoints[0];
-  if (!ep) throw new Error(`no endpoint for ${name}`);
-  // Build a synthetic call description the agent can follow (best-effort within MCP).
-  const method = ep.method.toUpperCase();
-  const path = ep.path.replace(':id', args.id || (args.businessId || ''));
-  const inputs = { ...args };
-  // Return a structured "call guide" the agent can execute via its own HTTP tool.
-  return {
-    mcpDelegatedCall: {
-      method,
-      path,
-      baseUrl: process.env.BACKEND_URL || 'https://pabandi.onrender.com',
-      inputs,
-      access: accessResult.note,
-    },
-    note: 'This MCP server itself does NOT perform the platform call — it returns the exact HTTP call you should make to the canonical endpoint. Call POST/GET ' + path + ' to ' + (process.env.BACKEND_URL || 'https://pabandi.onrender.com') + ' with the inputs above.',
-  };
+  return callPlatformHttp(def, args, req);
 }
 
-/** Express handler for POST /mcp (MCP Streamable HTTP). Performs real platform calls
- * via the canonical HTTP endpoints when an MCP client asks a platform tool to execute —
- * so the MCP server itself becomes the uniform access layer (not just a discovery doc).
- *
- * Access is enforced STRUCTURALLY: every platform tool handler calls authorizePlatformTool
- * (inline, not trusting the client's self-report), and returns 403 + a precise reason on
- * denial so an LLM or app learns exactly what it needs (connect a rail, reach Band A/B, etc.). */
+/** Express handler for POST /mcp */
 export const mcpHandler = async (req: Request, res: Response) => {
   optionalAuthenticate(req, res, async () => {
     const body = req.body;

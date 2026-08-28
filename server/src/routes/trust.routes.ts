@@ -10,6 +10,7 @@ import {
   streamTrustPulse,
 } from '../controllers/trust.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -52,6 +53,47 @@ router.get('/flux/:userId/predict', async (req, res) => {
     const { trustFluxService } = await import('../services/trustFlux.service');
     const projection = await trustFluxService.predict(userId, days);
     res.json({ success: true, data: projection });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/public/:userId — public trust profile (no auth).
+ * Returns score + tier + attestation + velocity (no owner-only actions).
+ */
+router.get('/public/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const [attestation, velocity] = await Promise.all([
+      (await import('../services/trustAttestation.service')).trustAttestationService.issue(user.id),
+      (await import('../services/trustScore.service')).trustScoreService.computeVelocity(user.id),
+    ]);
+    res.json({
+      success: true,
+      data: {
+        userId: user.id,
+        score: user.trustScore,
+        tier: user.verificationTier,
+        attestation,
+        trustVelocity: velocity,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/stamps/:userId — public trust audit timeline (no auth).
+ */
+router.get('/stamps/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const stamps = await prisma.trustAuditTrail.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 50 });
+    res.json({ success: true, data: stamps });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
