@@ -33,7 +33,7 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
  * error page. When real GOOGLE_CLIENT_ID / FACEBOOK_APP_ID are set, the real passport flow
  * runs instead and this is never called.
  */
-async function demoOAuthLogin(res: Response, provider: 'google' | 'facebook', role: string) {
+async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 'facebook', role: string) {
   const email = `demo-${provider}@pabandi.local`;
   const { prisma } = await import('../utils/database');
   let user: any = await prisma.user.findUnique({ where: { email } });
@@ -59,7 +59,12 @@ async function demoOAuthLogin(res: Response, provider: 'google' | 'facebook', ro
     { expiresIn: JWT_EXPIRES_IN as any }
   );
   logger.warn(`[auth] DEMO ${provider} login used (no real OAuth creds) — issued session for ${email}`);
-  return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&demo=${provider}`);
+  // Redirect back to the SAME host that served the request (Render app), not a hardcoded
+  // FRONTEND_URL — this keeps the OAuth callback on the live app even if FRONTEND_URL still
+  // points at the old Firebase host.
+  const host = (req.headers.host as string) || FRONTEND_URL.replace(/^https?:\/\//, '');
+  const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+  return res.redirect(`${proto}://${host}/auth/callback?token=${token}&role=${user.role}&demo=${provider}`);
 }
 
 // ── Email / Password auth ──────────────────────────────────────────────────
@@ -191,7 +196,7 @@ router.put('/wallet', authenticate, async (req: any, res, next) => {
 router.get('/google', oauthSession, (req: Request, res: Response, next: NextFunction) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     // No real creds → demo login so the button always works (issues a real session).
-    return demoOAuthLogin(res, 'google', (req.query.role as string) || 'customer');
+    return demoOAuthLogin(req, res, 'google', (req.query.role as string) || 'customer');
   }
   const role = (req.query.role as string) || 'customer';
   if (req.query.returnTo) {
@@ -240,7 +245,7 @@ router.get(
 router.get('/facebook', (req: Request, res: Response, next: NextFunction) => {
   if (!FACEBOOK_APP_ID) {
     // No real creds → demo login so the button always works (issues a real session).
-    return demoOAuthLogin(res, 'facebook', (req.query.role as string) || 'customer');
+    return demoOAuthLogin(req, res, 'facebook', (req.query.role as string) || 'customer');
   }
   const role = (req.query.role as string) || 'customer';
   passport.authenticate('facebook', {
