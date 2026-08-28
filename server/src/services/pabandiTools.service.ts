@@ -273,13 +273,17 @@ export function pabandiPlatformDoc() {
 }
 
 export async function toolAccessOk(toolName: string, req?: any, options?: { ownerUserId?: string; businessId?: string; verifiedRail?: boolean }) {
-  // Resolve the tool. MCP-style names are "pabandi:<short-lowercased>"; direct names
-  // match t.name (e.g. "pabandi_verify_passport" handled by the short->underscore mapping).
-  const underscore = toolName.replace(/^pabandi:/, '').replace(/_/g, ' ');
+  // Normalize tool name: accept "pabandi:short", "pabandi_short", or raw "name"
+  const normalized = toolName
+    .replace(/^pabandi[:_]/, '')
+    .replace(/_/g, ' ')
+    .toLowerCase();
   const mcptool = pabandiToolsRegistry.find(
-    (t) => `pabandi:${t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_')}` === toolName
-      || t.short.toLowerCase().replace(/[^a-z0-9]+/g, '_') === underscore.toLowerCase()
-      || t.name === toolName,
+    (t) => {
+      const registrySlug = t.short.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+      const registryNameSlug = t.name.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+      return registrySlug === normalized || registryNameSlug === normalized || t.name === toolName;
+    },
   );
   if (!mcptool) return { ok: false, reason: `unknown tool: ${toolName}` };
   if (mcptool.access === 'public') return { ok: true, note: 'public tool' };
