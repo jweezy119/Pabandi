@@ -157,7 +157,8 @@ function buildPlatformToolDef(t: any) {
     },
     access: t.access,
     endpoints: t.endpoints,
-    handler: async (args: any, req?: Request) => callPlatformHttp({ name: `pabandi_${shortSlug}`, access: t.access, endpoints: t.endpoints }, args, req),
+    registryName: t.name,
+    handler: async (args: any, req?: Request) => callPlatformHttp({ name: `pabandi_${shortSlug}`, registryName: t.name, access: t.access, endpoints: t.endpoints }, args, req),
   };
 }
 
