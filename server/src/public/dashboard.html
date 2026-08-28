@@ -63,7 +63,8 @@ async function load(){
       <div class="k"><div class="v">${d.postedGigs}</div><div class="l">gigs posted</div></div>
       <div class="k"><div class="v">${d.bookings}</div><div class="l">bookings</div></div>
       <div class="k"><div class="v">${d.rakeSolEarned.toFixed(4)}</div><div class="l">SOL raked</div></div>
-      <div class="k"><div class="v">${d.referralSolEarned.toFixed(4)}</div><div class="l">your SOL earned</div></div>`;
+      <div class="k"><div class="v">${d.referralSolEarned.toFixed(4)}</div><div class="l">your SOL earned</div></div>
+      <div class="k"><div class="v">${d.pabStaked}</div><div class="l">$PAB trust staked</div></div>`;
     $('note').innerHTML='Code <b>'+d.referralCode+'</b> · you earn 0.2% of every booking placed through it, in SOL.';
     $('upd').textContent='· '+new Date().toLocaleTimeString();
   }catch(e){ $('note').textContent='Error: '+e.message; }

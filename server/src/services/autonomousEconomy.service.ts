@@ -100,18 +100,18 @@ export class AutonomousEconomyService {
   }
 
   /** Business dashboard: a referrer's posted gigs, bookings, and rake earned (all SOL, real ledger). */
-  async businessDashboard(referralCode: string): Promise<{ referralCode: string; postedGigs: number; bookings: number; rakeSolEarned: number; referralSolEarned: number }> {
-    const [posted, bookings, refEarned] = await Promise.all([
+  async businessDashboard(referralCode: string): Promise<{ referralCode: string; postedGigs: number; bookings: number; rakeSolEarned: number; referralSolEarned: number; pabStaked: number }> {
+    const [posted, bookings, refEarned, rakeRows] = await Promise.all([
       prisma.gigEvent.count({ where: { kind: 'POST', referralCode } }),
       prisma.treasuryPosition.count({ where: { bucket: 'PLATFORM_FEE', meta: { path: ['referralCode'], equals: referralCode } } }),
       prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED', meta: { path: ['referralCode'], equals: referralCode } } }),
+      prisma.treasuryPosition.findMany({ where: { bucket: 'PLATFORM_FEE', meta: { path: ['referralCode'], equals: referralCode } } }),
     ]);
     let referralSolEarned = 0;
     for (const r of refEarned) if ((r.meta as any)?.asset !== 'PAB') referralSolEarned += r.amount || 0;
-    const rakeRows = await prisma.treasuryPosition.findMany({ where: { bucket: 'PLATFORM_FEE', meta: { path: ['referralCode'], equals: referralCode } } });
-    let rakeSolEarned = 0;
-    for (const r of rakeRows) rakeSolEarned += (r.meta as any)?.rakeSol || 0;
-    return { referralCode, postedGigs: posted, bookings, rakeSolEarned: +rakeSolEarned.toFixed(6), referralSolEarned: +referralSolEarned.toFixed(6) };
+    let rakeSolEarned = 0, pabStaked = 0;
+    for (const r of rakeRows) { rakeSolEarned += (r.meta as any)?.rakeSol || 0; pabStaked += (r.meta as any)?.stakePab || 0; }
+    return { referralCode, postedGigs: posted, bookings, rakeSolEarned: +rakeSolEarned.toFixed(6), referralSolEarned: +referralSolEarned.toFixed(6), pabStaked: +pabStaked.toFixed(2) };
   }
 
   async chargeRake(payer: string, solAmount: number, bookingRef?: string, opts?: { referralCode?: string; partnerId?: string }): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number; bookingRef: string; referralSol: number; partnerSol: number }> {

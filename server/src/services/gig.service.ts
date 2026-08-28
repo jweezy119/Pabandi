@@ -1,7 +1,6 @@
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { generateProject, topDemandSkills } from './recommendation/autogen.service';
-import { recommendBestAgent, ProjectSpec } from './recommendation/agentScorer.service';
 import { ptpEngine } from '../protocol/ptp.spec';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { decryptPrivateKey } from './web3Agent.service';
@@ -354,8 +353,10 @@ export async function claimGig(gigId: string, opts: { agentId?: string; passport
   let assignedAgentId: string | null = null;
   if (opts.agentId) { assignedAgentId = opts.agentId; claimerLabel = `agent:${opts.agentId}`; }
   else {
-    const rec = await recommendBestAgent({ title: gig.title, description: gig.description, category: gig.category, requiredSkills: gig.requiredSkills as string[], budgetUsd: gig.budgetUsd } as ProjectSpec);
-    if (rec.best) { assignedAgentId = rec.best.agentId; claimerLabel = `agent:${rec.best.agentId}`; }
+    // Lightweight pick (no 128-query scorer): assign the first active agent so the gig has a
+    // matched freelancer; the heavy capability-weighted scoring runs in the bidding path.
+    const rec = await prisma.web3Agent.findFirst({ where: { isActive: true }, orderBy: { balancePab: 'desc' } });
+    if (rec) { assignedAgentId = rec.id; claimerLabel = `agent:${rec.id}`; }
   }
   await prisma.project.update({ where: { id: gigId }, data: { status: 'IN_PROGRESS', bestAgentId: assignedAgentId, bestConfidence: assignedAgentId ? 90 : null } });
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
