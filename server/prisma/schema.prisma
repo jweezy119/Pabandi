@@ -149,6 +149,8 @@ model Business {
   referredById           String?
   bountyPaid             Boolean                 @default(false)
   referredBy             AccountManagerProfile?  @relation(fields: [referredById], references: [id])
+  Property               Property[]
+  OpenFinanceConnection  OpenFinanceConnection[]
 
   @@index([ownerId])
   @@index([city])
@@ -229,12 +231,95 @@ model Reservation {
   services            ReservationService[]
   solanaAttestationId String?              @unique
   dispute             Dispute?
+  StayBooking         StayBooking?
 
   @@index([businessId])
   @@index([customerId])
   @@index([reservationDate])
   @@index([status])
   @@index([businessId, reservationDate])
+}
+
+// ── Hospitality vertical (stays / short-term rentals / Airbnb-style) ──────────
+model Property {
+  id                  String           @id @default(cuid())
+  businessId          String
+  ownerId             String? // business owner user (for auth)
+  title               String
+  description         String?
+  city                String           @default("")
+  address             String?
+  country             String           @default("United States")
+  category            BusinessCategory @default(PROPERTY_RENTAL)
+  pricePerNight       Float            @default(0)
+  currency            String           @default("USD")
+  maxGuests           Int              @default(2)
+  bedrooms            Int              @default(1)
+  coverImageUrl       String?
+  amenities           String[] // e.g. ["wifi","kitchen","pool"]
+  isActive            Boolean          @default(true)
+  slug                String?          @unique
+  latitude            Float?
+  longitude           Float?
+  // Open-finance settlement rail linked to this property's payouts.
+  financeConnectionId String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  business          Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  financeConnection OpenFinanceConnection? @relation(fields: [financeConnectionId], references: [id])
+  bookings          StayBooking[]
+
+  @@index([businessId])
+  @@index([city])
+  @@index([category])
+}
+
+// A confirmed stay = a Reservation (existing model) + a Property + a guest deposit escrow.
+model StayBooking {
+  id            String            @id @default(cuid())
+  reservationId String            @unique
+  propertyId    String
+  guestUserId   String
+  checkIn       DateTime
+  checkOut      DateTime
+  guests        Int               @default(1)
+  pricePerNight Float
+  totalAmount   Float
+  depositAmount Float             @default(0) // guest deposit held in escrow
+  depositStatus DepositStatus     @default(NOT_REQUIRED)
+  escrowTxHash  String? // Solana/chain tx when funded (simulated flag otherwise)
+  status        ReservationStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([guestUserId])
+}
+
+// ── Open Finance connectivity: verifiable link between a business and its
+//    settlement rail (RAAST / Stripe Treasury / Open Banking / Solana wallet).
+//    This is the "open finance" primitive — portable, attestable, no bank lock-in. ──
+model OpenFinanceConnection {
+  id           String    @id @default(cuid())
+  businessId   String
+  provider     String // RAAST | STRIPE_TREASURY | OPEN_BANKING | SOL_WALLET | PAYPAL
+  accountRef   String // masked/opaque reference (e.g. IBAN tail, wallet addr, stripe acct id)
+  status       String    @default("PENDING") // PENDING | VERIFIED | FAILED
+  // Optional signed attestation that the rail is live (verifiable offline via PTP).
+  attestation  Json?
+  lastVerified DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  properties Property[]
+
+  @@index([businessId])
+  @@index([provider])
 }
 
 model Payment {
@@ -642,6 +727,7 @@ model TreasuryPosition {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   bucket    String // OPERATING | TREASURY | LP_PROVISION | YIELD_REINVEST | EMERGENCY
+  kind      String? // HOSPITALITY | REALESTATE | ESCROW | RAKED | REFERRAL | default null
   amount    Float
   txHash    String?
   status    String   @default("PENDING") // PENDING | DEPLOYED | REPATRIATED
@@ -1388,7 +1474,7 @@ model Web3Agent {
 
 model AgentTransaction {
   id          String   @id @default(cuid())
-  agentId     String?  // nullable: pool/arbitrage fees aren't tied to one agent
+  agentId     String? // nullable: pool/arbitrage fees aren't tied to one agent
   type        String // FUNDING | BOOKING_PAYMENT | STAKE | BADGE_PURCHASE | FEE_COLLECTION | POOL_FEE
   amount      Float
   txHash      String?
@@ -1404,18 +1490,18 @@ model AgentTransaction {
 }
 
 model AgentBooking {
-  id            String   @id @default(cuid())
-  fromAgentId   String   // payer agent (the "customer" on this rail)
-  toAgentId     String   // payee agent (the "merchant/asset" on this rail)
-  amountPab     Float    // value transferred (the asset value)
-  feeSol        Float    @default(0) // SOL platform fee collected
-  status        String   @default("PENDING") // PENDING | COMPLETED | CANCELLED | NO_SHOW
-  txHash        String?  // on-chain value-transfer tx (if live)
-  simulated     Boolean  @default(false)
-  bookingRef    String?  // human-readable ref
-  completedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String    @id @default(cuid())
+  fromAgentId String // payer agent (the "customer" on this rail)
+  toAgentId   String // payee agent (the "merchant/asset" on this rail)
+  amountPab   Float // value transferred (the asset value)
+  feeSol      Float     @default(0) // SOL platform fee collected
+  status      String    @default("PENDING") // PENDING | COMPLETED | CANCELLED | NO_SHOW
+  txHash      String? // on-chain value-transfer tx (if live)
+  simulated   Boolean   @default(false)
+  bookingRef  String? // human-readable ref
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([fromAgentId])
   @@index([toAgentId])
@@ -1699,25 +1785,25 @@ model CommunityGrant {
 
 // ── Trust Passport (public, portable provider trust identity) ───────────────
 model TrustPassport {
-  id            String   @id @default(cuid())
-  handle        String   @unique // shareable slug, e.g. "apex-builders"
+  id            String    @id @default(cuid())
+  handle        String    @unique // shareable slug, e.g. "apex-builders"
   agentId       String? // Web3Agent.id if linked
   providerRef   String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
-  category      String   @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  category      String    @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
   displayName   String
   bio           String?
   walletAddress String?
-  visibility    String   @default("PUBLIC") // PUBLIC | PRIVATE
-  claimsCount   Int      @default(0) // times requested/verified
+  visibility    String    @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount   Int       @default(0) // times requested/verified
   riskScore     Int?
   riskBand      String?
   lastCheckedAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  gigHistory    PassportGigHistory[]
-  endorsements  SkillEndorsement[]
-  vector        PassportVector?
+  gigHistory   PassportGigHistory[]
+  endorsements SkillEndorsement[]
+  vector       PassportVector?
 
   @@index([handle])
   @@index([agentId])
@@ -1727,23 +1813,23 @@ model TrustPassport {
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
 
 model PassportGigHistory {
-  id             String        @id @default(cuid())
-  passportId     String
-  gigId          String?       // Optional reference to external gig system
-  title          String
-  description    String?
-  scheduledDate  DateTime
-  locationHash   String?       // Geohash (4+ chars) for privacy-preserving location
-  zipCode        String?
-  timeBucket     String        // e.g., "0-6", "6-12", "12-18", "18-24"
-  dayOfWeek      Int           // 0-6 (Sunday-Saturday)
-  status         String        @default("COMPLETED") // COMPLETED | CANCELLED | NO_SHOW
-  clientRating   Int?          // 1-5 stars
-  leadTimeHours  Float?        // Hours between gig creation and acceptance
-  cancellationReason String?   // Context for cancellations
-  createdAt      DateTime      @default(now())
+  id                 String   @id @default(cuid())
+  passportId         String
+  gigId              String? // Optional reference to external gig system
+  title              String
+  description        String?
+  scheduledDate      DateTime
+  locationHash       String? // Geohash (4+ chars) for privacy-preserving location
+  zipCode            String?
+  timeBucket         String // e.g., "0-6", "6-12", "12-18", "18-24"
+  dayOfWeek          Int // 0-6 (Sunday-Saturday)
+  status             String   @default("COMPLETED") // COMPLETED | CANCELLED | NO_SHOW
+  clientRating       Int? // 1-5 stars
+  leadTimeHours      Float? // Hours between gig creation and acceptance
+  cancellationReason String? // Context for cancellations
+  createdAt          DateTime @default(now())
 
-  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  passport TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 
   @@index([passportId])
   @@index([locationHash])
@@ -1751,80 +1837,80 @@ model PassportGigHistory {
 }
 
 model SkillEndorsement {
-  id             String        @id @default(cuid())
-  passportId     String
-  skillName      String        // e.g., "Plumbing", "Catering", "ReactJS"
-  endorsedBy     String?       // Client or other verified user ID
-  rating         Int           @default(5) // Quality rating of the skill
-  weight         Float         @default(1.0) // Endorsement strength
-  createdAt      DateTime      @default(now())
+  id         String   @id @default(cuid())
+  passportId String
+  skillName  String // e.g., "Plumbing", "Catering", "ReactJS"
+  endorsedBy String? // Client or other verified user ID
+  rating     Int      @default(5) // Quality rating of the skill
+  weight     Float    @default(1.0) // Endorsement strength
+  createdAt  DateTime @default(now())
 
-  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  passport TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 
   @@index([passportId])
   @@index([skillName])
 }
 
 model PassportVector {
-  id             String        @id @default(cuid())
-  passportId     String        @unique
+  id             String   @id @default(cuid())
+  passportId     String   @unique
   // TODO: migrate to pgvector when cosine similarity searches exceed 100ms or dataset > 50k vectors.
   // Stores a 1D array of floats representing temporal, spatial, and behavioral tendencies.
-  behaviorVector Json          @default("[]") 
-  sampleCount    Int           @default(0) // Number of gigs used to build the vector
-  lastUpdated    DateTime      @updatedAt
+  behaviorVector Json     @default("[]")
+  sampleCount    Int      @default(0) // Number of gigs used to build the vector
+  lastUpdated    DateTime @updatedAt
 
-  passport       TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  passport TrustPassport @relation(fields: [passportId], references: [id], onDelete: Cascade)
 }
 
 // ── OAuth-Like Delegated Access ("Sign in with Pabandi") ─────────────
 
 model OAuthClient {
-  id           String             @id @default(cuid())
-  clientId     String             @unique // The public identifier for the app
-  clientSecret String             // The hashed secret for back-channel calls
-  name         String             // Display name (e.g., "Rozee.pk", "Daraz")
-  logoUrl      String?
-  redirectUris String[]           // Allowed callback URLs
-  webhookUrl   String?
+  id            String   @id @default(cuid())
+  clientId      String   @unique // The public identifier for the app
+  clientSecret  String // The hashed secret for back-channel calls
+  name          String // Display name (e.g., "Rozee.pk", "Daraz")
+  logoUrl       String?
+  redirectUris  String[] // Allowed callback URLs
+  webhookUrl    String?
   webhookSecret String?
-  isActive     Boolean            @default(true)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  authCodes    OAuthAuthCode[]
-  tokens       OAuthToken[]
+  authCodes OAuthAuthCode[]
+  tokens    OAuthToken[]
 }
 
 model OAuthAuthCode {
-  id           String      @id @default(cuid())
-  code         String      @unique
-  clientId     String
-  userId       String
-  redirectUri  String
-  expiresAt    DateTime
-  createdAt    DateTime    @default(now())
-  used         Boolean     @default(false)
+  id          String   @id @default(cuid())
+  code        String   @unique
+  clientId    String
+  userId      String
+  redirectUri String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  used        Boolean  @default(false)
 
-  client       OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
 }
 
 model OAuthToken {
-  id           String      @id @default(cuid())
-  accessToken  String      @unique
-  refreshToken String?     @unique
+  id           String   @id @default(cuid())
+  accessToken  String   @unique
+  refreshToken String?  @unique
   clientId     String
   userId       String
   expiresAt    DateTime
-  createdAt    DateTime    @default(now())
-  revoked      Boolean     @default(false)
+  createdAt    DateTime @default(now())
+  revoked      Boolean  @default(false)
 
-  client       OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client OAuthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([userId])
@@ -1853,21 +1939,21 @@ model AgentStake {
 
 // ── Project (autogen pipeline → posted project with idle-yield vault) ─────────────
 model Project {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  category      String
-  requiredSkills String[] // e.g. ["Rust","Anchor"]
-  budgetUsd     Float
-  estimatedHours Int    @default(0)
-  demandGrowthPct Float @default(0)
-  status        String   @default("OPEN") // OPEN | IN_PROGRESS | DELIVERED | CANCELLED
-  vaultUsdc     Float    @default(0) // idle capital routed to Kamino Lend (phase 2)
-  yieldEarnedUsdc Float  @default(0) // accrued float yield (phase 2)
-  bestAgentId   String? // chosen by recommendation engine
-  bestConfidence Float?  // confidence % of the recommendation
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  category        String
+  requiredSkills  String[] // e.g. ["Rust","Anchor"]
+  budgetUsd       Float
+  estimatedHours  Int      @default(0)
+  demandGrowthPct Float    @default(0)
+  status          String   @default("OPEN") // OPEN | IN_PROGRESS | DELIVERED | CANCELLED
+  vaultUsdc       Float    @default(0) // idle capital routed to Kamino Lend (phase 2)
+  yieldEarnedUsdc Float    @default(0) // accrued float yield (phase 2)
+  bestAgentId     String? // chosen by recommendation engine
+  bestConfidence  Float? // confidence % of the recommendation
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   bids ProjectBid[]
 
@@ -1877,15 +1963,15 @@ model Project {
 
 // ── ProjectBid (agent auto-bid on a project) ─────────────────────────────────────
 model ProjectBid {
-  id          String   @id @default(cuid())
-  projectId   String
-  agentId     String
+  id            String   @id @default(cuid())
+  projectId     String
+  agentId       String
   confidencePct Float // scorer output at bid time
-  quoteUsd    Float
-  stakePab    Float    @default(0) // PAB staked as trust bond (held, slashed on no-show, returned+bonus on delivery)
-  status      String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
-  breakdown   Json? // scorer ScoreBreakdown for transparency
-  createdAt   DateTime @default(now())
+  quoteUsd      Float
+  stakePab      Float    @default(0) // PAB staked as trust bond (held, slashed on no-show, returned+bonus on delivery)
+  status        String   @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  breakdown     Json? // scorer ScoreBreakdown for transparency
+  createdAt     DateTime @default(now())
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -1895,19 +1981,19 @@ model ProjectBid {
 
 // ── GigEvent (durable activity ledger: survives cold starts; powers board counters/feed) ──
 model GigEvent {
-  id          String   @id @default(cuid())
-  kind        String   // POST | CLAIM | COMPLETE
-  role        String   // project-owner | freelancer
-  gigId       String
-  source      String   @default("human") // human | ai-loop
-  skill       String?
-  budgetUsd   Float?
-  category    String?
-  claimedBy   String?
-  rakeSol     Float?
-  helperSol   Float?
+  id           String   @id @default(cuid())
+  kind         String // POST | CLAIM | COMPLETE
+  role         String // project-owner | freelancer
+  gigId        String
+  source       String   @default("human") // human | ai-loop
+  skill        String?
+  budgetUsd    Float?
+  category     String?
+  claimedBy    String?
+  rakeSol      Float?
+  helperSol    Float?
   referralCode String?
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@index([gigId])
   @@index([kind])
@@ -1918,33 +2004,33 @@ model GigEvent {
 //  Each task becomes a budgeted mini-gig with its own milestone escrow, so no single party
 //  carries full-program risk and the "right freelancer" is matched per task.
 model Program {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  clientWallet  String?
-  referralCode  String?
-  durationWeeks Int      @default(52)
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  clientWallet   String?
+  referralCode   String?
+  durationWeeks  Int           @default(52)
   totalBudgetUsd Float
-  taskCount     Int
-  status        String   @default("PLANNED") // PLANNED | ACTIVE | COMPLETED
-  createdAt     DateTime @default(now())
-  tasks         ProgramTask[]
+  taskCount      Int
+  status         String        @default("PLANNED") // PLANNED | ACTIVE | COMPLETED
+  createdAt      DateTime      @default(now())
+  tasks          ProgramTask[]
 }
 
 model ProgramTask {
-  id           String   @id @default(cuid())
-  programId    String
-  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
-  seq          Int // 1..N order
-  title        String
-  skill        String
-  category     String
-  budgetUsd    Float
-  estimatedHours Int
-  gigId        String? // the resulting gig once staffed
+  id              String   @id @default(cuid())
+  programId       String
+  program         Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  seq             Int // 1..N order
+  title           String
+  skill           String
+  category        String
+  budgetUsd       Float
+  estimatedHours  Int
+  gigId           String? // the resulting gig once staffed
   assignedAgentId String?
-  status       String   @default("PLANNED") // PLANNED | OPEN | IN_PROGRESS | COMPLETED
-  createdAt    DateTime @default(now())
+  status          String   @default("PLANNED") // PLANNED | OPEN | IN_PROGRESS | COMPLETED
+  createdAt       DateTime @default(now())
 
   @@index([programId])
   @@index([status])
