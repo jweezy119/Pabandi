@@ -65,8 +65,8 @@ router.get('/business/:refCode', async (req, res) => {
 // ── Demo booking (no wallet): full booking cycle server-side, simulated:true ──
 router.post('/demo-book', async (req, res) => {
   try {
-    const { referralCode, partnerId, agentId, solAmount } = req.body || {};
-    const r = await autonomousEconomyService.demoBook({ referralCode, partnerId, agentId, solAmount: solAmount ? Number(solAmount) : undefined });
+    const { referralCode, partnerId, agentId, gigId, solAmount } = req.body || {};
+    const r = await autonomousEconomyService.demoBook({ referralCode, partnerId, agentId, gigId, solAmount: solAmount ? Number(solAmount) : undefined });
     res.json({ success: true, data: r });
   } catch (e: any) {
     res.status(500).json({ success: false, error: e.message });
