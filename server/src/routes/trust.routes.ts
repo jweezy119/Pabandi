@@ -14,7 +14,6 @@ import { prisma } from '../utils/database';
 
 const router = Router();
 
-router.get('/public/:userId', getMyTrustProfile);
 router.get('/audit/:userId', getMyTrustAuditTimeline);
 router.get('/score/me', authenticate, getMyTrustProfile);
 router.get('/stamps/me', authenticate, getMyTrustStamps);
