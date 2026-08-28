@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: pabandi-backend
+    env: docker
+    region: ohio
+    plan: starter
+    rootDir: server # Our dockerfile and backend code is inside 'server/'
+    envVars:
+      - key: PORT
+        value: 8080
+      # You will need to set these manually in the Render Dashboard
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

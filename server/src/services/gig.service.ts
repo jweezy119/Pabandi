@@ -472,4 +472,4 @@ export async function bidRanking(gigId: string): Promise<any> {
   return { gigId, ranked: scored };
 }
 
-export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking };
+export const gigService = { createGigFromSme, registerAgent, bidOnGig, acceptBestBid, agentBalance, agentFaucet, pabStats, openBoard, claimGig, completeGig, bidRanking, ensureBusinessWallet };
