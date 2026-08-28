@@ -18,27 +18,28 @@ const getCached = <T,>(key: string, fallback: () => Promise<T>): Promise<T> => {
   });
 };
 
-const suggestFromLocationIQ = async (query: string): Promise<string[]> => {
-  const apiKey = process.env.LOCATIONIQ_API_KEY || process.env.LOCATION_IQ_API_KEY || '';
+const suggestFromNominatim = async (query: string): Promise<string[]> => {
   const normalized = String(query).trim();
-  if (!normalized || !apiKey) return [];
-  const params = {
-    key: apiKey,
-    q: normalized,
-    format: 'json',
-    limit: 8,
-    addressdetails: 0,
-    'accept-language': 'en',
-  } as Record<string, any>;
-
-  const res = await axios.get('https://us1.locationiq.com/v1/search.php', { params });
-  const items = Array.isArray(res.data) ? res.data : [];
-  const out: string[] = [];
-  for (const item of items) {
-    const name = item?.name || item?.display_name?.split(',')[0];
-    if (typeof name === 'string' && name.trim()) out.push(name.trim());
+  if (!normalized) return [];
+  // Open-source, key-free geocoder (OpenStreetMap Nominatim). Respectful usage:
+  // a real User-Agent + a single small request. Falls back to [] on any failure.
+  const url = 'https://nominatim.openstreetmap.org/search';
+  try {
+    const res = await axios.get(url, {
+      params: { q: normalized, format: 'json', limit: 8, addressdetails: 0 },
+      headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
+      timeout: 5000,
+    });
+    const items = Array.isArray(res.data) ? res.data : [];
+    const out: string[] = [];
+    for (const item of items) {
+      const name = item?.name || item?.display_name?.split(',')[0];
+      if (typeof name === 'string' && name.trim()) out.push(name.trim());
+    }
+    return out.slice(0, 8);
+  } catch {
+    return [];
   }
-  return out.slice(0, 8);
 };
 
 router.get('/text-search/suggestions', async (req: any, res: Response) => {
@@ -48,7 +49,7 @@ router.get('/text-search/suggestions', async (req: any, res: Response) => {
       return res.status(200).json({ success: true, data: { suggestions: [] } });
     }
     const key = `q:${query.toLowerCase()}`;
-    const suggestions = await getCached(key, () => suggestFromLocationIQ(query));
+    const suggestions = await getCached(key, () => suggestFromNominatim(query));
     return res.status(200).json({ success: true, data: { suggestions } });
   } catch (error) {
     console.error('[TextSearch] suggestions error:', error);

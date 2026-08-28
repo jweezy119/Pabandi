@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createBusiness,
   getBusiness,
+  getBusinessFull,
   updateBusiness,
   getBusinessReservations,
   getBusinessAnalytics,
@@ -63,9 +64,28 @@ router.get('/', rateLimiter, async (req, res, next) => {
       if (category && category !== 'ALL') {
         dbWhereCat.category = String(category);
       }
-      // Fetch the full active set (capped) so the directory is NEVER empty, then filter
-      // client-side by search terms. If the text filter matches nothing, we keep the full
-      // set instead of returning zero results (this is what made search always show "none").
+
+      // Real DB-level text search (open-source Postgres `contains`, no external API).
+      // When the user typed something, we filter at the database layer by name /
+      // description / city / category so genuine matches rank first.
+      if (cleanSearch) {
+        const terms = String(cleanSearch).trim().split(/\s+/).filter((t) => t.length > 1);
+        if (terms.length > 0) {
+          dbWhereCat.OR = terms.map((t) => ({
+            OR: [
+              { name: { contains: t, mode: 'insensitive' } },
+              { description: { contains: t, mode: 'insensitive' } },
+              { city: { contains: t, mode: 'insensitive' } },
+              { category: { contains: t, mode: 'insensitive' } },
+              { address: { contains: t, mode: 'insensitive' } },
+            ],
+          }));
+        }
+      }
+
+      // Fetch active businesses matching the text/category filters (capped). If a
+      // specific query matched nothing, we keep the query result empty and let the
+      // live OSM/Nominatim sources + the directory fallback below fill it in.
       const allSeeded = await prisma.business.findMany({
         where: dbWhereCat,
         include: { googleReviews: true, settings: true },
@@ -74,21 +94,16 @@ router.get('/', rateLimiter, async (req, res, next) => {
       });
 
       let seeded = allSeeded;
-      if (cleanSearch) {
-        const searchTerms = String(cleanSearch)
-          .trim()
-          .toLowerCase()
-          .split(/\s+/)
-          .filter((t) => t.length > 2);
-        if (searchTerms.length > 0) {
-          const filtered = allSeeded.filter((b: any) => {
-            const hay = `${b.name} ${b.description || ''} ${b.address || ''} ${b.city || ''} ${b.category || ''}`.toLowerCase();
-            return searchTerms.some((t) => hay.includes(t));
-          });
-          // Fallback: if text search matches nothing, show the whole active directory
-          // rather than an empty page.
-          seeded = filtered.length > 0 ? filtered : allSeeded;
-        }
+      // Pure-browse fallback: when there is NO search term at all and we somehow got
+      // nothing, show the full active directory rather than a blank page.
+      if (!cleanSearch && allSeeded.length === 0) {
+        const fallback = await prisma.business.findMany({
+          where: { isActive: true },
+          include: { googleReviews: true, settings: true },
+          orderBy: { createdAt: 'desc' },
+          take: 120,
+        });
+        seeded = fallback;
       }
 
       for (const b of seeded) {
@@ -120,25 +135,19 @@ router.get('/', rateLimiter, async (req, res, next) => {
       const liveSiteQuery = cleanSearch || 'restaurants,cafes,hotels,salons,clinics,gyms,nightclubs,bars';
 
       if (!hasQuery) {
+        // Open-source geocoder (OpenStreetMap Nominatim) — no API key, no cost.
+        // Only enrich when we have no coords yet; failures are non-fatal.
         try {
-          const locationIqKey = process.env.LOCATIONIQ_API_KEY;
-          if (locationIqKey) {
-            const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
-              params: {
-                key: locationIqKey,
-                q: liveSiteQuery,
-                format: 'json',
-                addressdetails: 1,
-                limit: 50
-              },
-              timeout: 5000
-            });
-            if (geoRes.data && geoRes.data.length > 0) {
-              locationIqPOIs = geoRes.data;
-            }
+          const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+            params: { q: liveSiteQuery, format: 'json', addressdetails: 1, limit: 50 },
+            headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
+            timeout: 5000,
+          });
+          if (geoRes.data && geoRes.data.length > 0) {
+            locationIqPOIs = geoRes.data;
           }
         } catch (err: any) {
-          console.warn('Live-site LocationIQ fallback failed:', err.message);
+          console.warn('Live-site Nominatim fallback failed:', err.message);
         }
       }
 
@@ -152,17 +161,10 @@ router.get('/', rateLimiter, async (req, res, next) => {
       // === STEP 2: LocationIQ Search ===
       if (cleanSearch) {
         try {
-          const locationIqKey = process.env.LOCATIONIQ_API_KEY;
-          if (locationIqKey) {
-            const geoRes = await axios.get(`https://us1.locationiq.com/v1/search.php`, {
-              params: {
-                key: locationIqKey,
-                q: cleanSearch,
-                format: 'json',
-                addressdetails: 1,
-                limit: 10
-              },
-              timeout: 5000
+            const geoRes = await axios.get('https://nominatim.openstreetmap.org/search', {
+              params: { q: cleanSearch, format: 'json', addressdetails: 1, limit: 10 },
+              headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
+              timeout: 5000,
             });
 
             if (geoRes.data && geoRes.data.length > 0) {
@@ -199,9 +201,8 @@ router.get('/', rateLimiter, async (req, res, next) => {
                 }
               }
             }
-          }
         } catch (err: any) {
-          console.warn('LocationIQ search failed:', err.message);
+          console.warn('Nominatim search failed:', err.message);
         }
       }
 
@@ -439,8 +440,13 @@ router.get('/slug/:slug', optionalAuthenticate, getBusinessBySlug);
 router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
 router.get('/:id/services', optionalAuthenticate, getBusinessServices);
 
-// GET /businesses/:id — full lookup (includes owner contact PII). Requires auth.
-router.get('/:id', authenticate, getBusiness);
+// GET /businesses/:id — PUBLIC lookup (sanitized). Powers every profile/booking
+// page across the app. Returns owner PII only when the caller owns the business
+// or is an admin; everyone else gets a safe public projection.
+router.get('/:id', optionalAuthenticate, getBusiness);
+
+// GET /businesses/:id/full — FULL lookup with owner PII. Requires auth.
+router.get('/:id/full', authenticate, getBusinessFull);
 
 // All subsequent business routes require authentication
 router.use(authenticate);

@@ -148,8 +148,9 @@ export const getBusiness = async (
       },
     });
 
-    // If not found in DB, try fetching dynamically
-    if (!business) {
+    // If not found in DB, try fetching dynamically — ONLY for authenticated callers
+    // (prevents a public GET from creating rows / hitting external APIs).
+    if (!business && req.user) {
       if (id.startsWith('osm-')) {
         try {
           const parts = id.split('-');
@@ -332,6 +333,13 @@ export const getBusiness = async (
     next(error);
   }
 };
+
+// Authenticated full lookup (owner/admin PII + OSM/Google enrichment).
+// Alias of getBusiness: for an authenticated caller who owns the business (or is
+// ADMIN) it returns the FULL record; for other authenticated callers it returns
+// the same sanitized public projection. The public GET /businesses/:id uses the
+// same function but is guarded so it never triggers side-effect enrichment.
+export const getBusinessFull = getBusiness;
 
 export const updateBusiness = async (
   req: AuthRequest,
