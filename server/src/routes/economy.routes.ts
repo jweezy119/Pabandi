@@ -52,6 +52,16 @@ router.post('/sol-checkout', async (req, res) => {
   }
 });
 
+// ── Business dashboard (by referral code): posted gigs, bookings, rake earned ──
+router.get('/business/:refCode', async (req, res) => {
+  try {
+    const r = await autonomousEconomyService.businessDashboard(req.params.refCode);
+    res.json({ success: true, data: r });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── Demo booking (no wallet): full booking cycle server-side, simulated:true ──
 router.post('/demo-book', async (req, res) => {
   try {

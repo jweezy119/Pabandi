@@ -63,16 +63,55 @@ export class AutonomousEconomyService {
    * base64 tx. Returns { serializedTx, rakeSol, netToProtocol, bookingRef }.
    * This is genuine profit: external SOL in, 1% skimmed, rest settles the booking.
    */
-  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; gigId?: string; solAmount?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; simulated: true }> {
+  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; gigId?: string; solAmount?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; stakePab: number; agentId: string | null; simulated: true }> {
     const solAmount = opts?.solAmount ?? 1.0;
     const rake = +(solAmount * 0.01).toFixed(6);
     const referralSol = opts?.referralCode ? +(rake * 0.2).toFixed(6) : 0;
     const partnerSol = opts?.partnerId ? +(solAmount * 0.001).toFixed(6) : 0;
+    // Resolve the agent being booked: explicit > gig's accepted bidder > gig's best agent.
+    let agentId = opts?.agentId || null;
+    if (!agentId && opts?.gigId) {
+      try {
+        const gig = await prisma.project.findUnique({ where: { id: opts.gigId } });
+        if (gig?.bestAgentId) agentId = gig.bestAgentId;
+        else {
+          const bid = await prisma.projectBid.findFirst({ where: { projectId: opts.gigId, status: 'PENDING' }, orderBy: { stakePab: 'desc' } });
+          if (bid) agentId = bid.agentId;
+        }
+      } catch { /* ignore */ }
+    }
+    // Trust loop: the booked agent stakes $PAB (skin-in-the-game). On delivery it's returned +20%.
+    const stakePab = agentId ? 10 : 0;
+    if (stakePab > 0 && agentId) {
+      try {
+        await prisma.agentStake.upsert({
+          where: { agentId },
+          create: { agentId, amountPab: stakePab, vault: process.env.PABANDI_TREASURY_WALLET || 'PABANDI_TREASURY', indexed: false },
+          update: { amountPab: { increment: stakePab } },
+        });
+        await prisma.web3Agent.update({ where: { id: agentId }, data: { balancePab: { decrement: stakePab } } }).catch(() => {});
+      } catch { /* ignore */ }
+    }
     const ref = `demo:${Date.now()}`;
-    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, gigId: opts?.gigId, note: 'demo booking' } } }).catch(() => {});
+    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, gigId: opts?.gigId, stakePab, note: 'demo booking' } } }).catch(() => {});
     if (referralSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'REFERRAL_EARNED', amount: referralSol, status: 'PENDING', txHash: `${ref}:ref`, meta: { asset: 'SOL', source: 'REFERRAL', referralCode: opts?.referralCode, simulated: true } } }).catch(() => {});
     if (partnerSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'PARTNER_FEE', amount: partnerSol, status: 'DEPLOYED', txHash: `${ref}:partner`, meta: { asset: 'SOL', source: 'PARTNER_FEE', partnerId: opts?.partnerId, simulated: true } } }).catch(() => {});
-    return { bookingRef: ref, rakeSol: rake, referralSol, partnerSol, simulated: true };
+    return { bookingRef: ref, rakeSol: rake, referralSol, partnerSol, stakePab, agentId, simulated: true };
+  }
+
+  /** Business dashboard: a referrer's posted gigs, bookings, and rake earned (all SOL, real ledger). */
+  async businessDashboard(referralCode: string): Promise<{ referralCode: string; postedGigs: number; bookings: number; rakeSolEarned: number; referralSolEarned: number }> {
+    const [posted, bookings, refEarned] = await Promise.all([
+      prisma.gigEvent.count({ where: { kind: 'POST', referralCode } }),
+      prisma.treasuryPosition.count({ where: { bucket: 'PLATFORM_FEE', meta: { path: ['referralCode'], equals: referralCode } } }),
+      prisma.treasuryPosition.findMany({ where: { bucket: 'REFERRAL_EARNED', meta: { path: ['referralCode'], equals: referralCode } } }),
+    ]);
+    let referralSolEarned = 0;
+    for (const r of refEarned) if ((r.meta as any)?.asset !== 'PAB') referralSolEarned += r.amount || 0;
+    const rakeRows = await prisma.treasuryPosition.findMany({ where: { bucket: 'PLATFORM_FEE', meta: { path: ['referralCode'], equals: referralCode } } });
+    let rakeSolEarned = 0;
+    for (const r of rakeRows) rakeSolEarned += (r.meta as any)?.rakeSol || 0;
+    return { referralCode, postedGigs: posted, bookings, rakeSolEarned: +rakeSolEarned.toFixed(6), referralSolEarned: +referralSolEarned.toFixed(6) };
   }
 
   async chargeRake(payer: string, solAmount: number, bookingRef?: string, opts?: { referralCode?: string; partnerId?: string }): Promise<{ serializedTx: string; rakeSol: number; netToProtocol: number; bookingRef: string; referralSol: number; partnerSol: number }> {

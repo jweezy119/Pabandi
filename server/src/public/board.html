@@ -163,10 +163,11 @@ async function claim(gigId){
 }
 async function bookGig(gigId, budgetUsd){
   try{
-    const solAmount = +(budgetUsd/800).toFixed(4) || 1; // book at ~$800/gig scale, min 1 SOL demo
+    const solAmount = +(budgetUsd/800).toFixed(4) || 1;
     const r=await fetch(API+'/economy/demo-book',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ gigId, solAmount, referralCode:$('ref').value.trim()||undefined })}).then(x=>x.json());
     if(!r.success) throw new Error(r.error||'booking failed');
-    alert('✅ Booking complete!\nGig: '+gigId+'\nPlatform rake: '+r.data.rakeSol+' SOL'+(r.data.referralSol?'\nReferral kickback: '+r.data.referralSol+' SOL':'')+'\n(simulated — connect a wallet to settle on-chain)');
+    let msg='✅ Booking complete!\nGig: '+gigId+'\nPlatform rake: '+r.data.rakeSol+' SOL'+(r.data.referralSol?'\nReferral kickback: '+r.data.referralSol+' SOL':'')+(r.data.stakePab?'\n🪙 Agent staked '+r.data.stakePab+' $PAB (returned +20% on delivery — the trust loop)':'')+(r.data.agentId?'\nAgent: '+r.data.agentId.slice(0,12):'')+'\n(simulated — connect a wallet to settle on-chain)';
+    alert(msg);
   }catch(e){ alert('Error: '+e.message); }
 }
 async function complete(gigId){
