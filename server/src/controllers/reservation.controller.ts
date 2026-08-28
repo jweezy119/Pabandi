@@ -25,6 +25,7 @@ import moment from 'moment-timezone';
 import { ReferralService } from '../services/referral.service';
 import { defaultDepositModeWeb3 } from '../utils/env';
 import { backgroundCheckService } from '../services/backgroundCheck.service';
+import { predictiveTrustService } from '../services/predictiveTrust.service';
 
 const referralService = new ReferralService();
 
@@ -397,6 +398,16 @@ export const createReservation = async (
     logger.info(
       `Reservation created: ${reservation.id}, Risk Score: ${prediction.riskScore}`
     );
+
+    // Predictive Intelligence layer: blend real customer/business history into the
+    // booking's aiFactors (non-destructive — augments the rule-based predictor above).
+    predictiveTrustService
+      .attachPredictionToReservation(reservation.id, {
+        customerId: req.user!.id,
+        businessId: business.id,
+        reservationTime,
+      })
+      .catch((e) => logger.warn(`[PredictiveTrust] attach skipped: ${e.message}`));
 
     let checkoutUrl = null;
     let checkoutSessionId = null;
