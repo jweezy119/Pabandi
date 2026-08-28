@@ -954,6 +954,10 @@ export const generateBookingLink = async (
   }
 };
 
+// Public, read-only lookup by slug — returns enough data for the booking
+// surface (settings, hours, services, location). Unclaimed but ACTIVE businesses
+// are still bookable (the normal case before an owner claims the profile), so we
+// do NOT 404 those — only truly missing or deactivated businesses 404.
 export const getBusinessBySlug = async (
   req: Request | any,
   res: Response,
@@ -961,12 +965,17 @@ export const getBusinessBySlug = async (
 ) => {
   try {
     const { slug } = req.params;
-
     const business = await prisma.business.findUnique({
-      where: { slug }
+      where: { slug },
+      include: {
+        settings: true,
+        businessHours: true,
+        tables: { where: { isActive: true } },
+        googleReviews: { orderBy: { time: 'desc' } },
+      },
     });
 
-    if (!business) {
+    if (!business || business.isActive === false) {
       throw new CustomError('Business not found', 404);
     }
 
@@ -976,7 +985,27 @@ export const getBusinessBySlug = async (
         id: business.id,
         name: business.name,
         slug: business.slug,
-      }
+        description: business.description || null,
+        category: business.category || null,
+        address: business.address || null,
+        city: business.city || null,
+        latitude: business.latitude || null,
+        longitude: business.longitude || null,
+        phone: business.phone || null,
+        email: business.email || null,
+        website: business.website || null,
+        coverImageUrl: business.coverImageUrl || null,
+        rating: business.rating || null,
+        reviewCount: business.reviewCount || 0,
+        isClaimed: business.isClaimed,
+        isVerified: business.isVerified,
+        trustScore: business.trustScore || 50,
+        businessTier: business.businessTier || 'STANDARD',
+        settings: business.settings || null,
+        businessHours: business.businessHours || [],
+        tables: business.tables || [],
+        googleReviews: business.googleReviews || [],
+      },
     });
   } catch (error) {
     next(error);

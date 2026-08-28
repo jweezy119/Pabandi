@@ -434,11 +434,13 @@ router.get('/me', authenticate, async (req: any, res, next) => {
   }
 });
 
-// Publicly accessible business routes (with optional auth)
+// Publicly accessible business routes (optional auth)
 router.get('/slug/:slug', optionalAuthenticate, getBusinessBySlug);
-router.get('/:id', optionalAuthenticate, getBusiness);
 router.get('/:id/reviews', optionalAuthenticate, getBusinessReviews);
 router.get('/:id/services', optionalAuthenticate, getBusinessServices);
+
+// GET /businesses/:id — full lookup (includes owner contact PII). Requires auth.
+router.get('/:id', authenticate, getBusiness);
 
 // All subsequent business routes require authentication
 router.use(authenticate);
