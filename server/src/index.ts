@@ -366,6 +366,25 @@ app.get('/', (req, res) => {
   });
 });
 
+// ── React SPA hosting (embedded client build) ───────────────────────────────
+// Serve the built React app from the same Render service so the whole product is live
+// without a separate Firebase host. Registered BEFORE the 404 handler so client-side
+// routes (/search, /login, /dashboard, ...) resolve to index.html.
+const SPA_DIR = path.join(__dirname, 'public', 'app');
+const SPA_INDEX = path.join(SPA_DIR, 'index.html');
+app.use(express.static(SPA_DIR));
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.method !== 'GET') return next();
+  const p = req.path;
+  if (p.startsWith('/api') || p.startsWith('/sdk') || p.startsWith('/health') || p.startsWith('/mcp')
+    || p.startsWith('/well-known') || p.startsWith('/.well-known') || p.startsWith('/shopify')
+    || p.startsWith('/assets') || p.startsWith('/images') || p === '/manifest.webmanifest'
+    || p === '/robots.txt' || p === '/sitemap.xml' || p === '/llms.txt' || p.startsWith('/pab-')) {
+    return next();
+  }
+  res.sendFile(SPA_INDEX, (err: any) => { if (err) next(); });
+});
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({
@@ -469,23 +488,3 @@ process.on('SIGTERM', async () => {
 });
 
 export default app;
-
-// ── React SPA hosting (embedded client build) ───────────────────────────────
-// Serve the built React app from the same Render service so the whole product is live
-// without a separate Firebase host. Non-API/non-sdk GET routes fall through to index.html
-// (SPA client-side routing). API + /sdk routes are registered above and take precedence.
-const SPA_DIR = path.join(__dirname, 'public', 'app');
-const SPA_INDEX = path.join(SPA_DIR, 'index.html');
-app.use(express.static(SPA_DIR));
-// SPA fallback: serve index.html for any GET route that isn't an API/SDK/asset path.
-app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.method !== 'GET') return next();
-  const p = req.path;
-  if (p.startsWith('/api') || p.startsWith('/sdk') || p.startsWith('/health') || p.startsWith('/mcp')
-    || p.startsWith('/well-known') || p.startsWith('/.well-known') || p.startsWith('/shopify')
-    || p.startsWith('/assets') || p.startsWith('/images') || p === '/manifest.webmanifest'
-    || p === '/robots.txt' || p === '/sitemap.xml' || p === '/llms.txt' || p.startsWith('/pab-')) {
-    return next();
-  }
-  res.sendFile(SPA_INDEX, (err: any) => { if (err) next(); });
-});
