@@ -89,3 +89,6 @@ marketing-bot/.venv/
 firebase-service-account.json
 server/.env
 client/.env.production
+.agentWallets.json
+server/src/.agentWallets.json
+dist/src/.agentWallets.json

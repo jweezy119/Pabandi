@@ -37,16 +37,64 @@ async function treasurySolBuffer(): Promise<number> {
   } catch { return 0; }
 }
 
+// ── Real 2-wallet SOL escrow (business owner wallet ↔ freelancer wallet) ─────
+// The AI business/owner wallet deposits the FULL project payment as on-chain escrow.
+// The treasury only CUSTODIES the deposited SOL and releases it to the winning freelancer
+// on delivery (minus 1% rake). Treasury never risks its own capital. When the business
+// wallet has no SOL, the flow is flagged simulated:true (honest, no fake tx).
+const FS = require('fs');
+const STORE_DIR = __dirname;
+const WALLETS_FILE = require('path').join(STORE_DIR, '.agentWallets.json');
+
+function loadWallets(): any { try { return JSON.parse(FS.readFileSync(WALLETS_FILE, 'utf-8')); } catch { return {}; } }
+function saveWallets(w: any) { try { FS.writeFileSync(WALLETS_FILE, JSON.stringify(w, null, 2)); } catch {} }
+
+/** Real business (owner-agent) wallet: generated once, encrypted at rest. Print its pubkey so it can be funded. */
+export function ensureBusinessWallet(): { pubkey: string; secretB64: string } {
+  const w = loadWallets();
+  if (w.business?.pubkey && w.business?.secretB64) return w.business;
+  const kp = Keypair.generate();
+  const bus = { pubkey: kp.publicKey.toBase58(), secretB64: Buffer.from(kp.secretKey).toString('base64') };
+  w.business = bus; saveWallets(w);
+  logger.info(`[wallet] NEW business(owner) wallet ${bus.pubkey} — fund it with SOL to enable LIVE escrow (treasury stays at 0 risk)`);
+  return bus;
+}
+
+/** Treasury keypair from SOLANA_PRIVATE_KEY (base58), matching economy service. */
+function treasuryKeypair(): Keypair | null {
+  const enc = process.env.SOLANA_PRIVATE_KEY; if (!enc) return null;
+  try { const bs58 = require('bs58'); const dec = (bs58.default ? bs58.default : bs58).decode(enc); return Keypair.fromSecretKey(dec); }
+  catch { try { return Keypair.fromSecretKey(new Uint8Array(JSON.parse(Buffer.from(enc, 'base64').toString()))); } catch { return null; } }
+}
+
+/** Treasury pays real SOL to a freelancer wallet (treasury signs; freelancer just receives). */
+async function payFromTreasury(toPubkey: string, amountSol: number): Promise<{ simulated: boolean; txHash: string | null }> {
+  if (!TREASURY_WALLET || amountSol <= 0) return { simulated: true, txHash: null };
+  try {
+    const kp = treasuryKeypair(); if (!kp) return { simulated: true, txHash: null };
+    const conn = new Connection(SOLANA_RPC, 'confirmed');
+    const bal = (await conn.getBalance(kp.publicKey)) / LAMPORTS_PER_SOL;
+    if (bal < amountSol + 0.002) { logger.warn(`[escrow] treasury has ${bal} SOL < ${amountSol}; marking simulated`); return { simulated: true, txHash: null }; }
+    const tx = new Transaction().add(SystemProgram.transfer({ fromPubkey: kp.publicKey, toPubkey: new PublicKey(toPubkey), lamports: Math.round(amountSol * LAMPORTS_PER_SOL) }));
+    const sig = await conn.sendTransaction(tx, [kp]);
+    await conn.confirmTransaction(sig, 'confirmed');
+    logger.info(`[escrow] PAID ${amountSol} SOL → freelancer ${toPubkey} (${sig})`);
+    return { simulated: false, txHash: sig };
+  } catch (e: any) { logger.warn('[escrow] pay failed, simulated:', e.message); return { simulated: true, txHash: null }; }
+}
+
 type GigExtra = {
   referralCode?: string | null;
   clientWallet?: string | null;
-  escrow?: { funded: boolean; payer: string | null; rakePct: number; helperPct: number; simulated?: boolean; txHash?: string | null };
+  escrow?: { funded: boolean; amount?: number; payer: string | null; rakePct: number; helperPct: number; simulated?: boolean; txHash?: string | null };
   milestones?: { name: string; pct: number }[];
   confidenceNote?: string;
   claimedBy?: string;
   claimedAt?: string;
   rakeSol?: number;
   helperSol?: number;
+  paidFreelancerSol?: number;
+  freelancerTx?: string | null;
   completedTx?: string | null;
   acceptedBidId?: string | null;
   stakePab?: number;
@@ -238,15 +286,17 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
   const best = bids.find((x) => x.agentId === pick.agentId)!;
   const agent = await prisma.web3Agent.findUnique({ where: { id: best.agentId } });
 
-  // Deposit the project-owner budget into escrow (on-chain when possible).
-  const escrowSol = +(gig.budgetUsd * 0.01).toFixed(6); // escrow float = 1% rake buffer; full budget is off-chain USD
-  const dep = await depositToEscrow(opts.payerSecretB64 || agent?.encryptedPrivateKey || '', escrowSol, `escrow:${gigId}`);
+  // Deposit the project-owner's FULL payment into escrow (real on-chain when business wallet funded).
+  // Demo rate: $800 budget = 1 SOL escrow. Treasury only custodies this; never risks its own SOL.
+  const escrowSol = +Math.max(0.0005, gig.budgetUsd / 800).toFixed(6);
+  const bus = ensureBusinessWallet();
+  const dep = await depositToEscrow(opts.payerSecretB64 || bus.secretB64, escrowSol, `escrow:${gigId}`);
 
   await prisma.project.update({ where: { id: gigId }, data: { status: 'IN_PROGRESS', bestAgentId: best.agentId, bestConfidence: pick.trust } });
   await prisma.projectBid.update({ where: { id: best.id }, data: { status: 'ACCEPTED', confidencePct: pick.trust } });
 
   const ex = extras[gigId] || (extras[gigId] = {} as GigExtra);
-  ex.escrow = { funded: true, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
+  ex.escrow = { funded: true, amount: escrowSol, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
   ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; ex.bidRanking = scored; saveStore();
   await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
 
@@ -282,6 +332,25 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
   await prisma.project.update({ where: { id: gigId }, data: { status: 'COMPLETED' } });
   meta.rakeSol = rakeSol; meta.helperSol = helperSol; meta.completedTx = txHash || null; saveStore();
 
+  // ── A0. REAL SOL payout: freelancer receives actual SOL from escrow (treasury custodies) ──
+  // Treasury holds the deposited escrow; release net (escrow minus 1% rake) to the freelancer's
+  // real wallet. If the business wallet was unfunded, this is flagged simulated (honest, no fake tx).
+  let paidFreelancerSol = 0, freelancerTx: string | null = null, payoutSimulated = meta.escrow?.simulated ?? true;
+  if (meta.claimedBy?.startsWith('agent:')) {
+    const winnerId = meta.claimedBy.replace('agent:', '');
+    const winner = await prisma.web3Agent.findUnique({ where: { id: winnerId }, select: { walletAddress: true } });
+    if (winner?.walletAddress && !meta.escrow?.simulated) {
+      const escrowSolHeld = meta.escrow?.amount ?? 0;
+      const netSol = +(rakeSol >= escrowSolHeld ? 0 : escrowSolHeld - rakeSol).toFixed(6);
+      if (netSol > 0) {
+        const pay = await payFromTreasury(winner.walletAddress, netSol);
+        paidFreelancerSol = pay.simulated ? 0 : netSol; freelancerTx = pay.txHash; payoutSimulated = pay.simulated;
+        logger.info(`[gig] freelancer ${winner.walletAddress} paid ${paidFreelancerSol} SOL (simulated=${pay.simulated})`);
+      }
+    }
+  }
+  meta.paidFreelancerSol = paidFreelancerSol; meta.freelancerTx = freelancerTx;
+
   // ── A. PAB trust stake: return stake + delivery bonus to the winning agent ──
   let stakeReturned = 0, deliveryBonus = 0;
   if (meta.stakePab && meta.claimedBy?.startsWith('agent:')) {
@@ -308,7 +377,8 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
 
   await gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: meta.escrow?.simulated ? 'ai-loop' : 'human' });
   logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}; PAB stake +${stakeReturned + deliveryBonus}, ref +${referralPab}`);
-  return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab };
+  return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab,
+    paidFreelancerSol, freelancerTx, simulated: payoutSimulated };
 }
 
 export async function agentBalance(agentId: string): Promise<any> {

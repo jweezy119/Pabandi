@@ -1,7 +1,23 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { gigService } from '../services/gig.service';
+import { PublicKey, LAMPORTS_PER_SOL, Connection } from '@solana/web3.js';
 
 const router = Router();
+
+/**
+ * GET /api/v1/gigs/wallet
+ * Exposes the AI business(owner) wallet address + live SOL balance. Fund this address with SOL
+ * to switch the autonomous escrow from simulated → REAL on-chain (freelancer receives actual SOL).
+ * Treasury is never at risk — it only custodies the deposited escrow.
+ */
+router.get('/wallet', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bus: any = (gigService as any).ensureBusinessWallet();
+    let balance = 0;
+    try { const c = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed'); balance = (await c.getBalance(new PublicKey(bus.pubkey))) / LAMPORTS_PER_SOL; } catch {}
+    res.json({ success: true, data: { businessWallet: bus.pubkey, solBalance: +balance.toFixed(6), funded: balance > 0.0005, note: 'Send SOL here to enable LIVE on-chain escrow (treasury risk = 0)' } });
+  } catch (e: any) { next(e); }
+});
 
 /**
  * POST /api/v1/gigs/autogen
