@@ -33,10 +33,23 @@ const router = Router();
 router.get('/', rateLimiter, async (req, res, next) => {
   try {
     const { prisma } = await import('../utils/database');
-    const { category, search, latitude, longitude } = req.query;
+    const { category, search, latitude, longitude, googlePlaceId } = req.query;
 
     // HARDENED: Sanitize search string to prevent malformed queries
     const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
+
+    // === STEP 0: Exact googlePlaceId lookup (used by NewReservationPage) ===
+    // If a specific place was selected, try to resolve it directly in the DB first.
+    if (googlePlaceId && String(googlePlaceId)) {
+      const existing = await prisma.business.findFirst({
+        where: { OR: [{ googlePlaceId: String(googlePlaceId) }, { externalId: String(googlePlaceId) }, { id: String(googlePlaceId) }] },
+        include: { googleReviews: true, settings: true },
+      });
+      if (existing) {
+        return res.json({ success: true, data: { businesses: [existing] } });
+      }
+      // No exact match — fall through to the directory/live lookup so it's never empty.
+    }
 
     let locationIqPOIs: any[] = []; // Supplemental live-site source
     let osmResults: any[] = [];
@@ -86,7 +99,13 @@ router.get('/', rateLimiter, async (req, res, next) => {
       }
     }
 
-    const shouldSkipLiveLookups = mergedBusinesses.length >= 12 && (!cleanSearch || cleanSearch.length <= 2);
+    // Only skip the live (LocationIQ/Overpass) lookups when there is NO specific
+    // query (pure browse-all) and the local directory already has enough results.
+    // Any real search term or placeId must always go to the live sources so the
+    // user actually gets matches for what they typed (this is what made searches
+    // appear to "always show no results" / the wrong generic list).
+    const hasSpecificQuery = !!cleanSearch || !!googlePlaceId;
+    const shouldSkipLiveLookups = !hasSpecificQuery && mergedBusinesses.length >= 12;
 
     let lat = latitude ? parseFloat(String(latitude)) : null;
     let lng = longitude ? parseFloat(String(longitude)) : null;

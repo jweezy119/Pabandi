@@ -190,6 +190,7 @@ export default function SearchPage() {
     async () => {
       const params: Record<string, string> = {};
       if (q && q.trim().length > 0) params.search = q.trim();
+      if (category && category !== 'ALL') params.category = category;
       if (userLoc) {
         params.latitude = String(userLoc.lat);
         params.longitude = String(userLoc.lng);
@@ -209,7 +210,10 @@ export default function SearchPage() {
       const profilesQuery = String(q || '').trim();
       if (profilesQuery.length >= 2) {
         try {
-          const profilesJson = await fetch(`${API_HOST}/api/v1/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 3500);
+          const profilesJson = await fetch(`${API_HOST}/api/v1/linkedin/seed/profiles?category=${encodeURIComponent(category === 'ALL' ? '' : category.toLowerCase())}`, { signal: controller.signal });
+          clearTimeout(timeout);
           const profilesJsonParsed = await profilesJson.json();
           const profiles = (profilesJsonParsed?.data?.profiles || []) as any[];
           const matched = profiles.filter((p) => {
