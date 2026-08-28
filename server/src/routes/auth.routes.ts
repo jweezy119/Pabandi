@@ -33,7 +33,7 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
  * error page. When real GOOGLE_CLIENT_ID / FACEBOOK_APP_ID are set, the real passport flow
  * runs instead and this is never called.
  */
-async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 'facebook', role: string) {
+async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 'github', role: string) {
   const email = `demo-${provider}@pabandi.local`;
   const { prisma } = await import('../utils/database');
   let user: any = await prisma.user.findUnique({ where: { email } });
@@ -241,40 +241,47 @@ router.get(
 
 // ── Facebook OAuth ─────────────────────────────────────────────────────────
 
-// Step 1: Redirect to Facebook, passing role as state
-router.get('/facebook', (req: Request, res: Response, next: NextFunction) => {
-  if (!FACEBOOK_APP_ID) {
+// ── GitHub OAuth ────────────────────────────────────────────────────────────
+
+// Step 1: Redirect to GitHub, passing role as state
+router.get('/github', oauthSession, (req: Request, res: Response, next: NextFunction) => {
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
     // No real creds → demo login so the button always works (issues a real session).
-    return demoOAuthLogin(req, res, 'facebook', (req.query.role as string) || 'customer');
+    return demoOAuthLogin(req, res, 'github', (req.query.role as string) || 'customer');
   }
   const role = (req.query.role as string) || 'customer';
-  passport.authenticate('facebook', {
-    scope: ['email', 'public_profile'],
+  if (req.query.returnTo) {
+    (req as any).session.returnTo = req.query.returnTo;
+  }
+  passport.authenticate('github', {
+    scope: ['user:email'],
     state: role,
   })(req, res, next);
 });
 
-// Step 2: Facebook redirects back here after auth
+// Step 2: GitHub redirects back here after auth
 router.get(
-  '/facebook/callback',
-  passport.authenticate('facebook', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=facebook_failed` }),
+  '/github/callback',
+  oauthSession,
+  passport.authenticate('github', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=github_failed` }),
   (req: Request, res: Response) => {
     const user = req.user as any;
     if (!user) {
-      return res.redirect(`${FRONTEND_URL}/login?error=facebook_failed`);
+      return res.redirect(`${FRONTEND_URL}/login?error=github_failed`);
     }
 
-    // Issue a JWT and redirect to the frontend with it
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
-    // Redirect with token in query string — frontend will pick it up
-    return res.redirect(
-      `${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`
-    );
+    const returnTo = (req as any).session?.returnTo;
+    if (returnTo) {
+      (req as any).session.returnTo = null;
+      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+    }
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
