@@ -349,14 +349,17 @@ app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
-  // If request comes from Shopify Admin (has shop and host), redirect to frontend embedded app
+  // Shopify deep-link redirect (unchanged)
   if (req.query.shop && req.query.host) {
-    // We explicitly route to the production frontend because the Shopify Admin 
-    // is accessing this from the merchant's browser over the internet.
     const frontendUrl = 'https://pabandi-42c5b.web.app';
     return res.redirect(`${frontendUrl}/shopify/app?shop=${req.query.shop}&host=${req.query.host}`);
   }
-
+  // Serve the React SPA to browsers; keep the JSON welcome for API clients (curl/health).
+  if (req.headers.accept && String(req.headers.accept).includes('text/html')) {
+    return res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'), (err: any) => {
+      if (err) res.status(200).json({ success: true, message: 'Welcome to the Pabandi Backend API', version: API_VERSION, docs: `/api/${API_VERSION}/docs`, health: '/health' });
+    });
+  }
   res.status(200).json({
     success: true,
     message: 'Welcome to the Pabandi Backend API',
