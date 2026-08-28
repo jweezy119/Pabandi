@@ -23,6 +23,12 @@ const GithubIcon = () => (
   </svg>
 );
 
+const PaypalIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="#003087" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.207 0 3.98.642 5.063 1.92 1.078 1.27 1.39 3.06 1.02 4.94-.37 1.88-1.36 3.5-2.79 4.62-1.43 1.12-3.36 1.74-5.48 1.74H9.6c-.46 0-.86.32-.96.78L7.076 21.337z"/>
+    <path d="M9.12 7.86l-.78 4.97c-.09.46-.52.78-.99.78H5.34l2.95-18.74h4.62c1.9 0 3.42.55 4.36 1.65.94 1.1 1.21 2.65.84 4.29-.35 1.78-1.29 3.32-2.65 4.38-1.36 1.06-3.19 1.65-5.2 1.65h-1.4l-.95 4.83H9.12z" fill="#009cde"/>
+  </svg>
+);
 const XIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -139,7 +145,7 @@ export default function AuthPage() {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | 'twitter' | 'linkedin' | 'tiktok' | 'wallet' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | 'paypal' | 'twitter' | 'linkedin' | 'tiktok' | 'wallet' | null>(null);
 
   const getPostLoginTarget = () => {
     const redirect = searchParams.get('redirect');
@@ -180,6 +186,13 @@ export default function AuthPage() {
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/github?role=${role}`;
+  };
+
+  const handlePaypalAuth = () => {
+    setOauthLoading('paypal');
+    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    window.location.href = `${backendUrl}/api/v1/auth/paypal?role=${role}`;
   };
 
   const handleTwitterAuth = () => {
@@ -355,6 +368,16 @@ export default function AuthPage() {
               ) : (
                 <><GithubIcon />
                 {isSignup ? 'Sign up with GitHub' : 'Sign in with GitHub'}</>
+              )}
+            </button>
+            <button onClick={handlePaypalAuth}
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 py-3.5 text-sm font-semibold text-white transition-colors shadow-sm touch-target sm:py-2.5"
+              disabled={!!oauthLoading}>
+              {oauthLoading === 'paypal' ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
+              ) : (
+                <><PaypalIcon />
+                {isSignup ? 'Sign up with PayPal' : 'Sign in with PayPal'}</>
               )}
             </button>
             <div className="mt-1 grid grid-cols-3 gap-3">

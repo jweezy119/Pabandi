@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GithubStrategy } from 'passport-github2';
+import { Strategy as PayPalStrategy } from 'passport-paypal-openidconnect';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { Strategy as TwitterStrategy } from 'passport-twitter';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin-oauth2';
@@ -14,6 +15,8 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID || '';
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET || '';
 const TWITTER_CONSUMER_KEY = process.env.TWITTER_CONSUMER_KEY || '';
@@ -122,6 +125,45 @@ export function configurePassport() {
     );
   } else {
     logger.warn('GitHub OAuth credentials not set. GitHub login will use demo fallback.');
+  }
+
+  if (PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET) {
+    passport.use(
+      new PayPalStrategy(
+        {
+          clientID: PAYPAL_CLIENT_ID,
+          clientSecret: PAYPAL_CLIENT_SECRET,
+          callbackURL: '/api/v1/auth/paypal/callback',
+          scope: 'openid profile email',
+        },
+        async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+          try {
+            const email = profile?._json?.email || profile?.email || (profile?.emails && profile.emails[0]?.value) || '';
+            if (!email) return done(new Error('No email from PayPal profile'));
+            const name = profile?.displayName || `${profile?._json?.given_name || ''} ${profile?._json?.family_name || ''}`.trim();
+            let user: any = await (prisma.user as any).findUnique({ where: { email } });
+            if (!user) {
+              user = await (prisma.user as any).create({
+                data: {
+                  email,
+                  passwordHash: '',
+                  firstName: profile?._json?.given_name || name.split(' ')[0] || '',
+                  lastName: profile?._json?.family_name || name.split(' ').slice(1).join(' ') || '',
+                  role: 'CUSTOMER' as any,
+                  paypalId: profile.id,
+                  isEmailVerified: true,
+                },
+              });
+            }
+            return done(null, user);
+          } catch (err) {
+            return done(err);
+          }
+        }
+      )
+    );
+  } else {
+    logger.warn('PayPal OAuth credentials not set. PayPal login will use demo fallback.');
   }
 
   if (FACEBOOK_APP_ID && FACEBOOK_APP_SECRET) {

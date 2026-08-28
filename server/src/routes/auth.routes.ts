@@ -33,7 +33,7 @@ const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
  * error page. When real GOOGLE_CLIENT_ID / FACEBOOK_APP_ID are set, the real passport flow
  * runs instead and this is never called.
  */
-async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 'github', role: string) {
+async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 'github' | 'paypal', role: string) {
   const email = `demo-${provider}@pabandi.local`;
   const { prisma } = await import('../utils/database');
   let user: any = await prisma.user.findUnique({ where: { email } });
@@ -276,6 +276,47 @@ router.get(
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
+    const returnTo = (req as any).session?.returnTo;
+    if (returnTo) {
+      (req as any).session.returnTo = null;
+      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+    }
+    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+  }
+);
+
+// ── PayPal Login (Log In with PayPal, OpenID Connect) ───────────────────────
+
+// Step 1: Redirect to PayPal, passing role as state
+router.get('/paypal', oauthSession, (req: Request, res: Response, next: NextFunction) => {
+  if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+    return demoOAuthLogin(req, res, 'paypal', (req.query.role as string) || 'customer');
+  }
+  const role = (req.query.role as string) || 'customer';
+  if (req.query.returnTo) {
+    (req as any).session.returnTo = req.query.returnTo;
+  }
+  passport.authenticate('paypal', {
+    scope: 'openid profile email',
+    state: role,
+  })(req, res, next);
+});
+
+// Step 2: PayPal redirects back here after auth
+router.get(
+  '/paypal/callback',
+  oauthSession,
+  passport.authenticate('paypal', { session: false, failureRedirect: `${FRONTEND_URL}/login?error=paypal_failed` }),
+  (req: Request, res: Response) => {
+    const user = req.user as any;
+    if (!user) {
+      return res.redirect(`${FRONTEND_URL}/login?error=paypal_failed`);
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
     const returnTo = (req as any).session?.returnTo;
     if (returnTo) {
       (req as any).session.returnTo = null;

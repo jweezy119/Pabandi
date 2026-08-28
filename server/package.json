@@ -67,6 +67,7 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "passport-linkedin-oauth2": "^2.0.0",
+    "passport-paypal-openidconnect": "^0.1.1",
     "passport-tiktok-auth": "^1.0.12",
     "passport-twitter": "^1.0.4",
     "prisma": "^5.22.0",
