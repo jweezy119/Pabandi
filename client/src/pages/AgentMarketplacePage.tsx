@@ -68,8 +68,8 @@ function AgentCard({ agent }: { agent: AgentItem }) {
 
 export default function AgentMarketplacePage() {
   const [page, setPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [searchFilter, setSearchFilter] = useState('');
+  const [categoryFilter] = useState('');
+  const [searchFilter] = useState('');
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => { const t = setTimeout(() => setIsReady(true), 120); return () => clearTimeout(t); }, []);
