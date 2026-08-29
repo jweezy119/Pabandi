@@ -263,6 +263,34 @@
   }
 }
 
+/* ── Global page-section entrance (fluid on EVERY page) ────────────────────
+   Applied to any <section> inside the PageTransition wrapper. Pages that opt
+   into scroll-reveal via .reveal keep that behavior; everything else gets a
+   consistent staggered mount fade so no page ever snaps in cold. */
+.page-enter section:not(.reveal) {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: sectionIn 520ms var(--ease-out) both;
+}
+.page-enter section:not(.reveal):nth-of-type(1) { animation-delay: 30ms; }
+.page-enter section:not(.reveal):nth-of-type(2) { animation-delay: 80ms; }
+.page-enter section:not(.reveal):nth-of-type(3) { animation-delay: 130ms; }
+.page-enter section:not(.reveal):nth-of-type(4) { animation-delay: 180ms; }
+.page-enter section:not(.reveal):nth-of-type(5) { animation-delay: 230ms; }
+.page-enter section:not(.reveal):nth-of-type(6) { animation-delay: 280ms; }
+.page-enter section:not(.reveal):nth-of-type(7) { animation-delay: 330ms; }
+.page-enter section:not(.reveal):nth-of-type(8) { animation-delay: 380ms; }
+
+@keyframes sectionIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth, app-like scrolling feel */
+html {
+  scroll-behavior: smooth;
+}
+
 /* ── Reveal group (staggered children) ─────────────────────────────────── */
 /* Used with useScrollReveal: parent .reveal-group, children .reveal stagger in */
 .reveal-group > .reveal {
