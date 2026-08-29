@@ -25,6 +25,7 @@ import { ptpEngine } from '../protocol/ptp.spec';
 import { solanaAnchor } from '../services/solanaAnchor.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { createHash } from 'crypto';
 
 const router = Router();
 
@@ -64,11 +65,14 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
     ).catch((e: any) => ({ simulated: true, error: e.message }));
 
     // 3. Persist to the trust audit trail (immutable, verifiable history).
+    const currentHash = createHash('sha256').update(`${proof.proofId}:${proof.commitment}:${entityId}`).digest('hex');
     await prisma.trustAuditTrail.create({
       data: {
         userId: entityId,
         previousScore: 0, newScore: 0, changeReason: proof.proofId,
         component: 'ZK_REALESTATE', severity: 'positive',
+        previousHash: currentHash, currentHash,
+        methodology: '1.0.0',
         metadata: { commitment: proof.commitment, publicInputs: proof.publicInputs, zkType: proof.zkType, anchor, issuedAt: proof.issuedAt } as any,
       } as any,
     }).catch((e: any) => logger.warn(`[REAL-ESTATE-ZK] audit persist skipped: ${e.message}`));
