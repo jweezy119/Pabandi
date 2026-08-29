@@ -64,18 +64,24 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
     ).catch((e: any) => ({ simulated: true, error: e.message }));
 
     // 3. Persist the portable proof record (no User FK — works for DID-only tenants).
-    await prisma.zkProofRecord.create({
-      data: {
-        proofId: proof.proofId,
-        component: 'ZK_POR',
-        entityId,
-        commitment: proof.commitment,
-        publicInputs: proof.publicInputs as any,
-        zkType: proof.zkType,
-        anchor: anchor as any,
-        issuedAt: new Date(proof.issuedAt),
-      },
-    }).catch((e: any) => logger.warn(`[POR-ZK] proof record persist skipped: ${e.message}`));
+    let persistError: string | undefined;
+    try {
+      await prisma.zkProofRecord.create({
+        data: {
+          proofId: proof.proofId,
+          component: 'ZK_POR',
+          entityId,
+          commitment: proof.commitment,
+          publicInputs: proof.publicInputs as any,
+          zkType: proof.zkType,
+          anchor: anchor as any,
+          issuedAt: new Date(proof.issuedAt),
+        },
+      });
+    } catch (e: any) {
+      persistError = e.message;
+      logger.warn(`[POR-ZK] proof record persist skipped: ${e.message}`);
+    }
 
     // 4. Fold the ZK commitment into a PORTABLE PTP attestation.
     const velocity = { direction: 'STEADY' as const, momentum: 0, confidence: 0.5 };
@@ -95,6 +101,7 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
       proof,
       attestation: att,
       anchor,
+      persistError,
       economics: {
         simulated: !!anchor?.simulated,
       },
