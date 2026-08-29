@@ -2158,3 +2158,22 @@ model ProgramTask {
   @@index([programId])
   @@index([status])
 }
+
+// Pre-registration interest for the Ondo USDY rent-yield rail (marketing/flywheel).
+// Captures landlord/property-manager intent BEFORE the rail goes live, so Pabandi can
+// show Ondo a growing, verifiable list of properties wanting tokenized-T-bill rent yield.
+model UsdyLead {
+  id           String   @id @default(cuid())
+  email        String
+  name         String?
+  propertyType String? // hotel | guesthouse | vacation_rental | serviced_apartment | other
+  portfolioSize Int?    // number of units/properties the lead manages
+  country      String?
+  message      String?
+  source       String   @default("usdy_landing") // where the lead came from
+  createdAt    DateTime @default(now())
+
+  @@unique([email])
+  @@index([createdAt])
+  @@index([country])
+}

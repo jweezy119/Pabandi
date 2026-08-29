@@ -76,6 +76,47 @@ export default function HospitalityPage() {
   );
   const connectedProperties = propertiesData?.data?.properties || [];
 
+  // Live USDY rail status + social-proof count (public, honest SIMULATED→LIVE)
+  const { data: usdyConfig } = useQuery('usdy-config', () =>
+    fetch('/api/v1/pyd/usdy/config').then((r) => r.json()),
+    { refetchOnWindowFocus: false }
+  );
+  const { data: usdyCount, refetch: refetchUsdyCount } = useQuery('usdy-leads-count', () =>
+    fetch('/api/v1/pyd/usdy/leads/count').then((r) => r.json()),
+    { refetchOnWindowFocus: false }
+  );
+
+  const [usdyForm, setUsdyForm] = useState({ email: '', name: '', propertyType: '', portfolioSize: '', country: '' });
+  const [usdySubmitting, setUsdySubmitting] = useState(false);
+  const [usdyDone, setUsdyDone] = useState(false);
+  const [usdyError, setUsdyError] = useState<string | null>(null);
+
+  const handleUsdyLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUsdyError(null);
+    setUsdySubmitting(true);
+    try {
+      const res = await fetch('/api/v1/pyd/usdy/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...usdyForm,
+          portfolioSize: usdyForm.portfolioSize ? Number(usdyForm.portfolioSize) : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsdyDone(true);
+        refetchUsdyCount();
+      } else {
+        setUsdyError(data.message || 'Could not pre-register. Try again.');
+      }
+    } catch {
+      setUsdyError('Network error. Try again.');
+    }
+    setUsdySubmitting(false);
+  };
+
   const [testingPropertyId, setTestingPropertyId] = useState<string | null>(null);
 
   const handleOpenWizard = (propertyType?: PropertyType) => {
@@ -365,6 +406,123 @@ export default function HospitalityPage() {
                   ))}
                 </div>
                 <Button onClick={() => handleOpenWizard()} className="mt-4 w-full py-2.5 text-xs font-bold">Activate for My Property</Button>
+              </Surface>
+            </div>
+          </div>
+        </section>
+
+        {/* USDY x Real Estate — Coming Soon (Ondo tokenized T-bills) */}
+        <section className="mb-20" id="usdy">
+          <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.07] to-indigo-500/[0.04] p-6 md:p-10 overflow-hidden relative">
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Chip tone="info" className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">Real Estate Yield</Chip>
+                  {usdyConfig?.data?.live ? (
+                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">LIVE</span>
+                  ) : (
+                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-amber-400/15 text-amber-300 border border-amber-400/40">Coming Soon</span>
+                  )}
+                </div>
+                <h2 className="mt-4 text-2xl font-bold text-white md:text-3xl">
+                  Earn USDY Yield on Every Rent Payment
+                </h2>
+                <p className="mt-3 max-w-xl text-sm text-slate-300 leading-relaxed">
+                  Pabandi is integrating <strong className="text-emerald-300">Ondo Finance USDY</strong> — tokenized US Treasuries — as the yield rail for real-estate rent streams. Rent held for the float window earns native T-bill yield, split <strong>50/50</strong> between tenant equity and landlord bonus. Non-custodial, Sharia-aligned, and anchored on Solana.
+                </p>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {[
+                    { v: `${(usdyConfig?.data?.apy ?? 4.5).toFixed(1)}%`, l: 'USDY APY (T-bills)', c: '#10b981' },
+                    { v: '50/50', l: 'Tenant / Landlord split', c: '#6366f1' },
+                    { v: 'ZK', l: 'Proof-of-Rent attestation', c: '#f0b429' },
+                    { v: 'SOL', l: 'Settlement chain', c: '#14b8a6' },
+                  ].map((s) => (
+                    <Surface key={s.l} className="flex flex-col gap-1">
+                      <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
+                      <p className="text-[10px] font-bold text-white">{s.l}</p>
+                    </Surface>
+                  ))}
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                  <span>✓ Rent held in USDY (paid 1st → settles 5th)</span>
+                  <span>✓ Yield from US Treasuries, not lending</span>
+                  <span>✓ Treasury-protected settlement wallet</span>
+                  <span>✓ Portable on-chain rent reliability</span>
+                </div>
+
+                {usdyConfig?.data?.live ? (
+                  <p className="mt-4 text-[11px] font-bold text-emerald-300">● Rail is LIVE — real on-chain USDY holding + yield distribution active.</p>
+                ) : (
+                  <p className="mt-4 text-[11px] text-slate-400">
+                    Status: <span className="text-amber-300 font-bold">Simulated</span> — real Solana USDY rail wired &amp; gated on Ondo mainnet mint + settlement wallet.{' '}
+                    <span className="text-slate-500">({usdyConfig?.data?.apy ?? 4.5}% APY reference.)</span>
+                  </p>
+                )}
+
+                <p className="mt-3 text-[11px] text-slate-500 max-w-xl">
+                  Built in public as part of Pabandi × Ondo — tokenized T-bill yield for the global rental economy. Pre-register your portfolio to get early access and help us show the demand.
+                </p>
+              </div>
+
+              {/* Pre-registration form (real lead capture) */}
+              <Surface className="w-full lg:w-80 shrink-0">
+                {usdyDone ? (
+                  <div className="text-center py-6">
+                    <div className="text-3xl">✅</div>
+                    <p className="mt-2 text-sm font-bold text-white">You're pre-registered!</p>
+                    <p className="mt-1 text-[11px] text-slate-400">We'll reach out when the USDY rail goes live.</p>
+                    <p className="mt-3 text-[11px] text-emerald-300 font-bold">
+                      {(usdyCount?.data?.totalPreRegistered ?? 0)} {((usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties')} pre-registered so far.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleUsdyLead} className="flex flex-col gap-3">
+                    <p className="text-sm font-bold text-white">Pre-register your portfolio</p>
+                    <p className="text-[10px] text-slate-400 -mt-1">Get early access to USDY rent yield.</p>
+                    <input
+                      type="email" required placeholder="Work email" value={usdyForm.email}
+                      onChange={(e) => setUsdyForm({ ...usdyForm, email: e.target.value })}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                    />
+                    <input
+                      type="text" placeholder="Name (optional)" value={usdyForm.name}
+                      onChange={(e) => setUsdyForm({ ...usdyForm, name: e.target.value })}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                    />
+                    <select
+                      value={usdyForm.propertyType}
+                      onChange={(e) => setUsdyForm({ ...usdyForm, propertyType: e.target.value })}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-400/50"
+                    >
+                      <option value="">Property type</option>
+                      <option value="hotel">Hotel / Resort</option>
+                      <option value="guesthouse">Guesthouse / B&B</option>
+                      <option value="vacation_rental">Vacation Rental</option>
+                      <option value="serviced_apartment">Serviced Apartment</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <input
+                      type="number" min="1" placeholder="Portfolio size (units)" value={usdyForm.portfolioSize}
+                      onChange={(e) => setUsdyForm({ ...usdyForm, portfolioSize: e.target.value })}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                    />
+                    <input
+                      type="text" placeholder="Country (optional)" value={usdyForm.country}
+                      onChange={(e) => setUsdyForm({ ...usdyForm, country: e.target.value })}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                    />
+                    {usdyError && <p className="text-[10px] text-rose-400">{usdyError}</p>}
+                    <Button type="submit" disabled={usdySubmitting} className="mt-1 w-full py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-400">
+                      {usdySubmitting ? 'Submitting...' : 'Get Early Access'}
+                    </Button>
+                    <p className="text-[9px] text-slate-500 text-center">
+                      {(usdyCount?.data?.totalPreRegistered ?? 0)} {(usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties'} already pre-registered.
+                    </p>
+                  </form>
+                )}
               </Surface>
             </div>
           </div>
