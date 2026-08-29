@@ -175,6 +175,49 @@ router.get('/renter-equity/:userId', async (req: Request, res: Response): Promis
   }
 });
 
+/**
+ * GET /api/v1/pyd/usdy/config
+ * Public view of the Ondo USDY rail status (mint, live flag, APY) — no secrets.
+ */
+router.get('/usdy/config', async (_req: Request, res: Response): Promise<any> => {
+  try {
+    const { ondoUsdyService } = await import('../services/ondoUsdy.service');
+    res.json({
+      success: true,
+      data: {
+        live: process.env.ONDO_RWA_LIVE === 'true',
+        usdyMint: process.env.ONDO_USDY_MINT || null,
+        settlementWalletConfigured: !!process.env.ONDO_SETTLEMENT_KEY,
+        apy: Number(process.env.ONDO_APY || 4.5),
+        note: process.env.ONDO_RWA_LIVE === 'true'
+          ? 'Real on-chain USDY holding + yield distribution active (settlement wallet).'
+          : 'SIMULATED: set ONDO_RWA_LIVE=true + ONDO_USDY_MINT + ONDO_SETTLEMENT_KEY to go live.',
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/pyd/usdy/hold
+ * Hold a rent payment in USDY for the float window (real SPL transfer when live).
+ */
+router.post('/usdy/hold', authenticate, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const tenantId = (req as any).user?.id;
+    const { streamId, tenantWallet, amountUsd } = req.body ?? {};
+    if (!streamId || !tenantWallet || !amountUsd) {
+      return res.status(400).json({ success: false, error: 'streamId, tenantWallet, amountUsd required' });
+    }
+    const { ondoUsdyService } = await import('../services/ondoUsdy.service');
+    const result = await ondoUsdyService.holdInUsdy(streamId, tenantWallet, Number(amountUsd));
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
 
 /**

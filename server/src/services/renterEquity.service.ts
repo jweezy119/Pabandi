@@ -70,28 +70,49 @@ export class RenterEquityService {
       stream.holdingDays
     );
 
+    // When ONDO_RWA_LIVE: use the real USDY yield split (same 50/50 math, real APY source)
+    // and perform the actual on-chain yield distribution from the settlement wallet.
+    const { ondoUsdyService } = await import('./ondoUsdy.service');
+    const usdySplit = ondoUsdyService.computeYieldSplit(stream.rentAmountUSD, stream.holdingDays);
+    const finalTenant = usdySplit.tenantEquity;
+    const finalLandlord = usdySplit.landlordBonus;
+    const finalTotal = usdySplit.totalYield;
+    const finalSpread = usdySplit.spread;
+
+    // Real on-chain yield distribution (USDC from settlement wallet) when live.
+    let onchain: any = { simulated: true };
+    if (process.env.ONDO_RWA_LIVE === 'true') {
+      try {
+        onchain = await ondoUsdyService.settleYield(
+          stream.id, stream.tenantId, stream.landlordId, stream.rentAmountUSD, stream.holdingDays
+        );
+      } catch (e: any) {
+        logger.warn(`[RenterEquity] on-chain USDY settle skipped: ${e.message}`);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // Credit tenant equity wallet
       await tx.renterEquityWallet.upsert({
         where: { userId: stream.tenantId },
-        create: { userId: stream.tenantId, tenantEquity: tenant, totalSettled: tenant },
-        update: { tenantEquity: { increment: tenant }, totalSettled: { increment: tenant } },
+        create: { userId: stream.tenantId, tenantEquity: finalTenant, totalSettled: finalTenant },
+        update: { tenantEquity: { increment: finalTenant }, totalSettled: { increment: finalTenant } },
       });
       // Credit landlord bonus wallet
       await tx.renterEquityWallet.upsert({
         where: { userId: stream.landlordId },
-        create: { userId: stream.landlordId, landlordBonus: landlord, totalSettled: landlord },
-        update: { landlordBonus: { increment: landlord }, totalSettled: { increment: landlord } },
+        create: { userId: stream.landlordId, landlordBonus: finalLandlord, totalSettled: finalLandlord },
+        update: { landlordBonus: { increment: finalLandlord }, totalSettled: { increment: finalLandlord } },
       });
       // Mark stream settled
       await tx.rentStream.update({
         where: { id: stream.id },
         data: {
           status: 'SETTLED',
-          totalYieldUSD: totalYield,
-          tenantEquityUSD: tenant,
-          landlordBonusUSD: landlord,
-          pabandiSpreadUSD: spread,
+          totalYieldUSD: finalTotal,
+          tenantEquityUSD: finalTenant,
+          landlordBonusUSD: finalLandlord,
+          pabandiSpreadUSD: finalSpread,
           settledAt: new Date(),
         },
       });
@@ -125,11 +146,12 @@ export class RenterEquityService {
     return {
       ok: true,
       settled: true,
-      simulated: stream.simulated,
-      totalYieldUSD: totalYield,
-      tenantEquityUSD: tenant,
-      landlordBonusUSD: landlord,
-      pabandiSpreadUSD: spread,
+      simulated: stream.simulated && onchain.simulated,
+      totalYieldUSD: finalTotal,
+      tenantEquityUSD: finalTenant,
+      landlordBonusUSD: finalLandlord,
+      pabandiSpreadUSD: finalSpread,
+      onchain,
       porProofId,
     };
   }
