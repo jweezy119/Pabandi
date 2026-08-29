@@ -64,18 +64,19 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
       'PABANDI_ZK'
     ).catch((e: any) => ({ simulated: true, error: e.message }));
 
-    // 3. Persist to the trust audit trail (immutable, verifiable history).
-    const currentHash = createHash('sha256').update(`${proof.proofId}:${proof.commitment}:${entityId}`).digest('hex');
-    await prisma.trustAuditTrail.create({
+    // 3. Persist the portable proof record (no User FK — works for DID-only entities).
+    await prisma.zkProofRecord.create({
       data: {
-        userId: entityId,
-        previousScore: 0, newScore: 0, changeReason: proof.proofId,
-        component: 'ZK_REALESTATE', severity: 'positive',
-        previousHash: currentHash, currentHash,
-        methodology: '1.0.0',
-        metadata: { commitment: proof.commitment, publicInputs: proof.publicInputs, zkType: proof.zkType, anchor, issuedAt: proof.issuedAt } as any,
-      } as any,
-    }).catch((e: any) => logger.warn(`[REAL-ESTATE-ZK] audit persist skipped: ${e.message}`));
+        proofId: proof.proofId,
+        component: 'ZK_REALESTATE',
+        entityId,
+        commitment: proof.commitment,
+        publicInputs: proof.publicInputs as any,
+        zkType: proof.zkType,
+        anchor: anchor as any,
+        issuedAt: new Date(proof.issuedAt),
+      },
+    }).catch((e: any) => logger.warn(`[REAL-ESTATE-ZK] proof record persist skipped: ${e.message}`));
 
     // 4. Fold the ZK commitment into a PORTABLE PTP attestation.
     //    `zkCommitment` lands in `attestation.zkProof.commitment`, which IS covered
@@ -113,20 +114,20 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
 /** Verify a ZK proof (third party: only public signals used). */
 router.get('/zk-proof/:proofId/verify', async (req: Request, res: Response) => {
   const { proofId } = req.params;
-  const stored = await prisma.trustAuditTrail.findFirst({
-    where: { component: 'ZK_REALESTATE', changeReason: proofId },
+  const stored = await prisma.zkProofRecord.findUnique({
+    where: { proofId },
   }).catch(() => null as any);
 
   if (!stored) return res.status(404).json({ success: false, error: 'proof not found' });
 
-  const meta: any = (stored as any).metadata || {};
+  const meta: any = stored;
   const result = await zkRealestateProver.verify({
-    proofId: meta.proofId || proofId,
+    proofId: meta.proofId,
     commitment: meta.commitment,
     publicInputs: meta.publicInputs,
     zkType: meta.zkType,
-    circuitCompiled: meta.circuitCompiled,
-    issuedAt: meta.issuedAt,
+    circuitCompiled: false,
+    issuedAt: meta.issuedAt?.toISOString?.() || meta.issuedAt,
   } as any);
 
   res.json({ success: true, valid: result.valid, reason: result.reason, storedAt: stored });

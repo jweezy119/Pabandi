@@ -1728,6 +1728,25 @@ model RentStream {
   @@index([status])
 }
 
+// ── ZK Proof Record (portable, verifiable history; no User FK so proofs persist
+//    even for DID-only subjects / external tenants). Used by PoR + real-estate ZK. ──
+model ZkProofRecord {
+  id            String   @id @default(cuid())
+  proofId       String   @unique // por_xxx / re_xxx
+  component     String   // ZK_POR | ZK_REALESTATE
+  entityId      String   // tenant/user/business DID the proof is bound to
+  commitment    String
+  publicInputs  Json
+  zkType        String   @default("noir-constraint")
+  anchor        Json?
+  issuedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([proofId])
+  @@index([entityId])
+  @@index([component])
+}
+
 model BackgroundCheck {
   id                   String    @id @default(cuid())
   subjectType          String // FREELANCER | PROPERTY_MANAGER | BUSINESS | GUEST
