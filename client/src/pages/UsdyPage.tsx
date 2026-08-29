@@ -30,6 +30,20 @@ export default function UsdyPage() {
   const apy = usdyConfig?.data?.apy ?? 4.5;
   const total = usdyCount?.data?.totalPreRegistered ?? 0;
 
+  const [copied, setCopied] = useState(false);
+  const shareWithOndo = () => {
+    const url = `${window.location.origin}/usdy`;
+    const msg =
+      `Hi Ondo team — Pabandi is bringing USDY (tokenized US Treasuries) to the global rental economy. ` +
+      `Rent held for the settlement window earns native T-bill yield, split 50/50 between tenants and landlords, ` +
+      `non-custodial and anchored on Solana with zero-knowledge Proof-of-Rent. ` +
+      `${total} properties have already pre-registered for early access: ${url}`;
+    navigator.clipboard.writeText(msg).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -209,6 +223,22 @@ export default function UsdyPage() {
           <p className="mt-4 text-[13px] font-bold text-emerald-300">
             {total} {total === 1 ? 'property has' : 'properties have'} pre-registered for USDY rent yield.
           </p>
+          <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="https://twitter.com/intent/tweet?text=Excited%20for%20%40Pabandi%20bringing%20%40OndoFinance%20USDY%20tokenized%20T-bill%20yield%20to%20global%20rent%20%E2%80%94%20non-custodial%2C%20Solana-anchored%2C%2050%2F50%20tenant-landlord%20split.%20Pre-register%3A%20https%3A%2F%2Fpabandi.onrender.com%2Fusdy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-emerald-950 transition-colors hover:bg-emerald-400"
+            >
+              Share on X
+            </a>
+            <button
+              onClick={shareWithOndo}
+              className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-2.5 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+            >
+              {copied ? '✓ Copied outreach message' : 'Copy "Share with Ondo" message'}
+            </button>
+          </div>
         </div>
       </section>
 

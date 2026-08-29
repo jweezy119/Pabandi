@@ -297,6 +297,9 @@ export default function HomePage() {
               <Link to="/pricing" className="ml-2 rounded-lg bg-white/10 px-4 py-2 text-xs text-white transition-colors hover:bg-white/20">
                 View Plans →
               </Link>
+              <Link to="/usdy" className="rounded-lg bg-emerald-500/15 px-4 py-2 text-xs text-emerald-300 ring-1 ring-emerald-500/30 transition-colors hover:bg-emerald-500/25">
+                USDY Yield →
+              </Link>
             </div>
 
             {/* About Me */}

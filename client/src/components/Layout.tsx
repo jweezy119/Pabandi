@@ -284,12 +284,13 @@ export default function Layout() {
               <DropdownItem to="/protected-deposit">Protected Deposit</DropdownItem>
               <DropdownItem to="/arbitration">Arbitration</DropdownItem>
             </Dropdown>
-            <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3', '/revenue', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3', '/revenue', '/usdy', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/cashout">Cash Out</DropdownItem>
-              <DropdownItem to="/payroll">Instant Pay</DropdownItem>
+              <DropdownItem to="/payout">Instant Pay</DropdownItem>
               <DropdownItem to="/economy">Economy</DropdownItem>
               <DropdownItem to="/revenue">Revenue</DropdownItem>
               <DropdownItem to="/web3">Web3</DropdownItem>
+              <DropdownItem to="/usdy">USDY Yield →</DropdownItem>
             </Dropdown>
             <Dropdown label="Company" current={['/about', '/sharia-compliance', '/technology', '/join', '/developer'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/about">About</DropdownItem>
