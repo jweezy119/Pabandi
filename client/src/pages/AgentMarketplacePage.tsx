@@ -16,6 +16,7 @@ type Agent = {
 };
 
 type Feedback = { id: string; rating: number; comment?: string | null; tags: string[]; createdAt: string };
+type Variant = { id: string; variant: string; metrics: Record<string, any>; deployed: boolean; createdAt: string };
 
 export default function AgentMarketplacePage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -23,6 +24,8 @@ export default function AgentMarketplacePage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [learning, setLearning] = useState<any>(null);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ outcome: 'COMPLETED' as 'COMPLETED' | 'NO_SHOW' | 'CANCELLED', rating: 5, tags: '' });
 
   useEffect(() => {
     fetch('/api/v1/agents')
@@ -42,6 +45,34 @@ export default function AgentMarketplacePage() {
       setFeedback(learn?.feedback || []);
     });
   }, [selected]);
+
+  const submitFeedback = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/v1/agents/${selected}/feedback`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          outcome: form.outcome,
+          rating: form.rating,
+          tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+          bookingId: `ui-${Date.now()}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const refresh = await fetch(`/api/v1/agents/${selected}/learning`).then((r) => r.json());
+        setLearning(refresh);
+        setFeedback(refresh.feedback || []);
+        setForm((f) => ({ ...f, tags: '' }));
+      } else {
+        alert(data.message || data.error || 'Failed');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white p-6">
@@ -83,9 +114,7 @@ export default function AgentMarketplacePage() {
                     <span className="rounded-full bg-white/10 px-2 py-0.5">PAB {a.balancePab}</span>
                     <span className="rounded-full bg-white/10 px-2 py-0.5">Stake {a.stakePab}</span>
                     {typeof a.rating === 'number' && (
-                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
-                        ★ {a.rating.toFixed(1)}
-                      </span>
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">★ {a.rating.toFixed(1)}</span>
                     )}
                   </div>
                   <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
@@ -117,6 +146,7 @@ export default function AgentMarketplacePage() {
                 Close
               </button>
             </div>
+
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-xl border border-white/10 bg-black/20 p-3">
                 <div className="text-xs text-slate-400">Active variant</div>
@@ -131,28 +161,85 @@ export default function AgentMarketplacePage() {
                 <div className="text-sm font-semibold">{feedback[0] ? `★ ${feedback[0].rating}` : '—'}</div>
               </div>
             </div>
-            <div className="mt-4">
-              <div className="text-xs text-slate-400 mb-2">Recent feedback</div>
-              <div className="space-y-2">
-                {feedback.length === 0 && <div className="text-xs text-slate-500">No feedback yet.</div>}
-                {feedback.map((f) => (
-                  <div key={f.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
-                    <div className="flex items-center justify-between">
-                      <span>★ {f.rating}</span>
-                      <span className="text-slate-500">{new Date(f.createdAt).toLocaleString()}</span>
-                    </div>
-                    {f.comment && <div className="mt-1 text-slate-300">{f.comment}</div>}
-                    {!!f.tags?.length && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {f.tags.map((t) => (
-                          <span key={t} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
-                            {t}
-                          </span>
-                        ))}
+
+            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4">
+              <div className="text-xs text-slate-400 mb-2">Submit outcome feedback</div>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                  value={form.outcome}
+                  onChange={(e) => setForm((f) => ({ ...f, outcome: e.target.value as any }))}
+                >
+                  <option value="COMPLETED">COMPLETED</option>
+                  <option value="NO_SHOW">NO_SHOW</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <select
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                  value={form.rating}
+                  onChange={(e) => setForm((f) => ({ ...f, rating: Number(e.target.value) }))}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>{n} ★</option>
+                  ))}
+                </select>
+                <input
+                  className="flex-1 min-w-[180px] rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                  placeholder="Tags: fast, quality, communicated"
+                  value={form.tags}
+                  onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+                />
+                <button
+                  onClick={submitFeedback}
+                  disabled={submitting}
+                  className="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-60"
+                >
+                  {submitting ? 'Saving...' : 'Save feedback'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs text-slate-400 mb-2">Recent feedback</div>
+                <div className="space-y-2">
+                  {feedback.length === 0 && <div className="text-xs text-slate-500">No feedback yet.</div>}
+                  {feedback.map((f) => (
+                    <div key={f.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span>★ {f.rating}</span>
+                        <span className="text-slate-500">{new Date(f.createdAt).toLocaleString()}</span>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {f.comment && <div className="mt-1 text-slate-300">{f.comment}</div>}
+                      {!!f.tags?.length && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {f.tags.map((t) => (
+                            <span key={t} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-slate-400 mb-2">Variant history</div>
+                <div className="space-y-2">
+                  {(learning?.variants || []).map((v: Variant) => (
+                    <div key={v.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{v.variant}</span>
+                        <span className={`rounded-full px-2 py-0.5 ${v.deployed ? 'bg-emerald-500/15 text-emerald-200' : 'bg-white/10 text-slate-300'}`}>
+                          {v.deployed ? 'active' : 'inactive'}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-slate-400">
+                        bookings: {(v.metrics?.bookings || 0)} · revenue: {(v.metrics?.revenue || 0)} · rating: {(v.metrics?.rating || 0).toFixed?.(1) ?? v.metrics?.rating}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

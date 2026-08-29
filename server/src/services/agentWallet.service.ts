@@ -227,6 +227,18 @@ export async function recordBookingOutcome(opts: {
     logger.warn(`[agentWallet] attestation re-issue failed: ${e.message}`);
   }
 
+  try {
+    const { webhookDeliveryService } = await import('./webhookDelivery.service');
+    const appId = (agent as any).createdBy;
+    if (appId) {
+      await webhookDeliveryService.enqueueWebhook({
+        appId,
+        event: `agent.${opts.status.toLowerCase()}`,
+        data: { agentId: opts.agentId, status: opts.status, stakeDelta, trustDelta, gigId: opts.gigId, bookingId: opts.bookingId },
+      });
+    }
+  } catch { /* webhook best-effort */ }
+
   return {
     ok: true,
     status: opts.status,
