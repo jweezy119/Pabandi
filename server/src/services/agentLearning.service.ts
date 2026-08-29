@@ -45,23 +45,30 @@ export async function recordLearningEvent(input: LearningInput): Promise<any> {
 
   // 1) Persist feedback if present
   if (input.rating && input.bookingId) {
-    await prisma.agentFeedback.create({
-      data: {
-        bookingId: input.bookingId,
-        agentId: input.agentId,
-        rating: input.rating,
-        comment: '',
-        tags: input.tags || [],
-      },
-    });
+    try {
+      await prisma.agentFeedback.create({
+        data: {
+          bookingId: input.bookingId,
+          agentId: input.agentId,
+          rating: input.rating,
+          comment: '',
+          tags: input.tags || [],
+        },
+      });
+    } catch { /* table may not exist yet */ }
   }
 
   // 2) Update all deployed variant metrics with this outcome (bandit update)
-  const deployed = await prisma.agentIteration.findMany({ where: { agentId: input.agentId, deployed: true } });
-  const variants = deployed.length > 0 ? deployed : await ensureDefaultVariants(input.agentId);
+  let variants;
+  try {
+    variants = await prisma.agentIteration.findMany({ where: { agentId: input.agentId, deployed: true } });
+  } catch {
+    return { ok: true, message: 'learning tables not yet migrated', skipped: true };
+  }
+  const rows = variants.length > 0 ? variants : await ensureDefaultVariants(input.agentId);
 
   const updated = [];
-  for (const v of variants) {
+  for (const v of rows) {
     const m = { ...(v.metrics as any) };
     m.bookings += 1;
     m.revenue += input.revenue || 0;
