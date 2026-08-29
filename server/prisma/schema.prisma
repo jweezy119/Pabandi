@@ -485,6 +485,21 @@ model ApiClient {
   @@index([businessId])
 }
 
+model AppConnection {
+  id           String   @id @default(cuid())
+  appName      String
+  ownerUserId  String
+  bearerToken  String?  // PTP attestation base64 (masked in responses)
+  scopes       String[]
+  webhookUrl   String?
+  redirectUrl  String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([ownerUserId])
+}
+
 model ApiUsageLog {
   id         String    @id @default(cuid())
   clientId   String
