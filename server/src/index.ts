@@ -305,6 +305,7 @@ import billingRoutes from './routes/billing.routes';
 import wellknownRoutes from './routes/wellknown.routes';
 import agentPassportRoutes from './routes/agentPassport.routes';
 import realestateRoutes from './routes/realestate.routes';
+import porRoutes from './routes/por.routes';
 import predictiveRoutes from './routes/predictive.routes';
 import geoRiskRoutes from './routes/geoRisk.routes';
 import protocolV2Routes from './routes/protocolV2.routes';
@@ -325,6 +326,7 @@ app.get('/.well-known/ptp.json', async (req, res) => {
 });
 app.use(`/api/${API_VERSION}/agent-passport`, agentPassportRoutes); // AI-agent trust standard (issue/verify)
 app.use(`/api/${API_VERSION}/realestate`, realestateRoutes); // ZK real-estate/hospitality escrow proofs
+app.use(`/api/${API_VERSION}/por`, porRoutes); // ZK Proof of Rent (portable tenant reliability)
 app.use(`/api/${API_VERSION}/predictive`, predictiveRoutes); // Predictive Intelligence (risk + demand + slots)
 app.use(`/api/${API_VERSION}/geo`, geoRiskRoutes); // Geospatial Risk Oracle (property + dual-risk pricing)
 app.use(`/api/${API_VERSION}/v2`, protocolV2Routes); // Pabandi Protocol v2.0: ZK / ACTUS / Kleros / Aragon / Mesh

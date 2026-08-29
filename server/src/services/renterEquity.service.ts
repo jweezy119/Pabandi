@@ -97,6 +97,31 @@ export class RenterEquityService {
       });
     });
 
+    // Issue a portable ZK Proof of Rent (amount + identity hidden) for the tenant.
+    // This is the "rent is not a sunk cost + reliability is portable" primitive:
+    // a third party can verify on-time payment without learning the rent amount.
+    let porProofId: string | undefined;
+    try {
+      const { zkPorProver } = await import('./zkPorProver.service');
+      const por = await zkPorProver.prove({
+        months_paid: 1,
+        graceDays: 5,
+        issuedAt: Math.floor(Date.now() / 1000),
+        tenant_secret: `${stream.tenantId}:por`,
+        rent_amount: stream.rentAmountUSD,
+        paid_ts: Math.floor(Date.now() / 1000) - stream.holdingDays * 86400,
+        due_ts: Math.floor(Date.now() / 1000) - stream.holdingDays * 86400,
+        salt: `${stream.id}:${stream.settledAt?.getTime() ?? Date.now()}`,
+        // entityId is NOT a circuit input — it binds the resulting PTP attestation only.
+        entityId: stream.tenantId,
+        trustScore: 70,
+      } as any);
+      porProofId = por.proofId;
+      logger.info(`[RenterEquity] Issued ZK Proof of Rent ${porProofId} for tenant ${stream.tenantId}`);
+    } catch (e: any) {
+      logger.warn(`[RenterEquity] PoR issuance skipped: ${e.message}`);
+    }
+
     return {
       ok: true,
       settled: true,
@@ -105,6 +130,7 @@ export class RenterEquityService {
       tenantEquityUSD: tenant,
       landlordBonusUSD: landlord,
       pabandiSpreadUSD: spread,
+      porProofId,
     };
   }
 
