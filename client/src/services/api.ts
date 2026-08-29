@@ -398,7 +398,7 @@ export const treasuryService = {
 
 export const economyService = {
   getStats: () => apiClient.get('/economy/stats'),
-  runDemoBooking: (body: { amountPab?: number }) => apiClient.post('/economy/demo-booking', body),
+  runDemoBooking: (body: { amountPab?: number }) => apiClient.post('/economy/demo-book', body),
 };
 
 export const accountManagerService = {

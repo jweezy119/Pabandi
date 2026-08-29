@@ -63,11 +63,23 @@ export class AutonomousEconomyService {
    * base64 tx. Returns { serializedTx, rakeSol, netToProtocol, bookingRef }.
    * This is genuine profit: external SOL in, 1% skimmed, rest settles the booking.
    */
-  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; gigId?: string; solAmount?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; stakePab: number; agentId: string | null; simulated: true }> {
+  async demoBook(opts?: { referralCode?: string; partnerId?: string; agentId?: string; gigId?: string; solAmount?: number; amountPab?: number }): Promise<{ bookingRef: string; rakeSol: number; referralSol: number; partnerSol: number; stakePab: number; agentId: string | null; simulated: true; amountPab: number; feePab: number; burnPab: number; allocation: { LP_PROVISION: number; OPERATING: number; YIELD_REINVEST: number; EMERGENCY: number }; delta: { accrualTotal: number } }> {
     const solAmount = opts?.solAmount ?? 1.0;
+    const amountPab = opts?.amountPab ?? 100;
     const rake = +(solAmount * 0.01).toFixed(6);
     const referralSol = opts?.referralCode ? +(rake * 0.2).toFixed(6) : 0;
     const partnerSol = opts?.partnerId ? +(solAmount * 0.001).toFixed(6) : 0;
+    // PAB fee + burn economics (mirrors tokenomics config: 2% fee, 12% burn).
+    const feePab = +(amountPab * 0.02).toFixed(4);
+    const burnPab = +(feePab * 0.12).toFixed(4);
+    const netPab = +(feePab - burnPab).toFixed(4);
+    const allocation = {
+      LP_PROVISION: +(netPab * 0.35).toFixed(4),
+      OPERATING: +(netPab * 0.25).toFixed(4),
+      YIELD_REINVEST: +(netPab * 0.25).toFixed(4),
+      EMERGENCY: +(netPab * 0.15).toFixed(4),
+    };
+    const delta = { accrualTotal: +netPab.toFixed(4) };
     // Resolve the agent being booked: explicit > gig's accepted bidder > gig's best agent.
     let agentId = opts?.agentId || null;
     if (!agentId && opts?.gigId) {
@@ -93,10 +105,10 @@ export class AutonomousEconomyService {
       } catch { /* ignore */ }
     }
     const ref = `demo:${Date.now()}`;
-    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, gigId: opts?.gigId, stakePab, note: 'demo booking' } } }).catch(() => {});
+    await prisma.treasuryPosition.create({ data: { bucket: 'PLATFORM_FEE', amount: rake, status: 'DEPLOYED', txHash: ref, meta: { asset: 'SOL', source: 'HUMAN_RAKE', simulated: true, solAmount, rakeSol: rake, amountPab, feePab, burnPab, referralCode: opts?.referralCode, referralSol, partnerId: opts?.partnerId, partnerSol, agentId: opts?.agentId, gigId: opts?.gigId, stakePab, note: 'demo booking' } } }).catch(() => {});
     if (referralSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'REFERRAL_EARNED', amount: referralSol, status: 'PENDING', txHash: `${ref}:ref`, meta: { asset: 'SOL', source: 'REFERRAL', referralCode: opts?.referralCode, simulated: true } } }).catch(() => {});
     if (partnerSol > 0) await prisma.treasuryPosition.create({ data: { bucket: 'PARTNER_FEE', amount: partnerSol, status: 'DEPLOYED', txHash: `${ref}:partner`, meta: { asset: 'SOL', source: 'PARTNER_FEE', partnerId: opts?.partnerId, simulated: true } } }).catch(() => {});
-    return { bookingRef: ref, rakeSol: rake, referralSol, partnerSol, stakePab, agentId, simulated: true };
+    return { bookingRef: ref, rakeSol: rake, referralSol, partnerSol, stakePab, agentId, simulated: true, amountPab, feePab, burnPab, allocation, delta };
   }
 
   /** Business dashboard: a referrer's posted gigs, bookings, and rake earned (all SOL, real ledger). */

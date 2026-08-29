@@ -1504,6 +1504,39 @@ model Web3Agent {
   stakes       AgentStake[]
 }
 
+model DaoProposal {
+  id          String   @id @default(cuid())
+  proposerId  String
+  title       String
+  description String
+  expiresAt   DateTime
+  status      String   @default("ACTIVE") // ACTIVE | PASSED | REJECTED
+  forVotes    Float    @default(0)
+  againstVotes Float   @default(0)
+  quorum      Float    @default(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  votes    DaoVote[]
+
+  @@index([status])
+  @@index([proposerId])
+}
+
+model DaoVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  voterId    String
+  vote       String // FOR | AGAINST
+  weight     Float    @default(1)
+  createdAt  DateTime @default(now())
+
+  proposal DaoProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([voterId])
+}
+
 model AgentTransaction {
   id          String   @id @default(cuid())
   agentId     String? // nullable: pool/arbitrage fees aren't tied to one agent
