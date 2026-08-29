@@ -92,3 +92,6 @@ client/.env.production
 .agentWallets.json
 server/src/.agentWallets.json
 dist/src/.agentWallets.json
+
+# client build artifact (SPA served from server/src/public/app)
+client/dist/

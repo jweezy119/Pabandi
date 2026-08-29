@@ -144,6 +144,17 @@ export default function BookingPage() {
     }
   }, [isAuthenticated, showBookingForm]);
 
+  // Pre-fill customer name/phone from the authenticated user (no re-typing)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: prev.customerName || `${user.firstName} ${user.lastName}`.trim(),
+        customerPhone: prev.customerPhone || (user.phone || ''),
+      }));
+    }
+  }, [isAuthenticated, user]);
+
   const handleAttachPassport = async () => {
     if (!user?.encryptedDietaryData || !business?.e2eePublicKey) return;
     try {
@@ -224,7 +235,7 @@ export default function BookingPage() {
 
         {/* Hero */}
         <div className="relative h-[353px] overflow-hidden rounded-xl md:h-[442px] md:mb-16">
-          <img alt={business.name} className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs0Ker3tH73HShnpzCYS57ru-3m9EJycGJWEoAjRes7gsogMja6_xbRcECJxl_z65r8L8K1RlEZ2Yi88YJIyaf83nLezBsjFXmlb_CGtThPJ6ogXH5z611EYKzBEDTMXJzLDG7fyLLKF34ij9frHsDsecGNoy_hs7IvUhUmEZAuY_nv4p5KYyTXW-LOg21c0WpklLm6jEm6yaeo4IOy7Cbsvl4x9UTkBa5rXOf0SxMRAdn2ZWlqSWwjXH_p0OZcyCMXCl4COE9RDOk" />
+          <img alt={business.name} className="h-full w-full object-cover" src={business.coverImageUrl || business.logoUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200'} />
           <div className="absolute inset-0 bg-gradient-to-t from-[#011d35]/90 via-[#011d35]/40 to-transparent" />
           <div className="absolute bottom-0 left-0 w-full p-6 text-white md:p-10">
             <div className="flex flex-col-reverse items-start justify-between gap-4 md:flex-row md:items-end">
@@ -297,7 +308,24 @@ export default function BookingPage() {
           </div>
 
           <div className={`${showBookingForm ? 'lg:col-span-1' : 'lg:col-span-8'}`}>
-            {showBookingForm ? (
+            {showBookingForm && !isAuthenticated ? (
+              <Surface className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl">🔐</div>
+                <h3 className="font-headline text-xl font-semibold text-primary">Sign in to book</h3>
+                <p className="mt-2 text-sm text-slate-300">Create a free Pabandi account to reserve {business.name} with escrow protection and earn $PAB.</p>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/business/${business.id}/book`)}`)}
+                    className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                  >
+                    Sign in / Register
+                  </button>
+                  <button onClick={() => setShowBookingForm(false)} className="rounded-xl border border-white/10 px-6 py-3 text-sm font-bold text-slate-300 hover:bg-white/5">
+                    Back
+                  </button>
+                </div>
+              </Surface>
+            ) : showBookingForm ? (
               <Surface>
                 <div className="mb-6 flex items-center justify-between">
                   <h3 className="font-headline text-[1.5rem] font-semibold text-primary">Table Reservation</h3>
@@ -378,7 +406,7 @@ export default function BookingPage() {
                   </Surface>
 
                   <div>
-                    <Button variant="default" onClick={() => {}} className="w-full py-4 text-lg font-semibold">
+                    <Button type="submit" variant="default" onClick={() => {}} className="w-full py-4 text-lg font-semibold">
                       Request Reservation
                     </Button>
                   </div>

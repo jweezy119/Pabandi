@@ -273,14 +273,6 @@ export default function SearchPage() {
       .map((x) => x.b);
   }, [data, userLoc, q]);
 
-  const distanceLabel = (b: Business) => {
-    if (!userLoc || !q.trim()) return '';
-    const m = haversineKm(userLoc, { lat: b.latitude ?? null, lng: b.longitude ?? null }) * 1000;
-    if (!Number.isFinite(m)) return '';
-    if (m < 1000) return `${Math.round(m)} m`;
-    return `${(m / 1000).toFixed(1)} km`;
-  };
-
   const pageTitle = useMemo(() => {
     if (category === 'LIVE_SELLER') return 'Live Selling';
     if (category === 'FREELANCE') return 'Freelance';
@@ -431,52 +423,89 @@ export default function SearchPage() {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
             <div className="mx-auto mb-2 text-3xl">🔍</div>
             <p className="text-sm font-medium text-slate-300">
-              No exact hits yet in this area.
+              No exact hits for “{q.trim() || CATEGORY_LABELS[category]}” yet — but great businesses are joining daily.
             </p>
             <div className="mt-3 flex flex-col justify-center gap-2 sm:flex-row">
-              <button onClick={() => applyCategory('ALL')} className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white">Browse all listings</button>
-              <Link to="/business/join" className="rounded-xl border border-white/15 px-5 py-2.5 text-center text-sm font-bold text-white">Recommend a business</Link>
+              <Link to="/search?category=ALL" className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white">Browse all businesses</Link>
+              <Link to="/business/join" className="rounded-xl border border-white/15 px-5 py-2.5 text-center text-sm font-bold text-white">List a business</Link>
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {['RESTAURANT','SALON','CLINIC','FITNESS_CENTER','PROPERTY_RENTAL','FREELANCE'].map((c) => (
+                <button key={c} onClick={() => applyCategory(c)} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold text-slate-300 hover:bg-white/10">
+                  {CATEGORY_LABELS[c] || c}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {isLoading && Array.from({ length: 6 }).map((_, idx) => <SkeletonCard key={`skeleton-${idx}`} />)}
-          {results.map((biz: any) => (
-            <GlassCard key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col">
+          {results.map((biz: any) => {
+            const trustRaw = biz.trustScore ?? biz.reliabilityScore ?? 0;
+            const trust = Math.max(0, Math.min(100, Math.round(trustRaw / 10)));
+            const deposit = trust >= 80 ? 0 : trust >= 50 ? 5 : 15;
+            const isVerified = biz.isVerified || trust >= 80;
+            const trustColor = isVerified ? '#14F195' : trust >= 50 ? '#fbbf24' : '#f87171';
+            return (
+            <GlassCard key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col overflow-hidden">
               <Link to={`/business/${biz.id}`} className="block">
                 <div
-                  className="h-36 rounded-t-2xl sm:h-40"
+                  className="relative h-40 rounded-t-2xl sm:h-44"
                   style={{
                     backgroundImage: biz.coverImageUrl ? `url(${biz.coverImageUrl})` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    backgroundColor: biz.coverImageUrl ? undefined : undefined,
                   }}
-                />
+                >
+                  {!biz.coverImageUrl && (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500/20 via-slate-800 to-emerald-500/10 text-4xl">
+                      {CATEGORY_LABELS[biz.category]?.[0] || '🏢'}
+                    </div>
+                  )}
+                  <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
+                      {CATEGORY_LABELS[biz.category] || biz.category}
+                    </span>
+                    {isVerified && (
+                      <span className="rounded-full bg-[#14F195]/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#14F195] backdrop-blur border border-[#14F195]/40">
+                        ✓ Verified
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute right-3 top-3">
+                    <span
+                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black backdrop-blur"
+                      style={{ background: `${trustColor}20`, color: trustColor, border: `1px solid ${trustColor}40` }}
+                      title="Pabandi Trust Score"
+                    >
+                      🛡 {trust}
+                    </span>
+                  </div>
+                </div>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-bold leading-snug text-white">{biz.name}</p>
                       <p className="mt-0.5 truncate text-xs text-slate-300">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <p className="rounded bg-indigo-500/10 px-1.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-200">{CATEGORY_LABELS[biz.category] || biz.category}</p>
-                      {typeof biz.rating === 'number' && (
-                        <p className="mt-1 text-[10px] font-bold text-slate-300">{biz.rating.toFixed(1)} ★ {biz.reviewCount || 0}</p>
-                      )}
-                      {distanceLabel(biz) && <p className="mt-1 text-[10px] font-bold text-slate-300">{distanceLabel(biz)}</p>}
-                    </div>
+                    {typeof biz.rating === 'number' && (
+                      <p className="shrink-0 text-[11px] font-bold text-amber-300">★ {biz.rating.toFixed(1)}{biz.reviewCount ? ` (${biz.reviewCount})` : ''}</p>
+                    )}
                   </div>
                   {biz.description && <p className="mt-2 line-clamp-2 text-xs text-slate-300">{biz.description}</p>}
+                  <p className="mt-2 text-[11px] font-medium text-slate-400">
+                    {isVerified ? 'Trust-verified · ' : `$${deposit} deposit protects you · `}escrow-backed booking
+                  </p>
                 </div>
               </Link>
-              <div className="px-4 pb-4">
+              <div className="mt-auto px-4 pb-4">
                 <Button onClick={() => handleBookNow(biz)} className="w-full py-3 text-sm font-bold">
                   {isAuthenticated ? 'Book now' : 'Log in to book'}
                 </Button>
               </div>
             </GlassCard>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

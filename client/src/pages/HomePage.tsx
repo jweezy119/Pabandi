@@ -50,14 +50,13 @@ export default function HomePage() {
   const revealRef6 = useScrollReveal<HTMLDivElement>();
   const revealRef7 = useScrollReveal<HTMLDivElement>();
   const revealRef8 = useScrollReveal<HTMLDivElement>();
+  const revealRef9 = useScrollReveal<HTMLDivElement>();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // NOTE: we no longer auto-prompt for location on load — the browser geolocation
+  // prompt is intrusive. Users opt in explicitly via the "Near Me" button.
   useEffect(() => {
-    const dismissed = sessionStorage.getItem('pabandi_location_onboarding_dismissed');
-    if (!dismissed) {
-      const timer = setTimeout(() => setShowOnboarding(true), 600);
-      return () => clearTimeout(timer);
-    }
+    // Intentionally empty: no automatic geolocation onboarding popup.
   }, []);
 
   const handleOnboardingLocation = () => {
@@ -454,7 +453,7 @@ export default function HomePage() {
         )}
 
         {/* USDY Yield — featured vertical strip */}
-        <section ref={revealRef2} className="reveal py-6">
+        <section ref={revealRef9} className="reveal py-6">
           <div className="overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.08] to-indigo-500/[0.04] p-6 sm:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div>
@@ -535,6 +534,15 @@ export default function HomePage() {
                       <span className="flex items-center text-sm font-body text-white">
                         ⭐ {businesses[0].rating?.toFixed(1) || '4.9'}
                       </span>
+                      {(() => {
+                        const t = Math.max(0, Math.min(100, Math.round((businesses[0].trustScore ?? businesses[0].reliabilityScore ?? 0) / 10)));
+                        const col = (businesses[0].isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
+                        return (
+                          <span className="flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur" style={{ color: col, borderColor: `${col}55`, background: `${col}20` }}>
+                            🛡 Trust {t}
+                          </span>
+                        );
+                      })()}
                       {(businesses[0].isClaimed || getBusinessLiveState(businesses[0])) && (
                         <span className="flex items-center gap-1 rounded border border-[#14F195]/40 bg-[#14F195]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#14F195]">
                           {getBusinessLiveState(businesses[0]) && <><span className="h-1.5 w-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live · </>}
@@ -634,6 +642,14 @@ export default function HomePage() {
             </div>
           )}
         </section>
+
+        {/* Browse all CTA */}
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-[11px] text-slate-400">Real businesses, trust-scored and escrow-protected.</p>
+          <Link to="/search?category=ALL" className="rounded-full bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition-colors">
+            Browse all businesses →
+          </Link>
+        </div>
 
         {/* App Features / proof grid */}
         <section ref={revealRef3} className="space-y-6 reveal">
