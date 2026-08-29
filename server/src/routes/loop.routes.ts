@@ -73,11 +73,19 @@ router.post('/wake', async (_req: Request, res: Response) => {
 
 /** POST /api/v1/loops/heartbeat — full cycle including delivery + program advancement. Used by the 24/7 external pinger (slow cadence). */
 router.post('/heartbeat', async (_req: Request, res: Response) => {
-  res.json({ success: true, data: { triggered: true, note: 'full cycle incl. delivery + programs' } });
+  res.json({ success: true, data: { triggered: true, note: 'full cycle incl. delivery + programs + rent-stream settlement' } });
   loopService.runProjectOwnerLoop(2, 'PABANDI', 6).catch(() => {});
   setTimeout(() => loopService.runFreelancerLoop(10).catch(() => {}), 1200);
   setTimeout(() => loopService.runFreelancerDeliver(2).catch(() => {}), 5000); // deliver a few → feed shows delivery
   setTimeout(() => programService.runAllPrograms().catch(() => {}), 6000); // advance any active programs
+  // Trust-As-Infrastructure: settle any pending rent streams (50/50 yield to tenant/landlord).
+  setTimeout(() => {
+    import('../services/renterEquity.service').then((m) =>
+      m.renterEquityService.settleAllPending().catch((e: any) =>
+        require('../utils/logger').logger.error(`[heartbeat] rent-stream settlement failed: ${e.message}`)
+      )
+    ).catch(() => {});
+  }, 7000);
 });
 
 /** POST /api/v1/loops/freelancers/deliver — accept best bid + deliver a limited number of open gigs. */

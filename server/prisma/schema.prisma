@@ -77,6 +77,7 @@ model User {
   web3Stakes              Web3StakeRecord[]
   AccountManagerProfile   AccountManagerProfile?
   verifiableCredentials   VerifiableCredential[]
+  renterEquityWallets     RenterEquityWallet[]
 
   @@index([email])
   @@index([phone])
@@ -1681,6 +1682,50 @@ model YieldAgreement {
 
   @@index([tenantId])
   @@index([landlordId])
+}
+
+// ── Renter Equity Wallet ─────────────────────────────────────────────────────
+// The "rent is not a sunk cost" primitive. Yield earned on held rent/deposit
+// accrues here, split 50/50 tenant/landlord. SIMULATED until an RWA adapter
+// (Ondo USDY / Jito) is live; Pabandi never custodies principal.
+model RenterEquityWallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  tenantEquity  Float    @default(0) // accrued yield owed to tenant
+  landlordBonus Float    @default(0) // accrued yield owed to landlord (if this user is a landlord)
+  totalSettled  Float    @default(0) // lifetime settled yield
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// A single rent payment held in the yield-bearing rail for the float window.
+model RentStream {
+  id              String   @id @default(cuid())
+  tenantId        String
+  landlordId      String
+  propertyId      String?
+  rentAmountUSD   Float
+  pool            String   @default("ONDO_USDC") // ONDO_USDC | JITO_STSOL | MAPLE
+  expectedApy     Float    @default(4.5)
+  holdingDays     Int      @default(4) // paid 1st, settles 5th
+  // Computed at settlement
+  totalYieldUSD   Float?
+  tenantEquityUSD Float?
+  landlordBonusUSD Float?
+  pabandiSpreadUSD Float?
+  status          String   @default("PENDING") // PENDING | SETTLED
+  simulated       Boolean  @default(true) // true until on-chain RWA adapter live
+  settledAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([landlordId])
+  @@index([status])
 }
 
 model BackgroundCheck {

@@ -134,6 +134,47 @@ router.get('/deposit/:id', authenticate, async (req: Request, res: Response): Pr
   }
 });
 
+/**
+ * POST /api/v1/pyd/rent-stream
+ * Create a tokenized rent stream (rent held in yield rail for float window).
+ */
+router.post('/rent-stream', authenticate, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const tenantId = (req as any).user?.id;
+    const { landlordId, rentAmountUSD, propertyId, pool, expectedApy, holdingDays } = req.body ?? {};
+    if (!landlordId || !rentAmountUSD) {
+      return res.status(400).json({ success: false, error: 'landlordId, rentAmountUSD required' });
+    }
+    const { renterEquityService } = await import('../services/renterEquity.service');
+    const stream = await renterEquityService.createRentStream({
+      tenantId,
+      landlordId,
+      rentAmountUSD: Number(rentAmountUSD),
+      propertyId,
+      pool,
+      expectedApy: expectedApy ? Number(expectedApy) : undefined,
+      holdingDays: holdingDays ? Number(holdingDays) : undefined,
+    });
+    res.json({ success: true, data: stream });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/pyd/renter-equity/:userId
+ * View a user's renter equity wallet (yield accrued, no principal).
+ */
+router.get('/renter-equity/:userId', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { renterEquityService } = await import('../services/renterEquity.service');
+    const equity = await renterEquityService.getEquity(req.params.userId);
+    res.json({ success: true, data: equity });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
 
 /**
