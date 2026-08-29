@@ -1,51 +1,38 @@
-import express from 'express';
-import { body } from 'express-validator';
+/**
+ * webhook.routes.ts — admin webhook delivery endpoints.
+ *
+ *   POST /api/v1/webhooks/deliver/now  — force process webhook queue
+ *   GET  /api/v1/webhooks/queue        — view pending webhooks
+ */
+import { Router, Request, Response } from 'express';
 import { authenticate, authorize } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validateRequest';
-import {
-  createWebhook,
-  getWebhooks,
-  updateWebhook,
-  deleteWebhook,
-  regenerateSecret,
-} from '../controllers/webhook.controller';
+import { prisma } from '../utils/database';
+import { webhookDeliveryService } from '../services/webhookDelivery.service';
 
-const router = express.Router();
+const router = Router();
 
-// All webhook routes require authentication and business owner role
 router.use(authenticate);
-router.use(authorize('BUSINESS_OWNER'));
+router.use(authorize('ADMIN'));
 
-// Get all webhooks
-router.get('/', getWebhooks);
+router.post('/deliver/now', async (_req: Request, res: Response) => {
+  try {
+    const result = await webhookDeliveryService.processWebhookQueue();
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
-// Create a new webhook
-router.post(
-  '/',
-  [
-    body('targetUrl').isURL().withMessage('Must be a valid URL'),
-    body('subscribedEvents').optional().isArray(),
-  ],
-  validateRequest,
-  createWebhook
-);
-
-// Update a webhook
-router.put(
-  '/:id',
-  [
-    body('targetUrl').optional().isURL().withMessage('Must be a valid URL'),
-    body('subscribedEvents').optional().isArray(),
-    body('isActive').optional().isBoolean(),
-  ],
-  validateRequest,
-  updateWebhook
-);
-
-// Delete a webhook
-router.delete('/:id', deleteWebhook);
-
-// Regenerate secret
-router.post('/:id/regenerate-secret', regenerateSecret);
+router.get('/queue', async (_req: Request, res: Response) => {
+  try {
+    const [pending, delivered] = await Promise.all([
+      prisma.webhookDelivery.count({ where: { status: 'QUEUED' } }),
+      prisma.webhookDelivery.count({ where: { status: 'DELIVERED' } }),
+    ]);
+    res.json({ success: true, data: { pending, delivered } });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 export default router;

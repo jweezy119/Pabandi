@@ -62,6 +62,7 @@ import rentalDepositRoutes from './routes/rentalDeposit.routes';
 import ppdRoutes from './routes/ppd.routes';
 import guaranteeClaimRoutes from './routes/guaranteeClaim.routes';
 import appIntegrationRoutes from './routes/appIntegration.routes';
+import agentMarketplaceRoutes from './routes/agentMarketplace.routes';
 import trustPassportRoutes from './routes/trustPassport.routes';
 import payoutRoutes from './routes/payout.routes';
 import accountManagerRoutes from './routes/accountManager.routes';
@@ -289,6 +290,7 @@ app.use(`/api/${API_VERSION}/pyd`, rentalDepositRoutes);
 app.use(`/api/${API_VERSION}/ppd`, ppdRoutes);
 app.use(`/api/${API_VERSION}/guarantee`, guaranteeClaimRoutes);
 app.use(`/api/${API_VERSION}/apps`, appIntegrationRoutes);
+app.use(`/api/${API_VERSION}/agents`, agentMarketplaceRoutes);
 app.use(`/api/${API_VERSION}/trust-passport`, trustPassportRoutes);
 
 // ── OSINT Intelligence Layer (Threat Fusion, Adversarial Graph, Biometrics) ──
