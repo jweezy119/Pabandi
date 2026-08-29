@@ -64,7 +64,6 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
     ).catch((e: any) => ({ simulated: true, error: e.message }));
 
     // 3. Persist the portable proof record (no User FK — works for DID-only tenants).
-    let persistError: string | undefined;
     try {
       await prisma.zkProofRecord.create({
         data: {
@@ -79,7 +78,6 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
         },
       });
     } catch (e: any) {
-      persistError = e.message;
       logger.warn(`[POR-ZK] proof record persist skipped: ${e.message}`);
     }
 
@@ -101,7 +99,6 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
       proof,
       attestation: att,
       anchor,
-      persistError,
       economics: {
         simulated: !!anchor?.simulated,
       },
