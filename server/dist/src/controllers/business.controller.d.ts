@@ -1,0 +1,24 @@
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
+export declare const createBusiness: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const getBusiness: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const getBusinessFull: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const updateBusiness: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessReservations: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessAnalytics: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessReviews: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const claimBusiness: (req: Request | any, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessCustomers: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const generateBookingLink: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessBySlug: (req: Request | any, res: Response, next: NextFunction) => Promise<void>;
+export declare const getBusinessServices: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const createBusinessService: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const updateBusinessService: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const deleteBusinessService: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const connectChannex: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const generateApiKey: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const getApiKeys: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const connectStripe: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getPayoutStatus: (req: AuthRequest, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const requestPayout: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
+//# sourceMappingURL=business.controller.d.ts.map

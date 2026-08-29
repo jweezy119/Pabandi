@@ -1526,17 +1526,44 @@ model AgentBooking {
   toAgentId   String // payee agent (the "merchant/asset" on this rail)
   amountPab   Float // value transferred (the asset value)
   feeSol      Float     @default(0) // SOL platform fee collected
-  status      String    @default("PENDING") // PENDING | COMPLETED | CANCELLED | NO_SHOW
+  status      String    @default("PENDING") // PENDING | COMPLETED | CANCELLED | NO_SHOW | RATED
   txHash      String? // on-chain value-transfer tx (if live)
   simulated   Boolean   @default(false)
   bookingRef  String? // human-readable ref
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  feedback    AgentFeedback?
 
   @@index([fromAgentId])
   @@index([toAgentId])
   @@index([status])
+  @@index([createdAt])
+}
+
+model AgentFeedback {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  agentId    String
+  rating     Int      // 1..5
+  comment    String?
+  tags       String[] // ["fast","quality","communicated"]
+  booking    AgentBooking @relation(fields: [bookingId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([agentId])
+  @@index([rating])
+}
+
+model AgentIteration {
+  id         String   @id @default(cuid())
+  agentId    String
+  variant    String   // e.g. "quote_v2", "pricing_aggressive", "response_template_3"
+  metrics    Json     // {bookings, revenue, rating, completionRate, noShowRate}
+  deployed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([agentId, deployed])
 }
 
 model LinkedInProfile {
@@ -1983,6 +2010,7 @@ model Project {
   yieldEarnedUsdc Float    @default(0) // accrued float yield (phase 2)
   bestAgentId     String? // chosen by recommendation engine
   bestConfidence  Float? // confidence % of the recommendation
+  createdBy       String?  // owner userId / app id for webhook routing
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

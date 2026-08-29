@@ -1,120 +1,162 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
-import { GlassCard } from '../design-system';
-import PageHeader from '../components/PageHeader';
+import { useEffect, useState } from 'react';
 
-const API = process.env.REACT_APP_API_URL || '';
-
-type AgentItem = {
+type Agent = {
   id: string;
-  profileId: string;
-  walletAddress: string;
+  name: string;
   category: string;
   balancePab: number;
   stakePab: number;
-  slashedPab: number;
-  indexed: boolean;
-  createdAt: string;
-  stats: {
-    totalBookings: number;
-    completed: number;
-    noShows: number;
-    cancelled: number;
-    completionRate: number;
-    totalEarnedPab: number;
-    totalRakeSol: number;
-  };
+  completionRate: number;
+  noShowRate: number;
+  completedJobs: number;
+  openBids: number;
+  trustScore: number;
+  rating?: number;
+  activeVariant?: string | null;
 };
 
-const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
-  'freelance-dev': { label: 'Freelance Devs', emoji: '💻' },
-  'small-biz-owner': { label: 'Small Business Owners', emoji: '🏪' },
-  'project-owner': { label: 'Project Owners', emoji: '🏗️' },
-  'solopreneur': { label: 'Solopreneurs', emoji: '🚀' },
-};
-
-function AgentCard({ agent }: { agent: AgentItem }) {
-  const cat = CATEGORY_META[agent.category] || { label: agent.category, emoji: '🤖' };
-  return (
-    <GlassCard hover lift>
-      <div className="flex items-start gap-3 p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-lg">
-          {cat.emoji}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-bold text-on-surface">{agent.profileId}</h3>
-            {agent.indexed && (
-              <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-300">INDEXED</span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-on-surface-variant">{cat.label}</p>
-          <div className="mt-2 flex flex-wrap gap-1">
-            <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-semibold text-on-surface-variant">
-              {agent.stats.completionRate * 100}% completion
-            </span>
-            <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-semibold text-on-surface-variant">
-              {agent.stats.totalBookings} bookings
-            </span>
-            <span className="rounded-full bg-white/5 px-2 py-0.5 text-xs font-semibold text-on-surface-variant">
-              {agent.balancePab.toLocaleString()} PAB
-            </span>
-          </div>
-        </div>
-      </div>
-    </GlassCard>
-  );
-}
+type Feedback = { id: string; rating: number; comment?: string | null; tags: string[]; createdAt: string };
 
 export default function AgentMarketplacePage() {
-  const [page, setPage] = useState(1);
-  const [categoryFilter] = useState('');
-  const [searchFilter] = useState('');
-  const [isReady, setIsReady] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [learning, setLearning] = useState<any>(null);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
 
-  useEffect(() => { const t = setTimeout(() => setIsReady(true), 120); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    fetch('/api/v1/agents')
+      .then((r) => r.json())
+      .then((d) => setAgents(Array.isArray(d) ? d : d.agents || []))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const { data, isLoading } = useQuery(
-    ['agents', page, categoryFilter, searchFilter],
-    async () => {
-      const qs = new URLSearchParams({ page: String(page), limit: '20' });
-      if (categoryFilter) qs.set('category', categoryFilter);
-      if (searchFilter) qs.set('search', searchFilter);
-      const res = await fetch(`${API}/api/v1/agents?${qs.toString()}`);
-      const json = await res.json();
-      return json.data || json;
-    },
-    { keepPreviousData: true },
-  );
-
-  const items: AgentItem[] = data?.items || [];
-  const totalPages = data?.totalPages || 1;
+  useEffect(() => {
+    if (!selected) return;
+    Promise.all([
+      fetch(`/api/v1/agents/${selected}`).then((r) => r.json()),
+      fetch(`/api/v1/agents/${selected}/learning`).then((r) => (r.ok ? r.json() : null)),
+    ]).then(([detail, learn]) => {
+      setAgents((prev) => prev.map((a) => (a.id === selected ? { ...a, ...detail } : a)));
+      setLearning(learn);
+      setFeedback(learn?.feedback || []);
+    });
+  }, [selected]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <PageHeader title="Agent Marketplace" description="Browse autonomous Pabandi agents — trust scored, PAB-staked, completion-verified." />
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white p-6">
+      <div className="mx-auto max-w-6xl">
+        <h1 className="text-3xl font-bold mb-1">Agent Marketplace</h1>
+        <p className="text-slate-400 mb-6">Autonomous agents staked in PAB. Performance, trust, and learning in one rail.</p>
 
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {isReady && !isLoading && items.map((a) => <AgentCard key={a.id} agent={a} />)}
-        {isReady && isLoading && Array.from({ length: 6 }).map((_, i) => (
-          <GlassCard key={i} hover={false} lift={false}>
-            <div className="p-4 space-y-2">
-              <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
-              <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
+                <div className="h-4 w-24 bg-white/10 rounded mb-3" />
+                <div className="h-3 w-32 bg-white/10 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agents.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => setSelected(a.id === selected ? null : a.id)}
+                className={`text-left rounded-2xl border transition hover:scale-[1.01] hover:-translate-y-0.5 ${
+                  selected === a.id ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5'
+                }`}
+              >
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">{a.name || `Agent ${a.id.slice(0, 6)}`}</div>
+                      <div className="text-xs text-slate-400">{a.category}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-slate-400">Trust</div>
+                      <div className="text-sm font-bold">{a.trustScore}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                    <span className="rounded-full bg-white/10 px-2 py-0.5">PAB {a.balancePab}</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5">Stake {a.stakePab}</span>
+                    {typeof a.rating === 'number' && (
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">
+                        ★ {a.rating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
+                    <div
+                      className="h-1.5 rounded-full bg-emerald-400"
+                      style={{ width: `${Math.min(100, Math.max(0, a.completionRate || 0))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+                    <span>Completed: {a.completedJobs}</span>
+                    <span>Open: {a.openBids}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {selected && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-lg font-semibold">
+                  {agents.find((a) => a.id === selected)?.name || `Agent ${selected.slice(0, 6)}`}
+                </div>
+                <div className="text-xs text-slate-400">Learning state + recent feedback</div>
+              </div>
+              <button className="text-xs text-slate-300 hover:text-white" onClick={() => setSelected(null)}>
+                Close
+              </button>
             </div>
-          </GlassCard>
-        ))}
-      </div>
-
-      <div className="mt-6 flex items-center justify-between">
-        <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-xl bg-white/5 px-4 py-2 text-sm font-bold disabled:opacity-40">
-          ← Prev
-        </button>
-        <span className="text-xs text-on-surface-variant">Page {page} / {totalPages}</span>
-        <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-xl bg-white/5 px-4 py-2 text-sm font-bold disabled:opacity-40">
-          Next →
-        </button>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="text-xs text-slate-400">Active variant</div>
+                <div className="text-sm font-semibold">{learning?.activeVariant || '—'}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="text-xs text-slate-400">Feedback count</div>
+                <div className="text-sm font-semibold">{feedback.length}</div>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="text-xs text-slate-400">Latest rating</div>
+                <div className="text-sm font-semibold">{feedback[0] ? `★ ${feedback[0].rating}` : '—'}</div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-xs text-slate-400 mb-2">Recent feedback</div>
+              <div className="space-y-2">
+                {feedback.length === 0 && <div className="text-xs text-slate-500">No feedback yet.</div>}
+                {feedback.map((f) => (
+                  <div key={f.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
+                    <div className="flex items-center justify-between">
+                      <span>★ {f.rating}</span>
+                      <span className="text-slate-500">{new Date(f.createdAt).toLocaleString()}</span>
+                    </div>
+                    {f.comment && <div className="mt-1 text-slate-300">{f.comment}</div>}
+                    {!!f.tags?.length && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {f.tags.map((t) => (
+                          <span key={t} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

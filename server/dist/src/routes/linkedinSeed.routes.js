@@ -1,0 +1,527 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const linkedinProfileSeeder_service_1 = require("../services/linkedinProfileSeeder.service");
+const logger_1 = require("../utils/logger");
+const database_1 = require("../utils/database");
+const agentLoop_service_1 = require("../services/agentLoop.service");
+const web3Agent_service_1 = require("../services/web3Agent.service");
+const router = (0, express_1.Router)();
+if (!linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles()?.length) {
+    logger_1.logger.info('[LinkedInSeed] Seeding profiles on startup from local JSON...');
+    linkedinProfileSeeder_service_1.linkedinProfileSeeder.seedAllProfiles(25).catch((e) => {
+        logger_1.logger.error('[LinkedInSeed] Startup seed failed: ' + e.message);
+    });
+}
+/**
+ * POST /api/v1/linkedin/seed
+ * Seed profiles from real public sources (GitHub, AngelList, Wellfound, Fiverr RSS, Chambers).
+ * Body: { profilesPerPersona?: number }
+ */
+router.post('/', async (req, res) => {
+    const profilesPerPersona = Number(req.body.profilesPerPersona) || 25;
+    try {
+        const results = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.seedAllProfiles(profilesPerPersona);
+        res.json({ success: true, data: results });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/with-wallets
+ * Seed real profiles AND generate + fund Solana wallets with $PAB.
+ * This bootstraps the self-economy: each profile gets a wallet with $1 PAB,
+ * then can self-generate bookings/revenue.
+ * Body: { profilesPerPersona?: number, fundingUsd?: number }
+ */
+router.post('/with-wallets', async (req, res) => {
+    const profilesPerPersona = Number(req.body.profilesPerPersona) || 25;
+    const fundingUsd = Number(req.body.fundingUsd) || 1;
+    try {
+        const results = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.seedWithWallets(profilesPerPersona, fundingUsd);
+        res.json({ success: true, data: results });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/fund-wallets
+ * Fund additional seeded profile wallets from treasury.
+ * Body: { count?: number, amountUsd?: number }
+ * Defaults: count=100, amountUsd=1 ($1 USDC = 100 PAB at $0.01)
+ */
+router.post('/fund-wallets', async (req, res) => {
+    const count = Math.min(Number(req.body.count) || 100, 200); // cap at 200 to limit exposure
+    const amountUsd = Number(req.body.amountUsd) || 1;
+    const pabPerWallet = Math.round(amountUsd / 0.01); // $0.01 = 100 PAB
+    try {
+        const profiles = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles();
+        const unfunded = profiles.filter(p => !p.walletAddress).slice(0, count);
+        if (unfunded.length === 0) {
+            return res.json({ success: true, data: { funded: 0, message: 'All profiles already have wallets' } });
+        }
+        let funded = 0;
+        let totalPab = 0;
+        for (const profile of unfunded) {
+            try {
+                const wallet = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.generateWalletForProfile(profile);
+                profile.walletAddress = wallet;
+                const result = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.fundProfileWallet(wallet, amountUsd);
+                if (result.simulated || result.txHash) {
+                    funded++;
+                    totalPab += pabPerWallet;
+                    // Register as AI agent and credit balance so the agent loop can use it
+                    const existing = await database_1.prisma.web3Agent.findUnique({ where: { profileId: profile.linkedinId } });
+                    if (!existing) {
+                        await web3Agent_service_1.web3AgentService.createAgent(profile.linkedinId, profile.persona, profile.firstName);
+                    }
+                    await database_1.prisma.web3Agent.update({
+                        where: { profileId: profile.linkedinId },
+                        data: { balancePab: { increment: pabPerWallet } },
+                    });
+                }
+            }
+            catch (err) {
+                logger_1.logger.warn(`[FundWallets] Failed to fund ${profile.linkedinId}: ${err.message}`);
+            }
+        }
+        res.json({
+            success: true,
+            data: {
+                funded,
+                totalPab,
+                amountUsd,
+                pabPerWallet,
+                message: `Funded ${funded} wallets with ${pabPerWallet} PAB each ($${amountUsd} USD)`,
+            },
+        });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+router.post('/import-csv', async (req, res) => {
+    const { personaId, csvContent } = req.body;
+    if (!personaId || !csvContent) {
+        return res.status(400).json({ success: false, error: 'personaId and csvContent required' });
+    }
+    try {
+        const result = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.importFromCSV(csvContent, personaId);
+        res.json({ success: true, data: result });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * GET /api/v1/linkedin/seed/profiles
+ * Public list of seeded profiles for the frontend.
+ * Query: ?category=freelance-dev|small-biz-owner|project-owner|solopreneur
+ */
+router.get('/profiles', async (req, res) => {
+    try {
+        const category = String(req.query.category || '').trim();
+        const stats = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getStats();
+        let profiles = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles?.() || [];
+        // Fallback: if in-memory seeder is empty, load from local seed data
+        if (!profiles.length) {
+            try {
+                const local = linkedinProfileSeeder_service_1.linkedinProfileSeeder.loadLocalSeedData?.();
+                if (Array.isArray(local) && local.length) {
+                    profiles = local.map((raw, idx) => ({
+                        linkedinId: raw.linkedinId || `local-${idx}`,
+                        firstName: raw.login?.split(/[-_]/)[0] || 'User',
+                        lastName: raw.login?.split(/[-_]/).slice(1).join('-') || '',
+                        headline: raw.headline || 'Developer',
+                        company: raw.company || '',
+                        location: raw.location || '',
+                        category: raw.category || 'freelance-dev',
+                        githubUrl: raw.githubUrl,
+                        walletAddress: null,
+                        trustVelocity: 0,
+                        connectionCount: raw.connectionCount || 0,
+                        profileCompleteness: 0.8,
+                    }));
+                }
+            }
+            catch (e) {
+                // ignore fallback errors
+            }
+        }
+        const filtered = category ? profiles.filter((p) => p.category === category || p.persona === category) : profiles;
+        res.json({
+            success: true,
+            data: {
+                total: filtered.length,
+                profiles: filtered.map((p) => ({
+                    linkedinId: p.linkedinId,
+                    firstName: p.firstName,
+                    lastName: p.lastName,
+                    headline: p.headline,
+                    company: p.company,
+                    location: p.location,
+                    category: p.persona || p.category,
+                    githubUrl: p.githubUrl,
+                    walletAddress: p.walletAddress || null,
+                    trustVelocity: p.trustVelocity,
+                    connectionCount: p.connectionCount,
+                    profileCompleteness: p.profileCompleteness,
+                })),
+                stats,
+            },
+        });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/badge/:linkedinId
+ * Get free public trust badge HTML for a seeded profile.
+ */
+router.get('/badge/:linkedinId', async (req, res) => {
+    const { linkedinId } = req.params;
+    try {
+        const stats = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getStats();
+        const demoProfile = {
+            linkedinId,
+            firstName: 'Demo',
+            lastName: 'User',
+            trustVelocity: 0.5,
+            persona: 'freelance-dev',
+            seedSource: 'LINKEDIN_SEARCH',
+            headline: 'Freelance Developer',
+            company: 'Self-employed',
+            industry: 'Software Development',
+            location: 'Remote',
+            connectionCount: 150,
+            headlineKeywords: ['developer', 'freelance'],
+            profileCompleteness: 0.9,
+            linkedinUrl: `https://linkedin.com/in/${linkedinId}`,
+        };
+        const badge = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getTrustBadge(demoProfile);
+        res.json({ success: true, data: { badge, profile: demoProfile, ...stats } });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/badge/purchase
+ * Purchase a trust badge for a profile (paid feature).
+ * Body: { linkedinId, badgeType, purchaserWallet }
+ * badgeType: 'genesis-partner' | 'early-adopter' | 'trust-flux'
+ */
+router.post('/badge/purchase', async (req, res) => {
+    const { linkedinId, badgeType, purchaserWallet } = req.body;
+    if (!linkedinId || !badgeType || !purchaserWallet) {
+        return res.status(400).json({ success: false, error: 'linkedinId, badgeType, and purchaserWallet required' });
+    }
+    const BADGE_PRICES = {
+        'genesis-partner': 50,
+        'early-adopter': 20,
+        'trust-flux': 10,
+    };
+    const price = BADGE_PRICES[badgeType];
+    if (!price) {
+        return res.status(400).json({ success: false, error: `Invalid badgeType. Valid: ${Object.keys(BADGE_PRICES).join(', ')}` });
+    }
+    try {
+        // Verify purchaser wallet has sufficient balance (simplified: check seeded profile)
+        const purchaser = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles().find(p => p.walletAddress === purchaserWallet);
+        if (!purchaser) {
+            return res.status(404).json({ success: false, error: 'Purchaser wallet not found among seeded profiles' });
+        }
+        // Log badge purchase as an agent transaction
+        await database_1.prisma.agentTransaction.create({
+            data: {
+                agentId: purchaserWallet,
+                type: 'BADGE_PURCHASE',
+                amount: price,
+                txHash: `badge-${linkedinId}-${badgeType}-${Date.now()}`,
+                fromAddress: purchaserWallet,
+                toAddress: process.env.PABANDI_TREASURY_WALLET || 'F5W934e6qJb8z2GZJj3kGjUfN6xLqK4W7CpHbBvRmN3D',
+            },
+        });
+        // Generate badge HTML
+        const profile = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles().find(p => p.linkedinId === linkedinId) || {
+            linkedinId,
+            firstName: 'Verified',
+            lastName: 'Profile',
+            trustVelocity: 0.5,
+            headline: 'Pabandi Verified',
+            company: 'Pabandi Network',
+            location: 'Global',
+        };
+        const badge = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getTrustBadge(profile);
+        res.json({
+            success: true,
+            data: {
+                badge,
+                badgeType,
+                price,
+                purchaserWallet,
+                purchasedAt: new Date().toISOString(),
+            },
+        });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * GET /api/v1/linkedin/seed/stats
+ * Get seeding + trust band statistics.
+ */
+router.get('/stats', async (_req, res) => {
+    try {
+        const stats = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getStats();
+        res.json({ success: true, data: stats });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/simulate-economy
+ * Run self-economy simulation: seeded profiles book each other,
+ * generating PAB rewards + platform fees.
+ * Body: { rounds?: number }
+ */
+router.post('/simulate-economy', async (req, res) => {
+    const rounds = Number(req.body.rounds) || 3;
+    try {
+        const result = await linkedinProfileSeeder_service_1.linkedinProfileSeeder.simulateSelfEconomy(rounds);
+        res.json({ success: true, data: result });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * GET /api/v1/linkedin/seed/agent-loop/status
+ * Returns the current state of the AI agent loop.
+ */
+router.get('/agent-loop/status', async (_req, res) => {
+    try {
+        const state = (0, agentLoop_service_1.getAgentLoopState)();
+        res.json({ success: true, data: state });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/agent-loop/start
+ * Manually restart the agent loop.
+ */
+router.post('/agent-loop/start', async (_req, res) => {
+    try {
+        (0, agentLoop_service_1.startAgentLoop)();
+        res.json({ success: true, message: 'Agent loop started' });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/agent-loop/stop
+ * Stop the agent loop.
+ */
+router.post('/agent-loop/stop', async (_req, res) => {
+    try {
+        (0, agentLoop_service_1.stopAgentLoop)();
+        res.json({ success: true, message: 'Agent loop stopped' });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/register-agents
+ * Register all funded profiles (with wallets) as AI agents in the DB.
+ * This allows the agent loop to load and transact with them.
+ */
+router.post('/register-agents', async (_req, res) => {
+    try {
+        const profiles = linkedinProfileSeeder_service_1.linkedinProfileSeeder.getProfiles();
+        const withWallet = profiles.filter(p => p.walletAddress);
+        let created = 0;
+        let skipped = 0;
+        for (const profile of withWallet) {
+            const existing = await database_1.prisma.web3Agent.findUnique({ where: { profileId: profile.linkedinId } });
+            if (existing) {
+                skipped++;
+                continue;
+            }
+            await web3Agent_service_1.web3AgentService.createAgent(profile.linkedinId, profile.persona, profile.firstName);
+            // Credit initial balance
+            await database_1.prisma.web3Agent.update({
+                where: { profileId: profile.linkedinId },
+                data: { balancePab: { increment: 100 } },
+            });
+            created++;
+        }
+        res.json({ success: true, data: { created, skipped, totalWithWallet: withWallet.length } });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/fund-agents
+ * Credit PAB to all existing agents in the DB (so agent loop has balances to transact).
+ */
+router.post('/fund-agents', async (req, res) => {
+    const amountPab = Number(req.body.amountPab) || 100;
+    try {
+        const result = await database_1.prisma.web3Agent.updateMany({
+            where: { isActive: true },
+            data: { balancePab: { increment: amountPab } },
+        });
+        res.json({ success: true, data: { updated: result.count, amountPab } });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/fund-agents-onchain
+ * Fund agents with REAL PAB on-chain from treasury wallet.
+ */
+router.post('/fund-agents-onchain', async (_req, res) => {
+    try {
+        const agents = await database_1.prisma.web3Agent.findMany({ where: { isActive: true } });
+        let funded = 0;
+        const errors = [];
+        for (const agent of agents) {
+            try {
+                const result = await web3Agent_service_1.web3AgentService.fundAgent(agent, 100);
+                if (result.success) {
+                    funded++;
+                }
+                else {
+                    errors.push(`Agent ${agent.profileId}: ${result.error}`);
+                }
+            }
+            catch (err) {
+                errors.push(`Agent ${agent.profileId}: ${err.message}`);
+            }
+        }
+        res.json({ success: true, data: { funded, total: agents.length, errors: errors.slice(0, 5) } });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+/**
+ * POST /api/v1/linkedin/seed/migrate
+ * Create Web3Agent and AgentTransaction tables if they don't exist.
+ */
+router.post('/migrate', async (_req, res) => {
+    try {
+        // Create Web3Agent table if missing
+        await database_1.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Web3Agent" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "profileId" TEXT NOT NULL UNIQUE,
+        "walletAddress" TEXT NOT NULL UNIQUE,
+        "encryptedPrivateKey" TEXT NOT NULL,
+        "category" TEXT NOT NULL,
+        "balancePab" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "dailyOutflow" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "dailyTransactions" INTEGER NOT NULL DEFAULT 0,
+        "lastReset" TIMESTAMP NOT NULL DEFAULT now(),
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+        // Create AgentTransaction table if missing
+        await database_1.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AgentTransaction" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "agentId" TEXT NOT NULL,
+        "type" TEXT NOT NULL,
+        "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "txHash" TEXT,
+        "fromAddress" TEXT,
+        "toAddress" TEXT,
+        "metadata" JSONB,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "AgentTransaction_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Web3Agent" ("id") ON DELETE CASCADE
+      )
+    `);
+        // Create indexes
+        await database_1.prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_agentId_createdAt_idx" ON "AgentTransaction" ("agentId", "createdAt")');
+        await database_1.prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "AgentTransaction_txHash_idx" ON "AgentTransaction" ("txHash")');
+        // Create VirtualAccount table if missing (Autonomous Treasury Orchestrator)
+        await database_1.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "VirtualAccount" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "userId" TEXT NOT NULL UNIQUE,
+        "routingNumber" TEXT NOT NULL,
+        "accountNumber" TEXT NOT NULL,
+        "bankName" TEXT NOT NULL,
+        "currency" TEXT NOT NULL DEFAULT 'USD',
+        "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+        "provider" TEXT NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        CONSTRAINT "VirtualAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE
+      )
+    `);
+        await database_1.prisma.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "VirtualAccount_userId_idx" ON "VirtualAccount" ("userId")');
+        // Create SecurityDeposit + YieldAgreement tables (Pabandi Yield Deposit / PYD)
+        await database_1.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "SecurityDeposit" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "tenantId" TEXT NOT NULL,
+        "landlordId" TEXT NOT NULL,
+        "rentalType" TEXT NOT NULL DEFAULT 'PROPERTY',
+        "assetDescription" TEXT NOT NULL,
+        "requiredAmountUSD" DOUBLE PRECISION NOT NULL,
+        "tenantRiskBand" TEXT NOT NULL,
+        "depositReductionPct" DOUBLE PRECISION NOT NULL DEFAULT 0,
+        "actualDepositUSD" DOUBLE PRECISION NOT NULL,
+        "yieldOptIn" BOOLEAN NOT NULL DEFAULT false,
+        "yieldAgreementId" TEXT UNIQUE,
+        "escrowContract" TEXT,
+        "escrowTxHash" TEXT,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+        await database_1.prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_tenantId_idx" ON "SecurityDeposit" ("tenantId")`);
+        await database_1.prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_landlordId_idx" ON "SecurityDeposit" ("landlordId")`);
+        await database_1.prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "SecurityDeposit_status_idx" ON "SecurityDeposit" ("status")`);
+        await database_1.prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "YieldAgreement" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "depositId" TEXT NOT NULL UNIQUE,
+        "tenantId" TEXT NOT NULL,
+        "landlordId" TEXT NOT NULL,
+        "tenantSignedAt" TIMESTAMP,
+        "landlordSignedAt" TIMESTAMP,
+        "pool" TEXT NOT NULL DEFAULT 'JITO_STSOL',
+        "expectedApy" DOUBLE PRECISION NOT NULL DEFAULT 7.0,
+        "tenantApy" DOUBLE PRECISION NOT NULL DEFAULT 5.5,
+        "pabandiSpreadPct" DOUBLE PRECISION NOT NULL DEFAULT 1.5,
+        "status" TEXT NOT NULL DEFAULT 'PROPOSED',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+      )
+    `);
+        await database_1.prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "YieldAgreement_tenantId_idx" ON "YieldAgreement" ("tenantId")`);
+        await database_1.prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "YieldAgreement_landlordId_idx" ON "YieldAgreement" ("landlordId")`);
+        res.json({ success: true, message: 'Database tables created' });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+exports.default = router;
+//# sourceMappingURL=linkedinSeed.routes.js.map

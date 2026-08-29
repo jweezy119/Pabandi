@@ -1,0 +1,1 @@
+{"version":3,"file":"mock-emi.rail.d.ts","sourceRoot":"","sources":["../../../../src/services/rails/mock-emi.rail.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,mBAAmB,EAAE,kBAAkB,EAAE,MAAM,wCAAwC,CAAC;AAGtH,qBAAa,WAAY,YAAW,mBAAmB;IACrD,IAAI,SAAsB;IAEpB,aAAa,CAAC,OAAO,EAAE,mBAAmB,GAAG,OAAO,CAAC,kBAAkB,CAAC;CAwC/E;AAED,eAAO,MAAM,WAAW,aAAoB,CAAC"}

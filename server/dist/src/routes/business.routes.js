@@ -1,0 +1,493 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const business_controller_1 = require("../controllers/business.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const rateLimiter_1 = require("../middleware/rateLimiter");
+const cache_service_1 = require("../services/cache.service");
+const axios_1 = __importDefault(require("axios"));
+const router = (0, express_1.Router)();
+// Public route to get businesses for the homepage/search
+// HARDENED: Rate limited to prevent scraping
+router.get('/', rateLimiter_1.rateLimiter, async (req, res, next) => {
+    try {
+        const { prisma } = await Promise.resolve().then(() => __importStar(require('../utils/database')));
+        const { category, search, latitude, longitude, googlePlaceId } = req.query;
+        // HARDENED: Sanitize search string to prevent malformed queries
+        const cleanSearch = search ? String(search).replace(/[^\w\s-]/gi, '').trim() : '';
+        // === STEP 0: Exact googlePlaceId lookup (used by NewReservationPage) ===
+        // If a specific place was selected, try to resolve it directly in the DB first.
+        if (googlePlaceId && String(googlePlaceId)) {
+            const existing = await prisma.business.findFirst({
+                where: { OR: [{ googlePlaceId: String(googlePlaceId) }, { externalId: String(googlePlaceId) }, { id: String(googlePlaceId) }] },
+                include: { googleReviews: true, settings: true },
+            });
+            if (existing) {
+                return res.json({ success: true, data: { businesses: [existing] } });
+            }
+            // No exact match — fall through to the directory/live lookup so it's never empty.
+        }
+        let locationIqPOIs = []; // Supplemental live-site source
+        let osmResults = [];
+        const mergedBusinesses = [];
+        const seenIds = new Set();
+        // === STEP 1: Seeded DB fallback-first search (claimed + OSM imports) ===
+        // We query local DB first so search/map never looks empty, even if live APIs fail.
+        {
+            const dbWhereCat = { isActive: true };
+            if (category && category !== 'ALL') {
+                dbWhereCat.category = String(category);
+            }
+            // Real DB-level text search (open-source Postgres `contains`, no external API).
+            // When the user typed something, we filter at the database layer by name /
+            // description / city / address so genuine matches rank first.
+            // NOTE: `category` is a Prisma ENUM — `contains`/insensitive is unsupported on
+            // enums, so category matching stays as an exact filter (handled above).
+            if (cleanSearch) {
+                const terms = String(cleanSearch).trim().split(/\s+/).filter((t) => t.length > 1);
+                if (terms.length > 0) {
+                    dbWhereCat.OR = terms.map((t) => ({
+                        OR: [
+                            { name: { contains: t, mode: 'insensitive' } },
+                            { description: { contains: t, mode: 'insensitive' } },
+                            { city: { contains: t, mode: 'insensitive' } },
+                            { address: { contains: t, mode: 'insensitive' } },
+                        ],
+                    }));
+                }
+            }
+            // Fetch active businesses matching the text/category filters (capped). If a
+            // specific query matched nothing, we keep the query result empty and let the
+            // live OSM/Nominatim sources + the directory fallback below fill it in.
+            const allSeeded = await prisma.business.findMany({
+                where: dbWhereCat,
+                include: { googleReviews: true, settings: true },
+                orderBy: { createdAt: 'desc' },
+                take: 120,
+            });
+            let seeded = allSeeded;
+            // Pure-browse fallback: when there is NO search term at all and we somehow got
+            // nothing, show the full active directory rather than a blank page.
+            if (!cleanSearch && allSeeded.length === 0) {
+                const fallback = await prisma.business.findMany({
+                    where: { isActive: true },
+                    include: { googleReviews: true, settings: true },
+                    orderBy: { createdAt: 'desc' },
+                    take: 120,
+                });
+                seeded = fallback;
+            }
+            for (const b of seeded) {
+                const key = b.externalId || b.googlePlaceId || b.id;
+                if (seenIds.has(key))
+                    continue;
+                seenIds.add(key);
+                mergedBusinesses.push(b);
+            }
+        }
+        // Only skip the live (LocationIQ/Overpass) lookups when there is NO specific
+        // query (pure browse-all) and the local directory already has enough results.
+        // Any real search term or placeId must always go to the live sources so the
+        // user actually gets matches for what they typed (this is what made searches
+        // appear to "always show no results" / the wrong generic list).
+        const hasSpecificQuery = !!cleanSearch || !!googlePlaceId;
+        const shouldSkipLiveLookups = !hasSpecificQuery && mergedBusinesses.length >= 12;
+        let lat = latitude ? parseFloat(String(latitude)) : null;
+        let lng = longitude ? parseFloat(String(longitude)) : null;
+        let extractedCity = '';
+        let searchKeyword = cleanSearch;
+        // If DB didn't satisfy the request, use live APIs to augment results.
+        if (!shouldSkipLiveLookups) {
+            // Public search fallback: when no explicit query/coords/category are provided,
+            // prefer returning nearby sites from LocationIQ so map/search never looks empty.
+            const hasQuery = cleanSearch || latitude || longitude || (category && category !== 'ALL');
+            const liveSiteQuery = cleanSearch || 'restaurants,cafes,hotels,salons,clinics,gyms,nightclubs,bars';
+            if (!hasQuery) {
+                // Open-source geocoder (OpenStreetMap Nominatim) — no API key, no cost.
+                // Only enrich when we have no coords yet; failures are non-fatal.
+                try {
+                    const geoRes = await axios_1.default.get('https://nominatim.openstreetmap.org/search', {
+                        params: { q: liveSiteQuery, format: 'json', addressdetails: 1, limit: 50 },
+                        headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
+                        timeout: 5000,
+                    });
+                    if (geoRes.data && geoRes.data.length > 0) {
+                        locationIqPOIs = geoRes.data;
+                    }
+                }
+                catch (err) {
+                    console.warn('Live-site Nominatim fallback failed:', err.message);
+                }
+            }
+            // Seed coordinates from live-site result if still missing
+            if ((lat == null || lng == null) && locationIqPOIs.length > 0) {
+                const bestMatch = locationIqPOIs[0];
+                lat = parseFloat(bestMatch.lat) || lat;
+                lng = parseFloat(bestMatch.lon) || lng;
+            }
+            // === STEP 2: LocationIQ Search ===
+            if (cleanSearch) {
+                try {
+                    const geoRes = await axios_1.default.get('https://nominatim.openstreetmap.org/search', {
+                        params: { q: cleanSearch, format: 'json', addressdetails: 1, limit: 10 },
+                        headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
+                        timeout: 5000,
+                    });
+                    if (geoRes.data && geoRes.data.length > 0) {
+                        if (!lat && !lng) {
+                            const bestMatch = geoRes.data[0];
+                            lat = parseFloat(bestMatch.lat);
+                            lng = parseFloat(bestMatch.lon);
+                            const address = bestMatch.address || {};
+                            extractedCity = address.city || address.town || address.village || address.county || '';
+                            if (extractedCity) {
+                                const regex = new RegExp(`\\b${extractedCity}\\b`, 'i');
+                                searchKeyword = cleanSearch.replace(regex, '').trim();
+                            }
+                        }
+                        const searchLower = cleanSearch.toLowerCase();
+                        const searchWords = searchLower.split(/\s+/).filter(w => w.length > 2);
+                        for (const result of geoRes.data) {
+                            if (!result.display_name)
+                                continue;
+                            const displayLower = result.display_name.toLowerCase();
+                            const nameMatchesSearch = searchWords.some(word => {
+                                if (extractedCity && word.toLowerCase() === extractedCity.toLowerCase())
+                                    return false;
+                                return displayLower.includes(word);
+                            });
+                            const rClass = result.class || '';
+                            const rType = result.type || '';
+                            const isKnownPOI = ['amenity', 'shop', 'leisure', 'tourism', 'craft'].includes(rClass) ||
+                                ['restaurant', 'cafe', 'fast_food', 'bar', 'beauty', 'hairdresser', 'massage',
+                                    'clinic', 'hospital', 'gym', 'fitness_centre', 'spa'].includes(rType);
+                            if (nameMatchesSearch || isKnownPOI) {
+                                locationIqPOIs.push(result);
+                            }
+                        }
+                    }
+                }
+                catch (err) {
+                    console.warn('Nominatim search failed:', err.message);
+                }
+            }
+            // === STEP 3: Overpass API search ===
+            const cacheKey = `osm_search:${cleanSearch}:${lat || 'null'}:${lng || 'null'}:${category || 'ALL'}`;
+            const cachedOsmResults = cache_service_1.cacheService.get(cacheKey);
+            if (cachedOsmResults) {
+                osmResults = cachedOsmResults;
+            }
+            else {
+                let overpassQuery = '';
+                if (lat && lng) {
+                    if (searchKeyword && searchKeyword.length > 2) {
+                        const cleanCategoryKeyword = searchKeyword.replace(/\b(food|restaurant|cafe|place|shop|parlor|store|center|centre|studio|bar|grill|spa|salon)\b/gi, '').trim() || searchKeyword;
+                        const flexibleNameRegex = searchKeyword.split('').join('.?');
+                        overpassQuery = `
+              [out:json][timeout:10];
+              (
+                node["name"~"${flexibleNameRegex}",i]["amenity"](around:50000,${lat},${lng});
+                node["name"~"${flexibleNameRegex}",i]["shop"](around:50000,${lat},${lng});
+                node["name"~"${flexibleNameRegex}",i]["leisure"](around:50000,${lat},${lng});
+                node["cuisine"~"${cleanCategoryKeyword}",i]["amenity"](around:50000,${lat},${lng});
+                node["shop"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+                node["amenity"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+                node["leisure"~"${cleanCategoryKeyword}",i](around:50000,${lat},${lng});
+              );
+              out center 20;
+            `;
+                    }
+                    else if (!searchKeyword) {
+                        let typeFilter = 'node["amenity"~"restaurant|cafe|clinic|hospital|fast_food|food_court|bar"]';
+                        if (category === 'SALON')
+                            typeFilter = 'node["shop"~"beauty|hairdresser"]';
+                        else if (category === 'SPA')
+                            typeFilter = 'node["shop"~"massage|beauty|wellness"]';
+                        else if (category === 'CLINIC')
+                            typeFilter = 'node["amenity"~"clinic|hospital|doctor|dentist"]';
+                        else if (category === 'FITNESS_CENTER')
+                            typeFilter = 'node["leisure"~"fitness_centre|sports_centre"]';
+                        else if (category === 'RESTAURANT')
+                            typeFilter = 'node["amenity"~"restaurant|cafe|fast_food|food_court"]';
+                        else if (category === 'LIVE_SELLER')
+                            typeFilter = 'node["shop"~"electronics|clothes|fashion|general"]';
+                        else if (category === 'FREELANCE')
+                            typeFilter = 'node["amenity"]["office"]["shop"]';
+                        overpassQuery = `
+              [out:json][timeout:10];
+              (
+                ${typeFilter}(around:10000,${lat},${lng});
+              );
+              out center 25;
+            `;
+                    }
+                }
+                if (overpassQuery) {
+                    try {
+                        const overpassUrl = 'https://overpass-api.de/api/interpreter';
+                        const overpassRes = await axios_1.default.post(overpassUrl, `data=${encodeURIComponent(overpassQuery)}`, {
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)'
+                            },
+                            timeout: 10000
+                        });
+                        osmResults = (overpassRes.data?.elements || []).filter((el) => !!el.id);
+                    }
+                    catch (err) {
+                        console.warn('Overpass search failed (Fallback to local DB):', err.message);
+                    }
+                }
+                if (osmResults.length > 0) {
+                    cache_service_1.cacheService.set(cacheKey, osmResults);
+                }
+            }
+        }
+        // === STEP 4: Merge LocationIQ POI results ===
+        for (const poi of locationIqPOIs) {
+            const poiId = (poi.osm_id && poi.osm_type) ? `osm-${poi.osm_type}-${poi.osm_id}` : `liq-${poi.place_id}`;
+            if (seenIds.has(poiId))
+                continue;
+            seenIds.add(poiId);
+            const addr = poi.address || {};
+            const rType = poi.type || '';
+            let mappedCat = 'RESTAURANT';
+            if (['beauty', 'hairdresser'].includes(rType))
+                mappedCat = 'SALON';
+            else if (['massage'].includes(rType))
+                mappedCat = 'SPA';
+            else if (['clinic', 'hospital', 'doctor', 'dentist'].includes(rType))
+                mappedCat = 'CLINIC';
+            else if (['gym', 'fitness_centre', 'sports_centre'].includes(rType))
+                mappedCat = 'FITNESS_CENTER';
+            if (category && category !== 'ALL' && mappedCat !== String(category))
+                continue;
+            const city = addr.city || addr.town || addr.village || extractedCity || 'Unknown City';
+            const displayName = poi.display_name || '';
+            const nameParts = displayName.split(',');
+            const name = nameParts[0]?.trim() || 'Unknown Business';
+            const address = nameParts.slice(1, 3).join(',').trim() || displayName;
+            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+            if (mappedCat === 'SALON')
+                coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'SPA')
+                coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'FITNESS_CENTER')
+                coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'CLINIC')
+                coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+            mergedBusinesses.push({
+                id: poiId,
+                googlePlaceId: poiId,
+                name,
+                description: `Found via Pabandi search. Claim this profile to set up Web3 bookings.`,
+                category: mappedCat,
+                address,
+                city,
+                phone: '+92 300 0000000',
+                email: 'contact@pabandi.com',
+                website: null,
+                coverImageUrl,
+                rating: 4.5,
+                reviewCount: 0,
+                isVerified: false,
+                isClaimed: false,
+                isActive: true,
+                latitude: parseFloat(poi.lat) || 0,
+                longitude: parseFloat(poi.lon) || 0,
+                googleReviews: []
+            });
+        }
+        // === STEP 5: Merge Overpass/OSM results ===
+        for (const el of osmResults) {
+            if (!el.id)
+                continue;
+            const osmId = `osm-${el.type || 'node'}-${el.id}`;
+            if (seenIds.has(osmId))
+                continue;
+            seenIds.add(osmId);
+            const tags = el.tags || {};
+            let mappedCat = 'RESTAURANT';
+            if (tags.shop === 'beauty' || tags.shop === 'hairdresser' || tags.amenity === 'hairdresser')
+                mappedCat = 'SALON';
+            else if (tags.shop === 'massage')
+                mappedCat = 'SPA';
+            else if (tags.amenity === 'clinic' || tags.amenity === 'hospital' || tags.amenity === 'doctor')
+                mappedCat = 'CLINIC';
+            else if (tags.leisure === 'fitness_centre' || tags.amenity === 'gym')
+                mappedCat = 'FITNESS_CENTER';
+            if (category && category !== 'ALL' && mappedCat !== String(category)) {
+                continue;
+            }
+            const address = tags['addr:full'] || tags['addr:street'] || tags.display_name || '';
+            const addressLower = address.toLowerCase();
+            let city = extractedCity || 'Unknown City';
+            if (!extractedCity && addressLower) {
+                if (addressLower.includes('lahore'))
+                    city = 'Lahore';
+                else if (addressLower.includes('islamabad'))
+                    city = 'Islamabad';
+                else if (addressLower.includes('rawalpindi'))
+                    city = 'Rawalpindi';
+                else if (addressLower.includes('faisalabad'))
+                    city = 'Faisalabad';
+                else if (addressLower.includes('multan'))
+                    city = 'Multan';
+                else if (addressLower.includes('peshawar'))
+                    city = 'Peshawar';
+                else if (addressLower.includes('quetta'))
+                    city = 'Quetta';
+                else if (addressLower.includes('karachi'))
+                    city = 'Karachi';
+                else if (addressLower.includes('chicago'))
+                    city = 'Chicago';
+                else if (addressLower.includes('new york'))
+                    city = 'New York';
+                else if (addressLower.includes('london'))
+                    city = 'London';
+            }
+            let coverImageUrl = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200';
+            if (mappedCat === 'SALON')
+                coverImageUrl = 'https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'SPA')
+                coverImageUrl = 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'FITNESS_CENTER')
+                coverImageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=800';
+            if (mappedCat === 'CLINIC')
+                coverImageUrl = 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&q=80&w=800';
+            const name = tags.name || 'Unknown Business';
+            mergedBusinesses.push({
+                id: osmId,
+                googlePlaceId: osmId,
+                name: name,
+                description: `Imported OpenStreetMap listing for ${name}. Claim this profile to set up Web3 bookings.`,
+                category: mappedCat,
+                address: address,
+                city: city,
+                phone: tags.phone || 'Contact via app',
+                email: 'contact@pabandi.com',
+                website: tags.website || null,
+                coverImageUrl: coverImageUrl,
+                rating: 4.5,
+                reviewCount: 1,
+                isVerified: false,
+                isClaimed: false,
+                isActive: true,
+                latitude: el.lat || null,
+                longitude: el.lon || null,
+                googleReviews: []
+            });
+        }
+        // If user location was provided, sort by proximity
+        if (lat != null && lng != null) {
+            const toRad = (v) => (v * Math.PI) / 180;
+            const R = 6371;
+            mergedBusinesses.sort((a, b) => {
+                const aLat = Number(a.latitude);
+                const aLng = Number(a.longitude);
+                const bLat = Number(b.latitude);
+                const bLng = Number(b.longitude);
+                if (aLat == null || aLng == null)
+                    return 1;
+                if (bLat == null || bLng == null)
+                    return -1;
+                const dLat = toRad(bLat - aLat);
+                const dLng = toRad(bLng - aLng);
+                const x = Math.sin(dLat / 2) ** 2 +
+                    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) *
+                        Math.sin(dLng / 2) ** 2;
+                const d = 2 * R * Math.asin(Math.sqrt(x));
+                return d;
+            });
+        }
+        res.json({ success: true, data: { businesses: mergedBusinesses } });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// GET /businesses/me — fetch the logged-in owner's business
+router.get('/me', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        const { prisma } = await Promise.resolve().then(() => __importStar(require('../utils/database')));
+        const business = await prisma.business.findUnique({
+            where: { ownerId: req.user.id },
+            include: { settings: true, businessHours: true },
+        });
+        if (!business) {
+            return res.json({ success: true, data: { business: null } });
+        }
+        res.json({ success: true, data: { business } });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// Publicly accessible business routes (optional auth)
+router.get('/slug/:slug', auth_middleware_1.optionalAuthenticate, business_controller_1.getBusinessBySlug);
+router.get('/:id/reviews', auth_middleware_1.optionalAuthenticate, business_controller_1.getBusinessReviews);
+router.get('/:id/services', auth_middleware_1.optionalAuthenticate, business_controller_1.getBusinessServices);
+// GET /businesses/:id — PUBLIC lookup (sanitized). Powers every profile/booking
+// page across the app. Returns owner PII only when the caller owns the business
+// or is an admin; everyone else gets a safe public projection.
+router.get('/:id', auth_middleware_1.optionalAuthenticate, business_controller_1.getBusiness);
+// GET /businesses/:id/full — FULL lookup with owner PII. Requires auth.
+router.get('/:id/full', auth_middleware_1.authenticate, business_controller_1.getBusinessFull);
+// All subsequent business routes require authentication
+router.use(auth_middleware_1.authenticate);
+router.post('/', business_controller_1.createBusiness);
+router.post('/:id/claim', business_controller_1.claimBusiness);
+router.put('/:id', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.updateBusiness);
+router.get('/:id/reservations', business_controller_1.getBusinessReservations);
+router.get('/:id/analytics', business_controller_1.getBusinessAnalytics);
+router.get('/:id/customers', business_controller_1.getBusinessCustomers);
+router.post('/:id/generate-link', business_controller_1.generateBookingLink);
+router.post('/:id/channex-connect', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.connectChannex);
+router.post('/:id/stripe-connect', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.connectStripe);
+router.post('/:id/payouts/raast', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.requestPayout);
+router.get('/:id/payouts/raast', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.getPayoutStatus);
+// Business Services Management
+router.post('/:id/services', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.createBusinessService);
+router.put('/:id/services/:serviceId', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.updateBusinessService);
+router.delete('/:id/services/:serviceId', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.deleteBusinessService);
+// Developer API Keys Management
+router.get('/:id/api-keys', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.getApiKeys);
+router.post('/:id/api-keys', (0, auth_middleware_1.authorize)('BUSINESS_OWNER', 'ADMIN'), business_controller_1.generateApiKey);
+exports.default = router;
+//# sourceMappingURL=business.routes.js.map

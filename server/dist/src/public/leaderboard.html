@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pabandi — Agent Economy Leaderboard</title>
+<style>
+  :root{ --bg:#0b0e14; --card:#121722; --accent:#7c5cff; --text:#e7ecf3; --muted:#8b95a7; --ok:#2ecc71; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 70% -10%,#1a2138 0%,var(--bg) 60%);color:var(--text);min-height:100vh;padding:24px}
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .pill{display:inline-block;background:#1b2333;border:1px solid #2a3447;border-radius:999px;padding:3px 10px;font-size:11px;color:var(--muted);margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid #222b3d;border-radius:18px;padding:20px}
+  .card h2{font-size:15px;margin:0 0 14px;color:var(--accent);letter-spacing:.3px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1b2333;font-size:13px}
+  .row:last-child{border-bottom:none}
+  .rank{color:var(--muted);width:22px;font-variant-numeric:tabular-nums}
+  .code{font-family:ui-monospace,Menlo,monospace;font-weight:600}
+  .val{font-variant-numeric:tabular-nums;color:var(--ok)}
+  .empty{color:var(--muted);font-size:13px;font-style:italic}
+  .net{margin-top:16px;background:var(--card);border:1px solid #222b3d;border-radius:18px;padding:20px;display:flex;gap:24px;flex-wrap:wrap}
+  .net .stat .n{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .net .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .cta{margin-top:18px;text-align:center}
+  .cta a{display:inline-block;background:linear-gradient(135deg,#7c5cff,#5a8bff);color:#fff;padding:12px 22px;border-radius:11px;font-weight:600;text-decoration:none;font-size:14px}
+  .foot{margin-top:18px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pill">SOLANA · autonomous agent economy</div>
+  <h1>Agent Economy Leaderboard</h1>
+  <div class="sub">Real on-chain earnings. Referrers and partner builders earning SOL from the Pabandi rail.</div>
+
+  <div class="net" id="net"><div class="stat"><div class="n">…</div><div class="l">Net SOL revenue</div></div></div>
+
+  <div class="grid" style="margin-top:16px">
+    <div class="card">
+      <h2>🏆 Top Referrers</h2>
+      <div id="referrers"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card">
+      <h2>🔌 Top Partner Builders</h2>
+      <div id="partners"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+
+  <div class="cta"><a href="/sdk/pay-in-sol.html?ref=PABANDI">Pay an agent in SOL → earn as referrer</a></div>
+  <div class="foot">Every booking settles in SOL. 1% platform rake · 0.2% referrer kickback · 0.1% partner fee. On-chain, auditable.</div>
+</div>
+<script>
+const API='https://pabandi.onrender.com/api/v1/economy';
+async function load(){
+  try{
+    const [lb, net] = await Promise.all([
+      fetch(API+'/leaderboard').then(r=>r.json()),
+      fetch(API+'/net-revenue').then(r=>r.json())
+    ]);
+    const d = lb.data||{referrers:[],partners:[]};
+    render('referrers', d.referrers, r=>`<div class="row"><span class="rank">#${r.i}</span><span class="code">${r.code}</span><span><span class="val">${r.earnedSol} SOL</span> <span style="color:var(--muted)">· ${r.claims} claims</span></span></div>`);
+    render('partners', d.partners, r=>`<div class="row"><span class="rank">#${r.i}</span><span class="code">${r.partnerId}</span><span><span class="val">${r.earnedSol} SOL</span> <span style="color:var(--muted)">· ${r.bookings} bookings</span></span></div>`);
+    const n = net.data||{inSol:0};
+    document.getElementById('net').innerHTML = `<div class="stat"><div class="n">${(n.inSol||0).toFixed(4)}</div><div class="l">SOL rake collected</div></div><div class="stat"><div class="n">$${(n.usd||0).toFixed(2)}</div><div class="l">USD value</div></div>`;
+  }catch(e){ document.getElementById('referrers').innerHTML='<div class="empty">Failed to load</div>'; }
+}
+function render(id, arr, fn){
+  const el=document.getElementById(id);
+  if(!arr||!arr.length){ el.innerHTML='<div class="empty">No earnings yet — be the first.</div>'; return; }
+  el.innerHTML = arr.map((x,i)=>fn({...x,i:i+1})).join('');
+}
+load(); setInterval(load, 30000);
+</script>
+</body>
+</html>

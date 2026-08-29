@@ -1,0 +1,2 @@
+export declare const saveConversationSignal: (phone: string, businessId: string, userMessage: string, agentReply: string, traceId?: string) => Promise<void>;
+//# sourceMappingURL=whatsapp.conversation.service.d.ts.map

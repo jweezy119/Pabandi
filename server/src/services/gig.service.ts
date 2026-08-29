@@ -299,6 +299,13 @@ export async function acceptBestBid(gigId: string, opts: { payerSecretB64?: stri
   ex.escrow = { funded: true, amount: escrowSol, payer: opts.clientWallet || agent?.walletAddress || null, rakePct: 1, helperPct: 0.2, simulated: dep.simulated, txHash: dep.txHash };
   ex.acceptedBidId = best.id; ex.claimedBy = `agent:${best.agentId}`; ex.stakePab = best.stakePab; ex.bidRanking = scored; saveStore();
   await gigActivity({ kind: 'CLAIM', role: 'freelancer', gigId, claimedBy: `agent:${best.agentId}`, by: 'bid', source: opts.payerSecretB64 ? 'ai-loop' : 'human' });
+  // Notify external apps that this gig was claimed by an agent
+  if (gig.createdBy) {
+    try {
+      const { webhookDeliveryService } = await import('./webhookDelivery.service');
+      await webhookDeliveryService.enqueueWebhook({ appId: gig.createdBy, event: 'gig.claimed', data: { gigId, agentId: best.agentId, trustScore: pick.trust, bidRanking: scored } });
+    } catch { /* webhook best-effort */ }
+  }
 
   logger.info(`[gig] bid accepted ${best.id} → agent ${best.agentId} (trust ${pick.trust}, value ${pick.value}); escrow funded (simulated=${dep.simulated})`);
   return { gigId, acceptedBidId: best.id, agentId: best.agentId, trustScore: pick.trust, bidRanking: scored, escrowFunded: true, simulated: dep.simulated, txHash: dep.txHash };
@@ -376,6 +383,23 @@ export async function completeGig(gigId: string, txHash?: string): Promise<any> 
   }
 
   await gigActivity({ kind: 'COMPLETE', role: 'freelancer', gigId, claimedBy: meta.claimedBy || 'human', rakeSol, helperSol, referralCode: meta.referralCode || null, source: meta.escrow?.simulated ? 'ai-loop' : 'human' });
+  // Wire outcome into learning + reputation
+  if (meta.claimedBy?.startsWith('agent:')) {
+    const winnerId = meta.claimedBy.replace('agent:', '');
+    try {
+      const { agentLearningService } = await import('./agentLearning.service');
+      await agentLearningService.recordLearningEvent({ agentId: winnerId, outcome: 'COMPLETED', revenue: budgetUsd, bookingId: gigId });
+    } catch { /* learning best-effort */ }
+    try {
+      const { agentWalletService } = await import('./agentWallet.service');
+      await agentWalletService.recordBookingOutcome({ agentId: winnerId, status: 'COMPLETED', gigId, qualityScore: 4 });
+    } catch { /* wallet best-effort */ }
+    try {
+      const { webhookDeliveryService } = await import('./webhookDelivery.service');
+      const appId = (gig as any).createdBy;
+      if (appId) await webhookDeliveryService.enqueueWebhook({ appId, event: 'gig.completed', data: { gigId, agentId: winnerId, status: 'COMPLETED', rakeSol, helperSol, referralPab } });
+    } catch { /* webhook best-effort */ }
+  }
   logger.info(`[gig] COMPLETED ${gigId} — rake ${rakeSol} SOL${helperSol ? `, helper ${helperSol} SOL (${meta.referralCode})` : ''}; PAB stake +${stakeReturned + deliveryBonus}, ref +${referralPab}`);
   return { gigId, status: 'COMPLETED', rakeSol, helperSol, referralCode: meta.referralCode || null, stakeReturned, deliveryBonus, referralPab,
     paidFreelancerSol, freelancerTx, simulated: payoutSimulated };
