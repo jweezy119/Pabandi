@@ -453,6 +453,28 @@ export default function HomePage() {
           </section>
         )}
 
+        {/* USDY Yield — featured vertical strip */}
+        <section ref={revealRef2} className="reveal py-6">
+          <div className="overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.08] to-indigo-500/[0.04] p-6 sm:p-8">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-300 border border-emerald-500/30">Pabandi × Ondo</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest rounded-full bg-amber-400/15 px-2.5 py-1 text-amber-300 border border-amber-400/40">Coming Soon</span>
+                </div>
+                <h3 className="mt-3 font-headline text-xl font-bold text-white sm:text-2xl">Earn USDY Treasury Yield on Rent</h3>
+                <p className="mt-1 max-w-xl text-sm text-slate-300">
+                  Tokenized US Treasuries (Ondo USDY) as the yield rail for real-estate rent — non-custodial, Solana-anchored, 50/50 tenant/landlord split. Pre-register your portfolio.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                <Link to="/usdy" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-emerald-950 transition-colors hover:bg-emerald-400">Explore USDY Yield →</Link>
+                <Link to="/hospitality" className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10">Hospitality</Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Featured Businesses */}
         <section ref={revealRef2} className="space-y-6 reveal">
           <div className="flex items-center justify-between">
