@@ -23,4 +23,4 @@ RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache \
  && npm run build
 
 # Start the server
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma migrate deploy --preview-feature && npm start"]
