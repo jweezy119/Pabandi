@@ -14,6 +14,15 @@ import { logger } from '../utils/logger';
 
 const router = Router();
 
+// Admin guard for internal/campaign operations (env-gated; no real admin login needed).
+function requireAdminKey(req: Request, res: Response, next: any) {
+  const key = process.env.ADMIN_API_KEY;
+  if (!key) return res.status(403).json({ success: false, message: 'Admin operations disabled (ADMIN_API_KEY unset).' });
+  const provided = req.headers['x-admin-key'] || (req.query as any).adminKey;
+  if (provided !== key) return res.status(401).json({ success: false, message: 'Unauthorized.' });
+  next();
+}
+
 /**
  * Create a security deposit (applies tenant's PTP band deposit reduction).
  * POST /api/v1/pyd/deposit
@@ -278,6 +287,32 @@ router.get('/usdy/leads/count', async (_req: Request, res: Response): Promise<an
     });
   } catch (err: any) {
     return res.json({ success: true, data: { totalPreRegistered: 0, countries: [] }, simulated: true });
+  }
+});
+
+/**
+ * DELETE /api/v1/pyd/usdy/lead
+ * Admin-only purge of pre-registration leads (e.g. remove test rows before showing the counter).
+ * Guarded by ADMIN_API_KEY (header x-admin-key or ?adminKey=).
+ */
+router.delete('/usdy/lead', requireAdminKey, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email, all } = req.query as any;
+    let deleted = 0;
+    if (all === 'true') {
+      const r = await prisma.usdyLead.deleteMany({});
+      deleted = r.count;
+    } else if (email) {
+      const r = await prisma.usdyLead.deleteMany({ where: { email: String(email) } });
+      deleted = r.count;
+    } else {
+      return res.status(400).json({ success: false, message: 'Provide ?email= or ?all=true' });
+    }
+    logger.info(`[rentalDeposit] USDY leads purged by admin: ${deleted}`);
+    return res.json({ success: true, data: { deleted } });
+  } catch (err: any) {
+    logger.error(`[rentalDeposit] USDY lead purge failed: ${err.message}`);
+    return res.status(500).json({ success: false, message: 'Purge failed.' });
   }
 });
 

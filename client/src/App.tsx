@@ -47,6 +47,7 @@ import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
 import AirdropPage from './pages/AirdropPage';
+import UsdyPage from './pages/UsdyPage';
 import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
@@ -118,6 +119,7 @@ function App() {
         <Routes>
           <Route path="/waitlist" element={<PublicSEO seo={{ title: 'Pabandi Waitlist', description: 'Join the Pabandi waitlist for early access to trusted bookings, escrow deposits, $PAB rewards, and local discovery.' }}><WaitlistPage /></PublicSEO>} />
           <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />
+          <Route path="/usdy" element={<PublicSEO seo={{ title: 'Pabandi × Ondo USDY — Tokenized T-Bill Yield on Rent', description: 'Pabandi brings Ondo Finance USDY (tokenized US Treasuries) to the global rental economy. Pre-register your portfolio for USDY rent yield.' }}><UsdyPage /></PublicSEO>} />
           <Route path="/city/:slug" element={<CityLandingPage />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<PublicSEO seo={{ title: 'Pabandi | Commitment, Secured.', description: 'Find trusted local hospitality, live sellers, freelancers, and gig workers near you. Book with escrow-backed deposits and earn $PAB rewards on Pabandi.' }}><HomePage /></PublicSEO>} />
