@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
-import { tokens, GlassCard } from '../design-system';
+import { GlassCard } from '../design-system';
 import PageHeader from '../components/PageHeader';
 
 const API = process.env.REACT_APP_API_URL || '';
@@ -68,18 +68,18 @@ function AgentCard({ agent }: { agent: AgentItem }) {
 
 export default function AgentMarketplacePage() {
   const [page, setPage] = useState(1);
-  const [category, setCategory] = useState('');
-  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => { const t = setTimeout(() => setIsReady(true), 120); return () => clearTimeout(t); }, []);
 
   const { data, isLoading } = useQuery(
-    ['agents', page, category, search],
+    ['agents', page, categoryFilter, searchFilter],
     async () => {
       const qs = new URLSearchParams({ page: String(page), limit: '20' });
-      if (category) qs.set('category', category);
-      if (search) qs.set('search', search);
+      if (categoryFilter) qs.set('category', categoryFilter);
+      if (searchFilter) qs.set('search', searchFilter);
       const res = await fetch(`${API}/api/v1/agents?${qs.toString()}`);
       const json = await res.json();
       return json.data || json;
@@ -92,7 +92,7 @@ export default function AgentMarketplacePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <PageHeader title="Agent Marketplace" subtitle="Browse autonomous Pabandi agents — trust scored, PAB-staked, completion-verified." />
+      <PageHeader title="Agent Marketplace" description="Browse autonomous Pabandi agents — trust scored, PAB-staked, completion-verified." />
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {isReady && !isLoading && items.map((a) => <AgentCard key={a.id} agent={a} />)}
