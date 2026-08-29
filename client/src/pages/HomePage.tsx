@@ -117,6 +117,12 @@ export default function HomePage() {
     return res.data?.data?.businesses || [];
   }, { enabled: !!(!data || data.length === 0) });
 
+  // Real AI freelancers / agents for the homepage discovery row.
+  const { data: freelanceBiz = [] } = useQuery(['home-freelance'], async () => {
+    const res = await businessService.getPublicBusinesses({ category: 'FREELANCE', limit: 12 });
+    return res.data?.data?.businesses || [];
+  });
+
   const source = fallbackContext.data && fallbackContext.data.length > 0 ? fallbackContext.data : (data || []);
   let businesses = source || [];
   businesses = rankBusinesses([...businesses], userLoc);
@@ -650,6 +656,45 @@ export default function HomePage() {
             Browse all businesses →
           </Link>
         </div>
+
+        {/* Featured AI Freelancers & Agents */}
+        {freelanceBiz.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Featured AI Freelancers & Agents</h3>
+              <Link to="/freelance" className="rounded-full bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-colors">
+                All freelancers →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {freelanceBiz.slice(0, 8).map((f: any) => {
+                const t = Math.max(0, Math.min(100, Math.round((f.trustScore ?? f.reliabilityScore ?? 0) / 10)));
+                const trustCol = (f.isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
+                const initials = ((f.name || 'AI')[0] || 'A');
+                return (
+                  <Link key={f.id} to={`/business/${f.id}`} className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-indigo-500/40 hover:bg-white/10">
+                    <div className="flex items-center gap-3">
+                      {f.logoUrl || f.coverImageUrl ? (
+                        <img src={f.logoUrl || f.coverImageUrl} alt={f.name} className="h-10 w-10 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white">{initials}</div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate font-headline text-sm font-bold text-white">{f.name}</p>
+                        <p className="truncate text-xs text-slate-400">{f.city || 'Remote'}</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-xs text-slate-300">{(f.description || 'Verified freelancer on Pabandi').slice(0, 80)}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: trustCol, borderColor: `${trustCol}55`, background: `${trustCol}20` }}>🛡 Trust {t}</span>
+                      <span className="text-[10px] text-slate-400">⭐ {f.rating?.toFixed(1) || '4.9'}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* App Features / proof grid */}
         <section ref={revealRef3} className="space-y-6 reveal">

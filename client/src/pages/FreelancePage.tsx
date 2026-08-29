@@ -94,6 +94,8 @@ export default function FreelancePage() {
     company: b.city || '',
     location: b.city || '',
     category: b.category,
+    trustScore: b.trustScore || 0,
+    isVerified: !!b.isVerified,
     githubUrl: '', walletAddress: '', trustVelocity: 0, connectionCount: 0,
   });
   const filteredProfiles = (freelanceBiz as any[]).map(toProfile).filter((p: any) => {
@@ -119,13 +121,13 @@ export default function FreelancePage() {
       `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
         <PageHeader
-          title="Freelance"
-          description="Verified freelancers and independent creators, searchable by skill, rate, and availability. Every profile includes a Pabandi Passport trust score and escrow-backed booking."
+          title="AI Freelancers & Agents"
+          description="Verified AI freelancers, developers, and independent creators — searchable by skill, rate, and availability. Every profile carries a Pabandi Passport trust score and escrow-backed booking so you never get ghosted."
           eyebrow="Network"
           actions={
             <>
               {!isAuthenticated && <Link to="/login" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">Log in to book</Link>}
-              <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse freelancers</Link>
+              <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse all freelancers</Link>
             </>
           }
         />
@@ -253,7 +255,12 @@ export default function FreelancePage() {
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {!isReady && Array.from({ length: 6 }).map((_, idx) => <ProfileSkeletonCard key={`skeleton-${idx}`} />)}
             {isReady && filteredProfiles.map((p, idx) => {
-              const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
+              const first = (p.firstName || 'P')[0] || 'P';
+              const last = (p.lastName || '')[0] || '';
+              const initials = `${first}${last}`.toUpperCase();
+              const t = Math.max(0, Math.min(100, Math.round((p.trustScore ?? 0) / 10)));
+              const trustLabel = (p.isVerified || t >= 80) ? 'Verified' : t >= 50 ? 'Trusted' : 'New';
+              const trustCol = (p.isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
               const hue = ['freelance-dev','small-biz-owner','project-owner','solopreneur'].indexOf(p.category) * 90;
               return (
                 <GlassCard key={p.id} className={`anim-fade-up ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
@@ -261,10 +268,11 @@ export default function FreelancePage() {
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black shadow" style={{ background: `linear-gradient(135deg, hsl(${hue},70%,55%), hsl(${hue + 40},60%,40%))`, color: 'white' }}>{initials}</div>
                     <div className="min-w-0">
                       <p className="font-headline font-bold text-sm truncate">{p.headline}</p>
-                      <p className="text-xs text-on-surface-variant truncate">{`${p.firstName} ${p.lastName}`} · {p.location}</p>
-                      <div className="mt-2 flex flex-wrap gap-1">
+                      <p className="text-xs text-on-surface-variant truncate">{`${p.firstName} ${p.lastName}`.trim()} · {p.location}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
                         <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{CATEGORY_META[p.category]?.label || p.category}</span>
-                        <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{p.company}</span>
+                        {t > 0 && <span className="px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider" style={{ color: trustCol, borderColor: `${trustCol}55`, background: `${trustCol}20` }}>🛡 {trustLabel} {t}</span>}
+                        {p.company && <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{p.company}</span>}
                       </div>
                     </div>
                   </Link>
