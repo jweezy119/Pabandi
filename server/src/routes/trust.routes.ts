@@ -61,6 +61,48 @@ router.get('/flux/:userId/predict', async (req, res) => {
  * GET /api/v1/trust/public/:userId — public trust profile (no auth).
  * Returns score + tier + attestation + velocity (no owner-only actions).
  */
+/**
+ * GET /api/v1/trust/litigation/:userId — public eviction/housing litigation check.
+ * Runs CourtListener for the user's name and returns the finding + trust impact.
+ * No auth. Safe to expose (name resolved server-side; only aggregate flags returned).
+ */
+router.get('/litigation/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const state = (req.query.state as string) || undefined;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const { courtListenerService } = await import('../services/osint/courtListener.service');
+    const fullName = `${user.firstName} ${user.lastName}`.trim();
+    const ev = await courtListenerService.lookupEvictions(fullName, state);
+
+    // Mirror the penalty the trust engine would apply.
+    let penalty = 0;
+    if (ev.found) {
+      penalty = 25;
+      if (ev.recentEviction) penalty += 20;
+      penalty += Math.min(15, (ev.count - 1) * 5);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        queriedName: fullName,
+        jurisdiction: state || 'ALL',
+        evictionFound: ev.found,
+        recentEviction: ev.recentEviction,
+        evictionCount: ev.count,
+        trustPenalty: penalty,
+        cases: ev.cases,
+        simulated: !process.env.COURTLISTENER_API_KEY,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get('/public/:userId', async (req, res) => {
   try {
     const { userId } = req.params;

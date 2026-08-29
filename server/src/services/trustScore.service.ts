@@ -8,6 +8,11 @@ export interface TrustInputs {
   osint: { breachCount: number; domainAgeDays: number; voipLikelihood: number };
   social: { witnessCount: number; vouchScore: number };
   behavior: { avgResponseMinutes: number; prepayCompliance: number };
+  litigation?: {
+    evictionFound: boolean;
+    recentEviction: boolean;
+    evictionCount: number;
+  };
   verticals?: {
     commerce: { completed: number; noShows: number };
     hospitality: { completed: number; noShows: number };
@@ -49,6 +54,14 @@ export class TrustScoreService {
     if (inputs.osint.voipLikelihood > 0.5) oScore -= 20;
     if (inputs.osint.domainAgeDays < 30) oScore -= 15;
     if (inputs.osint.domainAgeDays > 365) oScore += 10;
+
+    // Litigation / eviction penalty (CourtListener) — heaviest non-reliable signal.
+    if (inputs.litigation?.evictionFound) {
+      oScore -= 25; // prior eviction/housing litigation on record
+      if (inputs.litigation.recentEviction) oScore -= 20; // within 3 years = fresh risk
+      // Additional drag per extra matter, capped so it can't over-penalize a single noisy result.
+      oScore -= Math.min(15, (inputs.litigation.evictionCount - 1) * 5);
+    }
     
     // Social Score
     let sScore = 50; // neutral baseline
@@ -186,11 +199,32 @@ export class TrustScoreService {
     const domainAgeDays = event.osintData?.domainAgeDays || 365;
     const voipLikelihood = event.osintData?.voipLikelihood || 0;
 
+    // Litigation signal (CourtListener) — penalizes trust score on eviction/housing records.
+    let litigation: TrustInputs['litigation'] | undefined;
+    try {
+      const { courtListenerService } = require('./osint/courtListener.service');
+      const fullName = `${user.firstName} ${user.lastName}`.trim();
+      if (fullName.length > 2) {
+        const ev = await courtListenerService.lookupEvictions(fullName, event.osintData?.state);
+        litigation = {
+          evictionFound: ev.found,
+          recentEviction: ev.recentEviction,
+          evictionCount: ev.count,
+        };
+        if (ev.found) {
+          logger.warn(`[TrustScoreService] CourtListener: eviction/housing litigation found for ${fullName} (count=${ev.count}, recent=${ev.recentEviction})`);
+        }
+      }
+    } catch (err: any) {
+      logger.error(`[TrustScoreService] CourtListener lookup failed: ${err.message}`);
+    }
+
     const inputs: TrustInputs = {
       reliability: { completed, noShows, cancellations },
       osint: { breachCount, domainAgeDays, voipLikelihood },
       social: { witnessCount: 0, vouchScore: 0 },
       behavior: { avgResponseMinutes: 120, prepayCompliance: 1.0 },
+      litigation,
       verticals
     };
 
@@ -211,7 +245,10 @@ export class TrustScoreService {
       severity: event.severity,
       weightUsed: weights.osintWeight, // Can dynamically log which weight was dominant
       methodology: '1.0.0',
-      metadata: event.osintData
+      metadata: {
+        ...(event.osintData || {}),
+        ...(litigation ? { litigation } : {})
+      }
     });
 
     // 4. Determine Verification Tier

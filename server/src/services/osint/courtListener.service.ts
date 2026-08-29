@@ -96,6 +96,33 @@ export class CourtListenerService {
       return { count: 0, results: [] };
     }
   }
+
+  /**
+   * Targeted eviction / housing-litigation lookup.
+   * Reuses the civil-litigation search but filters results down to eviction,
+   * unlawful detainer, rent, landlord-tenant, and foreclosure matters to cut
+   * false positives. Returns an aggregate the trust engine can penalize on.
+   */
+  public async lookupEvictions(
+    name: string,
+    state?: string
+  ): Promise<{ found: boolean; count: number; recentEviction: boolean; cases: CourtListenerSearchResult['results'] }> {
+    const res = await this.searchCivilLitigation(name, state, true);
+    const EVICT_RE = /evict|unlawful detainer|landlord|tenant|rent|foreclos|housing/i;
+    const evictionCases = res.results.filter(
+      (r) => EVICT_RE.test(r.natureOfSuit || '') || EVICT_RE.test(r.caseName || '')
+    );
+    const recentEviction = evictionCases.some((r) => {
+      const yr = parseInt((r.dateFiled || '').slice(0, 4), 10);
+      return !Number.isNaN(yr) && new Date().getFullYear() - yr <= 3;
+    });
+    return {
+      found: evictionCases.length > 0,
+      count: evictionCases.length,
+      recentEviction,
+      cases: evictionCases,
+    };
+  }
 }
 
 export const courtListenerService = new CourtListenerService();
