@@ -370,6 +370,7 @@ app.get('/', (req, res) => {
   }
   // Serve the React SPA to browsers; keep the JSON welcome for API clients (curl/health).
   if (req.headers.accept && String(req.headers.accept).includes('text/html')) {
+    res.setHeader('Cache-Control', 'no-cache');
     return res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'), (err: any) => {
       if (err) res.status(200).json({ success: true, message: 'Welcome to the Pabandi Backend API', version: API_VERSION, docs: `/api/${API_VERSION}/docs`, health: '/health' });
     });
@@ -389,6 +390,15 @@ app.get('/', (req, res) => {
 // routes (/search, /login, /dashboard, ...) resolve to index.html.
 const SPA_DIR = path.join(__dirname, 'public', 'app');
 const SPA_INDEX = path.join(SPA_DIR, 'index.html');
+// Serve built assets with long cache (hashed filenames), but force no-cache on the
+// SPA shell (index.html) so Cloudflare/edge never serves a stale bundle after a deploy.
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const p = req.path;
+  if ((p === '/' || p === '/index.html') && req.method === 'GET') {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+  next();
+});
 app.use(express.static(SPA_DIR));
 app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (req.method !== 'GET') return next();
@@ -399,6 +409,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
     || p === '/robots.txt' || p === '/sitemap.xml' || p === '/llms.txt' || p.startsWith('/pab-')) {
     return next();
   }
+  res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(SPA_INDEX, (err: any) => { if (err) next(); });
 });
 
