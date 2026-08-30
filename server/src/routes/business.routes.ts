@@ -44,8 +44,37 @@ router.post('/geocode-backfill', async (req, res) => {
   const { prisma } = await import('../utils/database');
   const force = req.query.force === '1';
   const sync = req.query.sync === '1';
+  const mode = String(req.query.mode || 'geocode');
   const max = Math.min(parseInt(String(req.query.max ?? '25'), 10) || 25, 50);
   const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
+
+  // ── mode=country: derive correct `country` from lat/lng (seed data has it hardcoded
+  // to "United States" for every business). Done via coordinate bbox — no API calls. ──
+  const COUNTRY_FROM_COORDS = (lat: number, lng: number): string => {
+    if (lat >= 23.5 && lat <= 37.5 && lng >= 60 && lng <= 78) return 'Pakistan';
+    if (lat >= 49 && lat <= 59 && lng >= -8 && lng <= 2) return 'United Kingdom';
+    if (lat >= 24 && lat <= 34 && lng >= 50 && lng <= 57) return 'United Arab Emirates';
+    if (lat >= 24 && lat <= 49 && lng >= -125 && lng <= -66) return 'United States';
+    return 'United States';
+  };
+  if (mode === 'country') {
+    const due = await prisma.business.findMany({
+      where: { isActive: true, latitude: { not: null }, longitude: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: sync ? max : undefined,
+    });
+    const results: any[] = [];
+    for (const b of due) {
+      const correct = COUNTRY_FROM_COORDS(Number(b.latitude), Number(b.longitude));
+      const changed = correct !== b.country;
+      if (changed) await prisma.business.update({ where: { id: b.id }, data: { country: correct } });
+      results.push({ id: b.id, name: b.name, city: b.city, was: b.country, now: correct, changed });
+    }
+    return res.json({ success: true, mode: 'country', processed: results.length, results });
+  }
+
+
   // Match the public /businesses filter so we geocode the SAME active records the map uses.
   const baseWhere: any = { isActive: true };
   if (!force) baseWhere.OR = [{ latitude: null }, { longitude: null }];
