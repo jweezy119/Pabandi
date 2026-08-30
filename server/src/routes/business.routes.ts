@@ -30,54 +30,68 @@ import axios from 'axios';
 const router = Router();
 
 // ── Geocode backfill (one-time data fix): fill null lat/lng from city ──
-// Guarded by ?key= so it is not an open write endpoint. Runs in background to avoid
-// request timeouts. Geocodes by CITY NAME ALONE (the stored `country` field is corrupt
-// — every business says "United States" even Karachi/Lahore). Querying the city alone
-// lets Nominatim pick the prominent international city, not a same-named US township.
-// ?force=1 reprocesses ALL businesses (overwrites bad coords).
+// Guarded by ?key= so it is not an open write endpoint. Geocodes by CITY NAME ALONE
+// (the stored `country` field is corrupt — every business says "United States" even
+// Karachi/Lahore). Querying the city alone lets Nominatim pick the prominent
+// international city, not a same-named US township.
+// Modes:
+//   ?sync=1&max=N&offset=M  -> process a batch INLINE and return results+errors (debuggable)
+//   ?force=1                -> background reprocess ALL businesses (overwrites bad coords)
+//   (no sync/force)         -> background process only null-coord businesses
 router.post('/geocode-backfill', async (req, res) => {
   const KEY = process.env.GEOCODE_BACKFILL_KEY || 'pabandi-geocode-2026';
   if (req.query.key !== KEY) return res.status(401).json({ success: false, error: 'unauthorized' });
-  res.status(202).json({ success: true, message: 'geocode backfill started in background' });
-  (async () => {
-    try {
-      const { prisma } = await import('../utils/database');
-      const force = req.query.force === '1';
-      const where = force ? {} : { OR: [{ latitude: null }, { longitude: null }] };
-      const due = await prisma.business.findMany({ where });
-      let done = 0, failed = 0;
-      for (const b of due) {
-        // Use city (and state) only — ignore the corrupt country field.
-        const q = [b.city, b.state].filter(Boolean).join(', ');
-        if (!q) { failed++; continue; }
-        try {
-          let hit = null;
-          for (let attempt = 0; attempt < 3 && !hit; attempt++) {
-            try {
-              const r = await axios.get('https://nominatim.openstreetmap.org/search', {
-                params: { q, format: 'json', limit: 1 },
-                headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
-                timeout: 12000,
-              });
-              hit = r.data?.[0];
-            } catch {
-              await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
-            }
-          }
-          if (hit?.lat && hit?.lon) {
-            await prisma.business.update({
-              where: { id: b.id },
-              data: { latitude: parseFloat(hit.lat), longitude: parseFloat(hit.lon) },
-            });
-            done++;
-          } else failed++;
-        } catch { failed++; }
-        await new Promise((r) => setTimeout(r, 1200)); // Nominatim usage policy: 1 req/s
-      }
-      console.log(`[geocode-backfill] done=${done} failed=${failed} of ${due.length}`);
-    } catch (e) {
-      console.error('[geocode-backfill] error', e);
+  const { prisma } = await import('../utils/database');
+  const force = req.query.force === '1';
+  const sync = req.query.sync === '1';
+  const max = Math.min(parseInt(String(req.query.max ?? '25'), 10) || 25, 50);
+  const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
+  const where = force ? {} : { OR: [{ latitude: null }, { longitude: null }] };
+  const due = await prisma.business.findMany({ where, skip: offset, take: sync ? max : undefined });
+
+  const processOne = async (b: any) => {
+    const q = [b.city, b.state].filter(Boolean).join(', ');
+    if (!q) return { id: b.id, name: b.name, status: 'skip-no-city' };
+    let hit = null, lastErr: any = null;
+    for (let attempt = 0; attempt < 3 && !hit; attempt++) {
+      try {
+        const r = await axios.get('https://nominatim.openstreetmap.org/search', {
+          params: { q, format: 'json', limit: 1 },
+          headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
+          timeout: 12000,
+        });
+        hit = r.data?.[0];
+      } catch (e) { lastErr = String(e).slice(0, 120); await new Promise((r) => setTimeout(r, 2000 * (attempt + 1))); }
     }
+    if (hit?.lat && hit?.lon) {
+      await prisma.business.update({
+        where: { id: b.id },
+        data: { latitude: parseFloat(hit.lat), longitude: parseFloat(hit.lon) },
+      });
+      return { id: b.id, name: b.name, city: b.city, lat: parseFloat(hit.lat), lon: parseFloat(hit.lon) };
+    }
+    return { id: b.id, name: b.name, city: b.city, status: 'no-hit', err: lastErr };
+  };
+
+  if (sync) {
+    const results = [];
+    for (const b of due) {
+      results.push(await processOne(b));
+      await new Promise((r) => setTimeout(r, 1200)); // Nominatim: 1 req/s
+    }
+    return res.json({ success: true, processed: results.length, results });
+  }
+
+  // background mode
+  res.status(202).json({ success: true, message: 'geocode backfill started in background', total: due.length });
+  (async () => {
+    let done = 0, failed = 0;
+    for (const b of due) {
+      const r = await processOne(b);
+      if (r.status) failed++; else done++;
+      await new Promise((rr) => setTimeout(rr, 1200));
+    }
+    console.log(`[geocode-backfill] done=${done} failed=${failed} of ${due.length}`);
   })();
 });
 
