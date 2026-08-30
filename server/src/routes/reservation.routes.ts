@@ -75,7 +75,11 @@ router.post(
     const originalJson = res.json.bind(res);
     let createdId: string | undefined;
     (res as any).json = (body: any) => {
-      createdId = body?.data?.id || body?.id || body?.reservation?.id;
+      createdId =
+        body?.data?.reservation?.id ||
+        body?.data?.id ||
+        body?.id ||
+        body?.reservation?.id;
       return originalJson(body);
     };
     await new Promise<void>((resolve) =>
