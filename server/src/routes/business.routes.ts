@@ -46,8 +46,15 @@ router.post('/geocode-backfill', async (req, res) => {
   const sync = req.query.sync === '1';
   const max = Math.min(parseInt(String(req.query.max ?? '25'), 10) || 25, 50);
   const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
-  const where = force ? {} : { OR: [{ latitude: null }, { longitude: null }] };
-  const due = await prisma.business.findMany({ where, skip: offset, take: sync ? max : undefined });
+  // Match the public /businesses filter so we geocode the SAME active records the map uses.
+  const baseWhere: any = { isActive: true };
+  if (!force) baseWhere.OR = [{ latitude: null }, { longitude: null }];
+  const due = await prisma.business.findMany({
+    where: baseWhere,
+    orderBy: { createdAt: 'desc' },
+    skip: offset,
+    take: sync ? max : undefined,
+  });
 
   const processOne = async (b: any) => {
     const q = [b.city, b.state].filter(Boolean).join(', ');
