@@ -57,19 +57,27 @@ router.post('/geocode-backfill', async (req, res) => {
   });
 
   const processOne = async (b: any) => {
-    // Geocode by city name alone — Open-Meteo resolves the prominent city; the stored
-    // `state`/`country` fields are unreliable (country is hardcoded "United States").
-    const q = (b.city || '').trim();
-    if (!q) return { id: b.id, name: b.name, status: 'skip-no-city' };
+    // Geocode by city name alone — Nominatim resolves the prominent international city
+    // (Karachi→Pakistan, not the Texas township). The stored `state`/`country` fields are
+    // unreliable (country is hardcoded "United States").
+    const city = (b.city || '').trim();
+    if (!city) return { id: b.id, name: b.name, status: 'skip-no-city' };
     let hit = null, lastErr: any = null;
     for (let attempt = 0; attempt < 3 && !hit; attempt++) {
       try {
-        const r = await axios.get('https://geocoding-api.open-meteo.com/v1/search', {
-          params: { name: q, count: 1, language: 'en' },
+        const r = await axios.get('https://nominatim.openstreetmap.org/search', {
+          params: { q: b.city, format: 'json', limit: 1 },
+          headers: { 'User-Agent': 'PabandiApp/1.0 (contact@pabandi.app)' },
           timeout: 10000,
         });
-        hit = r.data?.results?.[0];
-      } catch (e) { lastErr = String(e).slice(0, 120); await new Promise((r) => setTimeout(r, 1500 * (attempt + 1))); }
+        hit = r.data?.[0];
+      } catch (e: any) {
+        lastErr = String(e?.message || e).slice(0, 120);
+        // Honour Nominatim rate-limit backoff
+        const retryAfter = e?.response?.headers?.['retry-after'];
+        const wait = retryAfter ? parseInt(retryAfter, 10) * 1000 : 2000 * (attempt + 1);
+        await new Promise((r) => setTimeout(r, wait));
+      }
     }
     if (hit?.lat && hit?.lon) {
       await prisma.business.update({
