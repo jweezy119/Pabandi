@@ -22,5 +22,5 @@ RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache \
  && npx prisma generate \
  && npm run build
 
-# Start the server (purge Cloudflare cache for pabandi.com after DB migrate, if configured)
-CMD ["sh", "-c", "npx prisma migrate deploy --preview-feature && node scripts/cf-purge.mjs; npm start"]
+# Start the server (purge Cloudflare cache for pabandi.com + mirror SPA to R2 after DB migrate, if configured)
+CMD ["sh", "-c", "npx prisma migrate deploy --preview-feature && node scripts/cf-purge.mjs && node scripts/upload-spa-r2.mjs; npm start"]
