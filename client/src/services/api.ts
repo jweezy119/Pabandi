@@ -422,12 +422,23 @@ export const offrampLpService = {
 };
 
 // Refer & Earn — partner (account manager) program.
+// NOTE: router is mounted at /account-manager (singular) in index.ts.
 export const referralService = {
-  getMe: () => apiClient.get('/account-managers/me'),
-  getLedger: () => apiClient.get('/account-managers/ledger'),
-  getReferrals: () => apiClient.get('/account-managers/referrals'),
-  getPayouts: () => apiClient.get('/account-managers/payouts'),
-  requestPayout: () => apiClient.post('/account-managers/payout/request'),
+  getMe: () => apiClient.get('/account-manager/me'),
+  getLedger: () => apiClient.get('/account-manager/ledger'),
+  getReferrals: () => apiClient.get('/account-manager/referrals'),
+  getPayouts: () => apiClient.get('/account-manager/payouts'),
+  requestPayout: () => apiClient.post('/account-manager/payout/request'),
+};
+
+// Real-estate court screening (CourtListener eviction / litigation).
+export const courtCheckService = {
+  // On-demand screen of both parties of a reservation.
+  screenBooking: (reservationId: string) =>
+    apiClient.post('/realestate/screen-booking', { reservationId }),
+  // Fetch persisted screening results for a reservation.
+  getByReservation: (reservationId: string) =>
+    apiClient.get(`/realestate/court-checks/${reservationId}`),
 };
 
 export default apiClient;

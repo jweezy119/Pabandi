@@ -47,6 +47,7 @@ import { WaitlistPage } from './pages/WaitlistPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
+import RealEstateScreeningPage from './pages/RealEstateScreeningPage';
 import AirdropPage from './pages/AirdropPage';
 import UsdyPage from './pages/UsdyPage';
 import CityLandingPage from './pages/CityLandingPage';
@@ -172,6 +173,7 @@ function App() {
             <Route path="technology" element={<TechnologyPage />} />
             <Route path="web3" element={<Web3Page />} />
             <Route path="hospitality" element={<HospitalityPage />} />
+            <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />

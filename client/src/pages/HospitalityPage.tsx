@@ -573,6 +573,25 @@ export default function HospitalityPage() {
 
         {/* FAQ */}
         <section className="mb-20 max-w-3xl mx-auto">
+          <div className="rounded-3xl border border-violet-500/25 bg-gradient-to-br from-indigo-500/10 to-violet-500/[0.06] p-8 md:p-10">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">🏛️</span>
+              <h2 className="text-xl font-bold text-white md:text-2xl">Court &amp; Eviction Screening — Built In</h2>
+            </div>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Every booking can be screened against U.S. court records (CourtListener) for eviction and
+              housing-litigation history. The result — LOW / MEDIUM / HIGH — automatically sizes the
+              security deposit and feeds the Pabandi trust rail. No more blind trust on a stranger's deposit.
+            </p>
+            <div className="mt-6">
+              <Link to="/real-estate/screening/example">
+                <Button className="px-6 py-3 text-sm font-bold">See the Screening Rail</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-20 max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold text-white md:text-2xl">Frequently Asked Questions</h2>
           </div>
