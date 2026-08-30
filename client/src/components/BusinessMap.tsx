@@ -1,6 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useEffect } from 'react';
 
 // Fix for default marker icons in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -9,6 +10,29 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// OSM tiles are light; render as a dark basemap via CSS filter on the tile pane only.
+function DarkTiles() {
+  const map = useMap();
+  useEffect(() => {
+    const apply = () => {
+      const tiles = map.getPane('tilePane')?.querySelectorAll('img') || [];
+      tiles.forEach((img) => {
+        (img as HTMLImageElement).style.filter = 'invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.1)';
+      });
+    };
+    apply();
+    map.on('tileload', apply);
+    map.on('zoomend', apply);
+    map.on('moveend', apply);
+    return () => {
+      map.off('tileload', apply);
+      map.off('zoomend', apply);
+      map.off('moveend', apply);
+    };
+  }, [map]);
+  return null;
+}
 
 interface BusinessMapProps {
   latitude?: number;
@@ -36,9 +60,10 @@ export default function BusinessMap({ latitude = 0, longitude = 0, name, zoom = 
         style={{ width: '100%', height: '100%', borderRadius: '0.75rem' }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <DarkTiles />
         <Marker position={[latitude, longitude]}>
           {name && <Popup>{name}</Popup>}
         </Marker>

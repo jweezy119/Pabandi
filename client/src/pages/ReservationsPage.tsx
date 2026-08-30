@@ -6,6 +6,7 @@ import { reservationService, popService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import { Surface, Button, tokens } from '../design-system';
+import ScreeningCard from '../components/ScreeningCard';
 
 const STATUS_CONFIG: Record<string, { label: string; accent: string }> = {
   CONFIRMED: { label: 'Confirmed', accent: '#10b981' },
@@ -168,6 +169,8 @@ export default function ReservationsPage() {
                       </span>
                     )}
                   </div>
+
+                  <ScreeningCard reservationId={r.id} />
 
                   {(r.status === 'CONFIRMED' || r.status === 'PENDING') && (
                     <Button

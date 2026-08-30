@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { courtCheckService } from '../services/api';
 
 type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -103,6 +103,43 @@ export default function ScreeningCard({ reservationId }: { reservationId: string
   const [screened, setScreened] = useState(false);
   const [tenant, setTenant] = useState<CheckResult | undefined>();
   const [landlord, setLandlord] = useState<CheckResult | undefined>();
+
+  // Auto-load any persisted screening results for this reservation on mount, so the
+  // card shows prior US + PK checks without requiring a re-run.
+  useEffect(() => {
+    let cancelled = false;
+    courtCheckService
+      .getByReservation(reservationId)
+      .then((res) => {
+        if (cancelled) return;
+        const checks: any[] = res.data?.checks || [];
+        if (checks.length === 0) return;
+        const toResult = (c: any): CheckResult => ({
+          id: c.id,
+          subjectType: c.subjectType,
+          name: c.name,
+          state: c.state,
+          found: c.found,
+          count: c.count,
+          recentEviction: c.recentEviction,
+          riskBand: (c.riskBand || 'LOW') as RiskBand,
+          reductionPct: c.reductionPct ?? 0,
+          source: c.source,
+          note: c.note,
+          cases: c.cases || [],
+        });
+        const grouped: Record<string, any[]> = { TENANT: [], LANDLORD: [] };
+        checks.forEach((c) => grouped[c.subjectType]?.push(c));
+        // Most recent of each type wins for display.
+        if (grouped.TENANT.length) setTenant(toResult(grouped.TENANT[0]));
+        if (grouped.LANDLORD.length) setLandlord(toResult(grouped.LANDLORD[0]));
+        setScreened(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [reservationId]);
 
   const runScreen = async () => {
     setLoading(true);

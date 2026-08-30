@@ -36,6 +36,30 @@ function MapUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
+// OSM tiles are light; render them as a dark basemap via a CSS filter on the
+// tile pane only (markers/popups are unaffected). Keyless, global coverage.
+function DarkTiles() {
+  const map = useMap();
+  useEffect(() => {
+    const apply = () => {
+      const tiles = map.getPane('tilePane')?.querySelectorAll('img') || [];
+      tiles.forEach((img) => {
+        (img as HTMLImageElement).style.filter = 'invert(1) hue-rotate(180deg) brightness(0.85) contrast(1.1)';
+      });
+    };
+    apply();
+    map.on('tileload', apply);
+    map.on('zoomend', apply);
+    map.on('moveend', apply);
+    return () => {
+      map.off('tileload', apply);
+      map.off('zoomend', apply);
+      map.off('moveend', apply);
+    };
+  }, [map]);
+  return null;
+}
+
 export interface Place {
   lat: number;
   lng: number;
@@ -58,10 +82,11 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
     <div className="w-full h-full relative rounded-3xl overflow-hidden bg-slate-900">
       <MapContainer center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
         <MapUpdater center={[center.lat, center.lng]} />
+        <DarkTiles />
         <ErrorFallback />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {hasSelection && selectedPlace && (
           <Marker position={[selectedPlace.lat, selectedPlace.lng]}>

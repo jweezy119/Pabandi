@@ -29,24 +29,6 @@ const PaypalIcon = () => (
     <path d="M9.12 7.86l-.78 4.97c-.09.46-.52.78-.99.78H5.34l2.95-18.74h4.62c1.9 0 3.42.55 4.36 1.65.94 1.1 1.21 2.65.84 4.29-.35 1.78-1.29 3.32-2.65 4.38-1.36 1.06-3.19 1.65-5.2 1.65h-1.4l-.95 4.83H9.12z" fill="#009cde"/>
   </svg>
 );
-const XIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </svg>
-);
-
-const LinkedInIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-  </svg>
-);
-
-const TikTokIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z"/>
-  </svg>
-);
-
 const MetaMaskIcon = () => (
   <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path fill="#E17726" d="M96.7,29.9c-2.4-7.4-4-11.4-4-11.4l-11.6,7.5l-12.7-8L80.8,4.9l4.5,1.7C85.3,6.6,99.1,37.3,96.7,29.9z"/>
@@ -145,7 +127,7 @@ export default function AuthPage() {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | 'paypal' | 'twitter' | 'linkedin' | 'tiktok' | 'wallet' | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | 'paypal' | 'wallet' | null>(null);
 
   const getPostLoginTarget = () => {
     const redirect = searchParams.get('redirect');
@@ -193,27 +175,6 @@ export default function AuthPage() {
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/paypal?role=${role}`;
-  };
-
-  const handleTwitterAuth = () => {
-    setOauthLoading('twitter');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-    window.location.href = `${backendUrl}/api/v1/auth/twitter?role=${role}`;
-  };
-
-  const handleLinkedInAuth = () => {
-    setOauthLoading('linkedin');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-    window.location.href = `${backendUrl}/api/v1/auth/linkedin?role=${role}`;
-  };
-
-  const handleTikTokAuth = () => {
-    setOauthLoading('tiktok');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-    window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
   };
 
   const isSignup = mode === 'signup';
@@ -380,20 +341,6 @@ export default function AuthPage() {
                 {isSignup ? 'Sign up with PayPal' : 'Sign in with PayPal'}</>
               )}
             </button>
-            <div className="mt-1 grid grid-cols-3 gap-3">
-              <button onClick={handleTwitterAuth} title="Continue with X"
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'twitter' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <XIcon />}
-              </button>
-              <button onClick={handleLinkedInAuth} title="Continue with LinkedIn"
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'linkedin' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <LinkedInIcon />}
-              </button>
-              <button onClick={handleTikTokAuth} title="Continue with TikTok"
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'tiktok' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <TikTokIcon />}
-              </button>
-            </div>
           </div>
 
           <div className="my-6 flex items-center gap-3">

@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import PageTransition from './PageTransition';
 import GlobalAIConciergeWidget from './GlobalAIConciergeWidget';
+import ParticleField from './ParticleField';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState, useRef } from 'react';
 
@@ -249,6 +250,7 @@ export default function Layout() {
       {/* Deep Space & Neon Background Layer */}
       <div className="fixed inset-0 z-[-1] pointer-events-none bg-background overflow-hidden">
          <img src="/assets/bg_abstract.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen" />
+         <ParticleField density={0.00005} />
          <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-radial-glow blur-3xl opacity-60" />
          <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-glow blur-3xl opacity-50" />
       </div>
