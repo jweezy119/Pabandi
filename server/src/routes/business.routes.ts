@@ -31,7 +31,13 @@ const router = Router();
 
 // ── Geocode backfill (one-time data fix): fill null lat/lng from city/country ──
 // Guarded by ?key= so it is not an open write endpoint. Runs in background to avoid
-// request timeouts; safe to call repeatedly (only touches null-coord businesses).
+// request timeouts. Country-scoped (countrycodes) so "Karachi" maps to Pakistan, not
+// the Texas township. ?force=1 reprocesses ALL businesses (overwrites bad coords).
+const COUNTRY_ISO: Record<string, string> = {
+  'united states': 'us', 'usa': 'us', 'us': 'us',
+  'pakistan': 'pk', 'united kingdom': 'gb', 'uk': 'gb', 'great britain': 'gb',
+  'united arab emirates': 'ae', 'uae': 'ae',
+};
 router.post('/geocode-backfill', async (req, res) => {
   const KEY = process.env.GEOCODE_BACKFILL_KEY || 'pabandi-geocode-2026';
   if (req.query.key !== KEY) return res.status(401).json({ success: false, error: 'unauthorized' });
@@ -39,17 +45,20 @@ router.post('/geocode-backfill', async (req, res) => {
   (async () => {
     try {
       const { prisma } = await import('../utils/database');
-      const due = await prisma.business.findMany({ where: { OR: [{ latitude: null }, { longitude: null }] } });
+      const force = req.query.force === '1';
+      const where = force ? {} : { OR: [{ latitude: null }, { longitude: null }] };
+      const due = await prisma.business.findMany({ where });
       let done = 0, failed = 0;
       for (const b of due) {
-        const q = [b.city, b.state, b.country].filter(Boolean).join(', ');
-        if (!q) { failed++; continue; }
+        const q = [b.city, b.state].filter(Boolean).join(', ');
+        const iso = COUNTRY_ISO[(b.country || '').toLowerCase()];
+        if (!q || !iso) { failed++; continue; }
         try {
           let hit = null;
           for (let attempt = 0; attempt < 3 && !hit; attempt++) {
             try {
               const r = await axios.get('https://nominatim.openstreetmap.org/search', {
-                params: { q, format: 'json', limit: 1 },
+                params: { q, format: 'json', limit: 1, countrycodes: iso },
                 headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
                 timeout: 12000,
               });
