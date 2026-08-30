@@ -25,7 +25,22 @@ const getDistance = (
   return R * c;
 };
 
-const INITIAL_CENTER = { lat: 41.8781, lng: -87.6298 };
+// Default map center = Karachi, Pakistan (the product's home market). The map only
+// uses this when there are zero businesses with valid coordinates; otherwise it
+// centers on the centroid of the real businesses (see deriveMapCenter below).
+const INITIAL_CENTER = { lat: 24.8607, lng: 67.0011 };
+
+const isValidCoord = (lat?: number, lng?: number) =>
+  typeof lat === 'number' && typeof lng === 'number' && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
+
+// Center the map on the real businesses instead of dumping everything on a hard-coded city.
+function deriveMapCenter(items: { latitude?: number; longitude?: number }[]): { lat: number; lng: number } {
+  const pts = items.filter((b) => isValidCoord(b.latitude, b.longitude));
+  if (pts.length === 0) return INITIAL_CENTER;
+  const lat = pts.reduce((s, b) => s + (b.latitude as number), 0) / pts.length;
+  const lng = pts.reduce((s, b) => s + (b.longitude as number), 0) / pts.length;
+  return { lat, lng };
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -126,6 +141,18 @@ export default function HomePage() {
   const source = fallbackContext.data && fallbackContext.data.length > 0 ? fallbackContext.data : (data || []);
   let businesses = source || [];
   businesses = rankBusinesses([...businesses], userLoc);
+
+  // Recenter the map on the real businesses' centroid (only on first load, so user
+  // panning isn't yanked back). Invalid/zero coords are skipped, not dumped on default.
+  const centeredRef = useRef(false);
+  useEffect(() => {
+    if (centeredRef.current) return;
+    const center = deriveMapCenter(businesses);
+    if (center.lat !== INITIAL_CENTER.lat || center.lng !== INITIAL_CENTER.lng) {
+      setMapCenter(center);
+      centeredRef.current = true;
+    }
+  }, [businesses]);
 
   const handleGetLocation = () => {
     setLocLoading(true);
@@ -328,15 +355,18 @@ export default function HomePage() {
               center={mapCenter}
               selectedPlace={selectedMapPlace}
               userLocation={userLoc}
-              places={businesses.slice(0, 8).map((b: any) => {
-                const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || '');
-                return {
-                  lat: b.latitude ?? mapCenter.lat,
-                  lng: b.longitude ?? mapCenter.lng,
-                  name: b.name,
-                  subtitle: [cityText, b.description, b.category].filter(Boolean).join(' · '),
-                };
-              })}
+              places={businesses
+                .slice(0, 8)
+                .filter((b: any) => isValidCoord(b.latitude, b.longitude))
+                .map((b: any) => {
+                  const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || '');
+                  return {
+                    lat: b.latitude,
+                    lng: b.longitude,
+                    name: b.name,
+                    subtitle: [cityText, b.description, b.category].filter(Boolean).join(' · '),
+                  };
+                })}
               onPlaceSelect={(place) =>
                 handlePlaceSelect({
                   name: place.name || place.subtitle || 'Location',
@@ -415,8 +445,8 @@ export default function HomePage() {
                   handlePlaceSelect({
                     name: biz.name,
                     address: biz.address || biz.city,
-                    lat: biz.latitude ?? mapCenter.lat,
-                    lng: biz.longitude ?? mapCenter.lng,
+                    lat: isValidCoord(biz.latitude, biz.longitude) ? biz.latitude : mapCenter.lat,
+                    lng: isValidCoord(biz.latitude, biz.longitude) ? biz.longitude : mapCenter.lng,
                   })
                 }
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs touch-target"

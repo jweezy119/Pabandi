@@ -36,8 +36,8 @@ export default function BusinessMap({ latitude = 0, longitude = 0, name, zoom = 
         style={{ width: '100%', height: '100%', borderRadius: '0.75rem' }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         <Marker position={[latitude, longitude]}>
           {name && <Popup>{name}</Popup>}
@@ -48,7 +48,7 @@ export default function BusinessMap({ latitude = 0, longitude = 0, name, zoom = 
         href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white text-gray-700 text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-md hover:bg-gray-50 transition-colors z-[1000]"
+        className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-slate-900/90 text-slate-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-md hover:bg-slate-800 transition-colors z-[1000] border border-white/10"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>

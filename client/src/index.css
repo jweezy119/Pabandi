@@ -30,19 +30,19 @@
     transition: transform 160ms var(--ease-out),
                 box-shadow 200ms var(--ease-out),
                 opacity 160ms var(--ease-out);
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
   }
 
   @media (hover: hover) and (pointer: fine) {
     .btn-primary:hover {
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.6);
       transform: translateY(-1px);
     }
   }
 
   .btn-primary:active {
     transform: scale(0.97);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
   }
 
   .btn-secondary {

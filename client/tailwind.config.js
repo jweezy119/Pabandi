@@ -35,7 +35,7 @@ export default {
         "error-container": "#7f1d1d",
         "primary-fixed-dim": "#1e40af",
         "on-tertiary-fixed-variant": "#10b981",
-        "primary": "#00f0ff",
+        "primary": "#6366f1",
         "on-primary-fixed-variant": "#93c5fd",
         "secondary": "#a855f7",
         "on-primary-fixed": "#bfdbfe",

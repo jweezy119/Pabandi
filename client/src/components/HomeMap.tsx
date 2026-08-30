@@ -60,8 +60,8 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
         <MapUpdater center={[center.lat, center.lng]} />
         <ErrorFallback />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         {hasSelection && selectedPlace && (
           <Marker position={[selectedPlace.lat, selectedPlace.lng]}>
@@ -117,12 +117,12 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
         ))}
       </MapContainer>
       {hasSelection && selectedPlace && (
-        <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 z-[1000] bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl p-4 shadow-xl">
+        <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 z-[1000] bg-slate-900/90 backdrop-blur-xl border border-indigo-400/25 rounded-2xl p-4 shadow-xl">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Selected</p>
-              <h3 className="text-base font-bold text-slate-900 leading-snug truncate">{selectedPlace.name}</h3>
-              {selectedPlace.subtitle && <p className="text-sm text-slate-600 truncate">{selectedPlace.subtitle}</p>}
+              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300/80">Selected</p>
+              <h3 className="text-base font-bold text-white leading-snug truncate">{selectedPlace.name}</h3>
+              {selectedPlace.subtitle && <p className="text-sm text-slate-300 truncate">{selectedPlace.subtitle}</p>}
             </div>
             <button
               type="button"
@@ -130,7 +130,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
                 onPlaceSelect?.(selectedPlace);
               }}
               aria-label="Center map"
-              className="shrink-0 w-9 h-9 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center justify-center"
+              className="shrink-0 w-9 h-9 rounded-full bg-white/10 text-slate-200 hover:bg-white/20 flex items-center justify-center"
             >
               <span className="material-symbols-outlined text-[18px]">near_me</span>
             </button>
@@ -140,7 +140,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
               href={`https://www.google.com/maps/search/?api=1&query=${selectedPlace.lat},${selectedPlace.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center text-xs font-bold bg-slate-900 text-white py-2.5 rounded-xl hover:bg-slate-800"
+              className="flex-1 text-center text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-500 text-white py-2.5 rounded-xl hover:opacity-90"
             >
               Open in Google Maps
             </a>
@@ -148,7 +148,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
               href={`https://www.openstreetmap.org/?mlat=${selectedPlace.lat}&mlon=${selectedPlace.lng}#map=16/${selectedPlace.lat}/${selectedPlace.lng}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              className="px-3 py-2.5 rounded-xl border border-indigo-400/30 text-xs font-bold text-slate-200 hover:bg-white/10"
             >
               OSM
             </a>
