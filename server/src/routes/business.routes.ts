@@ -45,12 +45,19 @@ router.post('/geocode-backfill', async (req, res) => {
         const q = [b.city, b.state, b.country].filter(Boolean).join(', ');
         if (!q) { failed++; continue; }
         try {
-          const r = await axios.get('https://nominatim.openstreetmap.org/search', {
-            params: { q, format: 'json', limit: 1 },
-            headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
-            timeout: 8000,
-          });
-          const hit = r.data?.[0];
+          let hit = null;
+          for (let attempt = 0; attempt < 3 && !hit; attempt++) {
+            try {
+              const r = await axios.get('https://nominatim.openstreetmap.org/search', {
+                params: { q, format: 'json', limit: 1 },
+                headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
+                timeout: 12000,
+              });
+              hit = r.data?.[0];
+            } catch {
+              await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+            }
+          }
           if (hit?.lat && hit?.lon) {
             await prisma.business.update({
               where: { id: b.id },
@@ -59,7 +66,7 @@ router.post('/geocode-backfill', async (req, res) => {
             done++;
           } else failed++;
         } catch { failed++; }
-        await new Promise((r) => setTimeout(r, 1100)); // Nominatim usage policy: 1 req/s
+        await new Promise((r) => setTimeout(r, 1200)); // Nominatim usage policy: 1 req/s
       }
       console.log(`[geocode-backfill] done=${done} failed=${failed} of ${due.length}`);
     } catch (e) {
