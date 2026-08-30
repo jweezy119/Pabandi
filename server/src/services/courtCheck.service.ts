@@ -130,6 +130,32 @@ export async function screenReservation(reservationId: string): Promise<{
     }),
   ]);
 
+  // Fold the screening outcome into the reservation's trust rail so the booking
+  // detail / risk UI reflects court + PK screening without a separate lookup.
+  try {
+    const bands = [tenant?.riskBand, landlord?.riskBand].filter(Boolean) as RiskBand[];
+    const combined: RiskBand = bands.includes('HIGH') ? 'HIGH' : bands.includes('MEDIUM') ? 'MEDIUM' : 'LOW';
+    const prev = (reservation.trustSignals as any) || {};
+    await prisma.reservation.update({
+      where: { id: reservationId },
+      data: {
+        trustSignals: {
+          ...prev,
+          courtScreen: {
+            tenantBand: tenant?.riskBand || 'LOW',
+            landlordBand: landlord?.riskBand || 'LOW',
+            combined,
+            depositAdjPct:
+              combined === 'HIGH' ? 0.25 : combined === 'MEDIUM' ? 0.1 : 0,
+            screenedAt: new Date().toISOString(),
+          },
+        },
+      },
+    });
+  } catch (e: any) {
+    logger.warn(`[CourtCheck] failed to persist trustSignals for ${reservationId}: ${e.message}`);
+  }
+
   return { tenant, landlord };
 }
 
