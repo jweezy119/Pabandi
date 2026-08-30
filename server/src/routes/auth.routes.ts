@@ -46,7 +46,7 @@ function frontendOrigin(req: Request): string {
       }
     }
   }
-  return FRONTEND_URL;
+  return 'https://pabandi.com';
 }
 
 /**
@@ -83,12 +83,10 @@ async function demoOAuthLogin(req: Request, res: Response, provider: 'google' | 
     { expiresIn: JWT_EXPIRES_IN as any }
   );
   logger.warn(`[auth] DEMO ${provider} login used (no real OAuth creds) — issued session for ${email}`);
-  // Redirect back to the SAME host that served the request (Render app), not a hardcoded
-  // FRONTEND_URL — this keeps the OAuth callback on the live app even if FRONTEND_URL still
-  // points at the old Firebase host.
-  const host = (req.headers.host as string) || FRONTEND_URL.replace(/^https?:\/\//, '');
-  const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
-  return res.redirect(`${proto}://${host}/auth/callback?token=${token}&role=${user.role}&demo=${provider}`);
+  // Redirect back to the SPA that initiated the login (not the API host / a hardcoded
+  // FRONTEND_URL). frontendOrigin() extracts the SPA origin from the request's
+  // Origin/Referer header so the token always lands on pabandi.com, never onrender.com.
+  return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}&demo=${provider}`);
 }
 
 // ── Email / Password auth ──────────────────────────────────────────────────
