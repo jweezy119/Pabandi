@@ -29,6 +29,8 @@ export default function UsdyPage() {
   const live = usdyConfig?.data?.live;
   const apy = usdyConfig?.data?.apy ?? 4.5;
   const total = usdyCount?.data?.totalPreRegistered ?? 0;
+  // Always share the live site origin (pabandi.com), never a backend/Render URL.
+  const shareUrl = `${window.location.origin}/usdy`;
 
   const [copied, setCopied] = useState(false);
   const shareWithOndo = () => {
@@ -225,7 +227,9 @@ export default function UsdyPage() {
           </p>
           <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a
-              href="https://twitter.com/intent/tweet?text=Excited%20for%20%40Pabandi%20bringing%20%40OndoFinance%20USDY%20tokenized%20T-bill%20yield%20to%20global%20rent%20%E2%80%94%20non-custodial%2C%20Solana-anchored%2C%2050%2F50%20tenant-landlord%20split.%20Pre-register%3A%20https%3A%2F%2Fpabandi.onrender.com%2Fusdy"
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                'Excited for @pabandiglobal bringing @OndoFinance USDY tokenized T-bill yield to global rent — non-custodial, Solana-anchored, 50/50 tenant-landlord split. Pre-register: '
+              )}${encodeURIComponent(shareUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-emerald-950 transition-colors hover:bg-emerald-400"

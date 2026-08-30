@@ -244,7 +244,7 @@ export class BadgeService {
     const cards: Record<string, string> = {
       X_TWITTER: `Another on-time arrival. Reliability score: ${badge.reliabilityScore}/100. ${streakText}. #PabandiReliable #BookingTrust`,
       LINKEDIN: `Maintaining professional punctuality — ${streakText}. My Pabandi Reliability Score: ${badge.reliabilityScore}/100 (${badge.tier}). Verified by Pabandi AI.\n\n#Reliability #ProfessionalDevelopment #Pabandi`,
-      INSTAGRAM: `✨ Reliability score: ${badge.reliabilityScore}/100. ${streakText}. Verified by @Pabandi 🏆 #PabandiReliable`,
+      INSTAGRAM: `✨ Reliability score: ${badge.reliabilityScore}/100. ${streakText}. Verified by @pabandiglobal 🏆 #PabandiReliable`,
       FACEBOOK: `Proud to share my Pabandi Reliability Score: ${badge.reliabilityScore}/100. ${streakText}. Building trust one booking at a time!`,
       TIKTOK: `POV: You actually show up 💯 Reliability score: ${badge.reliabilityScore}/100. ${streakText}. #PabandiReliable #BookingTrust #ShowUp`,
       WHATSAPP: `Hey! Check my Pabandi Reliability Score: ${badge.reliabilityScore}/100 — ${streakText}. Verified Reliable ✅`,

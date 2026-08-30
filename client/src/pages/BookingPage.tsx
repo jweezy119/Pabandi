@@ -118,7 +118,7 @@ export default function BookingPage() {
         // The backend endpoint is POST /api/v1/economy/sol-checkout; the hosted page handles
         // wallet connect, signing, broadcast, and confirm-rake. No GCP/Firebase redeploy needed.
         const amount = reservation.depositAmount ? Number(reservation.depositAmount) : 0.05;
-        const url = `https://pabandi.onrender.com/sdk/pay-in-sol.html#amount=${amount}&agent=${business?.id || 'agent:demo'}`;
+        const url = `${window.location.origin}/sdk/pay-in-sol.html#amount=${amount}&agent=${business?.id || 'agent:demo'}`;
         window.open(url, '_blank', 'noopener');
         setIsProcessingWeb3(false);
         return;
