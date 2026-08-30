@@ -106,7 +106,7 @@ export default function HomeMap({ center, selectedPlace, userLocation, places = 
                     onClick={() => {
                       onPlaceSelect?.(place);
                     }}
-                    className="mt-2 w-full bg-emerald-600 text-white text-xs font-bold py-1.5 rounded-lg"
+                    className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-bold py-1.5 rounded-lg hover:opacity-90"
                   >
                     View
                   </button>

@@ -48,7 +48,7 @@ export default function EconomyDashboardPage() {
           actions={
             <>
               <Link to="/freelance" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">View Freelancers</Link>
-              <Link to="/search" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 font-headline font-bold text-sm text-white shadow-sm hover:opacity-90">Explore Businesses</Link>
+              <Link to="/search" className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 font-headline font-bold text-sm text-white shadow-sm hover:opacity-90">Explore Businesses</Link>
               <button
                 onClick={runDemoBooking}
                 disabled={demo.loading}

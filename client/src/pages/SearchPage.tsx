@@ -89,7 +89,7 @@ const QUICK_PROMPTS = [
     href: '/hospitality',
     sub: 'Short-term rentals with escrow',
     icon: '📅',
-    accent: 'from-blue-500/20 to-cyan-500/20',
+    accent: 'from-blue-500/20 to-violet-500/20',
   },
   {
     key: 'freelance',

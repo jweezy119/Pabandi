@@ -393,7 +393,7 @@ export default function HomePage() {
                 </div>
                 <button
                   onClick={() => handleBookPlace(selectedMapPlace)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3.5 font-bold text-white shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3.5 font-bold text-white shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all"
                 >
                   Make Reservation →
                 </button>
@@ -468,7 +468,7 @@ export default function HomePage() {
                 <h3 className="font-headline mb-2 text-xl font-bold text-white">Live selling on Pabandi</h3>
                 <p className="mb-4 text-sm text-slate-300">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/live-selling" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-4 py-2 font-headline text-sm font-bold text-white shadow-sm">Open Live Selling</Link>
+                  <Link to="/live-selling" className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-4 py-2 font-headline text-sm font-bold text-white shadow-sm">Open Live Selling</Link>
                   <Link to="/live-sell" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10">Browse public hub</Link>
                 </div>
               </div>
@@ -707,7 +707,7 @@ export default function HomePage() {
                       {f.logoUrl || f.coverImageUrl ? (
                         <img src={f.logoUrl || f.coverImageUrl} alt={f.name} className="h-10 w-10 rounded-xl object-cover" />
                       ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white">{initials}</div>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-black text-white">{initials}</div>
                       )}
                       <div className="min-w-0">
                         <p className="truncate font-headline text-sm font-bold text-white">{f.name}</p>
@@ -752,7 +752,7 @@ export default function HomePage() {
               Bookings are protected with deposit escrow, verification, and real rewards for honored appointments.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/checkout" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">
+              <Link to="/checkout" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Open checkout
               </Link>
               <Link to="/how-it-works" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-colors hover:bg-white/10">
@@ -775,7 +775,7 @@ export default function HomePage() {
               <Link to="/freelance" className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline font-bold text-white shadow-sm transition-colors hover:bg-white/10">
                 View Freelancers
               </Link>
-              <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
+              <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Explore Businesses
               </Link>
             </div>

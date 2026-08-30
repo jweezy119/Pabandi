@@ -29,6 +29,45 @@ import axios from 'axios';
 
 const router = Router();
 
+// ── Geocode backfill (one-time data fix): fill null lat/lng from city/country ──
+// Guarded by ?key= so it is not an open write endpoint. Runs in background to avoid
+// request timeouts; safe to call repeatedly (only touches null-coord businesses).
+router.post('/geocode-backfill', async (req, res) => {
+  const KEY = process.env.GEOCODE_BACKFILL_KEY || 'pabandi-geocode-2026';
+  if (req.query.key !== KEY) return res.status(401).json({ success: false, error: 'unauthorized' });
+  res.status(202).json({ success: true, message: 'geocode backfill started in background' });
+  (async () => {
+    try {
+      const { prisma } = await import('../utils/database');
+      const due = await prisma.business.findMany({ where: { OR: [{ latitude: null }, { longitude: null }] } });
+      let done = 0, failed = 0;
+      for (const b of due) {
+        const q = [b.city, b.state, b.country].filter(Boolean).join(', ');
+        if (!q) { failed++; continue; }
+        try {
+          const r = await axios.get('https://nominatim.openstreetmap.org/search', {
+            params: { q, format: 'json', limit: 1 },
+            headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
+            timeout: 8000,
+          });
+          const hit = r.data?.[0];
+          if (hit?.lat && hit?.lon) {
+            await prisma.business.update({
+              where: { id: b.id },
+              data: { latitude: parseFloat(hit.lat), longitude: parseFloat(hit.lon) },
+            });
+            done++;
+          } else failed++;
+        } catch { failed++; }
+        await new Promise((r) => setTimeout(r, 1100)); // Nominatim usage policy: 1 req/s
+      }
+      console.log(`[geocode-backfill] done=${done} failed=${failed} of ${due.length}`);
+    } catch (e) {
+      console.error('[geocode-backfill] error', e);
+    }
+  })();
+});
+
 // Public route to get businesses for the homepage/search
 // HARDENED: Rate limited to prevent scraping
 router.get('/', rateLimiter, async (req, res, next) => {

@@ -43,7 +43,7 @@ const TapProfileButton = ({ business }: TapProfileButtonProps) => {
     <div className="flex items-center gap-2">
       <a
         href={checkoutUrl}
-        className="inline-flex items-center gap-2 bg-white text-black font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-white/90 transition-colors shadow-sm"
+        className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
       >
         Pay with Tap
       </a>
