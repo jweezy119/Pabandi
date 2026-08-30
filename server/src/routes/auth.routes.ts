@@ -26,6 +26,30 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 
 /**
+ * Resolve the SPA (frontend) origin to redirect OAuth results to.
+ * Prefer the request's Origin/Referer (the browser sends https://pabandi.com when the
+ * OAuth button is clicked from the live SPA) so we always land back on the SPA — even if
+ * FRONTEND_URL is misconfigured to the API host. Falls back to FRONTEND_URL, then localhost.
+ */
+function frontendOrigin(req: Request): string {
+  const origin = req.headers.origin as string | undefined;
+  const referer = req.headers.referer as string | undefined;
+  for (const raw of [origin, referer]) {
+    if (raw && /^https?:\/\//i.test(raw)) {
+      try {
+        const u = new URL(raw);
+        if (u.hostname !== 'localhost' && !u.hostname.includes('onrender.com')) {
+          return `${u.protocol}//${u.host}`;
+        }
+      } catch {
+        /* ignore malformed */
+      }
+    }
+  }
+  return FRONTEND_URL;
+}
+
+/**
  * Demo OAuth fallback — makes the Google/Facebook login buttons WORK even when real
  * OAuth credentials aren't configured (Render free tier / dev). We create-or-fetch a real
  * local user for the provider and issue a valid JWT, then redirect to the frontend exactly
@@ -229,12 +253,12 @@ router.get(
     const returnTo = (req as any).session?.returnTo;
     if (returnTo) {
       (req as any).session.returnTo = null; // clear it
-      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+      return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
     }
 
     // Redirect with token in query string — frontend will pick it up
     return res.redirect(
-      `${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`
+      `${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}`
     );
   }
 );
@@ -279,9 +303,9 @@ router.get(
     const returnTo = (req as any).session?.returnTo;
     if (returnTo) {
       (req as any).session.returnTo = null;
-      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+      return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
     }
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+    return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
@@ -320,9 +344,9 @@ router.get(
     const returnTo = (req as any).session?.returnTo;
     if (returnTo) {
       (req as any).session.returnTo = null;
-      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+      return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
     }
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+    return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
@@ -351,7 +375,7 @@ router.get(
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${storedRole}`);
+    return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${storedRole}`);
   }
 );
 
@@ -385,10 +409,10 @@ router.get(
     const returnTo = (req as any).session?.returnTo;
     if (returnTo) {
       (req as any).session.returnTo = null; // clear it
-      return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
+      return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}&returnTo=${encodeURIComponent(returnTo)}`);
     }
 
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+    return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
@@ -414,7 +438,7 @@ router.get(
       JWT_SECRET as Secret,
       { expiresIn: JWT_EXPIRES_IN as any }
     );
-    return res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}&role=${user.role}`);
+    return res.redirect(`${frontendOrigin(req)}/auth/callback?token=${token}&role=${user.role}`);
   }
 );
 
