@@ -84,6 +84,23 @@ Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
 - **Production App:** [https://pabandi.com](https://pabandi.com) (or `https://pabandi-42c5b.web.app`)
 - **Backend API:** `https://pabandi-backend-97129395003.asia-south1.run.app`
 
+> **⚠️ Deploy architecture (read before deploying):** `pabandi.com` is served by **Firebase Hosting**
+> (project `pabandi-42c5b`, `public: client/dist`). Render only serves the **API** (`pabandi.onrender.com`).
+> Pushing the SPA to Render does **NOT** update `pabandi.com` — you must deploy `client/dist` to Firebase.
+> The combined `./deploy.sh` does this in one step.
+
+### Deploy (one command)
+```bash
+./deploy.sh            # build client + deploy SPA to Firebase Hosting (updates pabandi.com)
+./deploy.sh --push     # also git push origin main (triggers Render API rebuild)
+```
+Manual equivalent:
+```bash
+cd client && npm run build
+firebase use pabandi-42c5b && firebase deploy --only hosting
+```
+After deploy, hard-refresh `pabandi.com` (Cmd/Ctrl+Shift+R). The SPA shell is served `no-cache`, so it reflects instantly.
+
 ---
 - **CoCreate 2026 Judge Quick Start**
   - Open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`

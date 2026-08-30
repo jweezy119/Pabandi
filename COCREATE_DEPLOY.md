@@ -11,10 +11,20 @@
 3. Use **Pay with Tap** or **Payment Link Card** for hosted checkout
 4. Open `/passport/dashboard`
 
+## Deploy Architecture (IMPORTANT)
+- **`pabandi.com` is served by Firebase Hosting** (project `pabandi-42c5b`, `public: client/dist`).
+- **Render (`pabandi.onrender.com`) serves ONLY the API.** Deploying the SPA to Render does NOT update `pabandi.com`.
+- To update the live site, deploy `client/dist` to Firebase (see below). This was the root cause of the "stale site" bug.
+
+## Deploy (local, one command)
+```bash
+./deploy.sh            # build client + deploy SPA to Firebase Hosting (updates pabandi.com)
+./deploy.sh --push     # also git push origin main (triggers Render API rebuild)
+```
+
 ## CI/CD
 - Push to `main` triggers `.github/workflows/deploy.yml`
-  - Builds Docker image from `server/Dockerfile`
-  - Deploys backend service on Cloud Run (`asia-south1`)
+  - Builds Docker image from `server/Dockerfile` (API on Render/Cloud Run)
   - Deploys frontend to Firebase Hosting (`pabandi-42c5b`)
 - Requires GitHub secrets for GCP + Firebase + DB
 
