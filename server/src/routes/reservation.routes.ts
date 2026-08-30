@@ -69,29 +69,28 @@ router.post(
   ],
   validateRequest,
   async (req: AuthRequest, res: Response, _next: NextFunction) => {
-    // Capture the created reservation id from the JSON response, then fire a
-    // non-blocking court screening of both parties. Screening NEVER blocks or
-    // fails the booking — worst case it logs and moves on.
+    // Capture the created reservation id from the JSON response and fire a
+    // non-blocking court screening of both parties. We trigger it inside the
+    // res.json override (rather than awaiting next()) because createReservation
+    // does NOT call next() on the success path — awaiting it would hang.
+    // Screening NEVER blocks or fails the booking.
     const originalJson = res.json.bind(res);
-    let createdId: string | undefined;
     (res as any).json = (body: any) => {
-      createdId =
+      const createdId =
         body?.data?.reservation?.id ||
         body?.data?.id ||
         body?.id ||
         body?.reservation?.id;
+      if (createdId) {
+        courtCheckService
+          .screenReservation(createdId)
+          .catch((e) =>
+            logger.warn(`[CourtCheck] auto-screen failed for ${createdId}: ${e.message}`)
+          );
+      }
       return originalJson(body);
     };
-    await new Promise<void>((resolve) =>
-      createReservation(req, res, () => resolve())
-    );
-    if (createdId) {
-      courtCheckService
-        .screenReservation(createdId)
-        .catch((e) =>
-          logger.warn(`[CourtCheck] auto-screen failed for ${createdId}: ${e.message}`)
-        );
-    }
+    createReservation(req, res, () => {});
   }
 );
 
