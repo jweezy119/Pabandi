@@ -439,6 +439,16 @@ export const courtCheckService = {
   // Fetch persisted screening results for a reservation.
   getByReservation: (reservationId: string) =>
     apiClient.get(`/realestate/court-checks/${reservationId}`),
+  // Pakistan trust screening (BackgroundCheck-based; CourtListener is US-only).
+  pakScreen: (payload: {
+    businessId?: string;
+    customerId?: string;
+    landlordName?: string;
+    tenantName?: string;
+    landlordNtn?: string;
+    tenantNtn?: string;
+    reservationId?: string;
+  }) => apiClient.post('/realestate/pak-screen', payload),
 };
 
 export default apiClient;

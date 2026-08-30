@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { courtCheckService } from '../services/api';
 
 type RiskBand = 'LOW' | 'MEDIUM' | 'HIGH';
+type Mode = 'US' | 'PK';
 
 interface CheckResult {
   id?: string;
@@ -13,13 +14,16 @@ interface CheckResult {
   recentEviction: boolean;
   riskBand: RiskBand;
   reductionPct: number;
+  source?: string;
+  note?: string;
+  manualVerifyUrl?: string;
   cases: any[];
 }
 
 const BAND_STYLES: Record<RiskBand, { color: string; bg: string; label: string; note: string }> = {
-  LOW: { color: '#34d399', bg: 'rgba(52,211,153,0.12)', label: 'LOW RISK', note: 'No eviction / housing litigation found.' },
-  MEDIUM: { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', label: 'MEDIUM RISK', note: 'Some housing/litigation history — deposit +10%.' },
-  HIGH: { color: '#f87171', bg: 'rgba(248,113,113,0.14)', label: 'HIGH RISK', note: 'Recent eviction on record — deposit +25%.' },
+  LOW: { color: '#34d399', bg: 'rgba(52,211,153,0.12)', label: 'LOW RISK', note: 'No adverse records found.' },
+  MEDIUM: { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', label: 'MEDIUM RISK', note: 'Some adverse history — deposit +10%.' },
+  HIGH: { color: '#f87171', bg: 'rgba(248,113,113,0.14)', label: 'HIGH RISK', note: 'Serious adverse record — deposit +25%.' },
 };
 
 function BandPill({ band }: { band: RiskBand }) {
@@ -65,13 +69,17 @@ function PartyCard({ title, result }: { title: string; result?: CheckResult }) {
         {result.name || '—'} {result.state ? `· ${result.state}` : ''}
       </div>
       <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>
-        {result.found ? `${result.count} matched docket(s)` : 'No matched dockets'} · deposit adj. {(result.reductionPct * 100).toFixed(0)}%
+        {result.found ? `${result.count} matched record(s)` : 'No matched records'} · deposit adj. {(result.reductionPct * 100).toFixed(0)}%
+        {result.source ? ` · src: ${result.source}` : ''}
       </div>
+      {result.note && (
+        <div style={{ fontSize: 11.5, color: 'var(--muted-foreground)', marginTop: 6, lineHeight: 1.4 }}>{result.note}</div>
+      )}
       {result.cases && result.cases.length > 0 && (
         <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {result.cases.slice(0, 3).map((c: any, i: number) => (
             <div key={i} style={{ fontSize: 11.5, color: 'var(--muted-foreground)', padding: '6px 8px', borderRadius: 8, background: 'rgba(0,0,0,0.18)' }}>
-              <span style={{ color: s.color, fontWeight: 600 }}>{c.caseName || 'Case'}</span>
+              <span style={{ color: s.color, fontWeight: 600 }}>{c.caseName || 'Record'}</span>
               {c.court ? ` · ${c.court}` : ''}
               {c.dateFiled ? ` · ${c.dateFiled}` : ''}
             </div>
@@ -79,11 +87,17 @@ function PartyCard({ title, result }: { title: string; result?: CheckResult }) {
           {result.cases.length > 3 && <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>+{result.cases.length - 3} more</div>}
         </div>
       )}
+      {result.manualVerifyUrl && (
+        <a href={result.manualVerifyUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, color: 'var(--accent)', marginTop: 8, display: 'inline-block' }}>
+          Verify manually →
+        </a>
+      )}
     </div>
   );
 }
 
 export default function ScreeningCard({ reservationId }: { reservationId: string }) {
+  const [mode, setMode] = useState<Mode>('US');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [screened, setScreened] = useState(false);
@@ -94,9 +108,16 @@ export default function ScreeningCard({ reservationId }: { reservationId: string
     setLoading(true);
     setError(null);
     try {
-      const res = await courtCheckService.screenBooking(reservationId);
-      const data = res.data;
+      let data: any;
+      if (mode === 'US') {
+        const res = await courtCheckService.screenBooking(reservationId);
+        data = res.data;
+      } else {
+        const res = await courtCheckService.pakScreen({ reservationId });
+        data = res.data;
+      }
       if (data?.success) {
+        // US endpoint returns {tenant, landlord}; PK endpoint returns same shape.
         setTenant(data.tenant);
         setLandlord(data.landlord);
         setScreened(true);
@@ -120,13 +141,38 @@ export default function ScreeningCard({ reservationId }: { reservationId: string
         boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)' }}>🏛️ Court & Eviction Screening</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)' }}>🏛️ Court & Trust Screening</div>
           <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)', marginTop: 4 }}>
-            Live check against U.S. court records (CourtListener). Risk band adjusts the security deposit.
+            {mode === 'US'
+              ? 'Live U.S. court records (CourtListener) — eviction & housing litigation.'
+              : 'Pakistan trust screen (BackgroundCheck KYC) — CourtListener is U.S.-only.'}
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['US', 'PK'] as Mode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 10,
+                border: '1px solid rgba(139,92,246,0.3)',
+                cursor: 'pointer',
+                background: mode === m ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent',
+                color: mode === m ? '#fff' : 'var(--muted-foreground)',
+                fontWeight: 600,
+                fontSize: 12,
+              }}
+            >
+              {m === 'US' ? '🇺🇸 U.S. Court' : '🇵🇰 Pakistan'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={runScreen}
           disabled={loading}
@@ -156,9 +202,9 @@ export default function ScreeningCard({ reservationId }: { reservationId: string
       {screened && tenant && landlord && (
         <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
           {tenant.riskBand === 'HIGH' || landlord.riskBand === 'HIGH'
-            ? '⚠️ A recent eviction was found — the platform recommends a higher security deposit before releasing the booking.'
+            ? '⚠️ A high-risk record was found — the platform recommends a higher security deposit before releasing the booking.'
             : tenant.riskBand === 'MEDIUM' || landlord.riskBand === 'MEDIUM'
-            ? 'ℹ️ Some court history found — a moderate deposit adjustment applies.'
+            ? 'ℹ️ Some adverse history found — a moderate deposit adjustment applies.'
             : '✅ Both parties cleared — standard deposit terms apply.'}
         </div>
       )}
