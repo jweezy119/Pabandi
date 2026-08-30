@@ -1777,6 +1777,7 @@ model CourtCheck {
   count         Int      @default(0)
   recentEviction Boolean @default(false)
   riskBand      String   @default("LOW") // LOW | MEDIUM | HIGH
+  source        String   @default("COURTLISTENER") // COURTLISTENER | PK_BACKGROUND | PK_FBR
   cases         Json?    // array of matched dockets (caseName, court, dateFiled, status)
   // Context
   reservationId String?

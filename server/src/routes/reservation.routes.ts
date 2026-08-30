@@ -15,6 +15,8 @@ import { authenticate } from '../middleware/auth.middleware';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { validateRequest } from '../middleware/validateRequest';
 import { courtCheckService } from '../services/courtCheck.service';
+import { pakCheckService } from '../services/pakCheck.service';
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 
 const router = Router();
@@ -87,6 +89,42 @@ router.post(
           .catch((e) =>
             logger.warn(`[CourtCheck] auto-screen failed for ${createdId}: ${e.message}`)
           );
+        // Pakistan / non-US bookings: CourtListener is US-only, so also run the PK
+        // BackgroundCheck-based trust screen (never blocks the booking).
+        prisma.reservation
+          .findUnique({ where: { id: createdId }, include: { business: true, customer: true } })
+          .then((r) => {
+            if (!r) return;
+            const country = (r.business?.country || '').toLowerCase();
+            const isNonUs = !country.includes('united states') && country !== '';
+            if (isNonUs) {
+              pakCheckService
+                .screenPakParty({
+                  subjectType: 'LANDLORD',
+                  subjectId: r.businessId,
+                  name: r.business?.name || 'Landlord',
+                  reservationId: createdId,
+                  businessId: r.businessId,
+                })
+                .catch((e) =>
+                  logger.warn(`[PakCheck] auto-screen landlord failed for ${createdId}: ${e.message}`)
+                );
+              if (r.customerId) {
+                pakCheckService
+                  .screenPakParty({
+                    subjectType: 'TENANT',
+                    subjectId: r.customerId,
+                    name: r.customerName || 'Tenant',
+                    reservationId: createdId,
+                    customerId: r.customerId,
+                  })
+                  .catch((e) =>
+                    logger.warn(`[PakCheck] auto-screen tenant failed for ${createdId}: ${e.message}`)
+                  );
+              }
+            }
+          })
+          .catch((e) => logger.warn(`[PakCheck] reservation lookup failed: ${e.message}`));
       }
       return originalJson(body);
     };

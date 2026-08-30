@@ -29,6 +29,7 @@ import { logger } from '../utils/logger';
 import { createHash } from 'crypto';
 import { courtListenerService } from '../services/osint/courtListener.service';
 import { courtCheckService } from '../services/courtCheck.service';
+import { pakCheckService } from '../services/pakCheck.service';
 
 const router = Router();
 
@@ -211,7 +212,38 @@ router.post('/screen-booking', authenticate, async (req: AuthRequest, res: Respo
   }
 });
 
-/** Fetch persisted court-check results for a reservation (for the screening UI card). */
+/** Pakistan trust screening — reads the real BackgroundCheck for a party (CourtListener is US-only). */
+router.post('/pak-screen', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { businessId, customerId, landlordName, tenantName, landlordNtn, tenantNtn, reservationId } = req.body as any;
+    const [landlord, tenant] = await Promise.all([
+      pakCheckService.screenPakParty({
+        subjectType: 'LANDLORD',
+        subjectId: businessId || undefined,
+        name: landlordName || 'Landlord',
+        ntn: landlordNtn || undefined,
+        reservationId,
+        businessId: businessId || undefined,
+      }),
+      customerId || tenantName
+        ? pakCheckService.screenPakParty({
+            subjectType: 'TENANT',
+            subjectId: customerId || undefined,
+            name: tenantName || 'Tenant',
+            ntn: tenantNtn || undefined,
+            reservationId,
+            customerId: customerId || undefined,
+          })
+        : Promise.resolve(null),
+    ]);
+    res.json({ success: true, source: 'PK_BACKGROUND', landlord, tenant });
+  } catch (e: any) {
+    logger.error(`[REAL-ESTATE] pak-screen failed: ${e.message}`);
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+/** Fetch persisted court/pak checks for a reservation (UI card). */
 router.get('/court-checks/:reservationId', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { reservationId } = req.params;
