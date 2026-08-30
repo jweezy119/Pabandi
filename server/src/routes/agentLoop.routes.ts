@@ -7,15 +7,20 @@
  *  POST /run-once       Run one booking cycle now (respects LIVE_BOOKINGS env).
  *  GET  /state          Current loop state (running, live, totals).
  *  GET  /sol-buffer     Funded-wallet SOL balance + how many agents hold SOL.
+ *
+ * NOTE: all state-changing endpoints are admin-only — they move real SOL and control the
+ * production agent loop.
  */
 import { Router, Request, Response } from 'express';
 import { runAgentLoopCycle, prepareLiveRails, getAgentLoopState, startAgentLoop, stopAgentLoop, getAgentLoopHealth } from '../services/agentLoop.service';
 import { web3AgentService } from '../services/web3Agent.service';
 import { prisma } from '../utils/database';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.post('/prepare-live', async (req: Request, res: Response): Promise<any> => {
+// State-changing (move real SOL / control the live loop) — ADMIN only.
+router.post('/prepare-live', authenticate, authorize('ADMIN'), async (req: Request, res: Response): Promise<any> => {
   const { solBudget, perAgentSol } = req.body || {};
   try {
     const r = await prepareLiveRails({ solBudget: solBudget ? Number(solBudget) : undefined, perAgentSol: perAgentSol ? Number(perAgentSol) : undefined });
@@ -24,13 +29,17 @@ router.post('/prepare-live', async (req: Request, res: Response): Promise<any> =
   } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-router.post('/run-once', async (_req: Request, res: Response): Promise<any> => {
+router.post('/run-once', authenticate, authorize('ADMIN'), async (_req: Request, res: Response): Promise<any> => {
   try {
     const r = await runAgentLoopCycle();
     res.json({ success: true, data: r });
   } catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+router.post('/start', authenticate, authorize('ADMIN'), (_req: Request, res: Response): any => { startAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
+router.post('/stop', authenticate, authorize('ADMIN'), (_req: Request, res: Response): any => { stopAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
+
+// Read-only observability — left open for monitoring dashboards.
 router.get('/state', (_req: Request, res: Response): any => {
   res.json({ success: true, data: getAgentLoopState() });
 });
@@ -49,9 +58,6 @@ router.get('/sol-buffer', async (_req: Request, res: Response): Promise<any> => 
   try { res.json({ success: true, data: await web3AgentService.liveSolBuffer() }); }
   catch (e: any) { res.status(500).json({ success: false, error: e.message }); }
 });
-
-router.post('/start', (_req: Request, res: Response): any => { startAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
-router.post('/stop', (_req: Request, res: Response): any => { stopAgentLoop(); res.json({ success: true, data: getAgentLoopState() }); });
 
 router.get('/health', async (_req: Request, res: Response): Promise<any> => {
   try { res.json({ success: true, data: await getAgentLoopHealth() }); }
