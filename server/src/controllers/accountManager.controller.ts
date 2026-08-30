@@ -159,5 +159,51 @@ export const accountManagerController = {
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
+  },
+
+  // Cash out all unbilled (isReversed=false, payoutId=null) referral ledger entries
+  // into a single ReferralPayout request. Returns the created payout + total.
+  async requestPayout(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const profile = await prisma.accountManagerProfile.findUnique({
+        where: { userId }
+      });
+      if (!profile) return res.status(404).json({ error: 'Account Manager profile not found' });
+
+      const unbilled = await prisma.referralLedger.findMany({
+        where: { profileId: profile.id, isReversed: false, payoutId: null }
+      });
+
+      const total = unbilled.reduce((sum, l) => sum + (l.amount || 0), 0);
+      if (total <= 0) {
+        return res.status(400).json({ error: 'No unbilled commissions to pay out', total: 0 });
+      }
+
+      const now = new Date();
+      const payout = await prisma.$transaction(async (tx) => {
+        const p = await tx.referralPayout.create({
+          data: {
+            profileId: profile.id,
+            amount: total,
+            periodStart: unbilled.reduce((min, l) => (l.createdAt < min ? l.createdAt : min), unbilled[0].createdAt),
+            periodEnd: unbilled.reduce((max, l) => (l.createdAt > max ? l.createdAt : max), unbilled[0].createdAt),
+            status: 'PENDING'
+          }
+        });
+        await tx.referralLedger.updateMany({
+          where: { id: { in: unbilled.map((l) => l.id) } },
+          data: { payoutId: p.id }
+        });
+        return p;
+      });
+
+      res.status(201).json({ success: true, payout, total, entries: unbilled.length });
+    } catch (error) {
+      console.error('requestPayout error', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };

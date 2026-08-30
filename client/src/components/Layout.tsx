@@ -309,6 +309,7 @@ export default function Layout() {
               <Dropdown label={initials} current={false}>
                 <DropdownItem to="/dashboard">Dashboard</DropdownItem>
                 <DropdownItem to="/wallet">Wallet</DropdownItem>
+                <DropdownItem to="/refer">Refer &amp; Earn</DropdownItem>
                 <DropdownItem to="/loans">Halal DeFi</DropdownItem>
                 <DropdownItem to="/account-manager">Partner Portal</DropdownItem>
                 <DropdownItem to="/profile">Profile</DropdownItem>

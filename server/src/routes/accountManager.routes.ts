@@ -1,24 +1,20 @@
 import { Router } from 'express';
 import { accountManagerController } from '../controllers/accountManager.controller';
-// import { authenticateToken, requireAdmin } from '../middleware/auth.middleware'; 
-// Assuming auth middleware exists, placeholder imports used here.
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// In a real implementation, you would use auth middlewares like so:
-// router.post('/admin/account-managers', authenticateToken, requireAdmin, accountManagerController.createPartner);
-// router.put('/admin/account-managers/config', authenticateToken, requireAdmin, accountManagerController.updateConfig);
-// router.get('/me', authenticateToken, accountManagerController.getMe);
-// router.get('/referrals', authenticateToken, accountManagerController.getReferrals);
-// router.get('/ledger', authenticateToken, accountManagerController.getLedger);
-// router.get('/payouts', authenticateToken, accountManagerController.getPayouts);
-
+// Partner (Account Manager) program endpoints.
+// Admin: create a partner + tune the program config.
 router.post('/admin', accountManagerController.createPartner);
 router.put('/admin/config', accountManagerController.updateConfig);
 
-router.get('/me', accountManagerController.getMe);
-router.get('/referrals', accountManagerController.getReferrals);
-router.get('/ledger', accountManagerController.getLedger);
-router.get('/payouts', accountManagerController.getPayouts);
+// Authenticated partner dashboard.
+router.get('/me', authenticate, accountManagerController.getMe);
+router.get('/referrals', authenticate, accountManagerController.getReferrals);
+router.get('/ledger', authenticate, accountManagerController.getLedger);
+router.get('/payouts', authenticate, accountManagerController.getPayouts);
+// Cash out accrued (unbilled) referral commissions into a payout request.
+router.post('/payout/request', authenticate, accountManagerController.requestPayout);
 
 export default router;

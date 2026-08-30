@@ -34,6 +34,7 @@ import ProfileDetailPage from './pages/ProfileDetailPage';
 import EconomyDashboardPage from './pages/EconomyDashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import { WalletPage } from './pages/WalletPage';
+import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
@@ -255,6 +256,10 @@ function App() {
             <Route
               path="/wallet"
               element={isAuthenticated ? <WalletPage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/refer"
+              element={isAuthenticated ? <ReferAndEarnPage /> : <Navigate to="/login" />}
             />
             <Route
               path="/verifier"

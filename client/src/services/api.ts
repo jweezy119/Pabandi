@@ -421,4 +421,13 @@ export const offrampLpService = {
   createStreamUrl: (lpWallet: string, apiKey: string) => `${API_HOST}/api/v1/offramp/lp/stream?wallet=${lpWallet}&apiKey=${apiKey}`
 };
 
+// Refer & Earn — partner (account manager) program.
+export const referralService = {
+  getMe: () => apiClient.get('/account-managers/me'),
+  getLedger: () => apiClient.get('/account-managers/ledger'),
+  getReferrals: () => apiClient.get('/account-managers/referrals'),
+  getPayouts: () => apiClient.get('/account-managers/payouts'),
+  requestPayout: () => apiClient.post('/account-managers/payout/request'),
+};
+
 export default apiClient;

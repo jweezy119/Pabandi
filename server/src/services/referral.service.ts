@@ -51,6 +51,7 @@ export class ReferralService {
 
     const config = await this.getConfig();
     if (!config || !config.active) return;
+    const bounty = config.signupBountyAmount ?? 5.0;
 
     await prisma.$transaction(async (tx) => {
       // Create ledger entry
@@ -58,7 +59,7 @@ export class ReferralService {
         data: {
           profileId: profile.id,
           type: LedgerEntryType.SIGNUP_BOUNTY,
-          amount: 5.0, // Fixed 5 PAB
+          amount: bounty,
           currency: 'PAB',
           businessId: businessId || null,
         }
@@ -68,7 +69,7 @@ export class ReferralService {
       if (profile.user.wallet) {
         await tx.wallet.update({
           where: { id: profile.user.wallet.id },
-          data: { balance: { increment: 5.0 } }
+          data: { balance: { increment: bounty } }
         });
       }
     });
