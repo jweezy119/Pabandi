@@ -26,8 +26,58 @@ import { solanaAnchor } from '../services/solanaAnchor.service';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { createHash } from 'crypto';
+import { courtListenerService } from '../services/osint/courtListener.service';
 
 const router = Router();
+
+/**
+ * POST /api/v1/realestate/court-check
+ * Screen a landlord or tenant for civil litigation / eviction history via CourtListener.
+ * This is the connective tissue between court public records and the rental trust rail:
+ * a flagged eviction/housing record feeds the trust score and deposit-risk band.
+ * Body: { name: string, state?: string, role?: 'LANDLORD'|'TENANT' }
+ */
+router.post('/court-check', async (req: Request, res: Response) => {
+  try {
+    const { name, state, role } = req.body ?? {};
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ success: false, error: 'name (min 2 chars) is required' });
+    }
+    const hasKey = !!process.env.COURTLISTENER_API_KEY || !!process.env.COURTLISTENER_API_KEYS;
+    if (!hasKey) {
+      return res.status(200).json({
+        success: true,
+        simulated: true,
+        message: 'COURTLISTENER_API_KEY not set — returning empty result. Add the key to enable live screening.',
+        name: name.trim(),
+        state: state || null,
+        role: role || 'TENANT',
+        found: false,
+        count: 0,
+        recentEviction: false,
+        cases: [],
+      });
+    }
+    const ev = await courtListenerService.lookupEvictions(name.trim(), state);
+    const riskBand = ev.recentEviction ? 'HIGH' : ev.found ? 'MEDIUM' : 'LOW';
+    logger.info(`[REAL-ESTATE-COURT] screened ${name.trim()} (${state || 'ALL'}) -> found=${ev.found} recent=${ev.recentEviction}`);
+    return res.json({
+      success: true,
+      simulated: false,
+      name: name.trim(),
+      state: state || null,
+      role: role || 'TENANT',
+      found: ev.found,
+      count: ev.count,
+      recentEviction: ev.recentEviction,
+      riskBand,
+      cases: ev.cases,
+    });
+  } catch (e: any) {
+    logger.error(`[REAL-ESTATE-COURT] ${e.message}`);
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 /** Issue a ZK escrow-split proof + portable PTP attestation for a real-estate gig. */
 router.post('/zk-proof', async (req: Request, res: Response) => {
