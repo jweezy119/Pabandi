@@ -57,7 +57,9 @@ router.post('/geocode-backfill', async (req, res) => {
   });
 
   const processOne = async (b: any) => {
-    const q = [b.city, b.state].filter(Boolean).join(', ');
+    // Geocode by city name alone — Open-Meteo resolves the prominent city; the stored
+    // `state`/`country` fields are unreliable (country is hardcoded "United States").
+    const q = (b.city || '').trim();
     if (!q) return { id: b.id, name: b.name, status: 'skip-no-city' };
     let hit = null, lastErr: any = null;
     for (let attempt = 0; attempt < 3 && !hit; attempt++) {
