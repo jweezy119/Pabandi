@@ -97,6 +97,19 @@ function App() {
     }
   }, [isAuthenticated, fetchWalletData]);
 
+  // Validate the persisted token on mount: if it's expired, clear auth so a stale
+  // session can never trap the user (or silently 401 every request).
+  useEffect(() => {
+    const { token, logout } = useAuthStore.getState();
+    if (!token) return;
+    try {
+      const exp = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))?.exp;
+      if (exp && Date.now() >= exp * 1000) logout();
+    } catch {
+      /* malformed token — leave as-is; API will reject and the user can re-login */
+    }
+  }, []);
+
   const DashboardPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <AdminPanel />;
@@ -129,14 +142,20 @@ function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="sharia-compliance" element={<ShariaCompliancePage />} />
 
-            {/* Unified auth page for both login & register */}
+            {/* OAuth callback — backend redirects here with ?token=...; we consume it and log in */}
+            <Route path="auth/callback" element={<AuthCallbackPage />} />
+
+            {/* Unified auth page for both login & register.
+                We do NOT auto-redirect when isAuthenticated: a persisted (possibly stale/expired)
+                token must never trap the user away from the login form. Token validity is checked
+                on app mount (see below), and a successful login navigates to the dashboard itself. */}
             <Route
               path="login"
-              element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
+              element={<AuthPage />}
             />
             <Route
               path="register"
-              element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthPage />}
+              element={<AuthPage />}
             />
 
             <Route path="/wallet" element={<WalletDashboard />} />

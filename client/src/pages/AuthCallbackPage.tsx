@@ -1,59 +1,71 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { tokens } from '../design-system';
 
-/**
- * This page handles the redirect from the backend after Google OAuth.
- * URL: /auth/callback?token=xxx&role=yyy
- * It reads the JWT, stores it in the auth store, then navigates to /dashboard.
- */
+/** Decode the (public) JWT payload without verifying the signature — we only need the claims
+ *  (id, email, role, names) to seed the auth store. The backend already authenticated the user. */
+function decodeJwtPayload(token: string): any | null {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(b64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export default function AuthCallbackPage() {
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const done = useRef(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    if (done.current) return;
+    done.current = true;
+
     const token = params.get('token');
-    const error = params.get('error');
+    const role = params.get('role');
     const returnTo = params.get('returnTo');
 
-    if (error || !token) {
-      navigate('/login?error=' + (error || 'oauth_failed'));
+    if (!token) {
+      navigate('/login?error=oauth_failed', { replace: true });
       return;
     }
 
-    // Decode JWT payload (base64) to get user info — no secret needed client-side
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-      const payload = JSON.parse(jsonPayload);
-      setAuth(
-        {
-          id: payload.id,
-          email: payload.email,
-          firstName: payload.firstName || payload.email.split('@')[0],
-          lastName: payload.lastName || '',
-          role: payload.role,
-        },
-        token
-      );
-      if (returnTo) {
-        navigate(returnTo, { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-    } catch {
-      navigate('/login?error=token_parse_failed');
-    }
-  }, []);
+    const claims = decodeJwtPayload(token);
+    const user = {
+      id: claims?.id || '',
+      email: claims?.email || '',
+      firstName: claims?.firstName || '',
+      lastName: claims?.lastName || '',
+      role: role || claims?.role || 'CUSTOMER',
+      reliabilityScore: 750,
+      trustScore: 73.8,
+      verificationTier: 'BASIC',
+      commerceScore: 73.75,
+      hospitalityScore: 73.75,
+      freelanceScore: 73.75,
+      appointmentScore: 73.75,
+      business: null,
+    };
+
+    setAuth(user as any, token);
+    navigate(returnTo || '/dashboard', { replace: true });
+  }, [params, navigate, setAuth]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ background: tokens.color.background }}>
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
-        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-[#0ea5e955] border-t-transparent" />
-        <p className="text-sm" style={{ color: tokens.color.muted }}>Completing sign-in…</p>
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-indigo-400/30 border-t-indigo-400" />
+        <p className="text-sm text-white/70">Signing you in…</p>
       </div>
     </div>
   );
