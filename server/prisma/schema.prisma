@@ -74,10 +74,11 @@ model User {
   passportScoreSnapshots  PassportScoreSnapshot[]
   whatsappSignals         WhatsAppChannelSignal[]
   socialGraphSignals      SocialGraphSignal[]
-  web3Stakes              Web3StakeRecord[]
+  web3Stakes               Web3StakeRecord[]
   AccountManagerProfile   AccountManagerProfile?
   verifiableCredentials   VerifiableCredential[]
   renterEquityWallets     RenterEquityWallet[]
+  courtChecks             CourtCheck[]
 
   @@index([email])
   @@index([phone])
@@ -152,6 +153,7 @@ model Business {
   referredBy             AccountManagerProfile?  @relation(fields: [referredById], references: [id])
   Property               Property[]
   OpenFinanceConnection  OpenFinanceConnection[]
+  courtChecks            CourtCheck[]
 
   @@index([ownerId])
   @@index([city])
@@ -233,6 +235,7 @@ model Reservation {
   solanaAttestationId String?              @unique
   dispute             Dispute?
   StayBooking         StayBooking?
+  courtChecks         CourtCheck[]
 
   @@index([businessId])
   @@index([customerId])
@@ -1759,6 +1762,37 @@ model RentStream {
   @@index([tenantId])
   @@index([landlordId])
   @@index([status])
+}
+
+// ── Court Check (CourtListener eviction / litigation screening) ─────────────────
+// Persisted screening of a landlord or tenant against U.S. court records. Feeds the
+// rental trust rail: the riskBand adjusts SecurityDeposit.tenantRiskBand / reduction.
+model CourtCheck {
+  id            String   @id @default(cuid())
+  subjectType   String   @default("TENANT") // TENANT | LANDLORD
+  name          String
+  state         String?
+  // CourtListener result snapshot
+  found         Boolean  @default(false)
+  count         Int      @default(0)
+  recentEviction Boolean @default(false)
+  riskBand      String   @default("LOW") // LOW | MEDIUM | HIGH
+  cases         Json?    // array of matched dockets (caseName, court, dateFiled, status)
+  // Context
+  reservationId String?
+  businessId    String?
+  customerId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  business    Business?    @relation(fields: [businessId], references: [id])
+  customer    User?        @relation(fields: [customerId], references: [id])
+
+  @@index([reservationId])
+  @@index([businessId])
+  @@index([customerId])
+  @@index([riskBand])
 }
 
 // ── ZK Proof Record (portable, verifiable history; no User FK so proofs persist

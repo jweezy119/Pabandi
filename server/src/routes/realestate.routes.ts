@@ -20,6 +20,7 @@
  *     by ANY third party offline — advancing the trust rail across the platform.
  */
 import { Router, Request, Response } from 'express';
+import { authenticate, AuthRequest } from '../middleware/auth.middleware';
 import { zkRealestateProver } from '../services/zkRealestateProver.service';
 import { ptpEngine } from '../protocol/ptp.spec';
 import { solanaAnchor } from '../services/solanaAnchor.service';
@@ -27,6 +28,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { createHash } from 'crypto';
 import { courtListenerService } from '../services/osint/courtListener.service';
+import { courtCheckService } from '../services/courtCheck.service';
 
 const router = Router();
 
@@ -181,6 +183,47 @@ router.get('/zk-proof/:proofId/verify', async (req: Request, res: Response) => {
   } as any);
 
   res.json({ success: true, valid: result.valid, reason: result.reason, storedAt: stored });
+});
+
+// ── Court screening (CourtListener) ──────────────────────────────────────────────
+
+/**
+ * Explicitly screen both parties of a reservation (idempotent-ish: creates a new
+ * CourtCheck record each call; the most recent one is what the UI shows).
+ */
+router.post('/screen-booking', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { reservationId } = req.body;
+    if (!reservationId) {
+      return res.status(400).json({ success: false, error: 'reservationId is required' });
+    }
+    const result = await courtCheckService.screenReservation(reservationId);
+    // If a SecurityDeposit exists for this reservation's business/customer, fold the
+    // risk band into its reduction.
+    const reservation = await prisma.reservation.findUnique({
+      where: { id: reservationId },
+      include: { business: true },
+    });
+    res.json({ success: true, reservationId, tenant: result.tenant, landlord: result.landlord });
+  } catch (e: any) {
+    logger.error(`[REAL-ESTATE] screen-booking failed: ${e.message}`);
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+/** Fetch persisted court-check results for a reservation (for the screening UI card). */
+router.get('/court-checks/:reservationId', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { reservationId } = req.params;
+    const checks = await prisma.courtCheck.findMany({
+      where: { reservationId },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, reservationId, checks });
+  } catch (e: any) {
+    logger.error(`[REAL-ESTATE] court-checks fetch failed: ${e.message}`);
+    res.status(400).json({ success: false, error: e.message });
+  }
 });
 
 export default router;

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import {
   createReservation,
@@ -12,7 +12,10 @@ import {
   arbitrateFreelanceWork
 } from '../controllers/reservation.controller';
 import { authenticate } from '../middleware/auth.middleware';
+import { AuthRequest } from '../middleware/auth.middleware';
 import { validateRequest } from '../middleware/validateRequest';
+import { courtCheckService } from '../services/courtCheck.service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -65,7 +68,27 @@ router.post(
     body('customerPhone').optional({ checkFalsy: true }).isString(),
   ],
   validateRequest,
-  createReservation
+  async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    // Capture the created reservation id from the JSON response, then fire a
+    // non-blocking court screening of both parties. Screening NEVER blocks or
+    // fails the booking — worst case it logs and moves on.
+    const originalJson = res.json.bind(res);
+    let createdId: string | undefined;
+    (res as any).json = (body: any) => {
+      createdId = body?.data?.id || body?.id || body?.reservation?.id;
+      return originalJson(body);
+    };
+    await new Promise<void>((resolve) =>
+      createReservation(req, res, () => resolve())
+    );
+    if (createdId) {
+      courtCheckService
+        .screenReservation(createdId)
+        .catch((e) =>
+          logger.warn(`[CourtCheck] auto-screen failed for ${createdId}: ${e.message}`)
+        );
+    }
+  }
 );
 
 /**
