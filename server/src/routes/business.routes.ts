@@ -62,13 +62,12 @@ router.post('/geocode-backfill', async (req, res) => {
     let hit = null, lastErr: any = null;
     for (let attempt = 0; attempt < 3 && !hit; attempt++) {
       try {
-        const r = await axios.get('https://nominatim.openstreetmap.org/search', {
-          params: { q, format: 'json', limit: 1 },
-          headers: { 'User-Agent': 'Pabandi/1.0 (contact@pabandi.com)' },
-          timeout: 12000,
+        const r = await axios.get('https://geocoding-api.open-meteo.com/v1/search', {
+          params: { name: q, count: 1, language: 'en' },
+          timeout: 10000,
         });
-        hit = r.data?.[0];
-      } catch (e) { lastErr = String(e).slice(0, 120); await new Promise((r) => setTimeout(r, 2000 * (attempt + 1))); }
+        hit = r.data?.results?.[0];
+      } catch (e) { lastErr = String(e).slice(0, 120); await new Promise((r) => setTimeout(r, 1500 * (attempt + 1))); }
     }
     if (hit?.lat && hit?.lon) {
       await prisma.business.update({
