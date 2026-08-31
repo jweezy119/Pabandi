@@ -45,8 +45,9 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import { ReferralLandingPage } from './pages/ReferralLandingPage';
-import { MarketplacePartnerPage } from './pages/MarketplacePartnerPage';
+import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
 import MarketplaceEmbed from './pages/MarketplaceEmbed';
+import SalePage from './pages/SalePage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
@@ -142,6 +143,8 @@ function App() {
           <Route path="/partners/marketplace" element={<PublicSEO seo={{ title: 'Pabandi for Marketplaces — Secure every local sale', description: 'Add Pabandi escrow + identity verification to Facebook Marketplace, OfferUp, Craigslist and more. One-line iframe. You earn on every secured sale.' }}><MarketplacePartnerPage /></PublicSEO>} />
           {/* Chrome-free embeddable widget for marketplaces (iframe on listings) */}
           <Route path="/embed/marketplace" element={<MarketplaceEmbed />} />
+          {/* Standalone seller sale page (status + secure link + release) */}
+          <Route path="/sale/:id" element={<PublicSEO seo={{ title: 'Your Pabandi-secured sale', description: 'Track your Pabandi-secured local sale, share the buyer link, and release escrow after a safe in-person exchange.' }}><SalePage /></PublicSEO>} />
           <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />
           <Route path="/usdy" element={<PublicSEO seo={{ title: 'Pabandi × Ondo USDY — Tokenized T-Bill Yield on Rent', description: 'Pabandi brings Ondo Finance USDY (tokenized US Treasuries) to the global rental economy. Pre-register your portfolio for USDY rent yield.' }}><UsdyPage /></PublicSEO>} />
           <Route path="/city/:slug" element={<CityLandingPage />} />

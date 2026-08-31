@@ -158,6 +158,29 @@ export const ReferAndEarnPage: React.FC = () => {
           <div className="mt-3 text-sm text-slate-400 break-all">{shareUrl}</div>
         </section>
 
+        {/* Marketplace embed snippet — turn any listing into a secured sale */}
+        <section className="rounded-2xl border border-indigo-400/20 bg-slate-900/60 p-6">
+          <div className="font-semibold text-white">Secure marketplace listings</div>
+          <div className="text-sm text-slate-400 mt-1">
+            Drop this on any Facebook Marketplace, OfferUp, or Craigslist listing. Buyers and sellers
+            meet verified, and you earn commission on every secured sale.
+          </div>
+          <pre className="mt-3 text-xs text-indigo-200 bg-black/40 border border-white/10 rounded-xl p-4 overflow-x-auto whitespace-pre-wrap">
+{`<iframe src="https://pabandi.com/embed/marketplace?code=${code}" width="320" height="360" frameborder="0" style="border:0;border-radius:14px;"></iframe>`}
+          </pre>
+          <button
+            onClick={() => navigator.clipboard?.writeText(`<iframe src="https://pabandi.com/embed/marketplace?code=${code}" width="320" height="360" frameborder="0" style="border:0;border-radius:14px;"></iframe>`)}
+            className="mt-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Copy embed code
+          </button>
+          <div className="mt-3">
+            <a href="/partners/marketplace" target="_blank" rel="noopener noreferrer" className="text-indigo-300 hover:underline text-sm">
+              See the full marketplace partner page →
+            </a>
+          </div>
+        </section>
+
         {/* Stats */}
         <section className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Stat label="Total earned" value={`${totalEarned.toFixed(2)} PAB`} />

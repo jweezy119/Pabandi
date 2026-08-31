@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, LedgerEntryType } from '@prisma/client';
 import { isDemoMode } from '../utils/env';
 
 const prisma = new PrismaClient();
@@ -86,7 +86,7 @@ router.post('/escrow/local-sale', async (req: Request, res: Response) => {
         status: sale.status,
         simulated,
         txHash: sale.txHash,
-        // The seller shares this link with the buyer to complete + fund the escrow.
+        // The seller shares this link with the buyer to fund + complete the escrow.
         secureLink: `${req.protocol}://${req.get('host')}/embed/marketplace?sale=${sale.id}`,
       },
     });
@@ -96,7 +96,7 @@ router.post('/escrow/local-sale', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/v1/marketplace/escrow/local-sale/:id — public status for the widget.
+// GET /api/v1/marketplace/escrow/local-sale/:id — public status for the widget / seller page.
 router.get('/escrow/local-sale/:id', async (req: Request, res: Response) => {
   try {
     const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
@@ -109,6 +109,9 @@ router.get('/escrow/local-sale/:id', async (req: Request, res: Response) => {
         amount: sale.amount,
         currency: sale.currency,
         itemTitle: sale.itemTitle,
+        sellerEmail: sale.sellerEmail,
+        buyerEmail: sale.buyerEmail,
+        referralCode: sale.referralCode,
         simulated: sale.simulated,
         txHash: sale.txHash,
         createdAt: sale.createdAt,
@@ -119,13 +122,77 @@ router.get('/escrow/local-sale/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/v1/marketplace/escrow/local-sale/:id/fund
+// Buyer funds the escrow. (SIMULATED hold in demo mode; real on-chain lock otherwise.)
+// Funds are now held — neither party can walk with them until release.
+router.post('/escrow/local-sale/:id/fund', async (req: Request, res: Response) => {
+  try {
+    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
+    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
+    if (sale.status !== 'VERIFIED') {
+      return res.status(400).json({ success: false, error: `Cannot fund a sale in status ${sale.status}` });
+    }
+    const buyerEmail = String(req.body?.buyerEmail || sale.buyerEmail || '').toLowerCase().trim();
+    if (!buyerEmail) {
+      return res.status(400).json({ success: false, error: 'buyerEmail is required to fund' });
+    }
+    const txHash = isDemoMode()
+      ? `localsale_fund_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      : sale.txHash;
+
+    const updated = await prisma.localSaleEscrow.update({
+      where: { id: sale.id },
+      data: { status: 'FUNDED', buyerEmail, txHash },
+    });
+
+    res.json({
+      success: true,
+      data: { saleId: updated.id, status: updated.status, simulated: updated.simulated, txHash: updated.txHash },
+    });
+  } catch (e: any) {
+    console.error('[marketplace] fund failed:', e.message);
+    res.status(500).json({ success: false, error: 'Could not fund escrow' });
+  }
+});
+
+// Record the partner commission for a completed secured sale (idempotent per sale).
+async function recordCommission(sale: any) {
+  if (!sale.referralCode) return;
+  const existing = await prisma.referralLedger.findFirst({
+    where: { reservationId: sale.id },
+  });
+  if (existing) return; // already booked
+
+  const profile = await prisma.accountManagerProfile.findUnique({ where: { referralCode: sale.referralCode } });
+  if (!profile) return;
+
+  const config = await prisma.partnerProgramConfig.findFirst();
+  const rate = config?.rateYear1 ?? 0.03;
+  const commission = Math.round(sale.amount * rate * 100) / 100;
+
+  await prisma.referralLedger.create({
+    data: {
+      profileId: profile.id,
+      type: LedgerEntryType.BOOKING_COMMISSION,
+      amount: commission,
+      currency: sale.currency || 'USD',
+      reservationId: sale.id,
+      platformFeeBasis: sale.amount,
+      commissionRate: rate,
+    },
+  });
+}
+
 // POST /api/v1/marketplace/escrow/local-sale/:id/release
-// Mark the in-person exchange complete → release escrow to the seller (SIMULATED).
-// In production this would sign the on-chain release; demo stays off-chain.
+// Buyer (or seller) confirms the in-person exchange happened → release escrow to the
+// seller and book the partner commission. (SIMULATED release in demo mode.)
 router.post('/escrow/local-sale/:id/release', async (req: Request, res: Response) => {
   try {
     const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
     if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
+    if (sale.status !== 'FUNDED' && sale.status !== 'VERIFIED') {
+      return res.status(400).json({ success: false, error: `Cannot release a sale in status ${sale.status}` });
+    }
 
     const txHash = isDemoMode()
       ? `localsale_release_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -135,6 +202,13 @@ router.post('/escrow/local-sale/:id/release', async (req: Request, res: Response
       where: { id: sale.id },
       data: { status: 'COMPLETED', txHash },
     });
+
+    // Book the partner's commission (best-effort; never blocks the release).
+    try {
+      await recordCommission(updated);
+    } catch (e: any) {
+      console.error('[marketplace] commission booking failed:', e.message);
+    }
 
     res.json({
       success: true,

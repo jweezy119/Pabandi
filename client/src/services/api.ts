@@ -446,6 +446,7 @@ export const marketplaceService = {
     buyerEmail?: string;
   }) => apiClient.post('/marketplace/escrow/local-sale', payload),
   getLocalSale: (id: string) => apiClient.get(`/marketplace/escrow/local-sale/${id}`),
+  fundLocalSale: (id: string, buyerEmail: string) => apiClient.post(`/marketplace/escrow/local-sale/${id}/fund`, { buyerEmail }),
   releaseLocalSale: (id: string) => apiClient.post(`/marketplace/escrow/local-sale/${id}/release`),
 };
 
