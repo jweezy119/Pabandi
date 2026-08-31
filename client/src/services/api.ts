@@ -460,7 +460,13 @@ export const propertyManagerService = {
   dashboard: () => apiClient.get('/property-manager/dashboard'),
   addProperty: (payload: any) => apiClient.post('/property-manager/properties', payload),
   addTenant: (payload: any) => apiClient.post('/property-manager/tenants', payload),
-  screenTenant: (payload: { tenantEmail: string; tenantName?: string; source?: string; band?: string }) => apiClient.post('/property-manager/screen', payload),
+  screenTenant: (payload: { tenantEmail: string; tenantName?: string; source?: string; band?: string; state?: string }) => apiClient.post('/property-manager/screen', payload),
+  addAppointment: (payload: { propertyId?: string; tenantEmail: string; tenantName?: string; startsAt: string; endsAt?: string; notes?: string }) => apiClient.post('/property-manager/appointments', payload),
+  updateAppointment: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/appointments/${id}`, payload),
+  addLease: (payload: any) => apiClient.post('/property-manager/leases', payload),
+  updateLease: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/leases/${id}`, payload),
+  addMaintenance: (payload: any) => apiClient.post('/property-manager/maintenance', payload),
+  updateMaintenance: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/maintenance/${id}`, payload),
   portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
 };
 
