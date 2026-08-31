@@ -84,14 +84,14 @@ export const PropertyManagerPage: React.FC = () => {
 
         {tab === 'overview' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Properties</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Occupied</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Vacant</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">${s.totalDepositHeld.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Deposits</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Tenants</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>High-risk</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Showings</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Active leases</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Properties</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Occupied</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Vacant</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">${s.totalDepositHeld.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Deposits held</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Tenants</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>High-risk</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Showings</div></Surface>
+            <Surface className="text-center" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Active leases</div></Surface>
           </div>
         )}
 
