@@ -239,10 +239,10 @@ export default function ScreeningCard({ reservationId }: { reservationId: string
       {screened && tenant && landlord && (
         <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
           {tenant.riskBand === 'HIGH' || landlord.riskBand === 'HIGH'
-            ? '⚠️ A high-risk record was found — the platform recommends a higher security deposit before releasing the booking.'
+            ? '⚠️ A high-risk record was found — the held security deposit was raised by 25% to protect against no-shows.'
             : tenant.riskBand === 'MEDIUM' || landlord.riskBand === 'MEDIUM'
-            ? 'ℹ️ Some adverse history found — a moderate deposit adjustment applies.'
-            : '✅ Both parties cleared — standard deposit terms apply.'}
+            ? 'ℹ️ Some adverse history found — the held security deposit was raised by 10%.'
+            : '✅ Both parties cleared — standard deposit terms apply (no adjustment).'}
         </div>
       )}
     </div>

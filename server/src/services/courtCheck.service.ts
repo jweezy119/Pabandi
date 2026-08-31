@@ -132,25 +132,38 @@ export async function screenReservation(reservationId: string): Promise<{
 
   // Fold the screening outcome into the reservation's trust rail so the booking
   // detail / risk UI reflects court + PK screening without a separate lookup.
+  // Also adjust the held deposit upward for elevated risk (never invents a deposit
+  // where none exists) and record the original so the change is transparent.
   try {
     const bands = [tenant?.riskBand, landlord?.riskBand].filter(Boolean) as RiskBand[];
     const combined: RiskBand = bands.includes('HIGH') ? 'HIGH' : bands.includes('MEDIUM') ? 'MEDIUM' : 'LOW';
-    const prev = (reservation.trustSignals as any) || {};
-    await prisma.reservation.update({
-      where: { id: reservationId },
-      data: {
-        trustSignals: {
-          ...prev,
-          courtScreen: {
-            tenantBand: tenant?.riskBand || 'LOW',
-            landlordBand: landlord?.riskBand || 'LOW',
-            combined,
-            depositAdjPct:
-              combined === 'HIGH' ? 0.25 : combined === 'MEDIUM' ? 0.1 : 0,
-            screenedAt: new Date().toISOString(),
-          },
+    const depositAdjPct = combined === 'HIGH' ? 0.25 : combined === 'MEDIUM' ? 0.1 : 0;
+
+    const updateData: any = {
+      trustSignals: {
+        ...(reservation.trustSignals as any || {}),
+        courtScreen: {
+          tenantBand: tenant?.riskBand || 'LOW',
+          landlordBand: landlord?.riskBand || 'LOW',
+          combined,
+          depositAdjPct,
+          screenedAt: new Date().toISOString(),
         },
       },
+    };
+
+    // Apply the risk surcharge to an already-required deposit (protects hosts from no-shows).
+    if (depositAdjPct > 0 && reservation.depositRequired && reservation.depositAmount) {
+      const original = reservation.depositAmount;
+      const adjusted = Math.round(original * (1 + depositAdjPct) * 100) / 100;
+      updateData.depositAmount = adjusted;
+      (updateData.trustSignals as any).courtScreen.depositOriginal = original;
+      (updateData.trustSignals as any).courtScreen.depositAdjusted = adjusted;
+    }
+
+    await prisma.reservation.update({
+      where: { id: reservationId },
+      data: updateData,
     });
   } catch (e: any) {
     logger.warn(`[CourtCheck] failed to persist trustSignals for ${reservationId}: ${e.message}`);
