@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth.middleware';
+import { courtListenerLimiter, courtListenerDailyLimiter } from '../middleware/rateLimit.middleware';
 import { courtCheckService } from '../services/courtCheck.service';
 import crypto from 'crypto';
 
@@ -126,8 +127,9 @@ router.post('/tenants', authenticate, async (req: any, res: Response) => {
 
 // POST /api/v1/property-manager/screen
 // Screens a tenant using the real CourtListener service (US court records).
-// If COURTLISTENER_API_KEY is not set, falls back to manual band selection.
-router.post('/screen', authenticate, async (req: any, res: Response) => {
+// Rate limited: 10/min per IP/user, 100/day per user.
+// Falls back to manual band selection if API key absent or rate limited.
+router.post('/screen', authenticate, courtListenerLimiter, courtListenerDailyLimiter, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -143,6 +145,7 @@ router.post('/screen', authenticate, async (req: any, res: Response) => {
     let screenedSource = source || 'MANUAL';
     let courtCheckId: string | null = null;
     let courtCheckResult: any = null;
+    let screeningDetails: any = null;
 
     // Run real CourtListener screening if source is COURTLISTENER and key is configured.
     if ((source === 'COURTLISTENER' || !source)) {
@@ -154,10 +157,17 @@ router.post('/screen', authenticate, async (req: any, res: Response) => {
         });
         if (result && result.id) {
           resolvedBand = result.riskBand;
-          depositAdjPct = result.reductionPct * 100; // convert 0.25 -> 25
+          depositAdjPct = result.reductionPct * 100;
           screenedSource = 'COURTLISTENER';
           courtCheckId = result.id;
           courtCheckResult = result;
+          // Build rich details for the UI.
+          screeningDetails = {
+            found: result.found,
+            count: result.count,
+            recentEviction: result.recentEviction,
+            cases: result.cases || [],
+          };
         }
       } catch (e: any) {
         console.warn('[pm] CourtListener screen failed, falling back to manual:', e.message);
@@ -191,6 +201,7 @@ router.post('/screen', authenticate, async (req: any, res: Response) => {
         screening,
         courtCheckId,
         courtCheckResult,
+        screeningDetails,
         recommendation: depositAdjPct > 0
           ? `${resolvedBand} risk — recommend ${depositAdjPct}% higher deposit.`
           : `${resolvedBand} risk — standard deposit terms.`,
@@ -201,7 +212,6 @@ router.post('/screen', authenticate, async (req: any, res: Response) => {
     res.status(500).json({ error: 'Could not screen tenant' });
   }
 });
-
 // ── Appointments ──────────────────────────────────────────────────────────────
 
 // POST /api/v1/property-manager/appointments

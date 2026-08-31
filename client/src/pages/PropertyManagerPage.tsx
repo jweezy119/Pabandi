@@ -15,6 +15,8 @@ const riskTone: Record<string, 'success' | 'warning' | 'danger'> = { LOW: 'succe
 const statusTone: Record<string, 'info' | 'success' | 'warning'> = { VACANT: 'info', OCCUPIED: 'success', MAINTENANCE: 'warning' };
 const apptTone: Record<string, 'info' | 'success' | 'warning' | 'danger'> = { PENDING: 'info', CONFIRMED: 'success', COMPLETED: 'success', CANCELLED: 'warning', NO_SHOW: 'danger' };
 const priorityTone: Record<string, 'info' | 'warning' | 'danger'> = { LOW: 'info', MEDIUM: 'warning', HIGH: 'danger', URGENT: 'danger' };
+const screeningSourceIcon: Record<string, string> = { COURTLISTENER: '🏛️', BACKGROUND_CHECK: '🇵🇰', MANUAL: '✏️' };
+const screeningSourceLabel: Record<string, string> = { COURTLISTENER: 'US CourtListener', BACKGROUND_CHECK: 'PK BackgroundCheck', MANUAL: 'Manual' };
 
 export const PropertyManagerPage: React.FC = () => {
   const [enrolling, setEnrolling] = useState(false);
@@ -150,16 +152,16 @@ export const PropertyManagerPage: React.FC = () => {
         {tab === 'screen' && (
           <div className="space-y-4">
             <Surface>
-              <h3 className="text-lg font-bold text-slate-100 mb-2">Screen a tenant</h3>
+              <h3 className="text-lg font-bold text-slate-100 mb-2">🔍 Screen a tenant</h3>
               <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Run a real US court (CourtListener) eviction check. Risk band auto-calculates the deposit surcharge.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input value={screenForm.tenantEmail} onChange={(e) => setScreenForm({ ...screenForm, tenantEmail: e.target.value })} placeholder="Tenant email *" type="email" className={inputClass} />
                 <input value={screenForm.tenantName} onChange={(e) => setScreenForm({ ...screenForm, tenantName: e.target.value })} placeholder="Tenant name" className={inputClass} />
                 <input value={screenForm.state} onChange={(e) => setScreenForm({ ...screenForm, state: e.target.value })} placeholder="State (e.g. IL)" className={inputClass} />
                 <select value={screenForm.source} onChange={(e) => setScreenForm({ ...screenForm, source: e.target.value })} className={selectClass}>
-                  <option value="COURTLISTENER">US CourtListener (real)</option>
-                  <option value="BACKGROUND_CHECK">PK BackgroundCheck</option>
-                  <option value="MANUAL">Manual</option>
+                  <option value="COURTLISTENER">🏛️ US CourtListener (real)</option>
+                  <option value="BACKGROUND_CHECK">🇵🇰 PK BackgroundCheck</option>
+                  <option value="MANUAL">✏️ Manual</option>
                 </select>
               </div>
               <Button onClick={screenTenant} className="mt-4">Run screening</Button>
@@ -168,7 +170,12 @@ export const PropertyManagerPage: React.FC = () => {
               {dash!.screenings.length === 0 && <p style={{ color: tokens.color.muted }}>No screenings yet.</p>}
               {dash!.screenings.map((sc) => (
                 <Surface key={sc.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}</div></div>
+                  <div>
+                    <div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>
+                      {screeningSourceIcon[sc.source] || '✏️'} {screeningSourceLabel[sc.source] || sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}
+                    </div>
+                  </div>
                   <div className="text-right">
                     <Badge tone={riskTone[sc.band] || 'info'}>{sc.band}</Badge>
                     {sc.depositAdjPct > 0 && <div className="text-xs mt-1 font-semibold" style={{ color: tokens.color.danger }}>+{sc.depositAdjPct}% deposit</div>}
