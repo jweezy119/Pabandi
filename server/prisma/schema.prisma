@@ -79,6 +79,7 @@ model User {
   verifiableCredentials   VerifiableCredential[]
   renterEquityWallets     RenterEquityWallet[]
   courtChecks             CourtCheck[]
+  propertyManagerProfile  PropertyManagerProfile?
 
   @@index([email])
   @@index([phone])
@@ -1074,6 +1075,12 @@ model LocalSaleEscrow {
   sellerEmail   String
   buyerEmail    String?
   status        SaleStatus @default(PENDING)
+  // SafeMeet: the agreed in-person exchange location + time.
+  meetupLocation String?
+  meetupLat     Float?
+  meetupLng     Float?
+  meetupAt      DateTime?
+  meetupStatus  String?   // PENDING | SCHEDULED | MET | NO_SHOW
   // null until released; SIMULATED in demo mode (no real on-chain tx).
   txHash        String?
   simulated     Boolean   @default(true)
@@ -1291,6 +1298,109 @@ model PartnerProgramConfig {
   rateYear2          Float    @default(0.02)
   rateYear3Plus      Float    @default(0.01)
   updatedAt          DateTime @updatedAt
+}
+
+// ── Property Manager CRM + White Label ────────────────────────────────────────
+// A property manager/landlord enrolls to get a CRM dashboard: their properties,
+// tenant history, screening records, and disputes. White-label lets them offer
+// a branded portal (their domain/slug) so tenants book through their own brand.
+
+model PropertyManagerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  companyName String?
+  // White-label portal: manager.brand.com or pabandi.com/p/:slug
+  slug        String?  @unique
+  domain      String?  @unique
+  brandColor  String?  // hex, e.g. "#6366f1"
+  logoUrl     String?
+  tagline     String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties PropertyManagerProperty[]
+  tenants    PropertyTenant[]
+  screenings PropertyScreening[]
+}
+
+// A property under a manager's portfolio (links to existing Property model).
+model PropertyManagerProperty {
+  id          String   @id @default(cuid())
+  managerId   String
+  propertyId  String?  // links to Property.id (optional, for discovery-linked)
+  title       String
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  country     String   @default("United States")
+  bedrooms    Int      @default(1)
+  bathrooms   Float    @default(1)
+  rentAmount  Float?
+  rentPeriod  String   @default("MONTH") // MONTH | WEEK | NIGHT
+  status      String   @default("VACANT") // VACANT | OCCUPIED | MAINTENANCE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager          PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  tenants          PropertyTenant[]
+  screeningRecords PropertyScreening[]
+
+  @@index([managerId])
+  @@index([status])
+}
+
+// Tenant history for a property manager (past + current tenants).
+model PropertyTenant {
+  id              String    @id @default(cuid())
+  managerId       String
+  propertyId      String?
+  // Tenant identity (email is the stable key for history lookup).
+  email           String
+  firstName       String?
+  lastName        String?
+  phone           String?
+  // History: past stays, disputes, screening bands.
+  status          String   @default("PROSPECT") // PROSPECT | APPLIED | APPROVED | ACTIVE | PAST | DENIED
+  riskBand        String?  // LOW | MEDIUM | HIGH (from CourtCheck)
+  depositHeld     Float    @default(0)
+  totalStays      Int      @default(0)
+  totalDisputes   Int      @default(0)
+  lastStayAt      DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@unique([managerId, email])
+  @@index([managerId])
+  @@index([email])
+}
+
+// Screening record for a tenant (CourtCheck US + PK rails).
+model PropertyScreening {
+  id              String   @id @default(cuid())
+  managerId       String
+  propertyId      String?
+  tenantEmail     String
+  tenantName      String?
+  // Screening result.
+  band            String   @default("LOW") // LOW | MEDIUM | HIGH
+  depositAdjPct   Float    @default(0)     // 0 | 10 | 25
+  screenedAt      DateTime @default(now())
+  source          String   @default("COURTLISTENER") // COURTLISTENER | BACKGROUND_CHECK | MANUAL
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([tenantEmail])
 }
 
 enum LedgerEntryType {

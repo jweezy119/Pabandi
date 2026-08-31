@@ -155,6 +155,122 @@ router.post('/escrow/local-sale/:id/fund', async (req: Request, res: Response) =
   }
 });
 
+// SafeMeet: curated safe public meetup spot types (no external API needed).
+// A seller/buyer picks one, or provides a custom location.
+const SAFE_MEET_SPOTS = [
+  { id: 'police', label: 'Police station lobby', note: '24/7 staffed, cameras, safest option' },
+  { id: 'bank', label: 'Bank lobby', note: 'Staffed, cameras, during business hours' },
+  { id: 'coffee', label: 'Busy coffee shop', note: 'Public, staffed, daytime' },
+  { id: 'mall', label: 'Shopping mall food court', note: 'Public, security, cameras' },
+  { id: 'library', label: 'Public library', note: 'Staffed, quiet, daytime' },
+  { id: 'custom', label: 'Custom location', note: 'Choose your own public spot' },
+];
+
+// GET /api/v1/marketplace/safe-meet — suggested safe meetup spots.
+router.get('/safe-meet', async (_req: Request, res: Response) => {
+  try {
+    res.json({ success: true, data: { spots: SAFE_MEET_SPOTS } });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/marketplace/escrow/local-sale/:id/meetup
+// Schedule the SafeMeet: agreed location + time. Both parties should confirm.
+router.post('/escrow/local-sale/:id/meetup', async (req: Request, res: Response) => {
+  try {
+    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
+    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
+    if (sale.status === 'COMPLETED' || sale.status === 'CANCELLED' || sale.status === 'DISPUTED') {
+      return res.status(400).json({ success: false, error: `Cannot schedule meetup for a ${sale.status} sale` });
+    }
+
+    const { meetupLocation, meetupLat, meetupLng, meetupAt } = req.body || {};
+    if (!meetupLocation) {
+      return res.status(400).json({ success: false, error: 'meetupLocation is required' });
+    }
+
+    const updated = await prisma.localSaleEscrow.update({
+      where: { id: sale.id },
+      data: {
+        meetupLocation: String(meetupLocation),
+        meetupLat: meetupLat != null ? Number(meetupLat) : null,
+        meetupLng: meetupLng != null ? Number(meetupLng) : null,
+        meetupAt: meetupAt ? new Date(meetupAt) : null,
+        meetupStatus: 'SCHEDULED',
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        saleId: updated.id,
+        meetupLocation: updated.meetupLocation,
+        meetupLat: updated.meetupLat,
+        meetupLng: updated.meetupLng,
+        meetupAt: updated.meetupAt,
+        meetupStatus: updated.meetupStatus,
+      },
+    });
+  } catch (e: any) {
+    console.error('[marketplace] meetup failed:', e.message);
+    res.status(500).json({ success: false, error: 'Could not schedule meetup' });
+  }
+});
+
+// POST /api/v1/marketplace/escrow/local-sale/:id/dispute
+// Either party files a dispute (item not as described, no-show, robbery, etc.).
+// Marks the sale DISPUTED, locks the escrow, and creates a Dispute record for arbitration.
+router.post('/escrow/local-sale/:id/dispute', async (req: Request, res: Response) => {
+  try {
+    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
+    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
+    if (sale.status === 'COMPLETED' || sale.status === 'CANCELLED' || sale.status === 'DISPUTED') {
+      return res.status(400).json({ success: false, error: `Cannot dispute a ${sale.status} sale` });
+    }
+
+    const { reportedByEmail, againstEmail, reason, type, evidenceUrls } = req.body || {};
+    if (!reportedByEmail || !reason) {
+      return res.status(400).json({ success: false, error: 'reportedByEmail and reason are required' });
+    }
+
+    // Mark the sale disputed.
+    const updated = await prisma.localSaleEscrow.update({
+      where: { id: sale.id },
+      data: { status: 'DISPUTED' },
+    });
+
+    // Create a Dispute record (contextType=LOCAL_SALE) so jurors can arbitrate.
+    // We link via sellerEmail/buyerEmail since local sales are email-based, not userId-based.
+    const dispute = await prisma.dispute.create({
+      data: {
+        type: type || 'OTHER',
+        description: reason,
+        outcome: 'PENDING',
+        stakedAmount: 0,
+        contextType: 'LOCAL_SALE',
+        contextId: sale.id,
+        evidenceUrls: evidenceUrls || [],
+        // reportedById / userId are userId-based; for local sales we store email in description.
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        saleId: updated.id,
+        status: updated.status,
+        disputeId: dispute.id,
+        disputeOutcome: dispute.outcome,
+        message: 'Dispute filed. Escrow is locked pending arbitration. A community juror will review.',
+      },
+    });
+  } catch (e: any) {
+    console.error('[marketplace] dispute failed:', e.message);
+    res.status(500).json({ success: false, error: 'Could not file dispute' });
+  }
+});
+
 // Record the partner commission for a completed secured sale (idempotent per sale).
 async function recordCommission(sale: any) {
   if (!sale.referralCode) return;

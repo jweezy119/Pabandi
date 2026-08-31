@@ -448,8 +448,23 @@ export const marketplaceService = {
   getLocalSale: (id: string) => apiClient.get(`/marketplace/escrow/local-sale/${id}`),
   fundLocalSale: (id: string, buyerEmail: string) => apiClient.post(`/marketplace/escrow/local-sale/${id}/fund`, { buyerEmail }),
   releaseLocalSale: (id: string) => apiClient.post(`/marketplace/escrow/local-sale/${id}/release`),
+  scheduleMeetup: (id: string, payload: { meetupLocation: string; meetupLat?: number; meetupLng?: number; meetupAt?: string }) => apiClient.post(`/marketplace/escrow/local-sale/${id}/meetup`, payload),
+  fileDispute: (id: string, payload: { reportedByEmail: string; reason: string; type?: string; evidenceUrls?: string[] }) => apiClient.post(`/marketplace/escrow/local-sale/${id}/dispute`, payload),
+  safeMeetSpots: () => apiClient.get('/marketplace/safe-meet'),
 };
 
+// Property Manager CRM + White Label (landlords, property managers).
+export const propertyManagerService = {
+  enroll: (payload?: { companyName?: string; slug?: string; brandColor?: string; tagline?: string }) => apiClient.post('/property-manager/enroll', payload || {}),
+  getMe: () => apiClient.get('/property-manager/me'),
+  dashboard: () => apiClient.get('/property-manager/dashboard'),
+  addProperty: (payload: any) => apiClient.post('/property-manager/properties', payload),
+  addTenant: (payload: any) => apiClient.post('/property-manager/tenants', payload),
+  screenTenant: (payload: { tenantEmail: string; tenantName?: string; source?: string; band?: string }) => apiClient.post('/property-manager/screen', payload),
+  portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
+};
+
+// Real-estate court screening (CourtListener eviction / litigation).
 // Real-estate court screening (CourtListener eviction / litigation).
 export const courtCheckService = {
   // On-demand screen of both parties of a reservation.
