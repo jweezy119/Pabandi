@@ -50,6 +50,7 @@ import MarketplaceEmbed from './pages/MarketplaceEmbed';
 import SalePage from './pages/SalePage';
 import PropertyManagerPage from './pages/PropertyManagerPage';
 import TenantPortalPage from './pages/TenantPortalPage';
+import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
@@ -151,6 +152,8 @@ function App() {
           <Route path="/property-manager" element={<PropertyManagerPage />} />
           {/* White-label tenant portal */}
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
+          {/* Demo walkthrough */}
+          <Route path="/demo" element={<PublicSEO seo={{ title: 'Pabandi Demo — See it in action', description: 'A guided walkthrough of Pabandi trust experience — property management to safe local sales.' }}><DemoWalkthroughPage /></PublicSEO>} />
           <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />
           <Route path="/usdy" element={<PublicSEO seo={{ title: 'Pabandi × Ondo USDY — Tokenized T-Bill Yield on Rent', description: 'Pabandi brings Ondo Finance USDY (tokenized US Treasuries) to the global rental economy. Pre-register your portfolio for USDY rent yield.' }}><UsdyPage /></PublicSEO>} />
           <Route path="/city/:slug" element={<CityLandingPage />} />
