@@ -434,7 +434,22 @@ export default function BookingPage() {
                       </div>
                       <div className="text-right">
                         <p className="mb-1 text-sm font-medium text-slate-300">Required Deposit</p>
-                        <div className="font-headline text-3xl font-black text-slate-100">{business.currency || 'USD'} {bookingResult.reservation.depositAmount || 0}</div>
+                        {(() => {
+                          const r: any = bookingResult.reservation || {};
+                          const cs = r.trustSignals?.courtScreen;
+                          const adj = cs?.depositAdjusted;
+                          const orig = cs?.depositOriginal;
+                          if (adj && orig && adj > orig) {
+                            return (
+                              <div className="flex items-end justify-end gap-2">
+                                <span className="mb-1 text-lg font-medium text-slate-500 line-through">{business.currency || 'USD'} {Number(orig).toLocaleString()}</span>
+                                <span className="font-headline text-3xl font-black text-red-300">{business.currency || 'USD'} {Number(adj).toLocaleString()}</span>
+                                <span className="mb-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-300">+{Math.round((adj - orig) / orig * 100)}% risk</span>
+                              </div>
+                            );
+                          }
+                          return <div className="font-headline text-3xl font-black text-slate-100">{business.currency || 'USD'} {bookingResult.reservation.depositAmount || 0}</div>;
+                        })()}
                       </div>
                     </div>
                     <div>

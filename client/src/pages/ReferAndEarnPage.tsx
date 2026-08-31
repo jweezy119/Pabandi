@@ -109,9 +109,22 @@ export const ReferAndEarnPage: React.FC = () => {
           <div className="mt-8 rounded-2xl border border-indigo-400/20 bg-slate-900/60 p-6 text-left">
             <p className="text-slate-300">
               Your account isn't a partner yet. Partners get a unique referral code and a live
-              earnings ledger. Ask the Pabandi team to activate your account manager profile, or
-              sign up with a friend's referral code to start earning.
+              earnings ledger — and earn PAB on every booking from people they refer.
             </p>
+            <button
+              onClick={async () => {
+                try {
+                  await referralService.enroll();
+                  load();
+                } catch (e: any) {
+                  setError(e?.response?.data?.error || 'Could not enroll. Try again.');
+                }
+              }}
+              className="mt-4 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 py-3 font-semibold text-white hover:opacity-90"
+            >
+              Become a partner & get my code
+            </button>
+            {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
           </div>
         </div>
       </div>

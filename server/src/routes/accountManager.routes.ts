@@ -10,6 +10,7 @@ router.post('/admin', authenticate, authorize('ADMIN'), accountManagerController
 router.put('/admin/config', authenticate, authorize('ADMIN'), accountManagerController.updateConfig);
 
 // Authenticated partner dashboard.
+router.post('/enroll', authenticate, accountManagerController.enroll);
 router.get('/me', authenticate, accountManagerController.getMe);
 router.get('/referrals', authenticate, accountManagerController.getReferrals);
 router.get('/ledger', authenticate, accountManagerController.getLedger);

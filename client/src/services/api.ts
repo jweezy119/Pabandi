@@ -424,6 +424,7 @@ export const offrampLpService = {
 // Refer & Earn — partner (account manager) program.
 // NOTE: router is mounted at /account-manager (singular) in index.ts.
 export const referralService = {
+  enroll: () => apiClient.post('/account-manager/enroll'),
   getMe: () => apiClient.get('/account-manager/me'),
   getLedger: () => apiClient.get('/account-manager/ledger'),
   getReferrals: () => apiClient.get('/account-manager/referrals'),

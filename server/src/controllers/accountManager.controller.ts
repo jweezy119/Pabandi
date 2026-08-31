@@ -71,6 +71,27 @@ export const accountManagerController = {
     }
   },
 
+  // Self-serve enrollment: any authenticated user can opt into the referral
+  // program and receive a unique code. Returns the existing profile if already enrolled.
+  async enroll(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const existing = await prisma.accountManagerProfile.findUnique({ where: { userId } });
+      if (existing) return res.json({ success: true, profile: existing, created: false });
+
+      const referralCode = generateRefCode();
+      const profile = await prisma.accountManagerProfile.create({
+        data: { userId, referralCode, status: 'ACTIVE' }
+      });
+      res.status(201).json({ success: true, profile, created: true });
+    } catch (error) {
+      console.error('enroll error', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // Dashboard Endpoints
   async getMe(req: Request, res: Response) {
     try {
