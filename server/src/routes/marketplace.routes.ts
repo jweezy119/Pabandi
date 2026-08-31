@@ -92,7 +92,7 @@ router.post('/escrow/local-sale', async (req: Request, res: Response) => {
     });
   } catch (e: any) {
     console.error('[marketplace] local-sale failed:', e.message);
-    res.status(500).json({ success: false, error: 'Could not open secured sale' });
+    res.status(500).json({ success: false, error: 'Could not open secured sale', detail: e.message });
   }
 });
 
