@@ -71,6 +71,38 @@ export const accountManagerController = {
     }
   },
 
+  // Public: validate a referral code and return a minimal share payload (referrer
+  // display name + program terms) so the public /r/:code landing page can render
+  // without auth. Returns 404 if the code is unknown or the partner is inactive.
+  async validateCode(req: Request, res: Response) {
+    try {
+      const code = String(req.params.code || '').trim().toUpperCase();
+      if (!code) return res.status(400).json({ error: 'Missing referral code' });
+
+      const profile = await prisma.accountManagerProfile.findUnique({
+        where: { referralCode: code },
+        include: { user: { select: { firstName: true, lastName: true } } }
+      });
+      if (!profile || profile.status !== 'ACTIVE') {
+        return res.status(404).json({ error: 'Referral code not found' });
+      }
+
+      const config = await prisma.partnerProgramConfig.findFirst();
+      const rateY1 = config?.rateYear1 ?? 0.03;
+
+      res.json({
+        success: true,
+        code: profile.referralCode,
+        referrerName: [profile.user?.firstName, profile.user?.lastName]
+          .filter(Boolean).join(' ') || 'A Pabandi partner',
+        rateYear1: rateY1,
+        signupBounty: config?.signupBountyAmount ?? 5,
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // Self-serve enrollment: any authenticated user can opt into the referral
   // program and receive a unique code. Returns the existing profile if already enrolled.
   async enroll(req: Request, res: Response) {

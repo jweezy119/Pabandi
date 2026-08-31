@@ -4,6 +4,9 @@ import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Public, unauthenticated: validate a referral code for the /r/:code share landing.
+router.get('/validate/:code', accountManagerController.validateCode);
+
 // Partner (Account Manager) program endpoints.
 // Admin-only: create a partner + tune the program config.
 router.post('/admin', authenticate, authorize('ADMIN'), accountManagerController.createPartner);

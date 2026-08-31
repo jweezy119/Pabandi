@@ -425,6 +425,7 @@ export const offrampLpService = {
 // NOTE: router is mounted at /account-manager (singular) in index.ts.
 export const referralService = {
   enroll: () => apiClient.post('/account-manager/enroll'),
+  validateCode: (code: string) => apiClient.get(`/account-manager/validate/${encodeURIComponent(code)}`),
   getMe: () => apiClient.get('/account-manager/me'),
   getLedger: () => apiClient.get('/account-manager/ledger'),
   getReferrals: () => apiClient.get('/account-manager/referrals'),

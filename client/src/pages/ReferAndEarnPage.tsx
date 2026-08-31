@@ -20,7 +20,7 @@ interface ReferralGroup {
   users: { id: string; firstName: string; lastName: string; createdAt: string }[];
 }
 
-const REFERRAL_BASE = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=` : 'https://pabandi.com/register?ref=';
+const REFERRAL_BASE = typeof window !== 'undefined' ? `${window.location.origin}/r/` : 'https://pabandi.com/r/';
 
 export const ReferAndEarnPage: React.FC = () => {
   const [code, setCode] = useState<string>('');

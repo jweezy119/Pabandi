@@ -44,6 +44,7 @@ import { CommunityJuryPage } from './pages/CommunityJuryPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
+import { ReferralLandingPage } from './pages/ReferralLandingPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
 import HospitalityPage from './pages/HospitalityPage';
@@ -133,6 +134,8 @@ function App() {
       <LanguageProvider>
         <Routes>
           <Route path="/waitlist" element={<PublicSEO seo={{ title: 'Pabandi Waitlist', description: 'Join the Pabandi waitlist for early access to trusted bookings, escrow deposits, $PAB rewards, and local discovery.' }}><WaitlistPage /></PublicSEO>} />
+          {/* Public referral invite landing — validates ?code and funnels to signup */}
+          <Route path="/r/:code" element={<PublicSEO seo={{ title: 'Join Pabandi with an invite', description: 'Join Pabandi through a friend’s invite — escrow-backed bookings, court & KYC screening, and $PAB rewards.' }}><ReferralLandingPage /></PublicSEO>} />
           <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />
           <Route path="/usdy" element={<PublicSEO seo={{ title: 'Pabandi × Ondo USDY — Tokenized T-Bill Yield on Rent', description: 'Pabandi brings Ondo Finance USDY (tokenized US Treasuries) to the global rental economy. Pre-register your portfolio for USDY rent yield.' }}><UsdyPage /></PublicSEO>} />
           <Route path="/city/:slug" element={<CityLandingPage />} />
