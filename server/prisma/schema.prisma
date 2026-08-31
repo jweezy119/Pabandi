@@ -1326,6 +1326,8 @@ model PropertyManagerProfile {
   appointments PropertyAppointment[]
   leases     PropertyLease[]
   maintenance PropertyMaintenance[]
+  webhooks   PropertyWebhook[]
+  activities PropertyActivity[]
 }
 
 // A property under a manager's portfolio (links to existing Property model).
@@ -1485,6 +1487,49 @@ model PropertyMaintenance {
   @@index([managerId])
   @@index([status])
   @@index([priority])
+}
+
+// Webhook integration for property managers to connect their own CRM/external systems.
+model PropertyWebhook {
+  id          String   @id @default(cuid())
+  managerId   String
+  // Webhook config.
+  url         String
+  secret      String   // for HMAC signature verification
+  // Which events to send: screening, tenant, appointment, lease, maintenance, all
+  events      String[] @default(["all"])
+  active      Boolean  @default(true)
+  // Delivery tracking.
+  lastDeliveredAt DateTime?
+  lastStatus  String?  // 200, 404, 500, etc.
+  failCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+}
+
+// Activity audit log for all CRM actions (who did what, when).
+model PropertyActivity {
+  id          String   @id @default(cuid())
+  managerId   String
+  // What happened.
+  action      String   // e.g. "screening.created", "tenant.updated", "lease.activated"
+  entityType  String   // screening, tenant, property, appointment, lease, maintenance
+  entityId    String
+  // Context.
+  description String
+  metadata    Json?    // e.g. { tenantEmail, band, source }
+  actorEmail  String?  // who performed the action (if not the manager)
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 
 enum LedgerEntryType {

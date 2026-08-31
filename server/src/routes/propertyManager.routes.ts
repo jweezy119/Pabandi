@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth.middleware';
 import { courtListenerLimiter, courtListenerDailyLimiter } from '../middleware/rateLimit.middleware';
 import { courtCheckService } from '../services/courtCheck.service';
+import { fireWebhooks, logActivity } from '../services/pmWebhook.service';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
@@ -38,6 +39,101 @@ router.get('/me', authenticate, async (req: any, res: Response) => {
     const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId }, include: { _count: { select: { properties: true, tenants: true } } } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     res.json({ success: true, data: profile });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/v1/property-manager/profile
+// Update the manager's profile: companyName, slug, domain, brandColor, logoUrl, tagline.
+router.patch('/profile', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { companyName, slug, domain, brandColor, logoUrl, tagline } = req.body || {};
+    const updateData: any = {};
+    if (companyName !== undefined) updateData.companyName = companyName;
+    if (slug !== undefined) updateData.slug = slug;
+    if (domain !== undefined) updateData.domain = domain;
+    if (brandColor !== undefined) updateData.brandColor = brandColor;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+    if (tagline !== undefined) updateData.tagline = tagline;
+
+    const updated = await prisma.propertyManagerProfile.update({ where: { id: profile.id }, data: updateData });
+    logActivity(profile.id, 'profile.updated', 'profile', profile.id, `Profile updated: ${Object.keys(updateData).join(', ')}`);
+    fireWebhooks(profile.id, 'profile.updated', { profileId: profile.id, ...updateData });
+    res.json({ success: true, data: updated });
+  } catch (e: any) {
+    console.error('[pm] profile update failed:', e.message);
+    res.status(500).json({ error: 'Could not update profile' });
+  }
+});
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/webhooks
+router.post('/webhooks', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { url, events } = req.body || {};
+    if (!url) return res.status(400).json({ error: 'url is required' });
+    const secret = crypto.randomBytes(32).toString('hex');
+    const webhook = await prisma.propertyWebhook.create({
+      data: { managerId: profile.id, url, secret, events: events || ['all'] },
+    });
+    logActivity(profile.id, 'webhook.created', 'webhook', webhook.id, `Webhook created: ${url}`);
+    res.status(201).json({ success: true, data: webhook });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create webhook' });
+  }
+});
+
+// GET /api/v1/property-manager/webhooks
+router.get('/webhooks', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const webhooks = await prisma.propertyWebhook.findMany({ where: { managerId: profile.id } });
+    res.json({ success: true, data: webhooks });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/v1/property-manager/webhooks/:id
+router.delete('/webhooks/:id', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    await prisma.propertyWebhook.delete({ where: { id: req.params.id } });
+    logActivity(profile.id, 'webhook.deleted', 'webhook', req.params.id, `Webhook deleted`);
+    res.json({ success: true, message: 'Webhook deleted' });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not delete webhook' });
+  }
+});
+
+// ── Activity Log ──────────────────────────────────────────────────────────────
+
+// GET /api/v1/property-manager/activity
+router.get('/activity', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const activities = await prisma.propertyActivity.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' }, take: 100 });
+    res.json({ success: true, data: activities });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
   }

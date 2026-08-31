@@ -457,6 +457,7 @@ export const marketplaceService = {
 export const propertyManagerService = {
   enroll: (payload?: { companyName?: string; slug?: string; brandColor?: string; tagline?: string }) => apiClient.post('/property-manager/enroll', payload || {}),
   getMe: () => apiClient.get('/property-manager/me'),
+  updateProfile: (payload: any) => apiClient.patch('/property-manager/profile', payload),
   dashboard: () => apiClient.get('/property-manager/dashboard'),
   addProperty: (payload: any) => apiClient.post('/property-manager/properties', payload),
   addTenant: (payload: any) => apiClient.post('/property-manager/tenants', payload),
@@ -467,10 +468,13 @@ export const propertyManagerService = {
   updateLease: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/leases/${id}`, payload),
   addMaintenance: (payload: any) => apiClient.post('/property-manager/maintenance', payload),
   updateMaintenance: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/maintenance/${id}`, payload),
+  webhooks: () => apiClient.get('/property-manager/webhooks'),
+  addWebhook: (payload: { url: string; events?: string[] }) => apiClient.post('/property-manager/webhooks', payload),
+  deleteWebhook: (id: string) => apiClient.delete(`/property-manager/webhooks/${id}`),
+  activity: () => apiClient.get('/property-manager/activity'),
   portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
 };
 
-// Real-estate court screening (CourtListener eviction / litigation).
 // Real-estate court screening (CourtListener eviction / litigation).
 export const courtCheckService = {
   // On-demand screen of both parties of a reservation.
