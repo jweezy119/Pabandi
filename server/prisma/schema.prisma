@@ -1059,6 +1059,40 @@ model EscrowEvent {
   @@index([checkoutSessionId])
 }
 
+// Secured local-sale escrow for marketplaces (FB Marketplace, OfferUp, Craigslist, etc.).
+// A marketplace or power-seller drops the /embed/marketplace widget on a listing; opening
+// a sale here secures the in-person transaction with identity verification + escrow so the
+// seller (often someone selling valuables to get by) never gets robbed or ghosted.
+model LocalSaleEscrow {
+  id            String    @id @default(cuid())
+  // Marketplace partner code that referred this sale (ties to ReferralLedger commission).
+  referralCode  String?
+  listingUrl    String?
+  itemTitle     String?
+  amount        Float
+  currency      String    @default("USD")
+  sellerEmail   String
+  buyerEmail    String?
+  status        SaleStatus @default(PENDING)
+  // null until released; SIMULATED in demo mode (no real on-chain tx).
+  txHash        String?
+  simulated     Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([referralCode])
+  @@index([status])
+}
+
+enum SaleStatus {
+  PENDING
+  VERIFIED
+  FUNDED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
 enum CheckoutStatus {
   PENDING
   PAID

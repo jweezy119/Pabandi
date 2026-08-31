@@ -74,6 +74,7 @@ import webhookEscrowRoutes from './routes/webhook.escrow.routes';
 import didRoutes from './routes/did.routes';
 import vcRoutes from './routes/vc.routes';
 import ebayRoutes from './routes/ebay.routes';
+import marketplaceRoutes from './routes/marketplace.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
@@ -229,6 +230,7 @@ app.use(`/api/${API_VERSION}/offramp/webhook`, offrampWebhookRoutes);
 app.use('/.well-known', didRoutes);
 app.use(`/api/${API_VERSION}/recommendation`, recommendationRoutes);
 app.use('/api/v1/live-seller/ebay', ebayRoutes);
+app.use(`/api/${API_VERSION}/marketplace`, marketplaceRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 

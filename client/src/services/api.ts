@@ -433,6 +433,22 @@ export const referralService = {
   requestPayout: () => apiClient.post('/account-manager/payout/request'),
 };
 
+// Marketplace partner / secured local-sale escrow (FB Marketplace, OfferUp, Craigslist, etc.)
+export const marketplaceService = {
+  validatePartner: (code: string) => apiClient.get(`/marketplace/validate/${encodeURIComponent(code)}`),
+  openLocalSale: (payload: {
+    referralCode?: string;
+    listingUrl?: string;
+    itemTitle?: string;
+    amount: number;
+    currency?: string;
+    sellerEmail: string;
+    buyerEmail?: string;
+  }) => apiClient.post('/marketplace/escrow/local-sale', payload),
+  getLocalSale: (id: string) => apiClient.get(`/marketplace/escrow/local-sale/${id}`),
+  releaseLocalSale: (id: string) => apiClient.post(`/marketplace/escrow/local-sale/${id}/release`),
+};
+
 // Real-estate court screening (CourtListener eviction / litigation).
 export const courtCheckService = {
   // On-demand screen of both parties of a reservation.

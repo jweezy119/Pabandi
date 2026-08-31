@@ -23,4 +23,6 @@ RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache \
  && npm run build
 
 # Start the server (purge Cloudflare cache for pabandi.com + mirror SPA to R2 after DB migrate, if configured)
-CMD ["sh", "-c", "npx prisma migrate deploy --preview-feature && node scripts/cf-purge.mjs && node scripts/upload-spa-r2.mjs; npm start"]
+# `prisma db push` syncs schema additions (new tables like LocalSaleEscrow) without dropping data;
+# `migrate deploy` applies any tracked migrations.
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npx prisma migrate deploy --preview-feature && node scripts/cf-purge.mjs && node scripts/upload-spa-r2.mjs; npm start"]
