@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { authenticate } from '../middleware/auth.middleware';
 import crypto from 'crypto';
 
 const prisma = new PrismaClient();
@@ -11,7 +12,7 @@ function generateSlug(name: string): string {
 
 // POST /api/v1/property-manager/enroll
 // Any authenticated user can enroll as a property manager / landlord.
-router.post('/enroll', async (req: any, res: Response) => {
+router.post('/enroll', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -37,7 +38,7 @@ router.post('/enroll', async (req: any, res: Response) => {
 });
 
 // GET /api/v1/property-manager/me — manager profile + stats.
-router.get('/me', async (req: any, res: Response) => {
+router.get('/me', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -55,7 +56,7 @@ router.get('/me', async (req: any, res: Response) => {
 });
 
 // GET /api/v1/property-manager/dashboard — full CRM snapshot.
-router.get('/dashboard', async (req: any, res: Response) => {
+router.get('/dashboard', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -70,13 +71,13 @@ router.get('/dashboard', async (req: any, res: Response) => {
 
     const stats = {
       totalProperties: properties.length,
-      occupied: properties.filter((p) => p.status === 'OCCUPIED').length,
-      vacant: properties.filter((p) => p.status === 'VACANT').length,
+      occupied: properties.filter((p: any) => p.status === 'OCCUPIED').length,
+      vacant: properties.filter((p: any) => p.status === 'VACANT').length,
       totalTenants: tenants.length,
-      activeTenants: tenants.filter((t) => t.status === 'ACTIVE').length,
-      totalDepositHeld: tenants.reduce((s, t) => s + (t.depositHeld || 0), 0),
-      highRiskTenants: tenants.filter((t) => t.riskBand === 'HIGH').length,
-      totalDisputes: tenants.reduce((s, t) => s + (t.totalDisputes || 0), 0),
+      activeTenants: tenants.filter((t: any) => t.status === 'ACTIVE').length,
+      totalDepositHeld: tenants.reduce((s: number, t: any) => s + (t.depositHeld || 0), 0),
+      highRiskTenants: tenants.filter((t: any) => t.riskBand === 'HIGH').length,
+      totalDisputes: tenants.reduce((s: number, t: any) => s + (t.totalDisputes || 0), 0),
     };
 
     res.json({ success: true, data: { profile, properties, tenants, screenings, stats } });
@@ -89,7 +90,7 @@ router.get('/dashboard', async (req: any, res: Response) => {
 // ── Properties ────────────────────────────────────────────────────────────────
 
 // POST /api/v1/property-manager/properties — add a property.
-router.post('/properties', async (req: any, res: Response) => {
+router.post('/properties', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -124,7 +125,7 @@ router.post('/properties', async (req: any, res: Response) => {
 // ── Tenants ───────────────────────────────────────────────────────────────────
 
 // POST /api/v1/property-manager/tenants — add/update a tenant (history tracked by email).
-router.post('/tenants', async (req: any, res: Response) => {
+router.post('/tenants', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -173,8 +174,7 @@ router.post('/tenants', async (req: any, res: Response) => {
 // ── Screening ─────────────────────────────────────────────────────────────────
 
 // POST /api/v1/property-manager/screen — screen a tenant (US CourtListener or PK rail).
-// Reuses the courtCheck service band logic via a simple inline computation for the CRM.
-router.post('/screen', async (req: any, res: Response) => {
+router.post('/screen', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -184,8 +184,6 @@ router.post('/screen', async (req: any, res: Response) => {
     const { tenantEmail, tenantName, source, band } = req.body || {};
     if (!tenantEmail) return res.status(400).json({ error: 'tenantEmail is required' });
 
-    // Compute risk band + deposit adjustment.
-    // band can be provided (MANUAL) or computed by the courtCheck service (COURTLISTENER/BACKGROUND_CHECK).
     const resolvedBand = (band || 'LOW').toUpperCase();
     const depositAdjPct = resolvedBand === 'HIGH' ? 25 : resolvedBand === 'MEDIUM' ? 10 : 0;
 
@@ -201,7 +199,6 @@ router.post('/screen', async (req: any, res: Response) => {
       },
     });
 
-    // Also upsert the tenant record with the screening band.
     const normalizedEmail = String(tenantEmail).toLowerCase().trim();
     const existing = await prisma.propertyTenant.findFirst({
       where: { managerId: profile.id, email: normalizedEmail },
@@ -259,7 +256,7 @@ router.get('/portal/:slug', async (req: Request, res: Response) => {
         tagline: profile.tagline,
         activeListings: profile.properties.length,
         totalProperties: profile._count.properties,
-        vacantListings: profile.properties.map((p) => ({
+        vacantListings: profile.properties.map((p: any) => ({
           id: p.id,
           title: p.title,
           address: p.address,
