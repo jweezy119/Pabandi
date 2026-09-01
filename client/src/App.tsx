@@ -61,6 +61,9 @@ import DocumentsPage from './pages/DocumentsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import LeaseGeneratorPage from './pages/LeaseGeneratorPage';
 import RentRollPage from './pages/RentRollPage';
+import TrustPassportPage from './pages/TrustPassportPage';
+import RewardsPage from './pages/RewardsPage';
+import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
@@ -79,7 +82,6 @@ import AgentMarketplacePage from './pages/AgentMarketplacePage';
 import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PpdWizardPage from './pages/PpdWizardPage';
-import TrustPassportPage from './pages/TrustPassportPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
 import PayrollPage from './pages/PayrollPage';
@@ -170,6 +172,12 @@ function App() {
           <Route path="/tenant" element={<TenantDashboardPage />} />
           {/* Documents */}
           <Route path="/documents" element={<DocumentsPage />} />
+          {/* Marketplace - Buy, Sell, Rent, Hire */}
+          <Route path="/marketplace" element={<PublicSEO seo={{ title: 'Pabandi Marketplace', description: 'Buy, sell, rent, and hire — all protected by escrow and background checks.' }}><MarketplacePage /></PublicSEO>} />
+          {/* Trust Passport */}
+          <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
+          {/* Rewards */}
+          <Route path="/rewards" element={<PublicSEO seo={{ title: '$PAB Rewards — Pabandi', description: 'Earn, spend, and stake $PAB tokens.' }}><RewardsPage /></PublicSEO>} />
           {/* Rent Roll */}
           <Route path="/rent-roll" element={<PublicSEO seo={{ title: 'Rent Roll — Pabandi', description: 'Track income, expenses, and NOI across all your properties.' }}><RentRollPage /></PublicSEO>} />
           {/* Lease Generator */}

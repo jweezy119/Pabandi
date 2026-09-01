@@ -1,139 +1,139 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { trustPassportService } from '../services/api';
-import { tokens } from '../design-system';
+import React from 'react';
+import { Surface, Badge, tokens } from '../design-system';
 
-const bandColor: Record<string, string> = {
-  A: '#22c55e', B: '#84cc16', C: '#eab308', D: '#f97316', E: '#ef4444',
-};
-
-export default function TrustPassportPage() {
-  const { handle } = useParams<{ handle: string }>();
-  const [data, setData] = useState<any>(null);
-  const [err, setErr] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [embedCode, setEmbedCode] = useState('');
-  const [embedCopied, setEmbedCopied] = useState(false);
-
-  useEffect(() => {
-    if (!handle) return;
-    trustPassportService.getPublic(handle)
-      .then((r) => setData(r.data?.data))
-      .catch((e) => setErr(e.response?.data?.error || e.message));
-  }, [handle]);
-
-  const share = async () => {
-    const url = `${window.location.origin}/trust/${handle}`;
-    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }
-    catch { setCopied(false); }
-  };
-
-  const band = data?.trust?.trustBand || 'D';
-  const bc = data?.backgroundCheck;
-  const prot = data?.protections || {};
-
+export const TrustPassportPage: React.FC = () => {
   return (
-    <div className="min-h-screen font-body flex items-center justify-center px-4 py-10" style={{ background: tokens.color.background, color: tokens.color.text }}>
-      <style>{`
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-        .anim-fade-up { animation: fadeUp .5s ease-out both; }
-        .band-glow { box-shadow: 0 0 40px ${bandColor[band] || '#888'}33; }
-      `}</style>
-      {err && <div className="text-red-400">{err}</div>}
-      {!data && !err && <div className="opacity-60">Loading passport…</div>}
-      {data && (
-        <div className="anim-fade-up w-full max-w-xl rounded-3xl p-7 band-glow" style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${bandColor[band]}55` }}>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-widest opacity-60">Pabandi Trust Passport</p>
-              <h1 className="font-headline text-2xl font-bold mt-1">{data.displayName}</h1>
-              <p className="text-sm opacity-60">{data.category} · @{data.handle}</p>
+    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="text-center mb-8">
+          <Badge tone="info" className="mb-3">🛂 Trust Passport</Badge>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-100 font-headline">
+            One Reputation. Every Transaction.
+          </h1>
+          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
+            Your Trust Passport follows you across buying, selling, renting, and hiring. Build it once, use it everywhere.
+          </p>
+        </div>
+
+        {/* Passport Card */}
+        <Surface className="p-6 mb-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))', border: '1px solid rgba(99,102,241,0.3)' }}>
+          <div className="text-5xl mb-3">🛂</div>
+          <div className="text-sm" style={{ color: tokens.color.muted }}>Trust Score</div>
+          <div className="text-6xl font-black text-slate-100 my-2">73.8</div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Badge tone="success">Tier: Silver</Badge>
+            <Badge tone="info">Verified</Badge>
+          </div>
+          <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
+            <div className="p-2 rounded-lg bg-white/5">
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Transactions</div>
+              <div className="font-bold text-slate-100">127</div>
             </div>
-            <div className="text-center">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg" style={{ background: bandColor[band], color: '#0a0a0a' }}>{band}</div>
-              <p className="text-xs opacity-60 mt-1">Trust Band</p>
+            <div className="p-2 rounded-lg bg-white/5">
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Success Rate</div>
+              <div className="font-bold text-emerald-300">98.4%</div>
+            </div>
+            <div className="p-2 rounded-lg bg-white/5">
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Member Since</div>
+              <div className="font-bold text-slate-100">Jan 2025</div>
             </div>
           </div>
+        </Surface>
 
-          {data.bio && <p className="text-sm opacity-80 mt-4">{data.bio}</p>}
-
-          {/* Headline trust */}
-          <div className="grid grid-cols-3 gap-3 mt-5 text-center">
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <p className="text-lg font-bold">{data.trust?.trustVelocity?.toFixed?.(2) ?? '0.00'}</p>
-              <p className="text-xs opacity-60">Velocity</p>
-            </div>
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <p className="text-lg font-bold">{data.trust?.reliabilityScore ?? '—'}</p>
-              <p className="text-xs opacity-60">Reliability</p>
-            </div>
-            <div className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <p className="text-lg font-bold">{Math.round((data.trust?.profileCompleteness ?? 0) * 100)}%</p>
-              <p className="text-xs opacity-60">Complete</p>
-            </div>
-          </div>
-
-          {/* Background check */}
-          <div className="rounded-2xl p-4 mt-4" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${(bc?.recommendation === 'PASS' ? '#22c55e' : '#ef4444')}44` }}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">Background Check</p>
-              <span className="text-xs px-2 py-1 rounded-full" style={{ background: bc?.recommendation === 'PASS' ? '#22c55e' : '#ef4444', color: '#0a0a0a', fontWeight: 700 }}>
-                {bc ? `${bc.recommendation} · ${bc.riskScore}/100` : 'Not run'}
-              </span>
-            </div>
-            {bc?.completedAt && <p className="text-xs opacity-60 mt-1">Verified {new Date(bc.completedAt).toLocaleDateString()}</p>}
-          </div>
-
-          {/* Skin in the game */}
-          <div className="rounded-2xl p-4 mt-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
-            <p className="text-sm font-semibold mb-2">Protected Activity</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><b>{prot.activeDeposits ?? 0}</b> active deposits · ${Math.round(prot.totalDepositsUSD ?? 0).toLocaleString()}</div>
-              <div><b>{prot.activeBonds ?? 0}</b> performance bonds · ${Math.round(prot.totalBondedUSD ?? 0).toLocaleString()}</div>
-              <div className="col-span-2 opacity-60">{prot.drawsReleased ?? 0} milestone draws released clean</div>
-            </div>
-          </div>
-
-          {data.communityPools?.length > 0 && (
-            <div className="rounded-2xl p-4 mt-4" style={{ background: 'rgba(255,255,255,0.03)' }}>
-              <p className="text-sm font-semibold mb-2">Community Pools Governed</p>
-              {data.communityPools.map((pl: any, i: number) => (
-                <p key={i} className="text-xs opacity-70">{pl.communityName}: ${Math.round(pl.availableYieldUSD).toLocaleString()} yield available</p>
+        {/* Reputation Breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Surface className="p-4 md:p-6">
+            <h2 className="text-lg font-bold text-slate-100 mb-4">📊 Reputation Breakdown</h2>
+            <div className="space-y-3">
+              {[
+                { label: 'Commerce', score: 73.75, color: '#6366f1', desc: 'Buying & selling' },
+                { label: 'Hospitality', score: 73.75, color: '#10b981', desc: 'Renting & hosting' },
+                { label: 'Freelance', score: 73.75, color: '#f59e0b', desc: 'Hiring & working' },
+                { label: 'Appointments', score: 73.75, color: '#ec4899', desc: 'Showing & visiting' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div>
+                    <div className="font-semibold text-slate-100 text-sm">{item.label}</div>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>{item.desc}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold" style={{ color: item.color }}>{item.score}</div>
+                    <div className="w-20 h-2 rounded-full bg-white/10 mt-1">
+                      <div className="h-full rounded-full" style={{ width: `${item.score}%`, background: item.color }} />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
+          </Surface>
 
-          {/* CTAs */}
-          <div className="flex gap-3 mt-6">
-            <Link to={`/protected-deposit?provider=${handle}`} className="btn-pab" style={{ background: tokens.color.primary, color: '#0a0a0a', fontWeight: 700, borderRadius: 12, padding: '11px 18px', textDecoration: 'none' }}>
-              Request Protected Deal
-            </Link>
-            <button className="btn-ghost" onClick={share} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '11px 18px', color: 'inherit', cursor: 'pointer' }}>
-              {copied ? 'Link copied!' : 'Share'}
-            </button>
-            <button className="btn-ghost" onClick={() => setEmbedCode(`<iframe src="${window.location.origin}/badge/${handle}" width="300" height="56" frameborder="0" style="border:0;border-radius:12px;overflow:hidden" title="Pabandi Trust Badge"></iframe>`)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '11px 18px', color: 'inherit', cursor: 'pointer' }}>
-              Embed badge
-            </button>
-          </div>
-
-          {embedCode && (
-            <div className="mt-3">
-              <p className="text-xs opacity-60 mb-1">Paste this on your site / WhatsApp bio:</p>
-              <div className="flex gap-2 items-start">
-                <code className="text-xs opacity-80 rounded-xl p-3 block" style={{ background: 'rgba(0,0,0,0.25)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', flex: 1 }}>{embedCode}</code>
-                <button className="btn-pab text-xs" onClick={async () => { try { await navigator.clipboard.writeText(embedCode); setEmbedCopied(true); setTimeout(() => setEmbedCopied(false), 1500); } catch { /* ignore */ } }} style={{ background: tokens.color.primary, color: '#0a0a0a', borderRadius: 12, padding: '8px 12px', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-                  {embedCopied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                <p className="text-xs opacity-60 mb-1">Preview:</p>
-                <iframe src={`/badge/${handle}`} width={300} height={56} style={{ border: 0, borderRadius: 12, overflow: 'hidden' }} title="Pabandi Trust Badge preview" />
-              </div>
+          <Surface className="p-4 md:p-6">
+            <h2 className="text-lg font-bold text-slate-100 mb-4">🏆 Badges & Verification</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: '🪪', label: 'ID Verified', desc: 'Government ID' },
+                { icon: '📱', label: 'Phone Verified', desc: 'SMS confirmed' },
+                { icon: '📧', label: 'Email Verified', desc: 'Email confirmed' },
+                { icon: '🔗', label: 'Wallet Connected', desc: 'Solana wallet' },
+                { icon: '🏠', label: 'Property Owner', desc: '1+ properties' },
+                { icon: '⭐', label: 'Top Rated', desc: '4.8+ avg rating' },
+              ].map((b, i) => (
+                <div key={i} className="p-3 rounded-xl bg-white/5 text-center">
+                  <div className="text-2xl mb-1">{b.icon}</div>
+                  <div className="font-semibold text-slate-100 text-xs">{b.label}</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>{b.desc}</div>
+                </div>
+              ))}
             </div>
-          )}
-          <p className="text-xs opacity-50 mt-4 text-center">Verified by Pabandi · {data.issuedAt && new Date(data.issuedAt).toLocaleString()}</p>
+          </Surface>
         </div>
-      )}
+
+        {/* How Trust Score Works */}
+        <Surface className="p-4 md:p-6 mb-6">
+          <h2 className="text-lg font-bold text-slate-100 mb-4">🔬 How Your Trust Score Is Calculated</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { icon: '✅', title: 'Positive Actions', items: ['Complete a sale (+5)', 'Pass screening (+10)', 'Win dispute (+15)', 'Good review (+2)', 'On-time payment (+3)'] },
+              { icon: '❌', title: 'Negative Actions', items: ['No-show (-20)', 'Failed dispute (-15)', 'Late payment (-5)', 'Bad review (-10)', 'Cancel deal (-3)'] },
+              { icon: '⚖️', title: 'Weighting', items: ['Recent activity matters most', 'Severity weighted', 'Volume matters', 'Dispute history tracked', 'Recovery possible'] },
+            ].map((cat, i) => (
+              <div key={i} className="p-3 rounded-xl bg-white/5">
+                <div className="text-xl mb-2">{cat.icon}</div>
+                <div className="font-semibold text-slate-100 text-sm mb-2">{cat.title}</div>
+                <ul className="space-y-1">
+                  {cat.items.map((item, j) => (
+                    <li key={j} className="text-xs" style={{ color: tokens.color.muted }}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Surface>
+
+        {/* Portable Reputation */}
+        <Surface className="p-4 md:p-6">
+          <h2 className="text-lg font-bold text-slate-100 mb-4">🌍 Portable Reputation</h2>
+          <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>
+            Your Trust Passport works across ALL Pabandi services. A high score here means better deals everywhere.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { icon: '🛒', label: 'Marketplace', benefit: 'Buy with escrow protection' },
+              { icon: '🏠', label: 'Rentals', benefit: 'Skip security deposit' },
+              { icon: '🔧', label: 'Services', benefit: 'Hire with confidence' },
+              { icon: '🏨', label: 'Hotels', benefit: 'Instant booking' },
+            ].map((s, i) => (
+              <div key={i} className="p-3 rounded-xl bg-white/5 text-center">
+                <div className="text-2xl mb-1">{s.icon}</div>
+                <div className="font-semibold text-slate-100 text-sm">{s.label}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{s.benefit}</div>
+              </div>
+            ))}
+          </div>
+        </Surface>
+      </div>
     </div>
   );
-}
+};
+
+export default TrustPassportPage;
