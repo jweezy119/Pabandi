@@ -52,6 +52,9 @@ import PropertyManagerPage from './pages/CRMPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
+import DisputeCenterPage from './pages/DisputeCenterPage';
+import SafeMeetPage from './pages/SafeMeetPage';
+import EscrowPage from './pages/EscrowPage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
@@ -159,6 +162,12 @@ function App() {
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
           {/* Tenant application tracker (authenticated) */}
           <Route path="/tenant" element={<TenantDashboardPage />} />
+          {/* Escrow & Disputes */}
+          <Route path="/escrow" element={<PublicSEO seo={{ title: 'Pabandi Escrow — Secured Transactions', description: 'Create escrow transactions, protect your trades, and resolve disputes fairly.' }}><EscrowPage /></PublicSEO>} />
+          {/* Dispute Center */}
+          <Route path="/disputes" element={<PublicSEO seo={{ title: 'Dispute Center — Fair Resolution', description: 'File disputes, submit evidence, and let the community jury decide.' }}><DisputeCenterPage /></PublicSEO>} />
+          {/* SafeMeet */}
+          <Route path="/safemeet" element={<PublicSEO seo={{ title: 'SafeMeet — Secure Exchange Locations', description: 'Schedule meetups at verified safe locations for in-person exchanges.' }}><SafeMeetPage /></PublicSEO>} />
           {/* Browse Hotels - links to Booking.com */}
           <Route path="/hotels" element={<PublicSEO seo={{ title: 'Browse Hotels — Pabandi', description: 'Search hotels on Booking.com with real prices and instant booking.' }}><BrowseHotelsPage /></PublicSEO>} />
           {/* Demo walkthrough */}
