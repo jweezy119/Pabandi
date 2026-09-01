@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
-
-// ── Types ────────────────────────────────────────────────────────────────────
+import { courtCheckService } from '../services/api';
 
 type DemoTab = 'pm' | 'sale' | 'screening' | 'appointments' | 'history' | 'crypto' | 'convert';
 
@@ -28,81 +27,6 @@ const initialDemoData: DemoData = {
   pabEarned: 0,
 };
 
-// ── Realistic CourtListener mock data ────────────────────────────────────────
-
-const COURT_LISTENER_MOCK: Record<string, any> = {
-  clean: {
-    count: 0,
-    results: [],
-  },
-  medium: {
-    count: 2,
-    results: [
-      {
-        id: 12345678,
-        caseName: 'Smith v. John Doe',
-        docketNumber: '2024-CV-01234',
-        court: 'Circuit Court of Cook County, Illinois',
-        dateFiled: '2023-06-15',
-        natureOfSuit: 'Landlord-Tenant - Rent Recovery',
-        status: 'Closed',
-      },
-      {
-        id: 12345679,
-        caseName: 'ABC Properties LLC v. John Doe',
-        docketNumber: '2023-CV-05678',
-        court: 'Circuit Court of Cook County, Illinois',
-        dateFiled: '2022-03-10',
-        natureOfSuit: 'Landlord-Tenant - Eviction',
-        status: 'Closed - Settled',
-      },
-    ],
-  },
-  high: {
-    count: 4,
-    results: [
-      {
-        id: 12345680,
-        caseName: 'XYZ Holdings v. John Doe',
-        docketNumber: '2024-CV-09876',
-        court: 'Superior Court of California, Los Angeles County',
-        dateFiled: '2024-11-20',
-        natureOfSuit: 'Unlawful Detainer - Eviction',
-        status: 'Active',
-      },
-      {
-        id: 12345681,
-        caseName: 'John Doe v. Metro Housing Authority',
-        docketNumber: '2024-CV-07654',
-        court: 'Superior Court of California, Los Angeles County',
-        dateFiled: '2024-08-05',
-        natureOfSuit: 'Housing - Habitability Dispute',
-        status: 'Active',
-      },
-      {
-        id: 12345682,
-        caseName: 'Sunrise Apartments v. John Doe',
-        docketNumber: '2024-CV-05432',
-        court: 'Circuit Court of Cook County, Illinois',
-        dateFiled: '2024-02-14',
-        natureOfSuit: 'Landlord-Tenant - Eviction',
-        status: 'Closed - Judgment for Plaintiff',
-      },
-      {
-        id: 12345683,
-        caseName: 'City Housing Corp v. John Doe',
-        docketNumber: '2023-CV-03210',
-        court: 'Circuit Court of Cook County, Illinois',
-        dateFiled: '2023-09-01',
-        natureOfSuit: 'Landlord-Tenant - Rent Recovery',
-        status: 'Closed - Settled',
-      },
-    ],
-  },
-};
-
-// ── Main Demo Page ───────────────────────────────────────────────────────────
-
 export const DemoWalkthroughPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -111,26 +35,21 @@ export const DemoWalkthroughPage: React.FC = () => {
   const [convertChoice, setConvertChoice] = useState<'keep' | 'import' | 'webhook' | 'fresh' | null>(null);
   const [importMethod, setImportMethod] = useState<'csv' | 'api'>('csv');
 
-  // Property form
   const [propForm, setPropForm] = useState({ title: '', address: '', rent: '' });
   const [showPropForm, setShowPropForm] = useState(false);
 
-  // Tenant form
   const [tenantForm, setTenantForm] = useState({ name: '', email: '' });
   const [showTenantForm, setShowTenantForm] = useState(false);
 
-  // Screening
   const [screenName, setScreenName] = useState('');
   const [screenState, setScreenState] = useState('IL');
   const [screenResult, setScreenResult] = useState<any>(null);
   const [screening, setScreening] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
 
-  // Appointments
   const [apptForm, setApptForm] = useState({ tenantName: '', tenantEmail: '', property: '', date: '' });
   const [showApptForm, setShowApptForm] = useState(false);
 
-  // Crypto
   const [walletAddr, setWalletAddr] = useState('');
 
   const addProperty = () => {
@@ -155,31 +74,35 @@ export const DemoWalkthroughPage: React.FC = () => {
     setShowTenantForm(false);
   };
 
-  const runScreening = () => {
+  const runScreening = async () => {
     if (!screenName) return;
     setScreening(true);
-    setTimeout(() => {
-      const outcomes = ['clean', 'medium', 'high'];
-      const outcome = outcomes[Math.floor(Math.random() * 3)];
-      const mockData = COURT_LISTENER_MOCK[outcome];
-      const band = outcome === 'high' ? 'HIGH' : outcome === 'medium' ? 'MEDIUM' : 'LOW';
-      const depositAdj = band === 'HIGH' ? 25 : band === 'MEDIUM' ? 10 : 0;
-      setScreenResult({
-        name: screenName,
-        state: screenState,
-        band,
-        depositAdj,
-        ...mockData,
-        screenedAt: new Date().toISOString(),
-        source: 'CourtListener API',
-        apiEndpoint: 'https://www.courtlistener.com/api/rest/v3/search/',
-        query: `"${screenName}"`,
-        type: 'dockets',
-        jurisdiction: screenState,
-      });
-      setDemoData((d) => ({ ...d, screeningRun: true, pabEarned: d.pabEarned + 10 }));
+    try {
+      const res = await courtCheckService.courtCheckByName(screenName, screenState);
+      const data = res.data?.data || res.data;
+      if (data) {
+        setScreenResult({
+          name: data.name,
+          state: data.state,
+          band: data.riskBand,
+          depositAdj: data.recentEviction ? 25 : data.found ? 10 : 0,
+          count: data.count,
+          results: data.cases || [],
+          screenedAt: new Date().toISOString(),
+          source: data.simulated ? 'Simulated (no API key)' : 'CourtListener API',
+          simulated: data.simulated,
+          apiEndpoint: 'https://www.courtlistener.com/api/rest/v3/search/',
+          query: `"${screenName}"`,
+          type: 'dockets',
+          jurisdiction: screenState,
+        });
+        setDemoData((d) => ({ ...d, screeningRun: true, pabEarned: d.pabEarned + 10 }));
+      }
+    } catch (e) {
+      console.error('Screening failed:', e);
+    } finally {
       setScreening(false);
-    }, 1800);
+    }
   };
 
   const addAppointment = () => {
@@ -211,13 +134,10 @@ export const DemoWalkthroughPage: React.FC = () => {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   const inputClass = "w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base transition-all";
 
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      {/* Nav */}
       <div className="sticky top-0 z-50 backdrop-blur-xl bg-surface/80 border-b border-white/5">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -237,7 +157,6 @@ export const DemoWalkthroughPage: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-100 font-headline">
             Commitment, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Secured.</span>
@@ -247,7 +166,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Tab Nav */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
           {([
             { id: 'pm', label: '🏘️ Property Manager' },
@@ -265,7 +183,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           ))}
         </div>
 
-        {/* ── Property Manager ────────────────────────────────────────────── */}
         {tab === 'pm' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -274,7 +191,6 @@ export const DemoWalkthroughPage: React.FC = () => {
               <Surface className="text-center"><div className="text-2xl font-bold text-indigo-300">{demoData.tenants.length}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Tenants</div></Surface>
               <Surface className="text-center"><div className="text-2xl font-bold text-amber-300">{demoData.pabEarned}</div><div className="text-xs" style={{ color: tokens.color.muted }}>$PAB earned</div></Surface>
             </div>
-
             <Surface>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-100">Properties</h3>
@@ -301,7 +217,6 @@ export const DemoWalkthroughPage: React.FC = () => {
                 </div>
               )}
             </Surface>
-
             <Surface>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-100">Tenants</h3>
@@ -330,7 +245,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Secured Sale ────────────────────────────────────────────────── */}
         {tab === 'sale' && (
           <div className="space-y-6">
             <Surface>
@@ -361,7 +275,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Screening ───────────────────────────────────────────────────── */}
         {tab === 'screening' && (
           <div className="space-y-6">
             <Surface>
@@ -381,7 +294,13 @@ export const DemoWalkthroughPage: React.FC = () => {
 
               {screenResult && (
                 <div className="mt-6 space-y-4">
-                  {/* Risk summary */}
+                  {screenResult.simulated && (
+                    <div className="p-4 rounded-xl border border-amber-400/30 bg-amber-500/10 text-sm">
+                      <p className="font-bold text-amber-200 mb-1">⚠️ Demo mode</p>
+                      <p className="text-amber-300/80">COURTLISTENER_API_KEY is not set. Results are simulated. Add the key to enable live screening.</p>
+                    </div>
+                  )}
+
                   <div className="p-4 rounded-xl bg-white/5">
                     <div className="flex items-center justify-between mb-3">
                       <div>
@@ -393,12 +312,11 @@ export const DemoWalkthroughPage: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3 text-center text-sm">
                       <div><div className="font-bold text-slate-100">{screenResult.count}</div><div style={{ color: tokens.color.muted }}>Cases found</div></div>
                       <div><div className="font-bold" style={{ color: screenResult.band === 'HIGH' ? tokens.color.danger : screenResult.band === 'MEDIUM' ? '#f59e0b' : '#10b981' }}>{screenResult.depositAdj > 0 ? `+${screenResult.depositAdj}%` : '0%'}</div><div style={{ color: tokens.color.muted }}>Deposit adj.</div></div>
-                      <div><div className="font-bold" style={{ color: screenResult.results.some((r: any) => r.status === 'Active') ? tokens.color.danger : '#10b981' }}>{screenResult.results.some((r: any) => r.status === 'Active') ? 'Active cases' : 'All closed'}</div><div style={{ color: tokens.color.muted }}>Status</div></div>
+                      <div><div className="font-bold" style={{ color: screenResult.results?.some((r: any) => r.status === 'Active') ? tokens.color.danger : '#10b981' }}>{screenResult.results?.some((r: any) => r.status === 'Active') ? 'Active cases' : 'All closed'}</div><div style={{ color: tokens.color.muted }}>Status</div></div>
                     </div>
                   </div>
 
-                  {/* Case list */}
-                  {screenResult.results.length > 0 && (
+                  {screenResult.results && screenResult.results.length > 0 && (
                     <div>
                       <h4 className="text-sm font-bold text-slate-100 mb-2">Cases found</h4>
                       <div className="space-y-2">
@@ -418,7 +336,6 @@ export const DemoWalkthroughPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Raw JSON toggle */}
                   <div>
                     <button onClick={() => setShowRawJson(!showRawJson)} className="text-xs font-semibold text-indigo-300 hover:text-indigo-200">
                       {showRawJson ? '▼ Hide raw API response' : '▶ Show raw API response'}
@@ -444,7 +361,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Appointments ────────────────────────────────────────────────── */}
         {tab === 'appointments' && (
           <div className="space-y-6">
             <Surface>
@@ -484,7 +400,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Tenant History ──────────────────────────────────────────────── */}
         {tab === 'history' && (
           <div className="space-y-6">
             <Surface>
@@ -519,7 +434,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Crypto ──────────────────────────────────────────────────────── */}
         {tab === 'crypto' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -584,7 +498,6 @@ export const DemoWalkthroughPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Convert ─────────────────────────────────────────────────────── */}
         {tab === 'convert' && (
           <div className="space-y-6">
             <div className="text-center mb-8">
