@@ -56,6 +56,8 @@ import DisputeCenterPage from './pages/DisputeCenterPage';
 import SafeMeetPage from './pages/SafeMeetPage';
 import EscrowPage from './pages/EscrowPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import LeaseGeneratorPage from './pages/LeaseGeneratorPage';
+import RentRollPage from './pages/RentRollPage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
@@ -163,6 +165,10 @@ function App() {
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
           {/* Tenant application tracker (authenticated) */}
           <Route path="/tenant" element={<TenantDashboardPage />} />
+          {/* Rent Roll */}
+          <Route path="/rent-roll" element={<PublicSEO seo={{ title: 'Rent Roll — Pabandi', description: 'Track income, expenses, and NOI across all your properties.' }}><RentRollPage /></PublicSEO>} />
+          {/* Lease Generator */}
+          <Route path="/leases" element={<PublicSEO seo={{ title: 'Lease Agreements — Pabandi', description: 'Create and manage lease agreements.' }}><LeaseGeneratorPage /></PublicSEO>} />
           {/* Email verification */}
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           {/* Escrow & Disputes */}
