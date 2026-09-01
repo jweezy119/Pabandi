@@ -26,18 +26,18 @@ export const BrowseHotelsPage: React.FC = () => {
   };
 
   const popularCities = [
-    { name: 'New York', emoji: '🗽' },
-    { name: 'Los Angeles', emoji: '🌴' },
-    { name: 'Chicago', emoji: '🌆' },
-    { name: 'Miami', emoji: '🏖️' },
-    { name: 'San Francisco', emoji: '🌉' },
-    { name: 'Las Vegas', emoji: '🎰' },
-    { name: 'Boston', emoji: '🏛️' },
-    { name: 'Washington DC', emoji: '🏛️' },
-    { name: 'Orlando', emoji: '🎢' },
-    { name: 'San Diego', emoji: '🌊' },
-    { name: 'Nashville', emoji: '🎸' },
-    { name: 'Austin', emoji: '🎵' },
+    { name: 'New York', emoji: '🗽', desc: 'The city that never sleeps' },
+    { name: 'Los Angeles', emoji: '🌴', desc: 'Sunset Boulevard & beaches' },
+    { name: 'Chicago', emoji: '🌆', desc: 'Architecture & deep dish' },
+    { name: 'Miami', emoji: '🏖️', desc: 'South Beach & nightlife' },
+    { name: 'San Francisco', emoji: '🌉', desc: 'Golden Gate & tech' },
+    { name: 'Las Vegas', emoji: '🎰', desc: 'Shows & entertainment' },
+    { name: 'Boston', emoji: '🏛️', desc: 'History & seafood' },
+    { name: 'Washington DC', emoji: '🏛️', desc: 'Monuments & museums' },
+    { name: 'Orlando', emoji: '🎢', desc: 'Theme parks & family fun' },
+    { name: 'San Diego', emoji: '🌊', desc: 'Perfect weather & zoo' },
+    { name: 'Nashville', emoji: '🎸', desc: 'Music City USA' },
+    { name: 'Austin', emoji: '🎵', desc: 'Live music capital' },
   ];
 
   return (
@@ -128,8 +128,31 @@ export const BrowseHotelsPage: React.FC = () => {
               >
                 <div className="text-2xl mb-1">{c.emoji}</div>
                 <div className="font-semibold text-slate-100">{c.name}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{c.desc}</div>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* How it works */}
+        <div className="mt-12">
+          <h3 className="text-lg font-bold text-slate-100 mb-4">How it works</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Surface className="text-center">
+              <div className="text-3xl mb-2">🔍</div>
+              <h4 className="font-bold text-slate-100">Search</h4>
+              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Enter your destination and dates</p>
+            </Surface>
+            <Surface className="text-center">
+              <div className="text-3xl mb-2">🏨</div>
+              <h4 className="font-bold text-slate-100">Compare</h4>
+              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Browse hotels with real prices & reviews</p>
+            </Surface>
+            <Surface className="text-center">
+              <div className="text-3xl mb-2">✅</div>
+              <h4 className="font-bold text-slate-100">Book</h4>
+              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Secure your stay on Booking.com</p>
+            </Surface>
           </div>
         </div>
 
