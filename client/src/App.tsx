@@ -53,6 +53,8 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
 import DisputeCenterPage from './pages/DisputeCenterPage';
+import MaintenancePage from './pages/MaintenancePage';
+import ApplicationsPage from './pages/ApplicationsPage';
 import SafeMeetPage from './pages/SafeMeetPage';
 import EscrowPage from './pages/EscrowPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -173,6 +175,10 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           {/* Escrow & Disputes */}
           <Route path="/escrow" element={<PublicSEO seo={{ title: 'Pabandi Escrow — Secured Transactions', description: 'Create escrow transactions, protect your trades, and resolve disputes fairly.' }}><EscrowPage /></PublicSEO>} />
+          {/* Maintenance */}
+          <Route path="/maintenance" element={<MaintenancePage />} />
+          {/* Applications */}
+          <Route path="/applications" element={<ApplicationsPage />} />
           {/* Dispute Center */}
           <Route path="/disputes" element={<PublicSEO seo={{ title: 'Dispute Center — Fair Resolution', description: 'File disputes, submit evidence, and let the community jury decide.' }}><DisputeCenterPage /></PublicSEO>} />
           {/* SafeMeet */}

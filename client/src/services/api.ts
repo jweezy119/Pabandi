@@ -470,6 +470,7 @@ export const propertyManagerService = {
   updateLease: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/leases/${id}`, payload),
   addMaintenance: (payload: any) => apiClient.post('/property-manager/maintenance', payload),
   updateMaintenance: (id: string, payload: { status?: string; notes?: string }) => apiClient.patch(`/property-manager/maintenance/${id}`, payload),
+  updateApplication: (id: string, payload: { status?: string; decisionNotes?: string }) => apiClient.patch(`/property-manager/applications/${id}`, payload),
   webhooks: () => apiClient.get('/property-manager/webhooks'),
   addWebhook: (payload: { url: string; events?: string[] }) => apiClient.post('/property-manager/webhooks', payload),
   deleteWebhook: (id: string) => apiClient.delete(`/property-manager/webhooks/${id}`),
