@@ -50,6 +50,7 @@ import MarketplaceEmbed from './pages/MarketplaceEmbed';
 import SalePage from './pages/SalePage';
 import PropertyManagerPage from './pages/PropertyManagerPage';
 import TenantPortalPage from './pages/TenantPortalPage';
+import TenantDashboardPage from './pages/TenantDashboardPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
@@ -152,6 +153,8 @@ function App() {
           <Route path="/property-manager" element={<PropertyManagerPage />} />
           {/* White-label tenant portal */}
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
+          {/* Tenant application tracker (authenticated) */}
+          <Route path="/tenant" element={<TenantDashboardPage />} />
           {/* Demo walkthrough */}
           <Route path="/demo" element={<PublicSEO seo={{ title: 'Pabandi Demo — See it in action', description: 'A guided walkthrough of Pabandi trust experience — property management to safe local sales.' }}><DemoWalkthroughPage /></PublicSEO>} />
           <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />

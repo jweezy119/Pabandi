@@ -1328,6 +1328,8 @@ model PropertyManagerProfile {
   maintenance PropertyMaintenance[]
   webhooks   PropertyWebhook[]
   activities PropertyActivity[]
+  applications TenantApplication[]
+  documents  TenantDocument[]
 }
 
 // A property under a manager's portfolio (links to existing Property model).
@@ -1355,6 +1357,7 @@ model PropertyManagerProperty {
   appointments     PropertyAppointment[]
   leases           PropertyLease[]
   maintenance      PropertyMaintenance[]
+  applications     TenantApplication[]
 
   @@index([managerId])
   @@index([status])
@@ -1458,6 +1461,7 @@ model PropertyLease {
 
   manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  documents TenantDocument[]
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -1512,6 +1516,70 @@ model PropertyWebhook {
 }
 
 // Activity audit log for all CRM actions (who did what, when).
+// Tenant application workflow (tenant applies to a listing).
+model TenantApplication {
+  id              String   @id @default(cuid())
+  managerId       String
+  propertyId      String?
+  // Applicant identity.
+  email           String
+  firstName       String?
+  lastName        String?
+  phone           String?
+  // Application details.
+  message         String?
+  desiredMoveIn   DateTime?
+  monthlyIncome   Float?
+  // Status: SUBMITTED | UNDER_REVIEW | SCREENING | APPROVED | DENIED | WITHDRAWN
+  status          String   @default("SUBMITTED")
+  // Screening result (filled when manager runs CourtCheck).
+  screeningBand   String?
+  screeningId     String?
+  depositAdjPct   Float    @default(0)
+  // Decision notes from manager.
+  decisionNotes   String?
+  decidedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  documents TenantDocument[]
+
+  @@index([managerId])
+  @@index([email])
+  @@index([status])
+}
+
+// Document storage for tenant applications / leases.
+model TenantDocument {
+  id              String   @id @default(cuid())
+  managerId       String
+  // Who owns this document (tenant email).
+  tenantEmail     String?
+  // Related entity.
+  applicationId   String?
+  leaseId         String?
+  // Document info.
+  title           String
+  fileName        String
+  fileUrl         String
+  fileSize        Int      @default(0)
+  mimeType        String?
+  // Category: ID | INCOME_PROOF | LEASE_AGREEMENT | BACKGROUND_CHECK | OTHER
+  category        String   @default("OTHER")
+  uploadedBy      String   @default("TENANT") // TENANT | MANAGER
+  createdAt       DateTime @default(now())
+
+  manager     PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  application TenantApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  lease       PropertyLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([tenantEmail])
+  @@index([category])
+}
+
 model PropertyActivity {
   id          String   @id @default(cuid())
   managerId   String

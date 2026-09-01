@@ -475,6 +475,16 @@ export const propertyManagerService = {
   portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
 };
 
+// Tenant experience (tenant-facing endpoints).
+export const tenantService = {
+  portal: (slug: string) => apiClient.get(`/tenant/portal/${slug}`),
+  apply: (payload: { slug: string; propertyId?: string; email: string; firstName?: string; lastName?: string; phone?: string; message?: string; desiredMoveIn?: string; monthlyIncome?: number }) => apiClient.post('/tenant/apply', payload),
+  dashboard: () => apiClient.get('/tenant/dashboard'),
+  applications: () => apiClient.get('/tenant/applications'),
+  application: (id: string) => apiClient.get(`/tenant/applications/${id}`),
+  documents: () => apiClient.get('/tenant/documents'),
+};
+
 // Real-estate court screening (CourtListener eviction / litigation).
 export const courtCheckService = {
   // On-demand screen of both parties of a reservation.

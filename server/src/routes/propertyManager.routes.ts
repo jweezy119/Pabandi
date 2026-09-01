@@ -156,6 +156,8 @@ router.get('/dashboard', authenticate, async (req: any, res: Response) => {
       prisma.propertyMaintenance.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' }, take: 50 }),
     ]);
 
+    const applications = await prisma.tenantApplication.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' }, take: 50 });
+
     const stats = {
       totalProperties: properties.length,
       occupied: properties.filter((p: any) => p.status === 'OCCUPIED').length,
@@ -170,7 +172,7 @@ router.get('/dashboard', authenticate, async (req: any, res: Response) => {
       openMaintenance: maintenance.filter((m: any) => m.status === 'OPEN' || m.status === 'IN_PROGRESS').length,
     };
 
-    res.json({ success: true, data: { profile, properties, tenants, screenings, appointments, leases, maintenance, stats } });
+    res.json({ success: true, data: { profile, properties, tenants, screenings, appointments, leases, maintenance, applications, stats } });
   } catch (e: any) {
     console.error('[pm] dashboard failed:', e.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -191,6 +193,8 @@ router.post('/properties', authenticate, async (req: any, res: Response) => {
     const property = await prisma.propertyManagerProperty.create({
       data: { managerId: profile.id, title, address: address || null, city: city || null, state: state || null, zip: zip || null, country: country || 'United States', bedrooms: bedrooms || 1, bathrooms: bathrooms || 1, rentAmount: rentAmount != null ? Number(rentAmount) : null, rentPeriod: rentPeriod || 'MONTH', status: status || 'VACANT' },
     });
+    logActivity(profile.id, 'property.created', 'property', property.id, `Property added: ${title}`);
+    fireWebhooks(profile.id, 'property.created', { propertyId: property.id, title });
     res.status(201).json({ success: true, data: property });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not add property' });
@@ -213,6 +217,8 @@ router.post('/tenants', authenticate, async (req: any, res: Response) => {
     const tenant = existing
       ? await prisma.propertyTenant.update({ where: { id: existing.id }, data: { firstName: firstName ?? existing.firstName, lastName: lastName ?? existing.lastName, phone: phone ?? existing.phone, propertyId: propertyId ?? existing.propertyId, status: status ?? existing.status, notes: notes ?? existing.notes } })
       : await prisma.propertyTenant.create({ data: { managerId: profile.id, email: normalizedEmail, firstName: firstName || null, lastName: lastName || null, phone: phone || null, propertyId: propertyId || null, status: status || 'PROSPECT', notes: notes || null } });
+    logActivity(profile.id, existing ? 'tenant.updated' : 'tenant.created', 'tenant', tenant.id, existing ? `Tenant updated: ${normalizedEmail}` : `Tenant added: ${normalizedEmail}`);
+    if (!existing) fireWebhooks(profile.id, 'tenant.created', { tenantId: tenant.id, email: normalizedEmail });
     res.status(existing ? 200 : 201).json({ success: true, data: tenant });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not save tenant' });
@@ -291,6 +297,9 @@ router.post('/screen', authenticate, courtListenerLimiter, courtListenerDailyLim
       await prisma.propertyTenant.create({ data: { managerId: profile.id, email: normalizedEmail, firstName: name, riskBand: resolvedBand, status: 'PROSPECT' } });
     }
 
+    logActivity(profile.id, 'screening.created', 'screening', screening.id, `Screening completed for ${tenantEmail}: ${resolvedBand}`);
+    fireWebhooks(profile.id, 'screening.created', { screeningId: screening.id, tenantEmail, band: resolvedBand, source: screenedSource });
+
     res.status(201).json({
       success: true,
       data: {
@@ -322,6 +331,8 @@ router.post('/appointments', authenticate, async (req: any, res: Response) => {
     const appointment = await prisma.propertyAppointment.create({
       data: { managerId: profile.id, propertyId: propertyId || null, tenantEmail: String(tenantEmail).toLowerCase().trim(), tenantName: tenantName || null, startsAt: new Date(startsAt), endsAt: endsAt ? new Date(endsAt) : null, notes: notes || null },
     });
+    logActivity(profile.id, 'appointment.created', 'appointment', appointment.id, `Showing scheduled for ${tenantEmail}`);
+    fireWebhooks(profile.id, 'appointment.created', { appointmentId: appointment.id, tenantEmail, startsAt });
     res.status(201).json({ success: true, data: appointment });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not create appointment' });
@@ -360,6 +371,8 @@ router.post('/leases', authenticate, async (req: any, res: Response) => {
     const lease = await prisma.propertyLease.create({
       data: { managerId: profile.id, propertyId: propertyId || null, tenantEmail: String(tenantEmail).toLowerCase().trim(), tenantName: tenantName || null, startDate: new Date(startDate), endDate: new Date(endDate), rentAmount: Number(rentAmount), rentPeriod: rentPeriod || 'MONTH', depositAmount: depositAmount != null ? Number(depositAmount) : 0, status: status || 'DRAFT', notes: notes || null },
     });
+    logActivity(profile.id, 'lease.created', 'lease', lease.id, `Lease created for ${tenantEmail}`);
+    fireWebhooks(profile.id, 'lease.created', { leaseId: lease.id, tenantEmail, rentAmount });
     res.status(201).json({ success: true, data: lease });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not create lease' });
@@ -375,6 +388,8 @@ router.patch('/leases/:id', authenticate, async (req: any, res: Response) => {
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { status, notes } = req.body || {};
     const lease = await prisma.propertyLease.update({ where: { id: req.params.id }, data: { ...(status && { status }), ...(notes && { notes }) } });
+    logActivity(profile.id, 'lease.updated', 'lease', lease.id, `Lease updated: ${status}`);
+    fireWebhooks(profile.id, 'lease.updated', { leaseId: lease.id, status });
     res.json({ success: true, data: lease });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not update lease' });
@@ -395,6 +410,8 @@ router.post('/maintenance', authenticate, async (req: any, res: Response) => {
     const maintenance = await prisma.propertyMaintenance.create({
       data: { managerId: profile.id, propertyId: propertyId || null, tenantEmail: tenantEmail ? String(tenantEmail).toLowerCase().trim() : null, title, description: description || null, priority: priority || 'MEDIUM', notes: notes || null },
     });
+    logActivity(profile.id, 'maintenance.created', 'maintenance', maintenance.id, `Maintenance reported: ${title}`);
+    fireWebhooks(profile.id, 'maintenance.created', { maintenanceId: maintenance.id, title, priority });
     res.status(201).json({ success: true, data: maintenance });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not create maintenance request' });
@@ -413,9 +430,48 @@ router.patch('/maintenance/:id', authenticate, async (req: any, res: Response) =
       where: { id: req.params.id },
       data: { ...(status && { status }), ...(notes && { notes }), ...(status === 'COMPLETED' ? { resolvedAt: new Date() } : {}) },
     });
+    logActivity(profile.id, 'maintenance.updated', 'maintenance', maintenance.id, `Maintenance updated: ${status}`);
+    fireWebhooks(profile.id, 'maintenance.updated', { maintenanceId: maintenance.id, status });
     res.json({ success: true, data: maintenance });
   } catch (e: any) {
     res.status(500).json({ error: 'Could not update maintenance' });
+  }
+});
+
+// ── Applications (tenant submissions) ────────────────────────────────────────
+
+// GET /api/v1/property-manager/applications — list applications for this manager.
+router.get('/applications', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const applications = await prisma.tenantApplication.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' } });
+    res.json({ success: true, data: applications });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/v1/property-manager/applications/:id — update application status (approve/deny/screen).
+router.patch('/applications/:id', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { status, decisionNotes } = req.body || {};
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (decisionNotes) updateData.decisionNotes = decisionNotes;
+    if (status === 'APPROVED' || status === 'DENIED') updateData.decidedAt = new Date();
+    const application = await prisma.tenantApplication.update({ where: { id: req.params.id }, data: updateData });
+    logActivity(profile.id, 'application.updated', 'application', application.id, `Application ${status}: ${application.email}`);
+    fireWebhooks(profile.id, 'application.updated', { applicationId: application.id, status, email: application.email });
+    res.json({ success: true, data: application });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not update application' });
   }
 });
 
