@@ -486,6 +486,11 @@ export const propertyManagerService = {
   documents: (tenantEmail?: string) => apiClient.get(`/documents${tenantEmail ? `?tenantEmail=${tenantEmail}` : ''}`),
   uploadDocument: (payload: any) => apiClient.post('/documents', payload),
   deleteDocument: (id: string) => apiClient.delete(`/documents/${id}`),
+  // Booking.com hotel search
+  searchHotels: (payload: any) => apiClient.post('/booking/search', payload),
+  autocompleteLocation: (payload: any) => apiClient.post('/booking/autocomplete', payload),
+  hotelDetails: (payload: any) => apiClient.post('/booking/details', payload),
+  seedHotels: (payload: any) => apiClient.post('/booking/seed', payload),
 };
 
 // Tenant experience (tenant-facing endpoints).
