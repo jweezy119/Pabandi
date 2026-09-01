@@ -1331,8 +1331,10 @@ model PropertyManagerProfile {
   maintenance PropertyMaintenance[]
   webhooks   PropertyWebhook[]
   activities PropertyActivity[]
-  applications TenantApplication[]
-  documents  TenantDocument[]
+  applications     TenantApplication[]
+  documents        TenantDocument[]
+
+  @@index([userId])
 }
 
 // A property under a manager's portfolio (links to existing Property model).
@@ -1361,9 +1363,87 @@ model PropertyManagerProperty {
   leases           PropertyLease[]
   maintenance      PropertyMaintenance[]
   applications     TenantApplication[]
+  units            PropertyUnit[]
+  rentPayments     RentPayment[]
+  inspections      PropertyInspection[]
 
   @@index([managerId])
   @@index([status])
+}
+
+// ── Deep Property-Specific Models ─────────────────────────────────────────────
+// Individual units within a property (e.g. Unit 2A, Unit 3B).
+model PropertyUnit {
+  id          String   @id @default(cuid())
+  propertyId  String
+  unitNumber  String   // e.g. "2A", "3B"
+  bedrooms    Int      @default(1)
+  bathrooms   Float    @default(1)
+  sqft        Int?
+  rentAmount  Float?
+  depositAmount Float  @default(0)
+  status      String   @default("VACANT") // VACANT | OCCUPIED | MAINTENANCE | RESERVED
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases   PropertyLease[]
+  rentPayments RentPayment[]
+  inspections  PropertyInspection[]
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+// Rent payment tracking for tenants.
+model RentPayment {
+  id          String   @id @default(cuid())
+  propertyId  String
+  unitId      String?
+  tenantEmail String
+  // Payment details.
+  amount      Float
+  dueDate     DateTime
+  paidAt      DateTime?
+  // Status: PENDING | PAID | LATE | PARTIAL
+  status      String   @default("PENDING")
+  // Payment method / reference.
+  method      String?  // BANK_TRANSFER | CASH | CHECK | ONLINE
+  reference   String?  // transaction reference
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([tenantEmail])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Property inspection reports.
+model PropertyInspection {
+  id          String   @id @default(cuid())
+  propertyId  String
+  unitId      String?
+  // Inspection details.
+  inspectedAt DateTime @default(now())
+  inspector   String?
+  // Overall condition: EXCELLENT | GOOD | FAIR | POOR
+  condition   String   @default("GOOD")
+  notes       String?
+  // Findings as JSON array [{ area, condition, notes, photos: [] }]
+  findings    Json?
+  createdAt   DateTime @default(now())
+
+  property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([inspectedAt])
 }
 
 // Tenant history for a property manager (past + current tenants).
@@ -1448,6 +1528,7 @@ model PropertyLease {
   id            String   @id @default(cuid())
   managerId     String
   propertyId    String?
+  unitId        String?
   tenantEmail   String
   tenantName    String?
   // Lease terms.
@@ -1464,6 +1545,7 @@ model PropertyLease {
 
   manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
 
   @@index([managerId])
