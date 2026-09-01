@@ -52,6 +52,7 @@ import PropertyManagerPage from './pages/CRMPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
+import BrowseHotelsPage from './pages/BrowseHotelsPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
@@ -158,6 +159,8 @@ function App() {
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
           {/* Tenant application tracker (authenticated) */}
           <Route path="/tenant" element={<TenantDashboardPage />} />
+          {/* Browse Hotels - links to Booking.com */}
+          <Route path="/hotels" element={<PublicSEO seo={{ title: 'Browse Hotels — Pabandi', description: 'Search hotels on Booking.com with real prices and instant booking.' }}><BrowseHotelsPage /></PublicSEO>} />
           {/* Demo walkthrough */}
           <Route path="/demo" element={<PublicSEO seo={{ title: 'Pabandi Demo — See it in action', description: 'A guided walkthrough of Pabandi trust experience — property management to safe local sales.' }}><DemoWalkthroughPage /></PublicSEO>} />
           {/* Redirect /try to /demo for backwards compatibility */}
