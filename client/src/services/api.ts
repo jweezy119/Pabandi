@@ -480,6 +480,9 @@ export const propertyManagerService = {
   addRentPayment: (payload: any) => apiClient.post('/property/rent-payments', payload),
   inspections: (propertyId: string) => apiClient.get(`/property/inspections?propertyId=${propertyId}`),
   addInspection: (payload: any) => apiClient.post('/property/inspections', payload),
+  financials: (propertyId: string) => apiClient.get(`/property/financials?propertyId=${propertyId}`),
+  addFinancial: (payload: any) => apiClient.post('/property/financials', payload),
+  financialSummary: (propertyId: string) => apiClient.get(`/property/financials/summary?propertyId=${propertyId}`),
 };
 
 // Tenant experience (tenant-facing endpoints).

@@ -215,4 +215,77 @@ router.get('/inspections', async (req: any, res: Response) => {
   }
 });
 
+// ── Financials ────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property/financials — record income or expense.
+router.post('/financials', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { propertyId, unitId, type, category, amount, description, tenantEmail, date } = req.body || {};
+    if (!propertyId || !type || !category || !amount) return res.status(400).json({ error: 'propertyId, type, category, amount are required' });
+
+    const financial = await prisma.propertyFinancial.create({
+      data: {
+        propertyId,
+        unitId: unitId || null,
+        type,
+        category,
+        amount: Number(amount),
+        description: description || null,
+        tenantEmail: tenantEmail ? String(tenantEmail).toLowerCase().trim() : null,
+        date: date ? new Date(date) : new Date(),
+      },
+    });
+    res.status(201).json({ success: true, data: financial });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not record financial' });
+  }
+});
+
+// GET /api/v1/property/financials?propertyId=ID — list financials.
+router.get('/financials', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { propertyId, type: typeFilter } = req.query;
+    const financials = await prisma.propertyFinancial.findMany({
+      where: { propertyId: propertyId as string, ...(typeFilter && { type: typeFilter as string }) },
+      orderBy: { date: 'desc' },
+    });
+    res.json({ success: true, data: financials });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/property/financials/summary?propertyId=ID — financial summary.
+router.get('/financials/summary', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { propertyId } = req.query;
+    const financials = await prisma.propertyFinancial.findMany({
+      where: { propertyId: propertyId as string },
+    });
+
+    const income = financials.filter((f) => f.type === 'INCOME').reduce((s, f) => s + f.amount, 0);
+    const expenses = financials.filter((f) => f.type === 'EXPENSE').reduce((s, f) => s + f.amount, 0);
+    const noi = income - expenses;
+
+    res.json({ success: true, data: { income, expenses, noi, count: financials.length } });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

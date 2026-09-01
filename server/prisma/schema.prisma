@@ -1366,6 +1366,7 @@ model PropertyManagerProperty {
   units            PropertyUnit[]
   rentPayments     RentPayment[]
   inspections      PropertyInspection[]
+  financials       PropertyFinancial[]
 
   @@index([managerId])
   @@index([status])
@@ -1391,6 +1392,7 @@ model PropertyUnit {
   leases   PropertyLease[]
   rentPayments RentPayment[]
   inspections  PropertyInspection[]
+  financials   PropertyFinancial[]
 
   @@index([propertyId])
   @@index([status])
@@ -1537,6 +1539,15 @@ model PropertyLease {
   rentAmount    Float
   rentPeriod    String   @default("MONTH") // MONTH | WEEK
   depositAmount Float    @default(0)
+  // Detailed lease terms.
+  petFee        Float    @default(0)     // one-time pet fee
+  petMonthly    Float    @default(0)     // monthly pet rent
+  lateFee       Float    @default(0)     // late payment fee
+  lateGraceDays Int      @default(5)     // grace period in days
+  utilities     String[] @default([])    // included utilities: WATER | ELECTRIC | GAS | INTERNET | TRASH
+  // Renewal / termination.
+  renewalTerms  String?                   // renewal terms
+  terminationNoticeDays Int @default(30) // days notice required
   // Status: DRAFT | ACTIVE | EXPIRED | TERMINATED
   status        String   @default("DRAFT")
   notes         String?
@@ -1565,6 +1576,10 @@ model PropertyMaintenance {
   priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
   // Status: OPEN | IN_PROGRESS | COMPLETED | CANCELLED
   status      String   @default("OPEN")
+  // Cost tracking.
+  cost        Float?
+  vendor      String?
+  vendorNotes String?
   resolvedAt  DateTime?
   notes       String?
   createdAt   DateTime @default(now())
@@ -1576,6 +1591,28 @@ model PropertyMaintenance {
   @@index([managerId])
   @@index([status])
   @@index([priority])
+}
+
+// Property financials (income/expense tracking).
+model PropertyFinancial {
+  id          String   @id @default(cuid())
+  propertyId  String
+  unitId      String?
+  date        DateTime @default(now())
+  // Transaction details.
+  type        String   // INCOME | EXPENSE
+  category    String   // RENT | LATE_FEE | PET_FEE | MAINTENANCE | UTILITY | INSURANCE | TAX | MORTGAGE | OTHER
+  amount      Float
+  description String?
+  tenantEmail String?
+  createdAt   DateTime @default(now())
+
+  property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([date])
+  @@index([type])
 }
 
 // Webhook integration for property managers to connect their own CRM/external systems.
