@@ -1309,6 +1309,9 @@ model PropertyManagerProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
   companyName String?
+  // What kind of business this CRM serves. Drives UI terminology + workflow.
+  // PROPERTY_MANAGEMENT | SALES | SERVICE | FREELANCE | GENERAL
+  businessType String  @default("GENERAL")
   // White-label portal: manager.brand.com or pabandi.com/p/:slug
   slug        String?  @unique
   domain      String?  @unique

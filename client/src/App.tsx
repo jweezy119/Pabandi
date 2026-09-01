@@ -48,7 +48,7 @@ import { ReferralLandingPage } from './pages/ReferralLandingPage';
 import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
 import MarketplaceEmbed from './pages/MarketplaceEmbed';
 import SalePage from './pages/SalePage';
-import PropertyManagerPage from './pages/PropertyManagerPage';
+import PropertyManagerPage from './pages/CRMPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';

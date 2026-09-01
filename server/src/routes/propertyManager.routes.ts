@@ -20,9 +20,9 @@ router.post('/enroll', authenticate, async (req: any, res: Response) => {
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     const existing = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
     if (existing) return res.json({ success: true, profile: existing, created: false });
-    const { companyName, slug, brandColor, tagline } = req.body || {};
+    const { companyName, slug, brandColor, tagline, businessType } = req.body || {};
     const profile = await prisma.propertyManagerProfile.create({
-      data: { userId, companyName: companyName || null, slug: slug || generateSlug(companyName || `landlord-${userId.slice(-6)}`), brandColor: brandColor || null, tagline: tagline || null },
+      data: { userId, companyName: companyName || null, slug: slug || generateSlug(companyName || `business-${userId.slice(-6)}`), brandColor: brandColor || null, tagline: tagline || null, businessType: businessType || 'GENERAL' },
     });
     res.status(201).json({ success: true, profile, created: true });
   } catch (e: any) {
