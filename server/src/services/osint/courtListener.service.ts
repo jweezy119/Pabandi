@@ -6,15 +6,16 @@ export interface CourtListenerCase {
   caseName: string;
   docketNumber: string;
   court: string;
-  courtType?: string;
+  courtType?: string; // CRIMINAL, CIVIL, BANKRUPTCY, etc.
   dateFiled: string;
   dateTerminated?: string;
   natureOfSuit: string;
   status: string;
   jurisdiction?: string;
   cause?: string;
-  juryDemand?: string;
-  demand?: string;
+  chapter?: string;
+  party?: string[];
+  attorney?: string[];
 }
 
 export interface CourtListenerSearchResult {
@@ -37,6 +38,8 @@ export interface CourtCheckResult {
   evictionCount: number;
   recentEviction: boolean;
   civilCases: number;
+  bankruptcyFound: boolean;
+  bankruptcyCount: number;
   totalCases: number;
   riskBand: 'LOW' | 'MEDIUM' | 'HIGH';
   riskFactors: string[];
@@ -124,7 +127,7 @@ export class CourtListenerService {
         ...(params.jury_demand && { jury_demand: params.jury_demand }),
       };
 
-      const response = await axios.get('https://www.courtlistener.com/api/rest/v3/search/', {
+      const response = await axios.get('https://www.courtlistener.com/api/rest/v4/search/', {
         params: queryParams,
         headers,
         timeout: 15000,
@@ -135,19 +138,20 @@ export class CourtListenerService {
         count: data.count || 0,
         totalPages: Math.ceil((data.count || 0) / (params.page_size || 25)),
         results: (data.results || []).slice(0, params.page_size || 25).map((r: any) => ({
-          id: r.id,
-          caseName: r.caseName || r.name || 'Unknown',
+          id: r.docket_id || r.id,
+          caseName: r.caseName || r.case_name || 'Unknown',
           docketNumber: r.docketNumber || 'Unknown',
           court: r.court || 'Unknown',
-          courtType: this.inferCourtType(r.court || '', r.nature_of_suit || ''),
+          courtType: this.inferCourtType(r.court || '', r.suitNature || r.cause || '', r.chapter),
           dateFiled: r.dateFiled || 'Unknown',
           dateTerminated: r.dateTerminated,
-          natureOfSuit: r.nature_of_suit || 'Unknown',
-          status: r.status || 'Unknown',
+          natureOfSuit: r.suitNature || r.cause || 'Unknown',
+          status: r.dateTerminated ? 'Terminated' : 'Active',
           jurisdiction: params.jurisdiction || undefined,
           cause: r.cause,
-          juryDemand: r.jury_demand,
-          demand: r.demand,
+          chapter: r.chapter,
+          party: r.party || [],
+          attorney: r.attorney || [],
         })),
       };
 
@@ -165,7 +169,7 @@ export class CourtListenerService {
   /**
    * Infer the type of case based on court name, nature of suit, and cause.
    */
-  private inferCourtType(court: string, natureOfSuit: string): string {
+  private inferCourtType(court: string, natureOfSuit: string, chapter?: string): string {
     const criminalIndicators = /criminal|felony|misdemeanor|assault|theft|robbery|murder|drug|dui|weapon|fraud|sexual|violent|prosecution|penal code|state v\.|people v\.|u\.s\. v\.|united states v\./i;
     const civilIndicators = /civil|eviction|unlawful|detainer|landlord|tenant|rent|foreclos|housing|contract|personal injury|tort|negligence|discrimination/i;
     const bankruptcyIndicators = /bankruptcy|chapter 7|chapter 11|chapter 13|insolvency/i;
@@ -173,7 +177,7 @@ export class CourtListenerService {
 
     if (criminalIndicators.test(natureOfSuit) || criminalIndicators.test(court)) return 'CRIMINAL';
     if (civilIndicators.test(natureOfSuit) || civilIndicators.test(court)) return 'CIVIL';
-    if (bankruptcyIndicators.test(natureOfSuit)) return 'BANKRUPTCY';
+    if (chapter || bankruptcyIndicators.test(natureOfSuit)) return 'BANKRUPTCY';
     if (familyIndicators.test(natureOfSuit)) return 'FAMILY';
     return 'OTHER';
   }
@@ -211,7 +215,8 @@ export class CourtListenerService {
       /evict|unlawful detainer|landlord|tenant|rent|foreclos/i.test(c.natureOfSuit + c.caseName)
     );
 
-    // Criminal risk signals
+    // Bankruptcy
+    const bankruptcyCases = allCases.filter(c => c.courtType === 'BANKRUPTCY');
     const violentCrime = criminalCases.some(c =>
       /assault|battery|murder|manslaughter|robbery|kidnap|sexual|weapon|violent|homicide|rape/i.test(c.natureOfSuit + c.caseName)
     );
@@ -254,6 +259,7 @@ export class CourtListenerService {
     if (recentEviction) riskFactors.push('Recent eviction (within 3 years)');
     if (evictionCases.length > 2) riskFactors.push(`${evictionCases.length} total evictions`);
     if (criminalCases.length > 3) riskFactors.push(`Extensive criminal record (${criminalCases.length} cases)`);
+    if (bankruptcyCases.length > 0) riskFactors.push(`${bankruptcyCases.length} bankruptcy filing(s)`);
 
     // Risk band
     let riskBand: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
@@ -277,6 +283,8 @@ export class CourtListenerService {
       evictionCount: evictionCases.length,
       recentEviction,
       civilCases: civilCases.length,
+      bankruptcyFound: bankruptcyCases.length > 0,
+      bankruptcyCount: bankruptcyCases.length,
       totalCases: allCases.length,
       riskBand,
       riskFactors,

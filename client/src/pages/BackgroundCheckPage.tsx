@@ -295,7 +295,26 @@ export default function BackgroundCheckPage() {
               </div>
             )}
 
-            {/* Clean Record */}
+            {/* Bankruptcy Section */}
+            {result.bankruptcyFound && (
+              <div className="rounded-3xl p-6" style={{ background: 'rgba(168,85,247,0.05)', border: '1px solid rgba(168,85,247,0.2)' }}>
+                <h3 className="font-bold text-lg mb-3">💼 Bankruptcy Records ({result.bankruptcyCount})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold text-purple-300">{result.bankruptcyCount}</div>
+                    <div className="text-xs opacity-60">Total Bankruptcy</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.chapter7 ? 'Yes' : 'No'}</div>
+                    <div className="text-xs opacity-60">Chapter 7</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.chapter13 ? 'Yes' : 'No'}</div>
+                    <div className="text-xs opacity-60">Chapter 13</div>
+                  </div>
+                </div>
+              </div>
+            )}
             {result.totalCases === 0 && (
               <div className="rounded-3xl p-6 text-center" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
                 <div className="text-4xl mb-3">✅</div>
@@ -323,8 +342,14 @@ export default function BackgroundCheckPage() {
                       </div>
                       <div className="text-xs" style={{ color: tokens.color.muted }}>
                         {c.docketNumber} · {c.court} · Filed {c.dateFiled}
+                        {c.dateTerminated && <span> · Terminated {c.dateTerminated}</span>}
+                        {c.chapter && <span> · Chapter {c.chapter}</span>}
                       </div>
-                      <div className="text-xs mt-1 text-slate-300">{c.natureOfSuit}</div>
+                      {c.party && c.party.length > 0 && (
+                        <div className="text-xs mt-1 text-slate-400">
+                          Parties: {c.party.slice(0, 4).join(', ')}{c.party.length > 4 ? '...' : ''}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
