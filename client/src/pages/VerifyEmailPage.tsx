@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { authService, propertyManagerService } from '../services/api';
+import { authService } from '../services/api';
 import { tokens } from '../design-system';
 
 export default function VerifyEmailPage() {
