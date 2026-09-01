@@ -70,7 +70,7 @@ export default function DeveloperPortalPage() {
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <a href="mailto:team@pabandi.com" className="no-underline">
+            <a href="mailto:jay@pabandi.com" className="no-underline">
               <Button>Get API Key →</Button>
             </a>
             <Chip tone="success">v0.1 Beta · Free for partners</Chip>

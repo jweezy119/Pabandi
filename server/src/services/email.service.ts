@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = process.env.SMTP_PORT;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'verify@pabandi.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'jay@pabandi.com';
 
 let transporter: nodemailer.Transporter | null = null;
 

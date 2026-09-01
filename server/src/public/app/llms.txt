@@ -30,7 +30,7 @@ Seller entry points:
 - https://pabandi.com/b/:slug
 
 Support:
-- support@pabandi.com
+- jay@pabandi.com
 - WhatsApp via Meta Cloud API from business/notification settings
 
 Tokens:

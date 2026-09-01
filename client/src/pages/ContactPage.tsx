@@ -32,8 +32,8 @@ export default function ContactPage() {
               Need help with a reservation, your Pabandi Score, or accessing your $PAB rewards? Our member success team is available 24/7.
             </p>
             <div className="space-y-4">
-              <a href="mailto:support@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors hover:text-primary font-semibold">
-                support@pabandi.com
+              <a href="mailto:jay@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors hover:text-primary font-semibold">
+                jay@pabandi.com
               </a>
               <div className="flex items-center gap-3 font-semibold text-on-surface">
                 In-App Live Chat (Average response time: &lt; 2 mins)
@@ -54,8 +54,8 @@ export default function ContactPage() {
               For our business partners. Need help setting up your profile, understanding analytics, or managing escrow payouts? Reach your dedicated account manager.
             </p>
             <div className="space-y-4">
-              <a href="mailto:sales@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
-                sales@pabandi.com
+              <a href="mailto:jay@pabandi.com" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
+                jay@pabandi.com
               </a>
               <a href="tel:+18007222634" className="flex items-center gap-3 text-on-surface transition-colors font-semibold" style={{ color: '#10b981' }}>
                 1-800-PABANDI

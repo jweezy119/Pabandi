@@ -98,7 +98,7 @@ export const createReservation = async (
                 name: p.name || 'Unknown Business',
                 address: p.formatted_address || 'Unknown Address',
                 phone: p.international_phone_number || p.formatted_phone_number || '+92 300 0000000',
-                email: 'contact@pabandi.com',
+                email: 'jay@pabandi.com',
                 website: p.website || null,
                 latitude: p.geometry?.location?.lat || 24.8607,
                 longitude: p.geometry?.location?.lng || 67.0011,

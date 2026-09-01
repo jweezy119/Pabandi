@@ -108,7 +108,7 @@ router.get('/spec', (_req: Request, res: Response) => {
         title: 'Pabandi Platform API',
         version: doc.version,
         description: doc.description + '\n\n' + 'Access tiers: ' + JSON.stringify(doc.accessTiers, null, 2) + '\n\n' + 'Portable trust: ' + JSON.stringify(doc.ptp, null, 2),
-        contact: { name: 'Pabandi', email: 'api@pabandi.com' },
+        contact: { name: 'Pabandi', email: 'jay@pabandi.com' },
       },
       servers: servers.map((s) => ({ url: s })),
       tags: [...new Set(doc.tools.map((t: any) => t.category).concat(['trust', 'sdk']))] as string[],

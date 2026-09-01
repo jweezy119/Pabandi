@@ -42,7 +42,7 @@ async function seedHotels() {
         city: 'New York',
         country: 'United States',
         phone: '+1 555 123 4567',
-        email: 'hotels@pabandi.com',
+        email: 'jay@pabandi.com',
         timezone: 'America/New_York',
         currency: 'USD',
       },

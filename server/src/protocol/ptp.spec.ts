@@ -280,7 +280,7 @@ export class PTPEngine {
       supported_risk_bands: ['A', 'B', 'C', 'D', 'E'],
       supported_entity_types: ['INDIVIDUAL', 'BUSINESS', 'AGENT'],
       documentation_url: 'https://docs.pabandi.com/ptp',
-      contact: 'api@pabandi.com',
+      contact: 'jay@pabandi.com',
     };
   }
 

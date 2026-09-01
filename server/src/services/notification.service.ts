@@ -72,7 +72,7 @@ export class NotificationService {
   ): Promise<boolean> {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || 'noreply@pabandi.com',
+        from: process.env.EMAIL_FROM || 'jay@pabandi.com',
         to: email,
         subject: `Reminder: Reservation at ${reservation.businessName}`,
         html: `
