@@ -5,7 +5,6 @@ import { propertyManagerService } from '../services/api';
 
 export const LeaseGeneratorPage: React.FC = () => {
   const [properties, setProperties] = useState<any[]>([]);
-  const [tenants] = useState<any[]>([]);
   const [leases, setLeases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
