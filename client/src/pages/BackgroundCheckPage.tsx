@@ -1,243 +1,246 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { backgroundCheckService } from '../services/api';
+import { courtCheckService } from '../services/api';
 import { tokens } from '../design-system';
-
-type SubjectType = 'FREELANCER' | 'PROPERTY_MANAGER' | 'BUSINESS' | 'GUEST';
-
-interface CheckResult {
-  checkId: string;
-  recommendation: string;
-  riskScore: number;
-  riskBand: string;
-  proceed: boolean;
-}
 
 export default function BackgroundCheckPage() {
   const { isAuthenticated } = useAuthStore();
-  const [subjectType, setSubjectType] = useState<SubjectType>('FREELANCER');
-  const [subjectId, setSubjectId] = useState<string>('');
   const [name, setName] = useState('');
-  const [github, setGithub] = useState('');
-  const [website, setWebsite] = useState('');
-  const [email, setEmail] = useState('');
-  const [company, setCompany] = useState('');
+  const [state, setState] = useState('IL');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CheckResult | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
-  const [errorCode, setErrorCode] = useState<number | null>(null);
-  const [recent, setRecent] = useState<any[]>([]);
-  const [consent, setConsent] = useState<boolean>(false);
-
-  // Allow deep-linking a subject (e.g. ?subjectId=<businessId>) so a check is
-  // tied to a real entity and can hard-gate bookings.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sid = params.get('subjectId');
-    if (sid) setSubjectId(sid);
-  }, []);
 
   const runCheck = async () => {
     if (!name.trim()) {
-      setError('Subject name is required');
+      setError('Name is required');
       return;
     }
     setError('');
     setLoading(true);
     setResult(null);
     try {
-      const res = await backgroundCheckService.preBooking({
-        subjectType,
-        subjectName: name,
-        subjectId: subjectId || undefined,
-        subjectGithub: github || undefined,
-        subjectWebsite: website || undefined,
-        subjectEmail: email || undefined,
-        subjectCompany: company || undefined,
-        consent: consent,
-        consentPurpose: 'Background screening (identity, OSINT, wallet) per Pabandi ToS + PECA/PDPA. Retention 30d.',
-      });
-      const data = res.data?.data;
-      setResult(data);
-      loadRecent();
+      const res = await courtCheckService.courtCheckByName(name, state);
+      setResult(res.data?.data || res.data);
     } catch (e: any) {
       setError(e.response?.data?.error || e.message || 'Check failed');
-      setErrorCode(e.response?.status ?? null);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadRecent = async () => {
-    try {
-      const res = await backgroundCheckService.list({ subjectType });
-      setRecent(res.data?.data || []);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) loadRecent();
-  }, [subjectType, isAuthenticated]);
-
   const bandColor: Record<string, string> = {
-    A: '#16a34a',
-    B: '#65a30d',
-    C: '#ca8a04',
-    D: '#ea580c',
-    E: '#dc2626',
-  };
-
-  const recColor: Record<string, string> = {
-    PASS: '#16a34a',
-    REVIEW: '#ca8a04',
-    REJECT: '#dc2626',
+    LOW: '#16a34a',
+    MEDIUM: '#ca8a04',
+    HIGH: '#dc2626',
   };
 
   return (
-    <div className="min-h-screen font-body relative" style={{ background: tokens.color.background, color: tokens.color.text }}>
-      <style>{`
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .anim-fade-up { animation: fadeUp .45s ease-out both; }
-        .card-lift { transition: transform .2s ease, box-shadow .2s ease; }
-        .card-lift:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,0.25); }
-        .input-pab { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 12px 14px; color: inherit; width: 100%; outline: none; transition: border-color .2s; }
-        .input-pab:focus { border-color: ${tokens.color.primary}; }
-        .btn-pab { background: ${tokens.color.primary}; color: #0a0a0a; font-weight: 700; border-radius: 14px; padding: 12px 20px; cursor: pointer; border: none; transition: opacity .2s; }
-        .btn-pab:hover { opacity: 0.9; }
-        .btn-pab:disabled { opacity: 0.5; cursor: not-allowed; }
-      `}</style>
+    <div className="min-h-screen font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
-        <div className="anim-fade-up">
+        <div>
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
           <h1 className="font-headline text-3xl sm:text-4xl font-bold">Background Check</h1>
           <p className="opacity-70 mt-2 max-w-2xl">
-            Streamlined, reliable screening for freelancers, service providers, and property managers.
-            Real sources: GitHub, domain age (RDAP), global news (GDELT), breach registry (HIBP),
-            US sanctions (OFAC), and company registries — fused into one trust verdict.
+            Comprehensive court record screening — criminal history (state + federal) and civil/eviction records via CourtListener.
           </p>
         </div>
 
         {/* Input form */}
-        <div className="anim-fade-up anim-delay-1 card-lift rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="text-xs uppercase tracking-wide opacity-60">Subject ID (optional — business/user id to hard-gate bookings)</label>
-              <input className="input-pab mt-1" placeholder="e.g. business id from profile URL" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} />
+            <div>
+              <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
+              <input
+                className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                placeholder="Full legal name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">Subject Type</label>
-              <select className="input-pab mt-1" value={subjectType} onChange={(e) => setSubjectType(e.target.value as SubjectType)}>
-                <option value="FREELANCER">Freelancer / Dev</option>
-                <option value="PROPERTY_MANAGER">Property Manager</option>
-                <option value="BUSINESS">Business</option>
-                <option value="GUEST">Guest / Client</option>
+              <label className="text-xs uppercase tracking-wide opacity-60">State</label>
+              <select
+                className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+              >
+                <option value="">All States</option>
+                <option value="AL">Alabama</option><option value="AK">Alaska</option><option value="AZ">Arizona</option>
+                <option value="AR">Arkansas</option><option value="CA">California</option><option value="CO">Colorado</option>
+                <option value="CT">Connecticut</option><option value="DE">Delaware</option><option value="FL">Florida</option>
+                <option value="GA">Georgia</option><option value="HI">Hawaii</option><option value="ID">Idaho</option>
+                <option value="IL">Illinois</option><option value="IN">Indiana</option><option value="IA">Iowa</option>
+                <option value="KS">Kansas</option><option value="KY">Kentucky</option><option value="LA">Louisiana</option>
+                <option value="ME">Maine</option><option value="MD">Maryland</option><option value="MA">Massachusetts</option>
+                <option value="MI">Michigan</option><option value="MN">Minnesota</option><option value="MS">Mississippi</option>
+                <option value="MO">Missouri</option><option value="MT">Montana</option><option value="NE">Nebraska</option>
+                <option value="NV">Nevada</option><option value="NH">New Hampshire</option><option value="NJ">New Jersey</option>
+                <option value="NM">New Mexico</option><option value="NY">New York</option><option value="NC">North Carolina</option>
+                <option value="ND">North Dakota</option><option value="OH">Ohio</option><option value="OK">Oklahoma</option>
+                <option value="OR">Oregon</option><option value="PA">Pennsylvania</option><option value="RI">Rhode Island</option>
+                <option value="SC">South Carolina</option><option value="SD">South Dakota</option><option value="TN">Tennessee</option>
+                <option value="TX">Texas</option><option value="UT">Utah</option><option value="VT">Vermont</option>
+                <option value="VA">Virginia</option><option value="WA">Washington</option><option value="WV">West Virginia</option>
+                <option value="WI">Wisconsin</option><option value="WY">Wyoming</option><option value="DC">Washington DC</option>
               </select>
             </div>
-            <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">Name *</label>
-              <input className="input-pab mt-1" placeholder="Full name or business name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">GitHub (freelancers)</label>
-              <input className="input-pab mt-1" placeholder="username" value={github} onChange={(e) => setGithub(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">Website / Domain</label>
-              <input className="input-pab mt-1" placeholder="example.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">Email</label>
-              <input className="input-pab mt-1" placeholder="contact@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wide opacity-60">Company (UK reg)</label>
-              <input className="input-pab mt-1" placeholder="Company Ltd" value={company} onChange={(e) => setCompany(e.target.value)} />
-            </div>
           </div>
-          {error && (
-            <div className="text-red-400 text-sm mt-3">
-              <p>{error}</p>
-              {errorCode === 402 && (
-                <a
-                  href="/business-model"
-                  className="inline-block mt-2 text-xs font-medium text-brand hover:underline bg-brand/10 px-3 py-1 rounded"
-                >
-                  Buy $PAB →
-                </a>
-              )}
-            </div>
-          )}
-          <label className="flex items-center gap-2 mt-3 text-sm opacity-80">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-            I consent to background screening (identity, OSINT, wallet analytics) per Pabandi ToS &amp; PECA/PDPA. Data retained 30 days.
-          </label>
+          {error && <div className="text-red-400 text-sm mt-3">{error}</div>}
           <div className="mt-5">
-            <button className="btn-pab" onClick={runCheck} disabled={loading || !consent}>
-              {loading ? 'Running checks…' : 'Run Background Check'}
+            <button
+              onClick={runCheck}
+              disabled={loading || !name.trim()}
+              className="px-6 py-3 rounded-xl font-bold cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: tokens.color.primary, color: '#0a0a0a' }}
+            >
+              {loading ? '🔍 Searching Court Records...' : 'Run Background Check'}
             </button>
           </div>
         </div>
 
-        {/* Result */}
+        {/* Results */}
         {result && (
-          <div className="anim-fade-up anim-delay-2 card-lift rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${recColor[result.recommendation] || '#888'}40` }}>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide opacity-60">Verdict</p>
-                <p className="font-headline text-2xl font-bold" style={{ color: recColor[result.recommendation] }}>
-                  {result.recommendation}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide opacity-60">Risk Score</p>
-                <p className="font-headline text-4xl font-bold" style={{ color: bandColor[result.riskBand] }}>
-                  {result.riskScore}<span className="text-lg opacity-50">/100</span>
-                </p>
-                <p className="text-sm opacity-60">Band {result.riskBand}</p>
+          <div className="space-y-6">
+            {/* Verdict */}
+            <div
+              className="rounded-3xl p-6"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: `1px solid ${bandColor[result.riskBand] || '#888'}40`,
+              }}
+            >
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wide opacity-60">Verdict</p>
+                  <p className="font-headline text-2xl font-bold" style={{ color: bandColor[result.riskBand] }}>
+                    {result.riskBand} RISK
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide opacity-60">Total Cases</p>
+                  <p className="font-headline text-4xl font-bold" style={{ color: bandColor[result.riskBand] }}>
+                    {result.totalCases}
+                  </p>
+                  <p className="text-sm opacity-60">{result.criminalCount} criminal · {result.evictionCount} eviction</p>
+                </div>
               </div>
             </div>
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${result.proceed ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                {result.proceed ? '✓ Safe to proceed' : '✕ Do not proceed'}
-              </span>
-              <a href={`/background-check/${result.checkId}`} className="ml-3 text-xs underline opacity-60 hover:opacity-100">
-                View full report →
-              </a>
-            </div>
+
+            {/* Risk Factors */}
+            {result.riskFactors && result.riskFactors.length > 0 && (
+              <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <h3 className="font-bold text-lg mb-3">⚠️ Risk Factors</h3>
+                <div className="space-y-2">
+                  {result.riskFactors.map((f: string, i: number) => (
+                    <div key={i} className="flex items-center gap-2 text-sm" style={{ color: tokens.color.muted }}>
+                      <span className="text-red-400">•</span> {f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Criminal Section */}
+            {result.criminalFound && (
+              <div className="rounded-3xl p-6" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                <h3 className="font-bold text-lg mb-3">🚨 Criminal Records ({result.criminalCount})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold text-red-300">{result.criminalCount}</div>
+                    <div className="text-xs opacity-60">Total Criminal</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold text-red-300">{result.felonyCount}</div>
+                    <div className="text-xs opacity-60">Felonies</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.violentCrime ? '🔴 YES' : '🟢 NO'}</div>
+                    <div className="text-xs opacity-60">Violent Crime</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.financialCrime ? '🔴 YES' : '🟢 NO'}</div>
+                    <div className="text-xs opacity-60">Financial Crime</div>
+                  </div>
+                </div>
+                {result.recentCriminal && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-400/20">
+                    <p className="text-xs text-red-300">⚠️ Recent criminal activity within the last 3 years</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Eviction Section */}
+            {result.evictionFound && (
+              <div className="rounded-3xl p-6" style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
+                <h3 className="font-bold text-lg mb-3">🏠 Eviction / Housing Records ({result.evictionCount})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold text-amber-300">{result.evictionCount}</div>
+                    <div className="text-xs opacity-60">Total Evictions</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold text-amber-300">{result.civilCases}</div>
+                    <div className="text-xs opacity-60">Civil Cases</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.recentEviction ? '🔴 Recent' : '🟢 None'}</div>
+                    <div className="text-xs opacity-60">Recent (3yr)</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Clean Record */}
+            {result.totalCases === 0 && (
+              <div className="rounded-3xl p-6 text-center" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <div className="text-4xl mb-3">✅</div>
+                <h3 className="font-bold text-lg text-emerald-300">Clean Record</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>No criminal, eviction, or civil records found.</p>
+              </div>
+            )}
+
+            {/* Case List */}
+            {result.cases && result.cases.length > 0 && (
+              <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <h3 className="font-bold text-lg mb-4">Case Details</h3>
+                <div className="space-y-3">
+                  {result.cases.map((c: any, i: number) => (
+                    <div key={i} className="p-4 rounded-xl bg-white/5">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="font-semibold text-slate-100">{c.caseName}</div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          c.courtType === 'CRIMINAL' ? 'bg-red-500/20 text-red-300' :
+                          c.courtType === 'CIVIL' ? 'bg-amber-500/20 text-amber-300' :
+                          'bg-slate-500/20 text-slate-300'
+                        }`}>
+                          {c.courtType || 'OTHER'}
+                        </span>
+                      </div>
+                      <div className="text-xs" style={{ color: tokens.color.muted }}>
+                        {c.docketNumber} · {c.court} · Filed {c.dateFiled}
+                      </div>
+                      <div className="text-xs mt-1 text-slate-300">{c.natureOfSuit}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Recent checks */}
-        {isAuthenticated && recent.length > 0 && (
-          <div className="anim-fade-up anim-delay-3">
-            <h2 className="font-headline text-xl font-bold mb-3">Recent Checks</h2>
-            <div className="space-y-2">
-              {recent.slice(0, 8).map((c: any) => (
-                <a key={c.id} href={`/background-check/${c.id}`} className="block card-lift rounded-2xl px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div>
-                    <p className="font-semibold">{c.subjectName}</p>
-                    <p className="text-xs opacity-60">{c.subjectType} · {new Date(c.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {c.riskScore !== null && (
-                      <span className="font-bold" style={{ color: bandColor[c.riskBand] }}>{c.riskScore}</span>
-                    )}
-                    {c.recommendation && (
-                      <span className="px-2 py-1 rounded-full text-xs font-bold" style={{ background: `${recColor[c.recommendation]}20`, color: recColor[c.recommendation] }}>
-                        {c.recommendation}
-                      </span>
-                    )}
-                  </div>
-                </a>
-              ))}
-            </div>
+        {/* Simulated mode notice */}
+        {result?.simulated && (
+          <div className="rounded-3xl p-4 text-sm" style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
+            <p className="text-amber-300">⚠️ Demo mode — COURTLISTENER_API_KEY is not set. Results are simulated. Add the key to enable live screening.</p>
           </div>
         )}
 
         {!isAuthenticated && (
-          <p className="text-sm opacity-60 anim-fade-up">Log in to save checks and view your screening history.</p>
+          <p className="text-sm opacity-60">Log in to save checks and view your screening history.</p>
         )}
       </div>
     </div>

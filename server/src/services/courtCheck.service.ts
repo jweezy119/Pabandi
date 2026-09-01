@@ -61,18 +61,18 @@ export async function screenParty(params: {
   }
 
   try {
-    const ev = await courtListenerService.lookupEvictions(cleanName, state);
-    const riskBand: RiskBand = ev.recentEviction ? 'HIGH' : ev.found ? 'MEDIUM' : 'LOW';
+    const comprehensive = await courtListenerService.comprehensiveCheck(cleanName, state);
+    const riskBand: RiskBand = comprehensive.riskBand;
     const result: CourtCheckResult = {
       subjectType,
       name: cleanName,
       state,
-      found: ev.found,
-      count: ev.count,
-      recentEviction: ev.recentEviction,
+      found: comprehensive.totalCases > 0,
+      count: comprehensive.totalCases,
+      recentEviction: comprehensive.recentEviction,
       riskBand,
       reductionPct: BAND_REDUCTION[riskBand],
-      cases: ev.cases,
+      cases: comprehensive.cases,
     };
 
     const saved = await prisma.courtCheck.create({
@@ -80,18 +80,18 @@ export async function screenParty(params: {
         subjectType,
         name: cleanName,
         state: state || null,
-        found: ev.found,
-        count: ev.count,
-        recentEviction: ev.recentEviction,
+        found: comprehensive.totalCases > 0,
+        count: comprehensive.totalCases,
+        recentEviction: comprehensive.recentEviction,
         riskBand,
-        cases: ev.cases as any,
+        cases: comprehensive.cases as any,
         reservationId: reservationId || null,
         businessId: businessId || null,
         customerId: customerId || null,
       },
     });
     result.id = saved.id;
-    logger.info(`[CourtCheck] ${subjectType} ${cleanName} (${state || 'ALL'}) -> ${riskBand} (reduction ${result.reductionPct})`);
+    logger.info(`[CourtCheck] ${subjectType} ${cleanName} (${state || 'ALL'}) -> ${riskBand} (${comprehensive.totalCases} cases, ${comprehensive.criminalCount} criminal)`);
     return result;
   } catch (e: any) {
     logger.error(`[CourtCheck] failed for ${cleanName}: ${e.message}`);

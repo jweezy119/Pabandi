@@ -134,7 +134,7 @@ export class OsintMCPClientService {
   public async queryCourtListenerMCP(name: string, state?: string): Promise<MCPInvestigationResult> {
     logger.info(`[MCP Client] Querying CourtListener MCP for entity: ${name}`);
     
-    const clData = await courtListenerService.searchCivilLitigation(name, state);
+    const clData = await courtListenerService.searchAllDockets(name, state);
     
     // Analyze findings
     const evictionMatches = clData.results.filter(r => 

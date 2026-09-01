@@ -61,20 +61,15 @@ router.post('/court-check', async (req: Request, res: Response) => {
         cases: [],
       });
     }
-    const ev = await courtListenerService.lookupEvictions(name.trim(), state);
-    const riskBand = ev.recentEviction ? 'HIGH' : ev.found ? 'MEDIUM' : 'LOW';
-    logger.info(`[REAL-ESTATE-COURT] screened ${name.trim()} (${state || 'ALL'}) -> found=${ev.found} recent=${ev.recentEviction}`);
+    const result = await courtListenerService.comprehensiveCheck(name.trim(), state);
+    logger.info(`[REAL-ESTATE-COURT] screened ${name.trim()} (${state || 'ALL'}) -> ${result.riskBand} (${result.totalCases} cases, ${result.criminalCount} criminal, ${result.evictionCount} eviction)`);
     return res.json({
       success: true,
       simulated: false,
       name: name.trim(),
       state: state || null,
       role: role || 'TENANT',
-      found: ev.found,
-      count: ev.count,
-      recentEviction: ev.recentEviction,
-      riskBand,
-      cases: ev.cases,
+      ...result,
     });
   } catch (e: any) {
     logger.error(`[REAL-ESTATE-COURT] ${e.message}`);
