@@ -61,7 +61,7 @@ export async function screenParty(params: {
   }
 
   try {
-    const comprehensive = await courtListenerService.comprehensiveCheck(cleanName, state);
+    const comprehensive = await courtListenerService.comprehensiveCheck(cleanName, { state });
     const riskBand: RiskBand = comprehensive.riskBand;
     const result: CourtCheckResult = {
       subjectType,

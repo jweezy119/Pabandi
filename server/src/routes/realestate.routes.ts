@@ -42,7 +42,7 @@ const router = Router();
  */
 router.post('/court-check', async (req: Request, res: Response) => {
   try {
-    const { name, state, role } = req.body ?? {};
+    const { name, state, court, dateFiledAfter, dateFiledBefore, docketNumber, role } = req.body ?? {};
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res.status(400).json({ success: false, error: 'name (min 2 chars) is required' });
     }
@@ -61,13 +61,20 @@ router.post('/court-check', async (req: Request, res: Response) => {
         cases: [],
       });
     }
-    const result = await courtListenerService.comprehensiveCheck(name.trim(), state);
-    logger.info(`[REAL-ESTATE-COURT] screened ${name.trim()} (${state || 'ALL'}) -> ${result.riskBand} (${result.totalCases} cases, ${result.criminalCount} criminal, ${result.evictionCount} eviction)`);
+    const result = await courtListenerService.comprehensiveCheck(name.trim(), {
+      state,
+      court,
+      dateFiledAfter,
+      dateFiledBefore,
+      docketNumber,
+    });
+    logger.info(`[REAL-ESTATE-COURT] screened ${name.trim()} (${state || 'ALL'}) -> ${result.riskBand} (${result.totalCases} cases)`);
     return res.json({
       success: true,
       simulated: false,
       name: name.trim(),
       state: state || null,
+      court: court || null,
       role: role || 'TENANT',
       ...result,
     });

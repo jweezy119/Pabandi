@@ -6,21 +6,35 @@ import { tokens } from '../design-system';
 export default function BackgroundCheckPage() {
   const { isAuthenticated } = useAuthStore();
   const [name, setName] = useState('');
-  const [state, setState] = useState('IL');
+  const [state, setState] = useState('');
+  const [court, setCourt] = useState('');
+  const [dateFiledAfter, setDateFiledAfter] = useState('');
+  const [dateFiledBefore, setDateFiledBefore] = useState('');
+  const [docketNumber, setDocketNumber] = useState('');
+  const [partyName, setPartyName] = useState('');
+  const [attorneyName, setAttorneyName] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
 
   const runCheck = async () => {
     if (!name.trim()) {
-      setError('Name is required');
+      setError('Full name is required');
       return;
     }
     setError('');
     setLoading(true);
     setResult(null);
     try {
-      const res = await courtCheckService.courtCheckByName(name, state);
+      const res = await courtCheckService.courtCheckByName(name, state, {
+        court,
+        dateFiledAfter,
+        dateFiledBefore,
+        docketNumber,
+        partyName,
+        attorneyName,
+      });
       setResult(res.data?.data || res.data);
     } catch (e: any) {
       setError(e.response?.data?.error || e.message || 'Check failed');
@@ -42,12 +56,13 @@ export default function BackgroundCheckPage() {
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
           <h1 className="font-headline text-3xl sm:text-4xl font-bold">Background Check</h1>
           <p className="opacity-70 mt-2 max-w-2xl">
-            Comprehensive court record screening — criminal history (state + federal) and civil/eviction records via CourtListener.
+            Comprehensive court record screening — criminal history (state + federal), civil/eviction records, and more via CourtListener.
           </p>
         </div>
 
         {/* Input form */}
         <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <h3 className="font-bold text-lg mb-4">Search Parameters</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
@@ -88,6 +103,80 @@ export default function BackgroundCheckPage() {
               </select>
             </div>
           </div>
+
+          {/* Advanced search toggle */}
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="mt-4 text-sm font-semibold text-indigo-300 hover:text-indigo-200"
+          >
+            {showAdvanced ? '▼ Hide Advanced Search' : '▶ Show Advanced Search'}
+          </button>
+
+          {showAdvanced && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Court ID (e.g., 'ill' for IL Supreme Court)</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  placeholder="Court ID"
+                  value={court}
+                  onChange={(e) => setCourt(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Docket Number</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  placeholder="2024-CV-01234"
+                  value={docketNumber}
+                  onChange={(e) => setDocketNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Party Name</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  placeholder="Specific party name"
+                  value={partyName}
+                  onChange={(e) => setPartyName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Attorney Name</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  placeholder="Attorney name"
+                  value={attorneyName}
+                  onChange={(e) => setAttorneyName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Date Filed After</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  type="date"
+                  value={dateFiledAfter}
+                  onChange={(e) => setDateFiledAfter(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Date Filed Before</label>
+                <input
+                  className="mt-1 w-full rounded-xl px-4 py-3 outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  type="date"
+                  value={dateFiledBefore}
+                  onChange={(e) => setDateFiledBefore(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           {error && <div className="text-red-400 text-sm mt-3">{error}</div>}
           <div className="mt-5">
             <button
@@ -163,6 +252,18 @@ export default function BackgroundCheckPage() {
                   <div className="text-center p-3 rounded-xl bg-white/5">
                     <div className="text-xl font-bold">{result.financialCrime ? '🔴 YES' : '🟢 NO'}</div>
                     <div className="text-xs opacity-60">Financial Crime</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.drugOffense ? '🔴 YES' : '🟢 NO'}</div>
+                    <div className="text-xs opacity-60">Drug Offense</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.sexOffense ? '🔴 YES' : '🟢 NO'}</div>
+                    <div className="text-xs opacity-60">Sex Offense</div>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-white/5">
+                    <div className="text-xl font-bold">{result.dui ? '🔴 YES' : '🟢 NO'}</div>
+                    <div className="text-xs opacity-60">DUI/DWI</div>
                   </div>
                 </div>
                 {result.recentCriminal && (

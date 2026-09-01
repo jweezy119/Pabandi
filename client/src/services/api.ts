@@ -512,8 +512,14 @@ export const courtCheckService = {
   getByReservation: (reservationId: string) =>
     apiClient.get(`/realestate/court-checks/${reservationId}`),
   // Direct name-based CourtListener search (for demo / on-demand checks).
-  courtCheckByName: (name: string, state?: string) =>
-    apiClient.post('/realestate/court-check', { name, state, role: 'TENANT' }),
+  courtCheckByName: (name: string, state?: string, options?: {
+    court?: string;
+    dateFiledAfter?: string;
+    dateFiledBefore?: string;
+    docketNumber?: string;
+    partyName?: string;
+    attorneyName?: string;
+  }) => apiClient.post('/realestate/court-check', { name, state, role: 'TENANT', ...options }),
   // Pakistan trust screening (BackgroundCheck-based; CourtListener is US-only).
   pakScreen: (payload: {
     businessId?: string;
