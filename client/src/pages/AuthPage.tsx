@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { authService } from '../services/api';
+import { authService, propertyManagerService } from '../services/api';
 import { signMessageWithWallet } from '../utils/web3';
 import { Surface, tokens } from '../design-system';
 
@@ -92,6 +92,10 @@ export default function AuthPage() {
     fiverrUrl: '', upworkUrl: '',
   });
   const urlError = searchParams.get('error');
+  const demoMode = searchParams.get('demo'); // 'migrate' | 'import' | 'webhook' | null
+  const [demoData, setDemoData] = useState<any>(null);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationDone, setMigrationDone] = useState(false);
   const [error, setError] = useState(() => {
     if (urlError === 'facebook_not_configured') return 'Facebook login is not configured yet. Please add FACEBOOK_APP_ID in backend.';
     if (urlError === 'facebook_failed') return 'Facebook authentication failed. Please try again.';
@@ -113,6 +117,39 @@ export default function AuthPage() {
     setMode(location.pathname === '/register' ? 'signup' : 'login');
     clearErrors();
   }, [location.pathname]);
+
+  // Load demo data for migration
+  useEffect(() => {
+    if (demoMode === 'migrate') {
+      const stored = localStorage.getItem('pabandi_demo_data');
+      if (stored) {
+        try { setDemoData(JSON.parse(stored)); } catch { /* ignore */ }
+      }
+    }
+  }, [demoMode]);
+
+  const migrateDemoData = async () => {
+    if (!demoData) return;
+    setMigrating(true);
+    try {
+      // Enroll as property manager
+      await propertyManagerService.enroll({ companyName: 'My Business', businessType: 'PROPERTY_MANAGEMENT' });
+      // Add properties
+      for (const p of demoData.properties || []) {
+        await propertyManagerService.addProperty(p);
+      }
+      // Add tenants
+      for (const t of demoData.tenants || []) {
+        await propertyManagerService.addTenant(t);
+      }
+      localStorage.removeItem('pabandi_demo_data');
+      setMigrationDone(true);
+    } catch {
+      // Migration failed silently — user can add manually
+    } finally {
+      setMigrating(false);
+    }
+  };
 
   useEffect(() => {
     const r = searchParams.get('role');
@@ -281,6 +318,55 @@ export default function AuthPage() {
                 <BuildingIcon />
                 Business
               </button>
+            </div>
+          )}
+
+          {/* Demo migration banner */}
+          {demoMode === 'migrate' && demoData && !migrationDone && (
+            <div className="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+              <p className="text-sm font-bold text-emerald-200 mb-2">📋 You have demo data ready to migrate</p>
+              <p className="text-xs text-emerald-300/80 mb-3">
+                {demoData.properties?.length || 0} properties, {demoData.tenants?.length || 0} tenants, {demoData.pabEarned || 0} $PAB earned
+              </p>
+              <button onClick={migrateDemoData} disabled={migrating}
+                className="w-full rounded-lg bg-emerald-500/20 border border-emerald-400/30 py-2 text-sm font-bold text-emerald-200 hover:bg-emerald-500/30 disabled:opacity-60">
+                {migrating ? 'Migrating…' : 'Migrate my demo data'}
+              </button>
+            </div>
+          )}
+          {migrationDone && (
+            <div className="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+              <p className="text-sm font-bold text-emerald-200">✅ Demo data migrated! Sign up to see it.</p>
+            </div>
+          )}
+
+          {/* Import/Webhook options from demo */}
+          {(demoMode === 'import' || demoMode === 'webhook') && (
+            <div className="mb-6 rounded-xl border border-indigo-400/30 bg-indigo-500/10 p-4">
+              <p className="text-sm font-bold text-indigo-200 mb-2">
+                {demoMode === 'import' ? '📥 Import from your CRM' : '🔗 Webhook integration'}
+              </p>
+              <p className="text-xs text-indigo-300/80 mb-3">
+                {demoMode === 'import'
+                  ? 'Upload a CSV or connect your existing property management software.'
+                  : 'Connect Pabandi as a trust layer on top of your existing CRM.'}
+              </p>
+              {demoMode === 'import' ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {['Buildium', 'AppFolio', 'Rent Manager', 'Yardi'].map((crm) => (
+                      <div key={crm} className="p-2 rounded-lg bg-white/5 text-center text-xs text-slate-300 border border-white/10">{crm}</div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-indigo-300/60">CSV upload available after signup</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {['tenant.created → auto-screen', 'lease.signed → escrow deposit', 'sale.completed → release funds'].map((e) => (
+                    <div key={e} className="text-xs text-indigo-300/80">→ {e}</div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -1,0 +1,585 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Surface, Button, Badge, tokens } from '../design-system';
+import { useAuthStore } from '../store/authStore';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+type DemoSection = 'hero' | 'pm' | 'sale' | 'screening' | 'crypto' | 'convert';
+
+type DemoProperty = { title: string; address: string; rent: number; status: 'VACANT' | 'OCCUPIED' };
+type DemoTenant = { name: string; email: string; band: 'LOW' | 'MEDIUM' | 'HIGH'; stays: number };
+type DemoData = {
+  properties: DemoProperty[];
+  tenants: DemoTenant[];
+  screeningRun: boolean;
+  walletConnected: boolean;
+  pabEarned: number;
+};
+
+const initialDemoData: DemoData = {
+  properties: [],
+  tenants: [],
+  screeningRun: false,
+  walletConnected: false,
+  pabEarned: 0,
+};
+
+// ── Main Demo Page ───────────────────────────────────────────────────────────
+
+export const DemoPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const [section, setSection] = useState<DemoSection>('hero');
+  const [demoData, setDemoData] = useState<DemoData>(initialDemoData);
+  const [convertChoice, setConvertChoice] = useState<'keep' | 'import' | 'webhook' | 'fresh' | null>(null);
+  const [importMethod, setImportMethod] = useState<'csv' | 'api'>('csv');
+
+  // Property form
+  const [propForm, setPropForm] = useState({ title: '', address: '', rent: '' });
+  const [showPropForm, setShowPropForm] = useState(false);
+
+  // Tenant form
+  const [tenantForm, setTenantForm] = useState({ name: '', email: '' });
+  const [showTenantForm, setShowTenantForm] = useState(false);
+
+  // Screening
+  const [screenEmail, setScreenEmail] = useState('');
+  const [screenResult, setScreenResult] = useState<any>(null);
+  const [screening, setScreening] = useState(false);
+
+  // Crypto
+  const [walletAddr, setWalletAddr] = useState('');
+
+  const addProperty = () => {
+    if (!propForm.title) return;
+    setDemoData((d) => ({
+      ...d,
+      properties: [...d.properties, { title: propForm.title, address: propForm.address, rent: Number(propForm.rent) || 0, status: 'VACANT' as const }],
+      pabEarned: d.pabEarned + 5,
+    }));
+    setPropForm({ title: '', address: '', rent: '' });
+    setShowPropForm(false);
+  };
+
+  const addTenant = () => {
+    if (!tenantForm.email) return;
+    setDemoData((d) => ({
+      ...d,
+      tenants: [...d.tenants, { name: tenantForm.name, email: tenantForm.email, band: 'LOW', stays: 0 }],
+      pabEarned: d.pabEarned + 3,
+    }));
+    setTenantForm({ name: '', email: '' });
+    setShowTenantForm(false);
+  };
+
+  const runScreening = () => {
+    if (!screenEmail) return;
+    setScreening(true);
+    setTimeout(() => {
+      const bands: Array<'LOW' | 'MEDIUM' | 'HIGH'> = ['LOW', 'MEDIUM', 'HIGH'];
+      const band = bands[Math.floor(Math.random() * 3)];
+      setScreenResult({ email: screenEmail, band, cases: band === 'HIGH' ? 2 : band === 'MEDIUM' ? 1 : 0, source: 'CourtListener' });
+      setDemoData((d) => ({ ...d, screeningRun: true, pabEarned: d.pabEarned + 10 }));
+      setScreening(false);
+    }, 1500);
+  };
+
+  const connectWallet = () => {
+    if (!walletAddr) return;
+    setDemoData((d) => ({ ...d, walletConnected: true, pabEarned: d.pabEarned + 15 }));
+  };
+
+  const handleConvert = () => {
+    if (convertChoice === 'keep') {
+      // Store demo data for migration, then go to signup
+      localStorage.setItem('pabandi_demo_data', JSON.stringify(demoData));
+      navigate('/signup?demo=migrate');
+    } else if (convertChoice === 'import') {
+      navigate('/signup?demo=import');
+    } else if (convertChoice === 'webhook') {
+      navigate('/signup?demo=webhook');
+    } else {
+      navigate('/signup');
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      {/* Nav */}
+      <div className="sticky top-0 z-50 backdrop-blur-xl bg-surface/80 border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🛡️</span>
+            <span className="text-lg font-bold text-slate-100">Pabandi</span>
+            <Badge tone="info">Demo</Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <Link to="/property-manager" className="text-sm text-slate-300 hover:text-white">Dashboard →</Link>
+            ) : (
+              <Link to="/login" className="text-sm text-slate-300 hover:text-white">Log in</Link>
+            )}
+            <Button onClick={() => setSection('convert')} size="sm">Get started</Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Section Nav */}
+        <div className="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+          {([
+            { id: 'hero', label: '🏠 Overview', icon: '🏠' },
+            { id: 'pm', label: '🏘️ Property Manager', icon: '🏘️' },
+            { id: 'sale', label: '🛡️ Secured Sale', icon: '🛡️' },
+            { id: 'screening', label: '🔍 Screening', icon: '🔍' },
+            { id: 'crypto', label: '💰 $PAB Crypto', icon: '💰' },
+            { id: 'convert', label: '🚀 Sign Up', icon: '🚀' },
+          ] as const).map((s) => (
+            <button key={s.id} onClick={() => setSection(s.id as DemoSection)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${section === s.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Hero ─────────────────────────────────────────────────────────── */}
+        {section === 'hero' && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-6">🛡️</div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-100 font-headline">
+              Commitment, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Secured.</span>
+            </h1>
+            <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+              Pabandi is the trust layer for local commerce. Property managers, buyers, sellers, and tenants — all protected by escrow, screening, and the $PAB token.
+            </p>
+            <div className="flex justify-center gap-3 mt-8">
+              <Button onClick={() => setSection('pm')}>Try the demo</Button>
+              <Button onClick={() => setSection('convert')} variant="ghost">Skip to signup</Button>
+            </div>
+
+            {/* North stars */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-16">
+              <Surface className="text-center">
+                <div className="text-3xl mb-2">🏘️</div>
+                <h3 className="font-bold text-slate-100">Property Managers</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>CRM with screening, rent tracking, inspections, and white-label tenant portals.</p>
+              </Surface>
+              <Surface className="text-center">
+                <div className="text-3xl mb-2">🛡️</div>
+                <h3 className="font-bold text-slate-100">Secured Sales</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Escrow-backed local sales with SafeMeet scheduling and $PAB rewards.</p>
+              </Surface>
+              <Surface className="text-center">
+                <div className="text-3xl mb-2">💰</div>
+                <h3 className="font-bold text-slate-100">$PAB Token</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Earn for every good action. Stake for trust. Slash for no-shows. All on Solana.</p>
+              </Surface>
+            </div>
+          </div>
+        )}
+
+        {/* ── Property Manager Demo ────────────────────────────────────────── */}
+        {section === 'pm' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-100">Property Manager CRM</h2>
+              <p className="mt-2 text-slate-400">Try adding properties and tenants — see how Pabandi tracks everything.</p>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Surface className="text-center">
+                <div className="text-2xl font-bold text-slate-100">{demoData.properties.length}</div>
+                <div className="text-xs" style={{ color: tokens.color.muted }}>Properties</div>
+              </Surface>
+              <Surface className="text-center">
+                <div className="text-2xl font-bold text-emerald-300">{demoData.properties.filter((p) => p.status === 'OCCUPIED').length}</div>
+                <div className="text-xs" style={{ color: tokens.color.muted }}>Occupied</div>
+              </Surface>
+              <Surface className="text-center">
+                <div className="text-2xl font-bold text-indigo-300">{demoData.tenants.length}</div>
+                <div className="text-xs" style={{ color: tokens.color.muted }}>Tenants</div>
+              </Surface>
+              <Surface className="text-center">
+                <div className="text-2xl font-bold text-amber-300">{demoData.pabEarned}</div>
+                <div className="text-xs" style={{ color: tokens.color.muted }}>$PAB earned</div>
+              </Surface>
+            </div>
+
+            {/* Properties */}
+            <Surface>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-100">Properties</h3>
+                <Button onClick={() => setShowPropForm(!showPropForm)} size="sm">+ Add property</Button>
+              </div>
+              {showPropForm && (
+                <div className="mb-4 p-4 rounded-xl bg-white/5 space-y-3">
+                  <input value={propForm.title} onChange={(e) => setPropForm({ ...propForm, title: e.target.value })} placeholder="Property name *" className={inputClass} />
+                  <input value={propForm.address} onChange={(e) => setPropForm({ ...propForm, address: e.target.value })} placeholder="Address" className={inputClass} />
+                  <input value={propForm.rent} onChange={(e) => setPropForm({ ...propForm, rent: e.target.value })} placeholder="Monthly rent" type="number" className={inputClass} />
+                  <div className="flex gap-2">
+                    <Button onClick={addProperty} size="sm">Save</Button>
+                    <Button onClick={() => setShowPropForm(false)} variant="ghost" size="sm">Cancel</Button>
+                  </div>
+                </div>
+              )}
+              {demoData.properties.length === 0 ? (
+                <p className="text-sm" style={{ color: tokens.color.muted }}>No properties yet. Add one above!</p>
+              ) : (
+                <div className="space-y-2">
+                  {demoData.properties.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                      <div>
+                        <div className="font-semibold text-slate-100">{p.title}</div>
+                        <div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
+                      </div>
+                      <Badge tone={p.status === 'VACANT' ? 'info' : 'success'}>{p.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Surface>
+
+            {/* Tenants */}
+            <Surface>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-100">Tenants</h3>
+                <Button onClick={() => setShowTenantForm(!showTenantForm)} size="sm">+ Add tenant</Button>
+              </div>
+              {showTenantForm && (
+                <div className="mb-4 p-4 rounded-xl bg-white/5 space-y-3">
+                  <input value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} placeholder="Tenant name" className={inputClass} />
+                  <input value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} placeholder="Email *" type="email" className={inputClass} />
+                  <div className="flex gap-2">
+                    <Button onClick={addTenant} size="sm">Save</Button>
+                    <Button onClick={() => setShowTenantForm(false)} variant="ghost" size="sm">Cancel</Button>
+                  </div>
+                </div>
+              )}
+              {demoData.tenants.length === 0 ? (
+                <p className="text-sm" style={{ color: tokens.color.muted }}>No tenants yet. Add one above!</p>
+              ) : (
+                <div className="space-y-2">
+                  {demoData.tenants.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                      <div>
+                        <div className="font-semibold text-slate-100">{t.name || t.email}</div>
+                        <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
+                      </div>
+                      <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Surface>
+          </div>
+        )}
+
+        {/* ── Secured Sale Demo ────────────────────────────────────────────── */}
+        {section === 'sale' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-100">Secured Sale</h2>
+              <p className="mt-2 text-slate-400">See how Pabandi protects local sales with escrow + SafeMeet.</p>
+            </div>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">How it works</h3>
+              <div className="space-y-4">
+                {[
+                  { icon: '🛡️', title: 'Seller opens a secured sale', desc: 'Drop the Pabandi widget on any listing. The seller opens a secured sale and gets a shareable buyer link.' },
+                  { icon: '📍', title: 'Schedule a SafeMeet', desc: 'Pick a safe public meetup spot — police station, bank, coffee shop, mall, library. Funds stay locked until the exchange.' },
+                  { icon: '💰', title: 'Buyer funds escrow', desc: 'The buyer opens the secure link and funds the escrow. Money is locked — neither party can walk with it.' },
+                  { icon: '🤝', title: 'Meet & exchange', desc: 'Meet at the safe spot, inspect the item, hand it over. No cash, no risk of robbery.' },
+                  { icon: '✅', title: 'Release funds', desc: 'Buyer confirms the exchange — funds release to the seller. If something goes wrong, file a dispute to lock the escrow for arbitration.' },
+                ].map((step, i) => (
+                  <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5">
+                    <div className="text-3xl">{step.icon}</div>
+                    <div>
+                      <div className="font-bold text-slate-100">{step.title}</div>
+                      <div className="text-sm" style={{ color: tokens.color.muted }}>{step.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Surface>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">Escrow simulation</h3>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="text-2xl font-bold text-emerald-300">$250</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>In escrow</div>
+                </div>
+                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                  <div className="text-2xl font-bold text-indigo-300">📍 Library</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>SafeMeet spot</div>
+                </div>
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <div className="text-2xl font-bold text-amber-300">25 $PAB</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>Seller reward</div>
+                </div>
+              </div>
+            </Surface>
+          </div>
+        )}
+
+        {/* ── Screening Demo ───────────────────────────────────────────────── */}
+        {section === 'screening' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-100">Tenant Screening</h2>
+              <p className="mt-2 text-slate-400">Run a real US court (CourtListener) or PK background check. Risk band auto-calculates deposit surcharge.</p>
+            </div>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">Try a mock screening</h3>
+              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Enter an email to see how screening works. This is a demo — no real check is run.</p>
+              <div className="flex gap-2">
+                <input value={screenEmail} onChange={(e) => setScreenEmail(e.target.value)} placeholder="tenant@email.com" type="email" className={inputClass} />
+                <Button onClick={runScreening} disabled={screening || !screenEmail}>
+                  {screening ? 'Running…' : 'Run check'}
+                </Button>
+              </div>
+
+              {screenResult && (
+                <div className="mt-4 p-4 rounded-xl bg-white/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-semibold text-slate-100">{screenResult.email}</div>
+                    <Badge tone={screenResult.band === 'HIGH' ? 'danger' : screenResult.band === 'MEDIUM' ? 'warning' : 'success'}>
+                      {screenResult.band} risk
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                    <div>
+                      <div className="font-bold text-slate-100">{screenResult.cases}</div>
+                      <div style={{ color: tokens.color.muted }}>Cases found</div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-100">{screenResult.source}</div>
+                      <div style={{ color: tokens.color.muted }}>Source</div>
+                    </div>
+                    <div>
+                      <div className="font-bold" style={{ color: screenResult.band === 'HIGH' ? tokens.color.danger : screenResult.band === 'MEDIUM' ? '#f59e0b' : '#10b981' }}>
+                        {screenResult.band === 'HIGH' ? '+25%' : screenResult.band === 'MEDIUM' ? '+10%' : '0%'}
+                      </div>
+                      <div style={{ color: tokens.color.muted }}>Deposit adj.</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Surface>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">Screening sources</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                  <span className="text-2xl">🏛️</span>
+                  <div>
+                    <div className="font-semibold text-slate-100">US CourtListener</div>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Real eviction records from US federal and state courts</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                  <span className="text-2xl">🇵🇰</span>
+                  <div>
+                    <div className="font-semibold text-slate-100">PK BackgroundCheck</div>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Pakistan civil and criminal records</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                  <span className="text-2xl">✏️</span>
+                  <div>
+                    <div className="font-semibold text-slate-100">Manual</div>
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Manager-entered risk assessment</div>
+                  </div>
+                </div>
+              </div>
+            </Surface>
+          </div>
+        )}
+
+        {/* ── Crypto / $PAB Demo ───────────────────────────────────────────── */}
+        {section === 'crypto' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-100">$PAB Token</h2>
+              <p className="mt-2 text-slate-400">The trust token on Solana. Earn for good actions, stake for trust, slash for no-shows.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Surface>
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Earn $PAB</h3>
+                <div className="space-y-2">
+                  {[
+                    { action: 'Complete a verified sale', reward: '+15 $PAB' },
+                    { action: 'Run a tenant screening', reward: '+10 $PAB' },
+                    { action: 'Add a property', reward: '+5 $PAB' },
+                    { action: 'Add a tenant', reward: '+3 $PAB' },
+                    { action: 'Refer a new user', reward: '+25 $PAB' },
+                    { action: 'Connect wallet', reward: '+15 $PAB' },
+                  ].map((e, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                      <span className="text-sm text-slate-300">{e.action}</span>
+                      <span className="text-sm font-bold text-emerald-300">{e.reward}</span>
+                    </div>
+                  ))}
+                </div>
+              </Surface>
+
+              <Surface>
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Stake $PAB</h3>
+                <div className="space-y-2">
+                  {[
+                    { tier: 'Bronze', stake: '100 $PAB', benefit: 'Basic trust badge' },
+                    { tier: 'Silver', stake: '500 $PAB', benefit: 'Priority in search' },
+                    { tier: 'Gold', stake: '2,000 $PAB', benefit: 'Reduced fees' },
+                    { tier: 'Platinum', stake: '10,000 $PAB', benefit: 'Arbitration voting' },
+                  ].map((t, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                      <div>
+                        <span className="text-sm font-semibold text-slate-100">{t.tier}</span>
+                        <span className="text-xs ml-2" style={{ color: tokens.color.muted }}>{t.benefit}</span>
+                      </div>
+                      <span className="text-sm font-bold text-amber-300">{t.stake}</span>
+                    </div>
+                  ))}
+                </div>
+              </Surface>
+            </div>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">Connect wallet (demo)</h3>
+              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Connect a Solana wallet (Phantom) to start earning $PAB.</p>
+              {demoData.walletConnected ? (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="font-semibold text-emerald-300">✅ Wallet connected</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{walletAddr.slice(0, 8)}…{walletAddr.slice(-4)}</div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input value={walletAddr} onChange={(e) => setWalletAddr(e.target.value)} placeholder="Solana wallet address (or click connect)" className={inputClass} />
+                  <Button onClick={connectWallet} disabled={!walletAddr}>Connect</Button>
+                </div>
+              )}
+            </Surface>
+
+            <Surface>
+              <h3 className="text-lg font-bold text-slate-100 mb-4">Tokenomics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div><div className="text-xl font-bold text-slate-100">2%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Platform fee</div></div>
+                <div><div className="text-xl font-bold text-slate-100">12%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Burn</div></div>
+                <div><div className="text-xl font-bold text-slate-100">35%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Liquidity</div></div>
+                <div><div className="text-xl font-bold text-slate-100">25%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Yield</div></div>
+              </div>
+            </Surface>
+          </div>
+        )}
+
+        {/* ── Convert / Signup ─────────────────────────────────────────────── */}
+        {section === 'convert' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-100">Ready to get started?</h2>
+              <p className="mt-2 text-slate-400">Choose how you want to set up your account.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Surface className={`cursor-pointer transition-all ${convertChoice === 'keep' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('keep')}>
+                <div className="text-3xl mb-2">📋</div>
+                <h3 className="font-bold text-slate-100">Keep my demo data</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Migrate the properties, tenants, and settings you just tried out in the demo.</p>
+                {demoData.properties.length > 0 && <Badge tone="success" className="mt-2">{demoData.properties.length} properties ready</Badge>}
+              </Surface>
+
+              <Surface className={`cursor-pointer transition-all ${convertChoice === 'import' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('import')}>
+                <div className="text-3xl mb-2">📥</div>
+                <h3 className="font-bold text-slate-100">Import from my CRM</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Upload a CSV or connect your existing property management software.</p>
+              </Surface>
+
+              <Surface className={`cursor-pointer transition-all ${convertChoice === 'webhook' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('webhook')}>
+                <div className="text-3xl mb-2">🔗</div>
+                <h3 className="font-bold text-slate-100">Connect via webhook</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Integrate Pabandi as a trust layer on top of your existing CRM via webhooks.</p>
+              </Surface>
+
+              <Surface className={`cursor-pointer transition-all ${convertChoice === 'fresh' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('fresh')}>
+                <div className="text-3xl mb-2">✨</div>
+                <h3 className="font-bold text-slate-100">Start fresh</h3>
+                <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Create a clean account and set everything up from scratch.</p>
+              </Surface>
+            </div>
+
+            {convertChoice === 'import' && (
+              <Surface>
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Import options</h3>
+                <div className="flex gap-3 mb-4">
+                  <button onClick={() => setImportMethod('csv')} className={`px-4 py-2 rounded-lg text-sm font-semibold ${importMethod === 'csv' ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>📄 CSV upload</button>
+                  <button onClick={() => setImportMethod('api')} className={`px-4 py-2 rounded-lg text-sm font-semibold ${importMethod === 'api' ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>🔌 API connect</button>
+                </div>
+                {importMethod === 'csv' ? (
+                  <div className="space-y-3">
+                    <p className="text-sm" style={{ color: tokens.color.muted }}>Upload a CSV with columns: property_name, address, rent, tenant_email, tenant_name, lease_start, lease_end</p>
+                    <div className="p-8 rounded-xl border-2 border-dashed border-white/10 text-center">
+                      <div className="text-3xl mb-2">📄</div>
+                      <p className="text-sm" style={{ color: tokens.color.muted }}>Drop CSV here or click to browse</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm" style={{ color: tokens.color.muted }}>Connect to your existing CRM via API.</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['Buildium', 'AppFolio', 'Rent Manager', 'Yardi', 'MRI', 'Custom'].map((crm) => (
+                        <div key={crm} className="p-3 rounded-lg bg-white/5 text-center text-sm text-slate-300">{crm}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Surface>
+            )}
+
+            {convertChoice === 'webhook' && (
+              <Surface>
+                <h3 className="text-lg font-bold text-slate-100 mb-4">Webhook integration</h3>
+                <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Pabandi becomes your trust layer. When events happen in your CRM, we screen, escrow, and verify.</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                    <span className="text-lg">→</span>
+                    <div className="text-sm"><strong className="text-slate-100">tenant.created</strong> <span style={{ color: tokens.color.muted }}>→ auto-screen</span></div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                    <span className="text-lg">→</span>
+                    <div className="text-sm"><strong className="text-slate-100">lease.signed</strong> <span style={{ color: tokens.color.muted }}>→ escrow deposit</span></div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                    <span className="text-lg">→</span>
+                    <div className="text-sm"><strong className="text-slate-100">sale.completed</strong> <span style={{ color: tokens.color.muted }}>→ release funds</span></div>
+                  </div>
+                </div>
+              </Surface>
+            )}
+
+            {convertChoice && (
+              <div className="text-center">
+                <Button onClick={handleConvert} size="lg">
+                  {convertChoice === 'keep' && 'Create account with demo data →'}
+                  {convertChoice === 'import' && 'Continue to import →'}
+                  {convertChoice === 'webhook' && 'Set up webhook →'}
+                  {convertChoice === 'fresh' && 'Create account →'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const inputClass = "w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base transition-all";
+
+export default DemoPage;

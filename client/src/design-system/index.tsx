@@ -49,17 +49,24 @@ type ButtonProps = {
   children: React.ReactNode;
   onClick?: () => void;
   variant?: Variant;
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   style?: React.CSSProperties;
 };
 
-export function Button({ children, onClick, variant = 'default', className = '', disabled = false, type = 'button', style }: ButtonProps) {
+export function Button({ children, onClick, variant = 'default', size = 'md', className = '', disabled = false, type = 'button', style }: ButtonProps) {
   const base = [
-    'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 cursor-pointer',
+    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-300 cursor-pointer',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
   ].join(' ');
+
+  const sizes = {
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
+  };
 
   const variants: Record<Variant, string> = {
     default: 'bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] active:scale-[0.97]',
@@ -68,7 +75,7 @@ export function Button({ children, onClick, variant = 'default', className = '',
   };
 
   return (
-    <button onClick={onClick} type={type} className={`${base} ${variants[variant]} ${className}`} style={style}>
+    <button onClick={onClick} type={type} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} style={style}>
       {children}
     </button>
   );
