@@ -57,6 +57,7 @@ import MaintenancePage from './pages/MaintenancePage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import SafeMeetPage from './pages/SafeMeetPage';
 import EscrowPage from './pages/EscrowPage';
+import DocumentsPage from './pages/DocumentsPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import LeaseGeneratorPage from './pages/LeaseGeneratorPage';
 import RentRollPage from './pages/RentRollPage';
@@ -167,6 +168,8 @@ function App() {
           <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
           {/* Tenant application tracker (authenticated) */}
           <Route path="/tenant" element={<TenantDashboardPage />} />
+          {/* Documents */}
+          <Route path="/documents" element={<DocumentsPage />} />
           {/* Rent Roll */}
           <Route path="/rent-roll" element={<PublicSEO seo={{ title: 'Rent Roll — Pabandi', description: 'Track income, expenses, and NOI across all your properties.' }}><RentRollPage /></PublicSEO>} />
           {/* Lease Generator */}
