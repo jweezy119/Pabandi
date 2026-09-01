@@ -472,6 +472,9 @@ export const propertyManagerService = {
   addWebhook: (payload: { url: string; events?: string[] }) => apiClient.post('/property-manager/webhooks', payload),
   deleteWebhook: (id: string) => apiClient.delete(`/property-manager/webhooks/${id}`),
   activity: () => apiClient.get('/property-manager/activity'),
+  // Email verification
+  sendVerificationCode: () => apiClient.post('/auth/verify/send-code'),
+  verifyEmail: (code: string) => apiClient.post('/auth/verify/email', { code }),
   portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
   // Property-specific
   units: (propertyId: string) => apiClient.get(`/property/units?propertyId=${propertyId}`),

@@ -57,6 +57,7 @@ router.post(
 
 router.post('/refresh', refreshToken);
 router.post('/verify/email', authenticate, verifyEmail);
+router.post('/verify/send-code', authenticate, sendVerificationCode);
 router.post('/verify/phone', authenticate, verifyPhone);
 router.get('/attestation', authenticate, getTrustAttestation);
 

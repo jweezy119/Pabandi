@@ -13,6 +13,7 @@ interface User {
   reliabilityScore?: number;
   trustScore?: number;
   verificationTier?: string;
+  isEmailVerified?: boolean;
   commerceScore?: number;
   hospitalityScore?: number;
   appointmentScore?: number;

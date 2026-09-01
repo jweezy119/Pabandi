@@ -18,6 +18,8 @@ model User {
   role                    UserRole                @default(CUSTOMER)
   isEmailVerified         Boolean                 @default(false)
   isPhoneVerified         Boolean                 @default(false)
+  verificationCode        String?                 // 6-digit email verification code
+  verificationCodeExpires DateTime?               // Code expiration timestamp
   reliabilityScore        Float                   @default(750)
   trustScore              Float                   @default(50.0)
   minimumSellerTrustScore Int                     @default(0)

@@ -8,6 +8,7 @@ import type { Secret, JwtPayload } from 'jsonwebtoken';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import { sendVerificationEmail, generateVerificationCode } from '../services/email.service';
 import { odooService } from '../services/odoo.service';
 import { osintService } from '../services/osint.service';
 
@@ -189,6 +190,17 @@ export const register = async (
     // Fire off async OSINT checks (background)
     osintService.queueOSINTChecks(user.id, user.business?.id).catch(err => {
       logger.error('Background OSINT check failed', err);
+    });
+
+    // Generate email verification code and send it
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationCode, verificationCodeExpires },
+    });
+    sendVerificationEmail(email, verificationCode, firstName).catch(err => {
+      logger.error('Failed to send verification email:', err);
     });
 
     // Generate tokens
@@ -396,17 +408,76 @@ export const verifyEmail = async (
   next: NextFunction
 ) => {
   try {
-    // In production, implement email verification logic
-    const user = await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { isEmailVerified: true },
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ error: 'Verification code is required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.json({ success: true, message: 'Email already verified' });
+    }
+
+    if (!user.verificationCode || !user.verificationCodeExpires) {
+      return res.status(400).json({ error: 'No verification code found. Please request a new one.' });
+    }
+
+    if (new Date() > user.verificationCodeExpires) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (code !== user.verificationCode) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        verificationCode: null,
+        verificationCodeExpires: null,
+      },
     });
 
-    res.json({
-      success: true,
-      message: 'Email verified successfully',
-      data: { user },
+    res.json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendVerificationCode = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.json({ success: true, message: 'Email already verified' });
+    }
+
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationCode, verificationCodeExpires },
     });
+
+    const sent = await sendVerificationEmail(user.email, verificationCode, user.firstName);
+    if (!sent) {
+      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+    }
+
+    res.json({ success: true, message: 'Verification code sent to your email' });
   } catch (error) {
     next(error);
   }
