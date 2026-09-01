@@ -24,8 +24,7 @@ RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache \
 
 # Start the server:
 # 1. Clean up orphaned records that could block FK constraints
-# 2. Baseline: mark existing migrations as applied (one-time, idempotent)
-# 3. Apply pending migrations safely (never drops data)
-# 4. Side-effect scripts are decoupled: failure doesn't prevent server start
-# 5. exec ensures Node receives OS signals for graceful shutdown on Render
-CMD ["sh", "-c", "npx ts-node scripts/cleanup-orphaned.ts && npx ts-node scripts/baseline-db.ts && npx prisma migrate deploy ; node scripts/cf-purge.mjs || true ; node scripts/upload-spa-r2.mjs || true ; exec npm start"]
+# 2. Apply pending migrations safely (never drops data)
+# 3. Side-effect scripts are decoupled: failure doesn't prevent server start
+# 4. exec ensures Node receives OS signals for graceful shutdown on Render
+CMD ["sh", "-c", "npx ts-node scripts/cleanup-orphaned.ts && npx prisma migrate deploy ; node scripts/cf-purge.mjs || true ; node scripts/upload-spa-r2.mjs || true ; exec npm start"]
