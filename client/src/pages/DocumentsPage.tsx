@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Surface, Button, Badge, tokens } from '../design-system';
+import { Surface, Button, tokens } from '../design-system';
 import { propertyManagerService } from '../services/api';
 
 const DOC_TYPES = [
