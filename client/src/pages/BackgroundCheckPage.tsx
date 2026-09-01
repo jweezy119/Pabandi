@@ -56,7 +56,7 @@ export default function BackgroundCheckPage() {
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
           <h1 className="font-headline text-3xl sm:text-4xl font-bold">Background Check</h1>
           <p className="opacity-70 mt-2 max-w-2xl">
-            Comprehensive court record screening — criminal history (state + federal), civil/eviction records, and more via CourtListener.
+            Comprehensive court record screening — criminal history (state + federal), civil/eviction records, bankruptcy, and more via CourtListener. Searches all docket types with intelligent name matching.
           </p>
         </div>
 
@@ -362,6 +362,13 @@ export default function BackgroundCheckPage() {
         {result?.simulated && (
           <div className="rounded-3xl p-4 text-sm" style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
             <p className="text-amber-300">⚠️ Demo mode — COURTLISTENER_API_KEY is not set. Results are simulated. Add the key to enable live screening.</p>
+          </div>
+        )}
+
+        {/* API key notice */}
+        {!result?.simulated && result?.totalCases === 0 && (
+          <div className="rounded-3xl p-4 text-sm" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
+            <p className="text-emerald-300">✅ Live mode — CourtListener API key is active. No records found for this name.</p>
           </div>
         )}
 

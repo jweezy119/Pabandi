@@ -183,6 +183,67 @@ export class CourtListenerService {
   }
 
   /**
+   * Generate common name variations for better matching.
+   * Handles: nicknames, middle initials, spelling variations, etc.
+   */
+  private generateNameVariations(name: string): string[] {
+    const trimmed = name.trim();
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return [trimmed];
+    if (parts.length === 1) return [trimmed];
+
+    const firstName = parts[0];
+    const lastName = parts[parts.length - 1];
+    const middleParts = parts.slice(1, -1);
+    const variations = [trimmed];
+
+    if (middleParts.length > 0) {
+      variations.push(`${firstName} ${lastName}`);
+      const middleInitial = middleParts[0][0];
+      variations.push(`${firstName} ${middleInitial} ${lastName}`);
+      variations.push(`${firstName} ${middleInitial}. ${lastName}`);
+    }
+
+    const spellingVariations: Record<string, string[]> = {
+      'hussain': ['hussain', 'hussein', 'husein'],
+      'hussein': ['hussein', 'hussain', 'husein'],
+      'mohammed': ['mohammed', 'muhammad', 'mohamed'],
+      'muhammad': ['muhammad', 'mohammed', 'mohamed'],
+      'ahmed': ['ahmed', 'ahmad'],
+      'ahmad': ['ahmad', 'ahmed'],
+      'hassan': ['hassan', 'hasan'],
+      'syed': ['syed', 'sayed', 'sayyed'],
+      'sayed': ['sayed', 'syed', 'sayyed'],
+      'javed': ['javed', 'jawed'],
+      'rashid': ['rashid', 'rasheed'],
+      'akhtar': ['akhtar', 'akhter'],
+      'riaz': ['riaz', 'riyaz'],
+      'naveed': ['naveed', 'naved', 'navid'],
+      'waqar': ['waqar', 'waqarr'],
+      'tariq': ['tariq', 'tareq', 'tarik'],
+      'faisal': ['faisal', 'faysal'],
+      'bilal': ['bilal', 'bilaal'],
+      'umar': ['umar', 'omer'],
+      'usman': ['usman', 'osman'],
+      'iqbal': ['iqbal', 'iqbaal'],
+    };
+
+    const firstNameLower = firstName.toLowerCase();
+    const lastNameLower = lastName.toLowerCase();
+    const firstNameSpellings = spellingVariations[firstNameLower] || [firstNameLower];
+    const lastNameSpellings = spellingVariations[lastNameLower] || [lastNameLower];
+
+    for (const fn of firstNameSpellings) {
+      for (const ln of lastNameSpellings) {
+        const variant = `${fn} ${ln}`;
+        if (!variations.includes(variant)) variations.push(variant);
+      }
+    }
+
+    return variations;
+  }
+
+  /**
    * Comprehensive court check — criminal + civil + eviction.
    * Returns a unified risk verdict the trust engine can penalize on.
    */
@@ -196,17 +257,35 @@ export class CourtListenerService {
       docketNumber?: string;
     }
   ): Promise<CourtCheckResult> {
-    const searchResult = await this.search({
-      q: `"${name}"`,
-      jurisdiction: options?.state,
-      court: options?.court,
-      date_filed_after: options?.dateFiledAfter,
-      date_filed_before: options?.dateFiledBefore,
-      docket_number: options?.docketNumber,
-      page_size: 50,
-      order_by: 'score',
+    // Try the exact name first, then common variations
+    const nameVariations = this.generateNameVariations(name);
+    let allCases: CourtListenerCase[] = [];
+    let totalCount = 0;
+
+    for (const nameVariant of nameVariations) {
+      const searchResult = await this.search({
+        q: `"${nameVariant}"`,
+        jurisdiction: options?.state,
+        court: options?.court,
+        date_filed_after: options?.dateFiledAfter,
+        date_filed_before: options?.dateFiledBefore,
+        docket_number: options?.docketNumber,
+        page_size: 50,
+        order_by: 'score',
+      });
+      totalCount += searchResult.count;
+      allCases = allCases.concat(searchResult.results);
+      // If we found results with this variation, no need to try others
+      if (searchResult.results.length > 0) break;
+    }
+
+    // Deduplicate by docket_id
+    const seen = new Set<number>();
+    allCases = allCases.filter(c => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
     });
-    const allCases = searchResult.results;
 
     // Categorize cases
     const criminalCases = allCases.filter(c => c.courtType === 'CRIMINAL');
