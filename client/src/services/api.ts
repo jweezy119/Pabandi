@@ -483,6 +483,9 @@ export const propertyManagerService = {
   financials: (propertyId: string) => apiClient.get(`/property/financials?propertyId=${propertyId}`),
   addFinancial: (payload: any) => apiClient.post('/property/financials', payload),
   financialSummary: (propertyId: string) => apiClient.get(`/property/financials/summary?propertyId=${propertyId}`),
+  documents: (tenantEmail?: string) => apiClient.get(`/documents${tenantEmail ? `?tenantEmail=${tenantEmail}` : ''}`),
+  uploadDocument: (payload: any) => apiClient.post('/documents', payload),
+  deleteDocument: (id: string) => apiClient.delete(`/documents/${id}`),
 };
 
 // Tenant experience (tenant-facing endpoints).
