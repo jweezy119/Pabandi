@@ -473,6 +473,13 @@ export const propertyManagerService = {
   deleteWebhook: (id: string) => apiClient.delete(`/property-manager/webhooks/${id}`),
   activity: () => apiClient.get('/property-manager/activity'),
   portal: (slug: string) => apiClient.get(`/property-manager/portal/${slug}`),
+  // Property-specific
+  units: (propertyId: string) => apiClient.get(`/property/units?propertyId=${propertyId}`),
+  addUnit: (payload: any) => apiClient.post('/property/units', payload),
+  rentPayments: (propertyId: string) => apiClient.get(`/property/rent-payments?propertyId=${propertyId}`),
+  addRentPayment: (payload: any) => apiClient.post('/property/rent-payments', payload),
+  inspections: (propertyId: string) => apiClient.get(`/property/inspections?propertyId=${propertyId}`),
+  addInspection: (payload: any) => apiClient.post('/property/inspections', payload),
 };
 
 // Tenant experience (tenant-facing endpoints).
