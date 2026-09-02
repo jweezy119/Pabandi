@@ -945,7 +945,7 @@ model TrustAuditTrail {
   weightUsed    Float?
   metadata      Json?
   previousHash  String?
-  currentHash   String   @unique
+  currentHash   String   @default(cuid()) @unique
   methodology   String   @default("1.0.0")
   createdAt     DateTime @default(now())
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
