@@ -66,7 +66,7 @@ import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import CalculatorPage from './pages/CalculatorPage';
 import NotificationCenter from './pages/NotificationCenter';
-import { DashboardPage as OldDashboardPage } from './pages/DashboardPage';
+import SmartSearchPage from './pages/SmartSearchPage';
 import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
@@ -198,6 +198,7 @@ function App() {
           <Route path="/token" element={<TokenFlowPage />} />
           {/* AI Tools */}
           <Route path="/dashboard" element={<UnifiedDashboardPage />} />
+          <Route path="/search" element={<SmartSearchPage />} />
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/calculator" element={<CalculatorPage />} />
           <Route path="/ai/chat" element={<AiChatPage />} />
