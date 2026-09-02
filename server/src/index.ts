@@ -74,6 +74,8 @@ import didRoutes from './routes/did.routes';
 import vcRoutes from './routes/vc.routes';
 import ebayRoutes from './routes/ebay.routes';
 import pabEconomyRoutes from './routes/pabEconomy.routes';
+import aiRealEstateRoutes from './routes/aiRealEstate.routes';
+import aiRoutes from './routes/ai.routes';
 import marketplaceRoutes from './routes/marketplace.routes';
 import escrowRoutes from './routes/escrow.routes';
 import notificationsRoutes from './routes/notifications.routes';
@@ -203,9 +205,6 @@ app.use(`/api/${API_VERSION}/linkedin`, linkedinRoutes);
 app.use(`/api/${API_VERSION}/background-check`, backgroundCheckRoutes);
 app.use(`/api/${API_VERSION}/reviews`, pabandiReviewRoutes);
 
-import aiRoutes from './routes/ai.routes';
-app.use(`/api/${API_VERSION}/ai`, aiRoutes);
-
 import bestFitRoutes from './routes/bestFit.routes';
 app.use(`/api/${API_VERSION}/best-fit`, bestFitRoutes);
 
@@ -240,6 +239,8 @@ app.use(`/api/${API_VERSION}/recommendation`, recommendationRoutes);
 app.use('/api/v1/live-seller/ebay', ebayRoutes);
 app.use(`/api/${API_VERSION}/booking`, bookingRoutes);
 app.use(`/api/${API_VERSION}/pab`, pabEconomyRoutes);
+app.use(`/api/${API_VERSION}/ai/realestate`, aiRealEstateRoutes);
+app.use(`/api/${API_VERSION}/ai`, aiRoutes);
 app.use(`/api/${API_VERSION}/marketplace`, marketplaceRoutes);
 app.use(`/api/${API_VERSION}/escrow`, escrowRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationsRoutes);

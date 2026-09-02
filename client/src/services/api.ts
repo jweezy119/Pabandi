@@ -508,11 +508,36 @@ export const propertyManagerService = {
   documents: (tenantEmail?: string) => apiClient.get(`/documents${tenantEmail ? `?tenantEmail=${tenantEmail}` : ''}`),
   uploadDocument: (payload: any) => apiClient.post('/documents', payload),
   deleteDocument: (id: string) => apiClient.delete(`/documents/${id}`),
+  // AI Real Estate
+  analyzeLease: (text: string) => apiClient.post('/ai/realestate/analyze-lease', { text }),
+  maintenanceAdvice: (issue: string, propertyType?: string, budget?: string, urgency?: string) => apiClient.post('/ai/realestate/maintenance-advice', { issue, propertyType, budget, urgency }),
+  marketInsights: (city: string, state?: string, propertyType?: string) => apiClient.post('/ai/realestate/market-insights', { city, state, propertyType }),
+  generateDocument: (type: string, params: any) => apiClient.post('/ai/realestate/generate-document', { type, params }),
+  propertyValuation: (payload: any) => apiClient.post('/ai/realestate/property-valuation', payload),
+  aiChat: (message: string, context?: any) => apiClient.post('/ai/realestate/chat', { message, context }),
   // Booking.com hotel search
   searchHotels: (payload: any) => apiClient.post('/booking/search', payload),
   autocompleteLocation: (payload: any) => apiClient.post('/booking/autocomplete', payload),
   hotelDetails: (payload: any) => apiClient.post('/booking/details', payload),
   seedHotels: (payload: any) => apiClient.post('/booking/seed', payload),
+};
+
+// AI Real Estate Service (separate export)
+export const aiRealEstateService = {
+  analyzeLease: (text: string) => apiClient.post('/ai/realestate/analyze-lease', { text }),
+  maintenanceAdvice: (issue: string, propertyType?: string, budget?: string, urgency?: string) => apiClient.post('/ai/realestate/maintenance-advice', { issue, propertyType, budget, urgency }),
+  marketInsights: (city: string, state?: string, propertyType?: string) => apiClient.post('/ai/realestate/market-insights', { city, state, propertyType }),
+  generateDocument: (type: string, params: any) => apiClient.post('/ai/realestate/generate-document', { type, params }),
+  propertyValuation: (payload: any) => apiClient.post('/ai/realestate/property-valuation', payload),
+  aiChat: (message: string, context?: any) => apiClient.post('/ai/realestate/chat', { message, context }),
+  chat: (message: string, context?: any) => apiClient.post('/ai/realestate/chat', { message, context }),
+  analyzeProperty: (payload: any) => apiClient.post('/ai/analyze-property', payload),
+  analyzeInvestment: (payload: any) => apiClient.post('/ai/analyze-investment', payload),
+  optimizeRent: (payload: any) => apiClient.post('/ai/optimize-rent', payload),
+  matchProperties: (payload: any) => apiClient.post('/ai/match-properties', payload),
+  screenTenant: (payload: any) => apiClient.post('/ai/screen-tenant', payload),
+  generateListing: (payload: any) => apiClient.post('/ai/generate-listing', payload),
+  maintenanceAssistant: (problem: string, propertyType?: string) => apiClient.post('/ai/maintenance', { problem, propertyType }),
 };
 
 // Tenant experience (tenant-facing endpoints).

@@ -64,11 +64,13 @@ import RentRollPage from './pages/RentRollPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
 import TokenomicsPage from './pages/TokenomicsPage';
 import WalletConnectPage from './pages/WalletConnectPage';
 import OnRampPage from './pages/OnRampPage';
 import OffRampPage from './pages/OffRampPage';
 import TokenFlowPage from './pages/TokenFlowPage';
+import AIPage from './pages/AIPage';
 import EscrowDetailPage from './pages/EscrowDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
@@ -189,6 +191,10 @@ function App() {
           <Route path="/onramp" element={<OnRampPage />} />
           <Route path="/offramp" element={<OffRampPage />} />
           <Route path="/token" element={<TokenFlowPage />} />
+          {/* AI Tools */}
+          <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
+          {/* AI Real Estate */}
+          <Route path="/ai" element={<AIPage />} />
           {/* Trust Passport */}
           <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
           {/* Rewards */}

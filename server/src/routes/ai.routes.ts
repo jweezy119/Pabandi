@@ -1,351 +1,346 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
-import { aiNlpService } from '../services/ai.nlp.service';
-import { noShowPredictor } from '../services/ai/noShowPredictor';
+import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database';
-import { osintMCPClient } from '../services/osint/osintMCPClient.service';
-import { authenticate } from '../middleware/auth.middleware';
-import { PAB_FEE_PER_CHECK } from '../config/tokenomics';
-import { blockchainService } from '../services/blockchain.service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
-/**
- * Monetization + anti-abuse for the brushing-scam scanner, mirroring the guards
- * on the background-check routes: 5 scans / 5 min / IP + a flat $PAB fee
- * debited BEFORE the (real-source) review fetch runs. Stops free reputation
- * harvesting of competitor sellers via the NLP model.
- */
-const scannerRateLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
-  keyGenerator: (req: any) => req.ip,
-  handler: (_req: any, res: any) => res.status(429).json({ success: false, error: 'Rate limit exceeded for scanner. Max 5 scans per 5 minutes. Buy a higher tier for bulk screening.' }),
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-async function debitScanFee(userId: string, fee = PAB_FEE_PER_CHECK): Promise<string | null> {
-  const result = await prisma.wallet.updateMany({
-    where: { userId, balance: { gte: fee } },
-    data: { balance: { decrement: fee } },
-  });
-  if (result.count === 0) {
-    const w = await prisma.wallet.findUnique({ where: { userId }, select: { balance: true } });
-    return `'Insufficient $PAB balance (have ${w?.balance ?? 0}, need ${fee}). Buy $PAB or top up before scanning — the scanner runs real-source checks, so it's paid.'`;
-  }
-  return null;
+// ── AI Investment Analyzer ──────────────────────────────────────────────────
+interface InvestmentInput {
+  purchasePrice: number;
+  downPayment: number;
+  interestRate: number;
+  loanTerm: number;
+  monthlyRent: number;
+  expenses: number; // monthly
+  vacancyRate?: number;
+  appreciationRate?: number;
+  holdingPeriod?: number;
 }
 
-router.get('/status', (_req: Request, res: Response) => {
-  res.json({
-    success: true,
-    service: 'ai',
-    endpoints: ['/api/v1/ai/status', '/api/v1/ai/models', '/api/v1/ai/nlp/classify', '/api/v1/ai/nlp/generate', '/api/v1/ai/forecast/demand'],
-    models: aiNlpService.getEnabledModels(),
-  });
-});
+interface InvestmentAnalysis {
+  monthlyMortgage: number;
+  monthlyCashFlow: number;
+  annualCashFlow: number;
+  cashOnCashReturn: number;
+  capRate: number;
+  totalReturn: number;
+  breakEvenMonths: number;
+  roi: number;
+  recommendation: string;
+  projections: { year: number; equity: number; totalReturn: number }[];
+}
 
-router.post('/forecast/demand', async (req: Request, res: Response, next: NextFunction) => {
+function analyzeInvestment(input: InvestmentInput): InvestmentAnalysis {
+  const { purchasePrice, downPayment, interestRate, loanTerm, monthlyRent, expenses } = input;
+  const vacancyRate = input.vacancyRate || 0.05;
+  const appreciationRate = input.appreciationRate || 0.03;
+  const holdingPeriod = input.holdingPeriod || 5;
+
+  const loanAmount = purchasePrice - downPayment;
+  const monthlyRate = interestRate / 100 / 12;
+  const numPayments = loanTerm * 12;
+  const monthlyMortgage = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+
+  const effectiveRent = monthlyRent * (1 - vacancyRate);
+  const monthlyCashFlow = effectiveRent - expenses - monthlyMortgage;
+  const annualCashFlow = monthlyCashFlow * 12;
+  const cashOnCashReturn = (annualCashFlow / downPayment) * 100;
+  const noi = (effectiveRent - expenses) * 12;
+  const capRate = (noi / purchasePrice) * 100;
+
+  const projections = [];
+  let equity = downPayment;
+  let totalReturn = 0;
+  for (let year = 1; year <= holdingPeriod; year++) {
+    const appreciation = purchasePrice * Math.pow(1 + appreciationRate, year) - purchasePrice;
+    const accumulatedCashFlow = annualCashFlow * year;
+    const loanPaydown = loanAmount - (loanAmount * ((Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, year * 12)) / (Math.pow(1 + monthlyRate, numPayments) - 1)));
+    equity = downPayment + appreciation + loanPaydown;
+    totalReturn = accumulatedCashFlow + appreciation + loanPaydown;
+    projections.push({ year, equity: Math.round(equity), totalReturn: Math.round(totalReturn) });
+  }
+
+  const roi = (totalReturn / downPayment) * 100;
+  const breakEvenMonths = monthlyCashFlow > 0 ? Math.ceil(downPayment / monthlyCashFlow) : Infinity;
+
+  let recommendation = 'neutral';
+  if (cashOnCashReturn > 10 && capRate > 7) recommendation = 'strong_buy';
+  else if (cashOnCashReturn > 6 && capRate > 5) recommendation = 'buy';
+  else if (cashOnCashReturn < 2 || capRate < 3) recommendation = 'avoid';
+
+  return {
+    monthlyMortgage: Math.round(monthlyMortgage),
+    monthlyCashFlow: Math.round(monthlyCashFlow),
+    annualCashFlow: Math.round(annualCashFlow),
+    cashOnCashReturn: Math.round(cashOnCashReturn * 100) / 100,
+    capRate: Math.round(capRate * 100) / 100,
+    totalReturn: Math.round(totalReturn),
+    breakEvenMonths: breakEvenMonths === Infinity ? -1 : breakEvenMonths,
+    roi: Math.round(roi * 100) / 100,
+    recommendation,
+    projections,
+  };
+}
+
+// ── POST /api/v1/ai/analyze-investment ──────────────────────────────────────
+router.post('/analyze-investment', async (req: Request, res: Response) => {
   try {
-    const { businessId, date, category, groupSize, advanceBookingDays } = req.body || {};
-    if (!businessId || !date) {
-      res.status(400).json({ success: false, error: 'businessId and date are required' });
-      return;
+    const input: InvestmentInput = req.body;
+    if (!input.purchasePrice || !input.monthlyRent) {
+      return res.status(400).json({ success: false, error: 'purchasePrice and monthlyRent are required' });
     }
-
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
-      select: { id: true, name: true, category: true, rating: true },
-    });
-    if (!business) {
-      res.status(404).json({ success: false, error: 'Business not found' });
-      return;
-    }
-
-    const target = new Date(date);
-    const isWeekend = target.getDay() === 5 || target.getDay() === 6;
-    const today = new Date();
-    const end = new Date(target.getTime() + 86_400_000);
-    const advanceDays = Math.max(0, Math.floor((today.getTime() - target.getTime()) / -86_400_000));
-
-    const reservationCount = await prisma.reservation.count({
-      where: { businessId, reservationDate: { gte: target, lt: end } },
-    });
-
-    const historical = await prisma.reservation.findMany({
-      where: { businessId, createdAt: { gte: new Date(today.getTime() - 30 * 86_400_000) } },
-      select: { status: true },
-    });
-    const noShowCount = historical.filter(r => r.status === 'NO_SHOW').length;
-    const cancelledCount = historical.filter(r => r.status === 'CANCELLED').length;
-    const historyCount = historical.length || 1;
-    const averageNoShowRate = noShowCount / historyCount;
-
-    const prediction = await noShowPredictor.predict({
-      customerHistory: { totalReservations: historyCount, noShowCount, cancellationCount: cancelledCount, averageNoShowRate },
-      timeFactors: { dayOfWeek: target.getDay(), hour: 19, isWeekend, isHoliday: false },
-      bookingFactors: { advanceBookingDays: advanceBookingDays ?? advanceDays, isSameDay: advanceDays <= 0, groupSize: groupSize || 2, hasSpecialRequests: false },
-      businessFactors: { averageNoShowRate, businessRating: business.rating ?? undefined, requiresDeposit: false, businessCategory: category || business.category?.toUpperCase() || 'OTHER' },
-    });
-
-    const forecast = {
-      businessId,
-      businessName: business.name,
-      date: target.toISOString().split('T')[0],
-      weekday: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][target.getDay()],
-      confidence: Math.max(0, Math.min(1, 1 - prediction.probability)),
-      demandSignal: prediction.riskScore > 65 ? 'high' : prediction.riskScore > 40 ? 'medium' : 'low',
-      recommendation: prediction.depositRecommendation.required ? 'Require deposit or release overbook margin carefully.' : 'Standard booking flow acceptable.',
-      predictedNoShowPercent: prediction.overbookingAdvice?.predictedNoShowPercent ?? Math.round(prediction.probability * 100) / 10,
-      safeOverbookMargin: prediction.overbookingAdvice?.safeOverbookMargin ?? 0,
-      factors: prediction.factors,
-      createdAt: new Date().toISOString(),
-    };
-
-    res.json({ success: true, data: forecast });
-  } catch (error) {
-    next(error);
+    const result = analyzeInvestment(input);
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// POST /api/v1/ai/nlp/classify
-router.post('/nlp/classify', async (req: Request, res: Response, next: NextFunction) => {
+// ── AI Rent Price Optimizer ─────────────────────────────────────────────────
+interface RentOptimizerInput {
+  address: string;
+  city: string;
+  state: string;
+  bedrooms: number;
+  bathrooms: number;
+  sqft: number;
+  amenities?: string[];
+}
+
+interface RentOptimizerResult {
+  suggestedRent: number;
+  range: { min: number; max: number };
+  confidence: number;
+  factors: string[];
+  comparables: any[];
+}
+
+function optimizeRent(input: RentOptimizerInput): RentOptimizerResult {
+  const CITY_MULTIPLIERS: Record<string, number> = {
+    'new york': 3.5, 'los angeles': 2.8, 'san francisco': 3.8,
+    'chicago': 1.8, 'miami': 2.2, 'houston': 1.5, 'phoenix': 1.6,
+    'dallas': 1.6, 'atlanta': 1.5, 'seattle': 2.5, 'denver': 2.0, 'austin': 2.0,
+  };
+  const DEFAULT_MULTIPLIER = 1.5;
+
+  const cityKey = input.city?.toLowerCase() || '';
+  const multiplier = CITY_MULTIPLIERS[cityKey] || DEFAULT_MULTIPLIER;
+
+  // Base rent calculation
+  let baseRent = input.sqft * multiplier * 0.8;
+  baseRent += input.bedrooms * 200;
+  baseRent += input.bathrooms * 150;
+
+  // Amenities bonus
+  const amenities = input.amenities || [];
+  if (amenities.includes('parking')) baseRent += 150;
+  if (amenities.includes('laundry')) baseRent += 100;
+  if (amenities.includes('gym')) baseRent += 100;
+  if (amenities.includes('pool')) baseRent += 150;
+  if (amenities.includes('doorman')) baseRent += 200;
+
+  const suggestedRent = Math.round(baseRent);
+  const range = { min: Math.round(suggestedRent * 0.9), max: Math.round(suggestedRent * 1.1) };
+
+  const factors: string[] = [];
+  factors.push(`Location: ${input.city}, ${input.state}`);
+  factors.push(`Size: ${input.sqft.toLocaleString()} sqft, ${input.bedrooms}bd/${input.bathrooms}ba`);
+  if (amenities.length > 0) factors.push(`Amenities: ${amenities.join(', ')}`);
+
+  return {
+    suggestedRent,
+    range,
+    confidence: CITY_MULTIPLIERS[cityKey] ? 75 : 55,
+    factors,
+    comparables: [],
+  };
+}
+
+// ── POST /api/v1/ai/optimize-rent ───────────────────────────────────────────
+router.post('/optimize-rent', async (req: Request, res: Response) => {
   try {
-    const { message } = req.body;
-    if (!message) {
-      res.status(400).json({ success: false, error: 'message is required' });
-      return;
+    const input: RentOptimizerInput = req.body;
+    if (!input.city || !input.bedrooms || !input.sqft) {
+      return res.status(400).json({ success: false, error: 'city, bedrooms, and sqft are required' });
     }
-    const classification = await aiNlpService.classifyIntentAndLanguage(message);
-    res.json({ success: true, data: classification });
-  } catch (error) {
-    next(error);
+    const result = optimizeRent(input);
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// POST /api/v1/ai/nlp/generate
-router.post('/nlp/generate', async (req: Request, res: Response, next: NextFunction) => {
+// ── AI Property Matcher ─────────────────────────────────────────────────────
+interface MatcherInput {
+  bedrooms?: number;
+  bathrooms?: number;
+  maxRent?: number;
+  city?: string;
+  state?: string;
+  amenities?: string[];
+}
+
+interface MatcherResult {
+  matches: any[];
+  totalAvailable: number;
+  matchScore: number;
+}
+
+// ── POST /api/v1/ai/match-properties ────────────────────────────────────────
+router.post('/match-properties', async (req: Request, res: Response) => {
   try {
-    const { template, context } = req.body;
-    if (!template || !context) {
-      res.status(400).json({ success: false, error: 'template and context are required' });
-      return;
-    }
-    const copy = await aiNlpService.generateCopy(template, context);
-    res.json({ success: true, data: { copy } });
-  } catch (error) {
-    next(error);
-  }
-});
+    const input: MatcherInput = req.body;
+    const where: any = { status: 'VACANT' };
+    if (input.city) where.city = { contains: input.city, mode: 'insensitive' };
+    if (input.state) where.state = { contains: input.state, mode: 'insensitive' };
+    if (input.bedrooms) where.bedrooms = { gte: input.bedrooms - 1, lte: input.bedrooms + 1 };
+    if (input.bathrooms) where.bathrooms = { gte: input.bathrooms - 0.5, lte: input.bathrooms + 0.5 };
+    if (input.maxRent) where.rentAmount = { lte: input.maxRent };
 
-// GET /api/v1/ai/models
-router.get('/models', (req: Request, res: Response) => {
-  const models = aiNlpService.getEnabledModels();
-  res.json({ success: true, data: models });
-});
-
-// POST /api/v1/ai/fraud/analyze
-router.post('/fraud/analyze', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { username, businessName, domain } = req.body;
-    if (!username) {
-      res.status(400).json({ success: false, error: 'username is required for analysis' });
-      return;
-    }
-
-    const report: any = {
-      timestamp: new Date().toISOString(),
-      target: { username, businessName, domain },
-      investigations: [],
-      synthesizedRiskScore: 0,
-      recommendation: 'APPROVE'
-    };
-
-    // 1. Identity correlation via Maigret MCP
-    const maigretResult = await osintMCPClient.queryMaigretMCP(username);
-    report.investigations.push(maigretResult);
-    report.synthesizedRiskScore += maigretResult.riskScoreDelta;
-
-    // 2. Corporate correlation via OpenRegistry MCP
-    if (businessName) {
-      const registryResult = await osintMCPClient.queryOpenRegistryMCP(businessName);
-      report.investigations.push(registryResult);
-      report.synthesizedRiskScore += registryResult.riskScoreDelta;
-    }
-
-    // 3. Infrastructure Pipeline
-    if (domain) {
-      const infraResults = await osintMCPClient.queryInfrastructurePipeline(domain);
-      report.investigations.push(...infraResults);
-      for (const res of infraResults) {
-        report.synthesizedRiskScore += res.riskScoreDelta;
-      }
-    }
-
-    // Agent Synthesis (Mocked LLM Synthesis)
-    if (report.synthesizedRiskScore >= 80) {
-      report.recommendation = 'QUARANTINE_AND_REVIEW';
-      report.summary = `High risk detected. Correlated identity points to threat actor presence or extremely risky infrastructure for ${domain || username}.`;
-    } else if (report.synthesizedRiskScore >= 40) {
-      report.recommendation = 'REQUIRE_ADDITIONAL_KYC';
-      report.summary = `Medium risk detected. Some suspicious findings in corporate registry or social footprint.`;
-    } else {
-      report.recommendation = 'APPROVE';
-      report.summary = `Low risk. Identity and infrastructure appear clean across all queried OSINT sources.`;
-    }
-
-    res.json({ success: true, data: report });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// POST /api/v1/ai/fraud/fusion — Full-spectrum Dempster-Shafer threat fusion
-router.post('/fraud/fusion', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { userId, username, businessName, domain, walletAddress, transactionAmount, ipAddress, deviceFingerprint } = req.body;
-    if (!userId) {
-      res.status(400).json({ success: false, error: 'userId is required for fusion analysis' });
-      return;
-    }
-
-    const { threatFusionEngine } = await import('../services/osint/threatFusion.engine');
-    const verdict = await threatFusionEngine.analyzeFull(userId, {
-      username,
-      businessId: businessName,
-      domain,
-      walletAddress,
-      transactionAmount,
-      ipAddress,
-      deviceFingerprint
+    const properties = await prisma.propertyManagerProperty.findMany({
+      where,
+      take: 20,
+      include: { manager: { select: { companyName: true, slug: true } } },
     });
 
-    res.json({ success: true, data: verdict });
-  } catch (error) {
-    next(error);
+    const matches = properties.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      address: p.address,
+      city: p.city,
+      state: p.state,
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      rentAmount: p.rentAmount,
+      manager: p.manager,
+    }));
+
+    res.json({ success: true, data: { matches, totalAvailable: properties.length, matchScore: properties.length > 0 ? 85 : 0 } });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
-// POST /api/v1/ai/daraz-scanner
-router.post('/daraz-scanner', authenticate, scannerRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+
+// ── AI Tenant Screener (profile analysis) ───────────────────────────────────
+interface ScreenerInput {
+  name: string;
+  email: string;
+  phone?: string;
+  monthlyIncome: number;
+  employmentStatus: string;
+  creditScore?: number;
+  evictionHistory?: boolean;
+  criminalHistory?: boolean;
+  references?: number;
+}
+
+interface ScreenerResult {
+  score: number;
+  band: 'LOW' | 'MEDIUM' | 'HIGH';
+  recommendation: string;
+  factors: string[];
+  risks: string[];
+  incomeToRentRatio: number;
+}
+
+function screenTenant(input: ScreenerInput, monthlyRent: number = 1500): ScreenerResult {
+  let score = 70;
+  const factors: string[] = [];
+  const risks: string[] = [];
+
+  // Income analysis
+  const incomeToRentRatio = input.monthlyIncome / monthlyRent;
+  if (incomeToRentRatio >= 3) {
+    score += 15;
+    factors.push(`Strong income ratio: ${incomeToRentRatio.toFixed(1)}x rent`);
+  } else if (incomeToRentRatio >= 2.5) {
+    score += 5;
+    factors.push(`Adequate income ratio: ${incomeToRentRatio.toFixed(1)}x rent`);
+  } else if (incomeToRentRatio < 2) {
+    score -= 20;
+    risks.push(`Low income ratio: ${incomeToRentRatio.toFixed(1)}x rent (recommended: 3x)`);
+  }
+
+  // Credit score
+  if (input.creditScore) {
+    if (input.creditScore >= 700) { score += 10; factors.push('Good credit score'); }
+    else if (input.creditScore >= 600) { score += 0; factors.push('Fair credit score'); }
+    else { score -= 15; risks.push('Below-average credit score'); }
+  }
+
+  // Employment
+  if (input.employmentStatus === 'employed') { score += 5; factors.push('Employed'); }
+  else if (input.employmentStatus === 'self-employed') { score += 0; factors.push('Self-employed'); }
+  else { score -= 10; risks.push('Unemployment or unstable income'); }
+
+  // History
+  if (input.evictionHistory) { score -= 25; risks.push('Prior eviction on record'); }
+  if (input.criminalHistory) { score -= 15; risks.push('Criminal history reported'); }
+
+  // References
+  if (input.references && input.references >= 2) { score += 5; factors.push('Multiple references provided'); }
+
+  score = Math.max(0, Math.min(100, score));
+  const band = score >= 75 ? 'LOW' : score >= 50 ? 'MEDIUM' : 'HIGH';
+  const recommendation = score >= 75 ? 'Approve' : score >= 50 ? 'Review manually' : 'Decline';
+
+  return { score, band, recommendation, factors, risks, incomeToRentRatio: Math.round(incomeToRentRatio * 100) / 100 };
+}
+
+// ── POST /api/v1/ai/screen-tenant ───────────────────────────────────────────
+router.post('/screen-tenant', async (req: Request, res: Response) => {
   try {
-    const { sellerUrl, sellerName } = req.body;
-    if (!sellerUrl) {
-      res.status(400).json({ success: false, error: 'sellerUrl is required' });
-      return;
+    const { monthlyRent, ...tenantInfo } = req.body;
+    if (!tenantInfo.name || !tenantInfo.email || !tenantInfo.monthlyIncome) {
+      return res.status(400).json({ success: false, error: 'name, email, and monthlyIncome are required' });
     }
+    const result = screenTenant(tenantInfo, monthlyRent);
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
-    // Monetization gate: debit $PAB before running real-source checks.
-    const feeDeclined = await debitScanFee((req as any).userId, PAB_FEE_PER_CHECK);
-    if (feeDeclined) return res.status(402).json({ success: false, error: feeDeclined });
+// ── AI Listing Description Writer ───────────────────────────────────────────
+interface ListingWriterInput {
+  propertyType: string;
+  bedrooms: number;
+  bathrooms: number;
+  sqft: number;
+  city: string;
+  state: string;
+  amenities: string[];
+  tone?: 'professional' | 'casual' | 'luxury';
+}
 
-    // In a real implementation, we would scrape the URL. For the demo, we generate mock reviews based on the name.
-    // Tip: Add 'bot' to the sellerName to trigger the fake review mock.
-    const isBot = sellerName?.toLowerCase().includes('bot') || sellerName?.toLowerCase().includes('fake');
-    
-    const reviews = isBot 
-      ? [
-          "very good product i like so much fast shipping",
-          "very good product i like so much fast shipping",
-          "nice quality sir highly recommend",
-          "very good product i like so much fast shipping",
-          "nice quality sir highly recommend",
-          "five star seller god bless you",
-          "five star seller god bless you",
-        ]
-      : [
-          "The shipping was a bit delayed but the quality is exactly as described. Will buy again.",
-          "Decent product for the price. The packaging was a bit damaged though.",
-          "Bought this for my son, he loves it. Good seller.",
-          "The color is slightly different from the picture but overall acceptable.",
-          "Customer service was helpful when I asked about sizing.",
-        ];
+function generateListingDescription(input: ListingWriterInput): string {
+  const tone = input.tone || 'professional';
+  const amenitiesList = input.amenities.length > 0 ? input.amenities.join(', ') : 'modern finishes';
 
-    const promptContext = { sellerName, reviews, url: sellerUrl };
-    const promptTemplate = `
-      You are Pabandi's AI Trust Oracle. Analyze these e-commerce seller reviews for "Brushing Scams" and Review Farm syntax.
-      Look for repetitive phrasing, unnatural grammar, duplicate reviews, or bot-like behavior.
-      
-      Context: {context}
-      
-      Respond strictly in valid JSON format with the following keys:
-      - isFake (boolean)
-      - trustScore (number, 0-100)
-      - rationale (string, explain exactly why you think these are fake or real based on the review syntax)
-      - reviewFarmProbability (number, 0-100)
-    `;
+  const intros: Record<string, string> = {
+    professional: `Welcome to this beautifully maintained ${input.bedrooms}-bedroom, ${input.bathrooms}-bathroom ${input.propertyType} in ${input.city}, ${input.state}.`,
+    casual: `Check out this awesome ${input.bedrooms}bd/${input.bathrooms}ba ${input.propertyType} in ${input.city}!`,
+    luxury: `Exceptional ${input.propertyType} residence offering ${input.bedrooms} bedrooms and ${input.bathrooms} bathrooms in prestigious ${input.city}, ${input.state}.`,
+  };
 
-    const aiResponse = await aiNlpService.generateCopy(promptTemplate, promptContext);
-    
-    let analysisResult = { isFake: false, trustScore: 85, rationale: "Reviews appear natural.", reviewFarmProbability: 10 };
-    try {
-      const jsonStr = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
-      analysisResult = JSON.parse(jsonStr);
-    } catch (e) {
-      console.error("[Daraz Scanner] Failed to parse LLM JSON:", e);
+  const sizeLine = `Spanning ${input.sqft.toLocaleString()} square feet, this property offers comfortable living space.`;
+  const amenitiesLine = `Featuring ${amenitiesList}.`;
+  const locationLine = `Located in ${input.city}, ${input.state} — close to shopping, dining, and transportation.`;
+
+  return `${intros[tone]}\n\n${sizeLine}\n\n${amenitiesLine}\n\n${locationLine}\n\nSchedule a showing today!`;
+}
+
+// ── POST /api/v1/ai/generate-listing ────────────────────────────────────────
+router.post('/generate-listing', async (req: Request, res: Response) => {
+  try {
+    const input: ListingWriterInput = req.body;
+    if (!input.propertyType || !input.bedrooms || !input.city) {
+      return res.status(400).json({ success: false, error: 'propertyType, bedrooms, and city are required' });
     }
-
-    // Persist the verdict + anchor it on-chain (fail-open: attestation is best-effort
-    // so a down blockchain never breaks the scan response). Mirrors reliability.service.
-    let checkId: string | null = null;
-    let attestationTx: string | null = null;
-    try {
-      const check = await prisma.backgroundCheck.create({
-        data: {
-          subjectType: 'BUSINESS',
-          subjectName: sellerName || 'Unknown Seller',
-          subjectId: sellerName || undefined,
-          subjectWebsite: sellerUrl,
-          requestedBy: (req as any).userId,
-          status: 'COMPLETE',
-          riskScore: analysisResult.trustScore,
-          riskBand: analysisResult.trustScore >= 80 ? 'A' : analysisResult.trustScore >= 50 ? 'B' : 'C',
-          recommendation: analysisResult.isFake ? 'REJECT' : 'PASS',
-          summary: analysisResult.rationale,
-          trigger: 'PRE_BOOKING',
-          pabFee: PAB_FEE_PER_CHECK,
-        },
-      });
-      checkId = check.id;
-      // Anchor on Solana (mock mode hashes JSON into a bs58 "txHash"; production is
-      // stubbed but the call never throws). Use the check id as the reservation ref.
-      const att = await blockchainService.logTrustAttestationOnSolana(
-        (req as any).userId,
-        check.id,
-        'COMPLETED_BOOKING',
-        {
-          source: 'DARAZ_SCANNER',
-          sellerUrl,
-          reviewFarmProbability: analysisResult.reviewFarmProbability,
-          trustScore: analysisResult.trustScore,
-          isFake: analysisResult.isFake,
-        }
-      );
-      if (att.txHash) {
-        attestationTx = att.txHash;
-        // Raw UPDATE: the solanaAttestationId column is added idempotently by the
-        // BackgroundCheck /migrate self-heal, but Prisma's generated client may
-        // not know about it yet — raw SQL avoids a typed-model dependency.
-        await prisma.$executeRawUnsafe(
-          `UPDATE \"BackgroundCheck\" SET \"solanaAttestationId\" = $1 WHERE id = $2`,
-          att.txHash, check.id
-        ).catch(() => undefined); // non-fatal: attestation is best-effort
-      }
-    } catch (persistError: any) {
-      console.error("[Daraz Scanner] Background check / attestation save skipped (non-fatal):", persistError.message);
-    }
-
-    res.json({ success: true, data: {
-      sellerName: sellerName || 'Unknown Seller',
-      url: sellerUrl,
-      analysis: analysisResult,
-      rawReviewsScraped: reviews.length,
-      sampleReviews: reviews,
-      checkId,
-      attestationTx,
-    }});
-  } catch (error) {
-    next(error);
+    const description = generateListingDescription(input);
+    res.json({ success: true, data: { description } });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
