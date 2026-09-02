@@ -64,6 +64,11 @@ import RentRollPage from './pages/RentRollPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import TokenomicsPage from './pages/TokenomicsPage';
+import WalletConnectPage from './pages/WalletConnectPage';
+import OnRampPage from './pages/OnRampPage';
+import OffRampPage from './pages/OffRampPage';
+import TokenFlowPage from './pages/TokenFlowPage';
 import EscrowDetailPage from './pages/EscrowDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
@@ -178,6 +183,12 @@ function App() {
           <Route path="/marketplace" element={<PublicSEO seo={{ title: 'Pabandi Marketplace', description: 'Buy, sell, rent, and hire — all protected by escrow and background checks.' }}><MarketplacePage /></PublicSEO>} />
           <Route path="/listing/:id" element={<ListingDetailPage />} />
           <Route path="/escrow/:id" element={<EscrowDetailPage />} />
+          {/* Token & Wallet */}
+          <Route path="/tokenomics" element={<TokenomicsPage />} />
+          <Route path="/wallet" element={<WalletConnectPage />} />
+          <Route path="/onramp" element={<OnRampPage />} />
+          <Route path="/offramp" element={<OffRampPage />} />
+          <Route path="/token" element={<TokenFlowPage />} />
           {/* Trust Passport */}
           <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
           {/* Rewards */}
