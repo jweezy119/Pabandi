@@ -18,13 +18,23 @@ type DemoData = {
   pabEarned: number;
 };
 
+// Pre-populated demo data so the experience looks rich immediately
 const initialDemoData: DemoData = {
-  properties: [],
-  tenants: [],
-  appointments: [],
+  properties: [
+    { title: '2BR Apartment - Downtown', address: '123 Main St, Chicago, IL', rent: 1800, status: 'OCCUPIED' },
+    { title: '1BR Condo - Lakeview', address: '456 Oak Ave, Chicago, IL', rent: 1200, status: 'OCCUPIED' },
+    { title: 'Studio - University', address: '789 Pine Rd, Chicago, IL', rent: 800, status: 'VACANT' },
+  ],
+  tenants: [
+    { name: 'Sarah Mitchell', email: 'sarah.m@email.com', band: 'LOW', stays: 2, disputes: 0, deposited: 1800, lastStay: '2026-08-01' },
+    { name: 'John Davis', email: 'john.d@email.com', band: 'LOW', stays: 1, disputes: 0, deposited: 1200, lastStay: '2026-07-15' },
+  ],
+  appointments: [
+    { id: 'appt-demo-1', tenantName: 'Mike Johnson', tenantEmail: 'mike.j@email.com', property: 'Studio - University', date: '2026-09-05T14:00:00', status: 'CONFIRMED' },
+  ],
   screeningRun: false,
   walletConnected: false,
-  pabEarned: 0,
+  pabEarned: 43,
 };
 
 const TABS = [
@@ -169,7 +179,7 @@ export const DemoWalkthroughPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Navigation - Horizontal scroll on mobile */}
+      {/* Tab Navigation */}
       <div className="sticky top-[57px] z-40 bg-surface/60 backdrop-blur-lg border-b border-white/5 overflow-x-auto no-scrollbar">
         <div className="max-w-6xl mx-auto px-4 py-2 flex gap-1" ref={scrollRef}>
           {TABS.map((t) => (
@@ -188,7 +198,6 @@ export const DemoWalkthroughPage: React.FC = () => {
         {/* —— Property Manager Tab —— */}
         {tab === 'pm' && (
           <div className="space-y-4">
-            {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Surface className="text-center p-3 md:p-4">
                 <div className="text-xl md:text-2xl font-bold text-slate-100">{demoData.properties.length}</div>
@@ -208,7 +217,6 @@ export const DemoWalkthroughPage: React.FC = () => {
               </Surface>
             </div>
 
-            {/* Properties */}
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base md:text-lg font-bold text-slate-100">Properties</h3>
@@ -225,31 +233,26 @@ export const DemoWalkthroughPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              {demoData.properties.length === 0 ? (
-                <p className="text-sm py-4 text-center" style={{ color: tokens.color.muted }}>No properties yet. Add one above!</p>
-              ) : (
-                <div className="space-y-2">
-                  {demoData.properties.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                      <div>
-                        <div className="font-semibold text-slate-100">{p.title}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
-                      </div>
-                      <Badge tone={p.status === 'VACANT' ? 'info' : 'success'}>{p.status}</Badge>
+              <div className="space-y-2">
+                {demoData.properties.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                    <div>
+                      <div className="font-semibold text-slate-100">{p.title}</div>
+                      <div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <Badge tone={p.status === 'VACANT' ? 'info' : 'success'}>{p.status}</Badge>
+                  </div>
+                ))}
+              </div>
             </Surface>
 
-            {/* Tenants */}
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base md:text-lg font-bold text-slate-100">Tenants</h3>
                 <Button onClick={() => setShowTenantForm(!showTenantForm)} size="sm">+ Add</Button>
               </div>
               {showTenantForm && (
-                <div className="mb-4 p-3 md:p-4 rounded-xl bg-white/5 space-y-3">
+                <div className="mb-4 p-3 rounded-xl bg-white/5 space-y-3">
                   <input value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} placeholder="Tenant name" className={inputClass} />
                   <input value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} placeholder="Email *" type="email" className={inputClass} />
                   <div className="flex gap-2">
@@ -258,21 +261,17 @@ export const DemoWalkthroughPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              {demoData.tenants.length === 0 ? (
-                <p className="text-sm py-4 text-center" style={{ color: tokens.color.muted }}>No tenants yet. Add one above!</p>
-              ) : (
-                <div className="space-y-2">
-                  {demoData.tenants.map((t, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                      <div>
-                        <div className="font-semibold text-slate-100">{t.name || t.email}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
-                      </div>
-                      <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
+              <div className="space-y-2">
+                {demoData.tenants.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                    <div>
+                      <div className="font-semibold text-slate-100">{t.name || t.email}</div>
+                      <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
+                  </div>
+                ))}
+              </div>
             </Surface>
           </div>
         )}
@@ -281,7 +280,7 @@ export const DemoWalkthroughPage: React.FC = () => {
         {tab === 'sale' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-4">How it works</h3>
+              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-4">How Secured Sales Work</h3>
               <div className="space-y-3">
                 {[
                   { icon: '🛡️', title: 'Seller opens a secured sale', desc: 'Drop the Pabandi widget on any listing. The seller opens a secured sale and gets a shareable buyer link.' },
@@ -382,14 +381,6 @@ export const DemoWalkthroughPage: React.FC = () => {
                 </div>
               )}
             </Surface>
-            <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-3">Screening sources</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5"><span className="text-xl">🏛️</span><div><div className="font-semibold text-slate-100 text-sm">US CourtListener</div><div className="text-xs" style={{ color: tokens.color.muted }}>Real eviction records from US federal and state courts</div></div></div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5"><span className="text-xl">🇵🇰</span><div><div className="font-semibold text-slate-100 text-sm">PK BackgroundCheck</div><div className="text-xs" style={{ color: tokens.color.muted }}>Pakistan civil and criminal records</div></div></div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5"><span className="text-xl">✏️</span><div><div className="font-semibold text-slate-100 text-sm">Manual</div><div className="text-xs" style={{ color: tokens.color.muted }}>Manager-entered risk assessment</div></div></div>
-              </div>
-            </Surface>
           </div>
         )}
 
@@ -413,21 +404,17 @@ export const DemoWalkthroughPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              {demoData.appointments.length === 0 ? (
-                <p className="text-sm py-4 text-center" style={{ color: tokens.color.muted }}>No appointments yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {demoData.appointments.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                      <div>
-                        <div className="font-semibold text-slate-100">{a.tenantName}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{a.property || 'No property'} · {new Date(a.date).toLocaleString()}</div>
-                      </div>
-                      <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'info' : 'warning'}>{a.status}</Badge>
+              <div className="space-y-2">
+                {demoData.appointments.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                    <div>
+                      <div className="font-semibold text-slate-100">{a.tenantName}</div>
+                      <div className="text-xs" style={{ color: tokens.color.muted }}>{a.property || 'No property'} · {new Date(a.date).toLocaleString()}</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'info' : 'warning'}>{a.status}</Badge>
+                  </div>
+                ))}
+              </div>
             </Surface>
           </div>
         )}
@@ -438,28 +425,24 @@ export const DemoWalkthroughPage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold text-slate-100 mb-2">Tenant history timeline</h3>
               <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Track every tenant's stays, disputes, payments, and risk bands.</p>
-              {demoData.tenants.length === 0 ? (
-                <p className="text-sm py-4 text-center" style={{ color: tokens.color.muted }}>No tenants yet. Add tenants in the Property Manager tab.</p>
-              ) : (
-                <div className="space-y-3">
-                  {demoData.tenants.map((t, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-white/5">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <div className="font-bold text-slate-100">{t.name || t.email}</div>
-                          <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
-                        </div>
-                        <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
+              <div className="space-y-3">
+                {demoData.tenants.map((t, i) => (
+                  <div key={i} className="p-3 rounded-xl bg-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <div className="font-bold text-slate-100">{t.name || t.email}</div>
+                        <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div><div className="font-bold text-slate-100">{t.stays || 0}</div><div style={{ color: tokens.color.muted }}>Stays</div></div>
-                        <div><div className="font-bold text-rose-300">{t.disputes || 0}</div><div style={{ color: tokens.color.muted }}>Disputes</div></div>
-                        <div><div className="font-bold text-emerald-300">${t.deposited || 0}</div><div style={{ color: tokens.color.muted }}>Deposits</div></div>
-                      </div>
+                      <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div><div className="font-bold text-slate-100">{t.stays || 0}</div><div style={{ color: tokens.color.muted }}>Stays</div></div>
+                      <div><div className="font-bold text-rose-300">{t.disputes || 0}</div><div style={{ color: tokens.color.muted }}>Disputes</div></div>
+                      <div><div className="font-bold text-emerald-300">${t.deposited || 0}</div><div style={{ color: tokens.color.muted }}>Deposits</div></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Surface>
           </div>
         )}
@@ -517,15 +500,6 @@ export const DemoWalkthroughPage: React.FC = () => {
                 </div>
               )}
             </Surface>
-            <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-3">Tokenomics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                <div><div className="text-lg font-bold text-slate-100">2%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Platform fee</div></div>
-                <div><div className="text-lg font-bold text-slate-100">12%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Burn</div></div>
-                <div><div className="text-lg font-bold text-slate-100">35%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Liquidity</div></div>
-                <div><div className="text-lg font-bold text-slate-100">25%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Yield</div></div>
-              </div>
-            </Surface>
           </div>
         )}
 
@@ -537,27 +511,18 @@ export const DemoWalkthroughPage: React.FC = () => {
               <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>Choose how you want to set up your account.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Surface className={`cursor-pointer p-4 transition-all ${convertChoice === 'keep' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('keep')}>
-                <div className="text-2xl mb-2">📋</div>
-                <h3 className="font-bold text-slate-100">Keep my demo data</h3>
-                <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Migrate the properties, tenants, and settings you just tried out.</p>
-                {demoData.properties.length > 0 && <Badge tone="success" className="mt-2">{demoData.properties.length} properties ready</Badge>}
-              </Surface>
-              <Surface className={`cursor-pointer p-4 transition-all ${convertChoice === 'import' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('import')}>
-                <div className="text-2xl mb-2">📥</div>
-                <h3 className="font-bold text-slate-100">Import from my CRM</h3>
-                <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Upload a CSV or connect your existing property management software.</p>
-              </Surface>
-              <Surface className={`cursor-pointer p-4 transition-all ${convertChoice === 'webhook' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('webhook')}>
-                <div className="text-2xl mb-2">🔗</div>
-                <h3 className="font-bold text-slate-100">Connect via webhook</h3>
-                <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Integrate Pabandi as a trust layer on top of your existing CRM.</p>
-              </Surface>
-              <Surface className={`cursor-pointer p-4 transition-all ${convertChoice === 'fresh' ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice('fresh')}>
-                <div className="text-2xl mb-2">✨</div>
-                <h3 className="font-bold text-slate-100">Start fresh</h3>
-                <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Create a clean account and set everything up from scratch.</p>
-              </Surface>
+              {[
+                { id: 'keep', icon: '📋', title: 'Keep my demo data', desc: 'Migrate the properties, tenants, and settings you just tried out.' },
+                { id: 'import', icon: '📥', title: 'Import from my CRM', desc: 'Upload a CSV or connect your existing property management software.' },
+                { id: 'webhook', icon: '🔗', title: 'Connect via webhook', desc: 'Integrate Pabandi as a trust layer on top of your existing CRM.' },
+                { id: 'fresh', icon: '✨', title: 'Start fresh', desc: 'Create a clean account and set everything up from scratch.' },
+              ].map((opt) => (
+                <Surface key={opt.id} className={`cursor-pointer p-4 transition-all ${convertChoice === opt.id ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice(opt.id as any)}>
+                  <div className="text-2xl mb-2">{opt.icon}</div>
+                  <h3 className="font-bold text-slate-100">{opt.title}</h3>
+                  <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>{opt.desc}</p>
+                </Surface>
+              ))}
             </div>
 
             {convertChoice === 'import' && (
@@ -579,17 +544,6 @@ export const DemoWalkthroughPage: React.FC = () => {
                     ))}
                   </div>
                 )}
-              </Surface>
-            )}
-
-            {convertChoice === 'webhook' && (
-              <Surface className="p-4">
-                <h3 className="text-base font-bold text-slate-100 mb-3">Webhook integration</h3>
-                <div className="space-y-2">
-                  {['tenant.created → auto-screen', 'lease.signed → escrow deposit', 'sale.completed → release funds'].map((e) => (
-                    <div key={e} className="text-xs text-indigo-300">→ {e}</div>
-                  ))}
-                </div>
               </Surface>
             )}
 
