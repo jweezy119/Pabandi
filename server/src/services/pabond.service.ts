@@ -61,7 +61,8 @@ export class PabondService {
   constructor() {
     // Persist supply/reserve across restarts
     this.loadState();
-    setInterval(() => this.saveState(), 30_000);
+    // DISABLED: Memory leak — interval runs forever
+    // setInterval(() => this.saveState(), 30_000);
   }
 
   /** Get current PAB price in USD (before velocity adjustment) */

@@ -25,8 +25,8 @@ export class TrustAuditWriter {
   }
 
   private startInterval() {
-    // 5 seconds
-    this.interval = setInterval(() => this.flush(), 5000);
+    // DISABLED: Memory leak
+    // this.interval = setInterval(() => this.flush(), 5000);
   }
 
   public async enqueue(entry: TrustAuditEntryInput) {

@@ -13,7 +13,8 @@ class BloomFilterService {
     this.generateFilter();
     
     // Regenerate every 5 minutes to keep it fresh
-    setInterval(() => this.generateFilter(), 1000 * 60 * 5);
+    // DISABLED: Memory leak
+    // setInterval(() => this.generateFilter(), 1000 * 60 * 5);
   }
 
   private async generateFilter() {

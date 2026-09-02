@@ -11,7 +11,8 @@ class CryptoService {
     
     // In a real multi-instance backend, this would be stored in Redis
     // and rotated by a cron job globally at midnight UTC.
-    setInterval(() => this.checkRotation(), 1000 * 60 * 60); // Check every hour
+    // DISABLED: Memory leak
+    // setInterval(() => this.checkRotation(), 1000 * 60 * 60);
   }
 
   private generateSalt(): string {
