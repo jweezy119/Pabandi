@@ -63,6 +63,8 @@ import LeaseGeneratorPage from './pages/LeaseGeneratorPage';
 import RentRollPage from './pages/RentRollPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import RewardsPage from './pages/RewardsPage';
+import ListingDetailPage from './pages/ListingDetailPage';
+import EscrowDetailPage from './pages/EscrowDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
@@ -174,6 +176,8 @@ function App() {
           <Route path="/documents" element={<DocumentsPage />} />
           {/* Marketplace - Buy, Sell, Rent, Hire */}
           <Route path="/marketplace" element={<PublicSEO seo={{ title: 'Pabandi Marketplace', description: 'Buy, sell, rent, and hire — all protected by escrow and background checks.' }}><MarketplacePage /></PublicSEO>} />
+          <Route path="/listing/:id" element={<ListingDetailPage />} />
+          <Route path="/escrow/:id" element={<EscrowDetailPage />} />
           {/* Trust Passport */}
           <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
           {/* Rewards */}
