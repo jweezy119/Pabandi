@@ -1,337 +1,183 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient, LedgerEntryType } from '@prisma/client';
-import { isDemoMode } from '../utils/env';
+import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
 
-const prisma = new PrismaClient();
 const router = Router();
 
-// Public: validate a marketplace partner code for the /partners/marketplace share link
-// and the /embed/marketplace widget. Returns the partner display info or 404.
-router.get('/validate/:code', async (req: Request, res: Response) => {
-  try {
-    const code = String(req.params.code || '').trim().toUpperCase();
-    if (!code) return res.status(400).json({ error: 'Missing partner code' });
-
-    const profile = await prisma.accountManagerProfile.findUnique({
-      where: { referralCode: code },
-      include: { user: { select: { firstName: true, lastName: true } } },
-    });
-    if (!profile || profile.status !== 'ACTIVE') {
-      return res.status(404).json({ error: 'Partner code not found' });
-    }
-    const config = await prisma.partnerProgramConfig.findFirst();
-    res.json({
-      success: true,
-      code: profile.referralCode,
-      partnerName: [profile.user?.firstName, profile.user?.lastName]
-        .filter(Boolean).join(' ') || 'A Pabandi partner',
-      rateYear1: config?.rateYear1 ?? 0.03,
-    });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// POST /api/v1/marketplace/escrow/local-sale
-// A marketplace or power-seller opens a Pabandi-secured local sale from the embed widget.
-// Persists the sale (escrow) and ties it to the referring partner code for commission.
-// SIMULATED in demo mode (no real on-chain tx) — consistent with the rest of the platform.
-router.post('/escrow/local-sale', async (req: Request, res: Response) => {
+// ── GET /api/v1/marketplace/listings ────────────────────────────────────────
+// Public: browse & search listings.
+router.get('/listings', async (req: Request, res: Response) => {
   try {
     const {
-      referralCode, listingUrl, itemTitle, amount, currency,
-      sellerEmail, buyerEmail,
-    } = req.body || {};
+      type, category, city, state, q, minPrice, maxPrice,
+      condition, sort = 'newest', page = '1', limit = '20',
+    } = req.query as Record<string, string>;
 
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-      return res.status(400).json({ success: false, error: 'A positive amount is required' });
+    const where: any = { status: 'ACTIVE' };
+    if (type) where.type = type.toUpperCase();
+    if (category) where.category = category.toLowerCase();
+    if (city) where.city = { contains: city, mode: 'insensitive' };
+    if (state) where.state = { contains: state, mode: 'insensitive' };
+    if (condition) where.condition = condition.toUpperCase();
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = parseFloat(minPrice);
+      if (maxPrice) where.price.lte = parseFloat(maxPrice);
     }
-    if (!sellerEmail) {
-      return res.status(400).json({ success: false, error: 'sellerEmail is required' });
-    }
-
-    // Validate the partner code if supplied (soft-fail: unknown codes just don't earn commission).
-    let resolvedCode: string | null = null;
-    if (referralCode) {
-      const profile = await prisma.accountManagerProfile.findUnique({
-        where: { referralCode: String(referralCode).trim().toUpperCase() },
-      });
-      if (profile && profile.status === 'ACTIVE') resolvedCode = profile.referralCode;
-    }
-
-    const simulated = isDemoMode();
-    const txHash = simulated
-      ? `localsale_init_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      : null;
-
-    const sale = await prisma.localSaleEscrow.create({
-      data: {
-        referralCode: resolvedCode,
-        listingUrl: listingUrl || null,
-        itemTitle: itemTitle || null,
-        amount: Number(amount),
-        currency: currency || 'USD',
-        sellerEmail: String(sellerEmail).toLowerCase().trim(),
-        buyerEmail: buyerEmail ? String(buyerEmail).toLowerCase().trim() : null,
-        status: 'VERIFIED', // identity assumed verified at widget open (signup/ID)
-        txHash,
-        simulated,
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        saleId: sale.id,
-        status: sale.status,
-        simulated,
-        txHash: sale.txHash,
-        // The seller shares this link with the buyer to fund + complete the escrow.
-        secureLink: `${req.protocol}://${req.get('host')}/embed/marketplace?sale=${sale.id}`,
-      },
-    });
-  } catch (e: any) {
-    console.error('[marketplace] local-sale failed:', e.message);
-    res.status(500).json({ success: false, error: 'Could not open secured sale' });
-  }
-});
-
-// GET /api/v1/marketplace/escrow/local-sale/:id — public status for the widget / seller page.
-router.get('/escrow/local-sale/:id', async (req: Request, res: Response) => {
-  try {
-    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
-    res.json({
-      success: true,
-      data: {
-        saleId: sale.id,
-        status: sale.status,
-        amount: sale.amount,
-        currency: sale.currency,
-        itemTitle: sale.itemTitle,
-        sellerEmail: sale.sellerEmail,
-        buyerEmail: sale.buyerEmail,
-        referralCode: sale.referralCode,
-        simulated: sale.simulated,
-        txHash: sale.txHash,
-        createdAt: sale.createdAt,
-      },
-    });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// POST /api/v1/marketplace/escrow/local-sale/:id/fund
-// Buyer funds the escrow. (SIMULATED hold in demo mode; real on-chain lock otherwise.)
-// Funds are now held — neither party can walk with them until release.
-router.post('/escrow/local-sale/:id/fund', async (req: Request, res: Response) => {
-  try {
-    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
-    if (sale.status !== 'VERIFIED') {
-      return res.status(400).json({ success: false, error: `Cannot fund a sale in status ${sale.status}` });
-    }
-    const buyerEmail = String(req.body?.buyerEmail || sale.buyerEmail || '').toLowerCase().trim();
-    if (!buyerEmail) {
-      return res.status(400).json({ success: false, error: 'buyerEmail is required to fund' });
-    }
-    const txHash = isDemoMode()
-      ? `localsale_fund_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      : sale.txHash;
-
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: sale.id },
-      data: { status: 'FUNDED', buyerEmail, txHash },
-    });
-
-    res.json({
-      success: true,
-      data: { saleId: updated.id, status: updated.status, simulated: updated.simulated, txHash: updated.txHash },
-    });
-  } catch (e: any) {
-    console.error('[marketplace] fund failed:', e.message);
-    res.status(500).json({ success: false, error: 'Could not fund escrow' });
-  }
-});
-
-// SafeMeet: curated safe public meetup spot types (no external API needed).
-// A seller/buyer picks one, or provides a custom location.
-const SAFE_MEET_SPOTS = [
-  { id: 'police', label: 'Police station lobby', note: '24/7 staffed, cameras, safest option' },
-  { id: 'bank', label: 'Bank lobby', note: 'Staffed, cameras, during business hours' },
-  { id: 'coffee', label: 'Busy coffee shop', note: 'Public, staffed, daytime' },
-  { id: 'mall', label: 'Shopping mall food court', note: 'Public, security, cameras' },
-  { id: 'library', label: 'Public library', note: 'Staffed, quiet, daytime' },
-  { id: 'custom', label: 'Custom location', note: 'Choose your own public spot' },
-];
-
-// GET /api/v1/marketplace/safe-meet — suggested safe meetup spots.
-router.get('/safe-meet', async (_req: Request, res: Response) => {
-  try {
-    res.json({ success: true, data: { spots: SAFE_MEET_SPOTS } });
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-});
-
-// POST /api/v1/marketplace/escrow/local-sale/:id/meetup
-// Schedule the SafeMeet: agreed location + time. Both parties should confirm.
-router.post('/escrow/local-sale/:id/meetup', async (req: Request, res: Response) => {
-  try {
-    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
-    if (sale.status === 'COMPLETED' || sale.status === 'CANCELLED' || sale.status === 'DISPUTED') {
-      return res.status(400).json({ success: false, error: `Cannot schedule meetup for a ${sale.status} sale` });
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { tags: { has: q } },
+      ];
     }
 
-    const { meetupLocation, meetupLat, meetupLng, meetupAt } = req.body || {};
-    if (!meetupLocation) {
-      return res.status(400).json({ success: false, error: 'meetupLocation is required' });
-    }
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
 
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: sale.id },
-      data: {
-        meetupLocation: String(meetupLocation),
-        meetupLat: meetupLat != null ? Number(meetupLat) : null,
-        meetupLng: meetupLng != null ? Number(meetupLng) : null,
-        meetupAt: meetupAt ? new Date(meetupAt) : null,
-        meetupStatus: 'SCHEDULED',
-      },
-    });
+    let orderBy: any = { createdAt: 'desc' };
+    if (sort === 'price_asc') orderBy = { price: 'asc' };
+    else if (sort === 'price_desc') orderBy = { price: 'desc' };
+    else if (sort === 'popular') orderBy = { viewCount: 'desc' };
+
+    const [listings, total] = await Promise.all([
+      prisma.marketplaceListing.findMany({
+        where, orderBy, skip, take: limitNum,
+        include: { seller: { select: { id: true, firstName: true, lastName: true, trustScore: true, createdAt: true } } },
+      }),
+      prisma.marketplaceListing.count({ where }),
+    ]);
 
     res.json({
       success: true,
       data: {
-        saleId: updated.id,
-        meetupLocation: updated.meetupLocation,
-        meetupLat: updated.meetupLat,
-        meetupLng: updated.meetupLng,
-        meetupAt: updated.meetupAt,
-        meetupStatus: updated.meetupStatus,
+        items: listings,
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
       },
     });
   } catch (e: any) {
-    console.error('[marketplace] meetup failed:', e.message);
-    res.status(500).json({ success: false, error: 'Could not schedule meetup' });
+    logger.error('Marketplace search failed:', e);
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// POST /api/v1/marketplace/escrow/local-sale/:id/dispute
-// Either party files a dispute (item not as described, no-show, robbery, etc.).
-// Marks the sale DISPUTED, locks the escrow, and creates a Dispute record for arbitration.
-router.post('/escrow/local-sale/:id/dispute', async (req: Request, res: Response) => {
+// ── GET /api/v1/marketplace/listings/:id ────────────────────────────────────
+router.get('/listings/:id', async (req: Request, res: Response) => {
   try {
-    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
-    if (sale.status === 'COMPLETED' || sale.status === 'CANCELLED' || sale.status === 'DISPUTED') {
-      return res.status(400).json({ success: false, error: `Cannot dispute a ${sale.status} sale` });
-    }
-
-    const { reportedByEmail, againstEmail, reason, type, evidenceUrls } = req.body || {};
-    if (!reportedByEmail || !reason) {
-      return res.status(400).json({ success: false, error: 'reportedByEmail and reason are required' });
-    }
-
-    // Mark the sale disputed.
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: sale.id },
-      data: { status: 'DISPUTED' },
+    const listing = await prisma.marketplaceListing.findUnique({
+      where: { id: req.params.id },
+      include: { seller: { select: { id: true, firstName: true, lastName: true, trustScore: true, walletAddress: true, createdAt: true } } },
     });
-
-    // Create a Dispute record (contextType=LOCAL_SALE) so jurors can arbitrate.
-    // We link via sellerEmail/buyerEmail since local sales are email-based, not userId-based.
-    const dispute = await prisma.dispute.create({
-      data: {
-        type: type || 'OTHER',
-        description: reason,
-        outcome: 'PENDING',
-        stakedAmount: 0,
-        contextType: 'LOCAL_SALE',
-        contextId: sale.id,
-        evidenceUrls: evidenceUrls || [],
-        // reportedById / userId are userId-based; for local sales we store email in description.
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        saleId: updated.id,
-        status: updated.status,
-        disputeId: dispute.id,
-        disputeOutcome: dispute.outcome,
-        message: 'Dispute filed. Escrow is locked pending arbitration. A community juror will review.',
-      },
-    });
+    if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
+    // Increment view count.
+    await prisma.marketplaceListing.update({ where: { id: listing.id }, data: { viewCount: { increment: 1 } } });
+    res.json({ success: true, data: listing });
   } catch (e: any) {
-    console.error('[marketplace] dispute failed:', e.message);
-    res.status(500).json({ success: false, error: 'Could not file dispute' });
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 
-// Record the partner commission for a completed secured sale (idempotent per sale).
-async function recordCommission(sale: any) {
-  if (!sale.referralCode) return;
-  const existing = await prisma.referralLedger.findFirst({
-    where: { reservationId: sale.id },
-  });
-  if (existing) return; // already booked
-
-  const profile = await prisma.accountManagerProfile.findUnique({ where: { referralCode: sale.referralCode } });
-  if (!profile) return;
-
-  const config = await prisma.partnerProgramConfig.findFirst();
-  const rate = config?.rateYear1 ?? 0.03;
-  const commission = Math.round(sale.amount * rate * 100) / 100;
-
-  await prisma.referralLedger.create({
-    data: {
-      profileId: profile.id,
-      type: LedgerEntryType.BOOKING_COMMISSION,
-      amount: commission,
-      currency: sale.currency || 'USD',
-      reservationId: sale.id,
-      platformFeeBasis: sale.amount,
-      commissionRate: rate,
-    },
-  });
-}
-
-// POST /api/v1/marketplace/escrow/local-sale/:id/release
-// Buyer (or seller) confirms the in-person exchange happened → release escrow to the
-// seller and book the partner commission. (SIMULATED release in demo mode.)
-router.post('/escrow/local-sale/:id/release', async (req: Request, res: Response) => {
+// ── POST /api/v1/marketplace/listings ───────────────────────────────────────
+// Create a listing (auth optional — guest can list with email only).
+router.post('/listings', async (req: Request, res: Response) => {
   try {
-    const sale = await prisma.localSaleEscrow.findUnique({ where: { id: req.params.id } });
-    if (!sale) return res.status(404).json({ success: false, error: 'Sale not found' });
-    if (sale.status !== 'FUNDED' && sale.status !== 'VERIFIED') {
-      return res.status(400).json({ success: false, error: `Cannot release a sale in status ${sale.status}` });
+    const {
+      title, description, type = 'ITEM', category, condition = 'GOOD',
+      price, currency = 'USD', city, state, zip, latitude, longitude,
+      imageUrls, sellerEmail, sellerName, tags, availableFrom, availableTo,
+    } = req.body;
+
+    if (!title || !price || !sellerEmail) {
+      return res.status(400).json({ success: false, error: 'title, price, and sellerEmail are required' });
     }
 
-    const txHash = isDemoMode()
-      ? `localsale_release_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      : sale.txHash;
-
-    const updated = await prisma.localSaleEscrow.update({
-      where: { id: sale.id },
-      data: { status: 'COMPLETED', txHash },
+    const listing = await prisma.marketplaceListing.create({
+      data: {
+        title, description, type: type.toUpperCase(), category: category?.toLowerCase(),
+        condition: condition.toUpperCase(), price: parseFloat(price), currency,
+        city, state, zip, latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+        imageUrls: imageUrls || [], sellerEmail, sellerName, tags: tags || [],
+        availableFrom: availableFrom ? new Date(availableFrom) : undefined,
+        availableTo: availableTo ? new Date(availableTo) : undefined,
+      },
     });
 
-    // Book the partner's commission (best-effort; never blocks the release).
-    try {
-      await recordCommission(updated);
-    } catch (e: any) {
-      console.error('[marketplace] commission booking failed:', e.message);
-    }
-
-    res.json({
-      success: true,
-      data: { saleId: updated.id, status: updated.status, simulated: updated.simulated, txHash: updated.txHash },
-    });
+    res.status(201).json({ success: true, data: listing });
   } catch (e: any) {
-    res.status(500).json({ success: false, error: 'Could not release sale' });
+    logger.error('Create listing failed:', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── PATCH /api/v1/marketplace/listings/:id ──────────────────────────────────
+router.patch('/listings/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const allowed = ['title', 'description', 'price', 'condition', 'status', 'imageUrls', 'tags', 'availableFrom', 'availableTo'];
+    const data: any = {};
+    for (const k of allowed) {
+      if (req.body[k] !== undefined) data[k] = req.body[k];
+    }
+    const listing = await prisma.marketplaceListing.update({ where: { id }, data });
+    res.json({ success: true, data: listing });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── DELETE /api/v1/marketplace/listings/:id ─────────────────────────────────
+router.delete('/listings/:id', async (req: Request, res: Response) => {
+  try {
+    await prisma.marketplaceListing.update({ where: { id: req.params.id }, data: { status: 'DELETED' } });
+    res.json({ success: true, message: 'Listing deleted' });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── POST /api/v1/marketplace/listings/:id/book ──────────────────────────────
+// Book a viewing / service slot.
+router.post('/listings/:id/book', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { buyerEmail, buyerName, scheduledAt, notes } = req.body;
+    if (!buyerEmail || !scheduledAt) {
+      return res.status(400).json({ success: false, error: 'buyerEmail and scheduledAt are required' });
+    }
+    const listing = await prisma.marketplaceListing.findUnique({ where: { id } });
+    if (!listing) return res.status(404).json({ success: false, error: 'Listing not found' });
+
+    const booking = await prisma.marketplaceBooking.create({
+      data: {
+        listingId: id, buyerEmail, buyerName, scheduledAt: new Date(scheduledAt), notes,
+      },
+    });
+
+    // TODO: notify seller via email/notification
+
+    res.status(201).json({ success: true, data: booking });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── GET /api/v1/marketplace/categories ──────────────────────────────────────
+// Public: category metadata with counts.
+router.get('/categories', async (_req: Request, res: Response) => {
+  try {
+    const categories = await prisma.marketplaceListing.groupBy({
+      by: ['category'],
+      where: { status: 'ACTIVE' },
+      _count: { category: true },
+    });
+    res.json({ success: true, data: categories });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 

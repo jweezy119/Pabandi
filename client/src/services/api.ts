@@ -453,6 +453,25 @@ export const marketplaceService = {
   scheduleMeetup: (id: string, payload: { meetupLocation: string; meetupLat?: number; meetupLng?: number; meetupAt?: string }) => apiClient.post(`/marketplace/escrow/local-sale/${id}/meetup`, payload),
   fileDispute: (id: string, payload: { reportedByEmail: string; reason: string; type?: string; evidenceUrls?: string[] }) => apiClient.post(`/marketplace/escrow/local-sale/${id}/dispute`, payload),
   safeMeetSpots: () => apiClient.get('/marketplace/safe-meet'),
+  // New unified marketplace
+  listings: (params?: { type?: string; category?: string; city?: string; q?: string; page?: number; limit?: number; sort?: string }) => apiClient.get('/marketplace/listings', { params }),
+  getListing: (id: string) => apiClient.get(`/marketplace/listings/${id}`),
+  createListing: (payload: any) => apiClient.post('/marketplace/listings', payload),
+  updateListing: (id: string, payload: any) => apiClient.patch(`/marketplace/listings/${id}`, payload),
+  deleteListing: (id: string) => apiClient.delete(`/marketplace/listings/${id}`),
+  bookListing: (id: string, payload: { buyerEmail: string; buyerName?: string; scheduledAt: string; notes?: string }) => apiClient.post(`/marketplace/listings/${id}/book`, payload),
+  categories: () => apiClient.get('/marketplace/categories'),
+};
+
+// Escrow state machine: PENDING → FUNDED → COMPLETED | DISPUTED | CANCELLED
+export const escrowService = {
+  create: (payload: { itemTitle: string; amount: number; currency?: string; sellerEmail: string; buyerEmail?: string; listingUrl?: string; referralCode?: string; meetupLocation?: string; meetupLat?: number; meetupLng?: number; meetupAt?: string }) => apiClient.post('/escrow', payload),
+  get: (id: string) => apiClient.get(`/escrow/${id}`),
+  fund: (id: string) => apiClient.post(`/escrow/${id}/fund`),
+  release: (id: string) => apiClient.post(`/escrow/${id}/release`),
+  dispute: (id: string) => apiClient.post(`/escrow/${id}/dispute`),
+  cancel: (id: string) => apiClient.post(`/escrow/${id}/cancel`),
+  list: (email: string, status?: string) => apiClient.get('/escrow', { params: { email, status } }),
 };
 
 // Property Manager CRM + White Label (landlords, property managers).

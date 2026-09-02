@@ -82,6 +82,7 @@ model User {
   renterEquityWallets     RenterEquityWallet[]
   courtChecks             CourtCheck[]
   propertyManagerProfile  PropertyManagerProfile?
+  marketplaceListings    MarketplaceListing[]
 
   @@index([email])
   @@index([phone])
@@ -2709,4 +2710,85 @@ model UsdyLead {
   @@unique([email])
   @@index([createdAt])
   @@index([country])
+}
+
+// ── Marketplace: Buy, Sell, Rent, Hire ───────────────────────────────────────
+// Unified marketplace for physical items, property rentals, and service providers.
+
+model MarketplaceListing {
+  id            String   @id @default(cuid())
+  sellerId      String?  // User.id (optional for guest listings)
+  sellerEmail   String
+  sellerName    String?
+  // What kind of listing this is.
+  type          ListingType @default(ITEM)
+  // Item details.
+  title         String
+  description   String?
+  category      String   // furniture | electronics | appliances | clothing | sports | other
+  condition     String   // NEW | LIKE_NEW | GOOD | FAIR | POOR
+  price         Float
+  currency      String   @default("USD")
+  // Location.
+  city          String?
+  state         String?
+  zip           String?
+  latitude      Float?
+  longitude     Float?
+  // Photos.
+  imageUrls     String[] @default([])
+  // Status: ACTIVE | SOLD | RESERVED | EXPIRED | DELETED.
+  status        String   @default("ACTIVE")
+  // Escrow protection.
+  escrowEnabled Boolean  @default(true)
+  escrowId      String?  // LocalSaleEscrow.id when funded
+  // Reservation / booking fields (for rental/service listings).
+  availableFrom DateTime?
+  availableTo   DateTime?
+  // Engagement.
+  viewCount     Int      @default(0)
+  favoriteCount Int      @default(0)
+  // Tags for search.
+  tags          String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  seller User? @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  bookings MarketplaceBooking[]
+
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([city])
+  @@index([sellerId])
+  @@index([price])
+  @@index([createdAt])
+}
+
+enum ListingType {
+  ITEM     // physical item for sale
+  RENTAL   // property/apartment rental
+  SERVICE  // freelancer/service provider
+  WANTED   // buyer looking for something
+}
+
+model MarketplaceBooking {
+  id           String   @id @default(cuid())
+  listingId    String
+  buyerId      String?
+  buyerEmail   String
+  buyerName    String?
+  // When.
+  scheduledAt  DateTime
+  // Status: PENDING | CONFIRMED | COMPLETED | CANCELLED | NO_SHOW.
+  status       String   @default("PENDING")
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([buyerEmail])
+  @@index([status])
 }
