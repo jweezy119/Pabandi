@@ -83,6 +83,7 @@ model User {
   courtChecks             CourtCheck[]
   propertyManagerProfile  PropertyManagerProfile?
   marketplaceListings    MarketplaceListing[]
+  pabWallet              PabWallet?
 
   @@index([email])
   @@index([phone])
@@ -2698,7 +2699,7 @@ model ProgramTask {
 // show Ondo a growing, verifiable list of properties wanting tokenized-T-bill rent yield.
 model UsdyLead {
   id           String   @id @default(cuid())
-  email        String
+  email        String   @unique
   name         String?
   propertyType String? // hotel | guesthouse | vacation_rental | serviced_apartment | other
   portfolioSize Int?    // number of units/properties the lead manages
@@ -2707,9 +2708,99 @@ model UsdyLead {
   source       String   @default("usdy_landing") // where the lead came from
   createdAt    DateTime @default(now())
 
-  @@unique([email])
   @@index([createdAt])
   @@index([country])
+}
+
+// ── PAB Arcade Token Economy ─────────────────────────────────────────────────
+// PAB is an arcade-token: earn by doing things, spend on services, stake for tiers.
+// Zero capital needed — issued as users earn it, burned as they spend it.
+
+model PabWallet {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  balance     Float    @default(0)
+  totalEarned Float    @default(0)
+  totalSpent  Float    @default(0)
+  totalBurned Float    @default(0)
+  stakedAmt   Float    @default(0)
+  stakedTier  String?
+  stakedAt    DateTime?
+  stakeExpires DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PabTransaction[]
+
+  @@index([userId])
+  @@index([stakedTier])
+}
+
+model PabTransaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  type        String
+  amount      Float
+  action      String
+  description String
+  refType     String?
+  refId       String?
+  balanceAfter Float
+  createdAt   DateTime @default(now())
+
+  wallet PabWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([type])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model PabEarnRule {
+  id          String   @id @default(cuid())
+  action      String   @unique
+  amount      Float
+  description String
+  isActive    Boolean  @default(true)
+  cooldownHours Int    @default(0)
+  dailyCap    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PabSpendRule {
+  id          String   @id @default(cuid())
+  action      String   @unique
+  cost        Float
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PabStakeTier {
+  id          String   @id @default(cuid())
+  tier        String   @unique
+  minStake    Float
+  durationDays Int
+  benefit     String
+  feeDiscount Float    @default(0)
+  searchBoost Boolean  @default(false)
+  badge       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PabTreasury {
+  id          String   @id @default(cuid())
+  totalSolEarned Float @default(0)
+  totalSolToPool Float @default(0)
+  totalPabBurned Float @default(0)
+  totalPabStaked Float @default(0)
+  poolSolBalance Float @default(0)
+  poolUsdcBalance Float @default(0)
+  updatedAt   DateTime @updatedAt
 }
 
 // ── Marketplace: Buy, Sell, Rent, Hire ───────────────────────────────────────
