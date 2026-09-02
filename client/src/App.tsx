@@ -64,6 +64,11 @@ import RentRollPage from './pages/RentRollPage';
 import TrustPassportPage from './pages/TrustPassportPage';
 import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import CalculatorPage from './pages/CalculatorPage';
+import NotificationCenter from './pages/NotificationCenter';
+import { DashboardPage as OldDashboardPage } from './pages/DashboardPage';
+import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
+import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
 import TokenomicsPage from './pages/TokenomicsPage';
 import WalletConnectPage from './pages/WalletConnectPage';
@@ -192,6 +197,10 @@ function App() {
           <Route path="/offramp" element={<OffRampPage />} />
           <Route path="/token" element={<TokenFlowPage />} />
           {/* AI Tools */}
+          <Route path="/dashboard" element={<UnifiedDashboardPage />} />
+          <Route path="/notifications" element={<NotificationCenter />} />
+          <Route path="/calculator" element={<CalculatorPage />} />
+          <Route path="/ai/chat" element={<AiChatPage />} />
           <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
           {/* AI Real Estate */}
           <Route path="/ai" element={<AIPage />} />

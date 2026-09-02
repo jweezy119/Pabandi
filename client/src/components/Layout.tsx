@@ -274,6 +274,12 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
+            <Dropdown label="AI Tools" current={['/ai', '/ai/analyze', '/ai/chat', '/calculator'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/ai/analyze">Property Analyzer</DropdownItem>
+              <DropdownItem to="/ai/chat">AI Chat</DropdownItem>
+              <DropdownItem to="/ai">Lease Analyzer</DropdownItem>
+              <DropdownItem to="/calculator">Calculator</DropdownItem>
+            </Dropdown>
             <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/profiles'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
