@@ -70,6 +70,7 @@ import SmartSearchPage from './pages/SmartSearchPage';
 import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
+import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
 import TokenomicsPage from './pages/TokenomicsPage';
 import WalletConnectPage from './pages/WalletConnectPage';
 import OnRampPage from './pages/OnRampPage';
@@ -203,6 +204,7 @@ function App() {
           <Route path="/calculator" element={<CalculatorPage />} />
           <Route path="/ai/chat" element={<AiChatPage />} />
           <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
+          <Route path="/ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
           {/* AI Real Estate */}
           <Route path="/ai" element={<AIPage />} />
           {/* Trust Passport */}
