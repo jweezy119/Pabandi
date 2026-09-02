@@ -70,6 +70,8 @@ import SmartSearchPage from './pages/SmartSearchPage';
 import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
+import BusinessOwnerAIDashboard from './pages/BusinessOwnerAIDashboard';
+import CustomerAIDashboard from './pages/CustomerAIDashboard';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
 import TokenomicsPage from './pages/TokenomicsPage';
 import WalletConnectPage from './pages/WalletConnectPage';
@@ -199,6 +201,8 @@ function App() {
           <Route path="/token" element={<TokenFlowPage />} />
           {/* AI Tools */}
           <Route path="/dashboard" element={<UnifiedDashboardPage />} />
+          <Route path="/business/ai" element={<BusinessOwnerAIDashboard />} />
+          <Route path="/customer/ai" element={<CustomerAIDashboard />} />
           <Route path="/search" element={<SmartSearchPage />} />
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/calculator" element={<CalculatorPage />} />
