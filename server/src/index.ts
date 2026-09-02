@@ -95,15 +95,15 @@ import { startAgentLoop } from './services/agentLoop.service';
 const app = express();
 const httpServer = createServer(app);
 
-// Initialize Firebase Admin globally
-try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
+// DISABLED: Firebase Admin (spawns background processes)
+// try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
 // Configure Passport strategies (env vars loaded above)
 try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
 app.use(passport.initialize());
 
-// Start DB keepalive to prevent Supabase free-tier pause
-try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' + (err as Error).message); }
+// DISABLED: DB keepalive (runs cron job forever)
+// try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' + (err as Error).message); }
 
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8080 : 5000);
 const API_VERSION = process.env.API_VERSION || 'v1';
@@ -157,8 +157,8 @@ app.use((req, _res, next) => {
 // Rate limiting
 app.use('/api/', rateLimiter);
 
-// Audit logging (runs for all routes starting with /api/)
-app.use('/api/', auditLog);
+// DISABLED: Audit logging (runs on every request, memory overhead)
+// app.use('/api/', auditLog);
 
 // Firebase App Check Middleware for API routes
 app.use('/api/', requireAppCheck);
@@ -454,50 +454,34 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   logger.info(`🏥 Health check: http://localhost:${parsedPort}/health`);
   logger.info(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? '✅ configured' : '❌ not configured'}`);
 
-  // Start OpenWA webhook manager (registers handlers and webhook with OpenWA)
-  try {
-    const { registerWebhookHandlers } = await import('./services/openwa.webhook-handler.service');
-    const { webhookManager } = await import('./services/openwa.webhook-manager.service');
-    registerWebhookHandlers();
-    webhookManager.start().catch(err => logger.warn(`OpenWA webhook manager start deferred: ${err?.message}`));
-    logger.info('📡 OpenWA webhook manager initialized');
-  } catch (err) {
-    logger.warn(`OpenWA webhook manager skipped: ${(err as Error).message}`);
-  }
+  // DISABLED: OpenWA webhook manager (spawns background processes)
+  // try {
+  //   const { registerWebhookHandlers } = await import('./services/openwa.webhook-handler.service');
+  //   const { webhookManager } = await import('./services/openwa.webhook-manager.service');
+  //   registerWebhookHandlers();
+  //   webhookManager.start().catch(err => logger.warn(`OpenWA webhook manager start deferred: ${err?.message}`));
+  // } catch (err) { logger.warn(`OpenWA webhook manager skipped: ${(err as Error).message}`); }
 
-  // Start Telegram LP Bot
-  try {
-    const { startTelegramBot } = await import('./services/telegram-bot.service');
-    startTelegramBot();
-  } catch (err) {
-    logger.warn(`Telegram bot skipped: ${(err as Error).message}`);
-  }
+  // DISABLED: Telegram bot (spawns background processes)
+  // try {
+  //   const { startTelegramBot } = await import('./services/telegram-bot.service');
+  //   startTelegramBot();
+  // } catch (err) { logger.warn(`Telegram bot skipped: ${(err as Error).message}`); }
 
-  // Start Agent Loop (badge purchases → bookings → pool fee collection)
-  try {
-    startAgentLoop();
-    logger.info('🤖 AI Agent Loop started');
-  } catch (err) {
-    logger.warn(`Agent loop skipped: ${(err as Error).message}`);
-  }
+  // DISABLED: Agent Loop (memory leak — spawns multiple intervals)
+  // try { startAgentLoop(); } catch (err) { logger.warn(`Agent Loop skipped: ${(err as Error).message}`); }
 
-  // Start Autonomous Marketing Agent (DRY_RUN by default; opt-in LIVE via SOCIAL_LIVE + MARKETING_AUTONOMOUS)
-  try {
-    const { startAutonomousMarketing } = await import('./services/marketingAgent.service');
-    startAutonomousMarketing();
-  } catch (err) {
-    logger.warn(`Marketing agent skipped: ${(err as Error).message}`);
-  }
+  // DISABLED: Autonomous Marketing Agent (memory leak — spawns intervals)
+  // try {
+  //   const { startAutonomousMarketing } = await import('./services/marketingAgent.service');
+  //   startAutonomousMarketing();
+  // } catch (err) { logger.warn(`Marketing agent skipped: ${(err as Error).message}`); }
 
-  // Start SEGMENTED autonomous loops: project owners (post gigs) + freelancers (book+complete).
-  // Opt-in via AUTONOMOUS_LOOPS=true (off by default so nothing surprises you).
-  try {
-    const { startLoops } = await import('./services/loop.service');
-    startLoops();
-    logger.info('🔁 Segmented loops registered (project-owners + freelancers)');
-  } catch (err) {
-    logger.warn(`Loops skipped: ${(err as Error).message}`);
-  }
+  // DISABLED: Segmented loops (memory leak — spawns intervals)
+  // try {
+  //   const { startLoops } = await import('./services/loop.service');
+  //   startLoops();
+  // } catch (err) { logger.warn(`Loops skipped: ${(err as Error).message}`); }
 
   // ── LIVE RAIL SELF-CHECK (fails LOUD, not silent) ───────────────────────────
   if (process.env.LIVE_BOOKINGS === 'true') {
