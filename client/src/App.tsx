@@ -70,6 +70,8 @@ import SmartSearchPage from './pages/SmartSearchPage';
 import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
+import TenantPortalPage2 from './pages/TenantPortalPage2';
+import SettingsPage from './pages/SettingsPage';
 import BusinessOwnerAIDashboard from './pages/BusinessOwnerAIDashboard';
 import CustomerAIDashboard from './pages/CustomerAIDashboard';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
@@ -203,6 +205,8 @@ function App() {
           <Route path="/dashboard" element={<UnifiedDashboardPage />} />
           <Route path="/business/ai" element={<BusinessOwnerAIDashboard />} />
           <Route path="/customer/ai" element={<CustomerAIDashboard />} />
+          <Route path="/tenant" element={<TenantPortalPage2 />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/search" element={<SmartSearchPage />} />
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/calculator" element={<CalculatorPage />} />

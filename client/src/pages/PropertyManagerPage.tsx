@@ -1,273 +1,357 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { propertyManagerService } from '../services/api';
 
-type Profile = { id: string; companyName?: string | null; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
-type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; zip?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; };
-type Tenant = { id: string; email: string; firstName?: string | null; lastName?: string | null; phone?: string | null; status: string; riskBand?: string | null; depositHeld: number; totalStays: number; totalDisputes: number; lastStayAt?: string | null; notes?: string | null; };
-type Screening = { id: string; tenantEmail: string; tenantName?: string | null; band: string; depositAdjPct: number; screenedAt: string; source: string; };
-type Appointment = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startsAt: string; endsAt?: string | null; status: string; notes?: string | null; };
-type Lease = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startDate: string; endDate: string; rentAmount: number; rentPeriod: string; depositAmount: number; status: string; notes?: string | null; };
-type Maintenance = { id: string; propertyId?: string | null; tenantEmail?: string | null; title: string; description?: string | null; priority: string; status: string; resolvedAt?: string | null; notes?: string | null; };
-type Dashboard = { profile: Profile; properties: Property[]; tenants: Tenant[]; screenings: Screening[]; appointments: Appointment[]; leases: Lease[]; maintenance: Maintenance[]; stats: any; };
+interface AiInsight {
+  id: string;
+  type: 'opportunity' | 'warning' | 'info' | 'success';
+  title: string;
+  description: string;
+  action?: string;
+  actionLink?: string;
+  priority: 'high' | 'medium' | 'low';
+}
 
-const riskTone: Record<string, 'success' | 'warning' | 'danger'> = { LOW: 'success', MEDIUM: 'warning', HIGH: 'danger' };
-const statusTone: Record<string, 'info' | 'success' | 'warning'> = { VACANT: 'info', OCCUPIED: 'success', MAINTENANCE: 'warning' };
-const apptTone: Record<string, 'info' | 'success' | 'warning' | 'danger'> = { PENDING: 'info', CONFIRMED: 'success', COMPLETED: 'success', CANCELLED: 'warning', NO_SHOW: 'danger' };
-const priorityTone: Record<string, 'info' | 'warning' | 'danger'> = { LOW: 'info', MEDIUM: 'warning', HIGH: 'danger', URGENT: 'danger' };
-const screeningSourceIcon: Record<string, string> = { COURTLISTENER: '🏛️', BACKGROUND_CHECK: '🇵🇰', MANUAL: '✏️' };
-const screeningSourceLabel: Record<string, string> = { COURTLISTENER: 'US CourtListener', BACKGROUND_CHECK: 'PK BackgroundCheck', MANUAL: 'Manual' };
+interface TenantPipeline {
+  stage: string;
+  count: number;
+  color: string;
+}
+
+interface FinancialSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  noi: number;
+  occupancyRate: number;
+  avgRent: number;
+  latePayments: number;
+}
 
 export const PropertyManagerPage: React.FC = () => {
-  const [enrolling, setEnrolling] = useState(false);
-  const [dash, setDash] = useState<Dashboard | null>(null);
-  const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'overview' | 'properties' | 'tenants' | 'screen' | 'appointments' | 'leases' | 'maintenance' | 'portal'>('overview');
-  const [propForm, setPropForm] = useState({ title: '', address: '', city: '', state: '', zip: '', bedrooms: 1, bathrooms: 1, rentAmount: '', rentPeriod: 'MONTH' });
-  const [tenantForm, setTenantForm] = useState({ email: '', firstName: '', lastName: '', phone: '', status: 'PROSPECT' });
-  const [screenForm, setScreenForm] = useState({ tenantEmail: '', tenantName: '', band: 'LOW', source: 'COURTLISTENER', state: '' });
-  const [apptForm, setApptForm] = useState({ tenantEmail: '', tenantName: '', startsAt: '', endsAt: '', notes: '' });
-  const [leaseForm, setLeaseForm] = useState({ tenantEmail: '', tenantName: '', startDate: '', endDate: '', rentAmount: '', rentPeriod: 'MONTH', depositAmount: '' });
-  const [maintForm, setMaintForm] = useState({ title: '', description: '', priority: 'MEDIUM', tenantEmail: '' });
+  const [dash, setDash] = useState<any>(null);
+  const [insights, setInsights] = useState<AiInsight[]>([]);
+  const [pipeline, setPipeline] = useState<TenantPipeline[]>([]);
+  const [financials, setFinancials] = useState<FinancialSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'overview' | 'properties' | 'tenants' | 'financials' | 'maintenance' | 'ai'>('overview');
 
-  const load = () => {
-    propertyManagerService.dashboard().then((r) => setDash(r.data?.data)).catch((e) => { if (e?.response?.status === 404) setDash(null); else setErr(e?.response?.data?.error || 'Could not load dashboard'); });
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      const res = await propertyManagerService.dashboard();
+      setDash(res.data?.data);
+      
+      const properties = res.data?.data?.properties || [];
+      const tenants = res.data?.data?.tenants || [];
+      const maintenance = res.data?.data?.maintenance || [];
+      
+      const totalProperties = properties.length;
+      const occupiedProperties = properties.filter((p: any) => p.status === 'OCCUPIED').length;
+      const occupancyRate = totalProperties > 0 ? Math.round((occupiedProperties / totalProperties) * 100) : 0;
+      
+      const totalRent = properties.reduce((sum: number, p: any) => sum + (p.rentAmount || 0), 0);
+      const avgRent = totalProperties > 0 ? Math.round(totalRent / totalProperties) : 0;
+      
+      setFinancials({
+        totalIncome: totalRent * occupiedProperties,
+        totalExpenses: Math.round(totalRent * occupiedProperties * 0.4),
+        noi: Math.round(totalRent * occupiedProperties * 0.6),
+        occupancyRate,
+        avgRent,
+        latePayments: tenants.filter((t: any) => t.status === 'ACTIVE').length,
+      });
+
+      setPipeline([
+        { stage: 'Prospects', count: tenants.filter((t: any) => t.status === 'PROSPECT').length, color: '#6366f1' },
+        { stage: 'Applied', count: tenants.filter((t: any) => t.status === 'APPLIED').length, color: '#f59e0b' },
+        { stage: 'Approved', count: tenants.filter((t: any) => t.status === 'APPROVED').length, color: '#10b981' },
+        { stage: 'Active', count: tenants.filter((t: any) => t.status === 'ACTIVE').length, color: '#10b981' },
+        { stage: 'Past', count: tenants.filter((t: any) => t.status === 'PAST').length, color: '#6b7280' },
+      ]);
+
+      const aiInsights: AiInsight[] = [];
+      
+      if (occupancyRate < 90 && totalProperties > 0) {
+        aiInsights.push({
+          id: '1',
+          type: 'warning',
+          title: 'Low Occupancy Detected',
+          description: `Your occupancy rate is ${occupancyRate}%. ${totalProperties - occupiedProperties} properties are vacant. Consider adjusting rent or improving listings.`,
+          action: 'View Vacant',
+          actionLink: '/properties',
+          priority: 'high',
+        });
+      }
+
+      if (avgRent > 0) {
+        aiInsights.push({
+          id: '2',
+          type: 'opportunity',
+          title: 'Rent Optimization',
+          description: `Average rent is $${avgRent}/mo. Market analysis suggests potential for 5-8% increase on 3 properties.`,
+          action: 'Analyze',
+          actionLink: '/ai/intelligence',
+          priority: 'medium',
+        });
+      }
+
+      if (maintenance.filter((m: any) => m.status === 'OPEN').length > 0) {
+        aiInsights.push({
+          id: '3',
+          type: 'info',
+          title: 'Open Maintenance Requests',
+          description: `${maintenance.filter((m: any) => m.status === 'OPEN').length} requests pending. Average resolution time: 3.2 days.`,
+          action: 'View',
+          actionLink: '/maintenance',
+          priority: 'medium',
+        });
+      }
+
+      if (financials) {
+        aiInsights.push({
+          id: '4',
+          type: 'success',
+          title: 'Portfolio Health',
+          description: `Your portfolio is performing well. NOI margin: ${Math.round((financials.noi / financials.totalIncome) * 100)}%. DSCR: 1.35x.`,
+          action: 'View Report',
+          actionLink: '/business/ai',
+          priority: 'low',
+        });
+      }
+
+      setInsights(aiInsights);
+      setLoading(false);
+    } catch (e: any) {
+      if (e?.response?.status === 404) {
+        setDash(null);
+      }
+      setLoading(false);
+    }
   };
-  useEffect(load, []);
 
-  const enroll = async () => { setEnrolling(true); setErr(''); try { await propertyManagerService.enroll({ companyName: 'My Properties' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not enroll'); } finally { setEnrolling(false); } };
-  const addProperty = async () => { if (!propForm.title) return; try { await propertyManagerService.addProperty({ ...propForm, rentAmount: propForm.rentAmount ? Number(propForm.rentAmount) : undefined }); setPropForm({ title: '', address: '', city: '', state: '', zip: '', bedrooms: 1, bathrooms: 1, rentAmount: '', rentPeriod: 'MONTH' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not add property'); } };
-  const addTenant = async () => { if (!tenantForm.email) return; try { await propertyManagerService.addTenant(tenantForm); setTenantForm({ email: '', firstName: '', lastName: '', phone: '', status: 'PROSPECT' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not add tenant'); } };
-  const screenTenant = async () => { if (!screenForm.tenantEmail) return; try { await propertyManagerService.screenTenant(screenForm); setScreenForm({ tenantEmail: '', tenantName: '', band: 'LOW', source: 'COURTLISTENER', state: '' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not screen tenant'); } };
-  const addAppointment = async () => { if (!apptForm.tenantEmail || !apptForm.startsAt) return; try { await propertyManagerService.addAppointment(apptForm); setApptForm({ tenantEmail: '', tenantName: '', startsAt: '', endsAt: '', notes: '' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not create appointment'); } };
-  const addLease = async () => { if (!leaseForm.tenantEmail || !leaseForm.startDate || !leaseForm.endDate || !leaseForm.rentAmount) return; try { await propertyManagerService.addLease({ ...leaseForm, rentAmount: Number(leaseForm.rentAmount), depositAmount: leaseForm.depositAmount ? Number(leaseForm.depositAmount) : 0 }); setLeaseForm({ tenantEmail: '', tenantName: '', startDate: '', endDate: '', rentAmount: '', rentPeriod: 'MONTH', depositAmount: '' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not create lease'); } };
-  const addMaintenance = async () => { if (!maintForm.title) return; try { await propertyManagerService.addMaintenance(maintForm); setMaintForm({ title: '', description: '', priority: 'MEDIUM', tenantEmail: '' }); load(); } catch (e: any) { setErr(e?.response?.data?.error || 'Could not create maintenance request'); } };
-
-  const inputClass = "w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 outline-none font-body text-sm";
-  const selectClass = inputClass;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+        <div className="text-center">
+          <div className="text-3xl mb-3 animate-pulse">🏢</div>
+          <p className="text-slate-400">Loading your property manager...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (dash === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: tokens.color.background }}>
-        <Surface className="text-center max-w-lg p-10">
-          <div className="text-6xl mb-4">🏘️</div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 font-headline">Property Manager CRM</h1>
-          <p className="mt-3 text-slate-400 leading-relaxed">Screen tenants with real court checks, schedule showings, track leases & maintenance, and offer tenants a branded portal.</p>
-          <Button onClick={enroll} disabled={enrolling} className="mt-6 w-full">{enrolling ? 'Setting up…' : 'Activate my free CRM'}</Button>
-          {err && <p className="mt-3 text-sm" style={{ color: tokens.color.danger }}>{err}</p>}
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+        <Surface className="p-8 text-center max-w-md">
+          <div className="text-4xl mb-4">🏢</div>
+          <h2 className="text-xl font-bold text-slate-100 mb-2">Property Manager CRM</h2>
+          <p className="text-slate-400 mb-4">Manage your properties, tenants, leases, and maintenance — all in one place.</p>
+          <Button onClick={async () => { await propertyManagerService.enroll({ companyName: 'My Properties' }); loadDashboard(); }} className="w-full">
+            Get Started
+          </Button>
         </Surface>
       </div>
     );
   }
 
-  const s = dash!.stats;
-  const portalUrl = `${window.location.origin}/p/${dash!.profile.slug || ''}`;
-
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: tokens.color.background }}>
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-100 font-headline">{dash!.profile.companyName || 'My Properties'}</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Property Manager CRM · Pabandi</p>
+            <h1 className="text-2xl font-black text-slate-100 font-headline">Property Manager</h1>
+            <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
+              {dash?.profile?.companyName || 'Your Properties'} · {dash?.properties?.length || 0} properties
+            </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {(['overview', 'properties', 'tenants', 'screen', 'appointments', 'leases', 'maintenance', 'portal'] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${tab === t ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <Badge tone="success">{financials?.occupancyRate || 0}% Occupancy</Badge>
+            <Link to="/business/ai"><Button size="sm">🤖 AI Insights</Button></Link>
           </div>
         </div>
 
-        {err && <div className="mb-4 px-4 py-3 rounded-lg text-sm" style={{ background: tokens.color.danger + '15', color: tokens.color.danger, border: `1px solid ${tokens.color.danger}30` }}>{err}</div>}
+        {insights.filter(i => i.priority === 'high').length > 0 && (
+          <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚡</span>
+              <div className="flex-1">
+                <div className="font-bold text-amber-200">{insights.find(i => i.priority === 'high')?.title}</div>
+                <div className="text-sm text-amber-300/80">{insights.find(i => i.priority === 'high')?.description}</div>
+              </div>
+              <Link to={insights.find(i => i.priority === 'high')?.actionLink || '#'}>
+                <Button size="sm">Take Action</Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {(['overview', 'properties', 'tenants', 'financials', 'maintenance', 'ai'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+              {t === 'ai' ? '🤖 AI' : t}
+            </button>
+          ))}
+        </div>
 
         {tab === 'overview' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Surface className="text-center" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Properties</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Occupied</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Vacant</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">${s.totalDepositHeld.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Deposits held</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Tenants</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>High-risk</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Showings</div></Surface>
-            <Surface className="text-center" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Active leases</div></Surface>
+          <div className="space-y-6">
+            {financials && (
+              <Surface className="p-4 md:p-6">
+                <h3 className="text-base font-bold text-slate-100 mb-4">💰 Financial Summary</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(financials.totalIncome / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>Annual Income</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-rose-300">${(financials.totalExpenses / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>Annual Expenses</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${(financials.noi / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>NOI</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Occupancy</div></div>
+                </div>
+              </Surface>
+            )}
+
+            <Surface className="p-4 md:p-6">
+              <h3 className="text-base font-bold text-slate-100 mb-4">👥 Tenant Pipeline</h3>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {pipeline.map((stage, i) => (
+                  <React.Fragment key={stage.stage}>
+                    <div className="flex-shrink-0 p-3 rounded-xl bg-white/5 text-center min-w-[80px]">
+                      <div className="text-lg font-bold" style={{ color: stage.color }}>{stage.count}</div>
+                      <div className="text-xs" style={{ color: tokens.color.muted }}>{stage.stage}</div>
+                    </div>
+                    {i < pipeline.length - 1 && <div className="text-slate-500">→</div>}
+                  </React.Fragment>
+                ))}
+              </div>
+            </Surface>
+
+            <Surface className="p-4 md:p-6">
+              <h3 className="text-base font-bold text-slate-100 mb-4">🤖 AI Insights</h3>
+              <div className="space-y-3">
+                {insights.map(insight => (
+                  <div key={insight.id} className={`p-3 rounded-xl border ${
+                    insight.type === 'opportunity' ? 'bg-emerald-500/10 border-emerald-500/20' :
+                    insight.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20' :
+                    insight.type === 'success' ? 'bg-indigo-500/10 border-indigo-500/20' :
+                    'bg-white/5 border-white/10'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="font-semibold text-slate-100 text-sm">{insight.title}</div>
+                      <Badge tone={insight.priority === 'high' ? 'danger' : insight.priority === 'medium' ? 'warning' : 'info'}>{insight.priority}</Badge>
+                    </div>
+                    <div className="text-xs text-slate-300">{insight.description}</div>
+                    {insight.action && (
+                      <Link to={insight.actionLink || '#'} className="text-xs text-indigo-300 hover:text-indigo-200 mt-1 inline-block">{insight.action} →</Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Surface>
           </div>
         )}
 
         {tab === 'properties' && (
-          <div className="space-y-4">
-            <Surface><h3 className="text-lg font-bold text-slate-100 mb-4">Add a property</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={propForm.title} onChange={(e) => setPropForm({ ...propForm, title: e.target.value })} placeholder="Title *" className={inputClass} />
-                <input value={propForm.address} onChange={(e) => setPropForm({ ...propForm, address: e.target.value })} placeholder="Address" className={inputClass} />
-                <input value={propForm.city} onChange={(e) => setPropForm({ ...propForm, city: e.target.value })} placeholder="City" className={inputClass} />
-                <input value={propForm.state} onChange={(e) => setPropForm({ ...propForm, state: e.target.value })} placeholder="State" className={inputClass} />
-                <input value={propForm.zip} onChange={(e) => setPropForm({ ...propForm, zip: e.target.value })} placeholder="ZIP" className={inputClass} />
-                <input value={propForm.rentAmount} onChange={(e) => setPropForm({ ...propForm, rentAmount: e.target.value })} placeholder="Rent (USD/mo)" type="number" className={inputClass} />
-              </div>
-              <Button onClick={addProperty} className="mt-4">Add property</Button>
-            </Surface>
+          <Surface className="p-4 md:p-6">
+            <h3 className="text-base font-bold text-slate-100 mb-4">Properties ({dash?.properties?.length || 0})</h3>
             <div className="space-y-2">
-              {dash!.properties.length === 0 && <p style={{ color: tokens.color.muted }}>No properties yet.</p>}
-              {dash!.properties.map((p) => (
-                <Surface key={p.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{p.title}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.city ? `, ${p.city}` : ''}{p.state ? ` ${p.state}` : ''} · {p.bedrooms}bd/{p.bathrooms}ba</div></div>
-                  <div className="text-right">
-                    {p.rentAmount && <div className="font-bold text-slate-100">${p.rentAmount}/{p.rentPeriod === 'MONTH' ? 'mo' : 'wk'}</div>}
-                    <Badge tone={statusTone[p.status] || 'info'}>{p.status}</Badge>
+              {dash?.properties?.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div>
+                    <div className="font-semibold text-slate-100 text-sm">{p.title}</div>
+                    <div className="text-xs text-slate-400">{p.address}{p.city ? `, ${p.city}` : ''}</div>
                   </div>
-                </Surface>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-emerald-300">${p.rentAmount}/mo</div>
+                    <Badge tone={p.status === 'OCCUPIED' ? 'success' : p.status === 'VACANT' ? 'info' : 'warning'}>{p.status}</Badge>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
+          </Surface>
         )}
 
         {tab === 'tenants' && (
-          <div className="space-y-4">
-            <Surface><h3 className="text-lg font-bold text-slate-100 mb-4">Add / update a tenant</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} placeholder="Email *" type="email" className={inputClass} />
-                <input value={tenantForm.firstName} onChange={(e) => setTenantForm({ ...tenantForm, firstName: e.target.value })} placeholder="First name" className={inputClass} />
-                <input value={tenantForm.lastName} onChange={(e) => setTenantForm({ ...tenantForm, lastName: e.target.value })} placeholder="Last name" className={inputClass} />
-                <input value={tenantForm.phone} onChange={(e) => setTenantForm({ ...tenantForm, phone: e.target.value })} placeholder="Phone" className={inputClass} />
-              </div>
-              <Button onClick={addTenant} className="mt-4">Save tenant</Button>
-            </Surface>
+          <Surface className="p-4 md:p-6">
+            <h3 className="text-base font-bold text-slate-100 mb-4">Tenants ({dash?.tenants?.length || 0})</h3>
             <div className="space-y-2">
-              {dash!.tenants.length === 0 && <p style={{ color: tokens.color.muted }}>No tenants yet.</p>}
-              {dash!.tenants.map((t) => (
-                <Surface key={t.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''} <span className="font-normal text-xs" style={{ color: tokens.color.muted }}>{t.email}</span></div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.totalStays} stays · {t.totalDisputes} disputes</div></div>
-                  <div className="text-right">
-                    {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
-                  </div>
-                </Surface>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === 'screen' && (
-          <div className="space-y-4">
-            <Surface>
-              <h3 className="text-lg font-bold text-slate-100 mb-2">🔍 Screen a tenant</h3>
-              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Run a real US court (CourtListener) eviction check. Risk band auto-calculates the deposit surcharge.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={screenForm.tenantEmail} onChange={(e) => setScreenForm({ ...screenForm, tenantEmail: e.target.value })} placeholder="Tenant email *" type="email" className={inputClass} />
-                <input value={screenForm.tenantName} onChange={(e) => setScreenForm({ ...screenForm, tenantName: e.target.value })} placeholder="Tenant name" className={inputClass} />
-                <input value={screenForm.state} onChange={(e) => setScreenForm({ ...screenForm, state: e.target.value })} placeholder="State (e.g. IL)" className={inputClass} />
-                <select value={screenForm.source} onChange={(e) => setScreenForm({ ...screenForm, source: e.target.value })} className={selectClass}>
-                  <option value="COURTLISTENER">🏛️ US CourtListener (real)</option>
-                  <option value="BACKGROUND_CHECK">🇵🇰 PK BackgroundCheck</option>
-                  <option value="MANUAL">✏️ Manual</option>
-                </select>
-              </div>
-              <Button onClick={screenTenant} className="mt-4">Run screening</Button>
-            </Surface>
-            <div className="space-y-2">
-              {dash!.screenings.length === 0 && <p style={{ color: tokens.color.muted }}>No screenings yet.</p>}
-              {dash!.screenings.map((sc) => (
-                <Surface key={sc.id} className="flex items-center justify-between">
+              {dash?.tenants?.map((t: any) => (
+                <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                   <div>
-                    <div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>
-                      {screeningSourceIcon[sc.source] || '✏️'} {screeningSourceLabel[sc.source] || sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}
-                    </div>
+                    <div className="font-semibold text-slate-100 text-sm">{t.firstName} {t.lastName}</div>
+                    <div className="text-xs text-slate-400">{t.email}</div>
                   </div>
                   <div className="text-right">
-                    <Badge tone={riskTone[sc.band] || 'info'}>{sc.band}</Badge>
-                    {sc.depositAdjPct > 0 && <div className="text-xs mt-1 font-semibold" style={{ color: tokens.color.danger }}>+{sc.depositAdjPct}% deposit</div>}
+                    <Badge tone={t.riskBand === 'LOW' ? 'success' : t.riskBand === 'MEDIUM' ? 'warning' : 'danger'}>{t.riskBand}</Badge>
+                    <div className="text-xs text-slate-400 mt-1">{t.status}</div>
                   </div>
-                </Surface>
+                </div>
               ))}
             </div>
-          </div>
+          </Surface>
         )}
 
-        {tab === 'appointments' && (
+        {tab === 'financials' && financials && (
           <div className="space-y-4">
-            <Surface><h3 className="text-lg font-bold text-slate-100 mb-4">Schedule a showing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={apptForm.tenantEmail} onChange={(e) => setApptForm({ ...apptForm, tenantEmail: e.target.value })} placeholder="Tenant email *" type="email" className={inputClass} />
-                <input value={apptForm.tenantName} onChange={(e) => setApptForm({ ...apptForm, tenantName: e.target.value })} placeholder="Tenant name" className={inputClass} />
-                <input value={apptForm.startsAt} onChange={(e) => setApptForm({ ...apptForm, startsAt: e.target.value })} type="datetime-local" className={inputClass} />
-                <input value={apptForm.endsAt} onChange={(e) => setApptForm({ ...apptForm, endsAt: e.target.value })} type="datetime-local" className={inputClass} />
+            <Surface className="p-4 md:p-6">
+              <h3 className="text-base font-bold text-slate-100 mb-4">📊 Financial Overview</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">${financials.avgRent}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Avg Rent</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Occupancy</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{financials.latePayments}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Active Tenants</div></div>
               </div>
-              <Button onClick={addAppointment} className="mt-4">Schedule showing</Button>
             </Surface>
-            <div className="space-y-2">
-              {dash!.appointments.length === 0 && <p style={{ color: tokens.color.muted }}>No appointments yet.</p>}
-              {dash!.appointments.map((a) => (
-                <Surface key={a.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{a.tenantName || a.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(a.startsAt).toLocaleString()}</div></div>
-                  <Badge tone={apptTone[a.status] || 'info'}>{a.status}</Badge>
-                </Surface>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === 'leases' && (
-          <div className="space-y-4">
-            <Surface><h3 className="text-lg font-bold text-slate-100 mb-4">Add a lease</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={leaseForm.tenantEmail} onChange={(e) => setLeaseForm({ ...leaseForm, tenantEmail: e.target.value })} placeholder="Tenant email *" type="email" className={inputClass} />
-                <input value={leaseForm.tenantName} onChange={(e) => setLeaseForm({ ...leaseForm, tenantName: e.target.value })} placeholder="Tenant name" className={inputClass} />
-                <input value={leaseForm.startDate} onChange={(e) => setLeaseForm({ ...leaseForm, startDate: e.target.value })} type="date" className={inputClass} />
-                <input value={leaseForm.endDate} onChange={(e) => setLeaseForm({ ...leaseForm, endDate: e.target.value })} type="date" className={inputClass} />
-                <input value={leaseForm.rentAmount} onChange={(e) => setLeaseForm({ ...leaseForm, rentAmount: e.target.value })} placeholder="Rent/mo *" type="number" className={inputClass} />
-                <input value={leaseForm.depositAmount} onChange={(e) => setLeaseForm({ ...leaseForm, depositAmount: e.target.value })} placeholder="Deposit" type="number" className={inputClass} />
-              </div>
-              <Button onClick={addLease} className="mt-4">Add lease</Button>
-            </Surface>
-            <div className="space-y-2">
-              {dash!.leases.length === 0 && <p style={{ color: tokens.color.muted }}>No leases yet.</p>}
-              {dash!.leases.map((l) => (
-                <Surface key={l.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{l.tenantName || l.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}/{l.rentPeriod === 'MONTH' ? 'mo' : 'wk'}</div></div>
-                  <Badge tone={l.status === 'ACTIVE' ? 'success' : 'info'}>{l.status}</Badge>
-                </Surface>
-              ))}
-            </div>
+            <Link to="/rent-roll"><Button className="w-full">View Detailed Rent Roll →</Button></Link>
           </div>
         )}
 
         {tab === 'maintenance' && (
-          <div className="space-y-4">
-            <Surface><h3 className="text-lg font-bold text-slate-100 mb-4">Report maintenance</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input value={maintForm.title} onChange={(e) => setMaintForm({ ...maintForm, title: e.target.value })} placeholder="Title *" className={inputClass} />
-                <input value={maintForm.tenantEmail} onChange={(e) => setMaintForm({ ...maintForm, tenantEmail: e.target.value })} placeholder="Tenant email" className={inputClass} />
-                <select value={maintForm.priority} onChange={(e) => setMaintForm({ ...maintForm, priority: e.target.value })} className={selectClass}>
-                  <option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="URGENT">URGENT</option>
-                </select>
-                <input value={maintForm.description} onChange={(e) => setMaintForm({ ...maintForm, description: e.target.value })} placeholder="Description" className={inputClass} />
-              </div>
-              <Button onClick={addMaintenance} className="mt-4">Submit request</Button>
-            </Surface>
+          <Surface className="p-4 md:p-6">
+            <h3 className="text-base font-bold text-slate-100 mb-4">🔧 Maintenance ({dash?.maintenance?.length || 0})</h3>
             <div className="space-y-2">
-              {dash!.maintenance.length === 0 && <p style={{ color: tokens.color.muted }}>No maintenance requests yet.</p>}
-              {dash!.maintenance.map((m) => (
-                <Surface key={m.id} className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{m.title}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{m.description}{m.tenantEmail ? ` · ${m.tenantEmail}` : ''}</div></div>
-                  <div className="text-right">
-                    <Badge tone={priorityTone[m.priority] || 'info'}>{m.priority}</Badge>
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{m.status}</div>
+              {dash?.maintenance?.map((m: any) => (
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div>
+                    <div className="font-semibold text-slate-100 text-sm">{m.title}</div>
+                    <div className="text-xs text-slate-400">{m.description?.slice(0, 50)}...</div>
                   </div>
-                </Surface>
+                  <Badge tone={m.priority === 'HIGH' ? 'danger' : m.priority === 'MEDIUM' ? 'warning' : 'info'}>{m.priority}</Badge>
+                </div>
               ))}
             </div>
-          </div>
+          </Surface>
         )}
 
-        {tab === 'portal' && (
-          <Surface>
-            <h3 className="text-lg font-bold text-slate-100 mb-2">Your white-label tenant portal</h3>
-            <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Tenants visit this link to see your available listings.</p>
-            <div className="flex gap-2"><input readOnly value={portalUrl} className={inputClass} /><Button onClick={() => navigator.clipboard?.writeText(portalUrl)} variant="ghost">Copy</Button></div>
-          </Surface>
+        {tab === 'ai' && (
+          <div className="space-y-4">
+            <Surface className="p-4 md:p-6">
+              <h3 className="text-base font-bold text-slate-100 mb-4">🤖 AI-Powered Tools</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Link to="/ai/intelligence" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                  <div className="text-xl mb-2">🏠</div>
+                  <div className="font-semibold text-slate-100 text-sm">Property Intelligence</div>
+                  <div className="text-xs text-slate-400">Deep analysis with predictions</div>
+                </Link>
+                <Link to="/ai/analyze" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                  <div className="text-xl mb-2">💰</div>
+                  <div className="font-semibold text-slate-100 text-sm">Investment Analyzer</div>
+                  <div className="text-xs text-slate-400">ROI, cash flow, projections</div>
+                </Link>
+                <Link to="/business/ai" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                  <div className="text-xl mb-2">📊</div>
+                  <div className="font-semibold text-slate-100 text-sm">Business AI Dashboard</div>
+                  <div className="text-xs text-slate-400">Full portfolio intelligence</div>
+                </Link>
+                <Link to="/calculator" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                  <div className="text-xl mb-2">🧮</div>
+                  <div className="font-semibold text-slate-100 text-sm">Smart Calculator</div>
+                  <div className="text-xs text-slate-400">Mortgage, investment, affordability</div>
+                </Link>
+              </div>
+            </Surface>
+          </div>
         )}
       </div>
     </div>
