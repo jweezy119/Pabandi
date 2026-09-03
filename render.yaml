@@ -1,19 +1,12 @@
 services:
   - type: web
-    name: pabandi-backend
+    name: pabandi
     env: docker
-    region: ohio
+    region: oregon
     plan: starter
-    rootDir: server # Our dockerfile and backend code is inside 'server/'
+    healthCheckPath: /health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
-        value: 8080
-      # You will need to set these manually in the Render Dashboard
-      - key: DATABASE_URL
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
+        value: "10000"

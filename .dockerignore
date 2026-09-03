@@ -5,3 +5,4 @@ build
 *.tsbuildinfo
 .env
 .env.*
+.git
