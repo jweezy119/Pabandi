@@ -9,8 +9,11 @@ RUN npm install
 
 COPY . .
 
-# Generate Prisma client (matches schema)
-RUN npx prisma generate
+# Force clean: remove any cached build artifacts
+RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache
 
-# Run with ts-node --transpile-only (no build step, no dist/ caching)
-CMD ["sh", "-c", "exec npx ts-node --transpile-only src/index.ts"]
+# Generate Prisma client and build
+RUN npx prisma generate && npm run build
+
+# Start server
+CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]
