@@ -274,14 +274,7 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="AI Tools" current={['/ai', '/ai/analyze', '/ai/chat', '/ai/intelligence', '/business/ai', '/customer/ai', '/calculator'].some((p) => location.pathname.startsWith(p))}>
-              <DropdownItem to="/ai/intelligence">Property Intelligence</DropdownItem>
-              <DropdownItem to="/ai/analyze">Investment Analyzer</DropdownItem>
-              <DropdownItem to="/ai/chat">AI Chat</DropdownItem>
-              <DropdownItem to="/business/ai">Business AI</DropdownItem>
-              <DropdownItem to="/customer/ai">Home Finder</DropdownItem>
-              <DropdownItem to="/calculator">Calculator</DropdownItem>
-            </Dropdown>
+            <DropdownItem to="/ai/assistant">AI Assistant</DropdownItem>
             <Dropdown label="Product" current={location.pathname.startsWith('/property-manager') || ['/live-selling', '/hospitality', '/freelance', '/marketplace', '/search', '/demo'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/property-manager">Property Manager</DropdownItem>
               <DropdownItem to="/tenant-workflow">Tenant Workflow</DropdownItem>

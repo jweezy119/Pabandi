@@ -90,8 +90,6 @@ export const CRMPage: React.FC = () => {
     { id: 'portal', icon: '🎨', label: 'Portal' },
     { id: 'webhooks', icon: '🔗', label: 'Webhooks' },
     { id: 'activity', icon: '📜', label: 'Activity' },
-    { id: 'tenant-workflow', icon: '🔄', label: 'Tenant Workflow' },
-    { id: 'ai-assistant', icon: '🤖', label: 'AI Assistant' },
   ];
 
   return (

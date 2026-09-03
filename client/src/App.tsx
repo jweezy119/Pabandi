@@ -7,8 +7,6 @@ import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import OAuthConsentPage from './pages/OAuthConsentPage';
-import BusinessDashboard from './pages/BusinessDashboard';
-import BusinessRegister from './pages/BusinessRegister';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
@@ -21,8 +19,6 @@ import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
 import BusinessCrmPage from './pages/BusinessCrmPage';
-import WalletDashboard from './pages/WalletDashboard';
-import AdminPanel from './pages/AdminPanel';
 import BusinessJoinPage from './pages/BusinessJoinPage';
 import BusinessActivationPage from './pages/BusinessActivationPage';
 import BusinessModelPage from './pages/BusinessModelPage';
@@ -48,7 +44,6 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import { ReferralLandingPage } from './pages/ReferralLandingPage';
 import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
-import MarketplaceEmbed from './pages/MarketplaceEmbed';
 import SalePage from './pages/SalePage';
 import PropertyManagerPage from './pages/CRMPage';
 import { TenantWorkflowPage } from './pages/TenantWorkflowPage';
@@ -72,15 +67,11 @@ import TrustPassportPage from './pages/TrustPassportPage';
 import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import CalculatorPage from './pages/CalculatorPage';
-import NotificationCenter from './pages/NotificationCenter';
 import SmartSearchPage from './pages/SmartSearchPage';
 import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
-import TenantPortalPage2 from './pages/TenantPortalPage2';
 import SettingsPage from './pages/SettingsPage';
-import BusinessOwnerAIDashboard from './pages/BusinessOwnerAIDashboard';
-import CustomerAIDashboard from './pages/CustomerAIDashboard';
 import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import PortfolioAnalyzerPage from './pages/PortfolioAnalyzerPage';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
@@ -89,7 +80,6 @@ import WalletConnectPage from './pages/WalletConnectPage';
 import OnRampPage from './pages/OnRampPage';
 import OffRampPage from './pages/OffRampPage';
 import TokenFlowPage from './pages/TokenFlowPage';
-import AIPage from './pages/AIPage';
 import EscrowDetailPage from './pages/EscrowDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
@@ -114,7 +104,6 @@ import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
 import PayrollPage from './pages/PayrollPage';
 import ArbitrationPage from './pages/ArbitrationPage';
-import TrustBadgeEmbed from './pages/TrustBadgeEmbed';
 import OutreachCRMPage from './pages/OutreachCRMPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
@@ -126,8 +115,6 @@ import { PublicPassportPage } from './pages/PublicPassportPage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { PluginManagerPage } from './pages/PluginManagerPage';
-import ShopifyAppBridge from './pages/ShopifyAppBridge';
-import LoanDashboard from './pages/LoanDashboard';
 import ActiveJobsPage from './pages/ActiveJobsPage';
 import JobWorkspacePage from './pages/JobWorkspacePage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
@@ -161,10 +148,10 @@ function App() {
 
   const DashboardPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" />;
-    if (user?.role === 'ADMIN') return <AdminPanel />;
-    if (user?.role === 'BUSINESS_OWNER') return <BusinessDashboard />;
+    if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
+    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/property-manager" replace />;
     if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
-    return <Navigate to="/freelance" replace />; // Default for customers for now
+    return <Navigate to="/property-manager" replace />;
   };
 
   const AuthRequiredProfilesPage = () => {
@@ -187,8 +174,7 @@ function App() {
           {/* Marketplace partner pitch + self-serve enrollment */}
           <Route path="/partners/marketplace" element={<PublicSEO seo={{ title: 'Pabandi for Marketplaces — Secure every local sale', description: 'Add Pabandi escrow + identity verification to Facebook Marketplace, OfferUp, Craigslist and more. One-line iframe. You earn on every secured sale.' }}><MarketplacePartnerPage /></PublicSEO>} />
           {/* Chrome-free embeddable widget for marketplaces (iframe on listings) */}
-          <Route path="/embed/marketplace" element={<MarketplaceEmbed />} />
-          {/* Standalone seller sale page (status + secure link + release) */}
+                    {/* Standalone seller sale page (status + secure link + release) */}
           <Route path="/sale/:id" element={<PublicSEO seo={{ title: 'Your Pabandi-secured sale', description: 'Track your Pabandi-secured local sale, share the buyer link, and release escrow after a safe in-person exchange.' }}><SalePage /></PublicSEO>} />
           {/* Property Manager CRM dashboard */}
           <Route path="/property-manager" element={<PropertyManagerPage />} />
@@ -216,13 +202,9 @@ function App() {
           <Route path="/token" element={<TokenFlowPage />} />
           {/* AI Tools */}
           <Route path="/dashboard" element={<UnifiedDashboardPage />} />
-          <Route path="/business/ai" element={<BusinessOwnerAIDashboard />} />
-          <Route path="/customer/ai" element={<CustomerAIDashboard />} />
-          <Route path="/tenant" element={<TenantPortalPage2 />} />
-          <Route path="/settings" element={<SettingsPage />} />
+                              <Route path="/settings" element={<SettingsPage />} />
           <Route path="/search" element={<SmartSearchPage />} />
-          <Route path="/notifications" element={<NotificationCenter />} />
-          <Route path="/calculator" element={<CalculatorPage />} />
+                    <Route path="/calculator" element={<CalculatorPage />} />
           <Route path="/ai/chat" element={<AiChatPage />} />
           <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
           <Route path="/ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
@@ -232,7 +214,6 @@ function App() {
           <Route path="/ai/lease-anomaly" element={<AILeaseAnomalyPage />} />
           <Route path="/ai/rent-optimizer" element={<AIRentOptimizerPage />} />
           {/* AI Real Estate */}
-          <Route path="/ai" element={<AIPage />} />
           {/* Trust Passport */}
           <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
           {/* Rewards */}
@@ -285,13 +266,11 @@ function App() {
             />
             <Route path="/onboarding" element={<OnboardingPage />} />
 
-            <Route path="/wallet" element={<WalletDashboard />} />
-            <Route path="/loans" element={<LoanDashboard />} />
-            <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
+            <Route path="/wallet" element={<WalletConnectPage />} />
+                        <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
 
             <Route path="/waitlist" element={<WaitlistPage />} />
-            <Route path="/shopify-app" element={<ShopifyAppBridge />} />
-            
+                        
             <Route path="/u/:slug" element={<PublicCustomerProfilePage />} />
             <Route path="business/:id" element={<BusinessProfilePage />} />
             <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
@@ -355,15 +334,14 @@ function App() {
             <Route path="terms" element={<TermsOfServicePage />} />
 
             {/* Shopify Embedded App Route */}
-            <Route path="shopify/app" element={<ShopifyAppBridge />} />
-
+            
             <Route
               path="dashboard"
               element={<DashboardPage />}
             />
             <Route
               path="business/register"
-              element={isAuthenticated ? <BusinessRegister /> : <Navigate to="/login" />}
+              element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />}
             />
             <Route
               path="business/crm"
@@ -395,7 +373,7 @@ function App() {
             />
             <Route
               path="wallet"
-              element={isAuthenticated ? <WalletDashboard /> : <Navigate to="/login" />}
+              element={isAuthenticated ? <WalletConnectPage /> : <Navigate to="/login" />}
             />
             <Route
               path="profile"
@@ -425,8 +403,7 @@ function App() {
           </Route>
 
           {/* Standalone embeddable badge (chrome-free, for iframe embeds) */}
-          <Route path="/badge/:handle" element={<TrustBadgeEmbed />} />
-        </Routes>
+                  </Routes>
       </LanguageProvider>
     </HelmetProvider>
   );
