@@ -153,7 +153,6 @@ export const guaranteeClaimService = {
         changeReason: 'GUARANTEE_CLAIM_RECORDED',
         component: 'PTP_GUARANTEE',
         severity: 'neutral',
-        currentHash: auditHash,
         metadata: {
           claimId: escrowEvent?.id || `claim-${bond.id}`,
           bondId: bond.id,

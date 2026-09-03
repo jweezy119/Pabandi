@@ -48,7 +48,6 @@ async function recordAuditTrail(
       component: 'AGENT_REPUTATION',
       severity,
       weightUsed: 1,
-      currentHash,
       metadata: metadata || {},
     } as any,
   });

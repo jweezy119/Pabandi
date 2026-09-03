@@ -247,7 +247,6 @@ export class LinkedInLeadGenService {
         changeReason: 'LINKEDIN_LEAD',
         component: 'LINKEDIN_LEADGEN',
         severity: 'positive',
-        currentHash: crypto.randomBytes(32).toString('hex'),
         metadata: {
           leadId,
           linkedinId,
@@ -306,7 +305,6 @@ export class LinkedInLeadGenService {
               changeReason: 'LINKEDIN_DM_SENT',
               component: 'LINKEDIN_LEADGEN',
               severity: 'positive',
-              currentHash: crypto.randomBytes(32).toString('hex'),
               metadata: {
                 linkedinId: prospect.linkedinId,
                 persona: persona.id,
@@ -363,7 +361,6 @@ export class LinkedInLeadGenService {
             changeReason: 'LINKEDIN_LEAD_CONVERTED',
             component: 'LINKEDIN_LEADGEN',
             severity: 'positive',
-            currentHash: crypto.randomBytes(32).toString('hex'),
             metadata: {
               leadId,
               persona: lead.persona,

@@ -9,11 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma client and build
+RUN npx prisma generate && npm run build
 
-# Fix failed migration history, then deploy all migrations
-RUN npx prisma migrate resolve --rolled-back 20260901_property_financials 2>/dev/null; npx prisma migrate deploy
-
-# Start server
+# Start server with memory limit to prevent OOM
 CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]

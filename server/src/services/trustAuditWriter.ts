@@ -71,7 +71,6 @@ export class TrustAuditWriter {
       weightUsed: entry.weightUsed || null,
       metadata: entry.metadata || {},
       previousHash,
-      currentHash,
       methodology: entry.methodology || "1.0.0",
     };
 

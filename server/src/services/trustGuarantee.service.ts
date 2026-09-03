@@ -133,7 +133,6 @@ export class TrustGuaranteeService {
           buyerRiskBand: riskBand,
           transactionAmountUSD,
         } as any,
-        currentHash: `guarantee-${Date.now()}-${merchantId}`,
       } as any,
     }).catch(err => logger.warn(`[Guarantee] Audit trail write failed: ${err.message}`));
 

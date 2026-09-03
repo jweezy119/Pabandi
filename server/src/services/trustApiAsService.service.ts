@@ -98,7 +98,6 @@ export class TrustApiAsService {
           entityType,
           riskBand: attestation.assessment.riskBand,
         } as any,
-        currentHash: `api-${Date.now()}-${customer.id}`,
       } as any,
     }).catch(e => logger.warn(`[TrustAPI] Audit log failed: ${e.message}`));
 

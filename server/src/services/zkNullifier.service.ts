@@ -108,7 +108,6 @@ export class ZkNullifierService {
         userId: tenantDID, previousScore: 0, newScore: 0, changeReason: nullifier,
         component: 'ZK_NULLIFIER', severity: 'positive',
         metadata: { commitment: commitmentHex, merkleRoot, anchor, consecutiveMonths, zkType: 'noir-constraint' } as any,
-        currentHash: `zk-${Date.now()}-${tenantDID}`,
       } as any,
     }).catch((e) => logger.warn(`[ZK] audit persist skipped: ${e.message}`));
 
