@@ -284,6 +284,8 @@ export default function Layout() {
             </Dropdown>
             <Dropdown label="Product" current={location.pathname.startsWith('/property-manager') || ['/live-selling', '/hospitality', '/freelance', '/marketplace', '/search', '/demo'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/property-manager">Property Manager</DropdownItem>
+              <DropdownItem to="/tenant-workflow">Tenant Workflow</DropdownItem>
+              <DropdownItem to="/ai/assistant">AI Assistant</DropdownItem>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>

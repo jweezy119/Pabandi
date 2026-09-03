@@ -70,6 +70,7 @@ export const authService = {
     lastName: string;
     phone?: string;
     code: string;
+    role?: string;
   }) => apiClient.post('/auth/register', data),
   requestVerificationCode: (email: string) =>
     apiClient.post('/auth/request-code', { email }),
