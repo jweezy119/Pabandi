@@ -9,8 +9,11 @@ RUN npm install
 
 COPY . .
 
-# Generate Prisma client only (no build, no migrate — migrate runs at runtime)
+# Generate Prisma client (no migrate — env vars not available during build)
 RUN npx prisma generate
 
-# Start: migrate then run with ts-node (avoids memory-huge dist/ folder)
-CMD ["sh", "-c", "npx prisma migrate deploy && exec npx ts-node src/index.ts"]
+# Build the project
+RUN npm run build
+
+# Run migrations + start server with limited memory
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node --max-old-space-size=384 dist/src/index.js"]
