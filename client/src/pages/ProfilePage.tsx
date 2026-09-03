@@ -598,7 +598,7 @@ export default function ProfilePage() {
 
   const handleConnect = async (platformId: string) => {
     if (platformId === 'LINKEDIN' || platformId === 'FACEBOOK') {
-      const token = localStorage.getItem('token');
+      const token = useAuthStore.getState().token;
       if (!token) return addToast('Please log in first', 'error');
       setConnectingPlatform(platformId);
       window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/social/connect/oauth/${platformId.toLowerCase()}?token=${token}`;
@@ -674,20 +674,57 @@ export default function ProfilePage() {
 
   // ── Reservation data ─────────────────────────────────────────────────────
 
-  const { data: reservationsData } = useQuery(
+  const { data: reservationsData, isLoading: reservationsLoading, error: reservationsError } = useQuery(
     'my-reservations-profile',
     () => reservationService.getUserReservations({ limit: 20 }),
-    { enabled: !!user }
+    { enabled: !!user, retry: 0, refetchOnWindowFocus: false }
   );
 
-  const { data: walletData } = useQuery(
+  const { data: walletData, isLoading: walletLoading, error: walletError } = useQuery(
     'wallet-profile',
     () => cryptoService.getWallet(),
-    { enabled: !!user }
+    { enabled: !!user, retry: 0, refetchOnWindowFocus: false, staleTime: 30_000 }
   );
 
   const reservations: any[] = reservationsData?.data?.data?.reservations || [];
   const pabBalance = (walletData as any)?.data?.data?.wallet?.balance ?? (walletData as any)?.data?.data?.balance ?? 0;
+
+  if (reservationsLoading || walletLoading) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 sm:p-5">
+                <div className="h-4 w-16 bg-outline/20 rounded mb-2 animate-pulse" />
+                <div className="h-8 w-10 bg-outline/15 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (reservationsError || walletError) {
+    const msg = (reservationsError as any)?.message || (walletError as any)?.message || 'Something timed out while loading your profile.';
+    return (
+      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+          <div className="bg-surface-container-lowest border border-error/25 rounded-2xl p-6">
+            <p className="text-sm font-bold text-error mb-2">Profile data couldn’t load</p>
+            <p className="text-xs text-on-surface-variant mb-4">{msg}</p>
+            <button onClick={() => { window.location.reload(); }} className="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Retry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const completed = reservations.filter(r => r.status === 'COMPLETED').length;
   const noShows = reservations.filter(r => r.status === 'NO_SHOW').length;
@@ -708,7 +745,7 @@ export default function ProfilePage() {
 
   const { current: loyaltyTier } = computeLoyaltyTier(completed, showRate);
 
-  const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
+  const initials = user ? `${(user.firstName || '')[0] || ''}${(user.lastName || '')[0] || ''}`.toUpperCase() : '';
 
   const achievements = [
     { icon: <TrophyIcon className="h-5 w-5" />, label: 'First Booking', description: 'Made your first reservation', earned: reservations.length >= 1, colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed' },

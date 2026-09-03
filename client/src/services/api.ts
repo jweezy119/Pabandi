@@ -61,7 +61,18 @@ export const authService = {
     firstName: string;
     lastName: string;
     phone?: string;
+    code?: string;
   }) => apiClient.post('/auth/register', data),
+  registerWithCode: (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    code: string;
+  }) => apiClient.post('/auth/register', data),
+  requestVerificationCode: (email: string) =>
+    apiClient.post('/auth/request-code', { email }),
   refreshToken: (refreshToken: string) =>
     apiClient.post('/auth/refresh', { refreshToken }),
   updateProfile: (data: { firstName: string; lastName: string }) =>
@@ -476,7 +487,7 @@ export const escrowService = {
 
 // Property Manager CRM + White Label (landlords, property managers).
 export const propertyManagerService = {
-  enroll: (payload?: { companyName?: string; slug?: string; brandColor?: string; tagline?: string; businessType?: string }) => apiClient.post('/property-manager/enroll', payload || {}),
+  enroll: (payload?: { companyName?: string; phone?: string; role?: string; propertyCount?: number; propertyName?: string; address?: string; rentAmount?: number; petFee?: number; lateFee?: number; lateGraceDays?: number; utilities?: string[]; screeningEnabled?: boolean; backgroundCheckRequired?: boolean; paymentRemindersEnabled?: boolean; slug?: string; brandColor?: string; tagline?: string; businessType?: string }) => apiClient.post('/property-manager/enroll', payload || {}),
   getMe: () => apiClient.get('/property-manager/me'),
   updateProfile: (payload: any) => apiClient.patch('/property-manager/profile', payload),
   dashboard: () => apiClient.get('/property-manager/dashboard'),

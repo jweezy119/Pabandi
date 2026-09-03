@@ -3,6 +3,8 @@ import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import OAuthConsentPage from './pages/OAuthConsentPage';
 import BusinessDashboard from './pages/BusinessDashboard';
@@ -267,8 +269,9 @@ function App() {
             />
             <Route
               path="register"
-              element={<AuthPage />}
+              element={<RegisterPage />}
             />
+            <Route path="/onboarding" element={<OnboardingPage />} />
 
             <Route path="/wallet" element={<WalletDashboard />} />
             <Route path="/loans" element={<LoanDashboard />} />
