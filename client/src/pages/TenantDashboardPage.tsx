@@ -1,122 +1,149 @@
-import React, { useState, useEffect } from 'react';
-import { Surface } from '../design-system';
+import { useState, useEffect } from 'react';
+
+import { Surface, tokens } from '../design-system';
 import { tenantService } from '../services/api';
 
-type Application = {
-  id: string;
-  email: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  status: string;
-  screeningBand?: string | null;
-  depositAdjPct: number;
-  decisionNotes?: string | null;
-  decidedAt?: string | null;
-  createdAt: string;
-};
+interface TenantDashboardData {
+  applications: any[];
+  documents: any[];
+  leases: any[];
+  maintenance: any[];
+  rentPayments: any[];
+}
 
-type Document = {
-  id: string;
-  title: string;
-  fileName: string;
-  fileUrl: string;
-  category: string;
-  createdAt: string;
-};
+export default function TenantDashboardPage() {
+  const [data, setData] = useState<TenantDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'overview' | 'rent' | 'maintenance' | 'documents' | 'lease'>('overview');
 
-const statusInfo: Record<string, { label: string; color: string }> = {
-  SUBMITTED: { label: '📨 Submitted', color: '#6366f1' },
-  UNDER_REVIEW: { label: '👀 Under review', color: '#f59e0b' },
-  SCREENING: { label: '🔍 Screening', color: '#f59e0b' },
-  APPROVED: { label: '✅ Approved', color: '#16a34a' },
-  DENIED: { label: '❌ Denied', color: '#dc2626' },
-  WITHDRAWN: { label: '🚪 Withdrawn', color: '#6b7280' },
-};
+  useEffect(() => {
+    loadTenantData();
+  }, []);
 
-const docCategoryIcon: Record<string, string> = {
-  ID: '🪪', INCOME_PROOF: '💰', LEASE_AGREEMENT: '📄', BACKGROUND_CHECK: '🔍', OTHER: '📎',
-};
+  const loadTenantData = async () => {
+    try {
+      const [appsRes, docsRes] = await Promise.all([
+        tenantService.applications().catch(() => ({ data: { data: [] } })),
+        tenantService.documents().catch(() => ({ data: { data: [] } })),
+      ]);
 
-export const TenantDashboardPage: React.FC = () => {
-  const [tab, setTab] = useState<'applications' | 'documents'>('applications');
-  const [apps, setApps] = useState<Application[]>([]);
-  const [docs, setDocs] = useState<Document[]>([]);
-  const [err, setErr] = useState('');
-
-  const load = () => {
-    tenantService.dashboard()
-      .then((r) => {
-        setApps(r.data?.data?.applications || []);
-        setDocs(r.data?.data?.documents || []);
-      })
-      .catch((e) => setErr(e?.response?.data?.error || 'Could not load dashboard'));
+      setData({
+        applications: appsRes.data?.data || [],
+        documents: docsRes.data?.data || [],
+        leases: [],
+        maintenance: [],
+        rentPayments: [],
+      });
+    } catch (e) {
+      console.error('Failed to load tenant data', e);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(load, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm" style={{ color: tokens.color.muted }}>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={page}>
-      <div style={{ maxWidth: 800, width: '100%' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 6 }}>My Applications</h1>
-        <p style={{ color: '#888', fontSize: 13, marginBottom: 20 }}>Track your rental applications and documents.</p>
+    <div className="min-h-screen pb-24 md:pb-0" style={{ background: tokens.color.background }}>
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-slate-100">Tenant Dashboard</h1>
+          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Track your applications, leases, payments, and maintenance requests.</p>
+        </div>
 
-        <div style={{ display: 'flex', gap: 2, marginBottom: 16 }}>
-          {(['applications', 'documents'] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)}
-              style={{ padding: '8px 16px', borderRadius: 8, border: tab === t ? '2px solid #6366f1' : '1px solid rgba(139,92,246,0.3)', background: tab === t ? '#eef2ff' : 'transparent', color: tab === t ? '#6366f1' : '#888', fontWeight: 700, fontSize: 13, cursor: 'pointer', textTransform: 'capitalize' }}>
-              {t}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {([
+            { id: 'overview', label: 'Overview', icon: '📊' },
+            { id: 'rent', label: 'Rent', icon: '💳' },
+            { id: 'maintenance', label: 'Maintenance', icon: '🔧' },
+            { id: 'documents', label: 'Documents', icon: '📄' },
+            { id: 'lease', label: 'Lease', icon: '📝' },
+          ] as const).map(s => (
+            <button key={s.id} onClick={() => setTab(s.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === s.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+              {s.icon} {s.label}
             </button>
           ))}
         </div>
 
-        {err && <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', fontSize: 13 }}>{err}</div>}
-
-        {tab === 'applications' && (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {apps.length === 0 && <Surface><p style={{ color: '#888' }}>No applications yet. Apply to a listing to get started.</p></Surface>}
-            {apps.map((a) => (
-              <Surface key={a.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{a.firstName || ''} {a.lastName || a.email}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>Applied {new Date(a.createdAt).toLocaleDateString()}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: statusInfo[a.status]?.color || '#888' }}>
-                      {statusInfo[a.status]?.label || a.status}
-                    </div>
-                    {a.screeningBand && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Band: {a.screeningBand}</div>}
-                    {a.decisionNotes && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{a.decisionNotes}</div>}
-                  </div>
-                </div>
-              </Surface>
-            ))}
+        {tab === 'overview' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Surface className="text-center">
+              <div className="text-3xl font-bold text-slate-100">{data?.applications?.length || 0}</div>
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Applications</div>
+            </Surface>
+            <Surface className="text-center">
+              <div className="text-3xl font-bold text-slate-100">{data?.documents?.length || 0}</div>
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Documents</div>
+            </Surface>
+            <Surface className="text-center">
+              <div className="text-3xl font-bold text-slate-100">{data?.leases?.length || 0}</div>
+              <div className="text-xs" style={{ color: tokens.color.muted }}>Active Leases</div>
+            </Surface>
           </div>
         )}
 
-        {tab === 'documents' && (
-          <div style={{ display: 'grid', gap: 10 }}>
-            {docs.length === 0 && <Surface><p style={{ color: '#888' }}>No documents yet.</p></Surface>}
-            {docs.map((d) => (
-              <Surface key={d.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{docCategoryIcon[d.category] || '📎'} {d.title}</div>
-                    <div style={{ fontSize: 12, color: '#888' }}>{d.category} · {new Date(d.createdAt).toLocaleDateString()}</div>
-                  </div>
-                  <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#6366f1', textDecoration: 'none' }}>View →</a>
+        {tab === 'rent' && (
+          <Surface className="p-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">💳 Rent Payments</h3>
+            <p className="text-sm" style={{ color: tokens.color.muted }}>Rent payment tracking coming soon. Your landlord will send payment links here.</p>
+          </Surface>
+        )}
+
+        {tab === 'maintenance' && (
+          <Surface className="p-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">🔧 Maintenance Requests</h3>
+            {data?.maintenance?.length === 0 && <p style={{ color: tokens.color.muted }}>No maintenance requests yet.</p>}
+            <div className="space-y-2">
+              {data?.maintenance?.map((m: any) => (
+                <div key={m.id} className="p-3 rounded-xl bg-white/5">
+                  <div className="font-semibold text-slate-100">{m.title}</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>{m.description} · {m.priority} · {m.status}</div>
                 </div>
-              </Surface>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Surface>
+        )}
+
+        {tab === 'documents' && (
+          <Surface className="p-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">📄 Documents</h3>
+            {data?.documents?.length === 0 && <p style={{ color: tokens.color.muted }}>No documents uploaded yet.</p>}
+            <div className="space-y-2">
+              {data?.documents?.map((d: any) => (
+                <div key={d.id} className="p-3 rounded-xl bg-white/5">
+                  <div className="font-semibold text-slate-100">{d.name || d.type}</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>{d.type} · {new Date(d.createdAt).toLocaleDateString()}</div>
+                </div>
+              ))}
+            </div>
+          </Surface>
+        )}
+
+        {tab === 'lease' && (
+          <Surface className="p-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">📝 My Lease</h3>
+            {data?.leases?.length === 0 && <p style={{ color: tokens.color.muted }}>No active lease yet.</p>}
+            <div className="space-y-2">
+              {data?.leases?.map((l: any) => (
+                <div key={l.id} className="p-3 rounded-xl bg-white/5">
+                  <div className="font-semibold text-slate-100">{l.propertyName || 'Lease'}</div>
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}/{l.rentPeriod === 'MONTH' ? 'mo' : 'wk'}</div>
+                </div>
+              ))}
+            </div>
+          </Surface>
         )}
       </div>
     </div>
   );
-};
-
-const page: React.CSSProperties = {
-  minHeight: '100vh', background: 'radial-gradient(800px 400px at 50% -10%, rgba(99,102,241,0.12), transparent 60%), #020617',
-  color: 'var(--foreground)', padding: '40px 20px',
-};
-
-export default TenantDashboardPage;
+}

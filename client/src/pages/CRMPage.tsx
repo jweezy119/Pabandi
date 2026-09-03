@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { propertyManagerService } from '../services/api';
 import { CRM_CONFIG, BUSINESS_TYPES, BusinessType } from '../config/crmConfig';
+import { TenantWorkflowPage } from './TenantWorkflowPage';
+import { AIAssistantPage } from './AIAssistantPage';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
 type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; };
@@ -88,6 +90,8 @@ export const CRMPage: React.FC = () => {
     { id: 'portal', icon: '🎨', label: 'Portal' },
     { id: 'webhooks', icon: '🔗', label: 'Webhooks' },
     { id: 'activity', icon: '📜', label: 'Activity' },
+    { id: 'tenant-workflow', icon: '🔄', label: 'Tenant Workflow' },
+    { id: 'ai-assistant', icon: '🤖', label: 'AI Assistant' },
   ];
 
   return (
@@ -377,6 +381,12 @@ export const CRMPage: React.FC = () => {
 
         {/* Activity */}
         {tab === 'activity' && <ActivityTab />}
+
+        {/* Tenant Workflow */}
+        {tab === 'tenant-workflow' && <TenantWorkflowPage />}
+
+        {/* AI Assistant */}
+        {tab === 'ai-assistant' && <AIAssistantPage />}
       </div>
 
       {/* Mobile Bottom Nav */}

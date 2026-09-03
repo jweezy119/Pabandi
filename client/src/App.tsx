@@ -51,6 +51,8 @@ import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
 import MarketplaceEmbed from './pages/MarketplaceEmbed';
 import SalePage from './pages/SalePage';
 import PropertyManagerPage from './pages/CRMPage';
+import { TenantWorkflowPage } from './pages/TenantWorkflowPage';
+import { AIAssistantPage } from './pages/AIAssistantPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
@@ -187,6 +189,10 @@ function App() {
           <Route path="/sale/:id" element={<PublicSEO seo={{ title: 'Your Pabandi-secured sale', description: 'Track your Pabandi-secured local sale, share the buyer link, and release escrow after a safe in-person exchange.' }}><SalePage /></PublicSEO>} />
           {/* Property Manager CRM dashboard */}
           <Route path="/property-manager" element={<PropertyManagerPage />} />
+          {/* Tenant Workflow with CourtListener Screening */}
+          <Route path="/tenant-workflow" element={<TenantWorkflowPage />} />
+          {/* AI Assistant for Property Management */}
+          <Route path="/ai/assistant" element={<AIAssistantPage />} />
           {/* Property detail page */}
           <Route path="/property/:id" element={<PropertyDetailPage />} />
           {/* White-label tenant portal */}
