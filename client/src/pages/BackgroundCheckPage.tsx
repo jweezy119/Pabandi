@@ -37,6 +37,7 @@ export default function BackgroundCheckPage() {
   const [compLoading, setCompLoading] = useState(false);
   const [compResult, setCompResult] = useState<CheckResult | null>(null);
   const [compError, setCompError] = useState('');
+  const [showRawComp, setShowRawComp] = useState(false);
 
   // History state
   const [history, setHistory] = useState<CheckResult[]>([]);
@@ -360,6 +361,12 @@ export default function BackgroundCheckPage() {
                 </div>
 
                 <ModuleGrid result={compResult} moduleColor={moduleColor} />
+                <div className="rounded-3xl p-4 text-xs" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <button onClick={() => setShowRawComp(!showRawComp)} className="text-slate-300 hover:text-white">{showRawComp ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
+                  {showRawComp && (
+                    <pre className="mt-3 whitespace-pre-wrap text-slate-300">{JSON.stringify(compResult, null, 2)}</pre>
+                  )}
+                </div>
               </div>
             )}
           </div>
