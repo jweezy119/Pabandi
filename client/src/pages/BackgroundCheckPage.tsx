@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { courtCheckService, backgroundCheckService } from '../services/api';
 import { tokens } from '../design-system';
 
-type Tab = 'court' | 'comprehensive' | 'history' | 'batch';
+type Tab = 'court' | 'comprehensive' | 'pakistan' | 'history' | 'batch';
 
 type CheckResult = any;
 
@@ -160,6 +160,7 @@ export default function BackgroundCheckPage() {
           {([
             { id: 'court', label: 'CourtListener', icon: '⚖️' },
             { id: 'comprehensive', label: 'Comprehensive', icon: '🛡️' },
+            { id: 'pakistan', label: 'Pakistan', icon: '🇵🇰' },
             { id: 'history', label: 'History', icon: '📋' },
             { id: 'batch', label: 'Batch Screen', icon: '🧾' },
           ] as const).map((s) => (
@@ -361,6 +362,34 @@ export default function BackgroundCheckPage() {
                 <ModuleGrid result={compResult} moduleColor={moduleColor} />
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'pakistan' && (
+          <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <h3 className="font-bold text-lg text-slate-100">🇵🇰 Pakistan Trust Screening</h3>
+            <p className="text-xs" style={{ color: tokens.color.muted }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">Party Name</label>
+                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} id="pak-name" placeholder="Full name" />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wide opacity-60">NTN / ID</label>
+                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} id="pak-ntn" placeholder="Optional" />
+              </div>
+            </div>
+            <button onClick={async () => {
+              const name = (document.getElementById('pak-name') as HTMLInputElement)?.value || '';
+              const ntn = (document.getElementById('pak-ntn') as HTMLInputElement)?.value || '';
+              if (!name.trim()) return;
+              try {
+                const res = await courtCheckService.pakScreen({ tenantName: name, tenantNtn: ntn || undefined });
+                alert(JSON.stringify(res.data?.data || res.data, null, 2));
+              } catch (e: any) {
+                alert(e.response?.data?.error || e.message || 'Pakistan screen failed');
+              }
+            }} className="w-full py-3 rounded-xl font-bold border-none hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>Run Pakistan Screen</button>
           </div>
         )}
 
