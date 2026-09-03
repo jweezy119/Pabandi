@@ -53,6 +53,9 @@ import SalePage from './pages/SalePage';
 import PropertyManagerPage from './pages/CRMPage';
 import { TenantWorkflowPage } from './pages/TenantWorkflowPage';
 import { AIAssistantPage } from './pages/AIAssistantPage';
+import { AITenantRiskPage } from './pages/AITenantRiskPage';
+import { AILeaseAnomalyPage } from './pages/AILeaseAnomalyPage';
+import { AIRentOptimizerPage } from './pages/AIRentOptimizerPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
@@ -225,6 +228,9 @@ function App() {
           <Route path="/ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
           <Route path="/ai/market" element={<MarketIntelligencePage />} />
           <Route path="/ai/portfolio" element={<PortfolioAnalyzerPage />} />
+          <Route path="/ai/tenant-risk" element={<AITenantRiskPage />} />
+          <Route path="/ai/lease-anomaly" element={<AILeaseAnomalyPage />} />
+          <Route path="/ai/rent-optimizer" element={<AIRentOptimizerPage />} />
           {/* AI Real Estate */}
           <Route path="/ai" element={<AIPage />} />
           {/* Trust Passport */}
