@@ -9,9 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Force fresh prisma generate
-RUN rm -rf node_modules/.prisma node_modules/.cache
+# Generate Prisma client at build time
 RUN npx prisma generate
 
-# Run directly with ts-node (no build step, no dist/ caching issues)
-CMD ["sh", "-c", "exec npx ts-node src/index.ts"]
+# Run with ts-node, skip prestart to avoid double prisma generate
+CMD ["sh", "-c", "exec npx ts-node --transpile-only src/index.ts"]
