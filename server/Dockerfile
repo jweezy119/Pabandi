@@ -9,12 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Force clean build - cache buster
-ARG CACHE_BUST=1
-RUN echo "Build: $(date) $CACHE_BUST"
+# Generate Prisma client
+RUN npx prisma generate
 
-# Generate Prisma client and build
-RUN npx prisma generate && npm run build
-
-# Start server
-CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]
+# Run directly with ts-node (avoids stale dist/ cache)
+CMD ["sh", "-c", "exec npx ts-node src/index.ts"]
