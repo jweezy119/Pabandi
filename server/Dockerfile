@@ -12,8 +12,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the project
-RUN npm run build
+# Fix failed migration history, then deploy all migrations
+RUN npx prisma migrate resolve --rolled-back 20260901_property_financials 2>/dev/null; npx prisma migrate deploy
 
-# Start server immediately (for port scan), then run db push in background
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss 2>&1 & sleep 5 && exec node --max-old-space-size=384 dist/src/index.js"]
+# Start server
+CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]
