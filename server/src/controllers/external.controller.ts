@@ -123,7 +123,7 @@ export const getPartnerTrustBadge = async (
     const latestAudit = await prisma.trustAuditTrail.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      select: { currentHash: true, previousHash: true }
+      select: { previousHash: true }
     });
 
     return ok(res, {
@@ -131,7 +131,7 @@ export const getPartnerTrustBadge = async (
       score: user.trustScore,
       tier: user.verificationTier,
       osintSignals: 10 + user.socialIdentities.length,
-      hashes: latestAudit ? [latestAudit.currentHash, latestAudit.previousHash || '0x000000000000'] : ['0x000000000000'],
+      hashes: latestAudit ? [latestAudit.previousHash || '0x000000000000'] : ['0x000000000000'],
       meta: {
         clientName: req.apiClient!.name,
         tier: req.apiClient!.tier,

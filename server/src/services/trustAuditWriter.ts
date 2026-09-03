@@ -38,14 +38,14 @@ export class TrustAuditWriter {
     // To ensure strict chain, we get the last one in the buffer first.
     const lastInBuffer = this.buffer.slice().reverse().find(e => e.userId === entry.userId);
     if (lastInBuffer) {
-      previousHash = lastInBuffer.currentHash;
+      previousHash = lastInBuffer.previousHash;
     } else {
       const lastInDb = await prisma.trustAuditTrail.findFirst({
         where: { userId: entry.userId },
         orderBy: { createdAt: 'desc' },
       });
       if (lastInDb) {
-        previousHash = lastInDb.currentHash;
+        previousHash = lastInDb.previousHash;
       }
     }
 
