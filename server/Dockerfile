@@ -9,8 +9,9 @@ RUN npm install
 
 COPY . .
 
-# Generate Prisma client
+# Force fresh prisma generate (no cache)
+RUN rm -rf node_modules/.prisma node_modules/.cache
 RUN npx prisma generate
 
-# Run directly with ts-node (avoids stale dist/ cache)
+# Run with ts-node
 CMD ["sh", "-c", "exec npx ts-node src/index.ts"]
