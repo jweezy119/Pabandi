@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS "PropertyFinancial" (
   "propertyId" TEXT NOT NULL,
   "unitId" TEXT,
   "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  // Transaction details.
-  "type" TEXT NOT NULL, // INCOME | EXPENSE
-  "category" TEXT NOT NULL, // RENT | LATE_FEE | PET_FEE | MAINTENANCE | UTILITY | INSURANCE | TAX | MORTGAGE | OTHER
+  -- Transaction details
+  "type" TEXT NOT NULL, -- INCOME | EXPENSE
+  "category" TEXT NOT NULL, -- RENT | LATE_FEE | PET_FEE | MAINTENANCE | UTILITY | INSURANCE | TAX | MORTGAGE | OTHER
   "amount" DOUBLE PRECISION NOT NULL,
   "description" TEXT,
   "tenantEmail" TEXT,
