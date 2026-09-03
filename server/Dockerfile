@@ -15,5 +15,5 @@ RUN npx prisma generate
 # Build the project
 RUN npm run build
 
-# Sync schema with DB and start server
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss 2>&1 && echo 'DB PUSH OK' && exec node --max-old-space-size=384 dist/src/index.js"]
+# Start server immediately (for port scan), then run db push in background
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss 2>&1 & sleep 5 && exec node --max-old-space-size=384 dist/src/index.js"]
