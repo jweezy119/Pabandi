@@ -4,16 +4,21 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install
+# Install dependencies
+RUN npm install -g prisma
 
-COPY . .
+# Download fresh code from GitHub (bypasses Docker layer cache)
+ARG COMMIT_SHA=main
+RUN git clone https://github.com/jweezy119/Pabandi.git /tmp/pabandi \
+    && cd /tmp/pabandi/server \
+    && git checkout ${COMMIT_SHA} \
+    && npm install \
+    && npx prisma generate \
+    && npm run build \
+    && cp -r dist /app/ \
+    && cp -r node_modules /app/ \
+    && rm -rf /tmp/pabandi
 
-# Force clean: remove any cached build artifacts
-RUN rm -rf dist .tsbuildinfo node_modules/.prisma node_modules/.cache
+EXPOSE 10000
 
-# Generate Prisma client and build
-RUN npx prisma generate && npm run build
-
-# Start server
-CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]
+CMD ["node", "dist/src/index.js"]
