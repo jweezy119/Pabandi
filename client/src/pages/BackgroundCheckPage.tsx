@@ -30,6 +30,7 @@ export default function BackgroundCheckPage() {
   const [courtLoading, setCourtLoading] = useState(false);
   const [courtResult, setCourtResult] = useState<CheckResult | null>(null);
   const [courtError, setCourtError] = useState('');
+  const [showRawCourt, setShowRawCourt] = useState(false);
 
   // Comprehensive check state
   const [cForm, setCForm] = useState({ subjectName: '', subjectType: 'GUEST', subjectEmail: '', subjectPhone: '', subjectWallet: '', subjectGithub: '', subjectWebsite: '', subjectCompany: '', consent: true });
@@ -283,6 +284,12 @@ export default function BackgroundCheckPage() {
                     <p className="text-emerald-300">✅ Live mode — no records found for this name.</p>
                   </div>
                 )}
+                <div className="rounded-3xl p-4 text-xs" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <button onClick={() => setShowRawCourt(!showRawCourt)} className="text-slate-300 hover:text-white">{showRawCourt ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
+                  {showRawCourt && (
+                    <pre className="mt-3 whitespace-pre-wrap text-slate-300">{JSON.stringify(courtResult, null, 2)}</pre>
+                  )}
+                </div>
               </div>
             )}
           </div>
