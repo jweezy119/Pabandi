@@ -9,11 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client only (no build, no migrate — migrate runs at runtime)
 RUN npx prisma generate
 
-# Run migrations at build time (ensures DB schema is up-to-date)
-RUN npx prisma migrate deploy
-
-# Start server with ts-node
-CMD ["sh", "-c", "exec npx ts-node src/index.ts"]
+# Start: migrate then run with ts-node (avoids memory-huge dist/ folder)
+CMD ["sh", "-c", "npx prisma migrate deploy && exec npx ts-node src/index.ts"]
