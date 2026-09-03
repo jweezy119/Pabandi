@@ -9,12 +9,12 @@ RUN npm install
 
 COPY . .
 
-# Force fresh build - cache buster
+# Force clean build - cache buster
 ARG CACHE_BUST=1
 RUN echo "Build: $(date) $CACHE_BUST"
 
 # Generate Prisma client and build
 RUN npx prisma generate && npm run build
 
-# Start server with memory limit
+# Start server
 CMD ["sh", "-c", "exec node --max-old-space-size=384 dist/src/index.js"]
