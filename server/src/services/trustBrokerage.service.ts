@@ -230,6 +230,7 @@ export class TrustBrokerageService {
           priceUSD: bundle.priceUSD,
           riskBand: bundle.data.riskBand,
         } as any,
+        currentHash: `brokerage-${Date.now()}-${buyerId}`,
       } as any,
     });
 

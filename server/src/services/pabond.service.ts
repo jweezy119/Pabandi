@@ -146,6 +146,7 @@ export class PabondService {
           source,
           ...(params.metadata || {}),
         } as any,
+        currentHash: `mint-${Date.now()}-${userId}`,
       } as any,
     });
 
@@ -194,6 +195,7 @@ export class PabondService {
         component: 'SYSTEM',
         severity: 'neutral',
         metadata: { usdReturn: Number(usdReturn), burnRatio: Number(burnRatio) } as any,
+        currentHash: `burn-${Date.now()}-${userId}`,
       } as any,
     });
 
@@ -240,6 +242,7 @@ export class PabondService {
         component: 'SYSTEM',
         severity: 'neutral',
         metadata: { usdReturn: Number(usdReturn), yieldClaim: Number(yieldClaim), pabBurned: pabAmount } as any,
+        currentHash: `batchredeem-${Date.now()}-${userId}`,
       } as any,
     });
 
@@ -352,6 +355,7 @@ export class PabondService {
             totalSupply: Number(this.totalSupplyPAB),
             pricePerPAB: this.getCurrentPrice(),
           } as any,
+          currentHash: `pabond-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         } as any,
       });
     } catch (err: any) {
