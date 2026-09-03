@@ -103,7 +103,7 @@ export default function AuthPage() {
   const getPostLoginTarget = () => {
     const redirect = searchParams.get('redirect');
     if (redirect && !redirect.includes('/login')) return redirect;
-    return '/freelance';
+    return role === 'business' ? '/property-manager' : '/freelance';
   };
 
   const handleWalletAuth = async () => {

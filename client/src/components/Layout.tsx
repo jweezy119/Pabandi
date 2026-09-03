@@ -282,10 +282,13 @@ export default function Layout() {
               <DropdownItem to="/customer/ai">Home Finder</DropdownItem>
               <DropdownItem to="/calculator">Calculator</DropdownItem>
             </Dropdown>
-            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/profiles'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Product" current={location.pathname.startsWith('/property-manager') || ['/live-selling', '/hospitality', '/freelance', '/marketplace', '/search', '/demo'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/property-manager">Property Manager</DropdownItem>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>
+              <DropdownItem to="/marketplace">Marketplace</DropdownItem>
+              <DropdownItem to="/demo">Demo</DropdownItem>
             </Dropdown>
             <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>

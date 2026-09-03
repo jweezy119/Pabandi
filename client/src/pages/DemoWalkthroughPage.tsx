@@ -146,13 +146,13 @@ export const DemoWalkthroughPage: React.FC = () => {
   const handleConvert = () => {
     if (convertChoice === 'keep') {
       localStorage.setItem('pabandi_demo_data', JSON.stringify(demoData));
-      navigate('/signup?demo=migrate');
+      navigate('/register?demo=migrate');
     } else if (convertChoice === 'import') {
-      navigate('/signup?demo=import');
+      navigate('/register?demo=import');
     } else if (convertChoice === 'webhook') {
-      navigate('/signup?demo=webhook');
+      navigate('/register?demo=webhook');
     } else {
-      navigate('/signup');
+      navigate('/register');
     }
   };
 
