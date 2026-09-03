@@ -74,6 +74,8 @@ import TenantPortalPage2 from './pages/TenantPortalPage2';
 import SettingsPage from './pages/SettingsPage';
 import BusinessOwnerAIDashboard from './pages/BusinessOwnerAIDashboard';
 import CustomerAIDashboard from './pages/CustomerAIDashboard';
+import MarketIntelligencePage from './pages/MarketIntelligencePage';
+import PortfolioAnalyzerPage from './pages/PortfolioAnalyzerPage';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
 import TokenomicsPage from './pages/TokenomicsPage';
 import WalletConnectPage from './pages/WalletConnectPage';
@@ -213,6 +215,8 @@ function App() {
           <Route path="/ai/chat" element={<AiChatPage />} />
           <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
           <Route path="/ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
+          <Route path="/ai/market" element={<MarketIntelligencePage />} />
+          <Route path="/ai/portfolio" element={<PortfolioAnalyzerPage />} />
           {/* AI Real Estate */}
           <Route path="/ai" element={<AIPage />} />
           {/* Trust Passport */}

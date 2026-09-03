@@ -580,3 +580,13 @@ export const courtCheckService = {
 };
 
 export default apiClient;
+
+// AI Advanced Service
+export const aiAdvancedService = {
+  propertyIntelligence: (payload: any) => apiClient.post('/ai/advanced/property-intelligence', payload),
+  scenarioPlanner: (payload: any) => apiClient.post('/ai/advanced/scenario-planner', payload),
+  portfolioAnalyzer: (payload: any) => apiClient.post('/ai/advanced/portfolio-analyzer', payload),
+  tenantIntelligence: (payload: any) => apiClient.post('/ai/advanced/tenant-intelligence', payload),
+  marketIntelligence: (payload: any) => apiClient.post('/ai/advanced/market-intelligence', payload),
+  maintenancePredictor: (payload: any) => apiClient.post('/ai/advanced/maintenance-predictor', payload),
+};
