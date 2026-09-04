@@ -633,6 +633,12 @@ export const promoService = {
   generateCommitment: (payload: any) => apiClient.post('/promo/zk/commitment', payload),
   verifyCommitment: (payload: any) => apiClient.post('/promo/zk/verify', payload),
   generateWorkProof: (payload: any) => apiClient.post('/promo/zk/work-proof', payload),
+  // Payout & earnings
+  submitWork: (payload: any) => apiClient.post('/promo/payout/submit-work', payload),
+  acceptAndPay: (payload: any) => apiClient.post('/promo/payout/accept-and-pay', payload),
+  submitReview: (payload: any) => apiClient.post('/promo/payout/review', payload),
+  getEarnings: (ambassadorId: string) => apiClient.get(`/promo/payout/earnings/${ambassadorId}`),
+  fundJob: (payload: any) => apiClient.post('/promo/payout/fund-job', payload),
 };
 
 export default apiClient;

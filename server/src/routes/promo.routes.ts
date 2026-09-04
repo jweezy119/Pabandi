@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { promoService } from '../services/promo.service';
+import { promoPayoutService } from '../services/promo.payout.service';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -231,3 +232,72 @@ router.post('/zk/work-proof', authenticate, async (req: any, res: Response) => {
 });
 
 export default router;
+
+// ── Payout & Earning ──────────────────────────────────────────────────────
+router.post('/payout/submit-work', authenticate, async (req: any, res: Response) => {
+  try {
+    const { jobId, ambassadorId, contentUrl, description, workHash } = req.body || {};
+    if (!jobId || !ambassadorId || !workHash) return res.status(400).json({ error: 'jobId, ambassadorId, workHash required' });
+    const result = await promoPayoutService.submitWork({ jobId, ambassadorId, contentUrl, description, workHash });
+    res.status(201).json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not submit work' });
+  }
+});
+
+router.post('/payout/accept-and-pay', authenticate, async (req: any, res: Response) => {
+  try {
+    const { submissionId } = req.body || {};
+    const userId = req.user?.id;
+    if (!submissionId) return res.status(400).json({ error: 'submissionId required' });
+    const result = await promoPayoutService.acceptAndPay(submissionId, userId);
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not accept and pay' });
+  }
+});
+
+router.post('/payout/review', authenticate, async (req: any, res: Response) => {
+  try {
+    const { submissionId, ambassadorId, rating, text, workType, zkSecret } = req.body || {};
+    if (!submissionId || !ambassadorId || !rating || !workType || !zkSecret) {
+      return res.status(400).json({ error: 'submissionId, ambassadorId, rating, workType, zkSecret required' });
+    }
+    const result = await promoPayoutService.submitReview({ submissionId, ambassadorId, rating, text, workType, zkSecret });
+    res.status(201).json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not submit review' });
+  }
+});
+
+router.post('/payout/verify-commitment', async (req: Request, res: Response) => {
+  try {
+    const { ambassadorId, secret, commitment } = req.body || {};
+    if (!ambassadorId || !secret || !commitment) return res.status(400).json({ error: 'ambassadorId, secret, commitment required' });
+    const valid = promoPayoutService.verifyCommitment(ambassadorId, secret, commitment);
+    res.json({ success: true, data: { valid } });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not verify' });
+  }
+});
+
+router.get('/payout/earnings/:ambassadorId', authenticate, async (req: any, res: Response) => {
+  try {
+    const earnings = await promoPayoutService.getEarnings(req.params.ambassadorId);
+    res.json({ success: true, data: earnings });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not load earnings' });
+  }
+});
+
+router.post('/payout/fund-job', authenticate, async (req: any, res: Response) => {
+  try {
+    const { jobId } = req.body || {};
+    const userId = req.user?.id;
+    if (!jobId) return res.status(400).json({ error: 'jobId required' });
+    const result = await promoPayoutService.fundJob(jobId, userId);
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not fund job' });
+  }
+});

@@ -2903,6 +2903,8 @@ model PromoAmbassador {
   completedJobs   Int      @default(0)
   totalEarnings   Float    @default(0) // USD
   zkPublicKey     String?  // for ZK proof verification
+  stakedPab       Float    @default(0) // $PAB staked for premium access
+  stakeTier       String?  // BRONZE | SILVER | GOLD | PLATINUM
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -2928,6 +2930,9 @@ model PromoJob {
   maxAmbassadors  Int      @default(1)
   status          String   @default("OPEN") // OPEN | IN_PROGRESS | COMPLETED | CANCELLED
   zkRequired      Boolean  @default(true) // require ZK proof for submission
+  escrowAmount    Float?   // held in escrow when funded
+  escrowStatus    String?  // PENDING | FUNDED | RELEASED | DISPUTED
+  brandVerified   Boolean  @default(false) // brand identity verified
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -2946,6 +2951,8 @@ model PromoSubmission {
   description     String?
   status          String   @default("SUBMITTED") // SUBMITTED | ACCEPTED | REJECTED | DISPUTED
   zkProofId       String?  // ZK proof of work completion
+  payoutAmount    Float?   // actual payout after rake
+  rakeAmount      Float?   // Pabandi rake
   submittedAt     DateTime @default(now())
   reviewedAt      DateTime?
   reviewNotes     String?
