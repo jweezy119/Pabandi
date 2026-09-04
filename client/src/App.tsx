@@ -13,6 +13,7 @@ import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
 import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import BookingPage from './pages/BookingPage';
+import BookingExperience from './pages/BookingExperience';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -280,6 +281,8 @@ function App() {
             <Route path="user/:id" element={<PublicCustomerProfilePage />} />
             <Route path="b/:slug" element={<ShortLinkBookingPage />} />
             <Route path="business/:id/book" element={<BookingPage />} />
+            <Route path="book" element={<BookingExperience />} />
+            <Route path="book/:id" element={<BookingExperience />} />
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />

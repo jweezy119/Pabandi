@@ -94,7 +94,7 @@ export default function ReservationsPage() {
               </button>
             ))}
           </div>
-          <Link to="/reservations/new" className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-center font-bold text-white shadow-sm transition-opacity hover:opacity-90 sm:w-auto">
+          <Link to="/book" className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-center font-bold text-white shadow-sm transition-opacity hover:opacity-90 sm:w-auto">
             New Booking
           </Link>
         </div>
