@@ -129,6 +129,24 @@ router.post('/properties', authenticate, async (req: any, res: Response) => {
   }
 });
 
+// GET /api/v1/property-manager/tenants/:id — single tenant detail (for profile view)
+router.get('/tenants/:id', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const tenant = await prisma.propertyTenant.findFirst({
+      where: { id: req.params.id, managerId: profile.id },
+      include: { property: { select: { id: true, title: true, address: true, city: true, state: true } } },
+    });
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    res.json({ success: true, data: tenant });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not load tenant' });
+  }
+});
+
 // POST /api/v1/property-manager/tenants
 router.post('/tenants', authenticate, async (req: any, res: Response) => {
   try {

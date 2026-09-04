@@ -560,6 +560,7 @@ export const tenantService = {
   applications: () => apiClient.get('/tenant/applications'),
   application: (id: string) => apiClient.get(`/tenant/applications/${id}`),
   documents: () => apiClient.get('/tenant/documents'),
+  get: (id: string) => apiClient.get(`/property-manager/tenants/${id}`),
 };
 
 // Real-estate court screening (CourtListener eviction / litigation).

@@ -7,7 +7,7 @@ import { AIAssistantPage } from './AIAssistantPage';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
 type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; };
-type Tenant = { id: string; email: string; firstName?: string | null; lastName?: string | null; phone?: string | null; status: string; riskBand?: string | null; depositHeld: number; totalStays: number; totalDisputes: number; lastStayAt?: string | null; notes?: string | null; };
+type Tenant = { id: string; email: string; firstName?: string | null; lastName?: string | null; phone?: string | null; status: string; riskBand?: string | null; depositHeld: number; totalStays: number; totalDisputes: number; lastStayAt?: string | null; notes?: string | null; property?: { id: string; title?: string | null; address?: string | null; city?: string | null; state?: string | null } | null; lease?: { id: string; startDate?: string | null; endDate?: string | null; rentAmount?: number | null; status?: string } | null; screenedAt?: string | null; screeningBand?: string | null; };
 type Screening = { id: string; tenantEmail: string; tenantName?: string | null; band: string; depositAdjPct: number; screenedAt: string; source: string; };
 type Appointment = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startsAt: string; endsAt?: string | null; status: string; notes?: string | null; };
 type Lease = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startDate: string; endDate: string; rentAmount: number; rentPeriod: string; depositAmount: number; status: string; notes?: string | null; };
@@ -25,6 +25,7 @@ export const CRMPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [propForm, setPropForm] = useState({ title: '', address: '', city: '', state: '', zip: '', bedrooms: 1, bathrooms: 1, rentAmount: '', rentPeriod: 'MONTH' });
   const [tenantForm, setTenantForm] = useState({ email: '', firstName: '', lastName: '', phone: '', status: 'PROSPECT' });
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [screenForm, setScreenForm] = useState({ tenantEmail: '', tenantName: '', band: 'LOW', source: 'COURTLISTENER', state: '' });
   const [apptForm, setApptForm] = useState({ tenantEmail: '', tenantName: '', startsAt: '', endsAt: '', notes: '' });
   const [leaseForm, setLeaseForm] = useState({ tenantEmail: '', tenantName: '', startDate: '', endDate: '', rentAmount: '', rentPeriod: 'MONTH', depositAmount: '' });
@@ -201,14 +202,99 @@ export const CRMPage: React.FC = () => {
             )}
             {dash!.tenants.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.tenants.label.toLowerCase()} yet.</p>}
             {dash!.tenants.map((t) => (
-              <Surface key={t.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div></div>
-                <div className="text-right">
-                  {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
-                  <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
-                </div>
-              </Surface>
+              <button key={t.id} onClick={() => setSelectedTenant(t)} className="w-full text-left active:scale-[0.98] transition-transform">
+                <Surface className="flex items-center justify-between">
+                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div></div>
+                  <div className="text-right">
+                    {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
+                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
+                  </div>
+                </Surface>
+              </button>
             ))}
+          </div>
+        )}
+
+        {/* Tenant Detail Modal */}
+        {selectedTenant && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setSelectedTenant(null)}>
+            <div className="max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-100 font-headline">Tenant Profile</h2>
+                <button onClick={() => setSelectedTenant(null)} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+              </div>
+              {/* Profile Header */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-xl font-bold">
+                  {(selectedTenant.firstName || '?')[0]}{(selectedTenant.lastName || '?')[0]}
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-100 text-lg">{selectedTenant.firstName || ''} {selectedTenant.lastName || ''}</div>
+                  <div className="text-sm text-slate-400">{selectedTenant.email}</div>
+                  {selectedTenant.phone && <div className="text-sm text-slate-400">{selectedTenant.phone}</div>}
+                </div>
+              </div>
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <Surface className="p-3">
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>Status</div>
+                  <div className="font-semibold text-slate-100 capitalize">{selectedTenant.status}</div>
+                </Surface>
+                <Surface className="p-3">
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>Risk Band</div>
+                  <div className="font-semibold text-slate-100">{selectedTenant.riskBand || 'N/A'}</div>
+                </Surface>
+                {selectedTenant.depositHeld > 0 && (
+                  <Surface className="p-3">
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Deposit Held</div>
+                    <div className="font-semibold text-slate-100">${selectedTenant.depositHeld.toLocaleString()}</div>
+                  </Surface>
+                )}
+                <Surface className="p-3">
+                  <div className="text-xs" style={{ color: tokens.color.muted }}>Total Stays</div>
+                  <div className="font-semibold text-slate-100">{selectedTenant.totalStays}</div>
+                </Surface>
+                {selectedTenant.screenedAt && (
+                  <Surface className="p-3">
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Screened</div>
+                    <div className="font-semibold text-slate-100 text-sm">{new Date(selectedTenant.screenedAt).toLocaleDateString()}</div>
+                  </Surface>
+                )}
+                {selectedTenant.screeningBand && (
+                  <Surface className="p-3">
+                    <div className="text-xs" style={{ color: tokens.color.muted }}>Screening</div>
+                    <div className="font-semibold text-slate-100">{selectedTenant.screeningBand}</div>
+                  </Surface>
+                )}
+              </div>
+              {/* Property */}
+              {selectedTenant.property && (
+                <Surface className="p-4 mb-4">
+                  <div className="text-sm font-semibold text-slate-100 mb-1">Property</div>
+                  <div className="text-slate-300">{selectedTenant.property.title || ''}</div>
+                  <div className="text-slate-400 text-sm">{[selectedTenant.property.address, selectedTenant.property.city, selectedTenant.property.state].filter(Boolean).join(', ')}</div>
+                </Surface>
+              )}
+              {/* Lease */}
+              {selectedTenant.lease && (
+                <Surface className="p-4 mb-4">
+                  <div className="text-sm font-semibold text-slate-100 mb-1">Current Lease</div>
+                  <div className="text-slate-300 text-sm">{selectedTenant.lease.startDate ? new Date(selectedTenant.lease.startDate).toLocaleDateString() : ''} — {selectedTenant.lease.endDate ? new Date(selectedTenant.lease.endDate).toLocaleDateString() : ''}</div>
+                  <div className="text-slate-400 text-sm">{selectedTenant.lease.rentAmount ? `$${selectedTenant.lease.rentAmount}/mo` : ''}</div>
+                  <Badge tone={selectedTenant.lease.status === 'ACTIVE' ? 'success' : 'info'} className="mt-1">{selectedTenant.lease.status}</Badge>
+                </Surface>
+              )}
+              {/* Notes */}
+              {selectedTenant.notes && (
+                <Surface className="p-4 mb-6">
+                  <div className="text-sm font-semibold text-slate-100 mb-1">Notes</div>
+                  <div className="text-slate-300 text-sm">{selectedTenant.notes}</div>
+                </Surface>
+              )}
+              <div className="flex gap-2">
+                <Button onClick={() => setSelectedTenant(null)} variant="ghost" className="flex-1">Close</Button>
+              </div>
+            </div>
           </div>
         )}
 
