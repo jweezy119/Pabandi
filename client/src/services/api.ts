@@ -665,6 +665,27 @@ export const businessImportService = {
   getStatus: () => apiClient.get('/businesses/import/status'),
 };
 
+export const partnerRewardsService = {
+  listOffers: (params?: { category?: string; businessId?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.category) q.set('category', params.category);
+    if (params?.businessId) q.set('businessId', params.businessId);
+    return apiClient.get(`/rewards/offers?${q.toString()}`);
+  },
+  getOffer: (id: string) => apiClient.get(`/rewards/offers/${id}`),
+  redeem: (id: string) => apiClient.post(`/rewards/offers/${id}/redeem`),
+  confirmRedemption: (code: string, purchaseAmount: number) =>
+    apiClient.post(`/rewards/rewards/${code}/confirm`, { purchaseAmount }),
+  getMyRewards: () => apiClient.get('/rewards/rewards'),
+  verifyCode: (code: string) => apiClient.get(`/rewards/rewards/verify/${code}`),
+  // Partner endpoints
+  createOffer: (payload: any) => apiClient.post('/rewards/partner/offers', payload),
+  getPartnerOffers: () => apiClient.get('/rewards/partner/offers'),
+  getPartnerAnalytics: (businessId: string) =>
+    apiClient.get('/rewards/partner/analytics', { params: { businessId } }),
+  getStats: () => apiClient.get('/rewards/stats'),
+};
+
 export default apiClient;
 
 // AI Advanced Service

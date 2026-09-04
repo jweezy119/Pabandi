@@ -84,6 +84,7 @@ model User {
   propertyManagerProfile  PropertyManagerProfile?
   marketplaceListings    MarketplaceListing[]
   pabWallet              PabWallet?
+  userRewards            UserReward[]
 
   @@index([email])
   @@index([phone])
@@ -159,6 +160,8 @@ model Business {
   Property               Property[]
   OpenFinanceConnection  OpenFinanceConnection[]
   courtChecks            CourtCheck[]
+  partnerOffers          PartnerOffer[]
+  partnerEnrollment      PartnerEnrollment?
 
   @@index([ownerId])
   @@index([city])
@@ -2984,4 +2987,96 @@ model PromoReview {
   @@index([workType])
   @@index([verified])
   @@index([rating])
+}
+// ── Partner Rewards & Offers ───────────────────────────────────────────────
+// Real businesses offer discounts to Pabandi users. Users earn rewards by
+// transacting with partners. Practical utility, not just tokens.
+
+model PartnerOffer {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Offer details
+  title           String
+  description     String
+  category        String   // FOOD, RETAIL, SERVICES, TRAVEL, HEALTH, OTHER
+  
+  // Reward structure
+  rewardType      String   // PERCENTAGE_OFF, FIXED_OFF, FREE_ITEM, CASHBACK_PAB
+  rewardValue     Float    // 10 = 10% off, $5 off, etc.
+  maxRewardAmount Float?   // cap for cashback
+  
+  // Requirements
+  minPurchase     Float?   // minimum purchase amount
+  maxRedemptions  Int      @default(100) // total available
+  perUserLimit    Int      @default(1)   // per user
+  
+  // Validity
+  startsAt        DateTime
+  endsAt          DateTime
+  active          Boolean  @default(true)
+  
+  // Tracking
+  totalRedeemed   Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  redemptions     UserReward[]
+
+  @@index([businessId])
+  @@index([category])
+  @@index([active])
+  @@index([endsAt])
+}
+
+model UserReward {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offerId         String
+  offer           PartnerOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  
+  // Redemption details
+  status          String   // PENDING, REDEEMED, EXPIRED, CANCELLED
+  redemptionCode  String   @unique
+  redeemedAt      DateTime?
+  
+  // Transaction info
+  purchaseAmount  Float?   // actual amount spent
+  rewardEarned    Float    // reward amount in $PAB or USD
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([offerId])
+  @@index([status])
+  @@index([redemptionCode])
+}
+
+// ── Partner Enrollment ─────────────────────────────────────────────────────
+// Tracks which businesses are enrolled in the rewards program
+
+model PartnerEnrollment {
+  id              String   @id @default(cuid())
+  businessId      String   @unique
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Enrollment status
+  status          String   // PENDING, ACTIVE, SUSPENDED
+  enrolledAt      DateTime @default(now())
+  
+  // Commission structure
+  commissionRate  Float    @default(0.02) // 2% to Pabandi
+  monthlyCap      Float    @default(500)
+  
+  // Payout info
+  payoutWallet    String?
+  totalPaidOut    Float    @default(0)
+  
+  updatedAt       DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([status])
 }

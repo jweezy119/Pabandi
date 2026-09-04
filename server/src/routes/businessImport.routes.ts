@@ -6,45 +6,11 @@ import { authenticate } from '../middleware/auth.middleware';
 const prisma = new PrismaClient();
 const router = Router();
 
-// ── Business Import Service ────────────────────────────────────────────────
-// Pulls real business data from Google Places API and OpenStreetMap
-
 const GOOGLE_PLACES_API = 'https://maps.googleapis.com/maps/api/place';
 
-interface GooglePlace {
-  place_id: string;
-  name: string;
-  formatted_address: string;
-  geometry: {
-    location: { lat: number; lng: number };
-  };
-  rating?: number;
-  user_ratings_total?: number;
-  formatted_phone_number?: string;
-  website?: string;
-  opening_hours?: { weekday_text: string[] };
-  photos?: { photo_reference: string }[];
-  types: string[];
-  price_level?: number;
-}
+// ── Business Scraper / Importer ───────────────────────────────────────────
+// Pulls real business data from Google Places API
 
-interface GooglePlaceDetail {
-  place_id: string;
-  name: string;
-  formatted_address: string;
-  geometry: { location: { lat: number; lng: number } };
-  rating?: number;
-  user_ratings_total?: number;
-  formatted_phone_number?: string;
-  website?: string;
-  opening_hours?: { weekday_text: string[] };
-  photos?: { photo_reference: string }[];
-  types: string[];
-  price_level?: number;
-  international_phone_number?: string;
-}
-
-// Map Google Places types to our business categories
 function mapGoogleTypeToCategory(types: string[]): any {
   if (types.includes('restaurant') || types.includes('food')) return 'RESTAURANT';
   if (types.includes('cafe') || types.includes('bakery')) return 'RESTAURANT';
@@ -58,15 +24,12 @@ function mapGoogleTypeToCategory(types: string[]): any {
   return 'RESTAURANT';
 }
 
-// Get photo URL from Google Places photo reference
 function getPhotoUrl(photoReference: string): string {
   return `${GOOGLE_PLACES_API}/photo?maxwidth=800&photoreference=${photoReference}&key=${process.env.GOOGLE_PLACES_API_KEY}`;
 }
 
-// ── Search and Import Businesses ──────────────────────────────────────────
-
 // POST /api/v1/businesses/import/search
-// Search for businesses via Google Places and import them
+// Search Google Places and import results
 router.post('/import/search', authenticate, async (req: any, res: Response) => {
   try {
     const { query, location, radius = 5000, type } = req.body;
@@ -80,13 +43,11 @@ router.post('/import/search', authenticate, async (req: any, res: Response) => {
       return res.status(400).json({ error: 'query or location required' });
     }
 
-    // Build search query
     let searchQuery = query || 'restaurants';
     if (location) {
       searchQuery += ` in ${location}`;
     }
 
-    // Search Google Places
     const searchUrl = `${GOOGLE_PLACES_API}/textsearch/json`;
     const searchRes = await axios.get(searchUrl, {
       params: {
@@ -98,7 +59,6 @@ router.post('/import/search', authenticate, async (req: any, res: Response) => {
 
     const results = searchRes.data.results || [];
     
-    // Import each result
     const imported = [];
     for (const place of results.slice(0, 10)) {
       const existing = await prisma.business.findFirst({
@@ -154,7 +114,6 @@ router.post('/import/place', authenticate, async (req: any, res: Response) => {
       return res.status(400).json({ error: 'placeId required' });
     }
 
-    // Check if already imported
     const existing = await prisma.business.findFirst({
       where: { googlePlaceId: placeId },
     });
@@ -163,7 +122,6 @@ router.post('/import/place', authenticate, async (req: any, res: Response) => {
       return res.json({ success: true, data: existing, alreadyImported: true });
     }
 
-    // Get place details from Google
     const detailUrl = `${GOOGLE_PLACES_API}/details/json`;
     const detailRes = await axios.get(detailUrl, {
       params: {
@@ -178,7 +136,6 @@ router.post('/import/place', authenticate, async (req: any, res: Response) => {
       return res.status(404).json({ error: 'Place not found' });
     }
 
-    // Create business record
     const business = await prisma.business.create({
       data: {
         googlePlaceId: place.place_id,
@@ -205,7 +162,7 @@ router.post('/import/place', authenticate, async (req: any, res: Response) => {
 });
 
 // POST /api/v1/businesses/import/bulk
-// Bulk import businesses from Google Places (admin only)
+// Bulk import businesses from Google Places
 router.post('/import/bulk', authenticate, async (req: any, res: Response) => {
   try {
     const { cities = ['New York', 'Los Angeles', 'Chicago'], type = 'restaurant' } = req.body;
@@ -220,7 +177,6 @@ router.post('/import/bulk', authenticate, async (req: any, res: Response) => {
 
     for (const city of cities) {
       try {
-        // Search for businesses in this city
         const searchUrl = `${GOOGLE_PLACES_API}/textsearch/json`;
         const searchRes = await axios.get(searchUrl, {
           params: {
@@ -276,7 +232,6 @@ router.post('/import/bulk', authenticate, async (req: any, res: Response) => {
 });
 
 // GET /api/v1/businesses/import/status
-// Get import status / stats
 router.get('/import/status', authenticate, async (req: any, res: Response) => {
   try {
     const [total, claimed, unclaimed] = await Promise.all([
