@@ -1473,6 +1473,7 @@ model PropertyTenant {
 
   manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  tenantApplications TenantApplication[]
 
   @@unique([managerId, email])
   @@index([managerId])
@@ -2882,4 +2883,98 @@ model MarketplaceBooking {
   @@index([listingId])
   @@index([buyerEmail])
   @@index([status])
+}
+
+
+// ── Promo Ambassador ZK Trust System ─────────────────────────────────────────
+// Brands post jobs, ambassadors do work, reviews are verified via ZK proofs
+// so companies see real reputation without exposing which ambassador said what.
+
+model PromoAmbassador {
+  id              String   @id @default(cuid())
+  userId          String?  @unique
+  handle          String   @unique // public pseudonym
+  workType        String   // SOCIAL_MEDIA | EVENTS | CONTENT | DELIVERY | SURVEY | OTHER
+  bio             String?
+  portfolioUrl    String?
+  verifiedBadges  String[] @default([]) // e.g. ["TOP_10_PERCENT", "FAST_DELIVERY"]
+  reputationScore Float    @default(50) // 0-100
+  totalJobs       Int      @default(0)
+  completedJobs   Int      @default(0)
+  totalEarnings   Float    @default(0) // USD
+  zkPublicKey     String?  // for ZK proof verification
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  submissions     PromoSubmission[]
+  reviews         PromoReview[]
+
+  @@index([workType])
+  @@index([reputationScore])
+  @@index([active])
+}
+
+model PromoJob {
+  id              String   @id @default(cuid())
+  brandId         String?  // brand/company that posted
+  brandName       String?  // display name (can be anonymous)
+  title           String
+  description     String
+  workType        String   // SOCIAL_MEDIA | EVENTS | CONTENT | DELIVERY | SURVEY | OTHER
+  budgetUsd       Float
+  deadline        DateTime?
+  requirements    String[] @default([]) // e.g. ["MIN_REPUTATION_70", "VERIFIED_BADGE"]
+  maxAmbassadors  Int      @default(1)
+  status          String   @default("OPEN") // OPEN | IN_PROGRESS | COMPLETED | CANCELLED
+  zkRequired      Boolean  @default(true) // require ZK proof for submission
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  submissions     PromoSubmission[]
+
+  @@index([workType])
+  @@index([status])
+  @@index([brandId])
+}
+
+model PromoSubmission {
+  id              String   @id @default(cuid())
+  jobId           String
+  ambassadorId    String
+  contentUrl      String?  // link to work (post, video, etc.)
+  description     String?
+  status          String   @default("SUBMITTED") // SUBMITTED | ACCEPTED | REJECTED | DISPUTED
+  zkProofId       String?  // ZK proof of work completion
+  submittedAt     DateTime @default(now())
+  reviewedAt      DateTime?
+  reviewNotes     String?
+
+  job             PromoJob       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  ambassador      PromoAmbassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([ambassadorId])
+  @@index([status])
+}
+
+model PromoReview {
+  id              String   @id @default(cuid())
+  submissionId    String   @unique
+  ambassadorId    String
+  rating          Int      // 1-5
+  text            String?
+  // ZK fields — review is verified without exposing ambassador identity to brand
+  zkProofId       String?  // ZK proof that reviewer is a real ambassador
+  zkCommitment    String?  // commitment hash (hides ambassadorId)
+  workType        String   // grouped by work type for brand insights
+  verified        Boolean  @default(false) // ZK proof verified
+  createdAt       DateTime @default(now())
+
+  ambassador      PromoAmbassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+
+  @@index([ambassadorId])
+  @@index([workType])
+  @@index([verified])
+  @@index([rating])
 }

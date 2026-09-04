@@ -592,6 +592,49 @@ export const courtCheckService = {
   }) => apiClient.post('/realestate/pak-screen', payload),
 };
 
+export const promoService = {
+  stats: () => apiClient.get('/promo/stats'),
+  listAmbassadors: (params?: { workType?: string; minReputation?: number; active?: boolean }) => {
+    const q = new URLSearchParams();
+    if (params?.workType) q.set('workType', params.workType);
+    if (params?.minReputation) q.set('minReputation', String(params.minReputation));
+    if (params?.active !== undefined) q.set('active', String(params.active));
+    return apiClient.get(`/promo/ambassadors?${q.toString()}`);
+  },
+  getAmbassador: (id: string) => apiClient.get(`/promo/ambassadors/${id}`),
+  createAmbassador: (payload: any) => apiClient.post('/promo/ambassadors', payload),
+  listJobs: (params?: { workType?: string; status?: string; brandId?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.workType) q.set('workType', params.workType);
+    if (params?.status) q.set('status', params.status);
+    if (params?.brandId) q.set('brandId', params.brandId);
+    return apiClient.get(`/promo/jobs?${q.toString()}`);
+  },
+  getJob: (id: string) => apiClient.get(`/promo/jobs/${id}`),
+  createJob: (payload: any) => apiClient.post('/promo/jobs', payload),
+  updateJobStatus: (id: string, status: string) => apiClient.patch(`/promo/jobs/${id}/status`, { status }),
+  listSubmissions: (params?: { jobId?: string; ambassadorId?: string; status?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.jobId) q.set('jobId', params.jobId);
+    if (params?.ambassadorId) q.set('ambassadorId', params.ambassadorId);
+    if (params?.status) q.set('status', params.status);
+    return apiClient.get(`/promo/submissions?${q.toString()}`);
+  },
+  createSubmission: (payload: any) => apiClient.post('/promo/submissions', payload),
+  updateSubmissionStatus: (id: string, status: string, reviewNotes?: string) => apiClient.patch(`/promo/submissions/${id}/status`, { status, reviewNotes }),
+  listReviews: (params?: { workType?: string; verified?: boolean; minRating?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.workType) q.set('workType', params.workType);
+    if (params?.verified !== undefined) q.set('verified', String(params.verified));
+    if (params?.minRating) q.set('minRating', String(params.minRating));
+    return apiClient.get(`/promo/reviews?${q.toString()}`);
+  },
+  createReview: (payload: any) => apiClient.post('/promo/reviews', payload),
+  generateCommitment: (payload: any) => apiClient.post('/promo/zk/commitment', payload),
+  verifyCommitment: (payload: any) => apiClient.post('/promo/zk/verify', payload),
+  generateWorkProof: (payload: any) => apiClient.post('/promo/zk/work-proof', payload),
+};
+
 export default apiClient;
 
 // AI Advanced Service

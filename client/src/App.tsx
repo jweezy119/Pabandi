@@ -99,6 +99,7 @@ import AgentPassportPage from './pages/AgentPassportPage';
 import AgentMarketplacePage from './pages/AgentMarketplacePage';
 import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
+import PromoPage from './pages/PromoPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
@@ -306,6 +307,7 @@ function App() {
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
             <Route path="background-check" element={<BackgroundCheckPage />} />
             <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
+            <Route path="promo" element={<PromoPage />} />
             <Route path="protected-deposit" element={<PpdWizardPage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />

@@ -86,6 +86,7 @@ import propertyManagerRoutes from './routes/propertyManager.routes';
 import propertyRoutes from './routes/property.routes';
 import documentRoutes from './routes/document.routes';
 import tenantRoutes from './routes/tenant.routes';
+import promoRoutes from './routes/promo.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
@@ -251,6 +252,7 @@ app.use(`/api/${API_VERSION}/property-manager`, propertyManagerRoutes);
 app.use(`/api/${API_VERSION}/property`, propertyRoutes);
 app.use(`/api/${API_VERSION}/documents`, documentRoutes);
 app.use(`/api/${API_VERSION}/tenant`, tenantRoutes);
+app.use(`/api/${API_VERSION}/promo`, promoRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 
