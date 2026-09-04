@@ -655,6 +655,16 @@ export const promoService = {
   getMintStatus: (ambassadorId: string) => apiClient.get(`/promo/payout/mint-status/${ambassadorId}`),
 };
 
+export const businessImportService = {
+  searchAndImport: (params: { query: string; location?: string; radius?: number; type?: string }) =>
+    apiClient.post('/businesses/import/search', params),
+  importByPlaceId: (placeId: string) =>
+    apiClient.post('/businesses/import/place', { placeId }),
+  bulkImport: (params: { cities?: string[]; type?: string }) =>
+    apiClient.post('/businesses/import/bulk', params),
+  getStatus: () => apiClient.get('/businesses/import/status'),
+};
+
 export default apiClient;
 
 // AI Advanced Service

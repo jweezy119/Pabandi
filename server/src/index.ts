@@ -27,6 +27,7 @@ import authRoutes from './routes/auth.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
 import whatsappAdvancedRoutes from './routes/whatsapp.advanced.routes';
 import businessRoutes from './routes/business.routes';
+import businessImportRoutes from './routes/businessImport.routes';
 import reservationRoutes from './routes/reservation.routes';
 import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
@@ -181,6 +182,7 @@ app.get('/healthz', (_req, res) => {
 // API Routes
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 app.use(`/api/${API_VERSION}/businesses`, businessRoutes);
+app.use(`/api/${API_VERSION}/businesses/import`, businessImportRoutes);
 app.use(`/api/${API_VERSION}/reservations`, reservationRoutes);
 app.use(`/api/${API_VERSION}/disputes`, disputeRoutes);
 app.use(`/api/${API_VERSION}/loans`, loanRoutes);
