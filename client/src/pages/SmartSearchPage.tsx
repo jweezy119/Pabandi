@@ -53,7 +53,7 @@ export const SmartSearchPage: React.FC = () => {
   const generateSuggestions = (q: string): AiSuggestion[] => {
     const all: AiSuggestion[] = [
       { id: '1', text: 'Analyze a property value', icon: '🏠', action: () => navigate('/ai/analyze') },
-      { id: '2', text: 'Generate a lease agreement', icon: '📝', action: () => navigate('/ai') },
+      { id: '2', text: 'Generate a lease agreement', icon: '📝', action: () => navigate('/ai/assistant') },
       { id: '3', text: 'Screen a tenant', icon: '🔍', action: () => navigate('/background-check') },
       { id: '4', text: 'Open an escrow', icon: '🔒', action: () => navigate('/escrow') },
       { id: '5', text: 'View my PAB balance', icon: '💰', action: () => navigate('/token') },

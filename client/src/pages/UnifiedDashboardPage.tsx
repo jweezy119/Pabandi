@@ -53,7 +53,7 @@ export const UnifiedDashboardPage: React.FC = () => {
     { icon: '🏠', label: 'Add Property', link: '/property-manager' },
     { icon: '📋', label: 'Create Listing', link: '/marketplace' },
     { icon: '🔍', label: 'Screen Tenant', link: '/background-check' },
-    { icon: '📝', label: 'Generate Lease', link: '/ai' },
+    { icon: '📝', label: 'Generate Lease', link: '/ai/lease-anomaly' },
     { icon: '🤖', label: 'Ask AI', link: '/ai/analyze' },
     { icon: '🔒', label: 'Open Escrow', link: '/escrow' },
   ];
@@ -171,8 +171,8 @@ export const UnifiedDashboardPage: React.FC = () => {
               <h3 className="text-base font-bold text-slate-100 mb-3">🤖 AI Tools</h3>
               <div className="space-y-2">
                 <Link to="/ai/analyze" className="block p-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300">Property Valuation</Link>
-                <Link to="/ai" className="block p-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300">Lease Analyzer</Link>
-                <Link to="/ai" className="block p-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300">Maintenance Assistant</Link>
+                <Link to="/ai/lease-anomaly" className="block p-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300">Lease Analyzer</Link>
+                <Link to="/ai/lease-anomaly" className="block p-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-slate-300">Maintenance Assistant</Link>
               </div>
             </Surface>
           </div>
