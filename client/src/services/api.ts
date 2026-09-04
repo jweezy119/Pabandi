@@ -90,6 +90,8 @@ export const authService = {
     apiClient.post('/auth/wallet/nonce', { walletAddress }),
   verifyWalletLogin: (data: { walletAddress: string; signature: string }) =>
     apiClient.post('/auth/wallet/verify', data),
+  connectWallet: (address: string, chain: string) =>
+    apiClient.put('/auth/wallet', { address, chain }),
 };
 
 export const businessService = {
@@ -205,6 +207,16 @@ export const socialService = {
 
 export const walletService = {
   getBalances: () => apiClient.get('/wallet/balances'),
+};
+
+export const pabService = {
+  getWallet: () => apiClient.get('/pab/wallet'),
+  earn: (payload: any) => apiClient.post('/pab/earn', payload),
+  spend: (payload: any) => apiClient.post('/pab/spend', payload),
+  stake: (tier: string) => apiClient.post('/pab/stake', tier),
+  unstake: () => apiClient.post('/pab/unstake'),
+  getStats: () => apiClient.get('/pab/stats'),
+  getTreasury: () => apiClient.get('/pab/treasury'),
 };
 
 export const reliabilityService = {

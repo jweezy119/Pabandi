@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
+import { authService } from '../services/api';
 
 declare global {
   interface Window {
@@ -41,6 +42,7 @@ export const WalletConnectPage: React.FC = () => {
         setAddress(resp.publicKey.toString());
         setWalletType('phantom');
         setConnected(true);
+        saveWallet(resp.publicKey.toString(), 'solana');
       } else {
         // Mobile: open Phantom app via deep link
         const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`;
@@ -63,6 +65,7 @@ export const WalletConnectPage: React.FC = () => {
         setAddress(window.solflare.publicKey?.toString() || '');
         setWalletType('solflare');
         setConnected(true);
+        saveWallet(window.solflare.publicKey?.toString() || '', 'solana');
       } else {
         window.open('https://solflare.com', '_blank');
         setError('Solflare not detected. Opening website...');
@@ -84,6 +87,14 @@ export const WalletConnectPage: React.FC = () => {
       setError(e.message || 'Connection failed');
     } finally {
       setConnecting(false);
+    }
+  };
+
+  const saveWallet = async (addr: string, chain: string) => {
+    try {
+      await authService.connectWallet(addr, chain);
+    } catch (e: any) {
+      console.error('Failed to save wallet:', e);
     }
   };
 
