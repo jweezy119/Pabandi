@@ -3,6 +3,7 @@ import { Surface, Button, Badge, tokens } from '../design-system';
 import { propertyManagerService } from '../services/api';
 import { CRM_CONFIG, BUSINESS_TYPES, BusinessType } from '../config/crmConfig';
 import { TenantWorkflowPage } from './TenantWorkflowPage';
+import TenantDashboardPage from './TenantDashboardPage';
 import { AIAssistantPage } from './AIAssistantPage';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
@@ -470,6 +471,9 @@ export const CRMPage: React.FC = () => {
 
         {/* Tenant Workflow */}
         {tab === 'tenant-workflow' && <TenantWorkflowPage />}
+
+        {/* Tenant Dashboard */}
+        {tab === 'tenant-dashboard' && <TenantDashboardPage />}
 
         {/* AI Assistant */}
         {tab === 'ai-assistant' && <AIAssistantPage />}
