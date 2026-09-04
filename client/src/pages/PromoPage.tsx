@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { promoService } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 type Tab = 'feed' | 'ambassadors' | 'jobs' | 'my-work';
 
@@ -9,6 +10,7 @@ const WORK_TYPES = ['SOCIAL_MEDIA', 'EVENTS', 'CONTENT', 'DELIVERY', 'SURVEY', '
 export const PromoPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>('feed');
   const [stats, setStats] = useState<any>(null);
+  const { user, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     promoService.stats().then((r) => setStats(r.data?.data)).catch(() => {});
@@ -23,7 +25,10 @@ export const PromoPage: React.FC = () => {
             <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">Promo Ambassadors</h1>
             <p className="text-xs md:text-sm" style={{ color: tokens.color.muted }}>ZK-verified brand promoters — real reviews, zero-knowledge identity</p>
           </div>
-          <div className="text-2xl">🎯</div>
+          <div className="flex items-center gap-2">
+            <Link to="/wallet"><Button size="sm" variant="ghost">🔗 Wallet</Button></Link>
+            <div className="text-2xl">🎯</div>
+          </div>
         </div>
       </div>
 
@@ -235,29 +240,75 @@ const JobsList: React.FC = () => {
   );
 };
 
-// ── My Work (placeholder for authenticated user's submissions) ─────────────
+// ── My Work (authenticated) ────────────────────────────────────────────────
 const MyWork: React.FC = () => {
+  const { user, isAuthenticated } = useAuthStore();
+  const [ambassador, setAmbassador] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const createAmbassador = async () => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    try {
+      const handle = user?.email?.split('@')[0] || `amb_${Date.now()}`;
+      const res = await promoService.createAmbassador({ handle, workType: 'SOCIAL_MEDIA' });
+      setAmbassador(res.data?.data);
+    } catch (e: any) {
+      console.error('Failed to create ambassador:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
+        <Surface className="p-6 text-center">
+          <div className="text-4xl mb-2">🔐</div>
+          <p className="text-slate-100 font-semibold">Sign in to get started</p>
+          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Log in or create an account to become an ambassador.</p>
+          <Link to="/login"><Button className="mt-4">Sign In</Button></Link>
+        </Surface>
+      </div>
+    );
+  }
+
+  if (!ambassador) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
+        <Surface className="p-6 text-center">
+          <div className="text-4xl mb-2">🚀</div>
+          <p className="text-slate-100 font-semibold">Become an ambassador</p>
+          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
+          <Button className="mt-4" onClick={createAmbassador} disabled={loading}>
+            {loading ? 'Creating...' : '+ Become an Ambassador'}
+          </Button>
+        </Surface>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
-      <Surface className="p-6 text-center">
-        <div className="text-4xl mb-2">🚀</div>
-        <p className="text-slate-100 font-semibold">Join as an ambassador</p>
-        <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
-        <Button className="mt-4">+ Become an Ambassador</Button>
-      </Surface>
       <Surface className="p-4">
-        <h3 className="font-semibold text-slate-100 mb-2">How ZK Reviews Work</h3>
-        <div className="space-y-2 text-sm text-slate-300">
-          <p>🔏 <strong>1.</strong> You submit work (post, video, content) as an ambassador.</p>
-          <p>🎭 <strong>2.</strong> You write a review — your identity is hidden via a ZK commitment.</p>
-          <p>✅ <strong>3.</strong> Brands see "verified ambassador" without knowing WHICH ambassador.</p>
-          <p>📊 <strong>4.</strong> Reviews are grouped by work type for brand insights.</p>
-          <p>💰 <strong>5.</strong> Your reputation grows — higher rep = access to better jobs.</p>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+            {ambassador.handle[0]}
+          </div>
+          <div>
+            <div className="font-semibold text-slate-100">{ambassador.handle}</div>
+            <div className="text-xs" style={{ color: tokens.color.muted }}>{ambassador.workType} · Rep: {ambassador.reputationScore}</div>
+          </div>
         </div>
       </Surface>
     </div>
   );
 };
+
+// Missing import
+import { Link } from 'react-router-dom';
 
 export default PromoPage;
