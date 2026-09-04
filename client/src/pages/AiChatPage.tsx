@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Badge, tokens } from '../design-system';
+import { aiRealEstateService } from '../services/api';
 
 interface Message {
   id: string;
@@ -39,12 +40,12 @@ export const AiChatPage: React.FC = () => {
     setLoading(true);
 
     try {
-      // Simple rule-based responses (no external API needed)
-      const response = generateResponse(input.toLowerCase());
+      const res = await aiRealEstateService.aiChat(input, { context: 'property_manager' });
+      const reply = res.data?.data?.reply || res.data?.reply || 'No response';
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response,
+        content: reply,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
@@ -63,41 +64,15 @@ export const AiChatPage: React.FC = () => {
     }
   };
 
-  const generateResponse = (input: string): string => {
-    if (input.includes('valuation') || input.includes('how much') || input.includes('worth')) {
-      return 'I can help with property valuation! Please provide:\n\n• City & state\n• Bedrooms & bathrooms\n• Square footage\n• Year built (optional)\n• Condition (excellent/good/fair/poor)\n\nOr go to **/ai/analyze** for a full valuation form.';
-    }
-    if (input.includes('rent') || input.includes('rental')) {
-      return 'For rental estimates, I need:\n\n• Property location (city, state)\n• Size (sqft, bedrooms, bathrooms)\n• Amenities (parking, laundry, gym, pool)\n\nI\'ll provide a suggested rent range with confidence score. Try **/ai/analyze**!';
-    }
-    if (input.includes('lease') || input.includes('contract')) {
-      return 'I can analyze your lease! Paste the text and I\'ll:\n\n• Extract key terms (rent, deposit, dates)\n• Identify red flags\n• List missing clauses\n• Give a risk score\n\nGo to **/ai** → Lease Analyzer to upload.';
-    }
-    if (input.includes('maintenance') || input.includes('repair') || input.includes('fix')) {
-      return 'Describe your maintenance issue and I\'ll help with:\n\n• Diagnosis (what\'s likely wrong)\n• Severity level (low/medium/high/emergency)\n• DIY possible? (yes/no)\n• Estimated cost range\n• Recommended vendor type\n• Safety warnings\n\nWhat\'s the issue?';
-    }
-    if (input.includes('screen') || input.includes('tenant') || input.includes('background')) {
-      return 'I can screen tenants! Provide:\n\n• Name & email\n• Monthly income\n• Employment status\n• Credit score (optional)\n• Eviction history (yes/no)\n• Criminal history (yes/no)\n\nI\'ll give a risk band (LOW/MEDIUM/HIGH) and recommendation.';
-    }
-    if (input.includes('invest') || input.includes('roi') || input.includes('cash flow')) {
-      return 'For investment analysis, I need:\n\n• Purchase price\n• Down payment\n• Interest rate & loan term\n• Expected monthly rent\n• Monthly expenses\n\nI\'ll calculate:\n• Monthly cash flow\n• Cap rate\n• Cash-on-cash return\n• 5-year ROI\n• Break-even timeline';
-    }
-    if (input.includes('document') || input.includes('generate') || input.includes('write')) {
-      return 'I can generate these documents:\n\n• 📄 Lease Agreement\n• 📝 Notice to Vacate\n• 🧾 Rent Receipt\n• 🔧 Maintenance Request\n• 📋 Move-In Checklist\n• 🐕 Pet Addendum\n\nGo to **/ai** → Documents to generate.';
-    }
-    if (input.includes('help') || input.includes('what can you do')) {
-      return 'I can help with:\n\n• 🏠 **Property Valuation** — estimate worth & rent\n• 📝 **Lease Analysis** — find red flags & missing terms\n• 🔧 **Maintenance** — diagnose issues & estimate costs\n• 🔍 **Tenant Screening** — assess risk level\n• 💰 **Investment Analysis** — cash flow & ROI\n• 📄 **Document Generation** — leases, notices, receipts\n• 📊 **Market Insights** — rental trends & recommendations\n\nJust ask!';
-    }
-    return 'I can help with property valuation, lease analysis, maintenance issues, tenant screening, investment analysis, and document generation.\n\nTry asking something like:\n• "What\'s my property worth?"\n• "Analyze this lease"\n• "AC not working"\n• "Screen a tenant"\n• "ROI on investment"\n• "Generate a lease"';
-  };
-
   const quickPrompts = [
-    'What\'s my property worth?',
+    "What's my property worth?",
     'Analyze my lease',
     'AC not working',
     'Screen a tenant',
     'ROI on investment',
     'Generate a lease',
+    'Market trends in my area',
+    'Maintenance cost estimate',
   ];
 
   return (
@@ -108,7 +83,7 @@ export const AiChatPage: React.FC = () => {
           <Badge tone="info" className="mb-2">🤖 AI Assistant</Badge>
           <h1 className="text-2xl font-black text-slate-100 font-headline">How can I help?</h1>
           <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
-            Ask about properties, leases, maintenance, tenants, investments
+            Ask about properties, leases, maintenance, tenants, investments, market trends
           </p>
         </div>
 
