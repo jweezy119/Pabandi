@@ -3136,6 +3136,12 @@ model FreightLoad {
   bids            FreightBid[]
   tracking        FreightTracking[]
   escrow          FreightEscrow?
+  stops           FreightStop[]
+  documents       FreightDocument[]
+  messages        FreightMessage[]
+  insurance       FreightInsurance?
+  scorecard       CarrierScorecard?
+  alerts          FreightAlert[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3243,6 +3249,11 @@ model CarrierProfile {
   // Verification
   verified          Boolean  @default(false)
   insuranceVerified Boolean  @default(false)
+  
+  documents         FreightDocument[]
+  scorecards        CarrierScorecard[]
+  rateCards         CarrierRateCard[]
+  availability      CarrierAvailability?
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -3397,4 +3408,221 @@ model CustomerVendorRelation {
   @@index([userId])
   @@index([businessId])
   @@index([segment])
+}
+// ── Freight Stops (Multi-Stop Loads) ───────────────────────────────────────
+model FreightStop {
+  id              String   @id @default(cuid())
+  loadId          String
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  sequence        Int      // 1, 2, 3...
+  type            String   // PICKUP, DROPOFF
+  address         String
+  city            String
+  state           String
+  zip             String
+  lat             Float?
+  lng             Float?
+  
+  cargoDescription String?
+  weightLbs       Float?
+  scheduledTime   DateTime?
+  actualTime      DateTime?
+  status          String   // PENDING, ARRIVED, COMPLETED, MISSED
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([loadId])
+}
+
+// ── Freight Documents ─────────────────────────────────────────────────────
+model FreightDocument {
+  id              String   @id @default(cuid())
+  loadId          String?
+  load            FreightLoad? @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  carrierId       String?
+  carrier         CarrierProfile? @relation(fields: [carrierId], references: [userId], onDelete: Cascade)
+  
+  uploadedById    String
+  
+  documentType    String   // BILL_OF_LADING, PROOF_OF_DELIVERY, INSURANCE_CERT, COMMERCIAL_INVOICE, PACKING_LIST, CUSTOMS_FORM, PHOTO
+  fileName        String
+  fileUrl         String
+  fileSize        Int?
+  mimeType        String?
+  
+  description     String?
+  
+  uploadedAt      DateTime @default(now())
+
+  @@index([loadId])
+  @@index([carrierId])
+}
+
+// ── Freight Messages ──────────────────────────────────────────────────────
+model FreightMessage {
+  id              String   @id @default(cuid())
+  loadId          String
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  senderId        String
+  
+  message         String
+  messageType     String   // MESSAGE, STATUS_UPDATE, ALERT, DISPUTE
+  
+  readAt          DateTime?
+  
+  createdAt       DateTime @default(now())
+
+  @@index([loadId])
+  @@index([senderId])
+}
+
+// ── Freight Insurance ─────────────────────────────────────────────────────
+model FreightInsurance {
+  id              String   @id @default(cuid())
+  loadId          String   @unique
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  provider        String
+  coverageAmount  Float
+  premium         Float
+  policyNumber    String
+  certificateUrl  String?
+  
+  status          String   // PENDING, ACTIVE, CLAIMED, EXPIRED
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([loadId])
+}
+
+// ── Carrier Scorecard ─────────────────────────────────────────────────────
+model CarrierScorecard {
+  id              String   @id @default(cuid())
+  loadId          String   @unique
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  shipperId       String
+  carrierId       String
+  carrier         CarrierProfile @relation(fields: [carrierId], references: [userId], onDelete: Cascade)
+  
+  // Scoring (1-100)
+  onTimeDelivery  Int?
+  cargoCondition  Int?
+  communication   Int?
+  professionalism Int?
+  
+  overallRating   Float
+  
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([loadId])
+  @@index([carrierId])
+}
+
+// ── Carrier Rate Cards ────────────────────────────────────────────────────
+model CarrierRateCard {
+  id              String   @id @default(cuid())
+  carrierId       String
+  carrier         CarrierProfile @relation(fields: [carrierId], references: [userId], onDelete: Cascade)
+  
+  originRegion    String   // City, state, or "ANY"
+  destRegion      String   // City, state, or "ANY"
+  
+  ratePerMile     Float
+  minimumCharge   Float
+  
+  cargoType       String?  // GENERAL, REFRIGERATED, HAZARDOUS, etc.
+  
+  effectiveDate   DateTime @default(now())
+  expirationDate  DateTime?
+  
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([carrierId])
+}
+
+// ── Carrier Availability ──────────────────────────────────────────────────
+model CarrierAvailability {
+  id                String   @id @default(cuid())
+  carrierId         String   @unique
+  carrier           CarrierProfile @relation(fields: [carrierId], references: [userId], onDelete: Cascade)
+  
+  isAvailable       Boolean  @default(true)
+  availableFrom     DateTime?
+  availableTo       DateTime?
+  
+  preferredRegions  String[]
+  maxDistance       Float?   // max miles from base
+  
+  lastLocation      String?
+  lastLocationAt    DateTime?
+  
+  updatedAt         DateTime @updatedAt
+
+  @@index([carrierId])
+}
+
+// ── Load Alerts & Notifications ───────────────────────────────────────────
+model FreightAlert {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  loadId          String?
+  load            FreightLoad? @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  alertType       String   // BID_RECEIVED, LOAD_ASSIGNED, STATUS_UPDATE, DELIVERY_CONFIRMED, DISPUTE_FILED, PAYMENT_RECEIVED
+  title           String
+  message         String
+  
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([loadId])
+}
+
+// ── Freight Templates (Save load details for repeat shipments) ────────────
+model FreightTemplate {
+  id              String   @id @default(cuid())
+  shipperId       String
+  
+  name            String
+  description     String?
+  
+  cargoType       String
+  weightLbs       Float
+  dimensions      String?
+  valueUsd        Float
+  
+  originAddress   String
+  originCity      String
+  originState     String
+  originZip       String
+  
+  destAddress     String
+  destCity        String
+  destState       String
+  destZip         String
+  
+  isRecurring     Boolean  @default(false)
+  recurrenceDays  Int?     // every N days
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shipperId])
 }

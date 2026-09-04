@@ -687,27 +687,57 @@ export const partnerRewardsService = {
 };
 
 export const freightService = {
-  listLoads: (params?: { status?: string; shipperId?: string; originCity?: string; destCity?: string }) => {
+  listLoads: (params?: any) => {
     const q = new URLSearchParams();
     if (params?.status) q.set('status', params.status);
     if (params?.shipperId) q.set('shipperId', params.shipperId);
     if (params?.originCity) q.set('originCity', params.originCity);
     if (params?.destCity) q.set('destCity', params.destCity);
+    if (params?.cargoType) q.set('cargoType', params.cargoType);
+    if (params?.minWeight) q.set('minWeight', params.minWeight);
+    if (params?.maxWeight) q.set('maxWeight', params.maxWeight);
+    if (params?.pickupDate) q.set('pickupDate', params.pickupDate);
     return apiClient.get(`/freight/loads?${q.toString()}`);
   },
   getLoad: (id: string) => apiClient.get(`/freight/loads/${id}`),
   createLoad: (payload: any) => apiClient.post('/freight/loads', payload),
+  updateLoadStatus: (id: string, status: string, location?: string) => apiClient.patch(`/freight/loads/${id}/status`, { status, location }),
   placeBid: (payload: any) => apiClient.post('/freight/bids', payload),
   acceptBid: (id: string) => apiClient.post(`/freight/bids/${id}/accept`),
+  rejectBid: (id: string) => apiClient.post(`/freight/bids/${id}/reject`),
   addTracking: (id: string, payload: any) => apiClient.post(`/freight/loads/${id}/tracking`, payload),
-  listCarriers: (params?: { verified?: boolean; state?: string }) => {
+  getTracking: (id: string) => apiClient.get(`/freight/loads/${id}/tracking`),
+  uploadDocument: (payload: any) => apiClient.post('/freight/documents', payload),
+  getDocuments: (loadId?: string, carrierId?: string) => {
+    const q = new URLSearchParams();
+    if (loadId) q.set('loadId', loadId);
+    if (carrierId) q.set('carrierId', carrierId);
+    return apiClient.get(`/freight/documents?${q.toString()}`);
+  },
+  sendMessage: (payload: any) => apiClient.post('/freight/messages', payload),
+  getMessages: (loadId: string) => apiClient.get(`/freight/messages/${loadId}`),
+  createEscrow: (payload: any) => apiClient.post('/freight/escrow', payload),
+  fundEscrow: (loadId: string) => apiClient.post(`/freight/escrow/${loadId}/fund`),
+  releaseEscrow: (loadId: string) => apiClient.post(`/freight/escrow/${loadId}/release`),
+  disputeEscrow: (loadId: string, reason: string) => apiClient.post(`/freight/escrow/${loadId}/dispute`, { reason }),
+  purchaseInsurance: (payload: any) => apiClient.post('/freight/insurance', payload),
+  getInsurance: (loadId: string) => apiClient.get(`/freight/insurance/${loadId}`),
+  createScorecard: (payload: any) => apiClient.post('/freight/scorecards', payload),
+  listCarriers: (params?: any) => {
     const q = new URLSearchParams();
     if (params?.verified) q.set('verified', 'true');
     if (params?.state) q.set('state', params.state);
+    if (params?.equipmentType) q.set('equipmentType', params.equipmentType);
     return apiClient.get(`/freight/carriers?${q.toString()}`);
   },
+  getCarrier: (id: string) => apiClient.get(`/freight/carriers/${id}`),
   createCarrierProfile: (payload: any) => apiClient.post('/freight/carriers', payload),
+  verifyCarrier: (id: string) => apiClient.patch(`/freight/carriers/${id}/verify`),
+  updateAvailability: (id: string, payload: any) => apiClient.patch(`/freight/carriers/${id}/availability`, payload),
+  createRateCard: (payload: any) => apiClient.post('/freight/rate-cards', payload),
+  getRateCards: (carrierId: string) => apiClient.get(`/freight/rate-cards/${carrierId}`),
   getStats: () => apiClient.get('/freight/stats'),
+  getCarrierStats: (carrierId: string) => apiClient.get(`/freight/stats/${carrierId}`),
 };
 
 export const promotionsService = {
