@@ -6,11 +6,11 @@ import { TenantWorkflowPage } from './TenantWorkflowPage';
 import { AIAssistantPage } from './AIAssistantPage';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
-type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; };
-type Tenant = { id: string; email: string; firstName?: string | null; lastName?: string | null; phone?: string | null; status: string; riskBand?: string | null; depositHeld: number; totalStays: number; totalDisputes: number; lastStayAt?: string | null; notes?: string | null; property?: { id: string; title?: string | null; address?: string | null; city?: string | null; state?: string | null } | null; lease?: { id: string; startDate?: string | null; endDate?: string | null; rentAmount?: number | null; status?: string } | null; screenedAt?: string | null; screeningBand?: string | null; };
+type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; unit?: { id: string; unitNumber?: string | null; title?: string | null } | null; };
+type Tenant = { id: string; email: string; firstName?: string | null; lastName?: string | null; phone?: string | null; status: string; riskBand?: string | null; depositHeld: number; totalStays: number; totalDisputes: number; lastStayAt?: string | null; notes?: string | null; property?: { id: string; title?: string | null; address?: string | null; city?: string | null; state?: string | null } | null; lease?: { id: string; startDate?: string | null; endDate?: string | null; rentAmount?: number | null; status?: string; unit?: { id: string; unitNumber?: string | null; title?: string | null } | null; petFee?: number | null; petMonthly?: number | null; lateFee?: number | null; utilities?: string[] | null } | null; screenedAt?: string | null; screeningBand?: string | null; };
 type Screening = { id: string; tenantEmail: string; tenantName?: string | null; band: string; depositAdjPct: number; screenedAt: string; source: string; };
 type Appointment = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startsAt: string; endsAt?: string | null; status: string; notes?: string | null; };
-type Lease = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startDate: string; endDate: string; rentAmount: number; rentPeriod: string; depositAmount: number; status: string; notes?: string | null; };
+type Lease = { id: string; propertyId?: string | null; tenantEmail: string; tenantName?: string | null; startDate: string; endDate: string; rentAmount: number; rentPeriod: string; depositAmount: number; status: string; notes?: string | null; unit?: { id: string; unitNumber?: string | null; title?: string | null } | null; petFee?: number | null; petMonthly?: number | null; lateFee?: number | null; utilities?: string[] | null; };
 type Maintenance = { id: string; propertyId?: string | null; tenantEmail?: string | null; title: string; description?: string | null; priority: string; status: string; resolvedAt?: string | null; notes?: string | null; cost?: number | null; vendor?: string | null; vendorNotes?: string | null; };
 type Application = { id: string; email: string; firstName?: string | null; lastName?: string | null; status: string; screeningBand?: string | null; depositAdjPct: number; decisionNotes?: string | null; decidedAt?: string | null; createdAt: string; message?: string | null; };
 type Dashboard = { profile: Profile; properties: Property[]; tenants: Tenant[]; screenings: Screening[]; appointments: Appointment[]; leases: Lease[]; maintenance: Maintenance[]; applications: Application[]; stats: any; };
@@ -204,7 +204,7 @@ export const CRMPage: React.FC = () => {
             {dash!.tenants.map((t) => (
               <button key={t.id} onClick={() => setSelectedTenant(t)} className="w-full text-left active:scale-[0.98] transition-transform">
                 <Surface className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div></div>
+                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}{t.property ? ` · ${t.property.title || ''}` : ''}</div></div>
                   <div className="text-right">
                     {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
                     <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
@@ -279,8 +279,10 @@ export const CRMPage: React.FC = () => {
               {selectedTenant.lease && (
                 <Surface className="p-4 mb-4">
                   <div className="text-sm font-semibold text-slate-100 mb-1">Current Lease</div>
+                  <div className="text-slate-300 text-sm">{selectedTenant.lease.unit?.unitNumber ? `Unit ${selectedTenant.lease.unit.unitNumber}` : ''} {selectedTenant.lease.unit?.title ? `(${selectedTenant.lease.unit.title})` : ''}</div>
                   <div className="text-slate-300 text-sm">{selectedTenant.lease.startDate ? new Date(selectedTenant.lease.startDate).toLocaleDateString() : ''} — {selectedTenant.lease.endDate ? new Date(selectedTenant.lease.endDate).toLocaleDateString() : ''}</div>
-                  <div className="text-slate-400 text-sm">{selectedTenant.lease.rentAmount ? `$${selectedTenant.lease.rentAmount}/mo` : ''}</div>
+                  <div className="text-slate-400 text-sm">{selectedTenant.lease.rentAmount ? `$${selectedTenant.lease.rentAmount}/mo` : ''}{selectedTenant.lease.petFee ? ` · Pet fee: $${selectedTenant.lease.petFee}` : ''}{selectedTenant.lease.petMonthly ? ` · Pet rent: $${selectedTenant.lease.petMonthly}/mo` : ''}{selectedTenant.lease.lateFee ? ` · Late fee: $${selectedTenant.lease.lateFee}` : ''}</div>
+                  {selectedTenant.lease.utilities?.length ? <div className="text-slate-400 text-sm">Utilities: {selectedTenant.lease.utilities.join(', ')}</div> : null}
                   <Badge tone={selectedTenant.lease.status === 'ACTIVE' ? 'success' : 'info'} className="mt-1">{selectedTenant.lease.status}</Badge>
                 </Surface>
               )}
