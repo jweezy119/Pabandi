@@ -686,6 +686,53 @@ export const partnerRewardsService = {
   getStats: () => apiClient.get('/rewards/stats'),
 };
 
+export const freightService = {
+  listLoads: (params?: { status?: string; originCity?: string; destCity?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.originCity) q.set('originCity', params.originCity);
+    if (params?.destCity) q.set('destCity', params.destCity);
+    return apiClient.get(`/freight/loads?${q.toString()}`);
+  },
+  getLoad: (id: string) => apiClient.get(`/freight/loads/${id}`),
+  createLoad: (payload: any) => apiClient.post('/freight/loads', payload),
+  placeBid: (payload: any) => apiClient.post('/freight/bids', payload),
+  acceptBid: (id: string) => apiClient.post(`/freight/bids/${id}/accept`),
+  addTracking: (id: string, payload: any) => apiClient.post(`/freight/loads/${id}/tracking`, payload),
+  listCarriers: (params?: { verified?: boolean; state?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.verified) q.set('verified', 'true');
+    if (params?.state) q.set('state', params.state);
+    return apiClient.get(`/freight/carriers?${q.toString()}`);
+  },
+  createCarrierProfile: (payload: any) => apiClient.post('/freight/carriers', payload),
+  getStats: () => apiClient.get('/freight/stats'),
+};
+
+export const promotionsService = {
+  listPromotions: (params?: { businessId?: string; active?: boolean; segment?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.businessId) q.set('businessId', params.businessId);
+    if (params?.active) q.set('active', 'true');
+    if (params?.segment) q.set('segment', params.segment);
+    return apiClient.get(`/promotions/promotions?${q.toString()}`);
+  },
+  getAvailable: () => apiClient.get('/promotions/promotions/available'),
+  redeem: (id: string) => apiClient.post(`/promotions/promotions/${id}/redeem`),
+  usePromotion: (code: string, purchaseAmount: number) =>
+    apiClient.post(`/promotions/promotions/use/${code}`, { purchaseAmount }),
+  getMyRedemptions: () => apiClient.get('/promotions/promotions/my'),
+  // Vendor endpoints
+  createPromotion: (payload: any) => apiClient.post('/promotions/vendor/promotions', payload),
+  getMyPromotions: () => apiClient.get('/promotions/vendor/promotions'),
+  getVendorAnalytics: (businessId: string) =>
+    apiClient.get(`/promotions/vendor/analytics?businessId=${businessId}`),
+  // Loyalty
+  getMembership: (businessId: string) => apiClient.get(`/promotions/loyalty/${businessId}`),
+  redeemPoints: (businessId: string, points: number) =>
+    apiClient.post(`/promotions/loyalty/${businessId}/redeem`, { points }),
+};
+
 export default apiClient;
 
 // AI Advanced Service

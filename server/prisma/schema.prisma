@@ -85,6 +85,12 @@ model User {
   marketplaceListings    MarketplaceListing[]
   pabWallet              PabWallet?
   userRewards            UserReward[]
+  freightLoads           FreightLoad[]
+  freightBids            FreightBid[]
+  carrierProfile         CarrierProfile?
+  promotionRedemptions   PromotionRedemption[]
+  loyaltyMemberships     LoyaltyMembership[]
+  vendorRelations        CustomerVendorRelation[]
 
   @@index([email])
   @@index([phone])
@@ -162,6 +168,9 @@ model Business {
   courtChecks            CourtCheck[]
   partnerOffers          PartnerOffer[]
   partnerEnrollment      PartnerEnrollment?
+  vendorPromotions       VendorPromotion[]
+  loyaltyProgram         LoyaltyProgram?
+  customerRelations      CustomerVendorRelation[]
 
   @@index([ownerId])
   @@index([city])
@@ -3079,4 +3088,313 @@ model PartnerEnrollment {
 
   @@index([businessId])
   @@index([status])
+}
+// ── Freight & Logistics ────────────────────────────────────────────────────
+// Shipper posts load → Carriers bid → Escrow locks payment → Delivery confirmed → Funds released
+
+model FreightLoad {
+  id              String   @id @default(cuid())
+  shipperId       String
+  shipper         User     @relation(fields: [shipperId], references: [id], onDelete: Cascade)
+  
+  // Load details
+  title           String
+  description     String?
+  cargoType       String   // GENERAL, REFRIGERATED, HAZARDOUS, OVERSIZED, FRAGILE
+  weightLbs       Float
+  dimensions      String?  // LxWxH in inches
+  valueUsd        Float    // declared value for insurance
+  
+  // Route
+  originAddress   String
+  originCity      String
+  originState     String
+  originZip       String
+  originLat       Float?
+  originLng       Float?
+  
+  destAddress     String
+  destCity        String
+  destState       String
+  destZip         String
+  destLat         Float?
+  destLng         Float?
+  
+  // Timing
+  pickupDate      DateTime
+  deliveryDate    DateTime
+  distanceMiles   Float?
+  
+  // Pricing
+  budgetUsd       Float
+  acceptedBidId   String?
+  
+  // Status
+  status          String   // OPEN, ASSIGNED, IN_TRANSIT, DELIVERED, COMPLETED, DISPUTED, CANCELLED
+  
+  // Relations
+  bids            FreightBid[]
+  tracking        FreightTracking[]
+  escrow          FreightEscrow?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shipperId])
+  @@index([status])
+  @@index([originCity])
+  @@index([destCity])
+  @@index([pickupDate])
+}
+
+model FreightBid {
+  id              String   @id @default(cuid())
+  loadId          String
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  carrierId       String
+  carrier         User     @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  
+  // Bid details
+  amountUsd       Float
+  currency        String   @default("USD") // USD, SOL, PAB
+  deliveryDays    Int      // estimated days
+  notes           String?
+  
+  // Status
+  status          String   // PENDING, ACCEPTED, REJECTED
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([loadId])
+  @@index([carrierId])
+  @@index([status])
+}
+
+model FreightEscrow {
+  id              String   @id @default(cuid())
+  loadId          String   @unique
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  // Escrow details
+  amountUsd       Float
+  amountSol       Float?
+  currency        String   @default("USD")
+  
+  // Status
+  status          String   // PENDING, FUNDED, RELEASED, DISPUTED, REFUNDED
+  
+  // Participants
+  shipperId       String
+  carrierId       String
+  
+  // Timing
+  fundedAt        DateTime?
+  deliveredAt     DateTime?
+  releasedAt      DateTime?
+  
+  // Dispute
+  disputeReason   String?
+  disputeResolved Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([loadId])
+  @@index([status])
+}
+
+model FreightTracking {
+  id              String   @id @default(cuid())
+  loadId          String
+  load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  
+  // Tracking details
+  status          String   // PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, EXCEPTION
+  location        String?
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+
+  @@index([loadId])
+}
+
+model CarrierProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Carrier info
+  companyName       String
+  dotNumber         String?  // Department of Transportation
+  mcNumber          String?  // Motor Carrier
+  fleetSize         Int      @default(1)
+  equipmentType     String[] // DRY_VAN, FLATBED, REFRIGERATED, TANKER, STEP_DECK
+  
+  // Coverage
+  operatingStates   String[]
+  maxLoadLbs        Float    @default(45000)
+  
+  // Performance
+  rating            Float    @default(50)
+  totalDeliveries   Int      @default(0)
+  onTimeRate        Float    @default(100)
+  
+  // Verification
+  verified          Boolean  @default(false)
+  insuranceVerified Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@index([verified])
+}
+// ── Enhanced Partner Promotions & Rewards ──────────────────────────────────
+// Real businesses offer promotions to Pabandi users based on their
+// actual purchasing behavior and vendor relationships.
+
+model VendorPromotion {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Promotion details
+  title           String
+  description     String
+  promotionType   String   // DISCOUNT_PERCENT, DISCOUNT_FIXED, FREE_SHIPPING, BOGO, LOYALTY_BONUS, VOLUME_DISCOUNT
+  value           Float    // 10 = 10% or $10 depending on type
+  
+  // Eligibility
+  minPurchase     Float?   // minimum purchase to qualify
+  maxDiscount     Float?   // cap on discount amount
+  quantityLimit   Int?     // total available (null = unlimited)
+  perCustomerLimit Int     @default(1)
+  
+  // Targeting
+  customerSegments String[] // NEW_CUSTOMER, RETURNING, VIP, ALL
+  categories      String[]  // which product categories apply
+  
+  // Schedule
+  startsAt        DateTime
+  endsAt          DateTime
+  isActive        Boolean  @default(true)
+  
+  // Tracking
+  totalRedeemed   Int      @default(0)
+  totalSavings    Float    @default(0) // total $ saved by customers
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  redemptions     PromotionRedemption[]
+
+  @@index([businessId])
+  @@index([isActive])
+  @@index([startsAt])
+  @@index([endsAt])
+}
+
+model PromotionRedemption {
+  id              String   @id @default(cuid())
+  promotionId     String
+  promotion       VendorPromotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Redemption details
+  status          String   // ACTIVE, USED, EXPIRED, CANCELLED
+  redemptionCode  String   @unique
+  discountAmount  Float    // actual discount applied
+  
+  // Purchase info
+  purchaseAmount  Float?
+  purchaseDate    DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([promotionId])
+  @@index([status])
+  @@index([redemptionCode])
+}
+
+// ── Vendor Loyalty Programs ────────────────────────────────────────────────
+// Track customer loyalty and reward repeat business
+
+model LoyaltyProgram {
+  id              String   @id @default(cuid())
+  businessId      String   @unique
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Program details
+  name            String
+  description     String
+  programType     String   // POINTS, TIERED, CASHBACK, VISITS
+  
+  // Relations
+  memberships     LoyaltyMembership[]
+  
+  // Points configuration
+  pointsPerDollar Float    @default(1)
+  pointValue      Float    @default(0.01) // $0.01 per point
+  
+  // Tier configuration
+  tierThresholds  Json?    // { bronze: 0, silver: 500, gold: 1000, platinum: 5000 }
+  
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LoyaltyMembership {
+  id              String   @id @default(cuid())
+  programId       String
+  program         LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Membership details
+  pointsBalance   Int      @default(0)
+  lifetimePoints  Int      @default(0)
+  currentTier     String   @default("BRONZE")
+  totalVisits     Int      @default(0)
+  totalSpent      Float    @default(0)
+  
+  joinedAt        DateTime @default(now())
+  lastVisitAt     DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@unique([programId, userId])
+  @@index([userId])
+}
+
+// ── Customer-Vendor Relationships ──────────────────────────────────────────
+// Track which customers buy from which vendors for targeted promotions
+
+model CustomerVendorRelation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // Relationship metrics
+  totalPurchases  Int      @default(0)
+  totalSpent      Float    @default(0)
+  lastPurchaseAt  DateTime?
+  averageOrder    Float    @default(0)
+  
+  // Status
+  isVIP           Boolean  @default(false)
+  segment         String   // NEW, ACTIVE, AT_RISK, CHURNED, VIP
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@index([segment])
 }

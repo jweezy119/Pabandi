@@ -89,6 +89,8 @@ import documentRoutes from './routes/document.routes';
 import tenantRoutes from './routes/tenant.routes';
 import promoRoutes from './routes/promo.routes';
 import partnerRewardsRoutes from './routes/partnerRewards.routes';
+import freightRoutes from './routes/freight.routes';
+import promotionsRoutes from './routes/promotions.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
@@ -257,6 +259,8 @@ app.use(`/api/${API_VERSION}/documents`, documentRoutes);
 app.use(`/api/${API_VERSION}/tenant`, tenantRoutes);
 app.use(`/api/${API_VERSION}/promo`, promoRoutes);
 app.use(`/api/${API_VERSION}/rewards`, partnerRewardsRoutes);
+app.use(`/api/${API_VERSION}/freight`, freightRoutes);
+app.use(`/api/${API_VERSION}/promotions`, promotionsRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 

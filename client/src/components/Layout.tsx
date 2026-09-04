@@ -282,6 +282,8 @@ export default function Layout() {
               <DropdownItem to="/agent-dashboard">AI Agent Loop</DropdownItem>
               <DropdownItem to="/promo">Promo Ambassadors</DropdownItem>
               <DropdownItem to="/rewards">Rewards</DropdownItem>
+              <DropdownItem to="/promotions">Promotions</DropdownItem>
+              <DropdownItem to="/freight">Freight & Logistics</DropdownItem>
             </Dropdown>
             <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>
