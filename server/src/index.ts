@@ -93,6 +93,7 @@ import freightRoutes from './routes/freight.routes';
 import mapsRoutes from './routes/maps.routes';
 import promotionsRoutes from './routes/promotions.routes';
 import nightlifeRoutes from './routes/nightlife.routes';
+import venuesRoutes from './routes/venues.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';
 import linkedinSeedRoutes from './routes/linkedinSeed.routes';
@@ -265,6 +266,7 @@ app.use(`/api/${API_VERSION}/freight`, freightRoutes);
 app.use(`/api/${API_VERSION}/maps`, mapsRoutes);
 app.use(`/api/${API_VERSION}/promotions`, promotionsRoutes);
 app.use(`/api/${API_VERSION}/nightlife`, nightlifeRoutes);
+app.use(`/api/${API_VERSION}/venues`, venuesRoutes);
 app.use(`/api/${API_VERSION}/webhook/stripe`, webhookStripeRoutes);
 app.use(`/api/${API_VERSION}/webhook/escrow`, webhookEscrowRoutes);
 

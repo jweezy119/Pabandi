@@ -25,6 +25,7 @@ export const BookingOS: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
+
   useEffect(() => {
     // Default location
     setLocation({ lat: 40.7589, lng: -73.9851, name: 'Times Square, New York' });
@@ -32,16 +33,17 @@ export const BookingOS: React.FC = () => {
 
   useEffect(() => {
     if (location) {
-      loadNearbyVenues();
+      loadVenues();
     }
   }, [location, selectedCategory]);
 
-  const loadNearbyVenues = async () => {
+  const loadVenues = async () => {
     if (!location) return;
     setLoading(true);
     try {
+      // Use the unified search API
       const res = await fetch(
-        `/api/v1/maps/nearby?lat=${location.lat}&lng=${location.lng}&category=${selectedCategory}&radius=5000&limit=30`
+        `/api/v1/venues/search?lat=${location.lat}&lng=${location.lng}&categories=${selectedCategory}&radius=5000&limit=30`
       );
       const data = await res.json();
       setVenues(data.data || []);
@@ -182,7 +184,7 @@ export const BookingOS: React.FC = () => {
               </div>
               
               {loading ? (
-                <div className="text-center py-12 text-gray-400">Loading venues...</div>
+                <div className="text-center py-12 text-gray-400">Loading...</div>
               ) : venues.length === 0 ? (
                 <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
                   <div className="text-5xl mb-4">🍽️</div>
@@ -232,27 +234,17 @@ export const BookingOS: React.FC = () => {
 const VenueCard: React.FC<{ venue: any; directionsUrl: string }> = ({ venue, directionsUrl }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const getTypeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      restaurant: 'bg-orange-500/20 text-orange-300',
-      bar: 'bg-purple-500/20 text-purple-300',
-      cafe: 'bg-amber-500/20 text-amber-300',
-      nightclub: 'bg-pink-500/20 text-pink-300',
-      hotel: 'bg-blue-500/20 text-blue-300',
-      theatre: 'bg-red-500/20 text-red-300',
-      museum: 'bg-green-500/20 text-green-300',
-      fast_food: 'bg-yellow-500/20 text-yellow-300',
-    };
-    return colors[type] || 'bg-gray-500/20 text-gray-300';
-  };
-
   return (
     <div className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer group">
-      {/* Image / Map placeholder */}
+      {/* Image */}
       <div className="relative h-48 bg-gray-200">
-        <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
-          <span className="text-4xl">🍽️</span>
-        </div>
+        {venue.imageUrl ? (
+          <img src={venue.imageUrl} alt={venue.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
+            <span className="text-4xl">🍽️</span>
+          </div>
+        )}
         {/* Favorite button */}
         <button
           onClick={(e) => { e.stopPropagation(); setIsFavorite(!isFavorite); }}
@@ -260,21 +252,27 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string }> = ({ venue, dir
         >
           {isFavorite ? '❤️' : '🤍'}
         </button>
-        {/* Type badge */}
-        <div className={`absolute bottom-3 left-3 px-2 py-1 rounded text-xs font-medium ${getTypeColor(venue.type)}`}>
-          {venue.type}
-        </div>
+        {/* Rating badge */}
+        {venue.rating && (
+          <div className="absolute bottom-3 left-3 px-2 py-1 rounded bg-white/90 text-sm font-medium text-gray-900 flex items-center gap-1">
+            <span className="text-yellow-500">★</span> {venue.rating}
+            {venue.reviewCount && <span className="text-gray-500 text-xs">({venue.reviewCount})</span>}
+          </div>
+        )}
       </div>
 
       {/* Details */}
       <div className="p-4">
         <div className="flex items-start justify-between mb-1">
           <h3 className="font-bold text-gray-900 group-hover:text-red-600 transition-colors truncate">{venue.name}</h3>
+          {venue.price && (
+            <span className="text-sm text-gray-500 ml-2">{venue.price}</span>
+          )}
         </div>
         
         {/* Address */}
         {venue.address && (
-          <p className="text-sm text-gray-600 mb-1">{venue.address}</p>
+          <p className="text-sm text-gray-600 mb-1 truncate">{venue.address}</p>
         )}
         {venue.city && (
           <p className="text-sm text-gray-500 mb-2">{venue.city}{venue.state ? `, ${venue.state}` : ''}</p>
@@ -296,7 +294,18 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string }> = ({ venue, dir
 
         {/* Hours */}
         {venue.hours && (
-          <p className="text-xs text-gray-500 mb-3">🕐 {venue.hours}</p>
+          <p className="text-xs text-gray-500 mb-3">🕐 {typeof venue.hours === 'string' ? venue.hours : 'Open today'}</p>
+        )}
+
+        {/* Source badges */}
+        {venue.sources && venue.sources.length > 0 && (
+          <div className="flex gap-1 mb-3">
+            {venue.sources.map((source: string) => (
+              <span key={source} className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500">
+                {source}
+              </span>
+            ))}
+          </div>
         )}
 
         {/* Actions */}
