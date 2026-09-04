@@ -639,6 +639,8 @@ export const promoService = {
   submitReview: (payload: any) => apiClient.post('/promo/payout/review', payload),
   getEarnings: (ambassadorId: string) => apiClient.get(`/promo/payout/earnings/${ambassadorId}`),
   fundJob: (payload: any) => apiClient.post('/promo/payout/fund-job', payload),
+  connectWallet: (ambassadorId: string, walletAddress: string) => apiClient.post(`/promo/ambassadors/${ambassadorId}/connect-wallet`, { walletAddress }),
+  getMintStatus: (ambassadorId: string) => apiClient.get(`/promo/payout/mint-status/${ambassadorId}`),
 };
 
 export default apiClient;

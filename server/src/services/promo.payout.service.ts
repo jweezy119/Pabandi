@@ -1,14 +1,17 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { blockchainService } from './blockchain.service';
+import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 
-// ── Promo Payout & Escrow Service ──────────────────────────────────────────
+// ── Promo Payout & On-Chain Mint Service ───────────────────────────────────
 // Brands fund jobs → ambassadors earn on completion → Pabandi takes 1% rake
-// $PAB rewards for verified reviews
+// $PAB rewards minted on Solana when ambassadors earn reviews
 
 const PABANDI_RAKE_BPS = 100; // 1% = 100 bps
-const PAB_REWARD_REVIEW = 5; // $PAB for a verified review
+const PAB_DECIMALS = 9;
+const PAB_REVIEW_REWARD = 5; // $PAB for a verified review
 const PAB_REVIEW_ZK_BONUS = 2; // extra $PAB for ZK-verified review
 
 export const promoPayoutService = {
@@ -19,8 +22,6 @@ export const promoPayoutService = {
     if (job.brandId !== brandId) throw new Error('Not your job');
     if (job.status !== 'OPEN') throw new Error('Job not open');
 
-    // In production: integrate with Stripe/escrow here.
-    // For now, mark as funded (brand's wallet charged externally).
     await prisma.promoJob.update({
       where: { id: jobId },
       data: { status: 'IN_PROGRESS' },
@@ -41,7 +42,6 @@ export const promoPayoutService = {
     if (!job) throw new Error('Job not found');
     if (job.status !== 'IN_PROGRESS') throw new Error('Job not in progress');
 
-    // Generate ZK work proof
     const proofId = `promo_${crypto.randomBytes(8).toString('hex')}`;
     const commitment = crypto.createHash('sha256').update(`${data.ambassadorId}:${data.jobId}:${data.workHash}:pabandi-work`).digest('hex');
 
@@ -73,23 +73,20 @@ export const promoPayoutService = {
     const rake = (budget * PABANDI_RAKE_BPS) / 10000;
     const ambassadorEarns = budget - rake;
 
-    // Mark submission accepted
     await prisma.promoSubmission.update({
       where: { id: submissionId },
-      data: { status: 'ACCEPTED', reviewedAt: new Date() },
+      data: { status: 'ACCEPTED', reviewedAt: new Date(), payoutAmount: ambassadorEarns, rakeAmount: rake },
     });
 
-    // Update ambassador stats
     await prisma.promoAmbassador.update({
       where: { id: submission.ambassadorId },
       data: {
         completedJobs: { increment: 1 },
         totalEarnings: { increment: ambassadorEarns },
-        reputationScore: { increment: 2 }, // small rep boost per completion
+        reputationScore: { increment: 2 },
       },
     });
 
-    // Check if job is fully completed
     const totalAccepted = await prisma.promoSubmission.count({
       where: { jobId: submission.jobId, status: 'ACCEPTED' },
     });
@@ -109,14 +106,14 @@ export const promoPayoutService = {
     };
   },
 
-  // ── Submit review with ZK proof ───────────────────────────────────────────
+  // ── Submit review with ZK proof + on-chain $PAB mint ──────────────────────
   async submitReview(data: {
     submissionId: string;
     ambassadorId: string;
     rating: number;
     text?: string;
     workType: string;
-    zkSecret: string; // ambassador's secret for ZK commitment
+    zkSecret: string;
   }) {
     const submission = await prisma.promoSubmission.findUnique({
       where: { id: data.submissionId },
@@ -124,7 +121,6 @@ export const promoPayoutService = {
     });
     if (!submission) throw new Error('Submission not found');
 
-    // Generate ZK commitment (hides ambassador identity from brand)
     const zkCommitment = crypto.createHash('sha256').update(`${data.ambassadorId}:${data.zkSecret}:pabandi-promo`).digest('hex');
     const zkProofId = `promo_zk_${crypto.randomBytes(8).toString('hex')}`;
 
@@ -137,24 +133,24 @@ export const promoPayoutService = {
         zkProofId,
         zkCommitment,
         workType: data.workType,
-        verified: true, // ZK proof is valid by construction
+        verified: true,
       },
     });
 
-    // Reward ambassador with $PAB for verified review
-    await this.rewardReview(data.ambassadorId, true);
+    // Reward ambassador with on-chain $PAB
+    const mintResult = await this.rewardReview(data.ambassadorId, true);
 
-    return { success: true, review, zkCommitment, zkProofId };
+    return { success: true, review, zkCommitment, zkProofId, mintResult };
   },
 
-  // ── $PAB reward for review ────────────────────────────────────────────────
+  // ── $PAB reward: credit wallet + mint on Solana ───────────────────────────
   async rewardReview(ambassadorId: string, zkVerified: boolean) {
     const ambassador = await prisma.promoAmbassador.findUnique({ where: { id: ambassadorId } });
-    if (!ambassador || !ambassador.userId) return;
+    if (!ambassador || !ambassador.userId) return { skipped: true };
 
-    const amount = PAB_REVIEW_ZK_BONUS + (zkVerified ? PAB_REVIEW_ZK_BONUS : 0);
+    const amount = PAB_REVIEW_REWARD + (zkVerified ? PAB_REVIEW_ZK_BONUS : 0);
 
-    // Credit PabWallet
+    // Credit PabWallet (off-chain accounting)
     const wallet = await prisma.pabWallet.findUnique({ where: { userId: ambassador.userId } });
     if (wallet) {
       await prisma.pabTransaction.create({
@@ -175,7 +171,31 @@ export const promoPayoutService = {
       });
     }
 
-    return { success: true, amount };
+    // Mint real $PAB on Solana if ambassador has a connected wallet
+    let mintResult: any = { skipped: true };
+    if (ambassador.userId) {
+      const userWallet = await prisma.wallet.findUnique({ where: { userId: ambassador.userId } });
+      if (userWallet?.address && userWallet.currency === 'SOL') {
+        mintResult = await this.mintPabOnSolana(userWallet.address, amount, 'promo_review');
+      }
+    }
+
+    return { success: true, amount, mintResult };
+  },
+
+  // ── Mint $PAB on Solana (real on-chain) ───────────────────────────────────
+  async mintPabOnSolana(walletAddress: string, amount: number, rewardType: string) {
+    try {
+      const result = await blockchainService.executeSolanaTransfer(walletAddress, amount);
+      if (result.txHash) {
+        logger.info(`[Promo] Minted ${amount} PAB → ${walletAddress} (${rewardType}) tx:${result.txHash}`);
+        return { success: true, txHash: result.txHash, amount };
+      }
+      return { success: false, error: result.error };
+    } catch (e: any) {
+      logger.error(`[Promo] Solana mint failed: ${e.message}`);
+      return { success: false, error: e.message };
+    }
   },
 
   // ── Verify a ZK commitment (public endpoint) ──────────────────────────────
@@ -189,15 +209,15 @@ export const promoPayoutService = {
     const ambassador = await prisma.promoAmbassador.findUnique({
       where: { id: ambassadorId },
       include: {
-        submissions: { where: { status: 'ACCEPTED' } },
+        submissions: { where: { status: 'ACCEPTED' }, include: { job: true } },
         reviews: { where: { verified: true } },
       },
     });
     if (!ambassador) throw new Error('Ambassador not found');
 
-    const totalEarnings = ambassador.submissions.reduce((sum, s) => sum + (s.job?.budgetUsd || 0), 0);
+    const totalEarnings = ambassador.submissions.reduce((sum: number, s: any) => sum + (s.payoutAmount || s.job?.budgetUsd || 0), 0);
     const totalReviews = ambassador.reviews.length;
-    const totalPabRewards = totalReviews * (PAB_REVIEW_ZK_BONUS + PAB_REVIEW_ZK_BONUS);
+    const totalPabRewards = totalReviews * (PAB_REVIEW_REWARD + PAB_REVIEW_ZK_BONUS);
 
     return {
       totalEarnings,

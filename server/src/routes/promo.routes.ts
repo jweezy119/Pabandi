@@ -2,6 +2,9 @@ import { Router, Request, Response } from 'express';
 import { promoService } from '../services/promo.service';
 import { promoPayoutService } from '../services/promo.payout.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const router = Router();
 
@@ -299,5 +302,29 @@ router.post('/payout/fund-job', authenticate, async (req: any, res: Response) =>
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ error: e.message || 'Could not fund job' });
+  }
+});
+
+// ── Ambassador wallet connection ───────────────────────────────────────────
+router.post('/ambassadors/:id/connect-wallet', authenticate, async (req: any, res: Response) => {
+  try {
+    const { walletAddress } = req.body || {};
+    if (!walletAddress) return res.status(400).json({ error: 'walletAddress required' });
+    const ambassador = await promoService.updateAmbassador(req.params.id, { zkPublicKey: walletAddress } as any);
+    res.json({ success: true, data: ambassador });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not connect wallet' });
+  }
+});
+
+// ── On-chain $PAB mint status ─────────────────────────────────────────────
+router.get('/payout/mint-status/:ambassadorId', authenticate, async (req: any, res: Response) => {
+  try {
+    const ambassador = await prisma.promoAmbassador.findUnique({ where: { id: req.params.ambassadorId } });
+    if (!ambassador) return res.status(404).json({ error: 'Ambassador not found' });
+    const wallet = await prisma.wallet.findUnique({ where: { userId: ambassador.userId! } });
+    res.json({ success: true, data: { wallet: wallet?.address || null, currency: wallet?.currency || null } });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message || 'Could not get mint status' });
   }
 });
