@@ -10,7 +10,7 @@ const WORK_TYPES = ['SOCIAL_MEDIA', 'EVENTS', 'CONTENT', 'DELIVERY', 'SURVEY', '
 export const PromoPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>('feed');
   const [stats, setStats] = useState<any>(null);
-  const { user, isAuthenticated } = useAuthStore();
+  useAuthStore(); // for auth state in child components
 
   useEffect(() => {
     promoService.stats().then((r) => setStats(r.data?.data)).catch(() => {});
