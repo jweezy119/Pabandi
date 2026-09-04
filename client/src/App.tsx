@@ -221,8 +221,7 @@ function App() {
           {/* Trust Passport */}
           <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
           {/* Rewards */}
-          <Route path="/freight" element={<PublicSEO seo={{ title: "Freight & Logistics — Pabandi", description: "Ship goods with trusted carriers. Escrow-protected payments." }}><FreightPage /></PublicSEO>} />
-          <Route path="/rewards" element={<PublicSEO seo={{ title: '$PAB Rewards — Pabandi', description: 'Earn, spend, and stake $PAB tokens.' }}><RewardsPage /></PublicSEO>} />
+
           {/* Rent Roll */}
           <Route path="/rent-roll" element={<PublicSEO seo={{ title: 'Rent Roll — Pabandi', description: 'Track income, expenses, and NOI across all your properties.' }}><RentRollPage /></PublicSEO>} />
           {/* Lease Generator */}
@@ -314,7 +313,9 @@ function App() {
             <Route path="background-check" element={<BackgroundCheckPage />} />
             <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
             <Route path="promo" element={<PromoPage />} />
-          <Route path="promotions" element={<PromotionsPage />} />
+            <Route path="promotions" element={<PromotionsPage />} />
+            <Route path="freight" element={<PublicSEO seo={{ title: "Freight & Logistics — Pabandi", description: "Ship goods with trusted carriers. Escrow-protected payments." }}><FreightPage /></PublicSEO>} />
+            <Route path="rewards" element={<PublicSEO seo={{ title: '$PAB Rewards — Pabandi', description: 'Earn, spend, and stake $PAB tokens.' }}><RewardsPage /></PublicSEO>} />
             <Route path="protected-deposit" element={<PpdWizardPage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />
