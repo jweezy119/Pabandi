@@ -687,9 +687,10 @@ export const partnerRewardsService = {
 };
 
 export const freightService = {
-  listLoads: (params?: { status?: string; originCity?: string; destCity?: string }) => {
+  listLoads: (params?: { status?: string; shipperId?: string; originCity?: string; destCity?: string }) => {
     const q = new URLSearchParams();
     if (params?.status) q.set('status', params.status);
+    if (params?.shipperId) q.set('shipperId', params.shipperId);
     if (params?.originCity) q.set('originCity', params.originCity);
     if (params?.destCity) q.set('destCity', params.destCity);
     return apiClient.get(`/freight/loads?${q.toString()}`);
