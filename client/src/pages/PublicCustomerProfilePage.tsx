@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { userService } from '../services/api';
 import toast from 'react-hot-toast';
 import { tokens } from '../design-system';
@@ -206,9 +206,19 @@ export const PublicCustomerProfilePage: React.FC = () => {
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between shrink-0">
                       <p className="text-2xl font-black text-white">${service.price}</p>
-                      <Link to={`/checkout/mock-escrow`} className="mt-4 sm:mt-0 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity w-full sm:w-auto text-center">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const resp = await api.post('/checkout/session/demo');
+                            const sid = resp.data?.data?.sessionId;
+                            if (sid) navigate(`/checkout/${sid}`);
+                            else navigate('/demo-checkout');
+                          } catch { navigate('/demo-checkout'); }
+                        }}
+                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-white transition-colors w-full sm:w-auto text-center"
+                      >
                         Fund Escrow
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 )) : (

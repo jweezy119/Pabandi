@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+// react-router-dom - no imports needed (buttons use window.location)
 import { tokens } from '../design-system';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -164,9 +164,19 @@ export default function FreelanceStorefrontPage() {
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between shrink-0">
                       <p className="text-2xl font-black text-white">${service.price}</p>
-                      <Link to={`/checkout/mock-escrow`} className="mt-4 sm:mt-0 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold text-sm px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity w-full sm:w-auto text-center">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const resp = await api.post('/checkout/session/demo');
+                            const sid = resp.data?.data?.sessionId;
+                            if (sid) window.location.href = `/checkout/${sid}`;
+                            else window.location.href = '/demo-checkout';
+                          } catch { window.location.href = '/demo-checkout'; }
+                        }}
+                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-white transition-colors w-full sm:w-auto text-center"
+                      >
                         Fund Escrow
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 ))}

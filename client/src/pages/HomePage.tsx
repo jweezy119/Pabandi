@@ -25,22 +25,7 @@ const getDistance = (
   return R * c;
 };
 
-// Default map center = Karachi, Pakistan (the product's home market). The map only
-// uses this when there are zero businesses with valid coordinates; otherwise it
-// centers on the centroid of the real businesses (see deriveMapCenter below).
-const INITIAL_CENTER = { lat: 24.8607, lng: 67.0011 };
-
-const isValidCoord = (lat?: number, lng?: number) =>
-  typeof lat === 'number' && typeof lng === 'number' && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
-
-// Center the map on the real businesses instead of dumping everything on a hard-coded city.
-function deriveMapCenter(items: { latitude?: number; longitude?: number }[]): { lat: number; lng: number } {
-  const pts = items.filter((b) => isValidCoord(b.latitude, b.longitude));
-  if (pts.length === 0) return INITIAL_CENTER;
-  const lat = pts.reduce((s, b) => s + (b.latitude as number), 0) / pts.length;
-  const lng = pts.reduce((s, b) => s + (b.longitude as number), 0) / pts.length;
-  return { lat, lng };
-}
+const INITIAL_CENTER = { lat: 41.8781, lng: -87.6298 };
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -65,13 +50,14 @@ export default function HomePage() {
   const revealRef6 = useScrollReveal<HTMLDivElement>();
   const revealRef7 = useScrollReveal<HTMLDivElement>();
   const revealRef8 = useScrollReveal<HTMLDivElement>();
-  const revealRef9 = useScrollReveal<HTMLDivElement>();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
-  // NOTE: we no longer auto-prompt for location on load — the browser geolocation
-  // prompt is intrusive. Users opt in explicitly via the "Near Me" button.
   useEffect(() => {
-    // Intentionally empty: no automatic geolocation onboarding popup.
+    const dismissed = sessionStorage.getItem('pabandi_location_onboarding_dismissed');
+    if (!dismissed) {
+      const timer = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleOnboardingLocation = () => {
@@ -132,27 +118,9 @@ export default function HomePage() {
     return res.data?.data?.businesses || [];
   }, { enabled: !!(!data || data.length === 0) });
 
-  // Real AI freelancers / agents for the homepage discovery row.
-  const { data: freelanceBiz = [] } = useQuery(['home-freelance'], async () => {
-    const res = await businessService.getPublicBusinesses({ category: 'FREELANCE', limit: 12 });
-    return res.data?.data?.businesses || [];
-  });
-
   const source = fallbackContext.data && fallbackContext.data.length > 0 ? fallbackContext.data : (data || []);
   let businesses = source || [];
   businesses = rankBusinesses([...businesses], userLoc);
-
-  // Recenter the map on the real businesses' centroid (only on first load, so user
-  // panning isn't yanked back). Invalid/zero coords are skipped, not dumped on default.
-  const centeredRef = useRef(false);
-  useEffect(() => {
-    if (centeredRef.current) return;
-    const center = deriveMapCenter(businesses);
-    if (center.lat !== INITIAL_CENTER.lat || center.lng !== INITIAL_CENTER.lng) {
-      setMapCenter(center);
-      centeredRef.current = true;
-    }
-  }, [businesses]);
 
   const handleGetLocation = () => {
     setLocLoading(true);
@@ -329,9 +297,6 @@ export default function HomePage() {
               <Link to="/pricing" className="ml-2 rounded-lg bg-white/10 px-4 py-2 text-xs text-white transition-colors hover:bg-white/20">
                 View Plans →
               </Link>
-              <Link to="/usdy" className="rounded-lg bg-emerald-500/15 px-4 py-2 text-xs text-emerald-300 ring-1 ring-emerald-500/30 transition-colors hover:bg-emerald-500/25">
-                USDY Yield →
-              </Link>
             </div>
 
             {/* About Me */}
@@ -355,18 +320,15 @@ export default function HomePage() {
               center={mapCenter}
               selectedPlace={selectedMapPlace}
               userLocation={userLoc}
-              places={businesses
-                .slice(0, 8)
-                .filter((b: any) => isValidCoord(b.latitude, b.longitude))
-                .map((b: any) => {
-                  const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || '');
-                  return {
-                    lat: b.latitude,
-                    lng: b.longitude,
-                    name: b.name,
-                    subtitle: [cityText, b.description, b.category].filter(Boolean).join(' · '),
-                  };
-                })}
+              places={businesses.slice(0, 8).map((b: any) => {
+                const cityText = b.__distanceKm != null ? `${getBusinessMatchLabel(b)}` : (b.city || '');
+                return {
+                  lat: b.latitude ?? mapCenter.lat,
+                  lng: b.longitude ?? mapCenter.lng,
+                  name: b.name,
+                  subtitle: [cityText, b.description, b.category].filter(Boolean).join(' · '),
+                };
+              })}
               onPlaceSelect={(place) =>
                 handlePlaceSelect({
                   name: place.name || place.subtitle || 'Location',
@@ -393,7 +355,7 @@ export default function HomePage() {
                 </div>
                 <button
                   onClick={() => handleBookPlace(selectedMapPlace)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3.5 font-bold text-white shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 py-3.5 font-bold text-white shadow-[0_8px_16px_rgba(20,241,149,0.2)] transition-all"
                 >
                   Make Reservation →
                 </button>
@@ -445,8 +407,8 @@ export default function HomePage() {
                   handlePlaceSelect({
                     name: biz.name,
                     address: biz.address || biz.city,
-                    lat: isValidCoord(biz.latitude, biz.longitude) ? biz.latitude : mapCenter.lat,
-                    lng: isValidCoord(biz.latitude, biz.longitude) ? biz.longitude : mapCenter.lng,
+                    lat: biz.latitude ?? mapCenter.lat,
+                    lng: biz.longitude ?? mapCenter.lng,
                   })
                 }
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10 sm:px-3 sm:py-2 sm:text-xs touch-target"
@@ -468,7 +430,7 @@ export default function HomePage() {
                 <h3 className="font-headline mb-2 text-xl font-bold text-white">Live selling on Pabandi</h3>
                 <p className="mb-4 text-sm text-slate-300">Seller broadcasts live on TikTok, YouTube, or Shopify. Buyers book or buy instantly with deposit protection and $PAB rewards.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link to="/live-selling" className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-4 py-2 font-headline text-sm font-bold text-white shadow-sm">Open Live Selling</Link>
+                  <Link to="/live-selling" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-4 py-2 font-headline text-sm font-bold text-white shadow-sm">Open Live Selling</Link>
                   <Link to="/live-sell" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/10">Browse public hub</Link>
                 </div>
               </div>
@@ -487,28 +449,6 @@ export default function HomePage() {
             )}
           </section>
         )}
-
-        {/* USDY Yield — featured vertical strip */}
-        <section ref={revealRef9} className="reveal py-6">
-          <div className="overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.08] to-indigo-500/[0.04] p-6 sm:p-8">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest rounded-full bg-emerald-500/15 px-2.5 py-1 text-emerald-300 border border-emerald-500/30">Pabandi × Ondo</span>
-                  <span className="text-[10px] font-black uppercase tracking-widest rounded-full bg-amber-400/15 px-2.5 py-1 text-amber-300 border border-amber-400/40">Coming Soon</span>
-                </div>
-                <h3 className="mt-3 font-headline text-xl font-bold text-white sm:text-2xl">Earn USDY Treasury Yield on Rent</h3>
-                <p className="mt-1 max-w-xl text-sm text-slate-300">
-                  Tokenized US Treasuries (Ondo USDY) as the yield rail for real-estate rent — non-custodial, Solana-anchored, 50/50 tenant/landlord split. Pre-register your portfolio.
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                <Link to="/usdy" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-emerald-950 transition-colors hover:bg-emerald-400">Explore USDY Yield →</Link>
-                <Link to="/hospitality" className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-white/10">Hospitality</Link>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Featured Businesses */}
         <section ref={revealRef2} className="space-y-6 reveal">
@@ -570,15 +510,6 @@ export default function HomePage() {
                       <span className="flex items-center text-sm font-body text-white">
                         ⭐ {businesses[0].rating?.toFixed(1) || '4.9'}
                       </span>
-                      {(() => {
-                        const t = Math.max(0, Math.min(100, Math.round((businesses[0].trustScore ?? businesses[0].reliabilityScore ?? 0) / 10)));
-                        const col = (businesses[0].isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
-                        return (
-                          <span className="flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur" style={{ color: col, borderColor: `${col}55`, background: `${col}20` }}>
-                            🛡 Trust {t}
-                          </span>
-                        );
-                      })()}
                       {(businesses[0].isClaimed || getBusinessLiveState(businesses[0])) && (
                         <span className="flex items-center gap-1 rounded border border-[#14F195]/40 bg-[#14F195]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#14F195]">
                           {getBusinessLiveState(businesses[0]) && <><span className="h-1.5 w-1.5 rounded-full bg-[#14F195] animate-pulse" /> Live · </>}
@@ -679,53 +610,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Browse all CTA */}
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-[11px] text-slate-400">Real businesses, trust-scored and escrow-protected.</p>
-          <Link to="/search?category=ALL" className="rounded-full bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition-colors">
-            Browse all businesses →
-          </Link>
-        </div>
-
-        {/* Featured AI Freelancers & Agents */}
-        {freelanceBiz.length > 0 && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Featured AI Freelancers & Agents</h3>
-              <Link to="/freelance" className="rounded-full bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-colors">
-                All freelancers →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {freelanceBiz.slice(0, 8).map((f: any) => {
-                const t = Math.max(0, Math.min(100, Math.round((f.trustScore ?? f.reliabilityScore ?? 0) / 10)));
-                const trustCol = (f.isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
-                const initials = ((f.name || 'AI')[0] || 'A');
-                return (
-                  <Link key={f.id} to={`/business/${f.id}`} className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:border-indigo-500/40 hover:bg-white/10">
-                    <div className="flex items-center gap-3">
-                      {f.logoUrl || f.coverImageUrl ? (
-                        <img src={f.logoUrl || f.coverImageUrl} alt={f.name} className="h-10 w-10 rounded-xl object-cover" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-black text-white">{initials}</div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate font-headline text-sm font-bold text-white">{f.name}</p>
-                        <p className="truncate text-xs text-slate-400">{f.city || 'Remote'}</p>
-                      </div>
-                    </div>
-                    <p className="mt-2 line-clamp-2 text-xs text-slate-300">{(f.description || 'Verified freelancer on Pabandi').slice(0, 80)}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className="rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: trustCol, borderColor: `${trustCol}55`, background: `${trustCol}20` }}>🛡 Trust {t}</span>
-                      <span className="text-[10px] text-slate-400">⭐ {f.rating?.toFixed(1) || '4.9'}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         {/* App Features / proof grid */}
         <section ref={revealRef3} className="space-y-6 reveal">
           <h3 className="font-headline text-2xl font-bold tracking-tight text-white">Why book with Pabandi</h3>
@@ -752,10 +636,10 @@ export default function HomePage() {
               Bookings are protected with deposit escrow, verification, and real rewards for honored appointments.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link to="/checkout" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">
+              <Link to="/demo-checkout" className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Open checkout
               </Link>
-              <Link to="/how-it-works" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-colors hover:bg-white/10">
+              <Link to="/join#how-it-works" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline text-sm font-bold text-white shadow-sm transition-colors hover:bg-white/10">
                 How it works
               </Link>
             </div>
@@ -775,7 +659,7 @@ export default function HomePage() {
               <Link to="/freelance" className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-headline font-bold text-white shadow-sm transition-colors hover:bg-white/10">
                 View Freelancers
               </Link>
-              <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
+              <Link to="/search" className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-6 py-3 font-headline font-bold text-white shadow-sm transition-opacity hover:opacity-90">
                 Explore Businesses
               </Link>
             </div>

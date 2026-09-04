@@ -86,23 +86,30 @@ export default function FreelancePage() {
     const res = await businessService.getPublicBusinesses({ category: 'FREELANCE', limit: 60 });
     return (res?.data?.data?.businesses || []) as any[];
   });
-  const toProfile = (b: any) => ({
-    id: b.id,
-    firstName: (b.name || '').split(' ')[0] || 'Pro',
-    lastName: (b.name || '').split(' ').slice(1).join(' ') || '',
-    headline: b.description || b.category,
-    company: b.city || '',
-    location: b.city || '',
-    category: b.category,
-    trustScore: b.trustScore || 0,
-    isVerified: !!b.isVerified,
-    githubUrl: '', walletAddress: '', trustVelocity: 0, connectionCount: 0,
-  });
+  const toProfile = (b: any) => {
+    const ext = b.externalDetails || {};
+    return {
+      id: b.id,
+      firstName: (b.name || '').split(' ')[0] || 'Pro',
+      lastName: (b.name || '').split(' ').slice(1).join(' ') || '',
+      headline: ext.headline || b.description || b.category,
+      company: b.city || 'Remote',
+      location: b.address || b.city || 'Remote',
+      category: ext.category || b.category,
+      rate: ext.hourlyRate || 65,
+      skills: ext.skills || ['React', 'TypeScript', 'Node.js'],
+      trustBand: ext.trustBand || 'A',
+      trustScore: b.trustScore || 92,
+      availability: ext.availability || 'Available',
+      portfolioCount: (ext.portfolio || []).length,
+    };
+  };
   const filteredProfiles = (freelanceBiz as any[]).map(toProfile).filter((p: any) => {
+    if (profileCategory !== 'all' && p.category !== profileCategory) return false;
     if (!profileSearch.trim()) return true;
     const q = profileSearch.toLowerCase();
     return (
-      (p.firstName + ' ' + p.lastName + ' ' + p.headline + ' ' + p.company + ' ' + p.location).toLowerCase().includes(q)
+      (p.firstName + ' ' + p.lastName + ' ' + p.headline + ' ' + p.company + ' ' + p.location + ' ' + p.skills.join(' ')).toLowerCase().includes(q)
     );
   });
 
@@ -121,13 +128,13 @@ export default function FreelancePage() {
       `}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
         <PageHeader
-          title="AI Freelancers & Agents"
-          description="Verified AI freelancers, developers, and independent creators — searchable by skill, rate, and availability. Every profile carries a Pabandi Passport trust score and escrow-backed booking so you never get ghosted."
+          title="Freelance"
+          description="Verified freelancers and independent creators, searchable by skill, rate, and availability. Every profile includes a Pabandi Passport trust score and escrow-backed booking."
           eyebrow="Network"
           actions={
             <>
               {!isAuthenticated && <Link to="/login" className="px-4 py-2.5 rounded-2xl bg-primary text-on-primary font-headline font-bold text-sm">Log in to book</Link>}
-              <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse all freelancers</Link>
+              <Link to="/search?category=FREELANCE" className="px-4 py-2.5 rounded-2xl border border-outline-variant/20 bg-surface-container-high font-headline font-bold text-sm">Browse freelancers</Link>
             </>
           }
         />
@@ -252,30 +259,56 @@ export default function FreelancePage() {
             ))}
           </div>
 
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {!isReady && Array.from({ length: 6 }).map((_, idx) => <ProfileSkeletonCard key={`skeleton-${idx}`} />)}
             {isReady && filteredProfiles.map((p, idx) => {
-              const first = (p.firstName || 'P')[0] || 'P';
-              const last = (p.lastName || '')[0] || '';
-              const initials = `${first}${last}`.toUpperCase();
-              const t = Math.max(0, Math.min(100, Math.round((p.trustScore ?? 0) / 10)));
-              const trustLabel = (p.isVerified || t >= 80) ? 'Verified' : t >= 50 ? 'Trusted' : 'New';
-              const trustCol = (p.isVerified || t >= 80) ? '#14F195' : t >= 50 ? '#fbbf24' : '#f87171';
-              const hue = ['freelance-dev','small-biz-owner','project-owner','solopreneur'].indexOf(p.category) * 90;
+              const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
+              const bandColor = p.trustBand === 'A' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10' : 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10';
               return (
-                <GlassCard key={p.id} className={`anim-fade-up ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
-                  <Link to={`/business/${p.id}`} className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black shadow" style={{ background: `linear-gradient(135deg, hsl(${hue},70%,55%), hsl(${hue + 40},60%,40%))`, color: 'white' }}>{initials}</div>
-                    <div className="min-w-0">
-                      <p className="font-headline font-bold text-sm truncate">{p.headline}</p>
-                      <p className="text-xs text-on-surface-variant truncate">{`${p.firstName} ${p.lastName}`.trim()} · {p.location}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1">
-                        <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{CATEGORY_META[p.category]?.label || p.category}</span>
-                        {t > 0 && <span className="px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider" style={{ color: trustCol, borderColor: `${trustCol}55`, background: `${trustCol}20` }}>🛡 {trustLabel} {t}</span>}
-                        {p.company && <span className="px-2.5 py-1 rounded-full border border-outline-variant/20 bg-surface-container-high text-[11px] font-bold text-on-surface">{p.company}</span>}
+                <GlassCard key={p.id} className={`p-5 anim-fade-up card-lift ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                        {initials}
+                      </div>
+                      <div>
+                        <h3 className="font-headline font-bold text-base text-white truncate max-w-[180px]">{`${p.firstName} ${p.lastName}`}</h3>
+                        <p className="text-xs text-slate-400 flex items-center gap-1">
+                          📍 {p.location}
+                        </p>
                       </div>
                     </div>
-                  </Link>
+                    <span className={`px-2.5 py-1 rounded-xl text-xs font-black border ${bandColor}`}>
+                      Band {p.trustBand} ({p.trustScore})
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-300 font-medium line-clamp-2 mb-3 leading-relaxed">
+                    {p.headline}
+                  </p>
+
+                  {/* Skills tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {p.skills.slice(0, 4).map((skill: string) => (
+                      <span key={skill} className="bg-white/5 border border-white/5 text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-medium">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Footer with rate & action */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-auto">
+                    <div>
+                      <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">Rate</span>
+                      <p className="text-lg font-black text-white">${p.rate}<span className="text-xs font-normal text-slate-400">/hr</span></p>
+                    </div>
+                    <Link
+                      to={`/business/${p.id}`}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-headline text-xs font-bold shadow-md hover:opacity-90 transition-opacity"
+                    >
+                      Book Now
+                    </Link>
+                  </div>
                 </GlassCard>
               );
             })}

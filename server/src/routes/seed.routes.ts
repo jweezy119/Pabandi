@@ -591,4 +591,116 @@ function hashCode(s: string): number {
   return h;
 }
 
+// ── Real Projects Seed ──────────────────────────────────────────────────────
+import { REAL_PROJECTS } from '../data/realProjects';
+
+router.post('/real-projects', async (_req: Request, res: Response): Promise<any> => {
+  const summary = { created: 0, skipped: 0, errors: [] as string[] };
+  try {
+    for (const p of REAL_PROJECTS) {
+      try {
+        const existing = await prisma.project.findFirst({ where: { title: p.title } });
+        if (existing) { summary.skipped++; continue; }
+        await prisma.project.create({
+          data: {
+            title: p.title, description: p.description, category: p.category,
+            requiredSkills: p.requiredSkills, budgetUsd: p.budgetUsd,
+            estimatedHours: p.estimatedHours, demandGrowthPct: p.demandGrowthPct, status: 'OPEN',
+          },
+        });
+        summary.created++;
+      } catch (e: any) { summary.errors.push(`${p.title}: ${e.message}`); }
+    }
+    res.json({ success: true, ...summary });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message, ...summary });
+  }
+});
+
+// ── Real Jobs Seed ──────────────────────────────────────────────────────────
+const REAL_JOBS = [
+  { title: 'Senior React Developer', desc: 'Build and maintain customer-facing web applications using React, TypeScript, and GraphQL. Work closely with design and product teams.', location: 'Remote', type: 'FREELANCE', min: 90000, max: 140000, company: 'Pabandi Network' },
+  { title: 'Solana Smart Contract Engineer', desc: 'Develop and audit Anchor-based smart contracts for DeFi and NFT applications. Must have experience with SPL tokens and program-derived addresses.', location: 'Remote', type: 'FREELANCE', min: 110000, max: 180000, company: 'Pabandi Network' },
+  { title: 'UI/UX Designer', desc: 'Design intuitive user interfaces for web and mobile applications. Create wireframes, prototypes, and design systems using Figma.', location: 'Remote', type: 'FREELANCE', min: 75000, max: 120000, company: 'Pabandi Network' },
+  { title: 'Backend Node.js Developer', desc: 'Build scalable APIs and microservices using Node.js, Express, and PostgreSQL. Experience with Redis caching and message queues preferred.', location: 'Remote', type: 'FREELANCE', min: 85000, max: 130000, company: 'Pabandi Network' },
+  { title: 'Mobile Developer (React Native)', desc: 'Develop cross-platform mobile applications for iOS and Android. Must have App Store and Play Store deployment experience.', location: 'Remote', type: 'FREELANCE', min: 80000, max: 125000, company: 'Pabandi Network' },
+  { title: 'DevOps Engineer', desc: 'Set up and maintain CI/CD pipelines, Kubernetes clusters, and cloud infrastructure on AWS. Terraform and monitoring experience required.', location: 'Remote', type: 'FREELANCE', min: 100000, max: 160000, company: 'Pabandi Network' },
+  { title: 'Content Marketing Manager', desc: 'Develop and execute content strategy including blog posts, social media, and email campaigns. SEO expertise and analytics skills required.', location: 'Remote', type: 'FREELANCE', min: 60000, max: 95000, company: 'Pabandi Network' },
+  { title: 'Data Analyst', desc: 'Analyze business data to identify trends and insights. Build dashboards and reports using SQL, Python, and BI tools.', location: 'Remote', type: 'FREELANCE', min: 70000, max: 110000, company: 'Pabandi Network' },
+  { title: 'Flutter Mobile Developer', desc: 'Build beautiful, performant mobile apps using Flutter and Dart. Must have experience with state management and REST API integration.', location: 'Lahore, Pakistan', type: 'FREELANCE', min: 50000, max: 85000, company: 'Pabandi Network' },
+  { title: 'AI/ML Engineer', desc: 'Build and deploy machine learning models for fraud detection, recommendation systems, and NLP applications. Python, TensorFlow, and FastAPI required.', location: 'Remote', type: 'FREELANCE', min: 120000, max: 180000, company: 'Pabandi Network' },
+  { title: 'Technical Writer', desc: 'Create clear, developer-friendly documentation for APIs, SDKs, and developer platforms. Experience with OpenAPI and Docusaurus preferred.', location: 'Remote', type: 'FREELANCE', min: 55000, max: 85000, company: 'Pabandi Network' },
+  { title: 'WordPress & WooCommerce Developer', desc: 'Build custom WordPress themes and WooCommerce stores. Must have experience with custom plugins, ACF, and performance optimization.', location: 'Karachi, Pakistan', type: 'FREELANCE', min: 40000, max: 70000, company: 'Pabandi Network' },
+  { title: 'Cybersecurity Analyst', desc: 'Conduct penetration testing, vulnerability assessments, and security audits for web applications. OWASP methodology and Burp Suite experience required.', location: 'Remote', type: 'FREELANCE', min: 95000, max: 150000, company: 'Pabandi Network' },
+  { title: 'Video Editor & Motion Designer', desc: 'Edit and produce marketing videos, explainer animations, and social media content. After Effects, Premiere Pro, and basic 3D skills required.', location: 'Remote', type: 'FREELANCE', min: 50000, max: 90000, company: 'Pabandi Network' },
+  { title: 'Growth Marketing Specialist', desc: 'Plan and execute paid advertising campaigns across Google, Meta, and TikTok. Manage $50K+ monthly ad budgets with ROAS optimization.', location: 'Remote', type: 'FREELANCE', min: 65000, max: 100000, company: 'Pabandi Network' },
+];
+
+router.post('/real-jobs', async (_req: Request, res: Response): Promise<any> => {
+  const summary = { created: 0, skipped: 0 };
+  try {
+    for (const j of REAL_JOBS) {
+      const existing = await prisma.jobPosting.findFirst({ where: { title: j.title } });
+      if (existing) { summary.skipped++; continue; }
+      await prisma.jobPosting.create({
+        data: {
+          title: j.title, description: j.desc, location: j.location,
+          employmentType: j.type, salaryMin: j.min, salaryMax: j.max,
+          companyName: j.company,
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        },
+      });
+      summary.created++;
+    }
+    res.json({ success: true, ...summary });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ── Real Freelancers Seed ───────────────────────────────────────────────────
+import { REAL_FREELANCERS } from '../data/realFreelancers';
+
+router.post('/real-freelancers', async (_req: Request, res: Response): Promise<any> => {
+  const summary = { created: 0, skipped: 0, errors: [] as string[] };
+  try {
+    for (const f of REAL_FREELANCERS) {
+      try {
+        const email = `${f.name.toLowerCase().replace(/\s+/g, '.')}@pabandi.freelance`;
+        const existing = await prisma.user.findFirst({ where: { email } });
+        if (existing) { summary.skipped++; continue; }
+        const passwordHash = await bcrypt.hash('pabandi2026', 10);
+        const user = await prisma.user.create({
+          data: {
+            email, passwordHash,
+            firstName: f.name.split(' ')[0], lastName: f.name.split(' ').slice(1).join(' '),
+            role: UserRole.CUSTOMER, isEmailVerified: true,
+            trustScore: f.trustScore, freelanceScore: f.trustScore,
+            verificationTier: f.trustBand === 'A' ? 'VERIFIED' : 'BASIC',
+          },
+        });
+        // Create a rich business profile with skills, rate, portfolio in externalDetails
+        await prisma.business.create({
+          data: {
+            ownerId: user.id, name: f.name, category: 'FREELANCE',
+            address: f.location, phone: '', email,
+            description: `${f.headline} — ${f.bio}`,
+            isVerified: true, isActive: true, trustScore: f.trustScore,
+            externalDetails: {
+              hourlyRate: f.rate, skills: f.skills, trustBand: f.trustBand,
+              portfolio: f.portfolio, availability: 'Available',
+              category: f.category, headline: f.headline,
+            },
+          },
+        });
+        summary.created++;
+      } catch (e: any) { summary.errors.push(`${f.name}: ${e.message}`); }
+    }
+    res.json({ success: true, ...summary });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message, ...summary });
+  }
+});
+
 export default router;
+

@@ -25,17 +25,29 @@ const ActiveJobsPage: React.FC = () => {
     const fetchJobs = async () => {
       try {
         // Fetch all reservations where user is customer (or freelancer acting as provider if schema differs)
-        const res = await api.get('/reservations/user');
-        
-        // Filter for active freelance jobs (Escrow Funded)
-        // In this implementation, the freelancer acts as the 'customer' booking the gig, 
-        // or the client acts as the customer. We'll just show active reservations with deposits.
+        const [res, gigsRes] = await Promise.all([
+          api.get('/reservations/user').catch(() => ({ data: [] })),
+          api.get('/gigs').catch(() => ({ data: { data: [] } })),
+        ]);
+
         const activeEscrowJobs = (res.data || []).filter((r: Job) => 
           r.depositPaid === true && 
           ['PENDING', 'CHECKED_IN', 'IN_PROGRESS'].includes(r.status)
         );
-        
-        setJobs(activeEscrowJobs);
+
+        const openGigs = (gigsRes.data?.data || gigsRes.data?.gigs || []).map((g: any) => ({
+          id: g.gigId || g.id,
+          businessId: g.gigId || g.id,
+          business: { name: g.title },
+          status: g.status || 'OPEN',
+          depositPaid: true,
+          depositAmount: g.budgetUsd || 0,
+          reservationDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          isGig: true,
+        }));
+
+        setJobs([...activeEscrowJobs, ...openGigs]);
       } catch (err) {
         console.error('Failed to fetch jobs', err);
       } finally {
@@ -92,8 +104,8 @@ const ActiveJobsPage: React.FC = () => {
           className="space-y-4"
         >
           {jobs.length > 0 ? (
-            jobs.map((job) => (
-              <Link to={`/workspace/${job.id}`} key={job.id}>
+            jobs.map((job: any) => (
+              <Link to={job.isGig ? `/gigs/${job.id}` : `/workspace/${job.id}`} key={job.id}>
                 <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6 hover:bg-gray-800/60 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl group-hover:bg-indigo-500/10 transition-colors" />
                   
