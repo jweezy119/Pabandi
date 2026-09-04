@@ -56,10 +56,34 @@ router.post('/apply', async (req: Request, res: Response) => {
       if (!property) return res.status(404).json({ error: 'Property not found' });
     }
 
+    // 1. Upsert the tenant record on the manager's profile (no synthetic data).
+    const tenant = await prisma.propertyTenant.upsert({
+      where: { managerId_email: { managerId: profile.id, email: String(email).toLowerCase().trim() } },
+      update: {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        phone: phone || undefined,
+        status: 'APPLIED',
+        lastStayAt: new Date(),
+      },
+      create: {
+        managerId: profile.id,
+        email: String(email).toLowerCase().trim(),
+        firstName: firstName || null,
+        lastName: lastName || null,
+        phone: phone || null,
+        propertyId: propertyId || null,
+        status: 'APPLIED',
+        notes: 'Applied via public portal',
+      },
+    });
+
+    // 2. Create the application record.
     const application = await prisma.tenantApplication.create({
       data: {
         managerId: profile.id,
         propertyId: propertyId || null,
+        tenantId: tenant.id,
         email: String(email).toLowerCase().trim(),
         firstName: firstName || null,
         lastName: lastName || null,
@@ -73,11 +97,7 @@ router.post('/apply', async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      data: {
-        applicationId: application.id,
-        status: application.status,
-        message: 'Application submitted. The property manager will review and run a background check.',
-      },
+      data: { applicationId: application.id, status: application.status, tenantId: tenant.id, message: 'Application submitted. The property manager will review and run a background check.' },
     });
   } catch (e: any) {
     console.error('[tenant] apply failed:', e.message);

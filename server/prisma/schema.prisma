@@ -1645,6 +1645,7 @@ model TenantApplication {
   id              String   @id @default(cuid())
   managerId       String
   propertyId      String?
+  tenantId        String?
   // Applicant identity.
   email           String
   firstName       String?
@@ -1668,6 +1669,7 @@ model TenantApplication {
 
   manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
 
   @@index([managerId])
