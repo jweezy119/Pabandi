@@ -22,17 +22,18 @@ export default function TenantDashboardPage() {
 
   const loadTenantData = async () => {
     try {
-      const [appsRes, docsRes] = await Promise.all([
+      const [dashRes, appsRes, docsRes] = await Promise.all([
+        tenantService.dashboard().catch(() => ({ data: { data: null } })),
         tenantService.applications().catch(() => ({ data: { data: [] } })),
         tenantService.documents().catch(() => ({ data: { data: [] } })),
       ]);
-
+      const dash = dashRes.data?.data;
       setData({
         applications: appsRes.data?.data || [],
         documents: docsRes.data?.data || [],
-        leases: [],
-        maintenance: [],
-        rentPayments: [],
+        leases: dash?.leases || [],
+        maintenance: dash?.maintenance || [],
+        rentPayments: dash?.rentPayments || [],
       });
     } catch (e) {
       console.error('Failed to load tenant data', e);
