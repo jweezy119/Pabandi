@@ -3626,3 +3626,218 @@ model FreightTemplate {
 
   @@index([shipperId])
 }
+// ── Nightlife & Club Scene ─────────────────────────────────────────────────
+// Venues, bottle service, cover charges, guest lists, events
+
+model NightlifeVenue {
+  id              String   @id @default(cuid())
+  name            String
+  address         String
+  city            String
+  state           String
+  zip             String
+  lat             Float
+  lng             Float
+  type            String   // CLUB, BAR, LOUNGE, ROOFTOP
+  capacity        Int
+  musicGenres     String[] // House, Techno, Hip-Hop, R&B, etc.
+  dressCode       String?
+  hours           Json     // { mon: { open, close }, ... }
+  phone           String?
+  website         String?
+  instagram       String?
+  rating          Float    @default(50)
+  isActive        Boolean  @default(true)
+  
+  // Relations
+  bottlePackages  BottlePackage[]
+  tableTypes      TableType[]
+  coverCharges    CoverCharge[]
+  events          NightlifeEvent[]
+  guestLists      GuestList[]
+  bottleReservations BottleReservation[]
+  analytics       VenueAnalytics[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BottlePackage {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  name            String
+  description     String
+  bottleType      String   // VODKA, CHAMPAGNE, TEQUILA, WHISKY, MIXED
+  basePrice       Float
+  minSpend        Float
+  maxGuests       Int
+  includes        String[] // mixers, bucket, sparklers, etc.
+  isActive        Boolean  @default(true)
+  
+  reservations    BottleReservation[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TableType {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  name            String   // VIP, Mezzanine, Dance Floor, Patio
+  basePrice       Float
+  minSpend        Float
+  maxCapacity     Int
+  totalCount      Int      @default(1)
+  isActive        Boolean  @default(true)
+  
+  reservations    BottleReservation[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BottleReservation {
+  id              String   @id @default(cuid())
+  userId          String
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  tableTypeId     String
+  tableType       TableType @relation(fields: [tableTypeId], references: [id], onDelete: Cascade)
+  bottlePackageId String
+  bottlePackage   BottlePackage @relation(fields: [bottlePackageId], references: [id], onDelete: Cascade)
+  
+  date            DateTime
+  guestCount      Int
+  arrivalTime     String
+  specialRequests String?
+  totalPrice      Float
+  status          String   // PENDING, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
+  confirmationCode String  @unique
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([venueId])
+  @@index([date])
+}
+
+model CoverCharge {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  name            String
+  amount          Float
+  type            String   // GENERAL, VIP, AFTER_HOURS
+  startTime       String
+  endTime         String
+  daysOfWeek      Number[]
+  gender          String?  // MALE, FEMALE, ALL
+  guestListIncluded Boolean @default(false)
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model GuestList {
+  id              String   @id @default(cuid())
+  userId          String
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  eventId         String?
+  
+  date            DateTime
+  partySize       Int
+  guestNames      String[]
+  status          String   // CONFIRMED, ARRIVED, NO_SHOW, CANCELLED, WAITING
+  noShowProbability Float  @default(0.3)
+  confirmationCode String  @unique
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([venueId])
+  @@index([date])
+}
+
+model NightlifeEvent {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  name            String
+  date            DateTime
+  startTime       String
+  endTime         String
+  description     String?
+  lineup          Json?    // [{ name, genre, time }]
+  coverChargeMultiplier Float @default(1.0)
+  ticketPrice     Float?
+  ticketTiers     Json?
+  attendeeIds     String[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([venueId])
+  @@index([date])
+}
+
+model VenueAnalytics {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  date            DateTime
+  totalAttendees  Int
+  totalRevenue    Float
+  avgSpendPerGuest Float
+  peakHour        Int
+  demographics    Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([venueId, date])
+  @@index([venueId])
+}
+
+model Promoter {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  name            String
+  phone           String?
+  instagram       String?
+  bio             String?
+  
+  isActive        Boolean  @default(true)
+  verified        Boolean  @default(false)
+  
+  // Relations
+  guestLists      GuestList[]
+  reviews         PromoterReview[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PromoterReview {
+  id              String   @id @default(cuid())
+  promoterId      String
+  promoter        Promoter @relation(fields: [promoterId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  rating          Int      // 1-5
+  comment         String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
