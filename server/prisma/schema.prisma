@@ -3738,7 +3738,7 @@ model CoverCharge {
   type            String   // GENERAL, VIP, AFTER_HOURS
   startTime       String
   endTime         String
-  daysOfWeek      Number[]
+  daysOfWeek      Int[]
   gender          String?  // MALE, FEMALE, ALL
   guestListIncluded Boolean @default(false)
   isActive        Boolean  @default(true)
