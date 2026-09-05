@@ -42,7 +42,6 @@ model User {
   profilePictureUrl       String?
   tiktokId                String?                 @unique
   twitterId               String?                 @unique
-  githubId                String?                 @unique
   walletAddress           String?                 @unique
   stripeCustomerId        String?
   bountyPaid              Boolean                 @default(false)
@@ -3737,7 +3736,7 @@ model CoverCharge {
   type            String   // GENERAL, VIP, AFTER_HOURS
   startTime       String
   endTime         String
-  daysOfWeek      Int[]
+  daysOfWeek      Number[]
   gender          String?  // MALE, FEMALE, ALL
   guestListIncluded Boolean @default(false)
   isActive        Boolean  @default(true)

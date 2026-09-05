@@ -35,22 +35,17 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
 import ProfileDetailPage from './pages/ProfileDetailPage';
 import EconomyDashboardPage from './pages/EconomyDashboardPage';
-import ProfilePage from './pages/ProfilePage';
-import { WalletPage } from './pages/WalletPage';
 import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
-import TrustPage from './pages/TrustPage';
 import { TrustPulsePage } from './pages/TrustPulsePage';
 import { CommunityJuryPage } from './pages/CommunityJuryPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
 import { WaitlistPage } from './pages/WaitlistPage';
 import { ReferralLandingPage } from './pages/ReferralLandingPage';
 import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
 import SalePage from './pages/SalePage';
-import PropertyManagerPage from './pages/CRMPage';
+import CRMPage from './pages/CRMPage';
 import { TenantWorkflowPage } from './pages/TenantWorkflowPage';
 import { AIAssistantPage } from './pages/AIAssistantPage';
 import { AITenantRiskPage } from './pages/AITenantRiskPage';
@@ -73,7 +68,6 @@ import RewardsPage from './pages/RewardsPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import CalculatorPage from './pages/CalculatorPage';
 import SmartSearchPage from './pages/SmartSearchPage';
-import UnifiedDashboardPage from './pages/UnifiedDashboardPage';
 import AiChatPage from './pages/AiChatPage';
 import AiPropertyAnalyzerPage from './pages/AiPropertyAnalyzerPage';
 import SettingsPage from './pages/SettingsPage';
@@ -128,7 +122,6 @@ import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
-import { PublicSEO } from './components/PublicSEO';
 import { useEffect } from 'react';
 
 function App() {
@@ -140,17 +133,13 @@ function App() {
     }
   }, [isAuthenticated, fetchWalletData]);
 
-  // Validate the persisted token on mount: if it's expired, clear auth so a stale
-  // session can never trap the user (or silently 401 every request).
   useEffect(() => {
     const { token, logout } = useAuthStore.getState();
     if (!token) return;
     try {
       const exp = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))?.exp;
       if (exp && Date.now() >= exp * 1000) logout();
-    } catch {
-      /* malformed token — leave as-is; API will reject and the user can re-login */
-    }
+    } catch { /* malformed */ }
   }, []);
 
   const DashboardPage = () => {
@@ -175,251 +164,141 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <Routes>
-          <Route path="/waitlist" element={<PublicSEO seo={{ title: 'Pabandi Waitlist', description: 'Join the Pabandi waitlist for early access to trusted bookings, escrow deposits, $PAB rewards, and local discovery.' }}><WaitlistPage /></PublicSEO>} />
-          {/* Public referral invite landing — validates ?code and funnels to signup */}
-          <Route path="/r/:code" element={<PublicSEO seo={{ title: 'Join Pabandi with an invite', description: 'Join Pabandi through a friend’s invite — escrow-backed bookings, court & KYC screening, and $PAB rewards.' }}><ReferralLandingPage /></PublicSEO>} />
-          {/* Marketplace partner pitch + self-serve enrollment */}
-          <Route path="/partners/marketplace" element={<PublicSEO seo={{ title: 'Pabandi for Marketplaces — Secure every local sale', description: 'Add Pabandi escrow + identity verification to Facebook Marketplace, OfferUp, Craigslist and more. One-line iframe. You earn on every secured sale.' }}><MarketplacePartnerPage /></PublicSEO>} />
-          {/* Chrome-free embeddable widget for marketplaces (iframe on listings) */}
-                    {/* Standalone seller sale page (status + secure link + release) */}
-          <Route path="/sale/:id" element={<PublicSEO seo={{ title: 'Your Pabandi-secured sale', description: 'Track your Pabandi-secured local sale, share the buyer link, and release escrow after a safe in-person exchange.' }}><SalePage /></PublicSEO>} />
-          {/* Property Manager CRM dashboard */}
-          <Route path="/property-manager" element={<PropertyManagerPage />} />
-          {/* Tenant Workflow with CourtListener Screening */}
-          <Route path="/tenant-workflow" element={<TenantWorkflowPage />} />
-          {/* AI Assistant for Property Management */}
-          <Route path="/ai/assistant" element={<AIAssistantPage />} />
-          {/* Property detail page */}
-          <Route path="/property/:id" element={<PropertyDetailPage />} />
-          {/* White-label tenant portal */}
-          <Route path="/p/:slug" element={<PublicSEO seo={{ title: 'Available rentals', description: 'Browse available rental listings secured by Pabandi — escrow-backed deposits and $PAB rewards.' }}><TenantPortalPage /></PublicSEO>} />
-          {/* Tenant application tracker (authenticated) */}
-          <Route path="/tenant" element={<TenantDashboardPage />} />
-          {/* Documents */}
-          <Route path="/documents" element={<DocumentsPage />} />
-          {/* Marketplace - Buy, Sell, Rent, Hire */}
-          <Route path="/marketplace" element={<PublicSEO seo={{ title: 'Pabandi Marketplace', description: 'Buy, sell, rent, and hire — all protected by escrow and background checks.' }}><MarketplacePage /></PublicSEO>} />
-          <Route path="/listing/:id" element={<ListingDetailPage />} />
-          <Route path="/escrow/:id" element={<EscrowDetailPage />} />
-          {/* Token & Wallet */}
-          <Route path="/tokenomics" element={<TokenomicsPage />} />
-          <Route path="/wallet" element={<WalletConnectPage />} />
-          <Route path="/onramp" element={<OnRampPage />} />
-          <Route path="/offramp" element={<OffRampPage />} />
-          <Route path="/token" element={<TokenFlowPage />} />
-          {/* AI Tools */}
-          <Route path="/dashboard" element={<UnifiedDashboardPage />} />
-                              <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/search" element={<SmartSearchPage />} />
-                    <Route path="/calculator" element={<CalculatorPage />} />
-          <Route path="/ai/chat" element={<AiChatPage />} />
-          <Route path="/ai/analyze" element={<AiPropertyAnalyzerPage />} />
-          <Route path="/ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
-          <Route path="/ai/market" element={<MarketIntelligencePage />} />
-          <Route path="/ai/portfolio" element={<PortfolioAnalyzerPage />} />
-          <Route path="/ai/tenant-risk" element={<AITenantRiskPage />} />
-          <Route path="/ai/lease-anomaly" element={<AILeaseAnomalyPage />} />
-          <Route path="/ai/rent-optimizer" element={<AIRentOptimizerPage />} />
-          {/* AI Real Estate */}
-          {/* Trust Passport */}
-          <Route path="/passport" element={<PublicSEO seo={{ title: 'Trust Passport — Pabandi', description: 'Your portable reputation across all Pabandi services.' }}><TrustPassportPage /></PublicSEO>} />
-          {/* Rewards */}
-
-          {/* Rent Roll */}
-          <Route path="/rent-roll" element={<PublicSEO seo={{ title: 'Rent Roll — Pabandi', description: 'Track income, expenses, and NOI across all your properties.' }}><RentRollPage /></PublicSEO>} />
-          {/* Lease Generator */}
-          <Route path="/leases" element={<PublicSEO seo={{ title: 'Lease Agreements — Pabandi', description: 'Create and manage lease agreements.' }}><LeaseGeneratorPage /></PublicSEO>} />
-          {/* Email verification */}
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          {/* Escrow & Disputes */}
-          <Route path="/escrow" element={<PublicSEO seo={{ title: 'Pabandi Escrow — Secured Transactions', description: 'Create escrow transactions, protect your trades, and resolve disputes fairly.' }}><EscrowPage /></PublicSEO>} />
-          {/* Maintenance */}
-          <Route path="/maintenance" element={<MaintenancePage />} />
-          {/* Applications */}
-          <Route path="/applications" element={<ApplicationsPage />} />
-          {/* Dispute Center */}
-          <Route path="/disputes" element={<PublicSEO seo={{ title: 'Dispute Center — Fair Resolution', description: 'File disputes, submit evidence, and let the community jury decide.' }}><DisputeCenterPage /></PublicSEO>} />
-          {/* SafeMeet */}
-          <Route path="/safemeet" element={<PublicSEO seo={{ title: 'SafeMeet — Secure Exchange Locations', description: 'Schedule meetups at verified safe locations for in-person exchanges.' }}><SafeMeetPage /></PublicSEO>} />
-          {/* Browse Hotels - links to Booking.com */}
-          <Route path="/hotels" element={<PublicSEO seo={{ title: 'Browse Hotels — Pabandi', description: 'Search hotels on Booking.com with real prices and instant booking.' }}><BrowseHotelsPage /></PublicSEO>} />
-          {/* Demo walkthrough */}
-          <Route path="/demo" element={<PublicSEO seo={{ title: 'Pabandi Demo — See it in action', description: 'A guided walkthrough of Pabandi trust experience — property management to safe local sales.' }}><DemoWalkthroughPage /></PublicSEO>} />
-          {/* Redirect /try to /demo for backwards compatibility */}
-          <Route path="/try" element={<Navigate to="/demo" replace />} />
-          <Route path="/airdrop" element={<PublicSEO seo={{ title: 'Pabandi Airdrop', description: 'Check your eligibility for the Pabandi airdrop. Review wallet status, $PAB rewards, and trust-score requirements.' }}><AirdropPage /></PublicSEO>} />
-          <Route path="/usdy" element={<PublicSEO seo={{ title: 'Pabandi × Ondo USDY — Tokenized T-Bill Yield on Rent', description: 'Pabandi brings Ondo Finance USDY (tokenized US Treasuries) to the global rental economy. Pre-register your portfolio for USDY rent yield.' }}><UsdyPage /></PublicSEO>} />
-          <Route path="/city/:slug" element={<CityLandingPage />} />
+          {/* ALL routes inside Layout so every page gets header+footer */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<PublicSEO seo={{ title: 'Pabandi | Commitment, Secured.', description: 'Find trusted local hospitality, live sellers, freelancers, and gig workers near you. Book with escrow-backed deposits and earn $PAB rewards on Pabandi.' }}><HomePage /></PublicSEO>} />
+            <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="sharia-compliance" element={<ShariaCompliancePage />} />
-
-            {/* OAuth callback — backend redirects here with ?token=...; we consume it and log in */}
             <Route path="auth/callback" element={<AuthCallbackPage />} />
-
-            {/* Unified auth page for both login & register.
-                We do NOT auto-redirect when isAuthenticated: a persisted (possibly stale/expired)
-                token must never trap the user away from the login form. Token validity is checked
-                on app mount (see below), and a successful login navigates to the dashboard itself. */}
-            <Route
-              path="login"
-              element={<AuthPage />}
-            />
-            <Route
-              path="register"
-              element={<RegisterPage />}
-            />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-
-            <Route path="/wallet" element={<WalletConnectPage />} />
-                        <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
-
-            <Route path="/waitlist" element={<WaitlistPage />} />
-                        
-            <Route path="/u/:slug" element={<PublicCustomerProfilePage />} />
-            <Route path="business/:id" element={<BusinessProfilePage />} />
-            <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
-            <Route path="checkout-success" element={<CheckoutSuccessPage />} />
-            <Route path="checkout-cancel" element={<CheckoutCancelPage />} />
-            <Route path="user/:id" element={<PublicCustomerProfilePage />} />
-            <Route path="b/:slug" element={<ShortLinkBookingPage />} />
-            <Route path="business/:id/book" element={<BookingPage />} />
+            <Route path="login" element={<AuthPage />} />
+            <Route path="register" element={<RegisterPage />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
+            <Route path="property-manager" element={<CRMPage />} />
+            <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
+            <Route path="ai/assistant" element={<AIAssistantPage />} />
+            <Route path="property/:id" element={<PropertyDetailPage />} />
+            <Route path="p/:slug" element={<TenantPortalPage />} />
+            <Route path="tenant" element={<TenantDashboardPage />} />
+            <Route path="documents" element={<DocumentsPage />} />
+            <Route path="marketplace" element={<MarketplacePage />} />
+            <Route path="listing/:id" element={<ListingDetailPage />} />
+            <Route path="escrow" element={<EscrowPage />} />
+            <Route path="escrow/:id" element={<EscrowDetailPage />} />
+            <Route path="tokenomics" element={<TokenomicsPage />} />
+            <Route path="wallet" element={<WalletConnectPage />} />
+            <Route path="onramp" element={<OnRampPage />} />
+            <Route path="offramp" element={<OffRampPage />} />
+            <Route path="token" element={<TokenFlowPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="calculator" element={<CalculatorPage />} />
+            <Route path="smart-search" element={<SmartSearchPage />} />
+            <Route path="ai/chat" element={<AiChatPage />} />
+            <Route path="ai/analyze" element={<AiPropertyAnalyzerPage />} />
+            <Route path="ai/intelligence" element={<AdvancedPropertyIntelligencePage />} />
+            <Route path="ai/market" element={<MarketIntelligencePage />} />
+            <Route path="ai/portfolio" element={<PortfolioAnalyzerPage />} />
+            <Route path="ai/tenant-risk" element={<AITenantRiskPage />} />
+            <Route path="ai/lease-anomaly" element={<AILeaseAnomalyPage />} />
+            <Route path="ai/rent-optimizer" element={<AIRentOptimizerPage />} />
+            <Route path="passport" element={<TrustPassportPage />} />
+            <Route path="passport/dashboard" element={<PassportDashboardPage />} />
+            <Route path="passport/:sellerId" element={<PublicPassportPage />} />
+            <Route path="trust/:handle" element={<TrustPassportPage />} />
+            <Route path="trust" element={<PassportDirectoryPage />} />
+            <Route path="trust/pulse" element={<TrustPulsePage />} />
+            <Route path="trust/jury" element={<CommunityJuryPage />} />
+            <Route path="agent-passport" element={<AgentPassportPage />} />
+            <Route path="background-check" element={<BackgroundCheckPage />} />
+            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
+            <Route path="protected-deposit" element={<PpdWizardPage />} />
+            <Route path="arbitration" element={<ArbitrationPage />} />
+            <Route path="safemeet" element={<SafeMeetPage />} />
+            <Route path="disputes" element={<DisputeCenterPage />} />
+            <Route path="cashout" element={<CashOutPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+            <Route path="economy" element={<EconomyDashboardPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
+            <Route path="rewards" element={<RewardsPage />} />
+            <Route path="refer" element={<ReferAndEarnPage />} />
+            <Route path="verifier" element={<VerifierSandboxPage />} />
             <Route path="book" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
             <Route path="booking" element={<BookingOS />} />
+            <Route path="reservations" element={<ReservationsPage />} />
+            <Route path="reservations/new" element={<NewReservationPage />} />
             <Route path="nightlife" element={<NightlifePage />} />
             <Route path="promoter" element={<PromoterOS />} />
-            <Route path="auth/callback" element={<AuthCallbackPage />} />
-            <Route path="oauth/authorize" element={<OAuthConsentPage />} />
-            <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
-            <Route path="t/pay/:sellerId" element={<TapPayPage />} />
-            <Route path="demo-checkout" element={<DemoCheckoutPage />} />
-            {/* Business partner landing page — public */}
-            <Route path="business/join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
-            <Route path="jobs/:id" element={<JobDetailsPage />} />
-            <Route path="join" element={<PublicSEO seo={{ title: 'Join Pabandi | Free Business Registration', description: 'Register your hospitality, live-selling, freelance, or local service business on Pabandi. Free onboarding, escrow-backed bookings, and $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
-            <Route path="business/join-claim" element={<PublicSEO seo={{ title: 'Claim Business | Pabandi', description: 'Claim your unclaimed Pabandi business profile with Web3 escrow, AI no-show protection, and Solana $PAB rewards.' }}><BusinessJoinPage /></PublicSEO>} />
-            <Route path="business/activate/:id" element={<PublicSEO seo={{ title: 'Business Setup | Pabandi', description: 'Claim your listing, connect checkout, and become booking-ready on Pabandi.' }}><BusinessActivationPage /></PublicSEO>} />
-            <Route path="/dashboard/jobs" element={<ActiveJobsPage />} />
-            <Route path="/workspace/:id" element={<JobWorkspacePage />} />
-            <Route path="partners/dashboard" element={<PartnerDashboardPage />} />
-            <Route path="pricing" element={<PublicSEO seo={{ title: 'Pabandi Pricing | Hospitality & Live Selling Plans', description: 'Explore Pabandi pricing for hospitality properties, live sellers, and freelancers. Free starter plans, escrow-backed deposits, and $PAB rewards.' }}><BusinessModelPage /></PublicSEO>} />
-            <Route path="business-model" element={<PublicSEO seo={{ title: 'Pabandi Business Model | Escrow Commissions & Rewards', description: 'Understand Pabandi revenue, escrow commissions, $PAB tokenomics, and trust incentives for sellers, buyers, and hosts.' }}><BusinessModelPage /></PublicSEO>} />
-            <Route path="technology" element={<TechnologyPage />} />
-            <Route path="web3" element={<Web3Page />} />
-            <Route path="hospitality" element={<HospitalityPage />} />
-            <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
+            <Route path="agent-dashboard" element={<AgentControlPanel />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />
             <Route path="storefront" element={<FreelanceStorefrontPage />} />
-            <Route path="daraz-scanner" element={<DarazScannerPage />} />
-            <Route path="background-check" element={<BackgroundCheckPage />} />
-            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
-            <Route path="promo" element={<PromoPage />} />
-            <Route path="promotions" element={<PromotionsPage />} />
-            <Route path="freight" element={<PublicSEO seo={{ title: "Freight & Logistics — Pabandi", description: "Ship goods with trusted carriers. Escrow-protected payments." }}><FreightPage /></PublicSEO>} />
-            <Route path="rewards" element={<PublicSEO seo={{ title: '$PAB Rewards — Pabandi', description: 'Earn, spend, and stake $PAB tokens.' }}><RewardsPage /></PublicSEO>} />
-            <Route path="protected-deposit" element={<PpdWizardPage />} />
-            <Route path="trust/:handle" element={<TrustPassportPage />} />
-            <Route path="trust" element={<PassportDirectoryPage />} />
-            <Route path="agent-passport" element={<AgentPassportPage />} />
-            <Route path="agent-panel" element={<AgentControlPanel />} />
-            <Route path="revenue" element={<RevenuePage />} />
-            <Route path="cashout" element={<CashOutPage />} />
-            <Route path="payroll" element={<PayrollPage />} />
-            <Route path="arbitration" element={<ArbitrationPage />} />
+            <Route path="gigs" element={<JobDetailsPage />} />
+            <Route path="gigs/:id" element={<JobDetailsPage />} />
+            <Route path="jobs/:id" element={<JobDetailsPage />} />
+            <Route path="jobs" element={<ActiveJobsPage />} />
+            <Route path="workspace/:id" element={<JobWorkspacePage />} />
+            <Route path="hotels" element={<BrowseHotelsPage />} />
+            <Route path="hospitality" element={<HospitalityPage />} />
+            <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
+            <Route path="freight" element={<FreightPage />} />
+            <Route path="business/join" element={<BusinessJoinPage />} />
+            <Route path="business/join-claim" element={<BusinessJoinPage />} />
+            <Route path="business/register" element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />} />
+            <Route path="business/:id" element={<BusinessProfilePage />} />
+            <Route path="business/:id/book" element={<BookingPage />} />
+            <Route path="business/activate/:id" element={<BusinessActivationPage />} />
+            <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
+            <Route path="business/settings" element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />} />
+            <Route path="business/analytics" element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />} />
+            <Route path="business/plugins" element={isAuthenticated ? <PluginManagerPage /> : <Navigate to="/login" />} />
+            <Route path="business-model" element={<BusinessModelPage />} />
+            <Route path="join" element={<BusinessJoinPage />} />
+            <Route path="pricing" element={<BusinessModelPage />} />
+            <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
+            <Route path="checkout-success" element={<CheckoutSuccessPage />} />
+            <Route path="checkout-cancel" element={<CheckoutCancelPage />} />
+            <Route path="demo-checkout" element={<DemoCheckoutPage />} />
+            <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
+            <Route path="t/pay/:sellerId" element={<TapPayPage />} />
+            <Route path="b/:slug" element={<ShortLinkBookingPage />} />
+            <Route path="web3" element={<Web3Page />} />
+            <Route path="lp-terminal" element={<LiquidityTerminalPage />} />
+            <Route path="usdy" element={<UsdyPage />} />
+            <Route path="airdrop" element={<AirdropPage />} />
+            <Route path="rent-roll" element={<RentRollPage />} />
+            <Route path="leases" element={<LeaseGeneratorPage />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
+            <Route path="applications" element={<ApplicationsPage />} />
             <Route path="profiles" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
-            <Route path="economy" element={<EconomyDashboardPage />} />
+            <Route path="technology" element={<TechnologyPage />} />
             <Route path="contact" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
-            {/* B2B Intelligence API developer portal — public */}
-            <Route path="developer" element={<PublicSEO seo={{ title: 'Pabandi Developer Portal | Local Business API', description: 'Explore the Pabandi developer API for local business data, escrow hooks, live-selling integrations, and trust-score endpoints.' }}><DeveloperPortalPage /></PublicSEO>} />
-            {/* Social & Professional Trust Layer — public */}
-            <Route path="trust" element={<PublicSEO seo={{ title: 'Pabandi Trust & Passport', description: 'Build your Pabandi Passport with trust scores, social verification, and portable credibility across the informal economy.' }}><TrustPage /></PublicSEO>} />
-            <Route path="trust/pulse" element={<TrustPulsePage />} />
-            <Route path="trust/jury" element={<CommunityJuryPage />} />
-            {/* Privacy Policy */}
-            <Route path="privacy" element={<PrivacyPolicyPage />} />
-            {/* Terms of Service */}
-            <Route path="terms" element={<TermsOfServicePage />} />
-
-            {/* Shopify Embedded App Route */}
-            
-            <Route
-              path="dashboard"
-              element={<DashboardPage />}
-            />
-            <Route
-              path="business/register"
-              element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="business/crm"
-              element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="outreach"
-              element={isAuthenticated && user?.role === 'ADMIN' ? <OutreachCRMPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="business/settings"
-              element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="business/analytics"
-              element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="business/plugins"
-              element={isAuthenticated ? <PluginManagerPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="reservations"
-              element={isAuthenticated ? <ReservationsPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="reservations/new"
-              element={isAuthenticated ? <NewReservationPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="wallet"
-              element={isAuthenticated ? <WalletConnectPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="profile"
-              element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/wallet"
-              element={isAuthenticated ? <WalletPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/refer"
-              element={isAuthenticated ? <ReferAndEarnPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/verifier"
-              element={isAuthenticated ? <VerifierSandboxPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="passport"
-              element={isAuthenticated ? <DietaryPassportPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="passport/dashboard"
-              element={isAuthenticated ? <PassportDashboardPage /> : <Navigate to="/login" />}
-            />
-            <Route path="passport/:sellerId" element={<PublicPassportPage />} />
+            <Route path="developer" element={<DeveloperPortalPage />} />
+            <Route path="promo" element={<PromoPage />} />
+            <Route path="promotions" element={<PromotionsPage />} />
+            <Route path="daraz-scanner" element={<DarazScannerPage />} />
+            <Route path="u/:slug" element={<PublicCustomerProfilePage />} />
+            <Route path="user/:id" element={<PublicCustomerProfilePage />} />
+            <Route path="verify-email" element={<VerifyEmailPage />} />
+            <Route path="passport/dietary" element={<DietaryPassportPage />} />
+            <Route path="demo" element={<DemoWalkthroughPage />} />
+            <Route path="try" element={<Navigate to="/demo" replace />} />
+            <Route path="oauth/authorize" element={<OAuthConsentPage />} />
+            <Route path="outreach" element={isAuthenticated && user?.role === 'ADMIN' ? <OutreachCRMPage /> : <Navigate to="/login" />} />
+            <Route path="partners/dashboard" element={<PartnerDashboardPage />} />
+            <Route path="partners/marketplace" element={<MarketplacePartnerPage />} />
+            <Route path="sale/:id" element={<SalePage />} />
+            <Route path="waitlist" element={<WaitlistPage />} />
+            <Route path="r/:code" element={<ReferralLandingPage />} />
+            <Route path="city/:slug" element={<CityLandingPage />} />
           </Route>
-
-          {/* Standalone embeddable badge (chrome-free, for iframe embeds) */}
-                  </Routes>
+        </Routes>
       </LanguageProvider>
     </HelmetProvider>
   );

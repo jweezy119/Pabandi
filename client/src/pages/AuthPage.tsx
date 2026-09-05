@@ -4,7 +4,6 @@ import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/api';
 import { signMessageWithWallet } from '../utils/web3';
 import { Surface, tokens } from '../design-system';
-import { SocialLoginButtons } from '../components/SocialAuth';
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
@@ -542,10 +541,6 @@ export default function AuthPage() {
               </>
             )}
           </p>
-
-          <div className="mt-4">
-            <SocialLoginButtons />
-          </div>
         </Surface>
 
         {/* Trust badges */}
