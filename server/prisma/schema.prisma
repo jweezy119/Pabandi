@@ -42,7 +42,6 @@ model User {
   profilePictureUrl       String?
   tiktokId                String?                 @unique
   twitterId               String?                 @unique
-  githubId                String?                 @unique
   walletAddress           String?                 @unique
   stripeCustomerId        String?
   bountyPaid              Boolean                 @default(false)
@@ -958,7 +957,6 @@ model TrustAuditTrail {
   weightUsed    Float?
   metadata      Json?
   previousHash  String?
-  currentHash   String?
   methodology   String   @default("1.0.0")
   createdAt     DateTime @default(now())
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)

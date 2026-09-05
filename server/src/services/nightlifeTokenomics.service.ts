@@ -93,13 +93,12 @@ export const nightlifeTokenomicsService = {
     // Create reward transaction
     await prisma.agentTransaction.create({
       data: {
-        userId: guestList.userId,
         type: 'NIGHTLIFE_ATTENDANCE_REWARD',
         amount: TOKEN_RATES.GUEST_ATTENDANCE_REWARD,
         description: `Attended ${guestList.venue?.name}`,
         referenceType: 'GUEST_LIST',
         referenceId: guestListId,
-              },
+      },
     });
 
     return {
@@ -114,7 +113,7 @@ export const nightlifeTokenomicsService = {
 
     await prisma.agentTransaction.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'NIGHTLIFE_REVIEW_REWARD',
         amount: reward,
         description: isFirstReview ? 'First venue review' : 'Venue review',
@@ -146,7 +145,7 @@ export const nightlifeTokenomicsService = {
 
     await prisma.agentTransaction.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'NIGHTLIFE_BOTTLE_REBATE',
         amount: rebate,
         description: `Bottle purchase rebate ($${amount})`,
@@ -166,22 +165,22 @@ export const nightlifeTokenomicsService = {
     const tierConfig = STAKING_TIERS[tier as keyof typeof STAKING_TIERS];
     if (!tierConfig) return { error: 'Invalid tier' };
 
-    const existingStake = await prisma.pabStake.findFirst({
-      where: { userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
+    const existingStake = await prisma.agentStake.findFirst({
+      where: { agentId: userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
     });
 
     if (existingStake) {
       // Upgrade: refund old stake, create new
-      await prisma.pabStake.update({
+      await prisma.agentStake.update({
         where: { id: existingStake.id },
-        data: { status: 'UNSTAKED', unstakedAt: new Date() },
+        data: { txStatus: 'UNSTAKED', unstakedAt: new Date() },
       });
     }
 
     // Create new stake
-    const stake = await prisma.pabStake.create({
+    const stake = await prisma.agentStake.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'PROMOTER_TIER',
         tier,
         amount: tierConfig.minStake,
@@ -193,7 +192,7 @@ export const nightlifeTokenomicsService = {
     // Transfer $PAB from user wallet
     await prisma.agentTransaction.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'PROMOTER_TIER_STAKE',
         amount: -tierConfig.minStake,
         description: `Staked for ${tier} promoter tier`,
@@ -206,21 +205,21 @@ export const nightlifeTokenomicsService = {
   },
 
   async unstakePromoterTier(userId: string) {
-    const existingStake = await prisma.pabStake.findFirst({
-      where: { userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
+    const existingStake = await prisma.agentStake.findFirst({
+      where: { agentId: userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
     });
 
     if (!existingStake) return { error: 'No active stake found' };
 
-    await prisma.pabStake.update({
+    await prisma.agentStake.update({
       where: { id: existingStake.id },
-      data: { status: 'UNSTAKED', unstakedAt: new Date() },
+      data: { txStatus: 'UNSTAKED', unstakedAt: new Date() },
     });
 
     // Refund $PAB to user wallet
     await prisma.agentTransaction.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'PROMOTER_TIER_UNSTAKE',
         amount: existingStake.amount,
         description: `Unstaked ${existingStake.tier} promoter tier`,
@@ -265,7 +264,7 @@ export const nightlifeTokenomicsService = {
   async depositGuestListSpot(userId: string, guestListId: string, amountPab: number) {
     await prisma.agentTransaction.create({
       data: {
-        userId,
+        agentId: userId,
         type: 'GUEST_LIST_DEPOSIT',
         amount: -amountPab,
         description: `Guest list deposit for ${guestListId}`,
@@ -282,7 +281,7 @@ export const nightlifeTokenomicsService = {
 
   async returnGuestListDeposit(userId: string, guestListId: string, showUp: boolean) {
     const deposit = await prisma.agentTransaction.findFirst({
-      where: { userId, referenceId: guestListId, type: 'GUEST_LIST_DEPOSIT' },
+      where: { agentId: userId, referenceId: guestListId, type: 'GUEST_LIST_DEPOSIT' },
     });
 
     if (!deposit) return null;
@@ -297,7 +296,7 @@ export const nightlifeTokenomicsService = {
       const bonus = TOKEN_RATES.GUEST_DEPOSIT_RETURN_BONUS;
       await prisma.agentTransaction.create({
         data: {
-          userId,
+          agentId: userId,
           type: 'GUEST_LIST_DEPOSIT_RETURN',
           amount: deposit.amount + bonus,
           description: 'Deposit returned + no-show prevention bonus',
