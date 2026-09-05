@@ -42,6 +42,7 @@ model User {
   profilePictureUrl       String?
   tiktokId                String?                 @unique
   twitterId               String?                 @unique
+  githubId                String?                 @unique
   walletAddress           String?                 @unique
   stripeCustomerId        String?
   bountyPaid              Boolean                 @default(false)
