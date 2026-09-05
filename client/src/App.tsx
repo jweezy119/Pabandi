@@ -20,6 +20,11 @@ import PromoterOS from './pages/PromoterOS';
 import AgentControlPanel from './pages/AgentControlPanel';
 import NightlifeTokenomics from './pages/NightlifeTokenomics';
 import BackgroundCheckHub from './pages/BackgroundCheckHub';
+import AgentDashboardPage from './pages/AgentDashboardPage';
+import AgentMarketplacePage from './pages/AgentMarketplacePage';
+import GigBoardPage from './pages/GigBoardPage';
+import GigDetailPage from './pages/GigDetailPage';
+
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -101,7 +106,6 @@ import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
 import AgentPassportPage from './pages/AgentPassportPage';
 import RevenuePage from './pages/RevenuePage';
-import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
 import FreightPage from './pages/FreightPage';
@@ -285,6 +289,11 @@ function App() {
             <Route path="booking" element={<BookingOS />} />
             <Route path="nightlife" element={<NightlifePage />} />
             <Route path="promoter" element={<PromoterOS />} />
+            <Route path="agent-dashboard" element={<AgentDashboardPage />} />
+            <Route path="agent-marketplace" element={<AgentMarketplacePage />} />
+            <Route path="gigs" element={<GigBoardPage />} />
+            <Route path="gigs/:id" element={<GigDetailPage />} />
+
             <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
@@ -310,7 +319,7 @@ function App() {
             <Route path="storefront" element={<FreelanceStorefrontPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
             <Route path="public-records" element={<BackgroundCheckHub />} />
-            <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
+
             <Route path="promo" element={<PromoPage />} />
             <Route path="promotions" element={<PromotionsPage />} />
             <Route path="freight" element={<PublicSEO seo={{ title: "Freight & Logistics — Pabandi", description: "Ship goods with trusted carriers. Escrow-protected payments." }}><FreightPage /></PublicSEO>} />
