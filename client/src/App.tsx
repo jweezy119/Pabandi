@@ -37,8 +37,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
 import ProfileDetailPage from './pages/ProfileDetailPage';
 import EconomyDashboardPage from './pages/EconomyDashboardPage';
-import ProfilePage from './pages/ProfilePage';
-import { WalletPage } from './pages/WalletPage';
 import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
@@ -108,7 +106,6 @@ import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
 import FreightPage from './pages/FreightPage';
 import PpdWizardPage from './pages/PpdWizardPage';
-import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
 import PayrollPage from './pages/PayrollPage';
 import ArbitrationPage from './pages/ArbitrationPage';
@@ -204,7 +201,6 @@ function App() {
           <Route path="/escrow/:id" element={<EscrowDetailPage />} />
           {/* Token & Wallet */}
           <Route path="/tokenomics" element={<TokenomicsPage />} />
-          <Route path="/wallet" element={<WalletConnectPage />} />
           <Route path="/onramp" element={<OnRampPage />} />
           <Route path="/offramp" element={<OffRampPage />} />
           <Route path="/token" element={<TokenFlowPage />} />
@@ -274,11 +270,8 @@ function App() {
             />
             <Route path="/onboarding" element={<OnboardingPage />} />
 
-            <Route path="/wallet" element={<WalletConnectPage />} />
-                        <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
+            <Route path="/lp-terminal" element={<LiquidityTerminalPage />} />
 
-            <Route path="/waitlist" element={<WaitlistPage />} />
-                        
             <Route path="/u/:slug" element={<PublicCustomerProfilePage />} />
             <Route path="business/:id" element={<BusinessProfilePage />} />
             <Route path="checkout/:sessionId" element={<CheckoutSessionPage />} />
@@ -292,7 +285,6 @@ function App() {
             <Route path="booking" element={<BookingOS />} />
             <Route path="nightlife" element={<NightlifePage />} />
             <Route path="promoter" element={<PromoterOS />} />
-            <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
@@ -325,7 +317,7 @@ function App() {
             <Route path="rewards" element={<PublicSEO seo={{ title: '$PAB Rewards — Pabandi', description: 'Earn, spend, and stake $PAB tokens.' }}><RewardsPage /></PublicSEO>} />
             <Route path="protected-deposit" element={<PpdWizardPage />} />
             <Route path="trust/:handle" element={<TrustPassportPage />} />
-            <Route path="trust" element={<PassportDirectoryPage />} />
+
             <Route path="agent-passport" element={<AgentPassportPage />} />
             <Route path="agent-panel" element={<AgentControlPanel />} />
             <Route path="nightlife-tokenomics" element={<NightlifeTokenomics />} />
@@ -393,14 +385,7 @@ function App() {
               path="wallet"
               element={isAuthenticated ? <WalletConnectPage /> : <Navigate to="/login" />}
             />
-            <Route
-              path="profile"
-              element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/wallet"
-              element={isAuthenticated ? <WalletPage /> : <Navigate to="/login" />}
-            />
+
             <Route
               path="/refer"
               element={isAuthenticated ? <ReferAndEarnPage /> : <Navigate to="/login" />}
