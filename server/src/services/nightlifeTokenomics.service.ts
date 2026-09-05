@@ -166,7 +166,7 @@ export const nightlifeTokenomicsService = {
     if (!tierConfig) return { error: 'Invalid tier' };
 
     const existingStake = await prisma.agentStake.findFirst({
-      where: { agentId: userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
+      where: { agentId: userId, type: 'PROMOTER_TIER', txStatus: 'ACTIVE' },
     });
 
     if (existingStake) {
@@ -206,7 +206,7 @@ export const nightlifeTokenomicsService = {
 
   async unstakePromoterTier(userId: string) {
     const existingStake = await prisma.agentStake.findFirst({
-      where: { agentId: userId, type: 'PROMOTER_TIER', status: 'ACTIVE' },
+      where: { agentId: userId, type: 'PROMOTER_TIER', txStatus: 'ACTIVE' },
     });
 
     if (!existingStake) return { error: 'No active stake found' };
