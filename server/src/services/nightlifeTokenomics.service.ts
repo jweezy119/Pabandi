@@ -91,7 +91,7 @@ export const nightlifeTokenomicsService = {
     });
 
     // Create reward transaction
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId: guestList.userId,
         type: 'NIGHTLIFE_ATTENDANCE_REWARD',
@@ -99,8 +99,7 @@ export const nightlifeTokenomicsService = {
         description: `Attended ${guestList.venue?.name}`,
         referenceType: 'GUEST_LIST',
         referenceId: guestListId,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return {
@@ -113,7 +112,7 @@ export const nightlifeTokenomicsService = {
   async rewardGuestReview(userId: string, reviewId: string, isFirstReview: boolean) {
     const reward = isFirstReview ? TOKEN_RATES.GUEST_FIRST_REVIEW_REWARD : TOKEN_RATES.GUEST_REVIEW_REWARD;
 
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId,
         type: 'NIGHTLIFE_REVIEW_REWARD',
@@ -121,15 +120,14 @@ export const nightlifeTokenomicsService = {
         description: isFirstReview ? 'First venue review' : 'Venue review',
         referenceType: 'REVIEW',
         referenceId: reviewId,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { amount: reward, reason: isFirstReview ? 'First review bonus' : 'Review reward' };
   },
 
   async rewardGuestReferral(referrerId: string, referredUserId: string) {
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId: referrerId,
         type: 'NIGHTLIFE_REFERRAL_REWARD',
@@ -137,8 +135,7 @@ export const nightlifeTokenomicsService = {
         description: 'Referred friend attended event',
         referenceType: 'REFERRAL',
         referenceId: referredUserId,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { amount: TOKEN_RATES.GUEST_REFERRAL_REWARD, reason: 'Referral reward' };
@@ -147,7 +144,7 @@ export const nightlifeTokenomicsService = {
   async rewardBottlePurchase(userId: string, amount: number, bottleReservationId: string) {
     const rebate = Math.round(amount * TOKEN_RATES.GUEST_BOTTLE_PURCHASE_REBATE * 100) / 100;
 
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId,
         type: 'NIGHTLIFE_BOTTLE_REBATE',
@@ -155,8 +152,7 @@ export const nightlifeTokenomicsService = {
         description: `Bottle purchase rebate ($${amount})`,
         referenceType: 'BOTTLE_RESERVATION',
         referenceId: bottleReservationId,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { amount: rebate, reason: 'Bottle purchase rebate' };
@@ -190,13 +186,12 @@ export const nightlifeTokenomicsService = {
         tier,
         amount: tierConfig.minStake,
         benefits: tierConfig.benefits,
-        status: 'ACTIVE',
-        stakedAt: new Date(),
+                stakedAt: new Date(),
       },
     });
 
     // Transfer $PAB from user wallet
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId,
         type: 'PROMOTER_TIER_STAKE',
@@ -204,8 +199,7 @@ export const nightlifeTokenomicsService = {
         description: `Staked for ${tier} promoter tier`,
         referenceType: 'PROMOTER_STAKE',
         referenceId: stake.id,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { stake, tierConfig };
@@ -224,7 +218,7 @@ export const nightlifeTokenomicsService = {
     });
 
     // Refund $PAB to user wallet
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId,
         type: 'PROMOTER_TIER_UNSTAKE',
@@ -232,8 +226,7 @@ export const nightlifeTokenomicsService = {
         description: `Unstaked ${existingStake.tier} promoter tier`,
         referenceType: 'PROMOTER_STAKE',
         referenceId: existingStake.id,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { refunded: existingStake.amount, tier: existingStake.tier };
@@ -252,15 +245,14 @@ export const nightlifeTokenomicsService = {
     const discount = 0.10;
     const finalPab = Math.round(amountPab * (1 - discount) * 100) / 100;
 
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         type: 'VENUE_SUBSCRIPTION',
         amount: -finalPab,
         description: `Venue subscription ($${amountUsd} → ${finalPab} $PAB, 10% discount)`,
         referenceType: 'VENUE',
         referenceId: venueId,
-        status: 'COMPLETED',
-      },
+              },
     });
 
     return { amountUsd, amountPab: finalPab, discount: discount * 100 };
@@ -271,7 +263,7 @@ export const nightlifeTokenomicsService = {
   // ═══════════════════════════════════════════════════════════════════════════
   
   async depositGuestListSpot(userId: string, guestListId: string, amountPab: number) {
-    await prisma.pabTransaction.create({
+    await prisma.agentTransaction.create({
       data: {
         userId,
         type: 'GUEST_LIST_DEPOSIT',
@@ -289,7 +281,7 @@ export const nightlifeTokenomicsService = {
   },
 
   async returnGuestListDeposit(userId: string, guestListId: string, showUp: boolean) {
-    const deposit = await prisma.pabTransaction.findFirst({
+    const deposit = await prisma.agentTransaction.findFirst({
       where: { userId, referenceId: guestListId, type: 'GUEST_LIST_DEPOSIT' },
     });
 
@@ -297,13 +289,13 @@ export const nightlifeTokenomicsService = {
 
     if (showUp) {
       // Return deposit + bonus
-      await prisma.pabTransaction.update({
+      await prisma.agentTransaction.update({
         where: { id: deposit.id },
         data: { status: 'COMPLETED' },
       });
 
       const bonus = TOKEN_RATES.GUEST_DEPOSIT_RETURN_BONUS;
-      await prisma.pabTransaction.create({
+      await prisma.agentTransaction.create({
         data: {
           userId,
           type: 'GUEST_LIST_DEPOSIT_RETURN',
@@ -311,14 +303,13 @@ export const nightlifeTokenomicsService = {
           description: 'Deposit returned + no-show prevention bonus',
           referenceType: 'GUEST_LIST',
           referenceId: guestListId,
-          status: 'COMPLETED',
-        },
+                  },
       });
 
       return { returned: deposit.amount + bonus, bonus };
     } else {
       // Forfeit deposit to venue
-      await prisma.pabTransaction.update({
+      await prisma.agentTransaction.update({
         where: { id: deposit.id },
         data: { status: 'FORFEITED' },
       });
@@ -336,7 +327,7 @@ export const nightlifeTokenomicsService = {
     const periods = { day: 1, week: 7, month: 30 };
     const since = new Date(now.getTime() - periods[period] * 24 * 60 * 60 * 1000);
 
-    const transactions = await prisma.pabTransaction.findMany({
+    const transactions = await prisma.agentTransaction.findMany({
       where: { createdAt: { gte: since }, status: 'COMPLETED' },
     });
 
