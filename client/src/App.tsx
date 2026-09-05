@@ -19,6 +19,7 @@ import NightlifePage from './pages/NightlifePage';
 import PromoterOS from './pages/PromoterOS';
 import AgentControlPanel from './pages/AgentControlPanel';
 import NightlifeTokenomics from './pages/NightlifeTokenomics';
+import BackgroundCheckHub from './pages/BackgroundCheckHub';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -100,7 +101,6 @@ import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
-import BackgroundCheckPage from './pages/BackgroundCheckPage';
 import AgentPassportPage from './pages/AgentPassportPage';
 import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
@@ -317,7 +317,7 @@ function App() {
             <Route path="freelance" element={<FreelancePage />} />
             <Route path="storefront" element={<FreelanceStorefrontPage />} />
             <Route path="daraz-scanner" element={<DarazScannerPage />} />
-            <Route path="background-check" element={<BackgroundCheckPage />} />
+            <Route path="public-records" element={<BackgroundCheckHub />} />
             <Route path="background-check/:id" element={<BackgroundCheckReportPage />} />
             <Route path="promo" element={<PromoPage />} />
             <Route path="promotions" element={<PromotionsPage />} />
