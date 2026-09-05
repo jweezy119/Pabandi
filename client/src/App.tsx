@@ -17,6 +17,7 @@ import BookingExperience from './pages/BookingExperience';
 import BookingOS from './pages/BookingOS';
 import NightlifePage from './pages/NightlifePage';
 import PromoterOS from './pages/PromoterOS';
+import AgentControlPanel from './pages/AgentControlPanel';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -100,7 +101,6 @@ import LiveSellingPage from './pages/LiveSellingPage';
 import FreelancePage from './pages/FreelancePage';
 import BackgroundCheckPage from './pages/BackgroundCheckPage';
 import AgentPassportPage from './pages/AgentPassportPage';
-import AgentMarketplacePage from './pages/AgentMarketplacePage';
 import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
@@ -326,7 +326,7 @@ function App() {
             <Route path="trust/:handle" element={<TrustPassportPage />} />
             <Route path="trust" element={<PassportDirectoryPage />} />
             <Route path="agent-passport" element={<AgentPassportPage />} />
-            <Route path="agents" element={<AgentMarketplacePage />} />
+            <Route path="agent-panel" element={<AgentControlPanel />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="cashout" element={<CashOutPage />} />
             <Route path="payroll" element={<PayrollPage />} />

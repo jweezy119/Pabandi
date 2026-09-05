@@ -3841,3 +3841,32 @@ model PromoterReview {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+model AgentExecution {
+  id          String   @id @default(cuid())
+  agentType   String
+  agentId     String
+  actionType  String
+  payload     Json
+  result      Json?
+  priority    String
+  reason      String
+  executedAt  DateTime @default(now())
+  userId      String?
+  venueId     String?
+  promoterId  String?
+  metadata    Json?
+
+  @@index([agentType])
+  @@index([executedAt])
+  @@index([venueId])
+}
+
+model AgentOrchestration {
+  id          String   @id @default(cuid())
+  context     Json
+  results     Json
+  conflicts   Json?
+  resolvedAt  DateTime @default(now())
+
+  @@index([resolvedAt])
+}
