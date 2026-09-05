@@ -18,6 +18,7 @@ import BookingOS from './pages/BookingOS';
 import NightlifePage from './pages/NightlifePage';
 import PromoterOS from './pages/PromoterOS';
 import AgentControlPanel from './pages/AgentControlPanel';
+import NightlifeTokenomics from './pages/NightlifeTokenomics';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -327,6 +328,7 @@ function App() {
             <Route path="trust" element={<PassportDirectoryPage />} />
             <Route path="agent-passport" element={<AgentPassportPage />} />
             <Route path="agent-panel" element={<AgentControlPanel />} />
+            <Route path="nightlife-tokenomics" element={<NightlifeTokenomics />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="cashout" element={<CashOutPage />} />
             <Route path="payroll" element={<PayrollPage />} />

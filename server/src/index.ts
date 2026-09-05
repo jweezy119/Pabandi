@@ -95,6 +95,8 @@ import promotionsRoutes from './routes/promotions.routes';
 import nightlifeRoutes from './routes/nightlife.routes';
 import venuesRoutes from './routes/venues.routes';
 import nightlifeIntegrationRoutes from './routes/nightlifeIntegration.routes';
+import nightlifeTokenomicsRoutes from './routes/nightlifeTokenomics.routes';
+import inventoryRoutes from './routes/inventory.routes';
 import agenticRoutes from './routes/agentic.routes';
 import monetizationRoutes from './routes/monetization.routes';
 import linkedinRoutes from './routes/linkedin.routes';

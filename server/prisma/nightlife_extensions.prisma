@@ -1,0 +1,242 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// INVENTORY MODELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model InventoryCategory {
+  id        String   @id @default(cuid())
+  venueId   String
+  name      String
+  type      String   // BOTTLE, MIXER, SUPPLY, OTHER
+  
+  products  InventoryProduct[]
+  
+  createdAt DateTime @default(now())
+  
+  @@index([venueId])
+}
+
+model InventoryProduct {
+  id            String   @id @default(cuid())
+  venueId       String
+  categoryId    String?
+  vendorId      String?
+  
+  name          String
+  brand         String?
+  type          String   // VODKA, CHAMPAGNE, TEQUILA, WHISKEY, MIXER, SUPPLY
+  sku           String?
+  barcode       String?
+  size          String   // 750ml, 1L, etc.
+  
+  currentStock  Int      @default(0)
+  parLevel      Int      @default(0)      // Minimum stock before reorder alert
+  reorderQuantity Int    @default(0)      // How much to reorder
+  unitPrice     Float    @default(0)      // Cost per unit
+  retailPrice   Float    @default(0)      // Sale price (for bottles)
+  
+  autoReorder   Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  
+  category      InventoryCategory? @relation(fields: [categoryId], references: [id])
+  vendor        InventoryVendor? @relation(fields: [vendorId], references: [id])
+  
+  transactions  InventoryTransaction[]
+  wasteRecords  WasteRecord[]
+  orderItems    PurchaseOrderItem[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([venueId])
+  @@index([categoryId])
+  @@index([vendorId])
+}
+
+model InventoryVendor {
+  id            String   @id @default(cuid())
+  venueId       String
+  
+  name          String
+  contactName   String?
+  phone         String?
+  email         String?
+  address       String?
+  notes         String?
+  
+  products      InventoryProduct[]
+  purchaseOrders PurchaseOrder[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([venueId])
+}
+
+model InventoryTransaction {
+  id            String   @id @default(cuid())
+  productId     String
+  product       InventoryProduct @relation(fields: [productId], references: [id])
+  
+  type          String   // IN (stock in), OUT (stock out), WASTE, ADJUSTMENT
+  quantity      Int
+  reason        String
+  balanceAfter  Int
+  
+  referenceType String?  // PURCHASE_ORDER, WASTE, SALE, MANUAL
+  referenceId   String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([productId])
+  @@index([type])
+}
+
+model WasteRecord {
+  id            String   @id @default(cuid())
+  venueId       String
+  productId     String
+  product       InventoryProduct @relation(fields: [productId], references: [id])
+  
+  quantity      Int
+  reason        String   // SPILL, EXPIRED, OVERPOUR, BROKEN, OTHER
+  notes         String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([venueId])
+  @@index([productId])
+}
+
+model PurchaseOrder {
+  id            String   @id @default(cuid())
+  poNumber      String   @unique
+  venueId       String
+  vendorId      String
+  vendor        InventoryVendor @relation(fields: [vendorId], references: [id])
+  
+  status        String   // DRAFT, SUBMITTED, RECEIVED, CANCELLED
+  
+  notes         String?
+  
+  items         PurchaseOrderItem[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  submittedAt   DateTime?
+  receivedAt    DateTime?
+  
+  @@index([venueId])
+  @@index([vendorId])
+}
+
+model PurchaseOrderItem {
+  id            String   @id @default(cuid())
+  poId          String
+  po            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  productId     String
+  product       InventoryProduct @relation(fields: [productId], references: [id])
+  
+  quantity      Int
+  unitPrice     Float
+  totalPrice    Float    @default(0)
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([poId])
+  @@index([productId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOCIAL MEDIA MODELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SocialAccount {
+  id              String   @id @default(cuid())
+  userId          String
+  platform        String   // INSTAGRAM, TIKTOK, TWITTER, FACEBOOK, WHATSAPP, SNAPCHAT
+  
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  
+  username        String?
+  displayName     String?
+  profileUrl      String?
+  followerCount   Int?
+  followingCount  Int?
+  postCount       Int?
+  
+  connectedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  shares          SocialShare[]
+  
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model SocialShare {
+  id            String   @id @default(cuid())
+  userId        String
+  socialAccount SocialAccount @relation(fields: [userId], references: [id])
+  
+  platform      String
+  contentType   String   // VENUE, EVENT, GUEST_LIST, BOTTLE, BOOKING
+  referenceId   String
+  
+  shareUrl      String?
+  externalUrl   String?  // URL on the social platform
+  
+  status        String   // SHARED, FAILED, DELETED
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([userId])
+  @@index([contentType])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOKENOMICS MODELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model PabStake {
+  id            String   @id @default(cuid())
+  userId        String
+  type          String   // PROMOTER_TIER, VENUE_TIER, GUEST_TRUST
+  
+  tier          String   // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
+  amount        Float
+  benefits      String[]
+  
+  status        String   // ACTIVE, UNSTAKED, SLASHED
+  
+  stakedAt      DateTime @default(now())
+  unstakedAt    DateTime?
+  expiresAt     DateTime?
+  
+  @@index([userId])
+  @@index([type])
+}
+
+model PabTransaction {
+  id            String   @id @default(cuid())
+  userId        String?
+  
+  type          String   // NIGHTLIFE_ATTENDANCE_REWARD, NIGHTLIFE_REVIEW_REWARD, NIGHTLIFE_REFERRAL_REWARD, NIGHTLIFE_BOTTLE_REBATE, PROMOTER_TIER_STAKE, PROMOTER_TIER_UNSTAKE, VENUE_SUBSCRIPTION, GUEST_LIST_DEPOSIT, GUEST_LIST_DEPOSIT_RETURN, REFERRAL
+  amount        Float
+  description   String
+  
+  referenceType String?
+  referenceId   String?
+  
+  status        String   // COMPLETED, PENDING, HELD, FORFEITED, CANCELLED
+  
+  metadata      Json?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
