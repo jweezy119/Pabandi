@@ -95,20 +95,18 @@ export const backgroundCheckService = {
       }),
     };
 
-    // Save to database (using existing model)
+    // Save to database (using existing comprehensive model)
     if (data.userId) {
       await prisma.backgroundCheck.create({
         data: {
           subjectType: 'GUEST',
           subjectName: `${data.firstName} ${data.lastName}`,
-          subjectEmail: undefined,
-          subjectPhone: undefined,
           requestedBy: data.userId,
           status: 'COMPLETE',
           riskScore: profile.riskAssessment?.score || 50,
           riskBand: profile.riskAssessment?.rating || 'MEDIUM_RISK',
           recommendation: profile.riskAssessment?.recommendation || 'Review required',
-          summary: `Background check for ${data.firstName} ${data.lastName}`,
+          summary: `Background check for ${data.firstName} ${data.lastName}. ${profile.riskAssessment?.factors?.join('. ')}.`,
           // Store raw data in existing result fields
           courtResult: profile.courtRecords as any,
           criminalResult: profile.criminalRecords as any,
@@ -116,6 +114,7 @@ export const backgroundCheckService = {
           fbiResult: profile.fbi as any,
           interpolResult: profile.interpol as any,
           sexOffenderResult: profile.sexOffender as any,
+          completedAt: new Date(),
         } as any,
       });
     }
