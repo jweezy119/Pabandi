@@ -12,7 +12,7 @@ import {
   FiCheckCircle,
   FiChevronRight,
   FiSearch,
-  FiBuilding,
+  FiBuilding2,
 } from 'react-icons/fi';
 
 const EQUIPMENT_TYPES = ['DRY_VAN', 'REEFER', 'FLATBED', 'STEP_DECK', 'POWER_ONLY', 'BOX_TRUCK'];

@@ -330,7 +330,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-grow mobile-safe-bottom">
+      <main className="flex-grow mobile-safe-bottom pt-14 sm:pt-16 pb-16 md:pb-0">
         <PageTransition>
           <Outlet />
         </PageTransition>

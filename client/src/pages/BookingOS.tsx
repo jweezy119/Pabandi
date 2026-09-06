@@ -8,6 +8,8 @@ const CATEGORIES = [
   { id: 'bar', label: 'Bars', icon: '🍸' },
   { id: 'cafe', label: 'Cafes', icon: '☕' },
   { id: 'club', label: 'Clubs', icon: '🎵' },
+  { id: 'nightclub', label: 'Nightclubs', icon: '🌃' },
+  { id: 'lounge', label: 'Lounges', icon: '🥂' },
   { id: 'event', label: 'Events', icon: '🎉' },
   { id: 'hotel', label: 'Hotels', icon: '🏨' },
   { id: 'theater', label: 'Theaters', icon: '🎭' },
@@ -395,10 +397,32 @@ const VenueCard: React.FC<{
 const VenueDetailModal: React.FC<{ venue: any; onClose: () => void; onReserve: (venue: any) => void }> = ({ venue, onClose, onReserve }) => {
   const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews'>('overview');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
   const amenities = renderAmenities(venue);
   const hours = formatHours(venue);
 
   const estimatedDeposit = venue.trustScore >= 80 ? 0 : venue.trustScore >= 50 ? 5 : 15;
+
+  // Fetch photos when modal opens
+  React.useEffect(() => {
+    const fetchPhotos = async () => {
+      if (!venue.source || !venue.id) return;
+      setLoadingPhotos(true);
+      try {
+        const response = await fetch(`/api/v1/venues/photos/${venue.source}/${venue.id}`);
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          setPhotos(data.data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch photos:', e);
+      } finally {
+        setLoadingPhotos(false);
+      }
+    };
+    fetchPhotos();
+  }, [venue]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
@@ -407,8 +431,8 @@ const VenueDetailModal: React.FC<{ venue: any; onClose: () => void; onReserve: (
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
-          {venue.imageUrl || (venue.photos && venue.photos.length > 0) ? (
-            <ImageGallery images={venue.photos && venue.photos.length > 0 ? venue.photos : [venue.imageUrl]} name={venue.name} />
+          {photos.length > 0 || venue.imageUrl ? (
+            <ImageGallery images={photos.length > 0 ? photos : [venue.imageUrl]} name={venue.name} loading={loadingPhotos} />
           ) : (
             <div className="w-full h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center rounded-t-2xl">
               <span className="text-6xl">🍽️</span>
@@ -545,10 +569,18 @@ const VenueDetailModal: React.FC<{ venue: any; onClose: () => void; onReserve: (
 };
 
 // ─── Photo Gallery ──────────────────────────────────────────────────────────
-const ImageGallery: React.FC<{ images: string[]; name: string }> = ({ images, name }) => {
+const ImageGallery: React.FC<{ images: string[]; name: string; loading?: boolean }> = ({ images, name, loading }) => {
   const [current, setCurrent] = useState(0);
   const validImages = (images || []).filter((u) => u && typeof u === 'string');
   const showNav = validImages.length > 1;
+
+  if (loading) {
+    return (
+      <div className="w-full h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center rounded-t-2xl animate-pulse">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   if (!validImages.length) {
     return (

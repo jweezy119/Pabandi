@@ -68,9 +68,9 @@ export const BookingLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive: isActiveNav }) => `
+                className={({ isActive }) => `
                   flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all $
-                  {isActiveNav 
+                  {isActive 
                     ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-400/20' 
                     : 'text-slate-300 hover:bg-white/5 hover:text-white'}
                 `}

@@ -8,16 +8,17 @@ import { web3AgentService } from '../services/web3Agent.service';
 const router = Router();
 
 // Defer profile seeding to after server startup — the ProfileSeeder makes
-// external API calls (GitHub, AngelList, etc.) that can take 30+ seconds,
-// which would cause Render's health check to time out during deploy.
-if (!linkedinProfileSeeder.getProfiles()?.length) {
-  logger.info('[LinkedInSeed] Seeding profiles on startup from local JSON...');
-  setTimeout(() => {
-    linkedinProfileSeeder.seedAllProfiles(25).catch((e: any) => {
-      logger.error('[LinkedInSeed] Startup seed failed: ' + e.message);
-    });
-  }, 1000);
-}
+// external API calls (GitHub, AngelList, etc.) that can take 30+ seconds
+// and use significant memory, which can cause OOM on Render's free tier.
+// Seeding can be triggered via POST /api/v1/linkedin/seed
+// if (!linkedinProfileSeeder.getProfiles()?.length) {
+//   logger.info('[LinkedInSeed] Seeding profiles on startup from local JSON...');
+//   setTimeout(() => {
+//     linkedinProfileSeeder.seedAllProfiles(25).catch((e: any) => {
+//       logger.error('[LinkedInSeed] Startup seed failed: ' + e.message);
+//     });
+//   }, 1000);
+// }
 
 /**
  * POST /api/v1/linkedin/seed

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { Button } from '../../design-system';
-import { FiPackage, FiPlus, FiList, FiActivity, FiFileText, FiShield, FiTrendingUp, FiSettings, FiLogOut, FiMenu, FiX, FiHome } from 'react-icons/fi';
+
+import { FiPackage, FiPlus, FiList, FiActivity, FiFileText, FiShield, FiTrendingUp, FiSettings, FiLogOut, FiMenu, FiX, FiHome, FiUsers } from 'react-icons/fi';
 
 const navigation = [
   { path: '/freight', label: 'Dashboard', icon: FiHome, roles: [] },
@@ -76,9 +76,9 @@ export const FreightLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive: isActiveNav }) => `
+                className={({ isActive }) => `
                   flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all $
-                  {isActiveNav 
+                  {isActive 
                     ? 'bg-orange-500/15 text-orange-300 border border-orange-400/20' 
                     : 'text-slate-300 hover:bg-white/5 hover:text-white'}
                 `}
