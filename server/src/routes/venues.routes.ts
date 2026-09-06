@@ -9,7 +9,7 @@ const FOURSQUARE_API_KEY = process.env.FOURSQUARE_API_KEY || '';
 const OPENMENU_API_KEY = process.env.OPENMENU_API_KEY || '';
 
 const yelpHeaders = { Authorization: `Bearer ${YELP_API_KEY}` };
-const foursquareHeaders = { Authorization: FOURSQUARE_API_KEY };
+const foursquareHeaders = { Authorization: `Bearer ${FOURSQUARE_API_KEY}`, Accept: 'application/json' };
 
 // ── Unified Venue Search ──────────────────────────────────────────────────
 // Searches Yelp, Foursquare, and OSM in parallel, deduplicates, and merges data
