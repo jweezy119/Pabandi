@@ -222,7 +222,7 @@ export const TenantWorkflowPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'radial-gradient(circle at top left, #0f172a, #020617)' }}>
+    <div className="pb-24 md:pb-0 mt-16" style={{ background: 'radial-gradient(circle at top left, #0f172a, #020617)' }}>
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-10">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-slate-100">Tenant Workflow</h1>

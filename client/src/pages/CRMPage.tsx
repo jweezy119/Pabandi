@@ -96,8 +96,8 @@ export const CRMPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 md:pb-0" style={{ background: tokens.color.background }}>
-      {/* Header */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3 md:px-8">
+      {/* Secondary CRM Header (Layout header handles top-level nav) */}
+      <div className="sticky top-16 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3 md:px-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">{dash!.profile.companyName || 'My Business'}</h1>

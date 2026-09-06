@@ -222,8 +222,8 @@ export default function BookingExperience() {
   // ── Detail + Booking View ────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3">
+      {/* Header (Layout header handles main nav; this is booking-specific context) */}
+      <header className="sticky top-16 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button onClick={() => setStep('search')} className="text-slate-400 hover:text-white">
             ← Back

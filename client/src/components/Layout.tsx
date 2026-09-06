@@ -215,7 +215,6 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
-  const isDetailScreen = location.pathname.includes('/book') || location.pathname.includes('/new');
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
@@ -338,7 +337,7 @@ export default function Layout() {
         <GlobalAIConciergeWidget />
       </main>
 
-      {!isAuthPage && !isDetailScreen && (
+      {!isAuthPage && (
         <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden">
           <div className="flex justify-around items-center px-2 py-2 safe-area-bottom">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
@@ -363,6 +362,48 @@ export default function Layout() {
             </button>
           </div>
         </nav>
+      )}
+
+      {/* Desktop Footer — always shown except on auth pages */}
+      {!isAuthPage && (
+        <footer className="hidden md:block bg-surface-bright/30 backdrop-blur-xl border-t border-outline-variant/10 mt-auto">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="grid grid-cols-4 gap-8 text-sm">
+              <div>
+                <p className="font-headline font-bold text-base text-on-surface mb-3">Pabandi</p>
+                <p className="text-on-surface-variant text-xs">One-stop shop: sell, buy, book, hire — all with trust &amp; $PAB rewards.</p>
+                <p className="text-on-surface-variant text-xs mt-2">© {new Date().getFullYear()} Pabandi. All rights reserved.</p>
+              </div>
+              <div>
+                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Marketplace</p>
+                <Link to="/live-selling" className="block text-on-surface-variant hover:text-primary py-1">Live Selling</Link>
+                <Link to="/freelance" className="block text-on-surface-variant hover:text-primary py-1">Freelancers</Link>
+                <Link to="/gigs" className="block text-on-surface-variant hover:text-primary py-1">Gig Board</Link>
+                <Link to="/hospitality" className="block text-on-surface-variant hover:text-primary py-1">Hospitality</Link>
+                <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">Freight</Link>
+                <Link to="/marketplace" className="block text-on-surface-variant hover:text-primary py-1">Marketplace</Link>
+              </div>
+              <div>
+                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Trust &amp; Money</p>
+                <Link to="/trust" className="block text-on-surface-variant hover:text-primary py-1">Trust Passports</Link>
+                <Link to="/protected-deposit" className="block text-on-surface-variant hover:text-primary py-1">Protected Deposit</Link>
+                <Link to="/escrow" className="block text-on-surface-variant hover:text-primary py-1">Escrow</Link>
+                <Link to="/cashout" className="block text-on-surface-variant hover:text-primary py-1">Cash Out</Link>
+                <Link to="/economy" className="block text-on-surface-variant hover:text-primary py-1">Economy</Link>
+                <Link to="/web3" className="block text-on-surface-variant hover:text-primary py-1">Web3</Link>
+              </div>
+              <div>
+                <p className="font-headline font-semibold text-sm text-on-surface mb-3">Company</p>
+                <Link to="/about" className="block text-on-surface-variant hover:text-primary py-1">About</Link>
+                <Link to="/sharia-compliance" className="block text-on-surface-variant hover:text-primary py-1">Sharia Compliance</Link>
+                <Link to="/technology" className="block text-on-surface-variant hover:text-primary py-1">Technology</Link>
+                <Link to="/contact" className="block text-on-surface-variant hover:text-primary py-1">Contact</Link>
+                <Link to="/developer" className="block text-on-surface-variant hover:text-primary py-1">API Docs</Link>
+                <Link to="/blog" className="block text-on-surface-variant hover:text-primary py-1">Blog</Link>
+              </div>
+            </div>
+          </div>
+        </footer>
       )}
 
       {searchOpen && <SearchSheet onClose={() => setSearchOpen(false)} />}

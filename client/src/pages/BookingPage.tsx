@@ -210,19 +210,16 @@ export default function BookingPage() {
   }
 
   return (
-    <div
-      className="min-h-screen text-slate-100 antialiased"
-      style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
-    >
-      {/* Top App Bar */}
-      <header className="sticky top-0 z-40 hidden md:flex items-center justify-between bg-background/80 px-6 py-4 backdrop-blur-md">
-        <h1 className="cursor-pointer font-headline text-2xl font-bold tracking-tighter text-primary" onClick={() => navigate('/')}>Pabandi</h1>
-        <div className="flex items-center gap-4">
-          {isAuthenticated ? (
-            <button onClick={() => navigate('/reservations')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">My Bookings</button>
-          ) : (
-            <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">Sign In</button>
-          )}
+    <div className="min-h-screen text-slate-100 antialiased" style={{ background: tokens.color.background, fontFamily: tokens.font.body }}>
+    {/* Top App Bar (Layout header handles main nav; this is booking-specific context) */}
+    <header className="sticky top-16 z-40 hidden md:flex items-center justify-between bg-surface/80 px-6 py-4 border-b border-white/5 backdrop-blur-md">
+      <h1 className="cursor-pointer font-headline text-xl font-bold tracking-tighter text-primary" onClick={() => navigate('/')}>Pabandi</h1>
+      <div className="flex items-center gap-4">
+        {isAuthenticated ? (
+          <button onClick={() => navigate('/reservations')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">My Bookings</button>
+        ) : (
+          <button onClick={() => navigate('/login')} className="text-sm font-medium text-slate-300 transition-colors hover:text-primary">Sign In</button>
+        )}
         </div>
       </header>
 
