@@ -38,7 +38,7 @@ const WHY_PABANDI = [
 ];
 
 export const CityLandingPage: React.FC = () => {
-  const pathCity = window.location.pathname.split('/')[1] || '';
+  const pathCity = window.location.pathname.split('/')[2] || '';
   const city = pathCity.toLowerCase() === 'chicago' ? 'chicago' : pathCity.toLowerCase() === 'new-york' ? 'new-york' : '';
   const data = CITY_DATA[city];
 
@@ -67,7 +67,7 @@ export const CityLandingPage: React.FC = () => {
         body: JSON.stringify({ ...formData, role: 'Business', location: data.name, why: `Business Interest from ${data.name} landing page` }),
       });
       setSubmitted(true);
-    } catch { setSubmitted(true); } // still show success to not frustrate user
+    } catch { setSubmitted(true); }
     finally { setSubmitting(false); }
   };
 
@@ -84,6 +84,8 @@ export const CityLandingPage: React.FC = () => {
           Pabandi
         </Link>
         <div className="flex items-center gap-4">
+          <Link to="/search" className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white hover:bg-white/20">Search</Link>
+          <Link to="/booking" className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white hover:bg-white/20">Book</Link>
           <Link to="/chicago" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'chicago' ? 'bg-sky-500/20 text-sky-400' : 'text-white/40 hover:text-white'}`}>Chicago</Link>
           <Link to="/new-york" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'new-york' ? 'bg-amber-500/20 text-amber-400' : 'text-white/40 hover:text-white'}`}>New York</Link>
         </div>

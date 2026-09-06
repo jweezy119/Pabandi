@@ -25,9 +25,7 @@ export const BookingOS: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
-
   useEffect(() => {
-    // Default location
     setLocation({ lat: 40.7589, lng: -73.9851, name: 'Times Square, New York' });
   }, []);
 
@@ -41,7 +39,6 @@ export const BookingOS: React.FC = () => {
     if (!location) return;
     setLoading(true);
     try {
-      // Use the unified search API
       const res = await fetch(
         `/api/v1/venues/search?lat=${location.lat}&lng=${location.lng}&categories=${selectedCategory}&radius=5000&limit=30`
       );
@@ -70,6 +67,14 @@ export const BookingOS: React.FC = () => {
     }
   };
 
+  const handleReserve = (venue: any) => {
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(`/booking/${venue.id}`)}`);
+      return;
+    }
+    navigate(`/booking/${venue.id}`, { state: { venue, date: selectedDate, guests: selectedGuests } });
+  };
+
   const getDirectionsUrl = (venue: any) => {
     return `https://www.google.com/maps/dir/?api=1&destination=${venue.lat},${venue.lng}`;
   };
@@ -92,7 +97,8 @@ export const BookingOS: React.FC = () => {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/')} className="text-sm text-gray-500 hover:text-gray-700">← Pabandi</button>
+            <button onClick={() => navigate('/search')} className="text-sm text-gray-500 hover:text-gray-700">← Back to Search</button>
+            <button onClick={() => navigate('/')} className="text-sm text-gray-500 hover:text-gray-700">← Home</button>
             {isAuthenticated ? (
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-sm font-bold">
                 {user?.firstName?.[0] || '?'}
@@ -190,11 +196,14 @@ export const BookingOS: React.FC = () => {
                   <div className="text-5xl mb-4">🍽️</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">No venues found</h3>
                   <p className="text-gray-600">Try searching a different area or category.</p>
+                  <button onClick={() => navigate('/search')} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    Search all businesses
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {venues.map((venue) => (
-                    <VenueCard key={venue.id} venue={venue} directionsUrl={getDirectionsUrl(venue)} />
+                    <VenueCard key={venue.id} venue={venue} directionsUrl={getDirectionsUrl(venue)} onReserve={handleReserve} />
                   ))}
                 </div>
               )}
@@ -203,24 +212,18 @@ export const BookingOS: React.FC = () => {
         )}
 
         {activeTab === 'reservations' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Your Reservations</h2>
-            <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
-              <div className="text-5xl mb-4">📅</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No reservations yet</h3>
-              <p className="text-gray-600">Your upcoming reservations will appear here.</p>
-            </div>
+          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+            <div className="text-5xl mb-4">📋</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Your reservations</h3>
+            <p className="text-gray-600">You have no upcoming reservations.</p>
           </div>
         )}
 
         {activeTab === 'tickets' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Your Tickets</h2>
-            <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
-              <div className="text-5xl mb-4">🎫</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No tickets yet</h3>
-              <p className="text-gray-600">Your purchased tickets will appear here.</p>
-            </div>
+          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+            <div className="text-5xl mb-4">🎫</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Your tickets</h3>
+            <p className="text-gray-600">You have no tickets yet.</p>
           </div>
         )}
       </div>
@@ -229,9 +232,9 @@ export const BookingOS: React.FC = () => {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// Venue Card (OpenTable style with real data)
+// Venue Card (OpenTable style with working Reserve button)
 // ────────────────────────────────────────────────────────────────────────────
-const VenueCard: React.FC<{ venue: any; directionsUrl: string }> = ({ venue, directionsUrl }) => {
+const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue: any) => void }> = ({ venue, directionsUrl, onReserve }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
@@ -310,7 +313,10 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string }> = ({ venue, dir
 
         {/* Actions */}
         <div className="flex gap-2">
-          <button className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onReserve(venue); }}
+            className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+          >
             Reserve
           </button>
           <a
