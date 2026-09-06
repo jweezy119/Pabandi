@@ -38,6 +38,7 @@ import externalRoutes from './routes/external.routes';
 import apiClientsRoutes from './routes/apiClients.routes';
 import apiKeyRoutes from './routes/apiKey.routes';
 import socialRoutes from './routes/social.routes';
+import socialAuthRoutes from './routes/socialAuth.routes';
 import checkoutRoutes from './routes/checkout.routes';
 import walletRoutes from './routes/wallet.routes';
 import waitlistRoutes from './routes/waitlist.routes';
@@ -282,6 +283,7 @@ import airdropRoutes from './routes/airdrop.routes';
 import sourcingRoutes from './routes/sourcing.routes';
 
 app.use(`/api/${API_VERSION}/social`, socialRoutes);
+app.use(`/api/${API_VERSION}/auth/social`, socialAuthRoutes);
 app.use(`/api/${API_VERSION}/wallet`, walletRoutes);
 app.use(`/api/${API_VERSION}/reliability`, reliabilityRoutes);
 app.use(`/api/${API_VERSION}/token-staking`, stakingRoutes);

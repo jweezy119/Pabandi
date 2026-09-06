@@ -5,6 +5,19 @@ import { useAuthStore } from '../store/authStore';
 
 const CARGO_TYPES = ['GENERAL', 'REFRIGERATED', 'HAZARDOUS', 'OVERSIZED', 'FRAGILE'];
 
+const SAMPLE_LOADS = [
+  { title: 'Electronics Shipment', cargoType: 'GENERAL', weightLbs: 500, originCity: 'Chicago', originState: 'IL', destCity: 'New York', destState: 'NY', budgetUsd: 2500 },
+  { title: 'Frozen Food Delivery', cargoType: 'REFRIGERATED', weightLbs: 2000, originCity: 'Los Angeles', originState: 'CA', destCity: 'Phoenix', destState: 'AZ', budgetUsd: 1800 },
+  { title: 'Construction Materials', cargoType: 'OVERSIZED', weightLbs: 15000, originCity: 'Houston', originState: 'TX', destCity: 'Dallas', destState: 'TX', budgetUsd: 3200 },
+];
+
+const SAMPLE_CARRIERS = [
+  { companyName: 'Swift Transport', equipmentType: ['DRY_VAN', 'FLATBED'], totalDeliveries: 156, rating: 4.8, operatingStates: ['IL', 'IN', 'WI', 'MI'], fleetSize: 25, verified: true },
+  { companyName: 'Cold Chain Logistics', equipmentType: ['REFRIGERATED'], totalDeliveries: 89, rating: 4.9, operatingStates: ['CA', 'AZ', 'NV', 'OR'], fleetSize: 12, verified: true },
+  { companyName: 'Heavy Haul Inc', equipmentType: ['FLATBED', 'STEP_DECK'], totalDeliveries: 234, rating: 4.7, operatingStates: ['TX', 'OK', 'LA', 'NM'], fleetSize: 30, verified: true },
+  { companyName: 'Express Freight', equipmentType: ['DRY_VAN'], totalDeliveries: 512, rating: 4.6, operatingStates: ['NY', 'NJ', 'PA', 'CT'], fleetSize: 45, verified: false },
+];
+
 export const FreightPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -84,6 +97,50 @@ export const FreightPage: React.FC = () => {
     }
   };
 
+  const seedDemoData = async () => {
+    setLoading(true);
+    try {
+      // Create sample loads
+      for (const load of SAMPLE_LOADS) {
+        try {
+          await freightService.createLoad({
+            ...load,
+            description: `${load.title} - Demo shipment`,
+            originAddress: '123 Main St',
+            originZip: '60601',
+            destAddress: '456 Oak Ave',
+            destZip: '10001',
+            pickupDate: new Date(Date.now() + 86400000).toISOString(),
+            deliveryDate: new Date(Date.now() + 172800000).toISOString(),
+            valueUsd: load.budgetUsd * 2,
+          });
+        } catch (e) {
+          // Ignore duplicate errors
+        }
+      }
+      // Create sample carrier profiles
+      for (const carrier of SAMPLE_CARRIERS) {
+        try {
+          await freightService.createCarrierProfile({
+            ...carrier,
+            dotNumber: `DOT-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            mcNumber: `MC-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+            maxLoadLbs: 45000,
+          });
+        } catch (e) {
+          // Ignore duplicate errors
+        }
+      }
+      await loadInitialData();
+      await loadLoads();
+      await loadCarriers();
+    } catch (e) {
+      console.error('Failed to seed demo data:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0f1a]">
       {/* Header */}
@@ -97,7 +154,8 @@ export const FreightPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="text-sm text-slate-400 hover:text-white transition-colors">← Back to Pabandi</button>
+            <button onClick={() => navigate('/search')} className="text-sm text-slate-400 hover:text-white transition-colors">← Search</button>
+            <button onClick={() => navigate('/')} className="text-sm text-slate-400 hover:text-white transition-colors">← Home</button>
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-sm font-bold">{user?.firstName?.[0] || '?'}</div>
           </div>
         </div>
@@ -131,7 +189,7 @@ export const FreightPage: React.FC = () => {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'dashboard' && <Dashboard stats={stats} loads={loads} carriers={carriers} onNavigate={setActiveTab} />}
+        {activeTab === 'dashboard' && <Dashboard stats={stats} loads={loads} carriers={carriers} onNavigate={setActiveTab} onSeedDemo={seedDemoData} loading={loading} />}
         {activeTab === 'loads' && <LoadBoard loads={loads} loading={loading} searchOrigin={searchOrigin} searchDest={searchDest} setSearchOrigin={setSearchOrigin} setSearchDest={setSearchDest} onSearch={loadLoads} />}
         {activeTab === 'post' && <PostLoadForm onSuccess={() => { loadInitialData(); setActiveTab('my-loads'); }} />}
         {activeTab === 'carriers' && <CarrierDirectory carriers={carriers} loading={loading} />}
@@ -143,7 +201,7 @@ export const FreightPage: React.FC = () => {
 };
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
-const Dashboard: React.FC<{ stats: any; loads: any[]; carriers: any[]; onNavigate: (tab: any) => void }> = ({ stats, loads, carriers, onNavigate }) => (
+const Dashboard: React.FC<{ stats: any; loads: any[]; carriers: any[]; onNavigate: (tab: any) => void; onSeedDemo: () => void; loading: boolean }> = ({ stats, loads, carriers, onNavigate, onSeedDemo, loading }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div className="bg-[#111827] rounded-xl p-4 border border-white/5">
@@ -164,6 +222,18 @@ const Dashboard: React.FC<{ stats: any; loads: any[]; carriers: any[]; onNavigat
       </div>
     </div>
 
+    {/* Show demo data button if no loads */}
+    {loads.length === 0 && carriers.length === 0 && !loading && (
+      <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl p-6 text-center">
+        <div className="text-4xl mb-3">🚛</div>
+        <h3 className="text-lg font-bold text-white mb-2">Welcome to FreightOS!</h3>
+        <p className="text-slate-400 text-sm mb-4">Load demo data to see how freight and logistics work.</p>
+        <button onClick={onSeedDemo} className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors">
+          Load Demo Data
+        </button>
+      </div>
+    )}
+
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <button onClick={() => onNavigate('post')} className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-6 text-left text-white hover:opacity-90 transition-opacity">
         <div className="text-3xl mb-2">📦</div>
@@ -182,27 +252,28 @@ const Dashboard: React.FC<{ stats: any; loads: any[]; carriers: any[]; onNavigat
       </button>
     </div>
 
-    <div className="bg-[#111827] rounded-xl border border-white/5 overflow-hidden">
-      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-        <h3 className="font-bold text-white">Recent Loads</h3>
-        <button onClick={() => onNavigate('loads')} className="text-sm text-orange-400 hover:text-orange-300">View All</button>
-      </div>
-      <div className="divide-y divide-white/5">
-        {loads.slice(0, 5).map((load) => (
-          <div key={load.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
-            <div>
-              <div className="font-medium text-white">{load.title}</div>
-              <div className="text-sm text-slate-400">{load.originCity} → {load.destCity} · {load.weightLbs} lbs</div>
+    {loads.length > 0 && (
+      <div className="bg-[#111827] rounded-xl border border-white/5 overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+          <h3 className="font-bold text-white">Recent Loads</h3>
+          <button onClick={() => onNavigate('loads')} className="text-sm text-orange-400 hover:text-orange-300">View All</button>
+        </div>
+        <div className="divide-y divide-white/5">
+          {loads.slice(0, 5).map((load) => (
+            <div key={load.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
+              <div>
+                <div className="font-medium text-white">{load.title}</div>
+                <div className="text-sm text-slate-400">{load.originCity} → {load.destCity} · {load.weightLbs} lbs</div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-emerald-400">${load.budgetUsd}</div>
+                <div className="text-xs text-slate-500">{load._count?.bids || 0} bids</div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="font-bold text-emerald-400">${load.budgetUsd}</div>
-              <div className="text-xs text-slate-500">{load._count?.bids || 0} bids</div>
-            </div>
-          </div>
-        ))}
-        {loads.length === 0 && <div className="px-4 py-8 text-center text-slate-400">No loads available yet</div>}
+          ))}
+        </div>
       </div>
-    </div>
+    )}
   </div>
 );
 
@@ -240,13 +311,13 @@ const LoadBoard: React.FC<any> = ({ loads, loading, searchOrigin, searchDest, se
                   <span>{load.destCity}, {load.destState}</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
-                  <span>{load.weightLbs.toLocaleString()} lbs</span>
+                  <span>{load.weightLbs?.toLocaleString()} lbs</span>
                   {load.dimensions && <span>{load.dimensions} in</span>}
                   <span>Pickup: {new Date(load.pickupDate).toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-xl font-bold text-emerald-400">${load.budgetUsd.toLocaleString()}</div>
+                <div className="text-xl font-bold text-emerald-400">${load.budgetUsd?.toLocaleString()}</div>
                 <div className="text-xs text-slate-500">{load._count?.bids || 0} bids</div>
               </div>
             </div>
@@ -260,6 +331,7 @@ const LoadBoard: React.FC<any> = ({ loads, loading, searchOrigin, searchDest, se
 // ── Post Load Form ─────────────────────────────────────────────────────────
 const PostLoadForm: React.FC<any> = ({ onSuccess }) => {
   const { isAuthenticated } = useAuthStore();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     title: '', description: '', cargoType: 'GENERAL', weightLbs: '', dimensions: '', valueUsd: '',
     originAddress: '', originCity: '', originState: '', originZip: '',
@@ -270,7 +342,7 @@ const PostLoadForm: React.FC<any> = ({ onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) return navigate('/login');
     setSubmitting(true);
     try {
       await freightService.createLoad({
@@ -294,7 +366,7 @@ const PostLoadForm: React.FC<any> = ({ onSuccess }) => {
       <div className="bg-[#111827] rounded-xl p-12 text-center border border-white/5">
         <div className="text-5xl mb-4">🔐</div>
         <h3 className="text-xl font-bold text-white mb-2">Sign in to post a load</h3>
-        <button className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg" onClick={() => window.location.href = '/login'}>Sign In</button>
+        <button className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg" onClick={() => navigate('/login')}>Sign In</button>
       </div>
     );
   }
@@ -409,7 +481,7 @@ const CarrierDirectory: React.FC<any> = ({ carriers, loading }) => (
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-400">{carrier.totalDeliveries} deliveries</span>
-              <span className="font-bold text-emerald-400">{carrier.rating.toFixed(1)} ⭐</span>
+              <span className="font-bold text-emerald-400">{carrier.rating?.toFixed(1)} ⭐</span>
             </div>
             <div className="mt-2 text-xs text-slate-500">
               {carrier.operatingStates?.length || 0} states · {carrier.fleetSize} vehicles
