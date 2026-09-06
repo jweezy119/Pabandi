@@ -407,8 +407,8 @@ const VenueDetailModal: React.FC<{ venue: any; onClose: () => void; onReserve: (
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
-          {venue.imageUrl ? (
-            <img src={venue.imageUrl} alt={venue.name} className="w-full h-64 object-cover rounded-t-2xl" />
+          {venue.imageUrl || (venue.photos && venue.photos.length > 0) ? (
+            <ImageGallery images={venue.photos && venue.photos.length > 0 ? venue.photos : [venue.imageUrl]} name={venue.name} />
           ) : (
             <div className="w-full h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center rounded-t-2xl">
               <span className="text-6xl">🍽️</span>
@@ -540,6 +540,61 @@ const VenueDetailModal: React.FC<{ venue: any; onClose: () => void; onReserve: (
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// ─── Photo Gallery ──────────────────────────────────────────────────────────
+const ImageGallery: React.FC<{ images: string[]; name: string }> = ({ images, name }) => {
+  const [current, setCurrent] = useState(0);
+  const validImages = (images || []).filter((u) => u && typeof u === 'string');
+  const showNav = validImages.length > 1;
+
+  if (!validImages.length) {
+    return (
+      <div className="w-full h-64 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center rounded-t-2xl">
+        <span className="text-6xl">📷</span>
+      </div>
+    );
+  }
+
+  const prev = () => setCurrent((c) => (c - 1 + validImages.length) % validImages.length);
+  const next = () => setCurrent((c) => (c + 1) % validImages.length);
+
+  return (
+    <div className="relative w-full h-64 rounded-t-2xl overflow-hidden group">
+      <img
+        src={validImages[current]}
+        alt={`${name} photo ${current + 1}`}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+      />
+      {showNav && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+          >
+            ›
+          </button>
+        </>
+      )}
+      {validImages.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          {validImages.map((_, i) => (
+            <span
+              key={i}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? 'bg-white w-4' : 'bg-white/30'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
