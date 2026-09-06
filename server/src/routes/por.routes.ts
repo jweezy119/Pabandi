@@ -21,7 +21,10 @@
  *     tenant's reliability without learning how much they pay or who they are.
  */
 import { Router, Request, Response } from 'express';
-import { zkPorProver } from '../services/zkPorProver.service';
+// Lazy-load to avoid runtime crash when @noir-lang/noir_wasm is not installed
+async function getZkPorProver() {
+  return (await import('../services/zkPorProver.service')).zkPorProver;
+}
 import { ptpEngine } from '../protocol/ptp.spec';
 import { solanaAnchor } from '../services/solanaAnchor.service';
 import { prisma } from '../utils/database';
@@ -51,7 +54,8 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
     }
 
     // 1. Generate the zero-knowledge proof (private inputs stay local).
-    const proof = await zkPorProver.prove({
+    const prover = await getZkPorProver();
+    const proof = await prover.prove({
       months_paid, graceDays, issuedAt,
       tenant_secret, rent_amount, paid_ts, due_ts, salt,
     });
@@ -119,7 +123,8 @@ router.get('/zk-proof/:proofId/verify', async (req: Request, res: Response) => {
   if (!stored) return res.status(404).json({ success: false, error: 'proof not found' });
 
   const meta: any = stored;
-  const result = await zkPorProver.verify({
+  const prover = await getZkPorProver();
+  const result = await prover.verify({
     proofId: meta.proofId,
     commitment: meta.commitment,
     publicInputs: meta.publicInputs,

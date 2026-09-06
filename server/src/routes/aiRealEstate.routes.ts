@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { aiNlpService } from '../services/ai.nlp.service';
 import { authenticate } from '../middleware/auth.middleware';
@@ -743,5 +743,3 @@ async function aiChat(message: string, context?: any): Promise<string> {
 
   return `I understand you're asking about: ${nlpResult.intent}. I'm Pabandi's AI assistant for real estate. I can help with lease analysis, maintenance advice, market insights, property valuation, and document generation. What would you like to explore?`;
 }
-
-import { Router } from 'express';

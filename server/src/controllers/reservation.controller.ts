@@ -2,7 +2,10 @@ import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { noShowPredictor } from '../services/ai/noShowPredictor';
+// Lazy-load noShowPredictor to avoid runtime crash when @tensorflow/tfjs is not installed
+async function getNoShowPredictor() {
+  return (await import('../services/ai/noShowPredictor')).noShowPredictor;
+}
 import { pabTokenStakingService } from '../services/pabTokenStaking.service';
 import { pabondService } from '../services/pabond.service';
 import { logger } from '../utils/logger';
@@ -217,14 +220,16 @@ export const createReservation = async (
       deviceFingerprint,
     });
 
-    // Get customer history for AI prediction
-    const customerHistory = req.user
-      ? await noShowPredictor.getCustomerHistory(req.user.id, business.id)
-      : undefined;
-
-    const businessNoShowRate = await noShowPredictor.getBusinessNoShowRate(
-      business.id
-    );
+    // Get customer history for AI prediction — lazy-loaded for optional ML deps
+    let customerHistory: any = undefined;
+    let businessNoShowRate = 0;
+    try {
+      const predictor = await getNoShowPredictor();
+      customerHistory = req.user ? await predictor.getCustomerHistory(req.user.id, business.id) : undefined;
+      businessNoShowRate = await predictor.getBusinessNoShowRate(business.id);
+    } catch (e) {
+      // ML deps not installed — skip AI prediction
+    }
 
     // Prepare features for AI prediction
     const features = {
@@ -288,8 +293,14 @@ export const createReservation = async (
       }
     }
 
-    // Get AI prediction
-    const prediction = await noShowPredictor.predict(features);
+    // Get AI prediction — lazy-loaded for optional ML deps
+    let prediction: any = { riskScore: 30, factors: {} };
+    try {
+      const predictor = await getNoShowPredictor();
+      prediction = await predictor.predict(features);
+    } catch (e) {
+      // ML deps not installed — use default prediction
+    }
 
     // Apply $PAB staking multiplier to reduce deposit for staked users
     const { multiplier: stakeMultiplier, totalStaked } = await pabTokenStakingService.getTrustMultiplier(req.user!.id);

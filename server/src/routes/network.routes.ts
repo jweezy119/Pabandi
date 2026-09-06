@@ -2,10 +2,22 @@ import { Router, Response } from 'express';
 import { apiKeyAuth, logApiUsage, ApiKeyRequest } from '../middleware/apiKey.middleware';
 import { networkService } from '../services/network.service';
 import { cryptoService } from '../services/crypto.service';
-import { bloomFilterService } from '../services/bloomFilter.service';
 import { strictApiLimiter } from '../middleware/rateLimit.middleware';
 import { logger } from '../utils/logger';
 import { discoverAgents } from '../controllers/discovery.controller';
+
+// Lazy-load to avoid runtime crash when bloom-filters is not installed
+let _bloomFilterService: any = null;
+async function getBloomFilterService() {
+  if (_bloomFilterService) return _bloomFilterService;
+  try {
+    const mod = await import('../services/bloomFilter.service');
+    _bloomFilterService = mod.bloomFilterService;
+    return _bloomFilterService;
+  } catch {
+    return null;
+  }
+}
 
 const router = Router();
 
@@ -17,8 +29,10 @@ router.get('/public-salt', (req, res) => {
   res.json({ salt: cryptoService.getPublicSalt() });
 });
 
-router.get('/bloom-filter', (req, res) => {
-  res.json({ filter: bloomFilterService.getSerializedFilter() });
+router.get('/bloom-filter', async (req, res) => {
+  const svc = await getBloomFilterService();
+  if (!svc) return res.status(503).json({ error: 'Bloom filter service unavailable' });
+  res.json({ filter: svc.getSerializedFilter() });
 });
 
 // Protect all network routes with B2B API Key validation

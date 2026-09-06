@@ -8,7 +8,21 @@
  * All anchor artifacts on Solana (chain untouched — hash commitments only).
  */
 import { Router, Request, Response } from 'express';
-import { zkNullifierService } from '../services/zkNullifier.service';
+
+// Lazy-load optional ZK/services modules so the server starts even when their
+// npm packages are not installed (e.g. @noir-lang/noir_wasm, bloom-filters).
+const _lazy: Record<string, any> = {};
+async function getLazy(name: string) {
+  if (_lazy[name]) return _lazy[name];
+  try {
+    const mod = await import(name);
+    const exported = Object.values(mod as Record<string, unknown>).find(v => typeof v === 'object' && v !== null) || mod;
+    _lazy[name] = exported;
+    return _lazy[name];
+  } catch (e) {
+    throw new Error(`Optional module ${name} not available`);
+  }
+}
 import { actusEngine } from '../services/actusEngine.service';
 import { klerosArbitration } from '../services/klerosArbitration.service';
 import { aragonDao, VoteChoice } from '../services/aragonDao.service';
@@ -20,11 +34,14 @@ const router = Router();
 router.post('/zk/issue', async (req: Request, res: Response): Promise<any> => {
   const { tenantDID, propertyDID, consecutiveMonths, secret } = req.body || {};
   if (!tenantDID || !propertyDID || !consecutiveMonths) return res.status(400).json({ success: false, error: 'tenantDID, propertyDID, consecutiveMonths required' });
-  try { res.json({ success: true, data: await zkNullifierService.issueProof(tenantDID, propertyDID, consecutiveMonths, secret) }); }
-  catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
+  try {
+    const svc = await getLazy('../services/zkNullifier.service');
+    res.json({ success: true, data: await svc.issueProof(tenantDID, propertyDID, consecutiveMonths, secret) });
+  } catch (e: any) { res.status(400).json({ success: false, error: e.message }); }
 });
 router.post('/zk/verify', async (req: Request, res: Response): Promise<any> => {
-  const v = await zkNullifierService.verifyProof(req.body || {});
+  const svc = await getLazy('../services/zkNullifier.service');
+  const v = await svc.verifyProof(req.body || {});
   res.json({ success: true, data: v });
 });
 

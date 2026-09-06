@@ -21,7 +21,18 @@
  */
 import { Router, Request, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
-import { zkRealestateProver } from '../services/zkRealestateProver.service';
+// Lazy-load the ZK prover to avoid runtime crashes when @noir-lang/noir_wasm is not installed
+let _zkRealestateProver: any = null;
+async function getZkRealestateProver() {
+  if (_zkRealestateProver) return _zkRealestateProver;
+  try {
+    const mod = await import('../services/zkRealestateProver.service');
+    _zkRealestateProver = mod.zkRealestateProver;
+    return _zkRealestateProver;
+  } catch (e) {
+    throw new Error('ZK Real Estate prover not available: @noir-lang/noir_wasm not installed');
+  }
+}
 import { ptpEngine } from '../protocol/ptp.spec';
 import { solanaAnchor } from '../services/solanaAnchor.service';
 import { prisma } from '../utils/database';
@@ -106,7 +117,8 @@ router.post('/zk-proof', async (req: Request, res: Response) => {
     }
 
     // 1. Generate the zero-knowledge proof (private inputs stay local).
-    const proof = await zkRealestateProver.prove({
+    const prover = await getZkRealestateProver();
+    const proof = await prover.prove({
       deposit, consecutiveMonths, rate, deadline,
       price, commission, valuation_hash, agent_secret,
     });
@@ -176,7 +188,8 @@ router.get('/zk-proof/:proofId/verify', async (req: Request, res: Response) => {
   if (!stored) return res.status(404).json({ success: false, error: 'proof not found' });
 
   const meta: any = stored;
-  const result = await zkRealestateProver.verify({
+  const prover = await getZkRealestateProver();
+  const result = await prover.verify({
     proofId: meta.proofId,
     commitment: meta.commitment,
     publicInputs: meta.publicInputs,

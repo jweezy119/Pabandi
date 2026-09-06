@@ -1,7 +1,18 @@
-                             import { Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { noShowPredictor } from '../services/ai/noShowPredictor';
+
+/**
+ * Lazy-load the no-show predictor to avoid runtime crashes when
+ * @tensorflow/tfjs is not installed.
+ */
+let _noShowPredictor: any = null;
+async function getNoShowPredictor() {
+  if (_noShowPredictor) return _noShowPredictor;
+  const mod = await import('../services/ai/noShowPredictor');
+  _noShowPredictor = mod.noShowPredictor;
+  return _noShowPredictor;
+}
 
 export const getAnalytics = async (
   req: AuthRequest,
@@ -28,6 +39,19 @@ export const getAnalytics = async (
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // No-show heatmap data — lazy-loaded to avoid runtime crash when @tensorflow/tfjs is not installed
+    let noShowByDay: any[] = [];
+    let noShowByHour: any[] = [];
+    try {
+      const predictor = await getNoShowPredictor();
+      [noShowByDay, noShowByHour] = await Promise.all([
+        predictor.getNoShowByDayOfWeek(business.id),
+        predictor.getNoShowByHour(business.id),
+      ]);
+    } catch (e) {
+      // ML deps not installed — graceful fallback
+    }
+
     // Get comprehensive analytics
     const [
       totalReservations,
@@ -41,8 +65,6 @@ export const getAnalytics = async (
       last7DaysReservations,
       upcomingRisky,
       protectedRevenue,
-      noShowByDay,
-      noShowByHour,
     ] = await Promise.all([
       prisma.reservation.count({
         where: { businessId: business.id },
@@ -135,9 +157,6 @@ export const getAnalytics = async (
           depositAmount: true,
         },
       }),
-      // No-show heatmap data
-      noShowPredictor.getNoShowByDayOfWeek(business.id),
-      noShowPredictor.getNoShowByHour(business.id),
     ]);
 
     // Calculate rates
