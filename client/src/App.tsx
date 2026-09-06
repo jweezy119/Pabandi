@@ -100,6 +100,9 @@ import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
 import FreightPage from './pages/FreightPage';
+import { FreightLayout } from './apps/freight';
+import { FreightDashboard, LoadBoard, PostLoad, MyLoads } from './apps/freight';
+import { BookingLayout } from './apps/booking';
 import PpdWizardPage from './pages/PpdWizardPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
@@ -225,7 +228,15 @@ function App() {
             <Route path="verifier" element={<VerifierSandboxPage />} />
             <Route path="book" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
-            <Route path="booking" element={<BookingOS />} />
+            <Route path="booking" element={<BookingLayout />}>
+              <Route index element={<BookingPage />} />
+              <Route path="my-reservations" element={<ReservationsPage />} />
+              <Route path="favorites" element={<BookingPage />} />
+              <Route path="venues" element={<BookingPage />} />
+              <Route path="analytics" element={<BookingPage />} />
+              <Route path="payments" element={<BookingPage />} />
+              <Route path="settings" element={<BookingPage />} />
+            </Route>
             <Route path="reservations" element={<ReservationsPage />} />
             <Route path="reservations/new" element={<NewReservationPage />} />
             <Route path="nightlife" element={<NightlifePage />} />
@@ -243,7 +254,22 @@ function App() {
             <Route path="hotels" element={<BrowseHotelsPage />} />
             <Route path="hospitality" element={<HospitalityPage />} />
             <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
-            <Route path="freight" element={<FreightPage />} />
+            <Route path="freight" element={<FreightLayout />}>
+              <Route index element={<FreightDashboard />} />
+              <Route path="loads" element={<LoadBoard />} />
+              <Route path="loads/:id" element={<FreightPage />} />
+              <Route path="post" element={<PostLoad />} />
+              <Route path="my-loads" element={<MyLoads />} />
+              <Route path="carriers" element={<FreightPage />} />
+              <Route path="bids" element={<FreightPage />} />
+              <Route path="tracking" element={<FreightPage />} />
+              <Route path="tracking/:id" element={<FreightPage />} />
+              <Route path="documents" element={<FreightPage />} />
+              <Route path="escrow" element={<FreightPage />} />
+              <Route path="insurance" element={<FreightPage />} />
+              <Route path="analytics" element={<FreightPage />} />
+              <Route path="settings" element={<FreightPage />} />
+            </Route>
             <Route path="business/join" element={<BusinessJoinPage />} />
             <Route path="business/join-claim" element={<BusinessJoinPage />} />
             <Route path="business/register" element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />} />
