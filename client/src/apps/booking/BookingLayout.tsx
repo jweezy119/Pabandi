@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
-import { FiCalendar, FiStar, FiHeart, FiCreditCard, FiSettings, FiLogOut, FiMenu, FiX, FiHome, FiSearch, FiBuilding2 } from 'react-icons/fi';
+import { FiCalendar, FiStar, FiHeart, FiCreditCard, FiSettings, FiLogOut, FiMenu, FiX, FiHome, FiSearch, FiGrid } from 'react-icons/fi';
 
 const navigation = [
   { path: '/booking', label: 'Discover', icon: FiSearch, roles: [] },
   { path: '/booking/my-reservations', label: 'My Reservations', icon: FiCalendar, roles: ['USER', 'ADMIN'] },
   { path: '/booking/favorites', label: 'Favorites', icon: FiHeart, roles: ['USER', 'ADMIN'] },
-  { path: '/booking/venues', label: 'My Venues', icon: FiBuilding2, roles: ['BUSINESS_OWNER', 'ADMIN'] },
+  { path: '/booking/venues', label: 'My Venues', icon: FiGrid, roles: ['BUSINESS_OWNER', 'ADMIN'] },
   { path: '/booking/analytics', label: 'Analytics', icon: FiStar, roles: ['BUSINESS_OWNER', 'ADMIN'] },
   { path: '/booking/payments', label: 'Payments', icon: FiCreditCard, roles: ['USER', 'ADMIN'] },
   { path: '/booking/settings', label: 'Settings', icon: FiSettings, roles: [] },
@@ -69,8 +69,8 @@ export const BookingLayout: React.FC = () => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all $
-                  {isActive 
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                  ${isActive 
                     ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-400/20' 
                     : 'text-slate-300 hover:bg-white/5 hover:text-white'}
                 `}

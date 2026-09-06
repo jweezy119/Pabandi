@@ -14,7 +14,7 @@ import CheckoutSuccessPage from './pages/CheckoutSuccessPage';
 import CheckoutCancelPage from './pages/CheckoutCancelPage';
 import BookingPage from './pages/BookingPage';
 import BookingExperience from './pages/BookingExperience';
-import BookingOS from './pages/BookingOS';
+// BookingOS replaced by BookingLayout + BookingPage (inside Layout wrapper)
 import NightlifePage from './pages/NightlifePage';
 import PromoterOS from './pages/PromoterOS';
 import AgentControlPanel from './pages/AgentControlPanel';

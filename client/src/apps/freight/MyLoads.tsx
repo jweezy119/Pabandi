@@ -266,7 +266,6 @@ export const MyLoads: React.FC = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredLoads.map(load => {
             const isOpen = load.status === 'OPEN';
-            const isTrackable = canTrack(load.status);
 
             return (
               <Surface 

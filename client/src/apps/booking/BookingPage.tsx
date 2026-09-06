@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import { Surface, Button, Badge, Chip, tokens } from '../design-system';
+import { useAuthStore } from '../../store/authStore';
+import { Surface, Button, Badge, Chip, tokens } from '../../design-system';
 
 const CATEGORIES = [
   { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },

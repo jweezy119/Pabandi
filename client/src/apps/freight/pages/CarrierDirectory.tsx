@@ -12,7 +12,7 @@ import {
   FiCheckCircle,
   FiChevronRight,
   FiSearch,
-  FiBuilding2,
+  FiHome,
 } from 'react-icons/fi';
 
 const EQUIPMENT_TYPES = ['DRY_VAN', 'REEFER', 'FLATBED', 'STEP_DECK', 'POWER_ONLY', 'BOX_TRUCK'];
@@ -219,7 +219,7 @@ export const CarrierDirectory = () => {
           {isAuthenticated && user?.role === 'CARRIER' && (
             <Link to="/freight/carriers/profile">
               <Button className="gap-2">
-                <FiBuilding size={16} /> My Profile
+                <FiHome size={16} /> My Profile
               </Button>
             </Link>
           )}

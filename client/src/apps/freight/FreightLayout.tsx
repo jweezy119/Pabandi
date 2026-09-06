@@ -77,8 +77,8 @@ export const FreightLayout: React.FC = () => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all $
-                  {isActive 
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all 
+                  ${isActive 
                     ? 'bg-orange-500/15 text-orange-300 border border-orange-400/20' 
                     : 'text-slate-300 hover:bg-white/5 hover:text-white'}
                 `}
