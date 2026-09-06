@@ -23,7 +23,7 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
   // because they only return public business data (venue listings, freight load
   // board stats, maps geocoding). The frontend does not send App Check tokens,
   // so these routes would otherwise always fail.
-  const publicGetPaths = ['/venues/search', '/freight/stats', '/freight/loads', '/maps/geocode'];
+  const publicGetPaths = ['/venues/search', '/freight/stats', '/freight/loads', '/maps/geocode', '/businesses'];
   if (req.method === 'GET' && publicGetPaths.some(path => req.originalUrl.includes(path))) {
     return next();
   }
