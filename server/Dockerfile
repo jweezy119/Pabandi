@@ -9,8 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Build TypeScript without node_modules copy cache
-RUN rm -rf dist .tsbuildinfo && npm run build
+# Force Prisma client regeneration from the correct schema
+RUN rm -rf node_modules/.prisma && npm run build
 
 EXPOSE 10000
 
