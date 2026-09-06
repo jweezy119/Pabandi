@@ -1,8 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { authenticate } from '../middleware/auth.middleware';
+import { aiRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
+
+// All AI endpoints require authentication + rate limiting
+router.use(authenticate);
+router.use(aiRateLimiter);
 
 // ── AI Investment Analyzer ──────────────────────────────────────────────────
 interface InvestmentInput {
@@ -83,7 +89,7 @@ function analyzeInvestment(input: InvestmentInput): InvestmentAnalysis {
 }
 
 // ── POST /api/v1/ai/analyze-investment ──────────────────────────────────────
-router.post('/analyze-investment', async (req: Request, res: Response) => {
+router.post('/analyze-investment', authenticate, aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const input: InvestmentInput = req.body;
     if (!input.purchasePrice || !input.monthlyRent) {
@@ -157,7 +163,7 @@ function optimizeRent(input: RentOptimizerInput): RentOptimizerResult {
 }
 
 // ── POST /api/v1/ai/optimize-rent ───────────────────────────────────────────
-router.post('/optimize-rent', async (req: Request, res: Response) => {
+router.post('/optimize-rent', authenticate, aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const input: RentOptimizerInput = req.body;
     if (!input.city || !input.bedrooms || !input.sqft) {
@@ -187,7 +193,7 @@ interface MatcherResult {
 }
 
 // ── POST /api/v1/ai/match-properties ────────────────────────────────────────
-router.post('/match-properties', async (req: Request, res: Response) => {
+router.post('/match-properties', authenticate, aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const input: MatcherInput = req.body;
     const where: any = { status: 'VACANT' };
@@ -288,7 +294,7 @@ function screenTenant(input: ScreenerInput, monthlyRent: number = 1500): Screene
 }
 
 // ── POST /api/v1/ai/screen-tenant ───────────────────────────────────────────
-router.post('/screen-tenant', async (req: Request, res: Response) => {
+router.post('/screen-tenant', authenticate, aiRateLimiter, async (req: Request, res: Response) => {
   try {
     const { monthlyRent, ...tenantInfo } = req.body;
     if (!tenantInfo.name || !tenantInfo.email || !tenantInfo.monthlyIncome) {

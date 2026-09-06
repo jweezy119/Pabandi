@@ -2,6 +2,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { trustAuditWriter } from './trustAuditWriter';
 import { webhookService } from './webhook.service';
+import { courtListenerService } from './osint/courtListener.service';
 
 export interface TrustInputs {
   reliability: { completed: number; noShows: number; cancellations: number };
@@ -202,7 +203,6 @@ export class TrustScoreService {
     // Litigation signal (CourtListener) — penalizes trust score on eviction/housing records.
     let litigation: TrustInputs['litigation'] | undefined;
     try {
-      const { courtListenerService } = require('./osint/courtListener.service');
       const fullName = `${user.firstName} ${user.lastName}`.trim();
       if (fullName.length > 2) {
         const ev = await courtListenerService.lookupEvictions(fullName, event.osintData?.state);

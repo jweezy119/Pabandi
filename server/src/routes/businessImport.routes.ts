@@ -79,6 +79,8 @@ router.post('/import/search', authenticate, async (req: any, res: Response) => {
             coverImageUrl: place.photos?.[0] ? getPhotoUrl(place.photos[0].photo_reference) : null,
             isActive: true,
             isClaimed: false,
+            phone: place.phone_number || '',
+            email: place.website ? `${place.place_id}@imported.pabandi.local` : '',
           },
         });
         imported.push(business);
@@ -145,7 +147,8 @@ router.post('/import/place', authenticate, async (req: any, res: Response) => {
         longitude: place.geometry?.location?.lng || 0,
         rating: place.rating || 0,
         reviewCount: place.user_ratings_total || 0,
-        phone: place.formatted_phone_number || place.international_phone_number,
+        phone: place.formatted_phone_number || place.international_phone_number || '',
+        email: place.website ? `${place.place_id}@imported.pabandi.local` : '',
         website: place.website,
         category: mapGoogleTypeToCategory(place.types || []),
         coverImageUrl: place.photos?.[0] ? getPhotoUrl(place.photos[0].photo_reference) : null,
@@ -206,6 +209,8 @@ router.post('/import/bulk', authenticate, async (req: any, res: Response) => {
                 reviewCount: place.user_ratings_total || 0,
                 category: mapGoogleTypeToCategory(place.types || []),
                 coverImageUrl: place.photos?.[0] ? getPhotoUrl(place.photos[0].photo_reference) : null,
+                phone: place.formatted_phone_number || place.international_phone_number || '',
+                email: place.website ? `${place.place_id}@imported.pabandi.local` : '',
                 isActive: true,
                 isClaimed: false,
               },

@@ -3,14 +3,23 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import { UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { fail } from '../utils/apiResponse';
 
 const router = Router();
+
+/** Production guard: block dangerous seed endpoints in production */
+function isProduction(req: Request): boolean {
+  return process.env.NODE_ENV === 'production';
+}
 
 /**
  * POST /api/v1/seed/freelancers
  * Admin endpoint to generate AI-like freelancer profiles
  */
 router.post('/freelancers', async (req: Request, res: Response): Promise<any> => {
+  if (isProduction(req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   try {
     const { count = 5 } = req.body;
     const generatedProfiles = [];
@@ -76,6 +85,9 @@ router.post('/freelancers', async (req: Request, res: Response): Promise<any> =>
  * Admin endpoint to generate fake transaction history (bookings) for freelancers
  */
 router.post('/bookings', async (req: Request, res: Response): Promise<any> => {
+  if (isProduction(req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   try {
     const { count = 10 } = req.body;
     
@@ -131,6 +143,9 @@ router.post('/bookings', async (req: Request, res: Response): Promise<any> => {
  * - ensures LinkedInProfile table exists (defensive; some envs missing it)
  */
 router.post('/reconcile', async (_req: Request, res: Response): Promise<any> => {
+  if (isProduction(_req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   const steps: string[] = [];
   try {
     await prisma.$executeRawUnsafe(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid WHERE t.typname = 'UserRole' AND e.enumlabel = 'FREELANCER') THEN ALTER TYPE "UserRole" ADD VALUE 'FREELANCER'; END IF; END $$;`);
@@ -174,6 +189,9 @@ router.post('/reconcile', async (_req: Request, res: Response): Promise<any> => 
  * with LinkedIn profiles, a liquidity-provider pool for the LOCAL off-ramp, and a bad actor.
  */
 router.post('/demo', async (req: Request, res: Response): Promise<any> => {
+  if (isProduction(req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   try {
     const { jurors = 8, freelancers = 12, liquidityProviders = 3 } = req.body || {};
     const created: any = { jurors: [], freelancers: [], liquidityProviders: [], admin: null };
@@ -356,6 +374,9 @@ const SEED_BIZ_CATEGORY: Record<string, BusinessCategory> = {
 };
 
 router.post('/real-businesses', async (_req: Request, res: Response): Promise<any> => {
+  if (isProduction(_req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   const summary: any = { profilesTotal: 0, profilesSeeded: 0, businessesCreated: 0, businessesSkipped: 0, integrationsWired: 0, perPersona: {} as Record<string, number>, samples: [] as string[] };
   try {
     const realProfiles = linkedinProfileSeeder.loadLocalSeedData();
@@ -509,6 +530,9 @@ async function osmQuery(bbox: [number, number, number, number], tagKey: string, 
 }
 
 router.post('/osm-businesses', async (req: Request, res: Response): Promise<any> => {
+  if (isProduction(req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   const summary: any = {
     success: true, cities: [] as any[], total: 0, created: 0, updated: 0, skipped: 0, byCategory: {},
     firstError: null as string | null,
@@ -595,6 +619,9 @@ function hashCode(s: string): number {
 import { REAL_PROJECTS } from '../data/realProjects';
 
 router.post('/real-projects', async (_req: Request, res: Response): Promise<any> => {
+  if (isProduction(_req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   const summary = { created: 0, skipped: 0, errors: [] as string[] };
   try {
     for (const p of REAL_PROJECTS) {
@@ -637,7 +664,10 @@ const REAL_JOBS = [
 ];
 
 router.post('/real-jobs', async (_req: Request, res: Response): Promise<any> => {
-  const summary = { created: 0, skipped: 0 };
+  if (isProduction(_req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
+  const summary = { created: 0, skipped: 0, errors: [] as string[] };
   try {
     for (const j of REAL_JOBS) {
       const existing = await prisma.jobPosting.findFirst({ where: { title: j.title } });
@@ -662,6 +692,9 @@ router.post('/real-jobs', async (_req: Request, res: Response): Promise<any> => 
 import { REAL_FREELANCERS } from '../data/realFreelancers';
 
 router.post('/real-freelancers', async (_req: Request, res: Response): Promise<any> => {
+  if (isProduction(_req)) {
+    return fail(res, 'Seed endpoints are disabled in production', 404);
+  }
   const summary = { created: 0, skipped: 0, errors: [] as string[] };
   try {
     for (const f of REAL_FREELANCERS) {

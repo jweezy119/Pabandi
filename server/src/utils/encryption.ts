@@ -1,6 +1,36 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex'); // 32 bytes (256 bits) for aes-256-gcm
+function requireEncryptionKey(): string {
+  const envKey = process.env.ENCRYPTION_KEY;
+  if (!envKey) {
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isProd) {
+      throw new Error(
+        'ENCRYPTION_KEY is not set in the environment. ' +
+        'This is required in production — wallet secrets and other encrypted data ' +
+        'cannot be decrypted without a stable key. Set a 64-character hex string.'
+      );
+    }
+    // Dev-only fallback: deterministic per-process so developer experience isn't
+    // broken, but still warn because any persisted ciphertext will be undecodable
+    // after a restart even in dev.
+    console.warn(
+      '[encryption] ENCRYPTION_KEY not set — using per-process random key. ' +
+      'Any encrypted data persists across restarts ONLY if this env var is configured.'
+    );
+    return crypto.randomBytes(32).toString('hex');
+  }
+  if (envKey.length !== 64) {
+    throw new Error(
+      `ENCRYPTION_KEY must be a 64-character hex string (got ${envKey.length} chars).`
+    );
+  }
+  return envKey;
+}
+
+// Resolved once at module load — stable across the process lifetime.
+// In production this throws if missing; in dev it warns and falls back.
+const ENCRYPTION_KEY = requireEncryptionKey();
 const IV_LENGTH = 16;
 
 /**
@@ -10,7 +40,11 @@ export function encrypt(text: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const key = Buffer.from(ENCRYPTION_KEY, 'hex');
   if (key.length !== 32) {
-    throw new Error('ENCRYPTION_KEY must be a 64-character hex string (32 bytes).');
+    throw new Error(
+      'ENCRYPTION_KEY must be a 64-character hex string (32 bytes). ' +
+      'In production this must be set explicitly in the environment — ' +
+      'the fallback randomBytes() would make decryption impossible after a restart.'
+    );
   }
 
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);

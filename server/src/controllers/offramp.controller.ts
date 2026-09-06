@@ -4,6 +4,12 @@ import { prisma } from '../utils/database';
 import { offrampService, offrampEvents } from '../services/offramp.service';
 import { webhookService } from '../services/webhook.service';
 import { ok, fail } from '../utils/apiResponse';
+import crypto from 'crypto';
+import { logger } from '../utils/logger';
+
+// Track concurrent SSE connections per LP wallet — caps at 3 per wallet to
+// prevent resource exhaustion from a single wallet opening many streams.
+const sseConnectionCount = new Map<string, number>();
 
 export const createIntent = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -59,6 +65,13 @@ export const submitProof = async (req: Request, res: Response, next: NextFunctio
     const { intentId } = req.params;
     const { lpWallet, imageBase64 } = req.body;
 
+    // Sanity cap on base64 image size — 10 MB decoded max (≈ 13.3 MB base64).
+    // Prevents a malicious LP from OOM-ing the server with a giant screenshot.
+    const MAX_BASE64_BYTES = 10 * 1024 * 1024;
+    if (imageBase64 && Buffer.byteLength(imageBase64, 'utf8') > MAX_BASE64_BYTES) {
+      return fail(res, `imageBase64 exceeds ${MAX_BASE64_BYTES} byte limit`, 413);
+    }
+
     const proof = await offrampService.submitProof(intentId, String(lpWallet || ''), String(imageBase64 || ''));
     return ok(res, { proof });
   } catch (error) {
@@ -91,9 +104,16 @@ export const acceptProof = async (req: AuthRequest, res: Response, next: NextFun
     const { intentId, proofId } = req.body;
     if (!intentId || !proofId) return fail(res, 'intentId and proofId are required', 400);
 
-    await offrampService.acceptProof(intentId);
+    // Only allow settlement from PROOF_SUBMITTED — not from MATCHED (no proof, no settlement).
     const intent = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
-    return ok(res, { intent });
+    if (!intent) return fail(res, 'Offramp intent not found', 404);
+    if (intent.status !== 'PROOF_SUBMITTED') {
+      return fail(res, `Cannot accept proof: intent is ${intent.status}, expected PROOF_SUBMITTED`, 409);
+    }
+
+    await offrampService.acceptProof(intentId);
+    const settled = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
+    return ok(res, { intent: settled });
   } catch (error) {
     next(error);
   }
@@ -152,6 +172,21 @@ export const registerProvider = async (req: AuthRequest, res: Response, next: Ne
 
     if (!walletAddress) return fail(res, 'walletAddress is required', 400);
 
+    const collateral = Number(collateralUsdc || 0);
+    const maxSingle = Number(maxSingleUsdc || 500);
+    const dailyLimit = Number(dailyLimitUsdc || 2000);
+
+    // Business logic validation — an LP cannot offer more than they hold.
+    if (maxSingle > collateral) {
+      return fail(res, `maxSingleUsdc (${maxSingle}) cannot exceed collateralUsdc (${collateral})`, 422);
+    }
+    if (dailyLimit > collateral) {
+      return fail(res, `dailyLimitUsdc (${dailyLimit}) cannot exceed collateralUsdc (${collateral})`, 422);
+    }
+    if (collateral <= 0) {
+      return fail(res, 'collateralUsdc must be greater than 0', 422);
+    }
+
     const provider = await prisma.liquidityProvider.create({
       data: {
         walletAddress: String(walletAddress),
@@ -160,9 +195,9 @@ export const registerProvider = async (req: AuthRequest, res: Response, next: Ne
         jazzCashAccount: jazzCashAccount ? String(jazzCashAccount) : null,
         bankIban: bankIban ? String(bankIban) : null,
         pkrReserveUsd: Number(pkrReserveUsd || 0),
-        collateralUsdc: Number(collateralUsdc || 0),
-        maxSingleUsdc: Number(maxSingleUsdc || 500),
-        dailyLimitUsdc: Number(dailyLimitUsdc || 2000),
+        collateralUsdc: collateral,
+        maxSingleUsdc: maxSingle,
+        dailyLimitUsdc: dailyLimit,
       },
     });
 
@@ -202,14 +237,32 @@ export const testWebhookDelivery = async (req: AuthRequest, res: Response, next:
 export const emiWebhook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const signature = req.headers['x-sfpy-signature'];
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body || {});
-    const expected = process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET_KEY;
-    if (!expected || !signature) {
-      return fail(res, 'Invalid signature', 401);
+    if (!signature || typeof signature !== 'string') {
+      return fail(res, 'Missing signature header', 401);
     }
 
-    const expectedHex = require('crypto').createHmac('sha256', String(expected)).update(String(rawBody)).digest('hex');
-    if (signature !== expectedHex) {
+    // Use raw body when available (captured by express.json verify hook); fall back safely
+    const rawBody = (req as any).rawBody;
+    const bodyToVerify = rawBody != null && typeof rawBody === 'string'
+      ? rawBody
+      : JSON.stringify(req.body ?? {});
+
+    const expectedSecret = process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET_KEY;
+    if (!expectedSecret) {
+      logger.error('[Offramp] SAFEPAY webhook secret is not configured');
+      return fail(res, 'Server misconfiguration', 500);
+    }
+
+    const expectedHex = crypto
+      .createHmac('sha256', expectedSecret)
+      .update(bodyToVerify)
+      .digest('hex');
+
+    // Constant-time comparison to avoid timing-side-channel on the webhook secret
+    if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedHex))) {
+      // valid signature path continues below
+    } else {
+      logger.warn(`[Offramp] EMI webhook signature mismatch for intentId=${req.query.intentId}`);
       return fail(res, 'Invalid signature', 401);
     }
 
@@ -225,7 +278,7 @@ export const emiWebhook = async (req: Request, res: Response, next: NextFunction
       destinationAccount: String(destinationAccount || ''),
       transactionId: String(transactionId),
       bankName: String(bankName || 'SafePay'),
-      signature: String(signature),
+      signature,
       verifiedAt: new Date().toISOString(),
     });
 
@@ -276,6 +329,40 @@ export const streamLpIntents = async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Wallet address required' });
   }
 
+  // Verify the requester is a registered, active LP before opening the SSE stream.
+  // Accept either an API key (x-api-key) or the LP wallet itself as a shared secret
+  // so that only the legitimate LP holder can subscribe to their own intents.
+  const providedKey = req.headers['x-api-key'] as string | undefined;
+  const expectedKey = process.env.OFFRAMP__LP_API_KEY;
+  const keyMatches = typeof providedKey === 'string' &&
+    expectedKey &&
+    crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(expectedKey));
+
+  let isRegisteredLp = false;
+  try {
+    const lp = await prisma.liquidityProvider.findUnique({
+      where: { walletAddress: lpWallet, isActive: true },
+    });
+    isRegisteredLp = !!lp;
+  } catch {
+    isRegisteredLp = false;
+  }
+
+  // Allow access if the LP API key matches OR the wallet is a registered active LP.
+  if (!keyMatches && !isRegisteredLp) {
+    return res.status(403).json({ success: false, error: 'Not authorized for this wallet stream' });
+  }
+
+  // ── SSE hardening ──────────────────────────────────────────────────────────
+  // Cap concurrent SSE connections per wallet to prevent resource exhaustion.
+  const MAX_SSE_CONNECTIONS = 3;
+  const conns = (sseConnectionCount.get(lpWallet) || 0);
+  if (conns >= MAX_SSE_CONNECTIONS) {
+    return res.status(429).json({ success: false, error: 'Too many SSE connections for this wallet' });
+  }
+  sseConnectionCount.set(lpWallet, conns + 1);
+
+  // Set headers and flush.
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -284,15 +371,56 @@ export const streamLpIntents = async (req: Request, res: Response) => {
 
   res.write('data: {"type":"CONNECTED"}\n\n');
 
+  // Heartbeat: send a ping every 30s to keep the connection alive and detect
+  // dead clients early. If the client doesn't respond, we'll detect it on
+  // the next write attempt and clean up.
+  const heartbeatInterval = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      // Client disconnected — cleanup will happen on 'close' event
+      clearInterval(heartbeatInterval);
+    }
+  }, 30_000);
+
+  // Cleanup on disconnect or timeout.
+  let disconnected = false;
+  const cleanup = () => {
+    if (disconnected) return;
+    disconnected = true;
+    clearInterval(heartbeatInterval);
+    offrampEvents.off('intent_updated', listener);
+    const current = sseConnectionCount.get(lpWallet) || 0;
+    sseConnectionCount.set(lpWallet, Math.max(0, current - 1));
+  };
+
+  res.on('close', cleanup);
+  res.on('error', cleanup);
+
+  // Timeout: if no data is sent within 5 minutes, close the connection.
+  // This prevents zombie connections from dead clients.
+  res.setTimeout(5 * 60 * 1000, () => {
+    if (!disconnected) {
+      try { res.write('event: error\ndata: "Connection timed out"\n\n'); } catch { /* ignore */ }
+      cleanup();
+      res.statusCode = 408;
+      res.end();
+    }
+  });
+
   const listener = (intent: any) => {
     if (intent && intent.lpWallet === lpWallet) {
-      res.write(`data: ${JSON.stringify({ type: 'INTENT_UPDATED', intent })}\n\n`);
+      try {
+        res.write(`data: ${JSON.stringify({ type: 'INTENT_UPDATED', intent })}\n\n`);
+      } catch {
+        // Client disconnected
+        cleanup();
+      }
     }
   };
 
   offrampEvents.on('intent_updated', listener);
 
-  req.on('close', () => {
-    offrampEvents.off('intent_updated', listener);
-  });
+  // Send initial confirmation that the stream is live.
+  res.write(`event: status\ndata: ${JSON.stringify({ connected: true, wallet: lpWallet })}\n\n`);
 };

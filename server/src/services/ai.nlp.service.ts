@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 
 const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY || '';
 
@@ -66,15 +67,86 @@ function extractBookingEntities(message: string): BookingEntities {
   };
 }
 
+const MAX_MESSAGE_LENGTH = 2000;
+
+const INJECTION_PATTERNS = [
+  /(ignore\s+(all|previous|above)\s+(instructions|rules|commands|directions))/gi,
+  /(forget\s+(all|previous|above)\s+(instructions|rules|commands))/gi,
+  /(you\s+are\s+now\s+(a|an)\s+\w+\s+that)/gi,
+  /(pretend\s+(you|to|that))/gi,
+  /(override\s+(all|previous|system))/gi,
+  /(new\s+instructions|new\s+role|new\s+persona)/gi,
+  /^\s*(system|assistant|user)\s*:/mi,
+];
+
+function validateAndSanitizeInput(message: string): { clean: string; blocked: boolean; reason?: string } {
+  const trimmed = message.trim();
+
+  if (!trimmed) {
+    return { clean: '', blocked: true, reason: 'Empty message' };
+  }
+
+  if (trimmed.length > MAX_MESSAGE_LENGTH) {
+    return {
+      clean: trimmed.substring(0, MAX_MESSAGE_LENGTH),
+      blocked: false,
+      reason: `Message truncated from ${trimmed.length} to ${MAX_MESSAGE_LENGTH} characters`,
+    };
+  }
+
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      logger.warn('[AI NLP] Potential prompt injection detected', {
+        pattern: pattern.source.substring(0, 80),
+        messageLength: trimmed.length,
+      });
+      return {
+        clean: trimmed,
+        blocked: true,
+        reason: 'Input contains potentially unsafe patterns',
+      };
+    }
+  }
+
+  return { clean: trimmed, blocked: false };
+}
+
+function validateClassificationOutput(data: any): data is ClassificationResult {
+  if (!data || typeof data !== 'object') return false;
+  if (!['booking', 'support', 'cancellation', 'general', 'sales', 'book_table', 'check_menu', 'ask_question'].includes(data.intent)) return false;
+  if (typeof data.language !== 'string' || data.language.length !== 2) return false;
+  if (!['positive', 'neutral', 'negative'].includes(data.sentiment)) return false;
+  if (typeof data.confidence !== 'number' || data.confidence < 0 || data.confidence > 1) return false;
+  return true;
+}
+
 class AiNlpService {
   getEnabledModels(): string[] {
     return ['qwen-turbo', 'qwen-plus', 'qwen-max'];
   }
 
   async classifyIntentAndLanguage(message: string): Promise<ClassificationResult> {
+    const validation = validateAndSanitizeInput(message);
+    if (validation.blocked) {
+      logger.warn('[AI NLP] Input blocked', { reason: validation.reason, messageLength: message.length });
+      return {
+        intent: 'general',
+        language: 'en',
+        sentiment: 'neutral',
+        confidence: 0.1,
+      };
+    }
+
+    const cleanMessage = validation.clean;
+
     if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
-      const entities = extractBookingEntities(message);
-      return { intent: entities.intent === 'book_table' ? 'booking' : entities.intent === 'check_menu' || entities.intent === 'ask_question' ? 'support' : 'general', language: 'en', sentiment: 'neutral', confidence: 0.7 };
+      const entities = extractBookingEntities(cleanMessage);
+      return {
+        intent: entities.intent === 'book_table' ? 'booking' : entities.intent === 'check_menu' || entities.intent === 'ask_question' ? 'support' : 'general',
+        language: /[\u0600-\u06FF]/.test(cleanMessage) ? 'ar' : 'en',
+        sentiment: 'neutral',
+        confidence: 0.7,
+      };
     }
 
     const context = `
@@ -95,7 +167,7 @@ Schema:
         input: {
           messages: [
             { role: 'system', content: context },
-            { role: 'user', content: message },
+            { role: 'user', content: cleanMessage },
           ],
         },
         parameters: { result_format: 'message' },
@@ -115,19 +187,26 @@ Schema:
       const content = response.data?.output?.choices?.[0]?.message?.content?.trim();
       if (content) {
         const jsonStr = content.replace(/^```json\n?/, '').replace(/```$/, '').trim();
-        const result = JSON.parse(jsonStr) as ClassificationResult;
-        return result;
+        const parsed = JSON.parse(jsonStr);
+        if (validateClassificationOutput(parsed)) {
+          logger.info('[AI NLP] Classification result', { intent: parsed.intent, language: parsed.language, confidence: parsed.confidence });
+          return parsed;
+        }
+        logger.warn('[AI NLP] Invalid classification output from LLM', { raw: jsonStr.substring(0, 200) });
       }
     } catch (error: any) {
-      const fallback = this.localFallback(message);
-      if (fallback) return fallback;
-      console.error('[AI NLP] Error classifying message:', error.response?.data || error.message);
+      const lower = cleanMessage.toLowerCase();
+      const direct = classifyDirect(lower);
+      if (direct) {
+        return { intent: direct, language: 'en', sentiment: 'neutral', confidence: 0.7 };
+      }
+      logger.error('[AI NLP] Error classifying message:', error.response?.data || error.message);
     }
 
-    const entities = extractBookingEntities(message);
+    const entities = extractBookingEntities(cleanMessage);
     return {
       intent: entities.intent === 'book_table' ? 'booking' : entities.intent === 'check_menu' || entities.intent === 'ask_question' ? 'support' : 'general',
-      language: /[\u0600-\u06FF]/.test(message) ? 'ar' : 'en',
+      language: /[\u0600-\u06FF]/.test(cleanMessage) ? 'ar' : 'en',
       sentiment: 'neutral',
       confidence: 0.4,
     };
@@ -136,23 +215,33 @@ Schema:
   localFallback(message: string): ClassificationResult | null {
     const lower = message.toLowerCase();
     const direct = classifyDirect(lower);
-    if (direct) return { intent: direct, language: 'en', sentiment: 'neutral', confidence: 0.7 } as any;
+    if (direct) return { intent: direct, language: 'en', sentiment: 'neutral', confidence: 0.7 };
     if (/\b(book|reserve|table for|reservation for|want to book)\b/.test(lower)) return { intent: 'booking', language: 'en', sentiment: 'neutral', confidence: 0.7 };
     return null;
   }
 
   async extractBookingEntities(message: string): Promise<BookingEntities> {
-    return extractBookingEntities(message);
+    const validation = validateAndSanitizeInput(message);
+    const clean = validation.blocked ? '' : validation.clean;
+    return extractBookingEntities(clean || message);
   }
 
   async generateCopy(template: string, contextVars: Record<string, any>): Promise<string> {
+    // Template and context vars are controlled by the business, not user input
+    // but still apply length limits to prevent abuse
+    if (template.length > 500) {
+      logger.warn('[AI NLP] Template too long, truncating', { length: template.length });
+      template = template.substring(0, 500);
+    }
+
     if (!DASHSCOPE_API_KEY || DASHSCOPE_API_KEY === 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY') {
       return `[Mock Generated] ${template} using ${JSON.stringify(contextVars)}`;
     }
 
     let contextStr = 'Context Variables:\n';
     for (const [key, value] of Object.entries(contextVars)) {
-      contextStr += `- ${key}: ${JSON.stringify(value)}\n`;
+      const valStr = typeof value === 'string' ? value.substring(0, 200) : JSON.stringify(value);
+      contextStr += `- ${key}: ${valStr}\n`;
     }
 
     const systemPrompt = `
@@ -187,7 +276,7 @@ Output ONLY the final message text. Do not include markdown unless appropriate f
       const content = response.data?.output?.choices?.[0]?.message?.content?.trim();
       return content || template;
     } catch (error: any) {
-      console.error('[AI NLP] Error generating copy:', error.response?.data || error.message);
+      logger.error('[AI NLP] Error generating copy:', error.response?.data || error.message);
       return 'Sorry, I am having trouble understanding right now. Please try again or use the app.';
     }
   }

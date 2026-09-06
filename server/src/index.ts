@@ -125,6 +125,35 @@ if (DEMO_MODE) {
 
 // Security and Performance middleware
 app.set('trust proxy', 1); // Essential for rate limiting behind Cloud Run
+
+// ── Startup sanity check: fail fast if required secrets are missing ───────────
+const requiredEnvVars: string[] = [];
+if (process.env.NODE_ENV === 'production') {
+  // Wallet/JWT auth
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+    requiredEnvVars.push('JWT_SECRET (min 16 chars)');
+  }
+  // SafePay / EMI webhook verification
+  if (!process.env.SAFEPAY_WEBHOOK_SECRET && !process.env.SAFEPAY_SECRET_KEY) {
+    requiredEnvVars.push('SAFEPAY_WEBHOOK_SECRET or SAFEPAY_SECRET_KEY');
+  }
+  // LP API key for offramp
+  if (!process.env.OFFRAMP__LP_API_KEY) {
+    requiredEnvVars.push('OFFRAMP__LP_API_KEY');
+  }
+  // Firebase App Check (production)
+  if (process.env.REQUIRE_APP_CHECK !== 'false' && !process.env.FIREBASE_APP_CHECK_SECRET) {
+    requiredEnvVars.push('FIREBASE_APP_CHECK_SECRET (set REQUIRE_APP_CHECK=false to skip)');
+  }
+}
+if (requiredEnvVars.length > 0) {
+  logger.error(
+    `🚨 Server starting with MISSING or weak env configuration in production:${requiredEnvVars.map(v => `\n   - ${v}`).join('')}\n` +
+    `   Fix these before serving real traffic, or set NODE_ENV != 'production' to bypass the check (dev only).`
+  );
+  // Non-fatal in dev; in production this should be escalated to your deploy monitor
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -143,11 +172,27 @@ app.use(helmet({
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 app.use(compression());
-const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/app\/?$/, '');
+const corsOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5500',
+  'https://pabandi-42c5b.web.app',
+  'https://pabandi.com',
+  'https://www.pabandi.com',
+];
+
+// In production, strip localhost origins from CORS allowlist.
+const isProductionEnv = process.env.NODE_ENV === 'production';
+const frontendOrigin = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .replace(/\/app\/?$/, '');
+
+const productionOrigins = [frontendOrigin, 'https://pabandi-42c5b.web.app', 'https://pabandi.com', 'https://www.pabandi.com'];
+
+const allowedOrigins = isProductionEnv
+  ? productionOrigins.filter((v, i, a) => v && a.indexOf(v) === i)
+  : corsOrigins.filter((v, i, a) => v && a.indexOf(v) === i);
+
 app.use(cors({
-  origin: [frontendOrigin, 'http://localhost:3000', 'http://localhost:5500', 'https://pabandi-42c5b.web.app', 'https://pabandi.com', 'https://www.pabandi.com'].filter(
-    (v, i, a) => v && a.indexOf(v) === i
-  ),
+  origin: allowedOrigins,
   credentials: true,
 }));
 

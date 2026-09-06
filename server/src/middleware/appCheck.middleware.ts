@@ -3,24 +3,19 @@ import * as admin from 'firebase-admin';
 import { logger } from '../utils/logger';
 
 export const requireAppCheck = async (req: Request, res: Response, next: NextFunction) => {
-  // Allow OPTIONS requests for CORS
-  if (req.method === 'OPTIONS') {
-    return next();
-  }
-
-  if (process.env.SKIP_APP_CHECK === 'true') {
-    return next();
-  }
-
-  // TEMPORARY FIX: App Check token logic was disabled on the frontend 
-  // to prevent hangs, so we must also bypass it on the backend globally
-  // otherwise all API calls (search, maps, etc.) will fail with 401.
-  return next();
+  // Do NOT bypass App Check globally. Individual routes that cannot
+  // attach custom headers (browser redirects etc.) must be exempted
+  // explicitly below.
 
   // Bypass App Check for OAuth redirect and callback routes because browser
   // redirects (window.location.href) cannot attach custom headers.
   const oauthPaths = ['/auth/google', '/auth/facebook', '/auth/twitter', '/auth/linkedin', '/auth/tiktok'];
   if (oauthPaths.some(path => req.originalUrl.includes(path))) {
+    return next();
+  }
+
+  // Allow local development without App Check when explicitly opted in.
+  if (process.env.NODE_ENV !== 'production' && process.env.SKIP_APP_CHECK === 'true') {
     return next();
   }
 

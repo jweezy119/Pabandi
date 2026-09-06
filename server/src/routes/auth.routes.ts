@@ -113,7 +113,7 @@ router.post('/auth/register', authRateLimiter, [
   try {
     const { email, password, firstName, lastName, phone, role, code } = req.body;
     const { prisma } = await import('../utils/database');
-    const { hash } = await import('bcrypt');
+    const { hash } = await import('bcryptjs');
     const jwt = (await import('jsonwebtoken')).default;
     const JWT_SECRET = process.env.JWT_SECRET!;
     const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;

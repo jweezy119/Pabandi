@@ -9,6 +9,18 @@ import axios from 'axios';
 import { getMessageAck } from './openwa.webhook-handler.service';
 
 export class ChannelDispatcher {
+  /** Track pending reminder timeouts keyed by intentId so they can be cleared on server shutdown. */
+  private reminderTimeouts = new Map<string, NodeJS.Timeout>();
+
+  /** Clear all pending reminder timeouts (call on graceful shutdown). */
+  shutdown() {
+    for (const [, timeout] of this.reminderTimeouts) {
+      clearTimeout(timeout);
+    }
+    this.reminderTimeouts.clear();
+    logger.info('[Dispatcher] Cleared all pending reminder timeouts');
+  }
+
   async dispatchNewIntent(intent: OfframpIntent) {
     // 1. Find all verified channels for active LPs with enough available collateral
     const availableLps = await prisma.liquidityProvider.findMany({
@@ -59,7 +71,8 @@ export class ChannelDispatcher {
           
           if (messageId) {
             // Schedule read-receipt check (LP auto-re-broadcast)
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
+              this.reminderTimeouts.delete(intent.id);
               const ack = getMessageAck(messageId);
               // If not read (ACK < 3) after 30s, ping again or move to next LP tier
               if (!ack || ack.ack < 3) {
@@ -67,6 +80,7 @@ export class ChannelDispatcher {
                 sendWhatsAppMessage(channel.address, `⚠️ Reminder: High-priority trade request ${intent.id} is still waiting for you!`);
               }
             }, 30000);
+            this.reminderTimeouts.set(intent.id, timeoutId);
           }
         } catch (e) {
           logger.error(`[Dispatcher] Failed to send WhatsApp to ${channel.address}:`, e);
@@ -151,3 +165,13 @@ export class ChannelDispatcher {
 
 export const channelDispatcher = new ChannelDispatcher();
 channelDispatcher.init();
+
+// Graceful shutdown: clear any pending LP reminder timeouts so we don't
+// send "reminder" pushes for intents that were already settled/funded.
+process.on('SIGTERM', () => {
+  channelDispatcher.shutdown();
+});
+
+process.on('SIGINT', () => {
+  channelDispatcher.shutdown();
+});

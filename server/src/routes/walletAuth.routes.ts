@@ -3,6 +3,7 @@ import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
 import nacl from 'tweetnacl';
 import { PublicKey } from '@solana/web3.js';
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
@@ -51,8 +52,14 @@ router.post('/verify', async (req: Request, res: Response) => {
       });
     }
 
-    // Generate a simple session token (in production, use JWT).
-    const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+    // Generate a short-lived JWT session token (signed with JWT_SECRET so the auth
+    // middleware can verify it with jwt.verify — the old base64(userId:timestamp)
+    // format was not a real JWT and could not be verified).
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'insecure-dev-secret',
+      { expiresIn: '24h' }
+    );
 
     res.json({
       success: true,

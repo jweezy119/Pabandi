@@ -23,6 +23,14 @@ if (ORACLE_SECRET_KEY) {
   );
 }
 
+if (!oracleKeypair) {
+  logger.warn(
+    '[SolanaEscrow] SOLANA_ORACLE_SECRET_KEY is not configured. ' +
+    'Oracle signing operations (initialize_escrow, release_escrow, refund_escrow) ' +
+    'will throw at runtime. Set the env var to enable on-chain escrow flows.'
+  );
+}
+
 const connection = new Connection(
   process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
   'confirmed'
@@ -52,28 +60,44 @@ export const solanaEscrowService = {
       throw new Error('Invalid serialized transaction');
     }
 
-    // Deeply inspect the transaction instructions to prevent blind signing
-    // The transaction should only contain the 'initializeEscrow' instruction directed at PROGRAM_ID.
+    // Deeply inspect the transaction instructions to prevent blind signing.
+    // The transaction should only contain the 'initializeEscrow' instruction
+    // directed at PROGRAM_ID, with the correct discriminator bytes.
     const message = transaction.message;
     const programIdIndex = message.staticAccountKeys.findIndex(k => k.equals(PROGRAM_ID));
-    
+
     if (programIdIndex === -1) {
       throw new Error('Transaction does not interact with the expected Program ID.');
     }
 
-    let initializeInstructionCount = 0;
-    
+    // initialize_escrow discriminator from IDL: [243,160,77,153,11,92,48,209]
+    const INITIALIZE_ESCROW_DISCRIMINATOR = new Uint8Array([
+      243, 160, 77, 153, 11, 92, 48, 209,
+    ]);
+
+    let validInitializeInstructionCount = 0;
+
     for (const ix of message.compiledInstructions) {
       if (ix.programIdIndex === programIdIndex) {
-        // Checking the discriminator for initialize_escrow (first 8 bytes)
-        // From IDL: [229, 219, 137, 187, 85, 206, 68, 206] or similar depending on generation.
-        // As a fallback for prototyping we're just checking that the oracle is required as a signer.
-        initializeInstructionCount++;
+        // Check that this instruction's data starts with the correct discriminator
+        const data = ix.data;
+        if (data.length >= INITIALIZE_ESCROW_DISCRIMINATOR.length) {
+          let discriminatorMatches = true;
+          for (let i = 0; i < INITIALIZE_ESCROW_DISCRIMINATOR.length; i++) {
+            if (data[i] !== INITIALIZE_ESCROW_DISCRIMINATOR[i]) {
+              discriminatorMatches = false;
+              break;
+            }
+          }
+          if (discriminatorMatches) {
+            validInitializeInstructionCount++;
+          }
+        }
       }
     }
 
-    if (initializeInstructionCount === 0) {
-      throw new Error('No initialize_escrow instruction found for the Program.');
+    if (validInitializeInstructionCount === 0) {
+      throw new Error('No initialize_escrow instruction with valid discriminator found for the Program.');
     }
 
     // 1. Fetch real-time trust score for this customer
@@ -153,7 +177,15 @@ export const solanaEscrowService = {
   },
 
   /**
-   * Oracle-Triggered Refund (e.g. cancellation)
+   * Builds a refund transaction for the customer to sign and submit.
+   *
+   * The on-chain `refund_escrow` instruction (lib.rs:154) requires the customer
+   * to be a signer — the backend cannot refund on the customer's behalf. This
+   * function prepares the serialized transaction; the frontend must deserialize,
+   * sign with the customer's wallet, and submit to the network.
+   *
+   * @returns base64-encoded serialized Transaction ready for customer signing
+   * @throws if the escrow state PDA doesn't exist or the build fails
    */
   async triggerRefundEscrow(
     reservationId: string,
@@ -188,32 +220,32 @@ export const solanaEscrowService = {
 
     const customerTokenAccount = getAssociatedTokenAddressSync(mintAddress, customerWallet);
 
-    logger.info(`[Escrow Oracle] Triggering Refund for ${reservationId}...`);
+    logger.info(`[Escrow Oracle] Building refund tx for ${reservationId} (customer must sign)...`);
 
     try {
-      // For refund_escrow, the IDL specifies customer must be a signer, which means the backend cannot
-      // unilaterally refund using only the oracle unless the smart contract allows the oracle to trigger it.
-      // Assuming for V1 the backend uses the customer's wallet if it holds custody, or the smart contract
-      // was built to allow the oracle to refund. The IDL provided earlier showed "customer" as signer.
-      // Let's assume the IDL can be bypassed or we have the customer's authority (e.g., Gasless relay).
-      // If we don't have the customer signer, this would need to be signed by the customer on the frontend.
-      // For backend-triggered refunds, the contract should have an `oracle_trigger` like `release_escrow`.
-      
+      // Build the refund instruction via Anchor.
+      // The `customer` account is marked as Signer<'info> in the IDL —
+      // the transaction is built with the customer as the required signer,
+      // but we do NOT sign here. The customer signs on the frontend.
       const tx = await program.methods.refundEscrow()
         .accounts({
-          customer: oracleKeypair.publicKey, // This will fail if the contract enforces customer == escrow_state.customer and they don't match. 
+          customer: customerWallet,
           escrowState: escrowStatePDA,
           vaultTokenAccount: vaultTokenPDA,
           customerTokenAccount: customerTokenAccount,
         })
-        .signers([oracleKeypair])
-        .rpc();
-        
-      logger.info(`[Escrow Oracle] Refunded funds. Tx: ${tx}`);
-      return tx;
+        .transaction();
+
+      // Serialize the Transaction to base64 for the frontend.
+      // Frontend flow: Transaction.from(Buffer.from(base64, 'base64'))
+      // → tx.sign(customerKeypair) → sendAndConfirmTransaction(connection, tx)
+      const serialized = Buffer.from(tx.serialize()).toString('base64');
+
+      logger.info(`[Escrow Oracle] Refund tx prepared for ${reservationId}. Customer must sign and submit.`);
+      return serialized;
     } catch (err: any) {
-      logger.error(`[Escrow Oracle] Refund failed: ${err.message}`);
-      throw new Error(`Refund failed: ${err.message}`);
+      logger.error(`[Escrow Oracle] Refund tx build failed for ${reservationId}: ${err.message}`);
+      throw new Error(`Refund tx preparation failed: ${err.message}`);
     }
   }
 };

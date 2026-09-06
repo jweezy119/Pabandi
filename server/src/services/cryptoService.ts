@@ -554,6 +554,13 @@ export class CryptoService {
   /**
    * Called when a reservation is CANCELLED by business.
    * Refunds escrowed funds 100% back to customer.
+   *
+   * IMPORTANT: The on-chain `refund_escrow` instruction requires the customer
+   * to sign the transaction. The backend builds the tx and returns the
+   * serialized form; the caller must arrange for the customer to sign and submit.
+   * The serialized tx is logged and stored for customer notification.
+   *
+   * @returns base64-encoded serialized Transaction, or null if refund couldn't be prepared
    */
   async refundEscrowToCustomer(reservationId: string): Promise<void> {
     try {

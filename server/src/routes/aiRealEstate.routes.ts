@@ -2,8 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { aiNlpService } from '../services/ai.nlp.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { aiRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
+
+// All AI real-estate endpoints require authentication + rate limiting
+router.use(authenticate);
+router.use(aiRateLimiter);
 
 // ── AI Lease Analyzer ───────────────────────────────────────────────────────
 // POST /api/v1/ai/analyze-lease
@@ -80,6 +85,9 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction) => 
   try {
     const { message, context } = req.body;
     if (!message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (typeof message !== 'string' || message.length > 2000) {
+      return res.status(400).json({ success: false, error: 'Message must be a string of 2000 characters or less' });
+    }
 
     const response = await aiChat(message, context);
     res.json({ success: true, data: { response } });
