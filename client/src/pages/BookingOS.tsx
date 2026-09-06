@@ -16,8 +16,8 @@ const CATEGORIES = [
 
 export const BookingOS: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'discover' | 'reservations' | 'tickets'>('discover');
+  const { isAuthenticated } = useAuthStore();
+  const [activeTab] = useState<'discover' | 'reservations' | 'tickets'>('discover');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('restaurant');
   const [selectedDate, setSelectedDate] = useState('');
