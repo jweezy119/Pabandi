@@ -77,10 +77,10 @@ export const BookingOS: React.FC = () => {
 
   const handleReserve = (venue: any) => {
     if (!isAuthenticated) {
-      navigate(`/login?redirect=${encodeURIComponent(`/booking/${venue.id}`)}`);
+      navigate(`/login?redirect=${encodeURIComponent(`/business/${venue.id}/book`)}`);
       return;
     }
-    navigate(`/booking/${venue.id}`, { state: { venue, date: selectedDate, guests: selectedGuests } });
+    navigate(`/business/${venue.id}/book`, { state: { venue, date: selectedDate, guests: selectedGuests } });
   };
 
   const getDirectionsUrl = (venue: any) => {
