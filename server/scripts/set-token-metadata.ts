@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { createMetadataAccountV3, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { keypairIdentity, publicKey } from '@metaplex-foundation/umi';

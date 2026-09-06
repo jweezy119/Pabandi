@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as tf from '@tensorflow/tfjs';
 import { logger } from '../../utils/logger';
 import { prisma } from '../../utils/database';

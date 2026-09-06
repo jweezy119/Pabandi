@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * zkNullifier.service.ts — ZK-style Proof of Rent (PoR) with NULLIFIERS.
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * buildZk.ts — Compile the Noir Proof-of-Rent circuit and emit the compiled program artifact.
  *

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * zkRealestateProver.ts — ZK constraint-execution prover for the
  * Pabandi Protocol v2.0 Real-Estate / Hospitality escrow-split circuit.

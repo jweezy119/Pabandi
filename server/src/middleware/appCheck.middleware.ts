@@ -19,12 +19,21 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
     return next();
   }
 
+  // Public read-only GET routes — these are safe to access without App Check
+  // because they only return public business data (venue listings, freight load
+  // board stats, maps geocoding). The frontend does not send App Check tokens,
+  // so these routes would otherwise always fail.
+  const publicGetPaths = ['/venues/search', '/freight/stats', '/freight/loads', '/maps/geocode'];
+  if (req.method === 'GET' && publicGetPaths.some(path => req.originalUrl.includes(path))) {
+    return next();
+  }
+
   const appCheckToken = req.header('X-Firebase-AppCheck');
 
   if (!appCheckToken) {
     logger.warn(`Unauthorized request: Missing App Check token from ${req.ip}`);
     return res.status(401).json({ 
-      success: false, 
+      success: false,
       error: 'Unauthorized: App Check token is missing.',
       code: 'app-check/missing-token'
     });

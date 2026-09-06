@@ -27,6 +27,7 @@ export const FreightPage: React.FC = () => {
   const [carriers, setCarriers] = useState<any[]>([]);
   const [myLoads, setMyLoads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchOrigin, setSearchOrigin] = useState('');
   const [searchDest, setSearchDest] = useState('');
 
@@ -50,8 +51,9 @@ export const FreightPage: React.FC = () => {
       setStats(statsRes.data?.data || {});
       setLoads(loadsRes.data?.data || []);
       setCarriers(carriersRes.data?.data || []);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load initial data:', e);
+      setError(e?.response?.data?.error || e?.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -189,6 +191,11 @@ export const FreightPage: React.FC = () => {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
         {activeTab === 'dashboard' && <Dashboard stats={stats} loads={loads} carriers={carriers} onNavigate={setActiveTab} onSeedDemo={seedDemoData} loading={loading} />}
         {activeTab === 'loads' && <LoadBoard loads={loads} loading={loading} searchOrigin={searchOrigin} searchDest={searchDest} setSearchOrigin={setSearchOrigin} setSearchDest={setSearchDest} onSearch={loadLoads} />}
         {activeTab === 'post' && <PostLoadForm onSuccess={() => { loadInitialData(); setActiveTab('my-loads'); }} />}

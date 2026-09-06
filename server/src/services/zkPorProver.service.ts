@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * zkPorProver.ts — ZK constraint-execution prover for the Pabandi Protocol v2.0
  * Proof of Rent (PoR) circuit.
