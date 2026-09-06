@@ -450,33 +450,34 @@ async function searchOpenMenu(name: string, lat?: string, lng?: string) {
 function mergeResults(yelp: any[], fsq: any[], osm: any[]) {
   const merged = new Map<string, any>();
 
-  // Process Yelp results (highest priority for ratings/reviews)
-  for (const venue of yelp) {
+  // Process Foursquare results first (primary source)
+  for (const venue of fsq) {
     const key = `${venue.name?.toLowerCase()}_${Math.round(venue.lat * 1000)}_${Math.round(venue.lng * 1000)}`;
-    merged.set(key, { ...venue, sources: ['yelp'] });
+    merged.set(key, { ...venue, sources: ['foursquare'] });
   }
 
-  // Merge Foursquare results
-  for (const venue of fsq) {
+  // Merge Yelp results as enrichment
+  for (const venue of yelp) {
     const key = `${venue.name?.toLowerCase()}_${Math.round(venue.lat * 1000)}_${Math.round(venue.lng * 1000)}`;
     const existing = merged.get(key);
     if (existing) {
-      // Merge data, preferring existing (Yelp) for ratings but adding Foursquare data
+      if (!existing.rating && venue.rating) existing.rating = venue.rating;
+      if (!existing.reviewCount && venue.reviewCount) existing.reviewCount = venue.reviewCount;
       if (!existing.website && venue.website) existing.website = venue.website;
-      if (!existing.phone && venue.tel) existing.phone = venue.tel;
-      if (!existing.description && venue.description) existing.description = venue.description;
-      existing.sources.push('foursquare');
+      if (!existing.phone && venue.phone) existing.phone = venue.phone;
+      if (!existing.price && venue.price) existing.price = venue.price;
+      if (!existing.imageUrl && venue.imageUrl) existing.imageUrl = venue.imageUrl;
+      existing.sources.push('yelp');
     } else {
-      merged.set(key, { ...venue, sources: ['foursquare'] });
+      merged.set(key, { ...venue, sources: ['yelp'] });
     }
   }
 
-  // Merge OSM results
+  // Merge OSM results as fallback
   for (const venue of osm) {
     const key = `${venue.name?.toLowerCase()}_${Math.round(venue.lat * 1000)}_${Math.round(venue.lng * 1000)}`;
     const existing = merged.get(key);
     if (existing) {
-      // Fill in missing data from OSM
       if (!existing.phone && venue.phone) existing.phone = venue.phone;
       if (!existing.website && venue.website) existing.website = venue.website;
       if (!existing.hours && venue.hours) existing.hours = venue.hours;
