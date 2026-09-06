@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { Surface, Button, tokens } from '../design-system';
 
 const CATEGORIES = [
   { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
@@ -23,6 +24,7 @@ export const BookingOS: React.FC = () => {
   const [selectedGuests, setSelectedGuests] = useState(2);
   const [venues, setVenues] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [location, setLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
   useEffect(() => {
@@ -38,13 +40,15 @@ export const BookingOS: React.FC = () => {
   const loadVenues = async () => {
     if (!location) return;
     setLoading(true);
+    setError('');
     try {
       const res = await fetch(
         `/api/v1/venues/search?lat=${location.lat}&lng=${location.lng}&categories=${selectedCategory}&radius=5000&limit=30`
       );
       const data = await res.json();
       setVenues(data.data || []);
-    } catch (e) {
+    } catch (e: any) {
+      setError('Failed to load venues. Please try again.');
       console.error('Failed to load venues:', e);
     } finally {
       setLoading(false);
@@ -54,13 +58,17 @@ export const BookingOS: React.FC = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setLoading(true);
+    setError('');
     try {
       const res = await fetch(`/api/v1/maps/geocode?q=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
       if (data.data) {
         setLocation({ lat: data.data.lat, lng: data.data.lng, name: data.data.displayName });
+      } else {
+        setError('Location not found. Try "Chicago", "New York", etc.');
       }
-    } catch (e) {
+    } catch (e: any) {
+      setError('Geocoding failed. Please try again.');
       console.error('Failed to geocode:', e);
     } finally {
       setLoading(false);
@@ -80,92 +88,70 @@ export const BookingOS: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7]">
-      {/* Header - OpenTable style */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-8 h-8 rounded bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white font-bold text-sm">B</div>
-              <span className="text-xl font-bold text-gray-900">BookOS</span>
-              <span className="text-xs text-gray-400 ml-1">by Pabandi</span>
-            </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <button onClick={() => setActiveTab('discover')} className={`text-sm font-medium ${activeTab === 'discover' ? 'text-red-600' : 'text-gray-600 hover:text-gray-900'}`}>Discover</button>
-              <button onClick={() => setActiveTab('reservations')} className={`text-sm font-medium ${activeTab === 'reservations' ? 'text-red-600' : 'text-gray-600 hover:text-gray-900'}`}>Reservations</button>
-              <button onClick={() => setActiveTab('tickets')} className={`text-sm font-medium ${activeTab === 'tickets' ? 'text-red-600' : 'text-gray-600 hover:text-gray-900'}`}>Tickets</button>
-            </nav>
+    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-black text-white">BookOS</h1>
+            <p className="text-sm" style={{ color: tokens.color.muted }}>Find and book venues near you</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/search')} className="text-sm text-gray-500 hover:text-gray-700">← Back to Search</button>
-            <button onClick={() => navigate('/')} className="text-sm text-gray-500 hover:text-gray-700">← Home</button>
-            {isAuthenticated ? (
-              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-sm font-bold">
-                {user?.firstName?.[0] || '?'}
-              </div>
-            ) : (
-              <button onClick={() => navigate('/login')} className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700">
-                Sign In
-              </button>
-            )}
-          </div>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/search')}>← Back to Search</Button>
         </div>
-      </header>
 
-      {/* Hero Search */}
-      {activeTab === 'discover' && (
-        <div className="bg-gradient-to-b from-white to-[#f7f7f7] py-12">
-          <div className="max-w-4xl mx-auto px-4">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Find your table</h1>
-            <p className="text-gray-600 mb-8">Book at the best restaurants, clubs, and events near {location?.name || 'you'}</p>
+        {/* Hero Search */}
+        {activeTab === 'discover' && (
+          <div className="mb-8">
+            <h2 className="text-3xl font-black text-white mb-2">Find your table</h2>
+            <p className="text-white/60 mb-6">Book at the best restaurants, clubs, and events near {location?.name || 'you'}</p>
             
-            <div className="bg-white rounded-lg shadow-lg p-4 flex flex-col md:flex-row gap-3">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">📍</span>
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   placeholder="Search city, neighborhood, or venue..."
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-indigo-400"
                 />
               </div>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">📅</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">📅</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded text-gray-900 focus:outline-none focus:border-red-500"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-400"
                 />
               </div>
               <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">👥</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">👥</span>
                 <select
                   value={selectedGuests}
                   onChange={(e) => setSelectedGuests(Number(e.target.value))}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded text-gray-900 focus:outline-none focus:border-red-500 appearance-none bg-white"
+                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-indigo-400 appearance-none"
                 >
                   {[1,2,3,4,5,6,7,8].map(n => (
-                    <option key={n} value={n}>{n} {n === 1 ? 'guest' : 'guests'}</option>
+                    <option key={n} value={n} className="bg-slate-800">{n} {n === 1 ? 'guest' : 'guests'}</option>
                   ))}
                 </select>
               </div>
-              <button onClick={handleSearch} className="px-8 py-3 bg-red-600 text-white font-medium rounded hover:bg-red-700 transition-colors">
+              <button onClick={handleSearch} className="px-8 py-3 bg-indigo-500 text-white font-medium rounded-xl hover:bg-indigo-600 transition-colors">
                 Find
               </button>
             </div>
 
             {/* Categories */}
-            <div className="flex gap-2 mt-6 overflow-x-auto pb-2">
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
                     selectedCategory === cat.id
-                      ? 'bg-red-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-200 hover:border-red-500'
+                      ? 'bg-indigo-500 text-white'
+                      : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
                   }`}
                 >
                   <span>{cat.icon}</span> {cat.label}
@@ -173,58 +159,54 @@ export const BookingOS: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Error */}
+        {error && (
+          <div className="mb-6 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Content */}
         {activeTab === 'discover' && (
-          <div className="space-y-8">
-            {/* Results */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {CATEGORIES.find(c => c.id === selectedCategory)?.label} near {location?.name || 'you'}
-                </h2>
-                <span className="text-sm text-gray-500">{venues.length} results</span>
+          <div className="space-y-6">
+            {loading ? (
+              <div className="text-center py-12 text-white/40">
+                <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                Loading venues...
               </div>
-              
-              {loading ? (
-                <div className="text-center py-12 text-gray-400">Loading...</div>
-              ) : venues.length === 0 ? (
-                <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
-                  <div className="text-5xl mb-4">🍽️</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">No venues found</h3>
-                  <p className="text-gray-600">Try searching a different area or category.</p>
-                  <button onClick={() => navigate('/search')} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                    Search all businesses
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {venues.map((venue) => (
-                    <VenueCard key={venue.id} venue={venue} directionsUrl={getDirectionsUrl(venue)} onReserve={handleReserve} />
-                  ))}
-                </div>
-              )}
-            </section>
+            ) : venues.length === 0 ? (
+              <Surface className="p-12 text-center">
+                <div className="text-5xl mb-4">🍽️</div>
+                <h3 className="text-xl font-bold text-white mb-2">No venues found</h3>
+                <p className="text-white/50 mb-4">Try searching a different area or category.</p>
+                <Button onClick={() => navigate('/search')}>Search all businesses</Button>
+              </Surface>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {venues.map((venue) => (
+                  <VenueCard key={venue.id} venue={venue} directionsUrl={getDirectionsUrl(venue)} onReserve={handleReserve} />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'reservations' && (
-          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+          <Surface className="p-12 text-center">
             <div className="text-5xl mb-4">📋</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Your reservations</h3>
-            <p className="text-gray-600">You have no upcoming reservations.</p>
-          </div>
+            <h3 className="text-xl font-bold text-white mb-2">Your reservations</h3>
+            <p className="text-white/50">You have no upcoming reservations.</p>
+          </Surface>
         )}
 
         {activeTab === 'tickets' && (
-          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+          <Surface className="p-12 text-center">
             <div className="text-5xl mb-4">🎫</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Your tickets</h3>
-            <p className="text-gray-600">You have no tickets yet.</p>
-          </div>
+            <h3 className="text-xl font-bold text-white mb-2">Your tickets</h3>
+            <p className="text-white/50">You have no tickets yet.</p>
+          </Surface>
         )}
       </div>
     </div>
@@ -232,34 +214,34 @@ export const BookingOS: React.FC = () => {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// Venue Card (OpenTable style with working Reserve button)
+// Venue Card
 // ────────────────────────────────────────────────────────────────────────────
 const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue: any) => void }> = ({ venue, directionsUrl, onReserve }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer group">
+    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/[0.08] transition-all group">
       {/* Image */}
-      <div className="relative h-48 bg-gray-200">
+      <div className="relative h-48 bg-white/5">
         {venue.imageUrl ? (
           <img src={venue.imageUrl} alt={venue.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
+          <div className="w-full h-full flex items-center justify-center text-white/20 bg-gradient-to-br from-indigo-500/10 to-purple-500/10">
             <span className="text-4xl">🍽️</span>
           </div>
         )}
         {/* Favorite button */}
         <button
           onClick={(e) => { e.stopPropagation(); setIsFavorite(!isFavorite); }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors shadow-sm"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
         >
           {isFavorite ? '❤️' : '🤍'}
         </button>
         {/* Rating badge */}
         {venue.rating && (
-          <div className="absolute bottom-3 left-3 px-2 py-1 rounded bg-white/90 text-sm font-medium text-gray-900 flex items-center gap-1">
-            <span className="text-yellow-500">★</span> {venue.rating}
-            {venue.reviewCount && <span className="text-gray-500 text-xs">({venue.reviewCount})</span>}
+          <div className="absolute bottom-3 left-3 px-2 py-1 rounded-full bg-black/50 text-sm font-medium text-white flex items-center gap-1">
+            <span className="text-yellow-400">★</span> {venue.rating}
+            {venue.reviewCount && <span className="text-white/50 text-xs">({venue.reviewCount})</span>}
           </div>
         )}
       </div>
@@ -267,29 +249,29 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue
       {/* Details */}
       <div className="p-4">
         <div className="flex items-start justify-between mb-1">
-          <h3 className="font-bold text-gray-900 group-hover:text-red-600 transition-colors truncate">{venue.name}</h3>
+          <h3 className="font-bold text-white group-hover:text-indigo-300 transition-colors truncate">{venue.name}</h3>
           {venue.price && (
-            <span className="text-sm text-gray-500 ml-2">{venue.price}</span>
+            <span className="text-sm text-white/40 ml-2">{venue.price}</span>
           )}
         </div>
         
         {/* Address */}
         {venue.address && (
-          <p className="text-sm text-gray-600 mb-1 truncate">{venue.address}</p>
+          <p className="text-sm text-white/50 mb-1 truncate">{venue.address}</p>
         )}
         {venue.city && (
-          <p className="text-sm text-gray-500 mb-2">{venue.city}{venue.state ? `, ${venue.state}` : ''}</p>
+          <p className="text-sm text-white/40 mb-2">{venue.city}{venue.state ? `, ${venue.state}` : ''}</p>
         )}
 
         {/* Contact info */}
-        <div className="flex items-center gap-3 mb-3 text-xs text-gray-500">
+        <div className="flex items-center gap-3 mb-3 text-xs text-white/40">
           {venue.phone && (
-            <a href={`tel:${venue.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-red-600 flex items-center gap-1">
+            <a href={`tel:${venue.phone}`} onClick={(e) => e.stopPropagation()} className="hover:text-indigo-300 flex items-center gap-1">
               📞 {venue.phone}
             </a>
           )}
           {venue.website && (
-            <a href={venue.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-red-600 flex items-center gap-1 truncate max-w-[150px]">
+            <a href={venue.website} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-indigo-300 flex items-center gap-1 truncate max-w-[150px]">
               🌐 Website
             </a>
           )}
@@ -297,14 +279,14 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue
 
         {/* Hours */}
         {venue.hours && (
-          <p className="text-xs text-gray-500 mb-3">🕐 {typeof venue.hours === 'string' ? venue.hours : 'Open today'}</p>
+          <p className="text-xs text-white/40 mb-3">🕐 {typeof venue.hours === 'string' ? venue.hours : 'Open today'}</p>
         )}
 
         {/* Source badges */}
         {venue.sources && venue.sources.length > 0 && (
           <div className="flex gap-1 mb-3">
             {venue.sources.map((source: string) => (
-              <span key={source} className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500">
+              <span key={source} className="px-1.5 py-0.5 text-xs rounded bg-white/5 text-white/40">
                 {source}
               </span>
             ))}
@@ -315,7 +297,7 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue
         <div className="flex gap-2">
           <button 
             onClick={(e) => { e.stopPropagation(); onReserve(venue); }}
-            className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+            className="flex-1 px-3 py-2 bg-indigo-500 text-white text-sm font-medium rounded-xl hover:bg-indigo-600 transition-colors"
           >
             Reserve
           </button>
@@ -324,7 +306,7 @@ const VenueCard: React.FC<{ venue: any; directionsUrl: string; onReserve: (venue
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="px-3 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded hover:border-red-500 hover:text-red-600 transition-colors"
+            className="px-3 py-2 border border-white/10 text-white/60 text-sm font-medium rounded-xl hover:border-indigo-400 hover:text-indigo-300 transition-colors"
           >
             🗺️
           </a>
