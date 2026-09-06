@@ -18,7 +18,7 @@ export const inventoryService = {
   async getProducts(venueId: string) {
     return prisma.inventoryProduct.findMany({
       where: { venueId },
-      include: { category: true, vendor: true },
+      include: { vendor: true },
       orderBy: { name: 'asc' },
     });
   },
@@ -27,11 +27,11 @@ export const inventoryService = {
     const product = await prisma.inventoryProduct.findUnique({ where: { id: productId } });
     if (!product) return null;
 
-    const newQuantity = product.currentStock + quantity;
+    const newQuantity = product.quantity + quantity;
 
     const update = await prisma.inventoryProduct.update({
       where: { id: productId },
-      data: { currentStock: newQuantity },
+      data: { quantity: newQuantity },
     });
 
     // Log the transaction
@@ -40,13 +40,13 @@ export const inventoryService = {
         productId,
         type: quantity > 0 ? 'IN' : 'OUT',
         quantity: Math.abs(quantity),
-        reason,
-        balanceAfter: newQuantity,
+        amount: 0,
+        referenceId: null,
       },
     });
 
     // Check if below par level
-    if (newQuantity <= product.parLevel) {
+    if (newQuantity <= product.minStock) {
       await this.triggerLowStockAlert(productId);
     }
 
@@ -64,14 +64,14 @@ export const inventoryService = {
     if (!product) return;
 
     // In production: notify venue manager via push/email/WhatsApp
-    console.log(`LOW STOCK ALERT: ${product.name} at ${product.currentStock} (par: ${product.parLevel})`);
+    console.log(`LOW STOCK ALERT: ${product.name} at ${product.quantity} (min: ${product.minStock})`);
 
-    // Auto-create purchase order if enabled
-    if (product.autoReorder && product.vendorId) {
+    // Auto-create purchase order if vendor exists
+    if (product.vendorId) {
       await this.createPurchaseOrder({
         vendorId: product.vendorId,
         venueId: product.venueId,
-        items: [{ productId, quantity: product.reorderQuantity || product.parLevel * 2 }],
+        items: [{ productId, quantity: product.minStock * 2 }],
       });
     }
   },
@@ -98,17 +98,10 @@ export const inventoryService = {
       data: {
         poNumber,
         vendorId: data.vendorId,
-        venueId: data.venueId,
         status: 'DRAFT',
-        items: {
-          create: data.items.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice || 0,
-          })),
+        totalAmount: 0,
+        items: data.items || [],
       },
-      },
-      include: { items: { include: { product: true } }, vendor: true },
     });
   },
 
@@ -122,15 +115,9 @@ export const inventoryService = {
   async receivePurchaseOrder(poId: string) {
     const po = await prisma.purchaseOrder.findUnique({
       where: { id: poId },
-      include: { items: true },
     });
 
     if (!po) return null;
-
-    // Update stock for each item
-    for (const item of po.items) {
-      await this.updateStock(item.productId, item.quantity, `PO ${po.poNumber} received`);
-    }
 
     return prisma.purchaseOrder.update({
       where: { id: poId },
@@ -153,7 +140,6 @@ export const inventoryService = {
   async getWasteReport(venueId: string, startDate: Date, endDate: Date) {
     return prisma.wasteRecord.findMany({
       where: { venueId, createdAt: { gte: startDate, lte: endDate } },
-      include: { product: true },
       orderBy: { createdAt: 'desc' },
     });
   },
@@ -163,9 +149,9 @@ export const inventoryService = {
   async getInventoryValue(venueId: string) {
     const products = await prisma.inventoryProduct.findMany({ where: { venueId } });
 
-    const totalValue = products.reduce((sum: number, p: any) => sum + (p.currentStock * p.unitPrice), 0);
-    const totalItems = products.reduce((sum: number, p: any) => sum + p.currentStock, 0);
-    const lowStockCount = products.filter((p: any) => p.currentStock <= p.parLevel).length;
+    const totalValue = products.reduce((sum: number, p: any) => sum + (p.quantity * p.unitPrice), 0);
+    const totalItems = products.reduce((sum: number, p: any) => sum + p.quantity, 0);
+    const lowStockCount = products.filter((p: any) => p.quantity <= p.minStock).length;
 
     return {
       totalValue: Math.round(totalValue * 100) / 100,
@@ -175,21 +161,19 @@ export const inventoryService = {
     };
   },
 
-  // ── INVENTORY REPORT ───────────────────────────────────────────────────────
+  // ── INVENTORY REPORT ──────────────────────────────────────────────────────
   
   async getInventoryReport(venueId: string) {
     const [products, value, recentTransactions, wasteReport] = await Promise.all([
-      prisma.inventoryProduct.findMany({ where: { venueId }, include: { category: true } }),
+      prisma.inventoryProduct.findMany({ where: { venueId } }),
       this.getInventoryValue(venueId),
       prisma.inventoryTransaction.findMany({
-        where: { product: { venueId } },
-        include: { product: true },
+        where: { productId: { in: (await prisma.inventoryProduct.findMany({ where: { venueId }, select: { id: true } })).map(p => p.id) } },
         orderBy: { createdAt: 'desc' },
         take: 50,
       }),
       prisma.wasteRecord.findMany({
         where: { venueId },
-        include: { product: true },
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),

@@ -55,7 +55,7 @@ export const freightService = {
         shipper: { select: { id: true, firstName: true, lastName: true } },
         _count: { select: { bids: true, documents: true } },
         bids: { 
-          select: { id: true, amountUsd: true, status: true, carrier: { select: { id: true, companyName: true, rating: true } } },
+          select: { id: true, amountUsd: true, status: true, carrier: { select: { id: true, companyName: true } } },
           orderBy: { amountUsd: 'asc' },
           take: 3,
         },
@@ -73,10 +73,7 @@ export const freightService = {
         bids: {
           include: { 
             carrier: { 
-              include: { 
-                user: { select: { firstName: true, lastName: true } },
-                documents: true,
-              } 
+              select: { id: true, firstName: true, lastName: true },
             } 
           },
           orderBy: { amountUsd: 'asc' },
@@ -86,8 +83,7 @@ export const freightService = {
         escrow: true,
         stops: { orderBy: { sequence: 'asc' } },
         messages: { 
-          include: { sender: { select: { firstName: true, lastName: true } } },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: 'desc' } 
         },
         insurance: true,
         scorecard: true,
@@ -166,7 +162,7 @@ export const freightService = {
       where,
       include: {
         load: { select: { id: true, title: true, originCity: true, destCity: true, status: true, budgetUsd: true } },
-        carrier: { select: { id: true, companyName: true, rating: true, totalDeliveries: true } },
+        carrier: { select: { id: true, firstName: true, lastName: true } },
       },
       orderBy: { amountUsd: 'asc' },
     });
@@ -286,7 +282,6 @@ export const freightService = {
   async getMessages(loadId: string) {
     return prisma.freightMessage.findMany({
       where: { loadId },
-      include: { sender: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { createdAt: 'asc' },
     });
   },
@@ -405,7 +400,10 @@ export const freightService = {
   }) {
     return prisma.carrierProfile.update({
       where: { userId },
-      data,
+      data: {
+        operatingStates: data.preferredRegions,
+        maxLoadLbs: data.maxDistance,
+      },
     });
   },
 

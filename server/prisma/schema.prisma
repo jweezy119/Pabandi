@@ -15,6 +15,7 @@ model User {
   passwordHash            String
   firstName               String
   lastName                String
+  companyName             String?
   role                    UserRole                @default(CUSTOMER)
   isEmailVerified         Boolean                 @default(false)
   isPhoneVerified         Boolean                 @default(false)
@@ -52,6 +53,8 @@ model User {
   payments                Payment[]
   reservations            Reservation[]
   socialIdentities        SocialIdentity[]
+  socialAccounts          SocialAccount[]
+  socialShares            SocialShare[]
   referredBy              User?                   @relation("UserReferrals", fields: [referredById], references: [id])
   referrals               User[]                  @relation("UserReferrals")
   wallet                  Wallet?
@@ -107,8 +110,8 @@ model Business {
   city                   String                  @default("")
   country                String                  @default("United States")
   postalCode             String?
-  phone                  String
-  email                  String
+  phone                  String?
+  email                  String?
   website                String?
   logoUrl                String?
   coverImageUrl          String?
@@ -2029,6 +2032,11 @@ model AgentTransaction {
   fromAddress String?
   toAddress   String?
   metadata    Json?
+  description String?
+  referenceId String?
+  status      String?
+  userId      String?
+  referenceType String?
   createdAt   DateTime @default(now())
 
   agent Web3Agent? @relation(fields: [agentId], references: [id], onDelete: Cascade)
@@ -2233,7 +2241,7 @@ model RentStream {
   tenantEquityUSD Float?
   landlordBonusUSD Float?
   pabandiSpreadUSD Float?
-  status          String   @default("PENDING") // PENDING | SETTLED
+  status          String   @default("PENDING") // PENDING, ARRIVED, COMPLETED, MISSED // PENDING | SETTLED
   simulated       Boolean  @default(true) // true until on-chain RWA adapter live
   settledAt       DateTime?
   createdAt       DateTime @default(now())
@@ -2596,8 +2604,15 @@ model AgentStake {
   agentId    String   @unique
   amountPab  Float    @default(0)
   slashedPab Float    @default(0)
-  vault      String // protocol stake vault (PAB treasury)
+  vault      String? // protocol stake vault (PAB treasury)
   indexed    Boolean  @default(false) // true once stake >= required
+  amount     Float    @default(0)
+  tier       String?
+  txStatus   String?
+  type       String?
+  benefits   String[]
+  stakedAt   DateTime?
+  unstakedAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -2740,6 +2755,8 @@ model PabWallet {
   stakedTier  String?
   stakedAt    DateTime?
   stakeExpires DateTime?
+  lifetimeEarned Float @default(0)
+  lifetimeSpent Float @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -3427,8 +3444,8 @@ model FreightStop {
   cargoDescription String?
   weightLbs       Float?
   scheduledTime   DateTime?
+  status          String   @default("PENDING") // PENDING, ARRIVED, COMPLETED, MISSED
   actualTime      DateTime?
-  status          String   // PENDING, ARRIVED, COMPLETED, MISSED
   notes           String?
   
   createdAt       DateTime @default(now())
@@ -3469,6 +3486,7 @@ model FreightMessage {
   load            FreightLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
   
   senderId        String
+  sender          String?
   
   message         String
   messageType     String   // MESSAGE, STATUS_UPDATE, ALERT, DISPUTE
@@ -3493,7 +3511,7 @@ model FreightInsurance {
   policyNumber    String
   certificateUrl  String?
   
-  status          String   // PENDING, ACTIVE, CLAIMED, EXPIRED
+  status          String   @default("PENDING") // PENDING, ACTIVE, CLAIMED, EXPIRED
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3736,7 +3754,7 @@ model CoverCharge {
   type            String   // GENERAL, VIP, AFTER_HOURS
   startTime       String
   endTime         String
-  daysOfWeek      Number[]
+  daysOfWeek      Int[]
   gender          String?  // MALE, FEMALE, ALL
   guestListIncluded Boolean @default(false)
   isActive        Boolean  @default(true)
@@ -3751,6 +3769,8 @@ model GuestList {
   venueId         String
   venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   eventId         String?
+  promoterId      String?
+  promoter        Promoter? @relation(fields: [promoterId], references: [id], onDelete: Cascade)
   
   date            DateTime
   partySize       Int
@@ -3758,6 +3778,9 @@ model GuestList {
   status          String   // CONFIRMED, ARRIVED, NO_SHOW, CANCELLED, WAITING
   noShowProbability Float  @default(0.3)
   confirmationCode String  @unique
+  depositAmount   Float    @default(0)
+  depositStatus   String   @default("WAIVED")
+  rewarded        Boolean  @default(false)
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3765,6 +3788,7 @@ model GuestList {
   @@index([userId])
   @@index([venueId])
   @@index([date])
+  @@index([promoterId])
 }
 
 model NightlifeEvent {
@@ -3852,6 +3876,7 @@ model AgentExecution {
   reason      String
   executedAt  DateTime @default(now())
   userId      String?
+  referenceType String?
   venueId     String?
   promoterId  String?
   metadata    Json?
@@ -3869,4 +3894,101 @@ model AgentOrchestration {
   resolvedAt  DateTime @default(now())
 
   @@index([resolvedAt])
+}
+
+
+model SocialAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       String
+  accessToken    String
+  refreshToken   String?
+  username       String?
+  profileUrl     String?
+  followerCount  Int?
+  connectedAt    DateTime @default(now())
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+model SocialShare {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String
+  contentType  String
+  referenceId  String?
+  shareUrl     String
+  status       String   @default("SHARED")
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([platform])
+}
+
+model InventoryProduct {
+  id           String   @id @default(cuid())
+  name         String
+  sku          String   @unique
+  category     String?
+  unitPrice    Float    @default(0)
+  quantity     Int      @default(0)
+  minStock     Int      @default(0)
+  vendorId     String?
+  vendor       InventoryVendor? @relation(fields: [vendorId], references: [id])
+  venueId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([vendorId])
+}
+
+model InventoryVendor {
+  id          String   @id @default(cuid())
+  name        String
+  contact     String?
+  email       String?
+  phone       String?
+  address     String?
+  products    InventoryProduct[]
+  purchaseOrders PurchaseOrder[]
+  venueId      String?
+  createdAt   DateTime @default(now())
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  vendorId    String?
+  vendor      InventoryVendor? @relation(fields: [vendorId], references: [id])
+  items       Json?
+  totalAmount Float    @default(0)
+  status      String   @default("PENDING")
+  submittedAt DateTime?
+  receivedAt  DateTime?
+  poNumber    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([vendorId])
+}
+
+model WasteRecord {
+  id          String   @id @default(cuid())
+  productId   String?
+  quantity    Float    @default(0)
+  reason      String?
+  venueId     String?
+  createdAt   DateTime @default(now())
+}
+
+model InventoryTransaction {
+  id          String   @id @default(cuid())
+  productId   String?
+  type        String
+  quantity    Float
+  amount      Float    @default(0)
+  referenceId String?
+  createdAt   DateTime @default(now())
 }
