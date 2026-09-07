@@ -4,7 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
-import passport from 'passport';
+// DISABLED: Passport (replaced with lightweight GitHub OAuth implementation)
+// import passport from 'passport';
 import compression from 'compression';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
@@ -20,11 +21,9 @@ const httpServer = createServer(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
-// Configure ONLY GitHub OAuth (lightweight — avoids loading all 7 social strategies)
-import('./utils/passport-github').then(({ configurePassport }) => {
-  try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
-}).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
-app.use(passport.initialize());
+// GitHub OAuth is handled directly in routes/githubAuth.routes.ts (no passport needed)
+// DISABLED: Passport (replaced with lightweight GitHub OAuth)
+// app.use(passport.initialize());
 
 // DISABLED: DB keepalive (runs cron job forever)
 // try { startDbKeepalive(); } catch (err) { logger.warn('DB keepalive skipped: ' + (err as Error).message); }
@@ -200,7 +199,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/public`, './routes/api-public.routes'],
   [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
   [`/api/${v}/social`, './routes/social.routes'],
-  [`/api/${v}/auth/social`, './routes/socialAuth.routes'],
+  [`/api/${v}/auth/social`, './routes/githubAuth.routes'],
   [`/api/${v}/wallet`, './routes/wallet.routes'],
   [`/api/${v}/reliability`, './routes/reliability.routes'],
   [`/api/${v}/token-staking`, './routes/staking.routes'],

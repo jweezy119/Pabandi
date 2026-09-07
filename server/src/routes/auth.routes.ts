@@ -4,7 +4,6 @@ import { register, login, refreshToken, verifyEmail, sendVerificationCode, verif
 import { validateRequest } from '../middleware/validateRequest';
 import { authenticate } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimiter';
-import passport from 'passport';
 import { cryptoService } from '../services/cryptoService';
 import { logger } from '../utils/logger';
 import jwt from 'jsonwebtoken';
