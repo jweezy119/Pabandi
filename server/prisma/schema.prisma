@@ -53,6 +53,7 @@ model User {
   cryptoRewards           CryptoReward[]
   payments                Payment[]
   reservations            Reservation[]
+  venueReviews            VenueReview[]
   socialIdentities        SocialIdentity[]
   socialAccounts          SocialAccount[]
   socialShares            SocialShare[]
@@ -3674,6 +3675,15 @@ model NightlifeVenue {
   instagram       String?
   rating          Float    @default(50)
   isActive        Boolean  @default(true)
+  description     String?
+  amenities       String[] @default([])
+  images          String[] @default([])
+  coverChargeDefault Float @default(0)
+  minAge          Int      @default(21)
+  featured        Boolean  @default(false)
+  openTime        String?
+  closeTime       String?
+  daysOpen        String[] @default([])
   
   // Relations
   bottlePackages  BottlePackage[]
@@ -3682,6 +3692,7 @@ model NightlifeVenue {
   events          NightlifeEvent[]
   guestLists      GuestList[]
   bottleReservations BottleReservation[]
+  reviews         VenueReview[]
   analytics       VenueAnalytics[]
   
   createdAt       DateTime @default(now())
@@ -3743,6 +3754,14 @@ model BottleReservation {
   totalPrice      Float
   status          String   // PENDING, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
   confirmationCode String  @unique
+  depositAmount   Float    @default(0)
+  depositPaid     Boolean  @default(false)
+  coverChargeAmount Float  @default(0)
+  guestListId     String?
+  guestList       GuestList? @relation(fields: [guestListId], references: [id], onDelete: SetNull)
+  promoterId      String?
+  promoter        Promoter? @relation(fields: [promoterId], references: [id], onDelete: SetNull)
+  promoCode       String?
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3759,6 +3778,7 @@ model CoverCharge {
   
   name            String
   amount          Float
+  description     String?
   type            String   // GENERAL, VIP, AFTER_HOURS
   startTime       String
   endTime         String
@@ -3783,12 +3803,16 @@ model GuestList {
   date            DateTime
   partySize       Int
   guestNames      String[]
+  email           String?
+  phone           String?
   status          String   // CONFIRMED, ARRIVED, NO_SHOW, CANCELLED, WAITING
   noShowProbability Float  @default(0.3)
   confirmationCode String  @unique
   depositAmount   Float    @default(0)
   depositStatus   String   @default("WAIVED")
   rewarded        Boolean  @default(false)
+  
+  bottleReservations BottleReservation[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3856,6 +3880,8 @@ model Promoter {
   // Relations
   guestLists      GuestList[]
   reviews         PromoterReview[]
+  promoCodes      PromoCode[]
+  bottleReservations BottleReservation[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -3873,6 +3899,55 @@ model PromoterReview {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model VenueReview {
+  id              String   @id @default(cuid())
+  venueId         String
+  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating          Int      // 1-5
+  text            String?
+  visitDate       DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([venueId])
+  @@index([userId])
+}
+
+model PromoCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  promoterId      String?
+  promoter        Promoter? @relation(fields: [promoterId], references: [id], onDelete: SetNull)
+  type            String   // PERCENTAGE, FIXED
+  value           Float
+  maxUses         Int      @default(100)
+  currentUses     Int      @default(0)
+  validFrom       DateTime @default(now())
+  validUntil      DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([promoterId])
+}
+
+model EmailLog {
+  id              String   @id @default(cuid())
+  toEmail         String
+  subject         String
+  body            String
+  type            String   // BOOKING_CONFIRMATION, PROMOTER_COMMISSION, GUEST_LIST_CONFIRMATION
+  status          String   // SENT, FAILED, PENDING
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+
+  @@index([toEmail])
+  @@index([type])
+}
+
 model AgentExecution {
   id          String   @id @default(cuid())
   agentType   String

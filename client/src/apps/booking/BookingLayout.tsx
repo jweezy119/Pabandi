@@ -3,9 +3,15 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 import { FiCalendar, FiStar, FiHeart, FiCreditCard, FiSettings, FiLogOut, FiMenu, FiX, FiHome, FiSearch, FiGrid } from 'react-icons/fi';
+import { VscOrganization } from 'react-icons/vsc';
+import { FaRegListAlt } from 'react-icons/fa';
 
 const navigation = [
   { path: '/booking', label: 'Discover', icon: FiSearch, roles: [] },
+  { path: '/booking/venues/search', label: 'Venue Search', icon: FiSearch, roles: ['USER', 'ADMIN'] },
+  { path: '/booking/my-bookings', label: 'My Bookings', icon: FiCalendar, roles: ['USER', 'ADMIN'] },
+  { path: '/booking/guest-list', label: 'Guest List', icon: FaRegListAlt, roles: ['USER', 'ADMIN'] },
+  { path: '/booking/promoter', label: 'Promoter', icon: VscOrganization, roles: ['USER', 'ADMIN'] },
   { path: '/booking/my-reservations', label: 'My Reservations', icon: FiCalendar, roles: ['USER', 'ADMIN'] },
   { path: '/booking/favorites', label: 'Favorites', icon: FiHeart, roles: ['USER', 'ADMIN'] },
   { path: '/booking/venues', label: 'My Venues', icon: FiGrid, roles: ['BUSINESS_OWNER', 'ADMIN'] },

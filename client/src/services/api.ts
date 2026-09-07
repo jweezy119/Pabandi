@@ -789,3 +789,80 @@ export const aiAdvancedService = {
   marketIntelligence: (payload: any) => apiClient.post('/ai/advanced/market-intelligence', payload),
   maintenancePredictor: (payload: any) => apiClient.post('/ai/advanced/maintenance-predictor', payload),
 };
+
+// Nightlife Venues Service
+export const nightlifeVenuesService = {
+  search: (params: { city?: string; type?: string; genre?: string; amenities?: string[]; priceRange?: string; limit?: number; offset?: number }) => {
+    const q = new URLSearchParams();
+    if (params.city) q.set('city', params.city);
+    if (params.type) q.set('type', params.type);
+    if (params.genre) q.set('genre', params.genre);
+    if (params.amenities?.length) q.set('amenities', params.amenities.join(','));
+    if (params.priceRange) q.set('priceRange', params.priceRange);
+    if (params.limit) q.set('limit', String(params.limit));
+    if (params.offset) q.set('offset', String(params.offset));
+    return apiClient.get(`/nightlife/venues?${q.toString()}`);
+  },
+  getDetails: (id: string) => apiClient.get(`/nightlife/venues/${id}`),
+  getReviews: (id: string) => apiClient.get(`/nightlife/venues/${id}/reviews`),
+  getEvents: (id: string) => apiClient.get(`/nightlife/venues/${id}/events`),
+  getTables: (id: string) => apiClient.get(`/nightlife/venues/${id}/tables`),
+  getBottles: (id: string) => apiClient.get(`/nightlife/venues/${id}/bottles`),
+  joinGuestList: (id: string, data: { name: string; partySize: number; date: string }) =>
+    apiClient.post(`/nightlife/venues/${id}/guest-list`, data),
+};
+
+// Nightlife Bookings Service
+export const nightlifeBookingService = {
+  create: (data: {
+    venueId: string;
+    tableId?: string;
+    bottleId?: string;
+    guestName: string;
+    guestEmail: string;
+    guestPhone: string;
+    partySize: number;
+    date: string;
+    specialRequests?: string;
+    promoCode?: string;
+    depositPercent: number;
+  }) => apiClient.post('/nightlife/bookings', data),
+  getMyBookings: (params?: { status?: string; from?: string; to?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.from) q.set('from', params.from);
+    if (params?.to) q.set('to', params.to);
+    return apiClient.get(`/nightlife/bookings/me${q.toString() ? `?${q.toString()}` : ''}`);
+  },
+  getBooking: (id: string) => apiClient.get(`/nightlife/bookings/${id}`),
+  cancelBooking: (id: string) => apiClient.post(`/nightlife/bookings/${id}/cancel`),
+  getQRCode: (id: string) => apiClient.get(`/nightlife/bookings/${id}/qr`),
+};
+
+// Promoter Service
+export const promoterService = {
+  getDashboard: () => apiClient.get('/promoter/dashboard'),
+  getReferralLink: () => apiClient.get('/promoter/referral-link'),
+  getStats: () => apiClient.get('/promoter/stats'),
+  getRecentBookings: () => apiClient.get('/promoter/bookings'),
+  getWallet: () => apiClient.get('/promoter/wallet'),
+  withdraw: (data: { amount: number; method?: string; destination?: string }) =>
+    apiClient.post('/promoter/withdraw', data),
+  getLeaderboard: (limit?: number) =>
+    apiClient.get(`/promoter/leaderboard${limit ? `?limit=${limit}` : ''}`),
+  getTier: () => apiClient.get('/promoter/tier'),
+  getActivePromoCode: () => apiClient.get('/promoter/promo-code'),
+};
+
+// Guest List Service
+export const guestListService = {
+  getMyEntries: (params?: { status?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    return apiClient.get(`/guest-list/me${q.toString() ? `?${q.toString()}` : ''}`);
+  },
+  join: (venueId: string, data: { name: string; partySize: number; date: string }) =>
+    apiClient.post(`/guest-list/${venueId}`, data),
+  cancel: (entryId: string) => apiClient.post(`/guest-list/${entryId}/cancel`),
+  getQRCode: (entryId: string) => apiClient.get(`/guest-list/${entryId}/qr`),
+};

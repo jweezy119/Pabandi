@@ -102,6 +102,12 @@ import FreightPage from './pages/FreightPage';
 import { FreightLayout } from './apps/freight';
 import { FreightDashboard, LoadBoard, PostLoad, MyLoads } from './apps/freight';
 import { BookingLayout } from './apps/booking';
+import VenueSearchPage from './pages/VenueSearchPage';
+import VenueDetailPage from './pages/VenueDetailPage';
+import BookingCheckoutPage from './pages/BookingCheckoutPage';
+import MyBookingsPage from './pages/MyBookingsPage';
+import PromoterDashboardPage from './pages/PromoterDashboardPage';
+import GuestListPage from './pages/GuestListPage';
 import PpdWizardPage from './pages/PpdWizardPage';
 import PassportDirectoryPage from './pages/PassportDirectoryPage';
 import CashOutPage from './pages/CashOutPage';
@@ -235,6 +241,12 @@ function App() {
               <Route path="analytics" element={<BookingPage />} />
               <Route path="payments" element={<BookingPage />} />
               <Route path="settings" element={<BookingPage />} />
+              <Route path="venues/search" element={<VenueSearchPage />} />
+              <Route path="venue/:id" element={<VenueDetailPage />} />
+              <Route path="checkout/:venueId" element={<BookingCheckoutPage />} />
+              <Route path="my-bookings" element={<MyBookingsPage />} />
+              <Route path="promoter" element={<PromoterDashboardPage />} />
+              <Route path="guest-list" element={<GuestListPage />} />
             </Route>
             <Route path="reservations" element={<ReservationsPage />} />
             <Route path="reservations/new" element={<NewReservationPage />} />

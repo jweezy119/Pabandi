@@ -55,6 +55,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^6.10.1",
     "prisma": "^5.22.0",
+    "resend": "^4.0.1",
     "stripe": "^22.3.2",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
