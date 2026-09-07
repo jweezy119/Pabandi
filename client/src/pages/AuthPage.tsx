@@ -108,7 +108,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const { login, register, loginWithWallet } = useAuthStore();
   const navigate = useNavigate();
-  const clearErrors = () => { setError(''); setFieldErrors({}); };
+  const clearErrors = () => { setError(''); setFieldErrors({}); }
 
   useEffect(() => {
     setMode(location.pathname === '/register' ? 'signup' : 'login');
@@ -160,7 +160,7 @@ export default function AuthPage() {
   const handleGitHubAuth = () => {
     setOauthLoading('github');
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\/d+\/?$/, '');
+    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
     window.location.href = `${backendUrl}/api/v1/auth/social/github?role=${role}`;
   };
 
@@ -469,7 +469,6 @@ export default function AuthPage() {
               <input id="password" name="password" type="password" autoComplete={isSignup ? 'new-password' : 'current-password'} required value={formData.password} onChange={handleChange}
                 className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.password ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
                 placeholder="Min. 8 characters" />
-              {isSignup && !fieldErrors.password && (<p className="mt-1.5 text-[11px] text-white/70">At least 8 characters</p>)}
               {fieldErrors.password && <FieldError msg={fieldErrors.password} />}
             </div>
 
