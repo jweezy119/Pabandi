@@ -20,8 +20,8 @@ const httpServer = createServer(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
-// Configure Passport strategies lazily (GitHub OAuth needs this)
-import('./utils/passport').then(({ configurePassport }) => {
+// Configure ONLY GitHub OAuth (lightweight — avoids loading all 7 social strategies)
+import('./utils/passport-github').then(({ configurePassport }) => {
   try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
 }).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
 app.use(passport.initialize());
