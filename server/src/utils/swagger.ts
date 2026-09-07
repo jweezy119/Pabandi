@@ -2,6 +2,8 @@ import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { Express, Request, Response } from 'express';
 
+// Disable swagger auto-scanning at startup (it eagerly loads all route files, consuming memory)
+// Swagger will scan routes on-demand via a lazy endpoint
 const options: swaggerJSDoc.Options = {
   definition: {
     openapi: '3.0.0',
@@ -38,7 +40,7 @@ const options: swaggerJSDoc.Options = {
     ],
   },
   // Paths to files containing OpenAPI definitions
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
+  apis: [], // Lazy: routes loaded on-demand to reduce startup memory
 };
 
 const swaggerSpec = swaggerJSDoc(options);

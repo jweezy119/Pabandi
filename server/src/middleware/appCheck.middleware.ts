@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
 import { logger } from '../utils/logger';
 
 export const requireAppCheck = async (req: Request, res: Response, next: NextFunction) => {
@@ -40,6 +39,7 @@ export const requireAppCheck = async (req: Request, res: Response, next: NextFun
   }
 
   try {
+    const admin = await import('firebase-admin');
     if (!admin.appCheck) {
       return res.status(500).json({ success: false, error: 'App Check is not configured.', code: 'app-check/not-configured' });
     }
