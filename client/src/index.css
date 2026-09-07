@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Safe area padding for iOS notched devices */
+.safe-area-pb {
+  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+}
+.safe-area-bottom {
+  padding-bottom: max(0.375rem, env(safe-area-inset-bottom));
+}
+
 /* Hide scrollbar on mobile nav */
 @media (max-width: 767px) {
   .no-scrollbar::-webkit-scrollbar { display: none; }

@@ -143,16 +143,16 @@ function MobileTab({ to, icon, label, current }: { to: string; icon: string; lab
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all duration-200 touch-target ${
+      className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all duration-200 touch-target ${
         current
           ? 'text-primary bg-primary-container/30 scale-[1.05]'
           : 'text-on-surface-variant hover:text-primary active:scale-95'
       }`}
     >
-      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
+      <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: current ? "'FILL' 1" : "'FILL' 0" }}>
         {icon}
       </span>
-      <span className="font-body text-[11px] font-semibold tracking-wide">{label}</span>
+      <span className="font-body text-[10px] font-semibold tracking-wide">{label}</span>
     </Link>
   );
 }
@@ -261,22 +261,23 @@ export default function Layout() {
         <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b shadow-2xl transition-all duration-300 ${scrolled ? 'bg-surface/60 backdrop-blur-2xl border-white/10 scale-[1.01]' : 'bg-surface/30 backdrop-blur-2xl border-white/5 scale-100'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
-              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs md:text-sm font-bold shrink-0 touch-target">
+              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
                 {initials}
               </Link>
             ) : (
-              <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 touch-target">
-                <span className="material-symbols-outlined">person</span>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 touch-target">
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">person</span>
               </div>
             )}
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/logo-company.jpg" alt="Pabandi" className="h-6 sm:h-8 w-auto" />
+            <Link to="/" className="flex items-center gap-1.5 sm:gap-2">
+              <img src="/logo-company.jpg" alt="Pabandi" className="h-5 sm:h-7 w-auto" />
+              <span className="font-headline font-bold text-sm sm:text-base text-on-surface hidden sm:inline">Pabandi</span>
             </Link>
           </div>
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles', '/freight', '/booking'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>
@@ -312,30 +313,38 @@ export default function Layout() {
             </Dropdown>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSearchOpen(true)} className="md:hidden w-10 h-10 rounded-full bg-white/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
-              <span className="material-symbols-outlined text-[20px]">search</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button onClick={() => setSearchOpen(true)} className="md:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 backdrop-blur text-on-surface flex items-center justify-center touch-target hover:bg-white/20 active:scale-95 transition-all duration-200">
+              <span className="material-symbols-outlined text-[18px] sm:text-[20px]">search</span>
             </button>
             {isAuthenticated ? (
-              <Dropdown label={initials} current={false}>
-                <DropdownItem to="/dashboard">Dashboard</DropdownItem>
-                <DropdownItem to="/wallet">Wallet</DropdownItem>
-                <DropdownItem to="/loans">Halal DeFi</DropdownItem>
-                <DropdownItem to="/account-manager">Partner Portal</DropdownItem>
-                <DropdownItem to="/profile">Profile</DropdownItem>
-                <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 text-sm text-error hover:bg-error-container/20 transition-all duration-150">Log Out</button>
-              </Dropdown>
+              <div className="flex items-center gap-1">
+                <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center touch-target">
+                  <span className="material-symbols-outlined text-[18px]">person</span>
+                </Link>
+                <Dropdown label={initials} current={false}>
+                  <DropdownItem to="/dashboard">Dashboard</DropdownItem>
+                  <DropdownItem to="/wallet">Wallet</DropdownItem>
+                  <DropdownItem to="/loans">Halal DeFi</DropdownItem>
+                  <DropdownItem to="/account-manager">Partner Portal</DropdownItem>
+                  <DropdownItem to="/profile">Profile</DropdownItem>
+                  <button onClick={handleLogout} className="block w-full text-left px-4 py-2.5 text-sm text-error hover:bg-error-container/20 transition-all duration-150">Log Out</button>
+                </Dropdown>
+              </div>
             ) : (
-              <div className="hidden md:flex gap-2">
-                <Link to="/login" className="text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
-                <Link to="/register" className="px-4 py-1.5 rounded-xl bg-primary text-on-primary text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link to="/login" className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center touch-target">
+                  <span className="material-symbols-outlined text-[18px]">person</span>
+                </Link>
+                <Link to="/login" className="hidden sm:inline text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
+                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
               </div>
             )}
           </div>
         </header>
       )}
 
-      <main className="flex-grow mobile-safe-bottom pt-14 sm:pt-16 pb-16 md:pb-0">
+      <main className="flex-grow mobile-safe-bottom pt-14 sm:pt-16 pb-16 sm:pb-0 md:pb-0">
         <PageTransition>
           <Outlet />
         </PageTransition>
@@ -343,27 +352,26 @@ export default function Layout() {
       </main>
 
       {!isAuthPage && (
-        <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden">
-          <div className="flex justify-around items-center px-2 py-2 safe-area-bottom">
+        <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb">
+          <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/live-sell" icon="videocam" label="Live" current={location.pathname === '/live-sell'} />
-            <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
+            <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
               <span className="material-symbols-outlined text-[24px]">search</span>
-              <span className="font-body text-[11px] font-semibold tracking-wide">Search</span>
+              <span className="font-body text-[10px] font-semibold tracking-wide">Search</span>
             </button>
             <MobileTab
               to={isOwnerOrAdmin ? '/dashboard' : '/reservations'}
               icon={isOwnerOrAdmin ? 'dashboard' : 'calendar_month'}
-              label={isOwnerOrAdmin ? 'Dashboard' : 'Bookings'}
+              label={isOwnerOrAdmin ? 'Dash' : 'Book'}
               current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}
             />
-            <MobileTab to="/profile" icon="person" label="Profile" current={location.pathname === '/profile'} />
             <button
               onClick={() => setMoreOpen(true)}
-              className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
             >
               <span className="material-symbols-outlined text-[24px]">apps</span>
-              <span className="font-body text-[11px] font-semibold tracking-wide">More</span>
+              <span className="font-body text-[10px] font-semibold tracking-wide">More</span>
             </button>
           </div>
         </nav>
