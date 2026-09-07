@@ -37,6 +37,7 @@ model User {
   updatedAt               DateTime                @updatedAt
   googleId                String?                 @unique
   facebookId              String?                 @unique
+  githubId                String?                 @unique
   resetToken              String?
   resetTokenExpires       DateTime?
   linkedinId              String?                 @unique
