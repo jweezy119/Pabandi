@@ -13,7 +13,7 @@ import { reviewService } from '../services/reviewService';
 import { cryptoService } from '../services/cryptoService';
 import { collectPlatformFee } from '../services/unifiedBooking.service';
 import { SOL_USD_PRICE } from '../config/tokenomics';
-import { ethers } from 'ethers';
+
 import { reliabilityService } from '../services/reliability.service';
 import { paymentRouter } from '../services/payment.router';
 import { webhookService } from '../services/webhook.service';

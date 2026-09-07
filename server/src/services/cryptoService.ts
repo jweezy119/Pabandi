@@ -3,19 +3,11 @@ import { logger } from '../utils/logger';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { getOrCreateAssociatedTokenAccount, transfer } from '@solana/spl-token';
 import bs58 from 'bs58';
-import { ethers } from 'ethers';
 import nacl from 'tweetnacl';
 
 import { solanaEscrowService } from './solana_escrow.service';
 import { TrustSignals } from '../services/trustSignal.service';
 import { TreasuryBucket } from '../services/treasury.service';
-
-// Pabandi Proof of Visit Contract (BSC Testnet)
-const PABANDI_POV_BSC = '0x1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0T'; // Dummy
-const POV_ABI = [
-  "function mintProofOfVisit(address to, string calldata businessId, string calldata businessName) external returns (uint256)",
-  "function hasVisited(address user, string calldata businessId) external view returns (bool)"
-];
 
 export const PAB_REWARD_RULES = {
   customer: {
@@ -85,9 +77,6 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Reward customer for completing a reservation (verified check-in).
-   */
   async rewardReservationCompletion(userId: string, reservationId: string): Promise<void> {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -96,25 +85,19 @@ export class CryptoService {
       });
       if (!reservation) return;
 
-      let amount: number = PAB_REWARD_RULES.customer.CHECK_IN; // 50 base
-
-      // 1. Reliability Multiplier
+      let amount: number = PAB_REWARD_RULES.customer.CHECK_IN;
       const rScore = reservation.customer.reliabilityScore || 100;
-      const reliabilityMultiplier = rScore / 100.0; // 0.0 to 1.0
-
-      // 2. Proving AI Wrong Bonus
+      const reliabilityMultiplier = rScore / 100.0;
       const aiRisk = reservation.riskScore || 0;
       let aiBonus = 0;
       if (aiRisk >= 60) {
-        // High risk but showed up! Give them up to 50% extra base reward
-        aiBonus = PAB_REWARD_RULES.customer.CHECK_IN * ((aiRisk - 60) / 100.0) * 2; 
+        aiBonus = PAB_REWARD_RULES.customer.CHECK_IN * ((aiRisk - 60) / 100.0) * 2;
       }
-
       const trustSignals = (reservation as any)?.trustSignals as TrustSignals | undefined;
       const trustBonus = (trustSignals?.riskDelta || 0) * (PAB_REWARD_RULES.customer.CHECK_IN / 100);
       amount = Math.floor((amount * reliabilityMultiplier) + aiBonus + trustBonus);
 
-      logger.info(`PAB +${amount} customer ${userId} reservation ${reservationId} (Base: ${PAB_REWARD_RULES.customer.CHECK_IN}, R-Score: ${rScore}, AI-Risk: ${aiRisk}, AI Bonus: ${aiBonus})`);
+      logger.info(`PAB +${amount} customer ${userId} reservation ${reservationId}`);
 
       await prisma.$transaction(async (tx) => {
         const existing = await tx.cryptoReward.findFirst({
@@ -138,48 +121,22 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Reward customer with 1% cashback for booking via AI Concierge.
-   */
   async triggerConciergeCashback(userId: string, reservationId: string): Promise<void> {
     try {
       const reservation = await prisma.reservation.findUnique({
         where: { id: reservationId },
         select: { depositAmount: true, isConcierge: true }
       });
-
       if (!reservation || !reservation.isConcierge || !reservation.depositAmount) return;
-
-      // 1% of the deposit amount in PAB (or equivalent)
       const amount = Math.floor(reservation.depositAmount * 0.01);
-
       if (amount <= 0) return;
 
-      logger.info(`PAB +${amount} (1% Cashback) customer ${userId} via AI Concierge for reservation ${reservationId}`);
-
+      logger.info(`PAB +${amount} (1% Cashback) customer ${userId} via AI Concierge`);
       await prisma.$transaction(async (tx) => {
-        const existing = await tx.cryptoReward.findFirst({
-          where: { userId, reservationId, type: 'RESERVATION_COMPLETION', metadata: { equals: { note: 'Concierge Cashback' } } as any },
-        });
-        if (existing) return;
-
         await this.creditPab(tx, userId, amount, 'RESERVATION_COMPLETION', reservationId, {
           note: 'Concierge Cashback',
           depositAmount: reservation.depositAmount
         });
-
-        // Optionally immediately trigger withdrawal to Solana wallet if they have one connected
-        try {
-          const wallet = await tx.wallet.findUnique({ where: { userId } });
-          if (wallet?.address && wallet.currency === 'SOL') {
-            // Process async withdrawal
-            setTimeout(() => {
-              this.withdrawToSolana(userId, amount).catch(e => logger.error("Async cashback withdrawal failed", e));
-            }, 5000);
-          }
-        } catch (e) {
-           logger.error("Failed to check wallet for cashback auto-withdraw", e);
-        }
       });
     } catch (error) {
       logger.error('Error triggering concierge cashback:', error);
@@ -187,9 +144,6 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Reward business owner when they honor a completed booking.
-   */
   async rewardBusinessForCompletion(businessId: string, reservationId: string): Promise<void> {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -202,36 +156,21 @@ export class CryptoService {
       });
       if (!business) return;
 
-      let amount: number = PAB_REWARD_RULES.business.HONORED_BOOKING; // 25 base
-      
-      // Risk Acceptance Bonus for Business
+      let amount: number = PAB_REWARD_RULES.business.HONORED_BOOKING;
       const aiRisk = reservation?.riskScore || 0;
       let aiBonus = 0;
       if (aiRisk >= 60) {
-        // Business took a chance on a high risk user and it paid off
         aiBonus = PAB_REWARD_RULES.business.HONORED_BOOKING * ((aiRisk - 50) / 100.0) * 1.5;
       }
-      
       amount = Math.floor(amount + aiBonus);
-
-      logger.info(`PAB +${amount} business owner ${business.ownerId} reservation ${reservationId} (Base: ${PAB_REWARD_RULES.business.HONORED_BOOKING}, AI-Risk: ${aiRisk}, Risk Bonus: ${aiBonus})`);
 
       await prisma.$transaction(async (tx) => {
         if (business.ownerId) {
-          try {
-            const existingBusinessReward = await tx.cryptoReward.findFirst({
-              where: { userId: business.ownerId, reservationId, type: 'BUSINESS_RESERVATION_HONORED' },
-            });
-
-            if (!existingBusinessReward) {
-              await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId, {
-                baseAmount: PAB_REWARD_RULES.business.HONORED_BOOKING,
-                aiRisk,
-                aiBonus
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to reward business ${business.id}:`, err);
+          const existing = await tx.cryptoReward.findFirst({
+            where: { userId: business.ownerId, reservationId, type: 'BUSINESS_RESERVATION_HONORED' },
+          });
+          if (!existing) {
+            await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_RESERVATION_HONORED', reservationId);
           }
         }
       });
@@ -241,9 +180,6 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Reward business when a no-show occurs and deposit protection applies.
-   */
   async rewardBusinessNoShowProtected(businessId: string, reservationId: string): Promise<void> {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -251,7 +187,6 @@ export class CryptoService {
         select: { depositRequired: true, depositStatus: true, trustSignals: true },
       });
       if (!reservation?.depositRequired) return;
-
       const business = await prisma.business.findUnique({
         where: { id: businessId },
         select: { ownerId: true },
@@ -259,16 +194,14 @@ export class CryptoService {
       if (!business) return;
 
       const amount = PAB_REWARD_RULES.business.NO_SHOW_DEPOSIT_KEPT;
-      logger.info(`PAB +${amount} business no-show protection ${businessId}`);
-
       await prisma.$transaction(async (tx) => {
         if (business.ownerId) {
           const existing = await tx.cryptoReward.findFirst({
             where: { userId: business.ownerId, reservationId, type: 'BUSINESS_NO_SHOW_PROTECTED' },
           });
-          if (existing) return;
-
-          await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_NO_SHOW_PROTECTED', reservationId);
+          if (!existing) {
+            await this.creditPab(tx, business.ownerId, amount, 'BUSINESS_NO_SHOW_PROTECTED', reservationId);
+          }
         }
       });
     } catch (error) {
@@ -277,14 +210,9 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Reward user for leaving a Google review.
-   */
   async rewardGoogleReview(userId: string, _businessId: string, _googleReviewId: string): Promise<void> {
     try {
       const amount = PAB_REWARD_RULES.customer.GOOGLE_REVIEW;
-      logger.info(`PAB +${amount} review reward user ${userId}`);
-
       await prisma.$transaction(async (tx) => {
         await this.creditPab(tx, userId, amount, 'GOOGLE_REVIEW');
       });
@@ -294,9 +222,6 @@ export class CryptoService {
     }
   }
 
-  /**
-   * Connect or update Solana (Phantom) wallet for payouts.
-   */
   async connectSolanaWallet(userId: string, address: string) {
     return prisma.wallet.upsert({
       where: { userId },
@@ -305,19 +230,11 @@ export class CryptoService {
     });
   }
 
-  /**
-   * Withdraw PAB to connected Solana wallet.
-   */
   async withdrawToSolana(userId: string, amount: number): Promise<{ txHash?: string, success: boolean, message: string }> {
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
-    if (!wallet || wallet.balance < amount) {
-      throw new Error("Insufficient local PAB balance");
-    }
-    if (!wallet.address || wallet.currency !== 'SOL') {
-      throw new Error("No Solana wallet connected");
-    }
+    if (!wallet || wallet.balance < amount) throw new Error("Insufficient local PAB balance");
+    if (!wallet.address || wallet.currency !== 'SOL') throw new Error("No Solana wallet connected");
 
-    // Process in DB first to prevent double-spending race conditions
     await prisma.wallet.update({
       where: { userId },
       data: { balance: { decrement: amount } }
@@ -325,16 +242,8 @@ export class CryptoService {
 
     try {
       if (!process.env.SOLANA_PRIVATE_KEY) {
-        logger.warn(`Simulating Solana withdrawal of ${amount} PAB to ${wallet.address} (No private key found in .env)`);
-        // Log a simulated reward event so it shows up in history
         await prisma.cryptoReward.create({
-          data: {
-            userId,
-            amount: -amount,
-            type: 'BUSINESS_RELIABILITY_BONUS', // fallback type or create a WITHDRAWAL type in schema if we had one
-            status: 'CLAIMABLE',
-            metadata: { note: "Simulated on-chain withdrawal" }
-          }
+          data: { userId, amount: -amount, type: 'BUSINESS_RELIABILITY_BONUS', status: 'CLAIMABLE', metadata: { note: "Simulated on-chain withdrawal" } }
         });
         return { success: true, message: "Simulated withdrawal successful" };
       }
@@ -344,69 +253,32 @@ export class CryptoService {
       const mintPublicKey = new PublicKey(process.env.SOLANA_PAB_MINT_ADDRESS!);
       const recipientPublicKey = new PublicKey(wallet.address);
 
-      // Get ATAs
       const fromAta = await getOrCreateAssociatedTokenAccount(connection, payer, mintPublicKey, payer.publicKey);
       const toAta = await getOrCreateAssociatedTokenAccount(connection, payer, mintPublicKey, recipientPublicKey);
+      const amountRaw = amount * 10 ** 9;
 
-      const amountRaw = amount * 10 ** 9; // 9 decimals
+      const txSignature = await transfer(connection, payer, fromAta.address, toAta.address, payer.publicKey, amountRaw);
 
-      const txSignature = await transfer(
-        connection,
-        payer,
-        fromAta.address,
-        toAta.address,
-        payer.publicKey,
-        amountRaw
-      );
-
-      logger.info(`Successfully withdrew ${amount} PAB to ${wallet.address}. Tx: ${txSignature}`);
-      
-      // Log the withdrawal event
       await prisma.cryptoReward.create({
-          data: {
-            userId,
-            amount: -amount,
-            type: 'BUSINESS_RELIABILITY_BONUS', // Represents withdrawal
-            status: 'CLAIMABLE',
-            metadata: { note: "On-chain withdrawal", txHash: txSignature }
-          }
+        data: { userId, amount: -amount, type: 'BUSINESS_RELIABILITY_BONUS', status: 'CLAIMABLE', metadata: { note: "On-chain withdrawal", txHash: txSignature } }
       });
 
       return { success: true, txHash: txSignature, message: "Withdrawal successful" };
     } catch (e) {
-      // Revert if on-chain fails
-      logger.error('Solana withdrawal failed, reverting balance.', e);
-      await prisma.wallet.update({
-        where: { userId },
-        data: { balance: { increment: amount } }
-      });
+      await prisma.wallet.update({ where: { userId }, data: { balance: { increment: amount } } });
       throw e;
     }
   }
 
-  /**
-   * Get wallet + recent rewards for any user.
-   */
   async getWalletData(userId: string) {
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
     const rewards = await prisma.cryptoReward.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 20,
-      include: {
-        reservation: {
-          select: {
-            id: true,
-            business: { select: { name: true } },
-          },
-        },
-      },
+      include: { reservation: { select: { id: true, business: { select: { name: true } } } } },
     });
-
-    const totalEarned = await prisma.cryptoReward.aggregate({
-      where: { userId },
-      _sum: { amount: true },
-    });
+    const totalEarned = await prisma.cryptoReward.aggregate({ where: { userId }, _sum: { amount: true } });
 
     return {
       balance: wallet?.balance || 0,
@@ -415,219 +287,60 @@ export class CryptoService {
       chain: wallet?.currency === 'SOL' ? 'solana' : wallet?.address ? 'other' : null,
       totalEarned: totalEarned._sum.amount || 0,
       recentRewards: rewards.map((r) => ({
-        id: r.id,
-        type: r.type,
-        amount: r.amount,
-        status: r.status,
-        createdAt: r.createdAt,
-        metadata: r.metadata,
-        businessName: r.reservation?.business?.name,
-        reservationId: r.reservationId,
+        id: r.id, type: r.type, amount: r.amount, status: r.status,
+        createdAt: r.createdAt, metadata: r.metadata,
+        businessName: r.reservation?.business?.name, reservationId: r.reservationId,
       })),
     };
   }
 
-  /**
-   * Business owner: PAB earnings breakdown and Solana payout readiness.
-   */
   async getBusinessRewardsSummary(ownerId: string) {
     const wallet = await prisma.wallet.findUnique({ where: { userId: ownerId } });
-    const businessRewards = await prisma.cryptoReward.findMany({
-      where: {
-        userId: ownerId,
-        type: { startsWith: 'BUSINESS_' },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 15,
-    });
-
     const byType = await prisma.cryptoReward.groupBy({
       by: ['type'],
       where: { userId: ownerId, type: { startsWith: 'BUSINESS_' } },
-      _sum: { amount: true },
-      _count: true,
+      _sum: { amount: true }, _count: true,
     });
-
     const totalBusinessPab = byType.reduce((sum, row) => sum + (row._sum.amount || 0), 0);
 
     return {
-      balance: wallet?.balance || 0,
-      currency: 'PAB',
-      totalBusinessPab,
+      balance: wallet?.balance || 0, currency: 'PAB', totalBusinessPab,
       solanaConnected: !!(wallet?.address && wallet.currency === 'SOL'),
       solanaAddress: wallet?.currency === 'SOL' ? wallet.address : null,
       rules: PAB_REWARD_RULES.business,
-      breakdown: byType.map((row) => ({
-        type: row.type,
-        count: row._count,
-        total: row._sum.amount || 0,
-      })),
-      recentRewards: businessRewards,
+      breakdown: byType.map((row) => ({ type: row.type, count: row._count, total: row._sum.amount || 0 })),
     };
   }
 
-  getPublicRewardRules() {
-    return PAB_REWARD_RULES;
-  }
+  getPublicRewardRules() { return PAB_REWARD_RULES; }
 
-  // --- Trust Attestation Standard (TAS) ---
-
-  /**
-   * Generates a signature for a Trust Attestation using the platform's private key.
-   */
   signAttestationData(dataBuffer: Uint8Array): { signature: string, pubkey: string } {
     if (!process.env.SOLANA_PRIVATE_KEY) {
-      logger.warn('No SOLANA_PRIVATE_KEY found. Mocking Ed25519 attestation signature.');
-      return {
-        signature: 'mock_signature_ed25519_' + Date.now(),
-        pubkey: 'mock_public_key'
-      };
+      return { signature: 'mock_signature_ed25519_' + Date.now(), pubkey: 'mock_public_key' };
     }
     const keypair = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
     const signature = nacl.sign.detached(dataBuffer, keypair.secretKey);
-    return {
-      signature: bs58.encode(signature),
-      pubkey: keypair.publicKey.toBase58()
-    };
+    return { signature: bs58.encode(signature), pubkey: keypair.publicKey.toBase58() };
   }
 
-  /**
-   * Verify an Ed25519 signature.
-   */
   verifyAttestationSignature(dataBuffer: Uint8Array, signatureBase58: string, pubkeyBase58: string): boolean {
     if (pubkeyBase58 === 'mock_public_key') return true;
     try {
       const signature = bs58.decode(signatureBase58);
       const pubkey = bs58.decode(pubkeyBase58);
       return nacl.sign.detached.verify(dataBuffer, signature, pubkey);
-    } catch (e) {
+    } catch {
       return false;
     }
   }
 
-  /**
-   * Issue a Verification Bounty (PAB Airdrop)
-   */
-  async issueVerificationBounty(userId: string, amount: number) {
-    await prisma.$transaction(async (tx) => {
-      await this.creditPab(tx, userId, amount, 'VERIFICATION_BOUNTY');
-    });
+  // DISABLED: BSC proof-of-visit (Solana-only now)
+  async mintProofOfVisit(_customerWallet: string, _businessId: string, _businessName: string): Promise<{ txHash: string; tokenId: string } | null> {
+    return null;
   }
 
-  // --- Web3 Escrow Integration ---
-
-  /**
-   * Called when a reservation is COMPLETED or NO_SHOW.
-   * Releases escrowed funds to the business minus the platform fee.
-   */
-  async releaseEscrowToBusiness(reservationId: string): Promise<void> {
-    try {
-      const reservation = await prisma.reservation.findUnique({
-        where: { id: reservationId },
-        include: { business: true }
-      });
-      if (!reservation) return;
-
-      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
-      const businessWallet = await prisma.wallet.findUnique({ where: { userId: reservation.business.ownerId! } });
-      
-      if (!customerWallet?.address || !businessWallet?.address) {
-        logger.warn(`[Escrow] Missing wallet for release ${reservationId}`);
-        return;
-      }
-
-      logger.info(`[Escrow] Calling releaseEscrow on Solana for ${reservationId}`);
-      
-      const mintStr = process.env.SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111';
-      
-      await solanaEscrowService.triggerReleaseEscrow(
-        reservationId,
-        customerWallet.address,
-        businessWallet.address,
-        mintStr
-      );
-    } catch (e: any) {
-      logger.error(`[Escrow] Failed to release funds for ${reservationId}: ${e.message}`);
-    }
-  }
-
-  /**
-   * Called when a reservation is CANCELLED by business.
-   * Refunds escrowed funds 100% back to customer.
-   *
-   * IMPORTANT: The on-chain `refund_escrow` instruction requires the customer
-   * to sign the transaction. The backend builds the tx and returns the
-   * serialized form; the caller must arrange for the customer to sign and submit.
-   * The serialized tx is logged and stored for customer notification.
-   *
-   * @returns base64-encoded serialized Transaction, or null if refund couldn't be prepared
-   */
-  async refundEscrowToCustomer(reservationId: string): Promise<void> {
-    try {
-      const reservation = await prisma.reservation.findUnique({
-        where: { id: reservationId },
-        include: { business: true }
-      });
-      if (!reservation) return;
-
-      const customerWallet = await prisma.wallet.findUnique({ where: { userId: reservation.customerId } });
-      if (!customerWallet?.address) {
-        logger.warn(`[Escrow] Missing customer wallet for refund ${reservationId}`);
-        return;
-      }
-
-      logger.info(`[Escrow] Calling refundEscrow on Solana for ${reservationId}`);
-      
-      const mintStr = process.env.SOLANA_PAB_MINT_ADDRESS || 'PAB1111111111111111111111111111111111111111';
-      
-      await solanaEscrowService.triggerRefundEscrow(
-        reservationId,
-        customerWallet.address,
-        mintStr
-      );
-    } catch (e: any) {
-      logger.error(`[Escrow] Failed to refund funds for ${reservationId}: ${e.message}`);
-    }
-  }
-
-  /**
-   * Mint a Proof of Visit (POV) Soulbound Token for a customer
-   */
-  async mintProofOfVisit(customerWallet: string, businessId: string, businessName: string): Promise<{ txHash: string; tokenId: string } | null> {
-    try {
-      if (!process.env.ESCROW_ORACLE_PRIVATE_KEY) return null;
-      const provider = new ethers.JsonRpcProvider('https://data-seed-prebsc-1-s1.binance.org:8545');
-      const wallet = new ethers.Wallet(process.env.ESCROW_ORACLE_PRIVATE_KEY, provider);
-      const contract = new ethers.Contract(PABANDI_POV_BSC, POV_ABI, wallet);
-
-      const tx = await contract.mintProofOfVisit(customerWallet, businessId, businessName);
-      await tx.wait();
-      
-      logger.info(`[POV] Minted Proof of Visit for ${customerWallet} at ${businessName}. Tx: ${tx.hash}`);
-      
-      // In a real implementation we'd parse the receipt logs to get the tokenId.
-      // For now, we return a mock token ID.
-      return { txHash: tx.hash, tokenId: `POV-${Date.now()}` };
-    } catch (e: any) {
-      logger.error(`[POV] Failed to mint Proof of Visit: ${e.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Check if a user holds a Proof of Visit token for a specific business
-   */
-  async hasVisited(customerWallet: string, businessId: string): Promise<boolean> {
-    try {
-      const provider = new ethers.JsonRpcProvider('https://data-seed-prebsc-1-s1.binance.org:8545');
-      const contract = new ethers.Contract(PABANDI_POV_BSC, POV_ABI, provider);
-      
-      const visited = await contract.hasVisited(customerWallet, businessId);
-      return visited;
-    } catch (e: any) {
-      logger.error(`[POV] Failed to check Proof of Visit: ${e.message}`);
-      return false; // Fail secure
-    }
+  async hasVisited(_customerWallet: string, _businessId: string): Promise<boolean> {
+    return false;
   }
 
   private getTreasuryBucket(type: RewardType) {
@@ -642,7 +355,6 @@ export class CryptoService {
       REFERRAL: 'OPERATING',
       STREAK_BONUS: 'OPERATING',
     } as const;
-
     return buckets[type];
   }
 
@@ -654,34 +366,16 @@ export class CryptoService {
     });
   }
 
-  // --- Dynamic Fee Signature (EVM) ---
-  
   calculateEscrowFee(businessTrustScore: number): number {
-    if (businessTrustScore < 50) return 300; // 3%
-    if (businessTrustScore <= 80) return 150; // 1.5%
-    return 50; // 0.5%
+    if (businessTrustScore < 50) return 300;
+    if (businessTrustScore <= 80) return 150;
+    return 50;
   }
 
+  // DISABLED: EVM signature generation (Solana-only now)
   async generateDynamicFeeSignature(reservationId: string, businessAddress: string, trustScore: number): Promise<{ feeBps: number, signature: string }> {
     const feeBps = this.calculateEscrowFee(trustScore);
-    
-    if (!process.env.ESCROW_ORACLE_PRIVATE_KEY) {
-      logger.warn('No ESCROW_ORACLE_PRIVATE_KEY found. Generating dummy signature for dynamic fee.');
-      return { feeBps, signature: '0x' };
-    }
-
-    const wallet = new ethers.Wallet(process.env.ESCROW_ORACLE_PRIVATE_KEY);
-    
-    // Equivalent to keccak256(abi.encodePacked(reservationId, feeBps, businessAddress))
-    const messageHash = ethers.solidityPackedKeccak256(
-      ['string', 'uint256', 'address'],
-      [reservationId, feeBps, businessAddress]
-    );
-
-    // Sign the hash (ethers signs the message hash with the '\x19Ethereum Signed Message:\n32' prefix)
-    const signature = await wallet.signMessage(ethers.getBytes(messageHash));
-    
-    return { feeBps, signature };
+    return { feeBps, signature: '0x' };
   }
 }
 
