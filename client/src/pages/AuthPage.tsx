@@ -80,6 +80,115 @@ const FieldError = ({ msg }: { msg: string }) => (
   <p className="mt-1.5 text-xs font-medium text-red-300">{msg}</p>
 );
 
+const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: { 
+  email: string; 
+  onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onVerified: () => void;
+  onError: (msg: string) => void;
+}) => {
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSendCode = async () => {
+    if (!email.trim()) {
+      onError('Please enter your email first');
+      return;
+    }
+    setLoading(true);
+    onError('');
+    try {
+      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const res = await fetch(`${backendUrl}/api/v1/auth/request-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCodeSent(true);
+      } else {
+        onError(data.message || 'Failed to send code');
+      }
+    } catch (err) {
+      onError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!codeInput.trim()) {
+      onError('Please enter the verification code');
+      return;
+    }
+    setLoading(true);
+    onError('');
+    try {
+      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const res = await fetch(`${backendUrl}/api/v1/auth/verify-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: codeInput }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onVerified();
+      } else {
+        onError(data.message || 'Invalid code');
+      }
+    } catch (err) {
+      onError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-white">Quick Login (No Password)</p>
+      <div className="flex gap-2">
+        <input 
+          type="email" 
+          value={email} 
+          onChange={onEmailChange}
+          placeholder="you@gmail.com"
+          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
+        />
+        <button 
+          type="button" 
+          onClick={handleSendCode}
+          disabled={loading}
+          className="px-4 py-3 rounded-lg bg-indigo-500 text-white text-sm font-bold touch-target disabled:opacity-50"
+        >
+          {loading ? '...' : 'Send Code'}
+        </button>
+      </div>
+      {codeSent && (
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            value={codeInput} 
+            onChange={(e) => setCodeInput(e.target.value)}
+            placeholder="Enter 6-digit code"
+            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
+          />
+          <button 
+            type="button" 
+            onClick={handleVerifyCode}
+            disabled={loading}
+            className="px-4 py-3 rounded-lg bg-green-500 text-white text-sm font-bold touch-target disabled:opacity-50"
+          >
+            {loading ? '...' : 'Verify'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function AuthPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -348,6 +457,26 @@ export default function AuthPage() {
           <div className="my-6 flex items-center gap-3">
             <hr className="flex-1 border-white/10" />
             <span className="text-xs font-medium text-white/70 uppercase tracking-wider">or continue with email</span>
+            <hr className="flex-1 border-white/10" />
+          </div>
+
+          {/* Email Code Login */}
+          <div className="mb-6">
+            <EmailCodeLogin 
+              email={formData.email} 
+              onEmailChange={(e) => setFormData({...formData, email: e.target.value})}
+              onVerified={() => {
+                if (mode === 'login') {
+                  navigate(getPostLoginTarget());
+                }
+              }}
+              onError={setError}
+            />
+          </div>
+
+          <div className="mb-6 flex items-center gap-3">
+            <hr className="flex-1 border-white/10" />
+            <span className="text-xs font-medium text-white/70 uppercase tracking-wider">or use password</span>
             <hr className="flex-1 border-white/10" />
           </div>
 
