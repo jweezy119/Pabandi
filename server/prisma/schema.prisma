@@ -216,6 +216,7 @@ model Reservation {
   customerId          String
   tableId             String?
   reservationDate     DateTime
+  checkInDate         DateTime?
   checkOutDate        DateTime?
   reservationTime     String
   numberOfGuests      Int
@@ -254,8 +255,13 @@ model Reservation {
   services            ReservationService[]
   solanaAttestationId String?              @unique
   dispute             Dispute?
-  StayBooking         StayBooking?
+  stayBooking         StayBooking?
   courtChecks         CourtCheck[]
+  checkInLat          Float?
+  checkInLng          Float?
+  checkInMethod       String?
+  qrCode              String?
+  qrCodeExpires       DateTime?
 
   @@index([businessId])
   @@index([customerId])

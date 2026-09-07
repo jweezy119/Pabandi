@@ -215,6 +215,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/recommendation`, './routes/recommendation.routes'],
   [`/api/v1/live-seller/ebay`, './routes/ebay.routes'],
   [`/api/${v}/booking`, './routes/booking.routes'],
+  [`/api/${v}/checkin`, './routes/checkin.routes'],
   [`/api/${v}/pab`, './routes/pabEconomy.routes'],
   [`/api/${v}/ai/realestate`, './routes/aiRealEstate.routes'],
   [`/api/${v}/ai/advanced`, './routes/aiAdvanced.routes'],
