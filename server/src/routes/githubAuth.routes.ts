@@ -1,8 +1,4 @@
 import { Router, Request, Response } from 'express';
-import axios from 'axios';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../utils/database';
-import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -21,13 +17,18 @@ router.get('/github', (req: Request, res: Response) => {
   res.redirect(githubUrl);
 });
 
-// GitHub OAuth callback
+// GitHub OAuth callback — lightweight, no DB/JWT
 router.get('/github/callback', async (req: Request, res: Response) => {
   try {
     const { code } = req.query;
     if (!code) {
       return res.redirect(`${CLIENT_URL}/login?error=github_no_code`);
     }
+
+    // Lazy-load heavy deps only when needed
+    const axios = (await import('axios')).default;
+    const jwt = (await import('jsonwebtoken')).default;
+    const { prisma } = await import('../utils/database');
 
     // Exchange code for access token
     const tokenRes = await axios.post(
@@ -81,7 +82,6 @@ router.get('/github/callback', async (req: Request, res: Response) => {
           isEmailVerified: true,
         },
       });
-      logger.info(`New GitHub OAuth user created: ${email}`);
     } else {
       await prisma.user.update({
         where: { email },
@@ -98,7 +98,6 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
     res.redirect(`${CLIENT_URL}/auth/callback?token=${token}`);
   } catch (error: any) {
-    logger.error(`GitHub OAuth error: ${error.message}`);
     res.redirect(`${CLIENT_URL}/login?error=github`);
   }
 });
