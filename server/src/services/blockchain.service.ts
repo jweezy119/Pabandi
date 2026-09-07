@@ -72,6 +72,7 @@ export class BlockchainService {
   // Dynamic imports used to avoid hard-dep on ethers at module load time
   private async getEthers() {
     try {
+      // @ts-ignore - ethers may not be installed
       return await import('ethers');
     } catch {
       logger.warn('[Blockchain] ethers not installed. Run: npm i ethers in /server');

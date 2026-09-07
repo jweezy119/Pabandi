@@ -745,14 +745,15 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
       throw new CustomError('Nonce expired. Please request a new one.', 400);
     }
 
-    const { ethers } = await import('ethers');
+    // Solana-native signature verification (no ethers needed)
+    const nacl = await import('tweetnacl');
+    const bs58 = await import('bs58');
     const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${walletAddress}\n\nNonce:\n${user.nonce}`;
-    
-    const recoveredAddress = ethers.verifyMessage(message, signature);
-
-    if (recoveredAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-      throw new CustomError('Signature verification failed', 401);
-    }
+    const messageBytes = new TextEncoder().encode(message);
+    const signatureBytes = (bs58 as any).default.decode(signature);
+    const publicKeyBytes = (bs58 as any).default.decode(walletAddress);
+    const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+    if (!isValid) throw new CustomError('Signature verification failed', 401);
 
     // Clear nonce to prevent replay attacks
     await prisma.user.update({

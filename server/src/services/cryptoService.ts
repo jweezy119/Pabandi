@@ -343,6 +343,17 @@ export class CryptoService {
     return false;
   }
 
+  // DISABLED: Escrow operations (Solana-only now)
+  async refundEscrowToCustomer(reservationId: string): Promise<any> {
+    logger.info(`[Escrow] Refund requested for ${reservationId} (disabled - Solana-only)`);
+    return null;
+  }
+
+  async releaseEscrowToBusiness(reservationId: string): Promise<any> {
+    logger.info(`[Escrow] Release requested for ${reservationId} (disabled - Solana-only)`);
+    return null;
+  }
+
   private getTreasuryBucket(type: RewardType) {
     const buckets: Partial<Record<RewardType, TreasuryBucket>> = {
       RESERVATION_COMPLETION: 'OPERATING',
