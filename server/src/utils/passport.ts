@@ -87,7 +87,7 @@ export function configurePassport() {
         {
           clientID: GITHUB_CLIENT_ID,
           clientSecret: GITHUB_CLIENT_SECRET,
-          callbackURL: '/api/v1/auth/github/callback',
+          callbackURL: '/api/v1/auth/social/github/callback',
           scope: ['user:email'],
         },
         async (accessToken: string, _refreshToken: string, profile: any, done: any) => {

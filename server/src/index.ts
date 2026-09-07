@@ -20,11 +20,10 @@ const httpServer = createServer(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
-// Configure Passport strategies (env vars loaded above) — lazy to avoid loading passport strategy modules at startup
-// import('./utils/passport').then(({ configurePassport }) => {
-//   try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
-// }).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
-// DISABLED: Passport strategy loading (imports heavy modules, causes OOM on 512MB)
+// Configure Passport strategies lazily (GitHub OAuth needs this)
+import('./utils/passport').then(({ configurePassport }) => {
+  try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
+}).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
 app.use(passport.initialize());
 
 // DISABLED: DB keepalive (runs cron job forever)
