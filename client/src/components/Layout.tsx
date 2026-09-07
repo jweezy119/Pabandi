@@ -78,6 +78,9 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
       { to: '/freelance', icon: 'group', label: 'Freelancers' },
       { to: '/gigs', icon: 'work', label: 'Gig Board' },
       { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
+      { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
+      { to: '/freight/my-loads', icon: 'receipt_long', label: 'FreightOS Loads' },
+      { to: '/booking', icon: 'restaurant_menu', label: 'BookingOS' },
     ]},
     { title: 'Trust & Safety', items: [
       { to: '/trust', icon: 'verified', label: 'Trust Passports' },
@@ -283,6 +286,8 @@ export default function Layout() {
               <DropdownItem to="/rewards">Rewards</DropdownItem>
               <DropdownItem to="/promotions">Promotions</DropdownItem>
               <DropdownItem to="/freight">Freight & Logistics</DropdownItem>
+              <DropdownItem to="/freight/my-loads">FreightOS Load Board</DropdownItem>
+              <DropdownItem to="/booking">BookingOS</DropdownItem>
             </Dropdown>
             <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>
@@ -381,6 +386,8 @@ export default function Layout() {
                 <Link to="/gigs" className="block text-on-surface-variant hover:text-primary py-1">Gig Board</Link>
                 <Link to="/hospitality" className="block text-on-surface-variant hover:text-primary py-1">Hospitality</Link>
                 <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">Freight</Link>
+                <Link to="/freight/my-loads" className="block text-on-surface-variant hover:text-primary py-1">FreightOS Load Board</Link>
+                <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
                 <Link to="/marketplace" className="block text-on-surface-variant hover:text-primary py-1">Marketplace</Link>
               </div>
               <div>
