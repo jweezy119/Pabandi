@@ -4,10 +4,6 @@ import { logger } from '../utils/logger';
 const prisma = new PrismaClient();
 
 export const checkInService = {
-  /**
-   * Generate a QR code for check-in
-   * Returns a unique token that can be verified via QR scan or manual entry
-   */
   async generateCheckInToken(reservationId: string) {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -23,14 +19,12 @@ export const checkInService = {
         return { success: false, message: 'Reservation has been cancelled' };
       }
 
-      // Generate a 6-character alphanumeric code
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let code = '';
       for (let i = 0; i < 6; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
       }
 
-      // Code expires in 24 hours
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       await prisma.reservation.update({
@@ -55,9 +49,6 @@ export const checkInService = {
     }
   },
 
-  /**
-   * Verify check-in via QR code or manual code entry
-   */
   async verifyCheckIn(data: {
     code: string;
     reservationId?: string;
@@ -67,14 +58,13 @@ export const checkInService = {
     verifiedBy?: string;
   }) {
     try {
-      const { code, reservationId, lat, lng, method, verifiedBy } = data;
+      const { code, reservationId, lat, lng, method } = data;
 
-      // Find reservation by code or ID
       let reservation;
       if (reservationId) {
         reservation = await prisma.reservation.findUnique({
           where: { id: reservationId },
-          include: { business: true, customer: true, table: true },
+          include: { business: true, customer: true },
         });
       } else {
         reservation = await prisma.reservation.findFirst({
@@ -82,7 +72,7 @@ export const checkInService = {
             qrCode: code,
             qrCodeExpires: { gt: new Date() },
           },
-          include: { business: true, customer: true, table: true },
+          include: { business: true, customer: true },
         });
       }
 
@@ -98,7 +88,6 @@ export const checkInService = {
         return { success: false, message: 'Already checked in' };
       }
 
-      // Check if within allowed time window (30 min before to 2 hours after reservation time)
       const now = new Date();
       const reservationDateTime = new Date(reservation.reservationDate);
       const [hours, minutes] = reservation.reservationTime.split(':').map(Number);
@@ -118,17 +107,15 @@ export const checkInService = {
         return { success: false, message: 'Check-in window has expired' };
       }
 
-      // If location provided, verify it's within 200m of business
       let locationVerified = false;
-      if (lat && lng && reservation.business.lat && reservation.business.lng) {
+      if (lat && lng && reservation.business.latitude && reservation.business.longitude) {
         const distance = calculateDistance(
           lat, lng,
-          reservation.business.lat, reservation.business.lng
+          reservation.business.latitude, reservation.business.longitude
         );
-        locationVerified = distance <= 0.2; // 200m threshold
+        locationVerified = distance <= 0.2;
       }
 
-      // Update reservation with check-in
       const updated = await prisma.reservation.update({
         where: { id: reservation.id },
         data: {
@@ -147,7 +134,6 @@ export const checkInService = {
           id: updated.id,
           customerName: updated.customerName,
           reservationTime: updated.reservationTime,
-          table: updated.table?.name || 'Not assigned',
           numberOfGuests: updated.numberOfGuests,
         },
         locationVerified,
@@ -159,9 +145,6 @@ export const checkInService = {
     }
   },
 
-  /**
-   * Check out a reservation
-   */
   async checkOut(reservationId: string) {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -197,9 +180,6 @@ export const checkInService = {
     }
   },
 
-  /**
-   * Get check-in history for a reservation
-   */
   async getCheckInHistory(reservationId: string) {
     try {
       const reservation = await prisma.reservation.findUnique({
@@ -233,9 +213,6 @@ export const checkInService = {
     }
   },
 
-  /**
-   * Get current active check-ins for a business
-   */
   async getActiveCheckIns(businessId: string) {
     try {
       const reservations = await prisma.reservation.findMany({
@@ -245,7 +222,6 @@ export const checkInService = {
         },
         include: {
           customer: { select: { firstName: true, lastName: true, phone: true } },
-          table: true,
         },
         orderBy: { checkInDate: 'desc' },
       });
@@ -259,7 +235,6 @@ export const checkInService = {
           numberOfGuests: r.numberOfGuests,
           checkInTime: r.checkInDate,
           checkInMethod: r.checkInMethod,
-          table: r.table?.name || 'Not assigned',
         })),
         count: reservations.length,
       };
@@ -270,12 +245,8 @@ export const checkInService = {
   },
 };
 
-/**
- * Calculate distance between two coordinates using Haversine formula
- * Returns distance in kilometers
- */
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
