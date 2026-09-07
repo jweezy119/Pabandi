@@ -17,7 +17,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: `${process.env.API_URL}/api/v1/auth/social/github/callback`,
+      callbackURL: `${process.env.API_URL || 'https://pabandi.onrender.com'}/api/v1/auth/social/github/callback`,
       scope: ['user:email'],
     },
     async (accessToken: string, refreshToken: string, profile: any, done: any) => {

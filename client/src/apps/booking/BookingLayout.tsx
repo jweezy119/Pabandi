@@ -9,7 +9,8 @@ const navigation = [
   { path: '/booking/my-reservations', label: 'My Reservations', icon: FiCalendar, roles: ['USER', 'ADMIN'] },
   { path: '/booking/favorites', label: 'Favorites', icon: FiHeart, roles: ['USER', 'ADMIN'] },
   { path: '/booking/venues', label: 'My Venues', icon: FiGrid, roles: ['BUSINESS_OWNER', 'ADMIN'] },
-  { path: '/booking/analytics', label: 'Analytics', icon: FiStar, roles: ['BUSINESS_OWNER', 'ADMIN'] },
+  { path: '/booking/check-ins', label: 'Check-Ins', icon: FiStar, roles: ['BUSINESS_OWNER', 'ADMIN'] },
+  { path: '/booking/promotions', label: 'Promotions', icon: FiCreditCard, roles: ['BUSINESS_OWNER', 'ADMIN'] },
   { path: '/booking/payments', label: 'Payments', icon: FiCreditCard, roles: ['USER', 'ADMIN'] },
   { path: '/booking/settings', label: 'Settings', icon: FiSettings, roles: [] },
 ];
