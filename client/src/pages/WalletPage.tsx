@@ -1,214 +1,237 @@
 import React, { useState, useEffect } from 'react';
-import { passportService } from '../services/api';
-import QRCode from 'qrcode';
-
-interface VC {
-  id: string;
-  credentialType: string;
-  jwtProof: string;
-  isRevoked: boolean;
-  issuedAt: string;
-  expiresAt: string;
-  subject: any;
-}
+import { useNavigate } from 'react-router-dom';
+import { Surface, Button, Badge, tokens } from '../design-system';
 
 export const WalletPage: React.FC = () => {
-  const [vcs, setVcs] = useState<VC[]>([]);
+  const navigate = useNavigate();
+  const [wallet, setWallet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedVc, setSelectedVc] = useState<VC | null>(null);
-  const [qrCodeData, setQrCodeData] = useState<string>('');
-  
-  // Selective Disclosure State
-  const [showDisclosureModal, setShowDisclosureModal] = useState(false);
-  const [availableKeys, setAvailableKeys] = useState<string[]>([]);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [generatingVp, setGeneratingVp] = useState(false);
+  const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
-    fetchCredentials();
+    fetchWallet();
   }, []);
 
-  const fetchCredentials = async () => {
+  const fetchWallet = async () => {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-      const data = await passportService.getVCs();
-      setVcs(data);
+      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const res = await fetch(`${backendUrl}/api/v1/wallet`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWallet(data.wallet);
+      } else {
+        setShowCreate(true);
+      }
     } catch (err) {
-      console.error('Failed to fetch credentials', err);
+      setError('Failed to fetch wallet');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleShowQR = async (vc: VC) => {
-    setSelectedVc(vc);
-    
-    // Extract available keys from subject (ignoring id)
-    const keys = Object.keys(vc.subject || {}).filter(k => k !== 'id');
-    setAvailableKeys(keys);
-    
-    // Default select all safe fields, e.g., tier
-    const defaultKeys = new Set(keys.filter(k => !k.includes('Score') && k !== 'reliability'));
-    if (defaultKeys.size === 0) defaultKeys.add(keys[0]);
-    setSelectedKeys(defaultKeys);
-    
-    setShowDisclosureModal(true);
-  };
-
-  const generatePresentation = async () => {
-    if (!selectedVc) return;
+  const handleCreateWallet = async () => {
+    setLoading(true);
+    setError('');
     try {
-      setGeneratingVp(true);
-      const res = await passportService.createPresentation(selectedVc.id, Array.from(selectedKeys));
-      const url = await QRCode.toDataURL(res.vpJwt, { width: 300, margin: 2 });
-      setQrCodeData(url);
-      setShowDisclosureModal(false);
+      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const res = await fetch(`${backendUrl}/api/v1/wallet/create`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWallet(data.wallet);
+        setShowCreate(false);
+      } else {
+        setError(data.message || 'Failed to create wallet');
+      }
     } catch (err) {
-      console.error('QR Generate Error', err);
+      setError('Network error');
     } finally {
-      setGeneratingVp(false);
+      setLoading(false);
     }
   };
 
-  const handleDownload = (vc: VC) => {
-    // Standard verifiable credential export format
-    const blob = new Blob([JSON.stringify({ vc: vc.jwtProof }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pabandi-${vc.credentialType.toLowerCase()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleClaimAirdrop = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const res = await fetch(`${backendUrl}/api/v1/wallet/claim-airdrop`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        fetchWallet();
+      } else {
+        setError(data.message || 'Failed to claim airdrop');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Digital Wallet</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Manage and export your W3C Verifiable Credentials (Open Badges v3). 
-          These credentials cryptographically prove your Trust Score anywhere on the internet.
-        </p>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-white/60">Loading wallet...</p>
+        </div>
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-        </div>
-      ) : vcs.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-500">You haven't earned any Verifiable Credentials yet.</p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          {vcs.map(vc => (
-            <div key={vc.id} className="bg-white border rounded-lg shadow-sm overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{vc.credentialType.replace('_', ' ')}</h3>
-                  <p className="text-sm text-gray-500">Issued: {new Date(vc.issuedAt).toLocaleDateString()}</p>
-                </div>
-                {vc.isRevoked ? (
-                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                    Revoked
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                    Active
-                  </span>
-                )}
-              </div>
-              <div className="bg-gray-50 px-6 py-4 space-y-3">
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleShowQR(vc)}
-                    className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition"
-                  >
-                    Scan to Wallet
-                  </button>
-                  <button
-                    onClick={() => handleDownload(vc)}
-                    className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-50 transition"
-                  >
-                    Download JSON
-                  </button>
-                </div>
-              </div>
+  if (showCreate || !wallet) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: tokens.color.background }}>
+        <div className="w-full max-w-md">
+          <Surface className="p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[32px] text-indigo-400">account_balance_wallet</span>
             </div>
-          ))}
-        </div>
-      )}
-
-      {showDisclosureModal && selectedVc && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Selective Disclosure</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              You are in full control of your data. Choose exactly which data fields you want to disclose in this cryptographic presentation.
+            <h1 className="text-2xl font-black text-white mb-2">Create Your Wallet</h1>
+            <p className="text-sm text-white/60 mb-6">
+              Get a Solana wallet to interact with the Pabandi ecosystem — earn $PAB rewards, make bookings, and more.
             </p>
-            
-            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto border p-4 rounded-md">
-              {availableKeys.map(key => (
-                <label key={key} className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                    checked={selectedKeys.has(key)}
-                    onChange={(e) => {
-                      const newSet = new Set(selectedKeys);
-                      if (e.target.checked) newSet.add(key);
-                      else newSet.delete(key);
-                      setSelectedKeys(newSet);
-                    }}
-                  />
-                  <span className="text-sm font-medium text-gray-900">{key}</span>
-                  <span className="text-xs text-gray-500 truncate ml-2">
-                    ({JSON.stringify(selectedVc.subject[key])})
-                  </span>
-                </label>
-              ))}
-            </div>
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200">
+                {error}
+              </div>
+            )}
+            <Button onClick={handleCreateWallet} disabled={loading} className="w-full">
+              {loading ? 'Creating...' : 'Create Wallet'}
+            </Button>
+            <button
+              onClick={() => navigate('/')}
+              className="mt-4 text-sm text-white/50 hover:text-white"
+            >
+              Skip for now
+            </button>
+          </Surface>
+        </div>
+      </div>
+    );
+  }
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDisclosureModal(false)}
-                className="flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-medium hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={generatePresentation}
-                disabled={generatingVp || selectedKeys.size === 0}
-                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {generatingVp ? 'Generating Proof...' : 'Generate Proof'}
-              </button>
+  return (
+    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-black text-white">My Wallet</h1>
+            <p className="text-sm text-white/60">Manage your $PAB and Solana assets</p>
+          </div>
+          <Button variant="ghost" onClick={() => navigate('/profile')}>
+            Back to Profile
+          </Button>
+        </div>
+
+        <Surface className="p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm text-white/60">Total Balance</p>
+              <p className="text-3xl font-black text-white">{wallet.balance || 0} <span className="text-lg text-indigo-400">$PAB</span></p>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-indigo-400">account_balance_wallet</span>
             </div>
           </div>
-        </div>
-      )}
+          <div className="flex gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(wallet.address)}>
+              Copy Address
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => {}}>
+              Receive
+            </Button>
+          </div>
+          <p className="mt-3 text-xs text-white/40 font-mono truncate">{wallet.address}</p>
+        </Surface>
 
-      {selectedVc && qrCodeData && !showDisclosureModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 text-center shadow-xl">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Export to Wallet</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Scan this QR code with a compatible digital wallet to import your {selectedVc.credentialType.replace('_', ' ')} credential.
-            </p>
-            <div className="flex justify-center bg-gray-50 p-4 rounded-lg mb-6">
-              <img src={qrCodeData} alt="QR Code" className="w-64 h-64" />
+        {!wallet.airdropClaimed && (
+          <Surface className="p-6 mb-6 border border-green-500/20 bg-green-500/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-green-300">🎉 Welcome Airdrop Available</p>
+                <p className="text-xs text-white/60">Claim your free $PAB to get started</p>
+              </div>
+              <Button onClick={handleClaimAirdrop} disabled={loading}>
+                Claim {wallet.airdropAmount || 100} $PAB
+              </Button>
             </div>
-            <button
-              onClick={() => { setSelectedVc(null); setQrCodeData(''); }}
-              className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md font-medium hover:bg-gray-200"
-            >
-              Close
+          </Surface>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Surface className="p-4 text-center">
+            <p className="text-xl font-bold text-white">{wallet.totalStaked || 0}</p>
+            <p className="text-xs text-white/60">Staked</p>
+          </Surface>
+          <Surface className="p-4 text-center">
+            <p className="text-xl font-bold text-white">{wallet.lockedPab || 0}</p>
+            <p className="text-xs text-white/60">Locked</p>
+          </Surface>
+          <Surface className="p-4 text-center">
+            <p className="text-xl font-bold text-white">{wallet.usdcBalance || 0}</p>
+            <p className="text-xs text-white/60">USDC</p>
+          </Surface>
+          <Surface className="p-4 text-center">
+            <Badge tone={wallet.airdropClaimed ? 'success' : 'warning'}>
+              {wallet.airdropClaimed ? 'Airdrop Claimed' : 'Airdrop Pending'}
+            </Badge>
+          </Surface>
+        </div>
+
+        <Surface className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-indigo-400 mb-2">send</span>
+              <p className="text-xs font-semibold text-white">Send</p>
+            </button>
+            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-green-400 mb-2">call_received</span>
+              <p className="text-xs font-semibold text-white">Receive</p>
+            </button>
+            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-yellow-400 mb-2">swap_horiz</span>
+              <p className="text-xs font-semibold text-white">Swap</p>
+            </button>
+            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-blue-400 mb-2">history</span>
+              <p className="text-xs font-semibold text-white">History</p>
             </button>
           </div>
-        </div>
-      )}
+        </Surface>
+
+        {error && (
+          <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+export default WalletPage;

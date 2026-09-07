@@ -74,7 +74,7 @@ import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import PortfolioAnalyzerPage from './pages/PortfolioAnalyzerPage';
 import AdvancedPropertyIntelligencePage from './pages/AdvancedPropertyIntelligencePage';
 import TokenomicsPage from './pages/TokenomicsPage';
-import WalletConnectPage from './pages/WalletConnectPage';
+import WalletPage from './pages/WalletPage';
 import OnRampPage from './pages/OnRampPage';
 import OffRampPage from './pages/OffRampPage';
 import TokenFlowPage from './pages/TokenFlowPage';
@@ -188,7 +188,7 @@ function App() {
             <Route path="escrow" element={<EscrowPage />} />
             <Route path="escrow/:id" element={<EscrowDetailPage />} />
             <Route path="tokenomics" element={<TokenomicsPage />} />
-            <Route path="wallet" element={<WalletConnectPage />} />
+            <Route path="my-wallet" element={<WalletPage />} />
             <Route path="onramp" element={<OnRampPage />} />
             <Route path="offramp" element={<OffRampPage />} />
             <Route path="token" element={<TokenFlowPage />} />
