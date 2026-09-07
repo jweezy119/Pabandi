@@ -20,10 +20,11 @@ const httpServer = createServer(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
-// Configure Passport strategies (env vars loaded above) — lazy import to defer loading passport strategy modules
-import('./utils/passport').then(({ configurePassport }) => {
-  try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
-}).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
+// Configure Passport strategies (env vars loaded above) — lazy to avoid loading passport strategy modules at startup
+// import('./utils/passport').then(({ configurePassport }) => {
+//   try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
+// }).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
+// DISABLED: Passport strategy loading (imports heavy modules, causes OOM on 512MB)
 app.use(passport.initialize());
 
 // DISABLED: DB keepalive (runs cron job forever)
@@ -129,20 +130,8 @@ app.use('/api/', rateLimiter);
 // DISABLED: Audit logging (runs on every request, memory overhead)
 // app.use('/api/', auditLog);
 
-// Firebase App Check Middleware for API routes — lazy to avoid import cost at startup
-let appCheckMiddleware: any = null;
-app.use('/api/', async (req: any, res: any, next: any) => {
-  if (!appCheckMiddleware) {
-    try {
-      const mod = await import('./middleware/appCheck.middleware');
-      appCheckMiddleware = mod.requireAppCheck;
-    } catch (err) {
-      logger.warn('AppCheck middleware load failed: ' + (err as Error).message);
-      appCheckMiddleware = (req: any, res: any, next: any) => next();
-    }
-  }
-  appCheckMiddleware(req, res, next);
-});
+// Firebase App Check Middleware for API routes — disabled to reduce startup memory (imports firebase-admin)
+app.use('/api/', (_req: any, _res: any, next: any) => next());
 
 // Health check endpoints
 app.get('/health', (_req, res) => {
@@ -331,10 +320,10 @@ app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   }
 });
 
-// Setup Swagger UI and Docs — lazy to avoid loading swagger-jsdoc at startup
-import('./utils/swagger').then(({ setupSwagger }) => {
-  try { setupSwagger(app); } catch (err) { logger.warn('Swagger setup skipped: ' + (err as Error).message); }
-}).catch(err => logger.warn('Swagger module load skipped: ' + (err as Error).message));
+// Setup Swagger UI and Docs — disabled to reduce startup memory (was importing swagger-jsdoc + swagger-ui-express)
+// import('./utils/swagger').then(({ setupSwagger }) => {
+//   try { setupSwagger(app); } catch (err) { logger.warn('Swagger setup skipped: ' + (err as Error).message); }
+// }).catch(err => logger.warn('Swagger module load skipped: ' + (err as Error).message));
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
@@ -451,14 +440,14 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
     }
   }
 
-  // Start Phase 0 Offramp SLA Sweeper
-  setInterval(() => {
-    import('./services/offramp.service').then(({ offrampService }) => {
-      offrampService.expireStaleIntents().catch(err => {
-        logger.error(`[Offramp Sweeper Error] ${err.message}`);
-      });
-    });
-  }, 5000);
+  // DISABLED: Phase 0 Offramp SLA Sweeper (loads heavy service modules, causes OOM on 512MB)
+  // setInterval(() => {
+  //   import('./services/offramp.service').then(({ offrampService }) => {
+  //     offrampService.expireStaleIntents().catch(err => {
+  //       logger.error(`[Offramp Sweeper Error] ${err.message}`);
+  //     });
+  //   });
+  // }, 5000);
 });
 
 // Graceful shutdown
