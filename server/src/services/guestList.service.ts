@@ -1,7 +1,8 @@
-import crypto from 'crypto';
-import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 import { emailService } from './email.service';
+
+
 
 export interface AddToGuestListData {
   userId: string;
@@ -34,7 +35,7 @@ export const guestListService = {
     const noShowProbability = await this.predictNoShow(userId, venueId);
 
     // Generate unique confirmation code
-    const confirmationCode = `GL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const confirmationCode = `GL-${require('crypto').randomBytes(3).toString('hex').toUpperCase()}`;
 
     const guestListEntry = await prisma.guestList.create({
       data: {

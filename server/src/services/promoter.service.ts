@@ -1,6 +1,6 @@
-import crypto from 'crypto';
-import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
+
 
 export interface RegisterPromoterData {
   name: string;
@@ -124,7 +124,7 @@ export const promoterService = {
     let isUnique = false;
 
     do {
-      code = `PROMO-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      code = `PROMO-${require('crypto').randomBytes(2).toString('hex').toUpperCase()}`;
       const existing = await prisma.promoCode.findUnique({
         where: { code },
       });

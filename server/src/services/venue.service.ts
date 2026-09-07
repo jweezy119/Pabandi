@@ -1,5 +1,6 @@
-import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
+
 
 export interface VenueFilters {
   city?: string;

@@ -1,7 +1,8 @@
-import crypto from 'crypto';
-import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 import { emailService } from './email.service';
+
+
 
 export interface CreateBookingData {
   userId: string;
@@ -121,7 +122,7 @@ export const bottleBookingService = {
     }
 
     // Generate unique confirmation code
-    const confirmationCode = `BTL-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const confirmationCode = `BTL-${require('crypto').randomBytes(3).toString('hex').toUpperCase()}`;
 
     // Create the reservation
     const booking = await prisma.bottleReservation.create({
