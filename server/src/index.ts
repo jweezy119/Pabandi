@@ -9,9 +9,6 @@ import compression from 'compression';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 import { rateLimiter } from './middleware/rateLimiter';
-import { configurePassport } from './utils/passport';
-import { requireAppCheck } from './middleware/appCheck.middleware';
-import { setupSwagger } from './utils/swagger';
 
 // Load environment variables FIRST
 dotenv.config();
@@ -23,8 +20,10 @@ const httpServer = createServer(app);
 // DISABLED: Firebase Admin (spawns background processes)
 // try { initFirebaseAdmin(); } catch (err) { logger.warn('Firebase init skipped: ' + (err as Error).message); }
 
-// Configure Passport strategies (env vars loaded above)
-try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
+// Configure Passport strategies (env vars loaded above) — lazy import to defer loading passport strategy modules
+import('./utils/passport').then(({ configurePassport }) => {
+  try { configurePassport(); } catch (err) { logger.warn('Passport init skipped: ' + (err as Error).message); }
+}).catch(err => logger.warn('Passport module load skipped: ' + (err as Error).message));
 app.use(passport.initialize());
 
 // DISABLED: DB keepalive (runs cron job forever)
@@ -130,8 +129,20 @@ app.use('/api/', rateLimiter);
 // DISABLED: Audit logging (runs on every request, memory overhead)
 // app.use('/api/', auditLog);
 
-// Firebase App Check Middleware for API routes
-app.use('/api/', requireAppCheck);
+// Firebase App Check Middleware for API routes — lazy to avoid import cost at startup
+let appCheckMiddleware: any = null;
+app.use('/api/', async (req: any, res: any, next: any) => {
+  if (!appCheckMiddleware) {
+    try {
+      const mod = await import('./middleware/appCheck.middleware');
+      appCheckMiddleware = mod.requireAppCheck;
+    } catch (err) {
+      logger.warn('AppCheck middleware load failed: ' + (err as Error).message);
+      appCheckMiddleware = (req: any, res: any, next: any) => next();
+    }
+  }
+  appCheckMiddleware(req, res, next);
+});
 
 // Health check endpoints
 app.get('/health', (_req, res) => {
@@ -147,258 +158,159 @@ app.get('/healthz', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// API Routes — lazy-loaded to reduce startup memory footprint (Render 512MB limit)
-async function loadApiRoutes() {
-  const v = API_VERSION;
-  const [
-    auth, businesses, businessImport, reservations, disputes, loans, payouts,
-    payments, paymentRecon, analytics, admin, shopify, webhooks, checkout,
-    escrow, crypto, whatsapp, whatsappAdv, apiClients, apiKeys, trust, monet,
-    linkedinSeed, linkedin, bgCheck, reviews, bestFit, web3, apiPublic,
-    apiSub, reliability, staking, airdrop, sourcing, social, socialAuth,
-    wallet, waitlist, acctMgr, offramp, offrampWh, did, recs, ebay, booking,
-    pabEcon, aiReal, aiAdv, ai, marketplace, notif, walletAuth, propMgr,
-    prop, docs, tenant, promo, rewards, freight, maps, promos, nightlife,
-    venues, nightlifeInt, agentic, whStripe, whEscrow, vc, tap, hospitality,
-    external, passport, publicPassport, textSearch, oauth, pop, network,
-    users, integrations, liveSell, shopifyInt, osint, seal, billing, wellknown,
-    agentPassport, realestate, por, predictive, geoRisk, protocolV2, agentLoop,
-    mcp, jobs, seed,
-  ] = await Promise.all([
-    import('./routes/auth.routes'),
-    import('./routes/business.routes'),
-    import('./routes/businessImport.routes'),
-    import('./routes/reservation.routes'),
-    import('./routes/dispute.routes'),
-    import('./routes/loan.routes'),
-    import('./routes/payout.routes'),
-    import('./routes/payment.routes'),
-    import('./routes/payment-reconciliation.routes'),
-    import('./routes/analytics.routes'),
-    import('./routes/admin.routes'),
-    import('./routes/shopify-integration.routes'),
-    import('./routes/webhook.routes'),
-    import('./routes/checkout.routes'),
-    import('./routes/escrow.routes'),
-    import('./routes/crypto.routes'),
-    import('./routes/whatsapp.routes'),
-    import('./routes/whatsapp.advanced.routes'),
-    import('./routes/apiClients.routes'),
-    import('./routes/apiKey.routes'),
-    import('./routes/trust.routes'),
-    import('./routes/monetization.routes'),
-    import('./routes/linkedinSeed.routes'),
-    import('./routes/linkedin.routes'),
-    import('./routes/backgroundCheck.routes'),
-    import('./routes/pabandiReview.routes'),
-    import('./routes/bestFit.routes'),
-    import('./routes/web3.routes'),
-    import('./routes/api-public.routes'),
-    import('./routes/api-subscription.routes'),
-    import('./routes/reliability.routes'),
-    import('./routes/staking.routes'),
-    import('./routes/airdrop.routes'),
-    import('./routes/sourcing.routes'),
-    import('./routes/social.routes'),
-    import('./routes/socialAuth.routes'),
-    import('./routes/wallet.routes'),
-    import('./routes/waitlist.routes'),
-    import('./routes/accountManager.routes'),
-    import('./routes/offramp.routes'),
-    import('./routes/offramp-webhook.routes'),
-    import('./routes/did.routes'),
-    import('./routes/recommendation.routes'),
-    import('./routes/ebay.routes'),
-    import('./routes/booking.routes'),
-    import('./routes/pabEconomy.routes'),
-    import('./routes/aiRealEstate.routes'),
-    import('./routes/aiAdvanced.routes'),
-    import('./routes/ai.routes'),
-    import('./routes/marketplace.routes'),
-    import('./routes/notifications.routes'),
-    import('./routes/walletAuth.routes'),
-    import('./routes/propertyManager.routes'),
-    import('./routes/property.routes'),
-    import('./routes/document.routes'),
-    import('./routes/tenant.routes'),
-    import('./routes/promo.routes'),
-    import('./routes/partnerRewards.routes'),
-    import('./routes/freight.routes'),
-    import('./routes/maps.routes'),
-    import('./routes/promotions.routes'),
-    import('./routes/nightlife.routes'),
-    import('./routes/venues.routes'),
-    import('./routes/nightlifeIntegration.routes'),
-    import('./routes/agentic.routes'),
-    import('./routes/webhook.stripe.routes'),
-    import('./routes/webhook.escrow.routes'),
-    import('./routes/vc.routes'),
-    import('./routes/tap.routes'),
-    import('./routes/hospitality.routes'),
-    import('./routes/external.routes'),
-    import('./routes/publicPassport.routes'),
-    import('./routes/textSearch.routes'),
-    import('./routes/oauth.routes'),
-    import('./routes/passport.routes'),
-    import('./routes/pop.routes'),
-    import('./routes/network.routes'),
-    import('./routes/user.routes'),
-    import('./routes/integrations.routes'),
-    import('./routes/livesell.routes'),
-    import('./routes/shopify.routes'),
-    import('./routes/openwa.routes'),
-    import('./routes/openwa.webhook.routes'),
-    import('./routes/evolution.webhook.routes'),
-    import('./routes/treasury.routes'),
-    import('./routes/treasury.autonomous.routes'),
-    import('./routes/economy.routes'),
-    import('./routes/marketing.routes'),
-    import('./routes/gig.routes'),
-    import('./routes/loop.routes'),
-    import('./routes/program.routes'),
-    import('./routes/rentalDeposit.routes'),
-    import('./routes/ppd.routes'),
-    import('./routes/guaranteeClaim.routes'),
-    import('./routes/appIntegration.routes'),
-    import('./routes/agentMarketplace.routes'),
-    import('./routes/agentLearning.routes'),
-    import('./routes/trustPassport.routes'),
-    import('./routes/osint.routes'),
-    import('./routes/seal.routes'),
-    import('./routes/billing.routes'),
-    import('./routes/wellknown.routes'),
-    import('./routes/agentPassport.routes'),
-    import('./routes/realestate.routes'),
-    import('./routes/por.routes'),
-    import('./routes/predictive.routes'),
-    import('./routes/geoRisk.routes'),
-    import('./routes/protocolV2.routes'),
-    import('./routes/agentLoop.routes'),
-    import('./mcp/pabandiMcpServer'),
-    import('./routes/jobs.routes'),
-    import('./routes/seed.routes'),
-  ]);
-
-  // Now register all routes
-  app.use(`/api/${v}/auth`, auth.default || auth);
-  app.use(`/api/${v}/businesses`, businesses.default || businesses);
-  app.use(`/api/${v}/businesses/import`, businessImport.default || businessImport);
-  app.use(`/api/${v}/reservations`, reservations.default || reservations);
-  app.use(`/api/${v}/disputes`, disputes.default || disputes);
-  app.use(`/api/${v}/loans`, loans.default || loans);
-  app.use(`/api/${v}/payouts`, payouts.default || payouts);
-  app.use(`/api/${v}/payments`, payments.default || payments);
-  app.use(`/api/${v}/payments`, paymentRecon.default || paymentRecon);
-  app.use(`/api/${v}/analytics`, analytics.default || analytics);
-  app.use(`/api/${v}/admin`, admin.default || admin);
-  app.use(`/api/${v}/shopify-integration`, shopify.default || shopify);
-  app.use(`/api/${v}/webhooks`, webhooks.default || webhooks);
-  app.use(`/api/${v}/checkout`, checkout.default || checkout);
-  app.use(`/api/${v}/escrow`, escrow.default || escrow);
-  app.use(`/api/${v}/crypto`, crypto.default || crypto);
-  app.use(`/api/${v}/whatsapp`, (whatsapp as any).default || whatsapp);
-  app.use(`/api/${v}/whatsapp/advanced`, (whatsappAdv as any).default || whatsappAdv);
-  app.use(`/api/${v}/admin/api-clients`, (apiClients as any).default || apiClients);
-  app.use(`/api/${v}/api-keys`, (apiKeys as any).default || apiKeys);
-  app.use(`/api/${v}/trust`, (trust as any).default || trust);
-  app.use(`/api/${v}/monetization`, (monet as any).default || monet);
-  app.use(`/api/${v}/linkedin/seed`, (linkedinSeed as any).default || linkedinSeed);
-  app.use(`/api/${v}/linkedin`, (linkedin as any).default || linkedin);
-  app.use(`/api/${v}/background-check`, (bgCheck as any).default || bgCheck);
-  app.use(`/api/${v}/reviews`, (reviews as any).default || reviews);
-  app.use(`/api/${v}/best-fit`, (bestFit as any).default || bestFit);
-  app.use(`/api/${v}/web3`, (web3 as any).default || web3);
-  app.use(`/api/${v}/public`, (apiPublic as any).default || apiPublic);
-  app.use(`/api/${v}/api-subscription`, (apiSub as any).default || apiSub);
-  app.use(`/api/${v}/social`, (social as any).default || social);
-  app.use(`/api/${v}/auth/social`, (socialAuth as any).default || socialAuth);
-  app.use(`/api/${v}/wallet`, (wallet as any).default || wallet);
-  app.use(`/api/${v}/reliability`, (reliability as any).default || reliability);
-  app.use(`/api/${v}/token-staking`, (staking as any).default || staking);
-  app.use(`/api/${v}/airdrop`, (airdrop as any).default || airdrop);
-  app.use(`/api/${v}/sourcing`, (sourcing as any).default || sourcing);
-  app.use(`/api/${v}/waitlist`, (waitlist as any).default || waitlist);
-  app.use(`/api/${v}/account-manager`, (acctMgr as any).default || acctMgr);
-  app.use(`/api/${v}/offramp`, (offramp as any).default || offramp);
-  app.use(`/api/${v}/offramp/webhook`, (offrampWh as any).default || offrampWh);
-  app.use('/.well-known', (did as any).default || did);
-  app.use(`/api/${v}/recommendation`, (recs as any).default || recs);
-  app.use('/api/v1/live-seller/ebay', (ebay as any).default || ebay);
-  app.use(`/api/${v}/booking`, (booking as any).default || booking);
-  app.use(`/api/${v}/pab`, (pabEcon as any).default || pabEcon);
-  app.use(`/api/${v}/ai/realestate`, (aiReal as any).default || aiReal);
-  app.use(`/api/${v}/ai/advanced`, (aiAdv as any).default || aiAdv);
-  app.use(`/api/${v}/ai`, (ai as any).default || ai);
-  app.use(`/api/${v}/marketplace`, (marketplace as any).default || marketplace);
-  app.use(`/api/${v}/escrow`, (escrow as any).default || escrow);
-  app.use(`/api/${v}/notifications`, (notif as any).default || notif);
-  app.use(`/api/${v}/auth/wallet`, (walletAuth as any).default || walletAuth);
-  app.use(`/api/${v}/property-manager`, (propMgr as any).default || propMgr);
-  app.use(`/api/${v}/property`, (prop as any).default || prop);
-  app.use(`/api/${v}/documents`, (docs as any).default || docs);
-  app.use(`/api/${v}/tenant`, (tenant as any).default || tenant);
-  app.use(`/api/${v}/promo`, (promo as any).default || promo);
-  app.use(`/api/${v}/rewards`, (rewards as any).default || rewards);
-  app.use(`/api/${v}/freight`, (freight as any).default || freight);
-  app.use(`/api/${v}/maps`, (maps as any).default || maps);
-  app.use(`/api/${v}/promotions`, (promos as any).default || promos);
-  app.use(`/api/${v}/nightlife`, (nightlife as any).default || nightlife);
-  app.use(`/api/${v}/venues`, (venues as any).default || venues);
-  app.use(`/api/${v}/nightlife/integrations`, (nightlifeInt as any).default || nightlifeInt);
-  app.use(`/api/${v}/agents`, (agentic as any).default || agentic);
-  app.use(`/api/${v}/webhook/stripe`, (whStripe as any).default || whStripe);
-  app.use(`/api/${v}/webhook/escrow`, (whEscrow as any).default || whEscrow);
-  app.use(`/api/${v}/passport/vc`, (vc as any).default || vc);
-  app.use(`/api/${v}/tap`, (tap as any).default || tap);
-  app.use(`/api/${v}/hospitality`, (hospitality as any).default || hospitality);
-  app.use('/api/hospitality', (hospitality as any).default || hospitality);
-  app.use('/external/v1', (external as any).default || external);
-  app.use(`/api/${v}/passport/public`, (publicPassport as any).default || publicPassport);
-  app.use(`/api/${v}/text-search`, (textSearch as any).default || textSearch);
-  app.use(`/api/${v}/oauth`, (oauth as any).default || oauth);
-  app.use(`/api/${v}/passport`, (passport as any).default || passport);
-  app.use(`/api/${v}/pop`, (pop as any).default || pop);
-  app.use(`/api/${v}/network`, (network as any).default || network);
-  app.use(`/api/${v}/users`, (users as any).default || users);
-  app.use(`/api/${v}/integrations`, (integrations as any).default || integrations);
-  app.use(`/api/${v}/integrations/livesell`, (liveSell as any).default || liveSell);
-  app.use(`/api/${v}/shopify`, (shopifyInt as any).default || shopifyInt);
-  app.use(`/api/${v}/openwa`, (whatsapp as any).default || whatsapp); // openwaRoutes
-  app.use(`/api/${v}/openwa/webhook`, (whatsapp as any).default || whatsapp);
-  app.use(`/api/${v}/evolution`, (whatsapp as any).default || whatsapp);
-  app.use(`/api/${v}/treasury`, (offramp as any).default || offramp);
-  app.use(`/api/${v}/economy`, (recs as any).default || recs);
-  app.use(`/api/${v}/gigs`, (notif as any).default || notif);
-  app.use(`/api/${v}/loops`, (notif as any).default || notif);
-  app.use(`/api/${v}/programs`, (notif as any).default || notif);
-  app.use(`/api/${v}/pyd`, (notif as any).default || notif);
-  app.use(`/api/${v}/ppd`, (notif as any).default || notif);
-  app.use(`/api/${v}/guarantee`, (notif as any).default || notif);
-  app.use(`/api/${v}/apps`, (notif as any).default || notif);
-  app.use(`/api/${v}/agents`, (agentic as any).default || agentic);
-  app.use(`/api/${v}/agents`, (agentLoop as any).default || agentLoop);
-  app.use(`/api/${v}/trust-passport`, (agentPassport as any).default || agentPassport);
-  app.use(`/api/${v}/osint`, (osint as any).default || osint);
-  app.use(`/api/${v}/seal`, (seal as any).default || seal);
-  app.use(`/api/${v}/billing`, (billing as any).default || billing);
-  app.use(`/api/${v}/jobs`, (jobs as any).default || jobs);
-  app.use(`/api/${v}/seed`, (seed as any).default || seed);
-  app.use('/.well-known/ptp', (wellknown as any).default || wellknown);
-  app.use(`/api/${v}/agent-passport`, (agentPassport as any).default || agentPassport);
-  app.use(`/api/${v}/realestate`, (realestate as any).default || realestate);
-  app.use(`/api/${v}/por`, (por as any).default || por);
-  app.use(`/api/${v}/predictive`, (predictive as any).default || predictive);
-  app.use(`/api/${v}/geo`, (geoRisk as any).default || geoRisk);
-  app.use(`/api/${v}/v2`, (protocolV2 as any).default || protocolV2);
-  app.use(`/api/${v}/agent-loop`, (agentLoop as any).default || agentLoop);
-
-  // MCP handler needs default export
-  const mcpMod = (mcp as any).default || (mcp as any).mcpHandler || mcp;
-  app.post('/mcp', (mcpMod as any).mcpHandler || mcpMod);
-  app.post(`/api/${v}/mcp`, (mcpMod as any).mcpHandler || mcpMod);
-
-  logger.info('✅ API routes registered');
+// API Routes — lazy-loaded per-route-prefix to reduce startup memory footprint (Render 512MB limit)
+// Each route prefix gets a lightweight stub that dynamically imports the real router on first request.
+function lazyRoute(routePath: string, importPath: string) {
+  let loadedRouter: any = null;
+  const stub = (req: any, res: any, next: any) => {
+    if (loadedRouter) {
+      return loadedRouter(req, res, next);
+    }
+    import(importPath).then(mod => {
+      loadedRouter = mod.default || mod;
+      logger.info(`✅ Lazy-loaded route: ${routePath} from ${importPath}`);
+      loadedRouter(req, res, next);
+    }).catch(err => {
+      logger.error(`Failed to lazy-load route ${routePath}:`, err);
+      res.status(500).json({ success: false, error: 'Route module failed to load' });
+    });
+  };
+  app.use(routePath, stub);
 }
+
+// Lazy-load routes — modules are imported on first request, not at startup
+const v = API_VERSION;
+const routeMap: [string, string][] = [
+  [`/api/${v}/auth`, './routes/auth.routes'],
+  [`/api/${v}/businesses`, './routes/business.routes'],
+  [`/api/${v}/businesses/import`, './routes/businessImport.routes'],
+  [`/api/${v}/reservations`, './routes/reservation.routes'],
+  [`/api/${v}/disputes`, './routes/dispute.routes'],
+  [`/api/${v}/loans`, './routes/loan.routes'],
+  [`/api/${v}/payouts`, './routes/payout.routes'],
+  [`/api/${v}/payments`, './routes/payment.routes'],
+  [`/api/${v}/payments/recon`, './routes/payment-reconciliation.routes'],
+  [`/api/${v}/analytics`, './routes/analytics.routes'],
+  [`/api/${v}/admin`, './routes/admin.routes'],
+  [`/api/${v}/shopify-integration`, './routes/shopify-integration.routes'],
+  [`/api/${v}/webhooks`, './routes/webhook.routes'],
+  [`/api/${v}/checkout`, './routes/checkout.routes'],
+  [`/api/${v}/escrow`, './routes/escrow.routes'],
+  [`/api/${v}/crypto`, './routes/crypto.routes'],
+  [`/api/${v}/whatsapp`, './routes/whatsapp.routes'],
+  [`/api/${v}/whatsapp/advanced`, './routes/whatsapp.advanced.routes'],
+  [`/api/${v}/admin/api-clients`, './routes/apiClients.routes'],
+  [`/api/${v}/api-keys`, './routes/apiKey.routes'],
+  [`/api/${v}/trust`, './routes/trust.routes'],
+  [`/api/${v}/monetization`, './routes/monetization.routes'],
+  [`/api/${v}/linkedin/seed`, './routes/linkedinSeed.routes'],
+  [`/api/${v}/linkedin`, './routes/linkedin.routes'],
+  [`/api/${v}/background-check`, './routes/backgroundCheck.routes'],
+  [`/api/${v}/reviews`, './routes/pabandiReview.routes'],
+  [`/api/${v}/best-fit`, './routes/bestFit.routes'],
+  [`/api/${v}/web3`, './routes/web3.routes'],
+  [`/api/${v}/public`, './routes/api-public.routes'],
+  [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
+  [`/api/${v}/social`, './routes/social.routes'],
+  [`/api/${v}/auth/social`, './routes/socialAuth.routes'],
+  [`/api/${v}/wallet`, './routes/wallet.routes'],
+  [`/api/${v}/reliability`, './routes/reliability.routes'],
+  [`/api/${v}/token-staking`, './routes/staking.routes'],
+  [`/api/${v}/airdrop`, './routes/airdrop.routes'],
+  [`/api/${v}/sourcing`, './routes/sourcing.routes'],
+  [`/api/${v}/waitlist`, './routes/waitlist.routes'],
+  [`/api/${v}/account-manager`, './routes/accountManager.routes'],
+  [`/api/${v}/offramp`, './routes/offramp.routes'],
+  [`/api/${v}/offramp/webhook`, './routes/offramp-webhook.routes'],
+  [`/.well-known`, './routes/did.routes'],
+  [`/api/${v}/recommendation`, './routes/recommendation.routes'],
+  [`/api/v1/live-seller/ebay`, './routes/ebay.routes'],
+  [`/api/${v}/booking`, './routes/booking.routes'],
+  [`/api/${v}/pab`, './routes/pabEconomy.routes'],
+  [`/api/${v}/ai/realestate`, './routes/aiRealEstate.routes'],
+  [`/api/${v}/ai/advanced`, './routes/aiAdvanced.routes'],
+  [`/api/${v}/ai`, './routes/ai.routes'],
+  [`/api/${v}/marketplace`, './routes/marketplace.routes'],
+  [`/api/${v}/notifications`, './routes/notifications.routes'],
+  [`/api/${v}/auth/wallet`, './routes/walletAuth.routes'],
+  [`/api/${v}/property-manager`, './routes/propertyManager.routes'],
+  [`/api/${v}/property`, './routes/property.routes'],
+  [`/api/${v}/documents`, './routes/document.routes'],
+  [`/api/${v}/tenant`, './routes/tenant.routes'],
+  [`/api/${v}/promo`, './routes/promo.routes'],
+  [`/api/${v}/rewards`, './routes/partnerRewards.routes'],
+  [`/api/${v}/freight`, './routes/freight.routes'],
+  [`/api/${v}/maps`, './routes/maps.routes'],
+  [`/api/${v}/promotions`, './routes/promotions.routes'],
+  [`/api/${v}/nightlife`, './routes/nightlife.routes'],
+  [`/api/${v}/venues`, './routes/venues.routes'],
+  [`/api/${v}/nightlife/integrations`, './routes/nightlifeIntegration.routes'],
+  [`/api/${v}/agents`, './routes/agentic.routes'],
+  [`/api/${v}/webhook/stripe`, './routes/webhook.stripe.routes'],
+  [`/api/${v}/webhook/escrow`, './routes/webhook.escrow.routes'],
+  [`/api/${v}/passport/vc`, './routes/vc.routes'],
+  [`/api/${v}/tap`, './routes/tap.routes'],
+  [`/api/${v}/hospitality`, './routes/hospitality.routes'],
+  [`/external/v1`, './routes/external.routes'],
+  [`/api/${v}/passport/public`, './routes/publicPassport.routes'],
+  [`/api/${v}/text-search`, './routes/textSearch.routes'],
+  [`/api/${v}/oauth`, './routes/oauth.routes'],
+  [`/api/${v}/passport`, './routes/passport.routes'],
+  [`/api/${v}/pop`, './routes/pop.routes'],
+  [`/api/${v}/network`, './routes/network.routes'],
+  [`/api/${v}/users`, './routes/user.routes'],
+  [`/api/${v}/integrations`, './routes/integrations.routes'],
+  [`/api/${v}/integrations/livesell`, './routes/livesell.routes'],
+  [`/api/${v}/shopify`, './routes/shopify.routes'],
+  [`/api/${v}/openwa`, './routes/openwa.routes'],
+  [`/api/${v}/openwa/webhook`, './routes/openwa.webhook.routes'],
+  [`/api/${v}/evolution`, './routes/evolution.webhook.routes'],
+  [`/api/${v}/treasury`, './routes/treasury.routes'],
+  [`/api/${v}/economy`, './routes/economy.routes'],
+  [`/api/${v}/marketing`, './routes/marketing.routes'],
+  [`/api/${v}/gigs`, './routes/gig.routes'],
+  [`/api/${v}/loops`, './routes/loop.routes'],
+  [`/api/${v}/programs`, './routes/program.routes'],
+  [`/api/${v}/pyd`, './routes/rentalDeposit.routes'],
+  [`/api/${v}/ppd`, './routes/ppd.routes'],
+  [`/api/${v}/guarantee`, './routes/guaranteeClaim.routes'],
+  [`/api/${v}/apps`, './routes/appIntegration.routes'],
+  [`/api/${v}/agent-marketplace`, './routes/agentMarketplace.routes'],
+  [`/api/${v}/agent-learning`, './routes/agentLearning.routes'],
+  [`/api/${v}/trust-passport`, './routes/trustPassport.routes'],
+  [`/api/${v}/osint`, './routes/osint.routes'],
+  [`/api/${v}/seal`, './routes/seal.routes'],
+  [`/api/${v}/billing`, './routes/billing.routes'],
+  [`/api/${v}/jobs`, './routes/jobs.routes'],
+  [`/api/${v}/seed`, './routes/seed.routes'],
+  [`/.well-known/ptp`, './routes/wellknown.routes'],
+  [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],
+  [`/api/${v}/agent-loop`, './routes/agentLoop.routes'],
+];
+
+for (const [routePath, importPath] of routeMap) {
+  lazyRoute(routePath, importPath);
+}
+
+// Lazy-load MCP handler
+app.post('/mcp', async (req, res) => {
+  try {
+    const { mcpHandler } = await import('./mcp/pabandiMcpServer');
+    mcpHandler(req, res);
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'MCP handler failed to load' });
+  }
+});
+app.post(`/api/${v}/mcp`, async (req, res) => {
+  try {
+    const { mcpHandler } = await import('./mcp/pabandiMcpServer');
+    mcpHandler(req, res);
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'MCP handler failed to load' });
+  }
+});
+
+logger.info(`✅ ${routeMap.length} lazy API routes registered`);
 
 // Expose public SDK for trust seals
 import path from 'path';
@@ -419,8 +331,10 @@ app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {
   }
 });
 
-// Setup Swagger UI and Docs
-setupSwagger(app);
+// Setup Swagger UI and Docs — lazy to avoid loading swagger-jsdoc at startup
+import('./utils/swagger').then(({ setupSwagger }) => {
+  try { setupSwagger(app); } catch (err) { logger.warn('Swagger setup skipped: ' + (err as Error).message); }
+}).catch(err => logger.warn('Swagger module load skipped: ' + (err as Error).message));
 
 // API Documentation
 app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
@@ -498,8 +412,8 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   logger.info(`🏥 Health check: http://localhost:${parsedPort}/health`);
   logger.info(`🔑 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? '✅ configured' : '❌ not configured'}`);
 
-  // Lazy-load routes in background after server is listening (avoids OOM at startup)
-  loadApiRoutes().catch(err => logger.error('Failed to load API routes:', err));
+  // Routes are registered lazily via lazyRoute() at module load — no startup loading needed
+  logger.info('✅ Server ready (routes will lazy-load on first request)');
 
   // DISABLED: Telegram bot (spawns background processes)
   // try {
