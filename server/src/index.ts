@@ -1,5 +1,5 @@
 // Pabandi Server - IPv4 Pooler active
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -284,9 +284,87 @@ for (const [routePath, importPath] of routeMap) {
   lazyRoute(routePath, importPath);
 }
 
-// Register GitHub OAuth route directly (not lazy-loaded) for reliability
-import githubAuthRouter from './routes/githubAuth.routes';
-directRoute(`/api/${v}/auth/social`, githubAuthRouter);
+// Register GitHub OAuth route inline (no module import needed)
+app.get('/api/v1/auth/social/github', (req: Request, res: Response) => {
+  const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
+  const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
+  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    return res.status(503).json({ success: false, message: 'GitHub OAuth not configured' });
+  }
+  const API_URL = process.env.API_URL || 'https://pabandi.onrender.com';
+  const CLIENT_URL = process.env.CLIENT_URL || 'https://pabandi.com';
+  const redirectUri = `${API_URL}/api/v1/auth/social/github/callback`;
+  const githubUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email`;
+  res.redirect(githubUrl);
+});
+
+app.get('/api/v1/auth/social/github/callback', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.query;
+    if (!code) return res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/login?error=github_no_code`);
+
+    const axios = (await import('axios')).default;
+    const jwt = (await import('jsonwebtoken')).default;
+    const { prisma } = await import('./utils/database');
+
+    const tokenRes = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      code,
+    }, { headers: { Accept: 'application/json' } });
+
+    const accessToken = tokenRes.data.access_token;
+    if (!accessToken) return res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/login?error=github_token`);
+
+    const userRes = await axios.get('https://api.github.com/user', {
+      headers: { Authorization: `token ${accessToken}` },
+    });
+
+    const githubUser = userRes.data;
+    let email = githubUser.email;
+
+    if (!email) {
+      const emailsRes = await axios.get('https://api.github.com/user/emails', {
+        headers: { Authorization: `token ${accessToken}` },
+      });
+      const primaryEmail = emailsRes.data.find((e: any) => e.primary && e.verified);
+      email = primaryEmail?.email;
+    }
+
+    if (!email) return res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/login?error=github_no_email`);
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash: '',
+          firstName: githubUser.name?.split(' ')[0] || githubUser.login || 'GitHub',
+          lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
+          role: 'CUSTOMER',
+          githubId: String(githubUser.id),
+          profilePictureUrl: githubUser.avatar_url,
+          isEmailVerified: true,
+        },
+      });
+    } else {
+      await prisma.user.update({
+        where: { email },
+        data: { githubId: String(githubUser.id), isEmailVerified: true, profilePictureUrl: user.profilePictureUrl || githubUser.avatar_url },
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'fallback',
+      { expiresIn: '7d' }
+    );
+
+    res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
+  } catch (error: any) {
+    res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/login?error=github`);
+  }
+});
 
 // Lazy-load MCP handler
 app.post('/mcp', async (req, res) => {
