@@ -96,10 +96,7 @@ export default function AuthPage() {
   });
   const urlError = searchParams.get('error');
   const [error, setError] = useState(() => {
-    if (urlError === 'facebook_not_configured') return 'Facebook login is not configured yet. Please add FACEBOOK_APP_ID in backend.';
-    if (urlError === 'google_not_configured') return 'Google login is not configured yet. Add GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET on the server and authorize the callback in Google Cloud.';
-    if (urlError === 'facebook_failed') return 'Facebook authentication failed. Please try again.';
-    if (urlError === 'google_failed') return 'Google authentication failed. Please try again.';
+    if (urlError === 'github_failed') return 'GitHub authentication failed. Please try again.';
     if (urlError === 'twitter_failed') return 'X/Twitter authentication failed. Please try again.';
     if (urlError === 'linkedin_failed') return 'LinkedIn authentication failed. Please try again.';
     if (urlError === 'tiktok_failed') return 'TikTok authentication failed. Please try again.';
