@@ -47,10 +47,20 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
 }
 
 // GitHub OAuth routes
-router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
+router.get('/github', (req: Request, res: Response, next: NextFunction) => {
+  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+    return res.status(503).json({ success: false, message: 'GitHub OAuth not configured' });
+  }
+  passport.authenticate('github', { scope: ['user:email'] })(req, res, next);
+});
 
 router.get('/github/callback',
-  passport.authenticate('github', { failureRedirect: '/login?error=github' }),
+  (req: Request, res: Response, next: NextFunction) => {
+    if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+      return res.status(503).json({ success: false, message: 'GitHub OAuth not configured' });
+    }
+    passport.authenticate('github', { failureRedirect: '/login?error=github' })(req, res, next);
+  },
   (req: any, res: Response) => {
     const user = req.user as any;
     const token = jwt.sign(
