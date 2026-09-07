@@ -165,6 +165,11 @@ function lazyRoute(routePath: string, importPath: string) {
   app.use(routePath, stub);
 }
 
+// Direct route registration (no lazy loading) for critical routes
+function directRoute(routePath: string, router: any) {
+  app.use(routePath, router);
+}
+
 // Lazy-load routes — modules are imported on first request, not at startup
 const v = API_VERSION;
 const routeMap: [string, string][] = [
@@ -199,7 +204,6 @@ const routeMap: [string, string][] = [
   [`/api/${v}/public`, './routes/api-public.routes'],
   [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
   [`/api/${v}/social`, './routes/social.routes'],
-  [`/api/${v}/auth/social`, './routes/githubAuth.routes'],
   [`/api/${v}/wallet`, './routes/wallet.routes'],
   [`/api/${v}/reliability`, './routes/reliability.routes'],
   [`/api/${v}/token-staking`, './routes/staking.routes'],
@@ -279,6 +283,10 @@ const routeMap: [string, string][] = [
 for (const [routePath, importPath] of routeMap) {
   lazyRoute(routePath, importPath);
 }
+
+// Register GitHub OAuth route directly (not lazy-loaded) for reliability
+import githubAuthRouter from './routes/githubAuth.routes';
+directRoute(`/api/${v}/auth/social`, githubAuthRouter);
 
 // Lazy-load MCP handler
 app.post('/mcp', async (req, res) => {
