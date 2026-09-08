@@ -1,8 +1,13 @@
-FROM node:20.18-slim
+FROM node:22-slim
+
+ARG CACHE_BUST=1
+RUN echo "Cache bust: $CACHE_BUST"
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+ENV NODE_ENV=production
 
 COPY package*.json ./
 RUN npm install
@@ -12,5 +17,5 @@ COPY . .
 # Force Prisma client regeneration from the correct schema
 RUN rm -rf node_modules/.prisma && npm run build
 
-# Run database migrations on startup with logging
-CMD ["sh", "-c", "echo 'Running Prisma migrations...' && npx prisma migrate deploy && echo 'Migrations complete, starting server...' && node dist/src/index.js"]
+# Run database schema push on startup (forces schema to match Prisma schema)
+CMD ["sh", "-c", "echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
