@@ -12,6 +12,5 @@ COPY . .
 # Force Prisma client regeneration from the correct schema
 RUN rm -rf node_modules/.prisma && npm run build
 
-EXPOSE 10000
-
-CMD ["node", "dist/src/index.js"]
+# Run database migrations on startup
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/index.js"]
