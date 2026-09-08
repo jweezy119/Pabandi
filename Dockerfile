@@ -31,5 +31,5 @@ EXPOSE 10000
 
 WORKDIR /app/server
 
-# Run database migrations on startup
-CMD ["sh", "-c", "echo 'Running Prisma migrations...' && npx prisma migrate deploy && echo 'Migrations complete, starting server...' && node dist/src/index.js"]
+# Run database schema push on startup (forces schema to match Prisma schema)
+CMD ["sh", "-c", "echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
