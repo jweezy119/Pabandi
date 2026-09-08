@@ -1,6 +1,6 @@
-FROM node:20-slim
+FROM node:22-slim
 
-ARG CACHE_BUST=1
+ARG CACHE_BUST=2
 RUN echo "Cache bust: $CACHE_BUST"
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
