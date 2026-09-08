@@ -4,6 +4,8 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 # Copy server package files
 COPY server/package*.json ./server/
 WORKDIR /app/server
