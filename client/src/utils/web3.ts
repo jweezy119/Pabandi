@@ -622,3 +622,33 @@ export const signMessageWithWallet = async (message: string): Promise<{ address:
   
   return { address, signature };
 };
+
+/**
+ * Prompts the user to sign a message using Phantom wallet (Solana).
+ * Returns signature in base58 format (bs58 encoded) for backend verification.
+ */
+export const signMessageWithPhantom = async (message: string): Promise<{ address: string, signature: string }> => {
+  const provider = (window as any).solana;
+  if (!provider || !provider.isPhantom) {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      const url = encodeURIComponent(window.location.href);
+      const ref = encodeURIComponent(window.location.origin);
+      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
+      throw new Error('Redirecting to Phantom App...');
+    }
+    throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
+  }
+
+  const resp = await provider.connect();
+  const address = resp.publicKey.toString();
+  
+  const messageBytes = new TextEncoder().encode(message);
+  const signedMessage = await provider.signMessage(messageBytes, 'utf8');
+  
+  // Phantom returns signature as Uint8Array, convert to base58
+  const bs58 = await import('bs58');
+  const signature = bs58.default.encode(signedMessage.signature);
+  
+  return { address, signature };
+};

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/api';
-import { signMessageWithWallet } from '../utils/web3';
+import { signMessageWithPhantom } from '../utils/web3';
 import { Surface, tokens } from '../design-system';
 
 type Mode = 'login' | 'signup';
@@ -254,14 +254,23 @@ export default function AuthPage() {
   const handleWalletAuth = async () => {
     try {
       setOauthLoading('wallet');
-      const ethereum = (window as any).ethereum;
-      if (!ethereum) throw new Error('MetaMask not detected. Please install it.');
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      const address = accounts[0];
+      const provider = (window as any).solana;
+      if (!provider || !provider.isPhantom) {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          const url = encodeURIComponent(window.location.href);
+          const ref = encodeURIComponent(window.location.origin);
+          window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
+          return;
+        }
+        throw new Error('Phantom wallet not detected. Please install it.');
+      }
+      const resp = await provider.connect();
+      const address = resp.publicKey.toString();
       const res = await authService.getWalletNonce(address);
       const nonce = res.data?.data?.nonce || res.data?.nonce;
       const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${address}\n\nNonce:\n${nonce}`;
-      const { signature } = await signMessageWithWallet(message);
+      const { signature } = await signMessageWithPhantom(message);
       await loginWithWallet(address, signature);
       navigate(getPostLoginTarget());
     } catch (err: any) {
