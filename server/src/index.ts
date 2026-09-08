@@ -174,9 +174,6 @@ function directRoute(routePath: string, router: any) {
 import githubAuthRoutes from './routes/githubAuth.routes';
 import authRoutes from './routes/auth.routes';
 
-const app = express();
-const httpServer = createServer(app);
-
 // Register critical routes immediately
 directRoute(`/api/${API_VERSION}/auth`, authRoutes);
 directRoute(`/api/${API_VERSION}/auth/social`, githubAuthRoutes);
