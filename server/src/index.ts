@@ -288,11 +288,6 @@ for (const [routePath, importPath] of routeMap) {
   lazyRoute(routePath, importPath);
 }
 
-// Register GitHub OAuth route inline (no module import needed)
-  } catch (error: any) {
-    res.redirect(`${process.env.CLIENT_URL || 'https://pabandi.com'}/login?error=github`);
-  }
-});
 
 // Lazy-load MCP handler
 app.post('/mcp', async (req, res) => {
