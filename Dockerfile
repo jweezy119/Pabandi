@@ -28,4 +28,6 @@ RUN cp -r dist/* /app/server/src/public/app/ 2>/dev/null || true
 EXPOSE 10000
 
 WORKDIR /app/server
-CMD ["node", "dist/src/index.js"]
+
+# Run database migrations on startup
+CMD ["sh", "-c", "echo 'Running Prisma migrations...' && npx prisma migrate deploy && echo 'Migrations complete, starting server...' && node dist/src/index.js"]
