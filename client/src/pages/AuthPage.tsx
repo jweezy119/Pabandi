@@ -8,70 +8,71 @@ import { Surface, tokens } from '../design-system';
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
 
+const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
   </svg>
 );
 
 const XIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 
 const LinkedInIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
   </svg>
 );
 
 const TikTokIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z"/>
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z" />
   </svg>
 );
 
 const MetaMaskIcon = () => (
   <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path fill="#E17726" d="M96.7,29.9c-2.4-7.4-4-11.4-4-11.4l-11.6,7.5l-12.7-8L80.8,4.9l4.5,1.7C85.3,6.6,99.1,37.3,96.7,29.9z"/>
-    <path fill="#E27625" d="M3.3,29.9C5.7,22.5,7.3,18.5,7.3,18.5l11.6,7.5l12.7-8L19.2,4.9L14.7,6.6C14.7,6.6,0.9,37.3,3.3,29.9z"/>
-    <path fill="#E27625" d="M68.4,18l-18.4,14L31.6,18l14.7-6.2l3.7,2l3.7-2L68.4,18z"/>
-    <path fill="#D5BFB2" d="M68.4,18l-10.3,5.6l10.3,10.6L68.4,18z"/>
-    <path fill="#D5BFB2" d="M31.6,18l10.3,5.6L31.6,34.2L31.6,18z"/>
-    <path fill="#233447" d="M68.4,34.2l12.7-8L66,41.9l21.2,5.2c-0.1,0.1-5,7-5.5,7.6L68.4,34.2z"/>
-    <path fill="#233447" d="M31.6,34.2l-12.7-8l15.1,15.7L12.8,47.1c0.1,0.1,5,7,5.5,7.6L31.6,34.2z"/>
-    <path fill="#CC6228" d="M81.7,54.7L68.4,34.2l13.3,20.5L81.7,54.7z"/>
-    <path fill="#CC6228" d="M18.3,54.7l13.3-20.5L18.3,54.7z"/>
-    <path fill="#E27525" d="M66,41.9l-16,14.6l16-14.6H66z"/>
-    <path fill="#E27525" d="M34,41.9l16,14.6l-16-14.6H34z"/>
-    <path fill="#E27525" d="M50,56.5L34,41.9l16-10.2L50,56.5z"/>
-    <path fill="#E27525" d="M50,56.5l16-14.6L50,31.7L50,56.5z"/>
-    <path fill="#F6851B" d="M81.7,54.7L66,41.9L50,56.5l16,16.5L81.7,54.7z"/>
-    <path fill="#F6851B" d="M18.3,54.7l15.7-12.8L50,56.5L34,73L18.3,54.7z"/>
-    <path fill="#C0AD9E" d="M81.7,54.7l-15.7,18.3l15.7-9.5L81.7,54.7z"/>
-    <path fill="#C0AD9E" d="M18.3,54.7l15.7,18.3L18.3,63.5L18.3,54.7z"/>
-    <path fill="#161616" d="M66,73l-16-16.5L66,73z"/>
-    <path fill="#161616" d="M34,73l16-16.5L34,73z"/>
-    <path fill="#763D16" d="M66,73l15.7-9.5L66,73z"/>
-    <path fill="#763D16" d="M34,73L18.3,63.5L34,73z"/>
-    <path fill="#F6851B" d="M66,73l-16,13.7L50,86.7L66,73z"/>
-    <path fill="#F6851B" d="M34,73l16,13.7L50,86.7L34,73z"/>
-    <path fill="#F6851B" d="M66,73l-16,13.7l16-13.7H66z"/>
-    <path fill="#F6851B" d="M34,73l16,13.7L34,73H34z"/>
-    <path fill="#F6851B" d="M81.7,63.5l-15.7,9.5L66,73l15.7-9.5L81.7,63.5z"/>
-    <path fill="#F6851B" d="M18.3,63.5l15.7,9.5L34,73L18.3,63.5z"/>
+    <path fill="#E17726" d="M96.7,29.9c-2.4-7.4-4-11.4-4-11.4l-11.6,7.5l-12.7-8L80.8,4.9l4.5,1.7C85.3,6.6,99.1,37.3,96.7,29.9z" />
+    <path fill="#E27625" d="M3.3,29.9C5.7,22.5,7.3,18.5,7.3,18.5l11.6,7.5l12.7-8L19.2,4.9L14.7,6.6C14.7,6.6,0.9,37.3,3.3,29.9z" />
+    <path fill="#E27625" d="M68.4,18l-18.4,14L31.6,18l14.7-6.2l3.7,2l3.7-2L68.4,18z" />
+    <path fill="#D5BFB2" d="M68.4,18l-10.3,5.6l10.3,10.6L68.4,18z" />
+    <path fill="#D5BFB2" d="M31.6,18l10.3,5.6L31.6,34.2L31.6,18z" />
+    <path fill="#233447" d="M68.4,34.2l12.7-8L66,41.9l21.2,5.2c-0.1,0.1-5,7-5.5,7.6L68.4,34.2z" />
+    <path fill="#233447" d="M31.6,34.2l-12.7-8l15.1,15.7L12.8,47.1c0.1,0.1,5,7,5.5,7.6L31.6,34.2z" />
+    <path fill="#CC6228" d="M81.7,54.7L68.4,34.2l13.3,20.5L81.7,54.7z" />
+    <path fill="#CC6228" d="M18.3,54.7l13.3-20.5L18.3,54.7z" />
+    <path fill="#E27525" d="M66,41.9l-16,14.6l16-14.6H66z" />
+    <path fill="#E27525" d="M34,41.9l16,14.6l-16-14.6H34z" />
+    <path fill="#E27525" d="M50,56.5L34,41.9l16-10.2L50,56.5z" />
+    <path fill="#E27525" d="M50,56.5l16-14.6L50,31.7L50,56.5z" />
+    <path fill="#F6851B" d="M81.7,54.7L66,41.9L50,56.5l16,16.5L81.7,54.7z" />
+    <path fill="#F6851B" d="M18.3,54.7l15.7-12.8L50,56.5L34,73L18.3,54.7z" />
+    <path fill="#C0AD9E" d="M81.7,54.7l-15.7,18.3l15.7-9.5L81.7,54.7z" />
+    <path fill="#C0AD9E" d="M18.3,54.7l15.7,18.3L18.3,63.5L18.3,54.7z" />
+    <path fill="#161616" d="M66,73l-16-16.5L66,73z" />
+    <path fill="#161616" d="M34,73l16-16.5L34,73z" />
+    <path fill="#763D16" d="M66,73l15.7-9.5L66,73z" />
+    <path fill="#763D16" d="M34,73L18.3,63.5L34,73z" />
+    <path fill="#F6851B" d="M66,73l-16,13.7L50,86.7L66,73z" />
+    <path fill="#F6851B" d="M34,73l16,13.7L50,86.7L34,73z" />
+    <path fill="#F6851B" d="M66,73l-16,13.7l16-13.7H66z" />
+    <path fill="#F6851B" d="M34,73l16,13.7L34,73H34z" />
+    <path fill="#F6851B" d="M81.7,63.5l-15.7,9.5L66,73l15.7-9.5L81.7,63.5z" />
+    <path fill="#F6851B" d="M18.3,63.5l15.7,9.5L34,73L18.3,63.5z" />
   </svg>
 );
 
 const BuildingIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"/>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
   </svg>
 );
 
 const UserIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
   </svg>
 );
 
@@ -79,8 +80,13 @@ const FieldError = ({ msg }: { msg: string }) => (
   <p className="mt-1.5 text-xs font-medium text-red-300">{msg}</p>
 );
 
-const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: { 
-  email: string; 
+const getBackendUrl = () => {
+  const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+  return rawBase.replace(/\/api\/v\d+\/?$/, '');
+};
+
+const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
+  email: string;
   onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onVerified: () => void;
   onError: (msg: string) => void;
@@ -97,8 +103,7 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
     setLoading(true);
     onError('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const backendUrl = getBackendUrl();
       const res = await fetch(`${backendUrl}/api/v1/auth/request-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,8 +130,7 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
     setLoading(true);
     onError('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+      const backendUrl = getBackendUrl();
       const res = await fetch(`${backendUrl}/api/v1/auth/verify-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,15 +153,15 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
     <div className="space-y-3">
       <p className="text-sm font-semibold text-white">Quick Login (No Password)</p>
       <div className="flex gap-2">
-        <input 
-          type="email" 
-          value={email} 
+        <input
+          type="email"
+          value={email}
           onChange={onEmailChange}
           placeholder="you@gmail.com"
           className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
         />
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={handleSendCode}
           disabled={loading}
           className="px-4 py-3 rounded-lg bg-indigo-500 text-white text-sm font-bold touch-target disabled:opacity-50"
@@ -167,15 +171,15 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
       </div>
       {codeSent && (
         <div className="flex gap-2">
-          <input 
-            type="text" 
-            value={codeInput} 
+          <input
+            type="text"
+            value={codeInput}
             onChange={(e) => setCodeInput(e.target.value)}
             placeholder="Enter 6-digit code"
             className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
           />
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={handleVerifyCode}
             disabled={loading}
             className="px-4 py-3 rounded-lg bg-green-500 text-white text-sm font-bold touch-target disabled:opacity-50"
@@ -197,10 +201,16 @@ export default function AuthPage() {
     return r === 'business' ? 'business' : 'customer';
   });
   const [formData, setFormData] = useState({
-    email: '', password: '', confirmPassword: '',
-    firstName: '', lastName: '', phone: '',
-    businessName: '', googlePlaceId: '',
-    fiverrUrl: '', upworkUrl: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    businessName: '',
+    googlePlaceId: '',
+    fiverrUrl: '',
+    upworkUrl: '',
   });
   const urlError = searchParams.get('error');
   const [error, setError] = useState(() => {
@@ -212,6 +222,7 @@ export default function AuthPage() {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const { login, register, loginWithWallet } = useAuthStore();
   const navigate = useNavigate();
   const clearErrors = () => { setError(''); setFieldErrors({}); }
@@ -233,7 +244,6 @@ export default function AuthPage() {
       setFieldErrors(prev => { const n = { ...prev }; delete n[e.target.name]; return n; });
     }
   };
-
 
   const getPostLoginTarget = () => {
     const redirect = searchParams.get('redirect');
@@ -262,25 +272,27 @@ export default function AuthPage() {
     }
   };
 
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+  const handleGitHubAuth = () => {
+    setOauthLoading('github');
+    const backendUrl = getBackendUrl();
+    window.location.href = `${backendUrl}/api/v1/auth/social/github?role=${role}`;
   };
 
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+  const handleXAuth = () => {
+    setOauthLoading('x');
+    const backendUrl = getBackendUrl();
+    window.location.href = `${backendUrl}/api/v1/auth/social/twitter?role=${role}`;
   };
 
   const handleLinkedInAuth = () => {
     setOauthLoading('linkedin');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    const backendUrl = getBackendUrl();
     window.location.href = `${backendUrl}/api/v1/auth/linkedin?role=${role}`;
   };
 
   const handleTikTokAuth = () => {
     setOauthLoading('tiktok');
-    const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-    const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
+    const backendUrl = getBackendUrl();
     window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
   };
 
@@ -335,6 +347,13 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  const socialLogins = [
+    { id: 'github', name: 'GitHub', icon: <GitHubIcon />, color: 'bg-gray-800 hover:bg-gray-700', onClick: handleGitHubAuth },
+    { id: 'x', name: 'X', icon: <XIcon />, color: 'bg-sky-600 hover:bg-sky-500', onClick: handleXAuth },
+    { id: 'linkedin', name: 'LinkedIn', icon: <LinkedInIcon />, color: 'bg-[#0A66C2] hover:bg-[#084298]', onClick: handleLinkedInAuth },
+    { id: 'tiktok', name: 'TikTok', icon: <TikTokIcon />, color: 'bg-black hover:bg-gray-900', onClick: handleTikTokAuth },
+  ] as const;
 
   return (
     <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: tokens.color.background }}>
@@ -414,27 +433,23 @@ export default function AuthPage() {
               {oauthLoading === 'wallet' ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E17726]/30 border-t-[#E17726]" />
               ) : (
-                <><MetaMaskIcon />
-                {isSignup ? 'Sign up with Wallet' : 'Sign in with Wallet'}</>
-              )}
-            </button>
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 py-3.5 text-sm font-semibold text-white shadow-sm touch-target sm:py-2.5 transition-all duration-150 active:scale-[0.98] hover:-translate-y-px hover:border-white/20 hover:bg-white/[0.07] disabled:opacity-60 disabled:active:scale-100"
-              disabled={!!oauthLoading}>
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
-              ) : (
+                <>
+                  <MetaMaskIcon />
+                  {isSignup ? 'Sign up with Wallet' : 'Sign in with Wallet'}
+                </>
               )}
             </button>
             <div className="mt-1 grid grid-cols-3 gap-3">
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-              </button>
-              <button onClick={handleLinkedInAuth} title="Continue with LinkedIn"
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'linkedin' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <LinkedInIcon />}
-              </button>
-              <button onClick={handleTikTokAuth} title="Continue with TikTok"
-                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'tiktok' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <TikTokIcon />}
-              </button>
+              {socialLogins.map((login) => (
+                <button key={login.id} onClick={login.onClick} title={`Continue with ${login.name}`}
+                  className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
+                  {oauthLoading === login.id ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
+                  ) : (
+                    login.icon
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -446,8 +461,8 @@ export default function AuthPage() {
 
           {/* Email Code Login */}
           <div className="mb-6">
-            <EmailCodeLogin 
-              email={formData.email} 
+            <EmailCodeLogin
+              email={formData.email}
               onEmailChange={(e) => setFormData({...formData, email: e.target.value})}
               onVerified={() => {
                 if (mode === 'login') {
@@ -630,20 +645,20 @@ export default function AuthPage() {
         <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold tracking-wide text-white/70 uppercase">
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
             Secure &amp; Encrypted
           </span>
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
             </svg>
             Always Free
           </span>
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
             Global Scale
           </span>

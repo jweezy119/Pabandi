@@ -29,6 +29,7 @@ interface RegisterBody {
   fiverrUrl?: string;
   upworkUrl?: string;
   refCode?: string;
+  code?: string; // For code-based registration flow
 }
 
 interface LoginBody {
@@ -46,8 +47,110 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName, phone, role, refCode } = req.body;
+    const { email, password, firstName, lastName, phone, role, refCode, code } = req.body;
 
+    // If code is provided, verify it first (code-based registration flow)
+    if (code) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        return res.status(400).json({ success: false, message: 'Invalid registration link' });
+      }
+
+      if (!user.verificationCode || !user.verificationCodeExpires) {
+        return res.status(400).json({ success: false, message: 'No verification code found. Please start over.' });
+      }
+
+      if (new Date() > user.verificationCodeExpires) {
+        return res.status(400).json({ success: false, message: 'Verification code expired. Please start over.' });
+      }
+
+      if (code !== user.verificationCode) {
+        return res.status(400).json({ success: false, message: 'Invalid verification code' });
+      }
+
+      // Verify password complexity
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$&*)' 
+        });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      // Update user with password and complete registration
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          firstName,
+          lastName,
+          phone,
+          role: role === 'BUSINESS_OWNER' ? UserRole.BUSINESS_OWNER : UserRole.CUSTOMER,
+          verificationCode: null,
+          verificationCodeExpires: null,
+          isEmailVerified: true,
+          ...(req.body.businessName && role === 'BUSINESS_OWNER' && {
+            business: {
+              create: {
+                name: req.body.businessName,
+                category: 'RESTAURANT',
+                address: 'Global',
+                phone: phone || '',
+                email: email,
+                googlePlaceId: req.body.googlePlaceId,
+              }
+            }
+          }),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          reliabilityScore: true,
+          trustScore: true,
+          verificationTier: true,
+          commerceScore: true,
+          hospitalityScore: true,
+          freelanceScore: true,
+          appointmentScore: true,
+          createdAt: true,
+          business: true,
+        },
+      });
+
+      // Generate tokens
+      const token = jwt.sign(
+        { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role } as JwtPayload,
+        JWT_SECRET as Secret,
+        { expiresIn: JWT_EXPIRES_IN as any }
+      );
+
+      const refreshToken = jwt.sign(
+        { id: updatedUser.id } as JwtPayload,
+        JWT_REFRESH_SECRET as Secret,
+        { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+      );
+
+      logger.info(`User completed registration via code: ${updatedUser.email}`);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration completed successfully',
+        data: {
+          user: updatedUser,
+          token,
+          refreshToken,
+        },
+      });
+    }
+
+    // Standard registration flow (without code)
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -444,6 +547,143 @@ export const verifyEmail = async (
     });
 
     res.json({ success: true, message: 'Email verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Public email code login: request code for any email (no auth required)
+export const requestLoginCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email required' });
+    }
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    const isNewUser = !user;
+
+    if (isNewUser) {
+      // Create a pending user record for email code login
+      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          firstName: 'User',
+          lastName: '',
+          role: UserRole.CUSTOMER,
+          reliabilityScore: 750,
+          trustScore: 50.0,
+          verificationTier: 'BASIC',
+          gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    // At this point, user is guaranteed to exist
+    const userRecord = user!;
+
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await prisma.user.update({
+      where: { id: userRecord.id },
+      data: { verificationCode, verificationCodeExpires },
+    });
+
+    const sent = await sendVerificationEmail(email, verificationCode, userRecord.firstName || 'User');
+    if (!sent) {
+      return res.status(500).json({ success: false, message: 'Failed to send code. Please try again.' });
+    }
+
+    res.json({ success: true, message: 'Code sent', isNewUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Public email code login: verify code and login/register (no auth required)
+export const verifyLoginCode = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, message: 'Email and code required' });
+    }
+
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { business: true }
+    });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid code' });
+    }
+
+    if (!user.verificationCode || !user.verificationCodeExpires) {
+      return res.status(400).json({ success: false, message: 'No code found. Please request a new one.' });
+    }
+
+    if (new Date() > user.verificationCodeExpires) {
+      return res.status(400).json({ success: false, message: 'Code expired. Please request a new one.' });
+    }
+
+    if (code !== user.verificationCode) {
+      return res.status(400).json({ success: false, message: 'Invalid code' });
+    }
+
+    // Clear the verification code
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { verificationCode: null, verificationCodeExpires: null, isEmailVerified: true },
+    });
+
+    // Generate tokens
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      JWT_SECRET as Secret,
+      { expiresIn: JWT_EXPIRES_IN as any }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id } as JwtPayload,
+      JWT_REFRESH_SECRET as Secret,
+      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+    );
+
+    logger.info(`User logged in via email code: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          role: user.role,
+          reliabilityScore: user.reliabilityScore,
+          trustScore: user.trustScore,
+          verificationTier: user.verificationTier,
+          commerceScore: user.commerceScore,
+          hospitalityScore: user.hospitalityScore,
+          freelanceScore: user.freelanceScore,
+          appointmentScore: user.appointmentScore,
+          business: user.business,
+        },
+        token,
+        refreshToken,
+      },
+    });
   } catch (error) {
     next(error);
   }

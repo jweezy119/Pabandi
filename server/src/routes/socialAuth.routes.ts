@@ -68,7 +68,7 @@ router.get('/github/callback',
       process.env.JWT_SECRET || 'fallback',
       { expiresIn: '7d' }
     );
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+    res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
   }
 );
 
@@ -121,7 +121,7 @@ router.get('/twitter/callback',
       process.env.JWT_SECRET || 'fallback',
       { expiresIn: '7d' }
     );
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+    res.redirect(`${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com'}/auth/callback?token=${token}`);
   }
 );
 

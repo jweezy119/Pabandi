@@ -170,10 +170,20 @@ function directRoute(routePath: string, router: any) {
   app.use(routePath, router);
 }
 
+// Import critical routes directly (not lazy)
+import githubAuthRoutes from './routes/githubAuth.routes';
+import authRoutes from './routes/auth.routes';
+
+const app = express();
+const httpServer = createServer(app);
+
+// Register critical routes immediately
+directRoute(`/api/${API_VERSION}/auth`, authRoutes);
+directRoute(`/api/${API_VERSION}/auth/social`, githubAuthRoutes);
+
 // Lazy-load routes — modules are imported on first request, not at startup
 const v = API_VERSION;
 const routeMap: [string, string][] = [
-  [`/api/${v}/auth`, './routes/auth.routes'],
   [`/api/${v}/businesses`, './routes/business.routes'],
   [`/api/${v}/businesses/import`, './routes/businessImport.routes'],
   [`/api/${v}/reservations`, './routes/reservation.routes'],
