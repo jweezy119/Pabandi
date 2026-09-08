@@ -30,6 +30,14 @@ jobs:
           cd server
           npm install
 
+      - name: Resolve failed migration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          cd server
+          npx prisma migrate resolve --applied 20260902_add_current_hash
+
       - name: Run Prisma Migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
