@@ -138,6 +138,7 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     googleOAuth: !!process.env.GOOGLE_CLIENT_ID,
+    deployVersion: '2026-09-08-migration-fix-v2',
   });
 });
 
