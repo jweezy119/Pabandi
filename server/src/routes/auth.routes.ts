@@ -56,7 +56,7 @@ router.post(
 
 router.post('/refresh', refreshToken);
 
-router.post('/auth/request-code', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/request-code', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body as { email: string };
     const { prisma } = await import('../utils/database');
@@ -82,7 +82,7 @@ router.post('/auth/request-code', async (req: Request, res: Response, next: Next
   }
 });
 
-router.post('/auth/verify-code', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify-code', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, code } = req.body as { email: string; code: string };
     const { prisma } = await import('../utils/database');
@@ -102,7 +102,7 @@ router.post('/auth/verify-code', async (req: Request, res: Response, next: NextF
   }
 });
 
-router.post('/auth/register', authRateLimiter, [
+router.post('/register', authRateLimiter, [
   body('email').isEmail().normalizeEmail({ gmail_remove_dots: false }).withMessage('Please enter a valid email address.'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.'),
   body('firstName').trim().notEmpty().withMessage('First name is required.'),

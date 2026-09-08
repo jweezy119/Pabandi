@@ -8,7 +8,6 @@ import { Surface, tokens } from '../design-system';
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
 
-const GitHubIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
   </svg>
@@ -205,8 +204,6 @@ export default function AuthPage() {
   });
   const urlError = searchParams.get('error');
   const [error, setError] = useState(() => {
-    if (urlError === 'github_failed') return 'GitHub authentication failed. Please try again.';
-    if (urlError === 'twitter_failed') return 'X/Twitter authentication failed. Please try again.';
     if (urlError === 'linkedin_failed') return 'LinkedIn authentication failed. Please try again.';
     if (urlError === 'tiktok_failed') return 'TikTok authentication failed. Please try again.';
     if (urlError === 'oauth_failed') return 'Authentication failed. Please try again.';
@@ -237,7 +234,6 @@ export default function AuthPage() {
     }
   };
 
-  const [oauthLoading, setOauthLoading] = useState<'github' | 'wallet' | 'twitter' | 'linkedin' | 'tiktok' | null>(null);
 
   const getPostLoginTarget = () => {
     const redirect = searchParams.get('redirect');
@@ -266,18 +262,12 @@ export default function AuthPage() {
     }
   };
 
-  const handleGitHubAuth = () => {
-    setOauthLoading('github');
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-    window.location.href = `${backendUrl}/api/v1/auth/social/github?role=${role}`;
   };
 
-  const handleTwitterAuth = () => {
-    setOauthLoading('twitter');
     const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
     const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-    window.location.href = `${backendUrl}/api/v1/auth/twitter?role=${role}`;
   };
 
   const handleLinkedInAuth = () => {
@@ -428,20 +418,14 @@ export default function AuthPage() {
                 {isSignup ? 'Sign up with Wallet' : 'Sign in with Wallet'}</>
               )}
             </button>
-            <button onClick={handleGitHubAuth} type="button"
               className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 py-3.5 text-sm font-semibold text-white shadow-sm touch-target sm:py-2.5 transition-all duration-150 active:scale-[0.98] hover:-translate-y-px hover:border-white/20 hover:bg-white/[0.07] disabled:opacity-60 disabled:active:scale-100"
               disabled={!!oauthLoading}>
-              {oauthLoading === 'github' ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
               ) : (
-                <><GitHubIcon />
-                {isSignup ? 'Sign up with GitHub' : 'Sign in with GitHub'}</>
               )}
             </button>
             <div className="mt-1 grid grid-cols-3 gap-3">
-              <button onClick={handleTwitterAuth} title="Continue with X"
                 className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
-                {oauthLoading === 'twitter' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" /> : <XIcon />}
               </button>
               <button onClick={handleLinkedInAuth} title="Continue with LinkedIn"
                 className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
