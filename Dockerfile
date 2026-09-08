@@ -1,6 +1,6 @@
 FROM node:22-slim
 
-ARG CACHE_BUST=3
+ARG CACHE_BUST=4
 RUN echo "Cache bust: $CACHE_BUST" && date > /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -12,7 +12,7 @@ ENV NODE_ENV=production
 # Copy server package files
 COPY server/package*.json ./server/
 WORKDIR /app/server
-RUN npm install
+RUN npm install --include=dev
 
 # Copy server source
 COPY server/ .
