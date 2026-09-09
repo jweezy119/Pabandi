@@ -14,24 +14,6 @@ const GitHubIcon = () => (
   </svg>
 );
 
-const XIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const LinkedInIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-  </svg>
-);
-
-const TikTokIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.13-3.92-5.36-.5-2.31.06-4.78 1.5-6.6 1.48-1.92 3.8-3.03 6.18-3.09h.16v4.06c-1.33.02-2.61.64-3.48 1.63-.82.91-1.22 2.16-1.07 3.39.19 1.58 1.34 3.03 2.87 3.42 1.43.37 3.01.12 4.2-1.01.76-.71 1.25-1.72 1.25-2.78V.02h-.41z" />
-  </svg>
-);
-
 const MetaMaskIcon = () => (
   <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path fill="#E17726" d="M96.7,29.9c-2.4-7.4-4-11.4-4-11.4l-11.6,7.5l-12.7-8L80.8,4.9l4.5,1.7C85.3,6.6,99.1,37.3,96.7,29.9z" />
@@ -138,6 +120,11 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
       });
       const data = await res.json();
       if (data.success) {
+        // Persist the session — without this the user "verifies" but stays logged out.
+        const payload = data.data ?? data;
+        if (payload?.token && payload?.user) {
+          useAuthStore.getState().setAuth(payload.user, payload.token);
+        }
         onVerified();
       } else {
         onError(data.message || 'Invalid code');
@@ -293,24 +280,6 @@ export default function AuthPage() {
     window.location.href = `${backendUrl}/api/v1/auth/social/github?role=${role}`;
   };
 
-  const handleXAuth = () => {
-    setOauthLoading('x');
-    const backendUrl = getBackendUrl();
-    window.location.href = `${backendUrl}/api/v1/auth/social/twitter?role=${role}`;
-  };
-
-  const handleLinkedInAuth = () => {
-    setOauthLoading('linkedin');
-    const backendUrl = getBackendUrl();
-    window.location.href = `${backendUrl}/api/v1/auth/linkedin?role=${role}`;
-  };
-
-  const handleTikTokAuth = () => {
-    setOauthLoading('tiktok');
-    const backendUrl = getBackendUrl();
-    window.location.href = `${backendUrl}/api/v1/auth/tiktok?role=${role}`;
-  };
-
   const isSignup = mode === 'signup';
   const isBusiness = role === 'business';
 
@@ -365,9 +334,6 @@ export default function AuthPage() {
 
   const socialLogins = [
     { id: 'github', name: 'GitHub', icon: <GitHubIcon />, color: 'bg-gray-800 hover:bg-gray-700', onClick: handleGitHubAuth },
-    { id: 'x', name: 'X', icon: <XIcon />, color: 'bg-sky-600 hover:bg-sky-500', onClick: handleXAuth },
-    { id: 'linkedin', name: 'LinkedIn', icon: <LinkedInIcon />, color: 'bg-[#0A66C2] hover:bg-[#084298]', onClick: handleLinkedInAuth },
-    { id: 'tiktok', name: 'TikTok', icon: <TikTokIcon />, color: 'bg-black hover:bg-gray-900', onClick: handleTikTokAuth },
   ] as const;
 
   return (
