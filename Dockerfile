@@ -1,6 +1,6 @@
 FROM node:22-slim
 
-ARG CACHE_BUST=4
+ARG CACHE_BUST=5
 RUN echo "Cache bust: $CACHE_BUST" && date > /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -34,5 +34,5 @@ EXPOSE 10000
 
 WORKDIR /app/server
 
-# Run database schema push on startup (forces schema to match Prisma schema)
-CMD ["sh", "-c", "echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
+# Clean orphaned data and push schema on startup
+CMD ["sh", "-c", "echo 'Cleaning orphaned AgentFeedback records...' && npx prisma db execute --stdin <<<'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
