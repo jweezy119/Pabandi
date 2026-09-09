@@ -37,15 +37,14 @@ router.post('/verify-code', verifyLoginCode);
 router.post('/wallet/nonce', getNonce);
 router.post('/wallet/verify', verifyWallet);
 
-// Protected routes (require authentication)
-router.use(authenticate);
-router.post('/verify/email', verifyEmail);
-router.post('/verify/send-code', sendVerificationCode);
-router.post('/verify/phone', verifyPhone);
-router.put('/update-password', updatePassword);
-router.get('/trust-attestation', getTrustAttestation);
-router.put('/profile', updateProfile);
-router.post('/request-change', requestProfileChange);
-router.get('/change-status', getProfileChangeStatus);
+// Protected routes (require authentication) - apply authenticate middleware individually
+router.post('/verify/email', authenticate, verifyEmail);
+router.post('/verify/send-code', authenticate, sendVerificationCode);
+router.post('/verify/phone', authenticate, verifyPhone);
+router.put('/update-password', authenticate, updatePassword);
+router.get('/trust-attestation', authenticate, getTrustAttestation);
+router.put('/profile', authenticate, updateProfile);
+router.post('/request-change', authenticate, requestProfileChange);
+router.get('/change-status', authenticate, getProfileChangeStatus);
 
 export default router;
