@@ -1,9 +1,12 @@
 // Sitara OS — My Bookings Page
-
-import { useSitaraStore } from '../store/sitaraStore';
+// Real platform reservations for signed-in users + local Sitara bookings.
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSitaraStore } from '../store/sitaraStore';
+import { useAuthStore } from '../../store/authStore';
+import { sitaraApi } from '../api/sitaraApi';
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   confirmed: 'bg-blue-100 text-blue-800',
   checked_in: 'bg-green-100 text-green-800',
@@ -12,14 +15,78 @@ const statusColors = {
   cancelled: 'bg-slate-100 text-slate-500',
 };
 
+function colorFor(status: string): string {
+  return statusColors[status?.toLowerCase()] || 'bg-slate-100 text-slate-600';
+}
+
+function fmtDate(v: any): string {
+  if (!v) return '—';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+}
+
 export default function MyBookingsPage() {
   const { bookings } = useSitaraStore();
+  const { isAuthenticated } = useAuthStore();
+  const [realBookings, setRealBookings] = useState<any[]>([]);
+  const [loadingReal, setLoadingReal] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setLoadingReal(true);
+    sitaraApi
+      .myReservations()
+      .then((r) => setRealBookings(Array.isArray(r) ? r : []))
+      .catch(() => setRealBookings([]))
+      .finally(() => setLoadingReal(false));
+  }, [isAuthenticated]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">My Bookings</h1>
       <p className="text-slate-600 mb-8">Your verified bookings and check-ins.</p>
 
+      {/* Real platform reservations */}
+      {isAuthenticated && (
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Platform reservations</h2>
+          {loadingReal ? (
+            <p className="text-slate-500 text-sm">Loading reservations…</p>
+          ) : realBookings.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-lg p-6 text-sm text-slate-500">
+              No platform reservations yet — book a venue or restaurant from Pabandi to see it here.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {realBookings.map((r: any) => {
+                const name =
+                  r.business?.name || r.businessName || r.venue || r.eventName || 'Reservation';
+                const when = r.scheduledAt || r.checkInDate || r.date || r.createdAt;
+                const status = String(r.status || 'pending').toLowerCase();
+                return (
+                  <div key={r.id} className="bg-white border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-slate-900">{name}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorFor(status)}`}>
+                        {status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600">{fmtDate(when)}</p>
+                    {(r.depositAmount || r.depositHeld) && (
+                      <p className="text-sm text-slate-600 mt-1">
+                        Deposit: <strong>${r.depositAmount ?? '—'}</strong>
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Local Sitara bookings (demo flow) */}
+      <h2 className="text-lg font-semibold text-slate-900 mb-4">Sitara bookings</h2>
       {bookings.length === 0 ? (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -45,11 +112,10 @@ export default function MyBookingsPage() {
                     {new Date(booking.scheduledAt).toLocaleString()}
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[booking.status]}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${colorFor(booking.status)}`}>
                   {booking.status.replace('_', ' ')}
                 </span>
               </div>
-
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-4">
                   <span className="text-slate-600">

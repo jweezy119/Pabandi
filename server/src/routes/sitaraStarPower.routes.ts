@@ -258,4 +258,37 @@ router.post('/redeem/:code', authenticate, async (req: any, res: Response, next:
   }
 });
 
+/**
+ * POST /api/v1/sitara/redemptions/:id/use
+ * Operator POS seam: mark a customer's promo redemption as consumed at the
+ * venue (scan code → verify → mark used). Future POS takes over this call.
+ */
+router.post('/redemptions/:id/use', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const redemption = await prisma.starPromoRedemption.findUnique({
+      where: { id: String(id) },
+      include: {
+        promo: { include: { business: { select: { ownerId: true, name: true } } } },
+      },
+    });
+    if (!redemption) {
+      return res.status(404).json({ error: 'Redemption not found' });
+    }
+    if (redemption.promo.business.ownerId !== req.user!.id) {
+      return res.status(403).json({ error: 'Not your business' });
+    }
+    if (redemption.usedAt) {
+      return res.status(409).json({ error: 'Already used' });
+    }
+    const updated = await prisma.starPromoRedemption.update({
+      where: { id: redemption.id },
+      data: { usedAt: new Date() },
+    });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

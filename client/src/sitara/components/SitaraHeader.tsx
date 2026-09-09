@@ -30,6 +30,12 @@ export default function SitaraHeader() {
             <Link to="/sitara/star-card" className="text-sm font-medium text-slate-600 hover:text-slate-900">
               Star Card
             </Link>
+            <Link to="/sitara/promos" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+              Promos
+            </Link>
+            <Link to="/sitara/promoter" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+              Promote
+            </Link>
           </nav>
 
           {/* User / Star Power */}

@@ -1,7 +1,10 @@
 // Sitara OS — Star Card Page
 // Shareable on-chain reputation card
 
+import { useEffect, useState } from 'react';
 import { useSitaraStore } from '../store/sitaraStore';
+import { useAuthStore } from '../../store/authStore';
+import { sitaraApi } from '../api/sitaraApi';
 
 const tierInfo = {
   'tara': { name: 'Tara', color: 'from-slate-400 to-slate-500', min: 0, max: 99 },
@@ -13,8 +16,33 @@ const tierInfo = {
 
 export default function StarCardPage() {
   const { user } = useSitaraStore();
+  const { user: authUser, isAuthenticated } = useAuthStore();
+  const [apiPoints, setApiPoints] = useState<number | null>(null);
+  const [apiTier, setApiTier] = useState<string | null>(null);
+  const [apiCheckIns, setApiCheckIns] = useState<number | null>(null);
 
-  if (!user) {
+  // Prefer live Star Power from the backend; fall back to local state.
+  useEffect(() => {
+    if (!isAuthenticated || !authUser?.id) return;
+    sitaraApi
+      .getStarPower(authUser.id)
+      .then((p) => {
+        setApiPoints(p.totalPoints);
+        setApiTier(p.tier);
+        setApiCheckIns(p.starCard?.verifiedCheckIns ?? p.reviews?.length ?? null);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, authUser?.id]);
+
+  const display = {
+    id: authUser?.id || user?.id || 'guest',
+    starPower: apiPoints ?? user?.starPower ?? 0,
+    starTier: (apiTier || user?.starTier || 'tara') as keyof typeof tierInfo,
+    verifiedCheckIns: apiCheckIns ?? user?.verifiedCheckIns ?? 0,
+    reliabilityScore: user?.reliabilityScore ?? authUser?.reliabilityScore ?? 100,
+  };
+
+  if (!isAuthenticated && !user) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
         <p className="text-slate-600">Please sign in to view your Star Card.</p>
@@ -22,11 +50,11 @@ export default function StarCardPage() {
     );
   }
 
-  const tier = tierInfo[user.starTier];
-  const nextTier = user.starTier === 'tara' ? tierInfo['sitara-e-noor'] : 
-                   user.starTier === 'sitara-e-noor' ? tierInfo['sitara-e-roshan'] :
-                   user.starTier === 'sitara-e-roshan' ? tierInfo['sitara-e-darakshan'] :
-                   user.starTier === 'sitara-e-darakshan' ? tierInfo['sitara-e-izzat'] : null;
+  const tier = tierInfo[display.starTier];
+  const nextTier = display.starTier === 'tara' ? tierInfo['sitara-e-noor'] : 
+                   display.starTier === 'sitara-e-noor' ? tierInfo['sitara-e-roshan'] :
+                   display.starTier === 'sitara-e-roshan' ? tierInfo['sitara-e-darakshan'] :
+                   display.starTier === 'sitara-e-darakshan' ? tierInfo['sitara-e-izzat'] : null;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -52,15 +80,15 @@ export default function StarCardPage() {
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white/10 rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold">{user.starPower}</p>
+            <p className="text-2xl font-bold">{display.starPower}</p>
             <p className="text-xs opacity-80">Star Power</p>
           </div>
           <div className="bg-white/10 rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold">{user.verifiedCheckIns}</p>
+            <p className="text-2xl font-bold">{display.verifiedCheckIns}</p>
             <p className="text-xs opacity-80">Check-ins</p>
           </div>
           <div className="bg-white/10 rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold">{user.reliabilityScore}%</p>
+            <p className="text-2xl font-bold">{display.reliabilityScore}%</p>
             <p className="text-xs opacity-80">Reliability</p>
           </div>
         </div>
@@ -68,13 +96,13 @@ export default function StarCardPage() {
         <div className="bg-white/10 rounded-lg p-4">
           <div className="flex items-center justify-between text-sm">
             <span>Next Tier: {nextTier?.name || 'MAX'}</span>
-            <span>{nextTier ? `${nextTier.min - user.starPower} SP away` : 'You\'ve reached the top!'}</span>
+            <span>{nextTier ? `${nextTier.min - display.starPower} SP away` : 'You\'ve reached the top!'}</span>
           </div>
           {nextTier && (
             <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
               <div
                 className="h-full bg-white rounded-full transition-all"
-                style={{ width: `${Math.min(100, ((user.starPower - tier.min) / (nextTier.min - tier.min)) * 100)}%` }}
+                style={{ width: `${Math.min(100, ((display.starPower - tier.min) / (nextTier.min - tier.min)) * 100)}%` }}
               />
             </div>
           )}
@@ -106,7 +134,7 @@ export default function StarCardPage() {
             <input
               type="text"
               readOnly
-              value={`https://pabandi.com/star-card/${user.id}`}
+              value={`https://pabandi.com/star-card/${display.id}`}
               className="flex-1 px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm"
             />
             <button className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600">

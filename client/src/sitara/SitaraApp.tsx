@@ -13,6 +13,8 @@ import CheckInPage from './pages/CheckInPage';
 import ReviewPage from './pages/ReviewPage';
 import StarCardPage from './pages/StarCardPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import PromosInboxPage from './pages/PromosInboxPage';
+import PromoterDashboardPage from './pages/PromoterDashboardPage';
 
 // Operator Pages
 import OperatorDashboard from './pages/OperatorDashboard';
@@ -27,6 +29,7 @@ import TenantDashboard from './pages/TenantDashboard';
 import TenantLeasePage from './pages/TenantLeasePage';
 import TenantPaymentsPage from './pages/TenantPaymentsPage';
 import TenantMaintenancePage from './pages/TenantMaintenancePage';
+import CustomersPage from './pages/CustomersPage';
 
 export default function SitaraApp() {
   return (
@@ -39,6 +42,8 @@ export default function SitaraApp() {
         <Route path="review/:bookingId" element={<ReviewPage />} />
         <Route path="star-card" element={<StarCardPage />} />
         <Route path="my-bookings" element={<MyBookingsPage />} />
+        <Route path="promos" element={<PromosInboxPage />} />
+        <Route path="promoter" element={<PromoterDashboardPage />} />
       </Route>
 
       {/* Operator App — /sitara/operator/... */}
@@ -49,6 +54,7 @@ export default function SitaraApp() {
         <Route path="leases" element={<LeasesPage />} />
         <Route path="promos" element={<PromosPage />} />
         <Route path="star-finder" element={<StarFinderPage />} />
+        <Route path="customers" element={<CustomersPage />} />
       </Route>
 
       {/* Tenant Portal — /sitara/tenant/... */}

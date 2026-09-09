@@ -36,6 +36,18 @@
   star-finder/leaderboard querying a non-existent relation (rewritten as review aggregation),
   ConsumerLayout wrong import depth, `verification.ts` now dependency-free stub.
 
+## ✅ Slice 2 — customer/promoter/business wiring (uncommitted)
+- `sitara/api/sitaraApi.ts`: typed client over the shared auth apiClient.
+- Customer: Promos Inbox (`/sitara/promos`, redeem by code/button), Star Card reads live
+  Star Power with local fallback, My Bookings shows real platform reservations + local demo bookings.
+- Promoter: `/sitara/promoter` dashboard (stats, referral link, recent bookings) on existing
+  promoter backend; header/footer nav added. Full PromoterOS still at `/promoter`.
+- Business: `/sitara/operator/customers` — CRM patrons + Star-ranked reviewers in one view,
+  links out to full CRM at `/business/crm`; sidebar Customers entry.
+- POS seam (no POS built): `POST /sitara/redemptions/:id/use` lets an operator mark a
+  redemption consumed — the call a future POS will take over.
+- Verified: server tsc clean, client tsc clean, vite build passes.
+
 ## ❌ Remaining
 - Branding: logo, colors, favicon, CSS variables
 - Frontend pages need API service hooks (currently using mock data + local Zustand state)

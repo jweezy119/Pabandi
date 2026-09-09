@@ -11,6 +11,7 @@ const operatorNav = [
   { path: '/sitara/operator/leases', label: 'Leases', icon: '📄' },
   { path: '/sitara/operator/promos', label: 'Promos', icon: '🎁' },
   { path: '/sitara/operator/star-finder', label: 'Star Finder', icon: '⭐' },
+  { path: '/sitara/operator/customers', label: 'Customers', icon: '💛' },
 ];
 
 export default function OperatorLayout() {

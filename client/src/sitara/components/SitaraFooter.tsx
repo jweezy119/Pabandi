@@ -25,6 +25,8 @@ export default function SitaraFooter() {
               <li><Link to="/sitara" className="hover:text-white">Discover</Link></li>
               <li><Link to="/sitara/my-bookings" className="hover:text-white">My Bookings</Link></li>
               <li><Link to="/sitara/star-card" className="hover:text-white">Star Card</Link></li>
+              <li><Link to="/sitara/promos" className="hover:text-white">Promos</Link></li>
+              <li><Link to="/sitara/promoter" className="hover:text-white">Promote</Link></li>
             </ul>
           </div>
 
