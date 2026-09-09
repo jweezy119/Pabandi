@@ -316,7 +316,7 @@ export default function AuthPage() {
       if (!formData.firstName.trim()) errs.firstName = 'First name is required.';
       if (!formData.lastName.trim()) errs.lastName = 'Last name is required.';
       if (isBusiness && !formData.businessName.trim()) errs.businessName = 'Business name is required.';
-      if (formData.password.length < 8) errs.password = 'Password must be at least 8 characters.';
+      if (!/^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/.test(formData.password)) errs.password = 'Use 8+ characters with upper + lower case, a number, and a symbol (!@#$&*).';
       if (formData.password !== formData.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
       if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
     }
@@ -607,6 +607,9 @@ export default function AuthPage() {
                 className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.password ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
                 placeholder="Min. 8 characters" />
               {fieldErrors.password && <FieldError msg={fieldErrors.password} />}
+              {isSignup && !fieldErrors.password && (
+                <p className="mt-1 text-xs text-white/50">8+ characters, upper + lower case, a number, and a symbol (!@#$&*).</p>
+              )}
             </div>
 
             {/* Confirm Password */}
