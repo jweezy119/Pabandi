@@ -30,7 +30,7 @@ router.get('/github', (req: Request, res: Response) => {
   const authUrl = `https://github.com/login/oauth/authorize?` + new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: CALLBACK_URL,
-    scope: 'user:email',
+    scope: 'read:user user:email',
     state,
   }).toString();
 
@@ -101,7 +101,9 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     }
 
     const profile = await userResponse.json();
-    logger.info('GitHub profile fetched', { login: profile.login, id: profile.id });
+    logger.info('GitHub profile fetched', { login: profile.login, id: profile.id, hasPublicEmail: !!profile.email });
+    // Granted scopes reveal scope-downgrade issues (e.g. stale grant without user:email)
+    logger.info('GitHub granted scopes', { scopes: userResponse.headers.get('x-oauth-scopes') });
 
     // Fetch user emails
     const emailResponse = await fetch('https://api.github.com/user/emails', {
