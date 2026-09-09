@@ -17,5 +17,6 @@ COPY . .
 # Force Prisma client regeneration from the correct schema
 RUN rm -rf node_modules/.prisma && npm run build
 
-# Run database schema push on startup (forces schema to match Prisma schema)
-CMD ["sh", "-c", "echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
+# Clean orphaned rows that block FK creation, then push schema on startup
+# (|| true: cleanup is best-effort — a missing table must not kill startup)
+CMD ["sh", "-c", "echo 'Cleaning orphaned AgentFeedback records...' && (npx prisma db execute --stdin <<<'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
