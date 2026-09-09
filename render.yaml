@@ -7,8 +7,31 @@ services:
     healthCheckPath: /health
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: CLIENT_URL
+        value: https://pabandi.onrender.com
+      - key: FRONTEND_URL
+        value: https://pabandi.onrender.com
+      - key: API_URL
+        value: https://pabandi.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pabandi-db
+          property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: pabandi-db
+          property: connectionString
