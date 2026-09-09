@@ -35,4 +35,4 @@ EXPOSE 10000
 WORKDIR /app/server
 
 # Clean orphaned data and push schema on startup
-CMD ["sh", "-c", "echo 'Cleaning orphaned AgentFeedback records...' && npx prisma db execute --stdin <<<'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
+CMD ["sh", "-c", "echo 'Cleaning orphaned AgentFeedback records...' && (echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
