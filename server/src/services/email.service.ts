@@ -30,11 +30,18 @@ export async function sendVerificationEmail(to: string, code: string, firstName:
   `;
 
   const result = await emailService.sendEmail(to, subject, html, 'VERIFICATION');
-  return result.status === 'SENT' || result.status === 'LOGGED';
+  // Only SENT means actually mailed. LOGGED (no provider configured) must
+  // surface as failure so callers don't claim a code was sent.
+  return result.status === 'SENT';
 }
 
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/** True when a real mail provider is configured; otherwise codes are only logged. */
+export function isEmailConfigured(): boolean {
+  return !!RESEND_API_KEY;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -8,7 +8,7 @@ import type { Secret, JwtPayload } from 'jsonwebtoken';
 import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
-import { sendVerificationEmail, generateVerificationCode } from '../services/email.service';
+import { sendVerificationEmail, generateVerificationCode, isEmailConfigured } from '../services/email.service';
 import { odooService } from '../services/odoo.service';
 import { osintService } from '../services/osint.service';
 
@@ -598,7 +598,15 @@ export const requestLoginCode = async (
 
     const sent = await sendVerificationEmail(email, verificationCode, userRecord.firstName || 'User');
     if (!sent) {
-      return res.status(500).json({ success: false, message: 'Failed to send code. Please try again.' });
+      // sendEmail returns LOGGED (not SENT) when no provider is configured —
+      // surface that honestly instead of claiming a code was mailed.
+      const configured = isEmailConfigured();
+      return res.status(configured ? 500 : 503).json({
+        success: false,
+        message: configured
+          ? 'Failed to send code. Please try again.'
+          : 'Email codes are temporarily unavailable. Please sign up or log in with your password instead.',
+      });
     }
 
     res.json({ success: true, message: 'Code sent', isNewUser });
