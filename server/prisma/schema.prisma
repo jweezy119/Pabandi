@@ -96,6 +96,12 @@ model User {
   promotionRedemptions   PromotionRedemption[]
   loyaltyMemberships     LoyaltyMembership[]
   vendorRelations        CustomerVendorRelation[]
+  starPower              StarPower?
+  starPowerTier          String                  @default("tara") // Sitara OS: current star tier for quick lookup
+  starPowerPoints        Int                     @default(0) // Sitara OS: cached total points
+  reviewUpvotes          PabandiReviewUpvote[]
+  sentStarPromos         StarPromo[]
+  starPromoRedemptions   StarPromoRedemption[]
 
   @@index([email])
   @@index([phone])
@@ -174,6 +180,7 @@ model Business {
   partnerOffers          PartnerOffer[]
   partnerEnrollment      PartnerEnrollment?
   vendorPromotions       VendorPromotion[]
+  starPromos             StarPromo[]
   loyaltyProgram         LoyaltyProgram?
   customerRelations      CustomerVendorRelation[]
 
@@ -997,13 +1004,85 @@ model PabandiReview {
   text          String?
   tokenId       String? // The POV SBT Token ID
   txHash        String? // Transaction hash of the SBT mint
+  starPoints    Int      @default(0) // Points earned from this review (rating * 10 + upvotes)
+  upvoteCount   Int      @default(0)
   createdAt     DateTime @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  upvotes PabandiReviewUpvote[]
 
   @@index([businessId])
   @@index([customerId])
+}
+
+// Sitara OS: Upvotes on reviews — only verified users who checked in can upvote
+model PabandiReviewUpvote {
+  id        String   @id @default(cuid())
+  reviewId  String
+  voterId   String   // Must have a verified check-in at the same business
+  createdAt DateTime @default(now())
+
+  review PabandiReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  voter  User          @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, voterId])
+  @@index([reviewId])
+  @@index([voterId])
+}
+
+// Sitara OS: Per-user Star Power tracking
+model StarPower {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  totalPoints Int      @default(0) // Sum of review starPoints + upvote bonuses
+  currentTier String   @default("tara") // tara | sitara-e-noor | sitara-e-roshan | sitara-e-darakshan | sitara-e-izzat
+  lastUpdated DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Sitara OS: Promotion sent from business to a Star Power tier
+model StarPromo {
+  id            String   @id @default(cuid())
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  senderId      String   // Business owner user
+  sender        User     @relation(fields: [senderId], references: [id])
+  targetTier    String?  // null = all tiers; else filter by tier
+  title         String
+  description   String
+  value         Float    // Dollar or percent value
+  promoType     String   // PERCENT | FIXED | FREE_SERVICE
+  code          String   @unique
+  expiresAt     DateTime
+  maxRedemptions Int?    // null = unlimited
+  redeemedCount    Int    @default(0)
+  isActive         Boolean @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  redemptions StarPromoRedemption[]
+
+  @@index([businessId])
+  @@index([senderId])
+  @@index([targetTier])
+  @@index([code])
+}
+
+model StarPromoRedemption {
+  id         String   @id @default(cuid())
+  promoId    String
+  promo      StarPromo @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redeemedAt DateTime @default(now())
+  usedAt     DateTime?
+
+  @@unique([promoId, userId])
+  @@index([userId])
+  @@index([promoId])
 }
 
 model SystemAuditLog {

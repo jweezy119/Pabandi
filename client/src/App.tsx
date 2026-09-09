@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -334,6 +335,7 @@ function App() {
             <Route path="waitlist" element={<WaitlistPage />} />
             <Route path="r/:code" element={<ReferralLandingPage />} />
             <Route path="city/:slug" element={<CityLandingPage />} />
+            <Route path="sitara/*" element={<SitaraApp />} />
           </Route>
         </Routes>
       </LanguageProvider>
