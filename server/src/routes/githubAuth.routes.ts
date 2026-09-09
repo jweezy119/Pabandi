@@ -47,7 +47,8 @@ router.get('/github/callback', async (req: Request, res: Response) => {
 
   if (error) {
     logger.warn('GitHub OAuth error:', error, error_description);
-    return res.redirect(`${CLIENT_URL}/login?error=github&message=${encodeURIComponent(error_description as string)}`);
+    const msg = (error_description as string) || (error as string) || 'Authorization failed';
+    return res.redirect(`${CLIENT_URL}/login?error=github&message=${encodeURIComponent(msg)}`);
   }
 
   if (!code) {

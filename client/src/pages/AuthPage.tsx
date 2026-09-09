@@ -218,6 +218,12 @@ export default function AuthPage() {
     if (urlError === 'tiktok_failed') return 'TikTok authentication failed. Please try again.';
     if (urlError === 'oauth_failed') return 'Authentication failed. Please try again.';
     if (urlError === 'token_parse_failed') return 'Login succeeded, but we could not read your session token. Please try again.';
+    // OAuth providers redirect back with ?error=<provider>&message=<detail>
+    if (urlError) {
+      const detail = searchParams.get('message');
+      const provider = urlError === 'github' ? 'GitHub' : urlError;
+      return `${provider} sign-in failed${detail && detail !== 'undefined' ? `: ${detail}` : '. Please try again.'}`;
+    }
     return '';
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
