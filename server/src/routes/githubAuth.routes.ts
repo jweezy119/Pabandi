@@ -118,15 +118,22 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     }
 
     const emails = await emailResponse.json();
-    logger.info('GitHub emails fetched', { count: emails.length });
+    logger.info('GitHub emails fetched', { count: Array.isArray(emails) ? emails.length : 'non-array' });
 
-    const primaryEmail = emails.find((e: any) => e.primary && e.verified)?.value 
-      || emails.find((e: any) => e.verified)?.value
-      || emails[0]?.value;
+    const emailList = Array.isArray(emails) ? emails : [];
+    // Prefer verified addresses, but fall back gracefully: public profile
+    // email, then primary (even unverified), then anything usable — an
+    // account with an unverified email beats a failed login.
+    const verifiedPrimary = emailList.find((e: any) => e.primary && e.verified)?.value;
+    const verifiedAny = emailList.find((e: any) => e.verified)?.value;
+    const primaryAny = emailList.find((e: any) => e.primary)?.value;
+    const firstAny = emailList[0]?.value;
+    const primaryEmail = verifiedPrimary || (profile.email as string) || verifiedAny || primaryAny || firstAny;
+    const emailVerified = !!(verifiedPrimary || verifiedAny);
 
     if (!primaryEmail) {
-      logger.warn('No verified email from GitHub', { emails });
-      return res.redirect(`${CLIENT_URL}/login?error=github&message=No verified email from GitHub`);
+      logger.warn('No usable email from GitHub', { emails });
+      return res.redirect(`${CLIENT_URL}/login?error=github&message=${encodeURIComponent('GitHub returned no email address. Add and verify an email at github.com/settings/emails, then try again.')}`);
     }
 
     logger.info('Primary email found', { email: primaryEmail });
@@ -147,7 +154,7 @@ router.get('/github/callback', async (req: Request, res: Response) => {
           firstName: nameParts[0] || profile.login,
           lastName: nameParts.slice(1).join(' ') || '',
           githubId: profile.id.toString(),
-          isEmailVerified: true,
+          isEmailVerified: emailVerified,
           passwordHash: '', // OAuth users don't need password
           role: 'CUSTOMER',
           reliabilityScore: 750,
