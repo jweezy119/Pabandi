@@ -55,19 +55,18 @@ export default function MonetizationDashboard() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: tokens.color.muted }}>
+      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">
         Revenue Dashboard
       </h3>
       <div className="grid grid-cols-2 gap-3">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="p-3 rounded-lg"
-            style={{ backgroundColor: tokens.color.surface, border: `1px solid ${tokens.color.border}` }}
+            className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <stat.icon size={14} style={{ color: stat.color }} />
-              <span className="text-xs" style={{ color: tokens.color.muted }}>{stat.label}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <stat.icon size={16} style={{ color: stat.color }} />
+              <span className="text-xs text-slate-400">{stat.label}</span>
             </div>
             <div className="text-lg font-bold" style={{ color: stat.color }}>{stat.value}</div>
           </div>
@@ -83,8 +82,7 @@ export default function MonetizationDashboard() {
             buyerId: 'marketplace-partner',
           });
         }}
-        className="w-full p-2 text-xs font-bold uppercase rounded"
-        style={{ backgroundColor: tokens.color.primary, color: '#FFFFFF' }}
+        className="w-full p-3 text-xs font-bold uppercase rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition-opacity"
       >
         Generate Trust Data Bundle for Sale
       </button>
