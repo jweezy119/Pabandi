@@ -30,6 +30,8 @@ export default function MyBookingsPage() {
   const { isAuthenticated } = useAuthStore();
   const [realBookings, setRealBookings] = useState<any[]>([]);
   const [loadingReal, setLoadingReal] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -41,6 +43,22 @@ export default function MyBookingsPage() {
       .finally(() => setLoadingReal(false));
   }, [isAuthenticated]);
 
+  const handleCancel = async (id: string) => {
+    if (!window.confirm('Cancel this reservation? Cancellation policy applies.')) return;
+    setCancelling(id);
+    setActionError(null);
+    try {
+      await sitaraApi.cancelReservation(id);
+      setRealBookings((list) =>
+        list.map((r) => (r.id === id ? { ...r, status: 'CANCELLED' } : r))
+      );
+    } catch (e: any) {
+      setActionError(e?.response?.data?.message || 'Could not cancel — policy may block it.');
+    } finally {
+      setCancelling(null);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">My Bookings</h1>
@@ -50,6 +68,11 @@ export default function MyBookingsPage() {
       {isAuthenticated && (
         <div className="mb-10">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Platform reservations</h2>
+          {actionError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4">
+              {actionError}
+            </div>
+          )}
           {loadingReal ? (
             <p className="text-slate-500 text-sm">Loading reservations…</p>
           ) : realBookings.length === 0 ? (
@@ -63,6 +86,7 @@ export default function MyBookingsPage() {
                   r.business?.name || r.businessName || r.venue || r.eventName || 'Reservation';
                 const when = r.scheduledAt || r.checkInDate || r.date || r.createdAt;
                 const status = String(r.status || 'pending').toLowerCase();
+                const cancellable = !['cancelled', 'completed', 'no_show'].includes(status);
                 return (
                   <div key={r.id} className="bg-white border border-slate-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-1">
@@ -76,6 +100,17 @@ export default function MyBookingsPage() {
                       <p className="text-sm text-slate-600 mt-1">
                         Deposit: <strong>${r.depositAmount ?? '—'}</strong>
                       </p>
+                    )}
+                    {cancellable && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => void handleCancel(r.id)}
+                          disabled={cancelling === r.id}
+                          className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded hover:bg-slate-200 disabled:opacity-50"
+                        >
+                          {cancelling === r.id ? 'Cancelling…' : 'Cancel reservation'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 );

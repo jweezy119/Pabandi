@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useSitaraStore } from '../store/sitaraStore';
 import { sitaraApi } from '../api/sitaraApi';
+import SquareConnectCard from '../components/SquareConnectCard';
 
 export default function OperatorDashboard() {
   const { user, units, bookings } = useSitaraStore();
@@ -86,6 +87,8 @@ export default function OperatorDashboard() {
             </button>
           </div>
         </div>
+
+        <SquareConnectCard />
 
         <div className="bg-white border border-slate-200 rounded-lg p-6">
           <h3 className="font-semibold text-slate-900 mb-4">Recent Activity</h3>

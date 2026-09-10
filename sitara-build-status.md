@@ -76,6 +76,16 @@
 - Operator dashboard: live reservations/reviews/promos counts per owned business.
 - Verified: server tsc clean, client tsc clean, vite build passes.
 
+## ✅ Slice 6 — reservations complete + Square geo import (uncommitted)
+- Reservations front+back: cancel flow in My Bookings (policy enforced server-side),
+  no-past-dates guard in booking. Backend already had trust gates/hours/policy.
+- Square: OAuth connect → locations import writes lat/lng/address onto the business
+  (`SquareConnection` model, token refresh, re-sync). Honest 503 until
+  SQUARE_APP_ID/SECRET set. Operator dashboard card handles the full loop.
+- Note: Square has no 3rd-party discovery API — merchant-location import is the real
+  geo answer; Foursquare/Yelp/OSM remain the public discovery sources.
+- Verified: server tsc clean, client tsc clean, vite build passes.
+
 ## ❌ Remaining
 - Branding: logo, colors, favicon, CSS variables
 - Frontend pages need API service hooks (currently using mock data + local Zustand state)

@@ -291,6 +291,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],
   [`/api/${v}/agent-loop`, './routes/agentLoop.routes'],
   [`/api/${v}/sitara`, './routes/sitaraStarPower.routes'],
+  [`/api/${v}/square`, './routes/square.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {

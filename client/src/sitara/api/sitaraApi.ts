@@ -143,6 +143,27 @@ export const sitaraApi = {
   /** Real reservations for the logged-in customer. */
   myReservations: () => unwrap<any[]>(reservationService.getUserReservations()),
 
+  /** Cancel a reservation (policy enforced server-side). */
+  cancelReservation: (id: string) =>
+    unwrap<any>(apiClient.post(`/reservations/${id}/cancel`)),
+
+  // ── Square (merchant geo import + future rails) ───────────────────
+  squareStatus: (businessId: string) =>
+    unwrap<any>(apiClient.get('/square/status', { params: { businessId } })),
+  /** Resolve the Square OAuth URL (authed) then navigate there. */
+  squareConnect: async (businessId: string): Promise<string> => {
+    const res: any = await apiClient.get('/square/connect', {
+      params: { businessId },
+      maxRedirects: 0,
+      validateStatus: (s: number) => s === 302,
+    });
+    const url = res?.headers?.location;
+    if (!url) throw new Error('No redirect from Square connect');
+    return url;
+  },
+  squareSync: (businessId: string) =>
+    unwrap<any>(apiClient.post('/square/sync', { businessId })),
+
   /** Logged-in owner's business (CRM anchor). */
   myBusiness: () =>
     businessService

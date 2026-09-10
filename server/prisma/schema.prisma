@@ -181,12 +181,32 @@ model Business {
   partnerEnrollment      PartnerEnrollment?
   vendorPromotions       VendorPromotion[]
   starPromos             StarPromo[]
+  squareConnection       SquareConnection?
   loyaltyProgram         LoyaltyProgram?
   customerRelations      CustomerVendorRelation[]
 
   @@index([ownerId])
   @@index([city])
   @@index([category])
+}
+
+// Square OAuth connection — imports merchant locations (geo) into Pabandi.
+// Tokens are sensitive: access token stored encrypted when ENCRYPTION_KEY set.
+model SquareConnection {
+  id           String   @id @default(cuid())
+  businessId   String   @unique
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  merchantId   String
+  accessToken  String   // encrypted at rest when ENCRYPTION_KEY is configured
+  refreshToken String?
+  tokenExpiresAt DateTime?
+  squareLocationId String?
+  lastSyncedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([merchantId])
 }
 
 model BusinessHours {
