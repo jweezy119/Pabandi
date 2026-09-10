@@ -100,6 +100,7 @@ const RENTAL: OperatorProfile = {
     { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
     { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
     { path: '/sitara/operator/units', label: 'Units', icon: '🏢' },
+    { path: '/sitara/operator/maintenance', label: 'Maintenance', icon: '🔧' },
     { path: '/sitara/operator/tenants', label: 'Tenants', icon: '👥' },
     { path: '/sitara/operator/leases', label: 'Leases', icon: '📄' },
     { path: '/sitara/operator/reservations', label: 'Viewings', icon: '📅' },

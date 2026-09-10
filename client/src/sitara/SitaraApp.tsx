@@ -27,6 +27,7 @@ import OperatorDashboard from './pages/OperatorDashboard';
 import BusinessStarCardPage from './pages/BusinessStarCardPage';
 import OperatorReservationsPage from './pages/OperatorReservationsPage';
 import OperatorReviewsPage from './pages/OperatorReviewsPage';
+import OperatorMaintenancePage from './pages/OperatorMaintenancePage';
 import UnitsPage from './pages/UnitsPage';
 import TenantsPage from './pages/TenantsPage';
 import LeasesPage from './pages/LeasesPage';
@@ -110,6 +111,7 @@ export default function SitaraApp() {
         <Route path="reservations" element={<OperatorReservationsPage />} />
         <Route path="reviews" element={<OperatorReviewsPage />} />
         <Route path="units" element={<UnitsPage />} />
+        <Route path="maintenance" element={<OperatorMaintenancePage />} />
         <Route path="tenants" element={<TenantsPage />} />
         <Route path="leases" element={<LeasesPage />} />
         <Route path="promos" element={<PromosPage />} />

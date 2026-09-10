@@ -1,164 +1,160 @@
-// Sitara OS — Units Page
-// Property unit management
+// Sitara OS — Units Page (real property backend)
+// Properties → units, all persisted. Enroll gate on first run.
+import { useEffect, useState } from 'react';
+import { sitaraApi } from '../api/sitaraApi';
+import { useRental, RentalGate } from '../utils/useRental';
 
-import { useState } from 'react';
-import { useSitaraStore } from '../store/sitaraStore';
-
-const statusColors = {
-  available: 'bg-green-100 text-green-800',
-  occupied: 'bg-blue-100 text-blue-800',
-  maintenance: 'bg-yellow-100 text-yellow-800',
-  reserved: 'bg-purple-100 text-purple-800',
+const statusColors: Record<string, string> = {
+  VACANT: 'bg-green-100 text-green-800',
+  OCCUPIED: 'bg-blue-100 text-blue-800',
+  MAINTENANCE: 'bg-yellow-100 text-yellow-800',
 };
 
 export default function UnitsPage() {
-  const { units, addUnit } = useSitaraStore();
-  const [showAdd, setShowAdd] = useState(false);
-  const [newUnit, setNewUnit] = useState({
-    buildingName: '',
-    unitNumber: '',
-    beds: 1,
-    baths: 1,
-    sqft: 0,
-    rentAmount: 0,
-    depositAmount: 0,
-  });
+  const { data, loading, enrolled, enrolling, enroll, refresh } = useRental();
+  const [propertyId, setPropertyId] = useState('');
+  const [units, setUnits] = useState<any[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [showAddProp, setShowAddProp] = useState(false);
+  const [showAddUnit, setShowAddUnit] = useState(false);
+  const [propTitle, setPropTitle] = useState('');
+  const [unitNumber, setUnitNumber] = useState('');
+  const [rent, setRent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAdd = () => {
-    addUnit({
-      id: `unit-${Date.now()}`,
-      buildingId: `bldg-${Date.now()}`,
-      buildingName: newUnit.buildingName,
-      unitNumber: newUnit.unitNumber,
-      beds: newUnit.beds,
-      baths: newUnit.baths,
-      sqft: newUnit.sqft,
-      rentAmount: newUnit.rentAmount,
-      depositAmount: newUnit.depositAmount,
-      status: 'available',
-    });
-    setShowAdd(false);
-    setNewUnit({ buildingName: '', unitNumber: '', beds: 1, baths: 1, sqft: 0, rentAmount: 0, depositAmount: 0 });
+  const properties: any[] = data?.properties || [];
+  useEffect(() => {
+    if (!propertyId && properties.length > 0) setPropertyId(properties[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  useEffect(() => {
+    if (!propertyId) {
+      setUnits([]);
+      return;
+    }
+    setLoadingUnits(true);
+    sitaraApi
+      .rentalUnits(propertyId)
+      .then((u) => setUnits(Array.isArray(u) ? u : []))
+      .catch(() => setUnits([]))
+      .finally(() => setLoadingUnits(false));
+  }, [propertyId, data]);
+
+  const handleAddProperty = async () => {
+    if (!propTitle.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await sitaraApi.rentalAddProperty({ title: propTitle.trim() });
+      setPropTitle('');
+      setShowAddProp(false);
+      await refresh();
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Could not add property.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleAddUnit = async () => {
+    if (!propertyId || !unitNumber.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await sitaraApi.rentalAddUnit({
+        propertyId,
+        unitNumber: unitNumber.trim(),
+        rentAmount: rent ? Number(rent) : undefined,
+      });
+      setUnitNumber('');
+      setRent('');
+      setShowAddUnit(false);
+      const u = await sitaraApi.rentalUnits(propertyId).catch(() => []);
+      setUnits(Array.isArray(u) ? u : []);
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Could not add unit.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <p className="text-slate-500 text-sm p-8">Loading portfolio…</p>;
+  if (!enrolled) return <RentalGate onEnroll={(n) => void enroll(n)} enrolling={enrolling} />;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Units</h1>
-          <p className="text-slate-600 mt-1">Manage your property units</p>
+          <p className="text-slate-600 mt-1">{properties.length} propert{properties.length === 1 ? 'y' : 'ies'} · live</p>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
-        >
-          + Add Unit
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAddProp(!showAddProp)} className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200">
+            + Property
+          </button>
+          <button onClick={() => setShowAddUnit(!showAddUnit)} disabled={!propertyId} className="px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50">
+            + Add Unit
+          </button>
+        </div>
       </div>
 
-      {showAdd && (
-        <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-slate-900 mb-4">Add New Unit</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="Building Name"
-              value={newUnit.buildingName}
-              onChange={(e) => setNewUnit({ ...newUnit, buildingName: e.target.value })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder="Unit Number"
-              value={newUnit.unitNumber}
-              onChange={(e) => setNewUnit({ ...newUnit, unitNumber: e.target.value })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Bedrooms"
-              value={newUnit.beds}
-              onChange={(e) => setNewUnit({ ...newUnit, beds: parseInt(e.target.value) })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Bathrooms"
-              value={newUnit.baths}
-              onChange={(e) => setNewUnit({ ...newUnit, baths: parseInt(e.target.value) })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Sq Ft"
-              value={newUnit.sqft}
-              onChange={(e) => setNewUnit({ ...newUnit, sqft: parseInt(e.target.value) })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Rent Amount ($)"
-              value={newUnit.rentAmount}
-              onChange={(e) => setNewUnit({ ...newUnit, rentAmount: parseInt(e.target.value) })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Deposit Amount ($)"
-              value={newUnit.depositAmount}
-              onChange={(e) => setNewUnit({ ...newUnit, depositAmount: parseInt(e.target.value) })}
-              className="px-3 py-2 border border-slate-300 rounded-lg"
-            />
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={handleAdd}
-              className="px-4 py-2 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
-            >
-              Save Unit
-            </button>
-            <button
-              onClick={() => setShowAdd(false)}
-              className="px-4 py-2 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300"
-            >
-              Cancel
-            </button>
-          </div>
+      {error && <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4">{error}</div>}
+
+      {showAddProp && (
+        <div className="bg-white border border-slate-200 rounded-lg p-4 mb-4 flex gap-2">
+          <input value={propTitle} onChange={(e) => setPropTitle(e.target.value)} placeholder="Property name or address" className="flex-1 px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+          <button onClick={() => void handleAddProperty()} disabled={saving} className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg disabled:opacity-50">Save</button>
         </div>
       )}
 
-      {units.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-slate-200 rounded-lg">
-          <p className="text-slate-600">No units yet. Add your first unit to get started.</p>
+      {properties.length > 1 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar mobile-scroll pb-1">
+          {properties.map((p: any) => (
+            <button key={p.id} onClick={() => setPropertyId(p.id)} className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium ${propertyId === p.id ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+              {p.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {showAddUnit && (
+        <div className="bg-white border border-slate-200 rounded-lg p-4 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <input value={unitNumber} onChange={(e) => setUnitNumber(e.target.value)} placeholder="Unit #" className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+          <input value={rent} onChange={(e) => setRent(e.target.value)} placeholder="Rent $" inputMode="decimal" className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+          <button onClick={() => void handleAddUnit()} disabled={saving} className="col-span-2 sm:col-span-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg disabled:opacity-50">Save unit</button>
+        </div>
+      )}
+
+      {properties.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
+          <p className="font-semibold text-slate-900 mb-1">No properties yet</p>
+          <p className="text-sm text-slate-500">Add your first property to start tracking units.</p>
+        </div>
+      ) : loadingUnits ? (
+        <p className="text-slate-500 text-sm">Loading units…</p>
+      ) : units.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
+          <p className="font-semibold text-slate-900 mb-1">No units in this property</p>
+          <p className="text-sm text-slate-500">Add one with + Add Unit above.</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Unit</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Building</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Beds/Baths</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Rent</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {units.map((unit) => (
-                <tr key={unit.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{unit.unitNumber}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{unit.buildingName}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{unit.beds}/{unit.baths}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">${unit.rentAmount}/mo</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[unit.status]}`}>
-                      {unit.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {units.map((u: any) => (
+            <div key={u.id} className="tile bg-white border border-slate-200 rounded-lg p-5">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-slate-900 text-lg">Unit {u.unitNumber}</h3>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[String(u.status)] || 'bg-slate-100 text-slate-600'}`}>
+                  {String(u.status || '').toLowerCase()}
+                </span>
+              </div>
+              <div className="text-sm text-slate-600 space-y-0.5">
+                <p>{u.bedrooms ?? '—'} bd · {u.bathrooms ?? '—'} ba{u.sqft ? ` · ${u.sqft} sqft` : ''}</p>
+                <p>Rent <strong className="text-slate-900">${u.rentAmount ?? '—'}</strong>/mo</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

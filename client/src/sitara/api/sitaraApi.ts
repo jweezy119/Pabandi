@@ -235,4 +235,22 @@ export const sitaraApi = {
   promoterRefLink: () => unwrap<any>(apiClient.get('/promoters/ref-link')),
   promoterRegister: (data: { name: string; phone?: string; instagram?: string; bio?: string }) =>
     unwrap<any>(apiClient.post('/promoters/register', data)),
+
+  // ── Rental vertical (real property-manager backend) ─────────────
+  /** Full operator snapshot: properties, tenants, leases, maintenance, stats. 404 = not enrolled. */
+  rentalDashboard: () => unwrap<any>(apiClient.get('/property-manager/dashboard')),
+  rentalEnroll: (companyName: string) =>
+    unwrap<any>(apiClient.post('/property-manager/enroll', { companyName })),
+  rentalAddProperty: (data: { title: string; address?: string; city?: string; rentAmount?: number }) =>
+    unwrap<any>(apiClient.post('/property-manager/properties', data)),
+  rentalUnits: (propertyId: string) =>
+    unwrap<any[]>(apiClient.get('/property/units', { params: { propertyId } })),
+  rentalAddUnit: (data: { propertyId: string; unitNumber: string; bedrooms?: number; bathrooms?: number; rentAmount?: number; depositAmount?: number }) =>
+    unwrap<any>(apiClient.post('/property/units', data)),
+  rentalAddTenant: (data: { email: string; firstName?: string; lastName?: string; phone?: string; propertyId?: string }) =>
+    unwrap<any>(apiClient.post('/property-manager/tenants', data)),
+  rentalAddLease: (data: { tenantEmail: string; startDate: string; endDate: string; rentAmount: number; propertyId?: string; depositAmount?: number }) =>
+    unwrap<any>(apiClient.post('/property-manager/leases', data)),
+  rentalAddMaintenance: (data: { title: string; description?: string; priority?: string; propertyId?: string }) =>
+    unwrap<any>(apiClient.post('/property-manager/maintenance', data)),
 };
