@@ -74,6 +74,21 @@ export const sitaraApi = {
   publicBusinesses: (params?: any) =>
     unwrap<any[]>(businessService.getPublicBusinesses(params)),
 
+  /**
+   * Real geo-discovery via Foursquare/Yelp/OSM.
+   * Frugal: aggressive caching, slim payloads, free-tier-friendly limits.
+   * Returns real venues ready to be booked.
+   */
+  discover: (params: {
+    lat: number;
+    lng: number;
+    q?: string;
+    radius?: number;
+    limit?: number;
+    category?: string;
+  }) =>
+    unwrap<any>(apiClient.get('/venues/sitara/discover', { params })),
+
   /** Create a real platform reservation for the logged-in customer. */
   createReservation: (data: {
     businessId: string;

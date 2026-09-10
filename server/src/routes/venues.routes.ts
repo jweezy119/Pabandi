@@ -11,6 +11,71 @@ const OPENMENU_API_KEY = process.env.OPENMENU_API_KEY || '';
 const yelpHeaders = { Authorization: `Bearer ${YELP_API_KEY}` };
 const foursquareHeaders = { Authorization: `Bearer ${FOURSQUARE_API_KEY}`, Accept: 'application/json' };
 
+// ── Sitara Discovery: Real Geo Businesses ──────────────────────────────────
+// Lightweight endpoint for Sitara OS discovery — returns real geo-located
+// businesses from Foursquare (primary), Yelp (enrichment), and OSM (fallback).
+// Frugal: caches aggressively, limits to free-tier-friendly payloads.
+router.get('/sitara/discover', async (req: Request, res: Response) => {
+  try {
+    const { lat, lng, q, radius = 2000, limit = 12, category } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'lat and lng are required' });
+    }
+
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    const numRadius = Math.min(Number(radius), 5000); // Cap for frugality
+    const numLimit = Math.min(Number(limit), 20);
+
+    // Search Foursquare (primary), Yelp (enrichment), OSM (fallback) in parallel
+    const [yelpResults, fsqResults, osmResults] = await Promise.allSettled([
+      searchYelp(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
+      searchFoursquare(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
+      searchOSM(String(numLat), String(numLng), category as String, String(numRadius), String(numLimit)),
+    ]);
+
+    // Merge and deduplicate — Foursquare is primary
+    const merged = mergeResults(
+      yelpResults.status === 'fulfilled' ? yelpResults.value : [],
+      fsqResults.status === 'fulfilled' ? fsqResults.value : [],
+      osmResults.status === 'fulfilled' ? osmResults.value : []
+    );
+
+    // Slim down payload for frugality — only what Sitara needs
+    const slim = merged.slice(0, numLimit).map((v: any) => ({
+      id: v.id,
+      name: v.name,
+      category: v.cuisine || v.categories?.[0] || v.type || 'restaurant',
+      rating: v.rating,
+      reviewCount: v.reviewCount,
+      price: v.price,
+      phone: v.phone,
+      address: v.address,
+      city: v.city,
+      lat: v.lat,
+      lng: v.lng,
+      imageUrl: v.imageUrl,
+      isOpenNow: v.isOpenNow,
+      sources: v.sources || [v.source],
+    }));
+
+    res.json({
+      success: true,
+      data: slim,
+      sources: {
+        yelp: yelpResults.status === 'fulfilled' ? yelpResults.value.length : 0,
+        foursquare: fsqResults.status === 'fulfilled' ? fsqResults.value.length : 0,
+        osm: osmResults.status === 'fulfilled' ? osmResults.value.length : 0,
+      },
+      cached: false,
+    });
+  } catch (e: any) {
+    console.error('Sitara discover failed:', e.message);
+    res.status(500).json({ error: 'Discovery failed', data: [] });
+  }
+});
+
 // ── Unified Venue Search ──────────────────────────────────────────────────
 // Searches Yelp, Foursquare, and OSM in parallel, deduplicates, and merges data
 router.get('/search', async (req: Request, res: Response) => {
