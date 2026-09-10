@@ -253,11 +253,11 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => update({ step: 1 })} className="btn-secondary flex-1 py-2.5 text-xs font-bold">← Back</button>
+                <button onClick={() => update({ step: 1 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">← Back</button>
                 <button
                   onClick={() => update({ step: 3 })}
                   disabled={!state.propertyName || !state.propertyType}
-                  className="btn-primary flex-1 py-2.5 text-xs font-bold disabled:opacity-40"
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
                 >
                   Continue →
                 </button>
@@ -311,18 +311,20 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
               </div>
 
               {submitError && (
-                <div className="p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-[11px] text-red-300">
+                <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-[11px] text-rose-300">
                   {submitError}
                 </div>
               )}
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => update({ step: 2 })} className="btn-secondary flex-1 py-2.5 text-xs font-bold">← Back</button>
+                <button onClick={() => update({ step: 2 })} className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">
+                  ← Back
+                </button>
                 <button
                   id="connect-submit-btn"
                   onClick={handleSubmit}
                   disabled={!state.pmsPropertyId || !state.apiKey || isSubmitting}
-                  className="btn-primary flex-1 py-2.5 text-xs font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white disabled:opacity-40 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
                 >
                   {isSubmitting ? (
                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
