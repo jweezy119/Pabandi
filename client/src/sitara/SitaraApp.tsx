@@ -13,6 +13,7 @@ import TenantLayout from './apps/tenant/TenantLayout';
 
 // Consumer Pages
 import DiscoveryPage from './pages/DiscoveryPage';
+import BusinessDetailPage from './pages/BusinessDetailPage';
 import BookingFlowPage from './pages/BookingFlowPage';
 import CheckInPage from './pages/CheckInPage';
 import ReviewPage from './pages/ReviewPage';
@@ -91,6 +92,7 @@ export default function SitaraApp() {
       {/* Consumer App — /sitara, /sitara/book/:id, ... */}
       <Route element={<ConsumerLayout />}>
         <Route index element={<DiscoveryPage />} />
+        <Route path="place/:source/:id" element={<BusinessDetailPage />} />
         <Route path="book/:businessId" element={<BookingFlowPage />} />
         <Route path="checkin/:bookingId" element={<CheckInPage />} />
         <Route path="review/:bookingId" element={<ReviewPage />} />

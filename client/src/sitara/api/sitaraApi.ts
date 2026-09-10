@@ -89,6 +89,16 @@ export const sitaraApi = {
   }) =>
     unwrap<any>(apiClient.get('/venues/sitara/discover', { params })),
 
+  // ── Venue detail (Yelp-style pages) ─────────────────────────────
+  venueDetails: (source: string, id: string) =>
+    unwrap<any>(apiClient.get(`/venues/venues/${source}/${encodeURIComponent(id)}`)),
+  venueReviews: (source: string, id: string) =>
+    unwrap<any[]>(apiClient.get(`/venues/reviews/${source}/${encodeURIComponent(id)}`)),
+  venuePhotos: (source: string, id: string) =>
+    unwrap<any[]>(apiClient.get(`/venues/photos/${source}/${encodeURIComponent(id)}`)),
+  venueMenu: (name: string, lat?: number, lng?: number) =>
+    unwrap<any>(apiClient.get('/venues/menu', { params: { name, lat, lng } })),
+
   /** Create a real platform reservation for the logged-in customer. */
   createReservation: (data: {
     businessId: string;
