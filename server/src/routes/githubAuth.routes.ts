@@ -123,18 +123,19 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     logger.info('GitHub emails fetched', { count: Array.isArray(emails) ? emails.length : 'non-array' });
 
     const emailList = Array.isArray(emails) ? emails : [];
+    // GitHub's email objects look like { email, primary, verified, visibility }.
     // Prefer verified addresses, but fall back gracefully: public profile
     // email, then primary (even unverified), then anything usable — an
     // account with an unverified email beats a failed login.
-    const verifiedPrimary = emailList.find((e: any) => e.primary && e.verified)?.value;
-    const verifiedAny = emailList.find((e: any) => e.verified)?.value;
-    const primaryAny = emailList.find((e: any) => e.primary)?.value;
-    const firstAny = emailList[0]?.value;
+    const verifiedPrimary = emailList.find((e: any) => e.primary && e.verified)?.email;
+    const verifiedAny = emailList.find((e: any) => e.verified)?.email;
+    const primaryAny = emailList.find((e: any) => e.primary)?.email;
+    const firstAny = emailList[0]?.email;
     const primaryEmail = verifiedPrimary || (profile.email as string) || verifiedAny || primaryAny || firstAny;
     const emailVerified = !!(verifiedPrimary || verifiedAny);
 
     if (!primaryEmail) {
-      logger.warn('No usable email from GitHub', { emails });
+      logger.warn('No usable email from GitHub', { count: emailList.length });
       return res.redirect(`${CLIENT_URL}/login?error=github&message=${encodeURIComponent('GitHub returned no email address. Add and verify an email at github.com/settings/emails, then try again.')}`);
     }
 
@@ -168,9 +169,9 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       logger.info('User created', { userId: user.id });
     }
 
-    // Generate JWT
+    // Generate JWT (include names so the callback can seed the session)
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, firstName: (user as any).firstName || '', lastName: (user as any).lastName || '' },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
