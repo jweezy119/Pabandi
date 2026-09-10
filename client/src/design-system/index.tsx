@@ -2,16 +2,19 @@ export const tokens = {
   color: {
     background: '#020617',
     surface: '#0f172a',
+    surfaceContainer: '#1e293b',
     border: 'rgba(255,255,255,0.08)',
     borderSubtle: 'rgba(255,255,255,0.05)',
     primary: '#818cf8',
+    primaryHover: '#6366f1',
     secondary: '#c084fc',
     accent: '#38bdf8',
     success: '#22c55e',
     warning: '#fbbf24',
     danger: '#ef4444',
     text: '#e2e8f0',
-    muted: '#94a3b8',
+    textMuted: '#94a3b8',
+    textDim: '#64748b',
   },
   radius: {
     sm: '6px',
@@ -26,24 +29,35 @@ export const tokens = {
     md: '12px',
     lg: '16px',
     xl: '24px',
+    '2xl': '32px',
+    '3xl': '48px',
   },
   font: {
     body: "Inter, ui-sans-serif, system-ui, -apple-system, sans-serif",
     mono: "'Fira Code', 'JetBrains Mono', monospace",
+    display: "'Inter', ui-sans-serif, system-ui, sans-serif",
   },
   shadow: {
     sm: '0px 1px 2px rgba(2, 6, 23, 0.4)',
     md: '0px 8px 24px rgba(2, 6, 23, 0.45)',
     lg: '0px 24px 48px rgba(2, 6, 23, 0.5)',
+    glow: '0 0 20px rgba(99, 102, 241, 0.35)',
   },
   easing: {
     out: 'cubic-bezier(0,0,0.2,1)',
     spring: 'cubic-bezier(0.34,1.56,0.64,1)',
     emphatic: 'cubic-bezier(0.16,1,0.3,1)',
   },
+  breakpoints: {
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    '2xl': '1536px',
+  },
 };
 
-type Variant = 'default' | 'ghost' | 'outline';
+type Variant = 'default' | 'ghost' | 'outline' | 'primary';
 
 type ButtonProps = {
   children: React.ReactNode;
@@ -54,9 +68,12 @@ type ButtonProps = {
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   style?: React.CSSProperties;
+  loading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 };
 
-export function Button({ children, onClick, variant = 'default', size = 'md', className = '', disabled = false, type = 'button', style }: ButtonProps) {
+export function Button({ children, onClick, variant = 'default', size = 'md', className = '', disabled = false, type = 'button', style, loading = false, leftIcon, rightIcon }: ButtonProps) {
   const base = [
     'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-300 cursor-pointer',
     disabled ? 'opacity-50 cursor-not-allowed' : '',
@@ -72,11 +89,23 @@ export function Button({ children, onClick, variant = 'default', size = 'md', cl
     default: 'bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] active:scale-[0.97]',
     ghost: 'bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10',
     outline: 'bg-transparent text-slate-200 border border-white/15 hover:border-indigo-400/60 hover:text-indigo-200',
+    primary: 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_30px_rgba(99,102,241,0.55)] active:scale-[0.97]',
   };
 
   return (
-    <button onClick={onClick} type={type} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} style={style}>
-      {children}
+    <button onClick={onClick} type={type} className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} style={style} disabled={disabled || loading}>
+      {loading ? (
+        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      ) : (
+        <>
+          {leftIcon}
+          {children}
+          {rightIcon}
+        </>
+      )}
     </button>
   );
 }

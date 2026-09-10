@@ -352,15 +352,15 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Panel */}
-        <Surface>
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
           {/* Mode tabs */}
           <div className="mb-6 flex gap-2 bg-white/5 p-1.5 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-white/15 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-indigo-500 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
               Sign In
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-white/15 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-indigo-500 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
               Create Account
             </button>
           </div>

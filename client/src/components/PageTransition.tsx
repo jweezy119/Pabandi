@@ -17,7 +17,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
   return (
     <div
       key={location.pathname}
-      className="page-enter macos-fade"
+      className="page-enter fade-in"
       style={{ willChange: 'transform, opacity' }}
     >
       {children}
