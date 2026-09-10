@@ -84,17 +84,19 @@ export const CommandPalette: React.FC<{ isOpen: boolean; onClose: () => void }> 
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh]" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-surface/95 backdrop-blur-xl shadow-2xl"
+        className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f172a]/95 backdrop-blur-xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-3 border-b border-white/10">
+        <div className="p-3 border-b border-white/10 flex items-center gap-2">
+          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type a command or search..."
-            className="w-full bg-transparent text-slate-100 outline-none text-sm placeholder:text-slate-500"
+            className="flex-1 bg-transparent text-slate-100 outline-none text-sm placeholder:text-slate-500"
           />
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-white/5 text-slate-500 border border-white/10">⌘K</kbd>
         </div>
         <div className="max-h-80 overflow-y-auto p-2">
           {filtered.length === 0 ? (
