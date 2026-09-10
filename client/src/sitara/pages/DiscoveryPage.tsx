@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sitaraApi } from '../api/sitaraApi';
+import DiscoveryMap from '../components/DiscoveryMap';
 
 const categories = [
   { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
@@ -36,6 +37,8 @@ interface BizCard {
   price: string;
   address?: string;
   isOpenNow?: boolean;
+  lat?: number;
+  lng?: number;
   real: boolean;
 }
 
@@ -61,6 +64,7 @@ export default function DiscoveryPage() {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [view, setView] = useState<'list' | 'map'>('list');
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -102,6 +106,8 @@ export default function DiscoveryPage() {
             price: b.price || '$$',
             address: b.address,
             isOpenNow: b.isOpenNow,
+            lat: b.lat != null ? Number(b.lat) : undefined,
+            lng: b.lng != null ? Number(b.lng) : undefined,
             real: true,
           }))
         );
@@ -214,6 +220,19 @@ export default function DiscoveryPage() {
 
       {/* Sort + filters */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar mobile-scroll pb-1">
+        <div className="flex shrink-0 bg-white border border-slate-200 rounded-full p-0.5">
+          {(['list', 'map'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                view === v ? 'bg-slate-900 text-white' : 'text-slate-600'
+              }`}
+            >
+              {v === 'list' ? '☰ List' : '🗺️ Map'}
+            </button>
+          ))}
+        </div>
         <span className="text-xs font-medium text-slate-500 shrink-0">SORT:</span>
         {(
           [
@@ -294,6 +313,16 @@ export default function DiscoveryPage() {
           <p className="font-semibold text-slate-900 mb-1">Nothing found</p>
           <p className="text-sm text-slate-500">Try a different craving, or browse a category above.</p>
         </div>
+      ) : view === 'map' ? (
+        userLocation ? (
+          <DiscoveryMap pins={visible} center={userLocation} />
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+            <p className="text-4xl mb-3">🗺️</p>
+            <p className="font-semibold text-slate-900 mb-1">Map needs your location</p>
+            <p className="text-sm text-slate-500">Allow location access to see places around you.</p>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {visible.map((business) => (
