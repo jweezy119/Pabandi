@@ -119,11 +119,11 @@ export default function BusinessDetailPage() {
       </div>
 
       {/* Action row */}
-      <div className="px-4 sm:px-0 mt-4 grid grid-cols-3 gap-2">
+      <div className="px-4 sm:px-0 mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
         <Link
           to={`/sitara/book/${encodeURIComponent(id)}`}
           state={{ name: venue.name }}
-          className="tile col-span-3 sm:col-span-1 px-4 py-3 bg-amber-500 text-white text-center font-semibold rounded-xl"
+          className="tile col-span-2 sm:col-span-1 px-4 py-3 bg-amber-500 text-white text-center font-semibold rounded-xl"
         >
           📅 Book a visit
         </Link>

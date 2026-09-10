@@ -115,7 +115,8 @@ export default function ReviewPage() {
                 <button
                   key={star}
                   onClick={() => setRating(star)}
-                  className={`text-3xl transition-colors ${
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                  className={`rate-star text-3xl transition-colors ${
                     star <= rating ? 'text-amber-500' : 'text-slate-300'
                   }`}
                 >

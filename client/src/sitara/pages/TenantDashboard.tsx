@@ -54,7 +54,7 @@ export default function TenantDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-8">
         <Link to="/sitara/tenant/payments" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">💳</span>
           <h3 className="font-semibold text-slate-900">Pay Rent</h3>

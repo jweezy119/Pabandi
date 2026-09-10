@@ -122,3 +122,19 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Mobile correctness fixes ─────────────────────────────────── */
+@media (max-width: 767px) {
+  /* iOS zooms on focus when inputs are <16px — the #1 "broken" feeling */
+  .sitara input, .sitara select, .sitara textarea {
+    font-size: 16px !important;
+  }
+  /* Star-rating + icon buttons get real tap targets */
+  .sitara .rate-star {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

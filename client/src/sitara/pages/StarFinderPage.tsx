@@ -109,24 +109,26 @@ export default function StarFinderPage() {
         <div className="space-y-4">
           {customers.map((customer: any) => (
             <div key={customer.userId} className="bg-white border border-slate-200 rounded-lg p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                  {(customer.name || '?').charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-slate-900">{customer.name}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tierColors[customer.tier] || tierColors.tara}`}>
-                      {customer.tierName || customer.tier}
-                    </span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 shrink-0 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                    {(customer.name || '?').charAt(0)}
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-600 mt-1">
-                    <span>★ {customer.totalPoints ?? customer.starPower} SP</span>
-                    <span>{customer.reviewCount ?? customer.visits} reviews</span>
-                    {customer.avgRating != null && <span>⭐ {Number(customer.avgRating).toFixed(1)}</span>}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-slate-900 truncate">{customer.name}</h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tierColors[customer.tier] || tierColors.tara}`}>
+                        {customer.tierName || customer.tier}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-600 mt-1 flex-wrap">
+                      <span>★ {customer.totalPoints ?? customer.starPower} SP</span>
+                      <span>{customer.reviewCount ?? customer.visits} reviews</span>
+                      {customer.avgRating != null && <span>⭐ {Number(customer.avgRating).toFixed(1)}</span>}
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 sm:ml-auto">
                   {selectedCustomer === customer.userId ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -167,7 +169,7 @@ export default function StarFinderPage() {
       )}
 
       {/* Promo Stats */}
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-6">
         <div className="bg-white border border-slate-200 rounded-lg p-6 text-center">
           <p className="text-3xl font-bold text-slate-900">{live ? sentCount : 24}</p>
           <p className="text-sm text-slate-600">Promos sent</p>
