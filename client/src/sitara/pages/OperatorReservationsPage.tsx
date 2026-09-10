@@ -79,6 +79,26 @@ export default function OperatorReservationsPage() {
     }
   };
 
+  const [checkingIn, setCheckingIn] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  /** Staff taps when the guest walks in — marks arrival on the live book. */
+  const handleCheckInGuest = async (reservationId: string) => {
+    setCheckingIn(reservationId);
+    setActionError(null);
+    try {
+      await sitaraApi.verifyCheckIn({ reservationId, method: 'manual' });
+      if (businessId) await fetchList(businessId);
+    } catch (e: any) {
+      setActionError(e?.response?.data?.message || e?.message || 'Check-in failed.');
+    } finally {
+      setCheckingIn(null);
+    }
+  };
+
+  const canCheckIn = (r: any) =>
+    ['PENDING', 'CONFIRMED'].includes(String(r.status || '').toUpperCase());
+
   const today = dayKey(new Date());
   const visible = useMemo(() => {
     const sorted = [...reservations].sort(
@@ -148,6 +168,12 @@ export default function OperatorReservationsPage() {
         ))}
       </div>
 
+      {actionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4">
+          {actionError}
+        </div>
+      )}
+
       {visible.length === 0 ? (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
           <p className="text-slate-500">No {profile.bookingNounPlural.toLowerCase()} in this view yet.</p>
@@ -186,6 +212,15 @@ export default function OperatorReservationsPage() {
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(String(r.status || ''))}`}>
                       {String(r.status || 'pending').replace(/_/g, ' ').toLowerCase()}
                     </span>
+                    {canCheckIn(r) && (
+                      <button
+                        onClick={() => void handleCheckInGuest(r.id)}
+                        disabled={checkingIn === r.id}
+                        className="block mt-1.5 px-2.5 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {checkingIn === r.id ? '…' : '✓ Check in'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

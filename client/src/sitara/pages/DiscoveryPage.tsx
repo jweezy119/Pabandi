@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { sitaraApi } from '../api/sitaraApi';
 import DiscoveryMap from '../components/DiscoveryMap';
+import { getFavorites, Favorite } from '../utils/favorites';
 
 const categories = [
   { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
@@ -65,7 +66,16 @@ export default function DiscoveryPage() {
   const [searching, setSearching] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [view, setView] = useState<'list' | 'map'>('list');
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Favorites live on-device; refresh whenever discovery regains focus.
+  useEffect(() => {
+    const sync = () => setFavorites(getFavorites());
+    sync();
+    window.addEventListener('focus', sync);
+    return () => window.removeEventListener('focus', sync);
+  }, []);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -262,6 +272,36 @@ export default function DiscoveryPage() {
           {openNow ? '✓ Open now' : 'Open now'}
         </button>
       </div>
+
+      {/* Saved places (on-device favorites) */}
+      {favorites.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-slate-900">❤️ Your saved places</h2>
+            <span className="text-xs text-slate-500">{favorites.length} saved</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar mobile-scroll pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+            {favorites.map((b) => (
+              <Link
+                key={`${b.source}:${b.id}`}
+                to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`}
+                className="tile shrink-0 w-48 bg-white rounded-xl shadow-sm overflow-hidden"
+              >
+                <div className="h-24 bg-slate-200 overflow-hidden tile-img">
+                  <img src={b.image} alt={b.name} loading="lazy" className="w-full h-full object-cover" />
+                </div>
+                <div className="p-3">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{b.name}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    <span className="text-amber-500">★</span> {Number(b.rating || 0).toFixed(1)}
+                    {b.price ? ` · ${b.price}` : ''}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Top-rated shelf (exposure for earned stars) */}
       {!query && !selectedCategory && topRated.length > 0 && (

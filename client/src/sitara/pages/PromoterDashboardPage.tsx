@@ -209,12 +209,40 @@ export default function PromoterDashboardPage() {
           Every guest who books through it earns you commission — plus +50 Star Power when they check in.
         </p>
         {referralUrl ? (
-          <div className="flex gap-2">
-            <input readOnly value={referralUrl} className="flex-1 px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-sm text-white" />
-            <button onClick={() => void copyReferral()} className="px-4 py-2 bg-white text-orange-600 text-sm font-semibold rounded-lg hover:bg-orange-50">
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
+          <>
+            <div className="flex gap-2">
+              <input readOnly value={referralUrl} className="flex-1 px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-sm text-white" />
+              <button onClick={() => void copyReferral()} className="px-4 py-2 bg-white text-orange-600 text-sm font-semibold rounded-lg hover:bg-orange-50">
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Join me on Pabandi — verified bookings, real reviews: ${referralUrl}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="tile flex-1 px-3 py-2 bg-white/20 border border-white/30 text-center text-sm font-semibold rounded-lg"
+              >
+                WhatsApp
+              </a>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Verified bookings, real reviews — join me on Pabandi: ${referralUrl}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="tile flex-1 px-3 py-2 bg-white/20 border border-white/30 text-center text-sm font-semibold rounded-lg"
+              >
+                Post on X
+              </a>
+              {(navigator as any)?.share && (
+                <button
+                  onClick={() => (navigator as any).share({ title: 'Pabandi', text: 'Verified bookings, real reviews', url: referralUrl }).catch(() => {})}
+                  className="tile flex-1 px-3 py-2 bg-white/20 border border-white/30 text-sm font-semibold rounded-lg"
+                >
+                  Share…
+                </button>
+              )}
+            </div>
+          </>
         ) : (
           <p className="text-sm opacity-80">Referral link unavailable right now.</p>
         )}

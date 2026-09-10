@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { sitaraApi } from '../api/sitaraApi';
+import { isFavorite, toggleFavorite } from '../utils/favorites';
 
 function Stars({ value }: { value: number }) {
   return (
@@ -22,6 +23,7 @@ export default function BusinessDetailPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [menu, setMenu] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fav, setFav] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +37,7 @@ export default function BusinessDetailPage() {
         if (cancelled) return;
         const vv = v.status === 'fulfilled' ? v.value : null;
         setVenue(vv);
+        if (vv) setFav(isFavorite(String(vv.id || id), source));
         if (r.status === 'fulfilled' && Array.isArray(r.value)) setReviews(r.value);
         if (p.status === 'fulfilled' && Array.isArray(p.value)) setPhotos(p.value);
         // Details endpoint already attaches OpenMenu when available; top up if missing.
@@ -99,6 +102,23 @@ export default function BusinessDetailPage() {
           aria-label="Back"
         >
           ←
+        </button>
+        <button
+          onClick={() => {
+            const next = toggleFavorite({
+              id: String(venue.id || id),
+              source,
+              name: venue.name,
+              image: hero,
+              rating,
+              price: venue.price,
+            });
+            setFav(next);
+          }}
+          aria-label={fav ? 'Remove from favorites' : 'Save to favorites'}
+          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow text-xl active:scale-90 transition-transform"
+        >
+          {fav ? '❤️' : '🤍'}
         </button>
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{venue.name}</h1>
