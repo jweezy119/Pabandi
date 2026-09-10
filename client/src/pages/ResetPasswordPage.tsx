@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
 
         <Surface>
           <h1 className="font-headline text-2xl font-bold" style={{ color: tokens.color.text }}>Reset Password</h1>
-          <p className="mb-6 text-sm" style={{ color: tokens.color.muted }}>
+          <p className="mb-6 text-sm" style={{ color: tokens.color.textDim }}>
             Choose a new password for your account.
           </p>
 
@@ -75,12 +75,12 @@ export default function ResetPasswordPage() {
               )}
 
               <div>
-                <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.muted }}>New Password</label>
+                <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.textDim }}>New Password</label>
                 <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors" style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }} />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.muted }}>Confirm New Password</label>
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.textDim }}>Confirm New Password</label>
                 <input id="confirmPassword" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors" style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }} />
               </div>
 

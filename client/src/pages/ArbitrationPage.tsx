@@ -26,7 +26,7 @@ export default function ArbitrationPage() {
       <h1 className="text-3xl font-black font-headline tracking-tight" style={{ color: tokens.color.text }}>
         Community Arbitration
       </h1>
-      <p className="text-sm mt-2" style={{ color: tokens.color.muted }}>
+      <p className="text-sm mt-2" style={{ color: tokens.color.textDim }}>
         Trust-gated peer jury. High-trust members (Trust Score &gt; 90) vote on open disputes.
         Low-value claims auto-resolve via Pabandi's AI Trust Arbitrator. No chargebacks — just verified work and fair rulings.
       </p>
@@ -39,7 +39,7 @@ export default function ArbitrationPage() {
             className="px-3 py-1.5 rounded-lg text-xs font-bold"
             style={{
               background: status === s ? tokens.color.primary : 'transparent',
-              color: status === s ? '#0a0a0a' : tokens.color.muted,
+              color: status === s ? '#0a0a0a' : tokens.color.textDim,
               border: `1px solid ${status === s ? tokens.color.primary : 'rgba(255,255,255,0.15)'}`,
             }}
           >
@@ -51,9 +51,9 @@ export default function ArbitrationPage() {
       <FileDisputeForm />
 
       <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm" style={{ color: tokens.color.muted }}>Loading disputes…</p>}
+        {isLoading && <p className="text-sm" style={{ color: tokens.color.textDim }}>Loading disputes…</p>}
         {!isLoading && disputes.length === 0 && (
-          <p className="text-sm" style={{ color: tokens.color.muted }}>No disputes {status ? `with status ${status}` : 'filed'}. Clean ledger. 🎉</p>
+          <p className="text-sm" style={{ color: tokens.color.textDim }}>No disputes {status ? `with status ${status}` : 'filed'}. Clean ledger. 🎉</p>
         )}
         {disputes.map((d: any) => (
           <DisputeCard key={d.id} d={d} />
@@ -115,16 +115,16 @@ function DisputeCard({ d }: { d: any }) {
           <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.08)' }}>
             {OUTCOME_LABEL[d.outcome] || d.outcome}
           </span>
-          <span className="text-xs ml-2" style={{ color: tokens.color.muted }}>
+          <span className="text-xs ml-2" style={{ color: tokens.color.textDim }}>
             {d.contextType || 'RESERVATION'} · {d.type}
           </span>
         </div>
-        <span className="text-xs" style={{ color: tokens.color.muted }}>{new Date(d.createdAt).toLocaleDateString()}</span>
+        <span className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(d.createdAt).toLocaleDateString()}</span>
       </div>
       <p className="text-sm mt-2" style={{ color: tokens.color.text }}>{d.description}</p>
       {/* Real trust signal: disputed party's latest background-check verdict */}
       {d.userId && (
-        <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: tokens.color.muted }}>
+        <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: tokens.color.textDim }}>
           <span className="material-symbols-outlined text-[14px]" style={{ color: tokens.color.primary }}>fact_check</span>
           <span>Counterparty: </span>
           {d.check ? (
@@ -142,11 +142,11 @@ function DisputeCard({ d }: { d: any }) {
               {d.check.riskScore != null && <span>({d.check.riskScore}/100)</span>}
             </>
           ) : (
-            <span style={{ color: tokens.color.muted }}>No recent verification on file</span>
+            <span style={{ color: tokens.color.textDim }}>No recent verification on file</span>
           )}
         </div>
       )}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style={{ color: tokens.color.muted }}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs" style={{ color: tokens.color.textDim }}>
         <span>Staked: {d.stakedAmount} PAB</span>
         <span>Votes: {d.votes?.length || 0}</span>
         {d.contextId && <span>Ref: {d.contextId.slice(0, 12)}…</span>}
@@ -166,7 +166,7 @@ function DisputeCard({ d }: { d: any }) {
             onClick={() => voteMutation.mutate(d.reportedById)}
             disabled={voteMutation.isLoading}
             className="px-3 py-1.5 rounded-lg text-xs font-bold"
-            style={{ background: 'transparent', color: tokens.color.muted, border: '1px solid rgba(255,255,255,0.15)' }}
+            style={{ background: 'transparent', color: tokens.color.textDim, border: '1px solid rgba(255,255,255,0.15)' }}
           >
             Dismiss (worker paid fair)
           </button>

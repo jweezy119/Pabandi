@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-do
 import { useAuthStore } from '../store/authStore';
 import { authService } from '../services/api';
 import { signMessageWithPhantom } from '../utils/web3';
-import { Surface, tokens } from '../design-system';
+import { tokens } from '../design-system';
 
 type Mode = 'login' | 'signup';
 type Role = 'customer' | 'business';
@@ -623,7 +623,7 @@ export default function AuthPage() {
               </>
             )}
           </p>
-        </Surface>
+        </div>
 
         {/* Trust badges */}
         <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold tracking-wide text-white/70 uppercase">

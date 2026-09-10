@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from 'react-query';
 import { disputeService } from '../services/api';
-import { tokens } from '../design-system';
 
 /**
  * One-click dispute entry from a paid-work row (Payroll ledger / Cash-out history).

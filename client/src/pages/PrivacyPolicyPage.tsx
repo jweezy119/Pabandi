@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
         Privacy & Data Sovereignty
       </h1>
 
-      <div className="font-body space-y-8" style={{ color: tokens.color.muted }}>
+      <div className="font-body space-y-8" style={{ color: tokens.color.textDim }}>
 
         <section className="rounded-xl border p-6" style={{ background: tokens.color.surface, borderColor: tokens.color.border }}>
           <h2 className="font-headline mb-4 text-2xl font-bold text-on-surface">
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
           <h2 className="font-headline mb-4 text-2xl font-bold text-on-surface">
             4. Data Security & Hosting
           </h2>
-          <p className="font-body" style={{ color: tokens.color.muted }}>
+          <p className="font-body" style={{ color: tokens.color.textDim }}>
             Your data is encrypted at rest and never sold to third parties. Our servers are secured and globally distributed for maximum data sovereignty and reliability.
           </p>
         </section>
@@ -53,20 +53,20 @@ export default function PrivacyPolicyPage() {
             <div className="flex w-full flex-col items-center rounded-lg p-6 text-center md:w-1/3" style={{ background: tokens.color.background }}>
               <div className="mb-3 text-4xl">📱</div>
               <h3 className="font-bold text-on-surface">Your Phone</h3>
-              <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>Only GPS Coordinate + Timestamp</p>
+              <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>Only GPS Coordinate + Timestamp</p>
             </div>
 
             <div className="flex flex-col items-center">
-              <div className="text-3xl md:-rotate-90" style={{ color: tokens.color.muted }}>→</div>
+              <div className="text-3xl md:-rotate-90" style={{ color: tokens.color.textDim }}>→</div>
             </div>
 
             <div className="flex w-full flex-col items-center rounded-lg p-6 text-center md:w-1/3" style={{ background: tokens.color.background }}>
               <div className="mb-3 text-4xl" style={{ color: tokens.color.success }}>🖥️</div>
               <h3 className="font-bold text-on-surface">Pabandi Server</h3>
-              <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>Encrypted & Verified Check-in</p>
+              <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>Encrypted & Verified Check-in</p>
             </div>
           </div>
-          <p className="mt-4 text-center text-sm" style={{ color: tokens.color.muted }}>
+          <p className="mt-4 text-center text-sm" style={{ color: tokens.color.textDim }}>
             No constant tracking. We only verify your location at the exact time of your appointment.
           </p>
         </section>

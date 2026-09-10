@@ -77,19 +77,19 @@ export const AiPropertyAnalyzerPage: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-xl font-bold text-emerald-300">${result.estimatedValue?.toLocaleString()}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Est. Value</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Est. Value</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-xl font-bold text-indigo-300">${result.rentalEstimate}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Monthly Rent</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Monthly Rent</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-xl font-bold text-amber-300">{result.capRate}%</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Cap Rate</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Cap Rate</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-xl font-bold text-purple-300">{result.roi5Year}%</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>5-Year ROI</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>5-Year ROI</div>
                 </div>
               </div>
             </Surface>

@@ -48,7 +48,7 @@ export const EscrowPage: React.FC = () => {
                     <div className="text-3xl">{s.icon}</div>
                     <div>
                       <div className="font-bold text-slate-100">Step {s.step}: {s.title}</div>
-                      <div className="text-sm" style={{ color: tokens.color.muted }}>{s.desc}</div>
+                      <div className="text-sm" style={{ color: tokens.color.textDim }}>{s.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -61,17 +61,17 @@ export const EscrowPage: React.FC = () => {
                 <div className="text-center">
                   <div className="text-3xl mb-2">🛡️</div>
                   <div className="font-bold text-slate-100">No More Scams</div>
-                  <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Seller can't run away with your money</p>
+                  <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Seller can't run away with your money</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl mb-2">👁️</div>
                   <div className="font-bold text-slate-100">Inspect Before Paying</div>
-                  <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Check the item before funds release</p>
+                  <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Check the item before funds release</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl mb-2">⚖️</div>
                   <div className="font-bold text-slate-100">Fair Disputes</div>
-                  <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Community jury, not a corporation</p>
+                  <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Community jury, not a corporation</p>
                 </div>
               </div>
             </Surface>
@@ -119,14 +119,14 @@ const NewTransactionForm: React.FC = () => {
       <Surface className="text-center">
         <div className="text-5xl mb-4">✅</div>
         <h3 className="text-xl font-bold text-slate-100 mb-2">Escrow Created!</h3>
-        <p className="text-sm" style={{ color: tokens.color.muted }}>
+        <p className="text-sm" style={{ color: tokens.color.textDim }}>
           Transaction ID: <span className="font-mono text-indigo-300">esc-{Date.now().toString(36)}</span>
         </p>
-        <p className="text-sm mt-2" style={{ color: tokens.color.muted }}>
+        <p className="text-sm mt-2" style={{ color: tokens.color.textDim }}>
           Share this with your counterparty to fund the escrow.
         </p>
         <div className="mt-4 p-4 rounded-xl bg-white/5">
-          <div className="text-sm" style={{ color: tokens.color.muted }}>Status</div>
+          <div className="text-sm" style={{ color: tokens.color.textDim }}>Status</div>
           <div className="font-bold text-amber-300">⏳ Awaiting Funding</div>
         </div>
       </Surface>
@@ -186,7 +186,7 @@ const ActiveTransactions: React.FC = () => {
             <div className="font-semibold text-slate-100">{t.item}</div>
             <Badge tone={t.status === 'FUNDED' ? 'success' : 'warning'}>{t.status}</Badge>
           </div>
-          <div className="text-sm space-y-1" style={{ color: tokens.color.muted }}>
+          <div className="text-sm space-y-1" style={{ color: tokens.color.textDim }}>
             <div>ID: <span className="font-mono text-indigo-300">{t.id}</span></div>
             <div>Amount: <span className="font-bold text-slate-100">${t.amount}</span></div>
             <div>Counterparty: {t.counterparty}</div>
@@ -226,7 +226,7 @@ const DisputesTab: React.FC = () => {
             <div className="font-semibold text-slate-100">{d.item}</div>
             <Badge tone="warning">{d.status}</Badge>
           </div>
-          <div className="text-sm space-y-1" style={{ color: tokens.color.muted }}>
+          <div className="text-sm space-y-1" style={{ color: tokens.color.textDim }}>
             <div>Dispute ID: <span className="font-mono text-indigo-300">{d.id}</span></div>
             <div>Amount in dispute: <span className="font-bold text-slate-100">${d.amount}</span></div>
             <div>Against: {d.against}</div>

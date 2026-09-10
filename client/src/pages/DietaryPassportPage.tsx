@@ -49,7 +49,7 @@ export default function DietaryPassportPage() {
       <h1 className="font-headline mb-6 text-3xl font-bold text-on-surface">
         Dietary & Preference Passport
       </h1>
-      <p className="mb-8" style={{ color: tokens.color.muted }}>
+      <p className="mb-8" style={{ color: tokens.color.textDim }}>
         Your dietary preferences are encrypted locally using Zero-Knowledge architecture. 
         Pabandi servers cannot read this data. It is only decrypted by the restaurant when you book a table.
       </p>

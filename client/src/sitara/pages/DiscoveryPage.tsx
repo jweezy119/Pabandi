@@ -62,14 +62,14 @@ export default function DiscoveryPage() {
     }
   }, []);
 
-  async function loadRealBusinesses(loc: { lat: number; lng: number }) {
+  async function loadRealBusinesses(loc: { lat: number; lng: number; category?: string }) {
     try {
       const data = await sitaraApi.discover({
         lat: loc.lat,
         lng: loc.lng,
         radius: 2000,
         limit: 12,
-        category: selectedCategory || undefined,
+        category: loc.category || selectedCategory || undefined,
       });
 
       if (Array.isArray(data) && data.length > 0) {

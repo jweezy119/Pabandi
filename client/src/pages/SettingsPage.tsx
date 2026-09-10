@@ -57,7 +57,7 @@ export const SettingsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-100 font-headline">Settings</h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Manage your account, notifications, and preferences</p>
+            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Manage your account, notifications, and preferences</p>
           </div>
           {saved && <Badge tone="success">✓ Saved</Badge>}
         </div>
@@ -244,19 +244,19 @@ export const SettingsPage: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-lg font-bold text-indigo-300">12</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Valuations</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Valuations</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-lg font-bold text-emerald-300">5</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Searches</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Searches</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-lg font-bold text-amber-300">3</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Reports</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Reports</div>
                 </div>
                 <div className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-lg font-bold text-purple-300">8</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>AI Chats</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>AI Chats</div>
                 </div>
               </div>
             </Surface>

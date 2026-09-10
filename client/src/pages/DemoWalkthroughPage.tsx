@@ -201,19 +201,19 @@ export const DemoWalkthroughPage: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Surface className="text-center p-3 md:p-4">
                 <div className="text-xl md:text-2xl font-bold text-slate-100">{demoData.properties.length}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Properties</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Properties</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
                 <div className="text-xl md:text-2xl font-bold text-emerald-300">{demoData.properties.filter((p) => p.status === 'OCCUPIED').length}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Occupied</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Occupied</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
                 <div className="text-xl md:text-2xl font-bold text-indigo-300">{demoData.tenants.length}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Tenants</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Tenants</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
                 <div className="text-xl md:text-2xl font-bold text-amber-300">{demoData.pabEarned}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>$PAB earned</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>$PAB earned</div>
               </Surface>
             </div>
 
@@ -238,7 +238,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                     <div>
                       <div className="font-semibold text-slate-100">{p.title}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
                     </div>
                     <Badge tone={p.status === 'VACANT' ? 'info' : 'success'}>{p.status}</Badge>
                   </div>
@@ -266,7 +266,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                     <div>
                       <div className="font-semibold text-slate-100">{t.name || t.email}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}</div>
                     </div>
                     <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
                   </div>
@@ -291,7 +291,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                 ].map((step, i) => (
                   <div key={i} className="flex gap-3 p-3 rounded-xl bg-white/5">
                     <div className="text-2xl">{step.icon}</div>
-                    <div><div className="font-bold text-slate-100 text-sm">{step.title}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{step.desc}</div></div>
+                    <div><div className="font-bold text-slate-100 text-sm">{step.title}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{step.desc}</div></div>
                   </div>
                 ))}
               </div>
@@ -301,15 +301,15 @@ export const DemoWalkthroughPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-2 md:gap-3 text-center">
                 <div className="p-3 md:p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <div className="text-lg md:text-2xl font-bold text-emerald-300">$250</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>In escrow</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>In escrow</div>
                 </div>
                 <div className="p-3 md:p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
                   <div className="text-lg md:text-2xl font-bold text-indigo-300">📍 Library</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>SafeMeet spot</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>SafeMeet spot</div>
                 </div>
                 <div className="p-3 md:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <div className="text-lg md:text-2xl font-bold text-amber-300">25 $PAB</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Seller reward</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Seller reward</div>
                 </div>
               </div>
             </Surface>
@@ -321,7 +321,7 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold text-slate-100 mb-2">Run a background check</h3>
-              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Searches US CourtListener for eviction and housing litigation records.</p>
+              <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Searches US CourtListener for eviction and housing litigation records.</p>
               <div className="space-y-3">
                 <input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="Full name *" className={inputClass} />
                 <select value={screenState} onChange={(e) => setScreenState(e.target.value)} className={inputClass}>
@@ -344,14 +344,14 @@ export const DemoWalkthroughPage: React.FC = () => {
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="font-bold text-slate-100">{screenResult.name}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{screenResult.state} · {screenResult.source}</div>
+                        <div className="text-xs" style={{ color: tokens.color.textDim }}>{screenResult.state} · {screenResult.source}</div>
                       </div>
                       <Badge tone={screenResult.band === 'HIGH' ? 'danger' : screenResult.band === 'MEDIUM' ? 'warning' : 'success'}>{screenResult.band}</Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div><div className="font-bold text-slate-100">{screenResult.count}</div><div style={{ color: tokens.color.muted }}>Cases</div></div>
-                      <div><div className="font-bold" style={{ color: screenResult.band === 'HIGH' ? tokens.color.danger : '#10b981' }}>{screenResult.depositAdj > 0 ? `+${screenResult.depositAdj}%` : '0%'}</div><div style={{ color: tokens.color.muted }}>Deposit</div></div>
-                      <div><div className="font-bold" style={{ color: screenResult.results?.some((r: any) => r.status === 'Active') ? tokens.color.danger : '#10b981' }}>{screenResult.results?.some((r: any) => r.status === 'Active') ? 'Active' : 'Clear'}</div><div style={{ color: tokens.color.muted }}>Status</div></div>
+                      <div><div className="font-bold text-slate-100">{screenResult.count}</div><div style={{ color: tokens.color.textDim }}>Cases</div></div>
+                      <div><div className="font-bold" style={{ color: screenResult.band === 'HIGH' ? tokens.color.danger : '#10b981' }}>{screenResult.depositAdj > 0 ? `+${screenResult.depositAdj}%` : '0%'}</div><div style={{ color: tokens.color.textDim }}>Deposit</div></div>
+                      <div><div className="font-bold" style={{ color: screenResult.results?.some((r: any) => r.status === 'Active') ? tokens.color.danger : '#10b981' }}>{screenResult.results?.some((r: any) => r.status === 'Active') ? 'Active' : 'Clear'}</div><div style={{ color: tokens.color.textDim }}>Status</div></div>
                     </div>
                   </div>
                   {screenResult.results?.length > 0 && (
@@ -364,7 +364,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                               <div className="font-semibold text-slate-100 text-xs">{c.caseName}</div>
                               <Badge tone={c.status === 'Active' ? 'danger' : 'info'}>{c.status}</Badge>
                             </div>
-                            <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{c.docketNumber} · {c.court}</div>
+                            <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{c.docketNumber} · {c.court}</div>
                           </div>
                         ))}
                       </div>
@@ -409,7 +409,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                   <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
                     <div>
                       <div className="font-semibold text-slate-100">{a.tenantName}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>{a.property || 'No property'} · {new Date(a.date).toLocaleString()}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.property || 'No property'} · {new Date(a.date).toLocaleString()}</div>
                     </div>
                     <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'info' : 'warning'}>{a.status}</Badge>
                   </div>
@@ -424,21 +424,21 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
               <h3 className="text-base md:text-lg font-bold text-slate-100 mb-2">Tenant history timeline</h3>
-              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Track every tenant's stays, disputes, payments, and risk bands.</p>
+              <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Track every tenant's stays, disputes, payments, and risk bands.</p>
               <div className="space-y-3">
                 {demoData.tenants.map((t, i) => (
                   <div key={i} className="p-3 rounded-xl bg-white/5">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <div className="font-bold text-slate-100">{t.name || t.email}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}</div>
+                        <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}</div>
                       </div>
                       <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div><div className="font-bold text-slate-100">{t.stays || 0}</div><div style={{ color: tokens.color.muted }}>Stays</div></div>
-                      <div><div className="font-bold text-rose-300">{t.disputes || 0}</div><div style={{ color: tokens.color.muted }}>Disputes</div></div>
-                      <div><div className="font-bold text-emerald-300">${t.deposited || 0}</div><div style={{ color: tokens.color.muted }}>Deposits</div></div>
+                      <div><div className="font-bold text-slate-100">{t.stays || 0}</div><div style={{ color: tokens.color.textDim }}>Stays</div></div>
+                      <div><div className="font-bold text-rose-300">{t.disputes || 0}</div><div style={{ color: tokens.color.textDim }}>Disputes</div></div>
+                      <div><div className="font-bold text-emerald-300">${t.deposited || 0}</div><div style={{ color: tokens.color.textDim }}>Deposits</div></div>
                     </div>
                   </div>
                 ))}
@@ -479,7 +479,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                     { tier: 'Platinum', stake: '10,000 $PAB', benefit: 'Arbitration voting' },
                   ].map((t, i) => (
                     <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                      <div><span className="text-sm font-semibold text-slate-100">{t.tier}</span><span className="text-xs ml-2" style={{ color: tokens.color.muted }}>{t.benefit}</span></div>
+                      <div><span className="text-sm font-semibold text-slate-100">{t.tier}</span><span className="text-xs ml-2" style={{ color: tokens.color.textDim }}>{t.benefit}</span></div>
                       <span className="text-sm font-bold text-amber-300">{t.stake}</span>
                     </div>
                   ))}
@@ -491,7 +491,7 @@ export const DemoWalkthroughPage: React.FC = () => {
               {demoData.walletConnected ? (
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <div className="font-semibold text-emerald-300">✅ Wallet connected</div>
-                  <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{walletAddr.slice(0, 8)}…{walletAddr.slice(-4)}</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{walletAddr.slice(0, 8)}…{walletAddr.slice(-4)}</div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -508,7 +508,7 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-3xl font-bold text-slate-100">Ready to get started?</h2>
-              <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>Choose how you want to set up your account.</p>
+              <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>Choose how you want to set up your account.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
@@ -520,7 +520,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                 <Surface key={opt.id} className={`cursor-pointer p-4 transition-all ${convertChoice === opt.id ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice(opt.id as any)}>
                   <div className="text-2xl mb-2">{opt.icon}</div>
                   <h3 className="font-bold text-slate-100">{opt.title}</h3>
-                  <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>{opt.desc}</p>
+                  <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{opt.desc}</p>
                 </Surface>
               ))}
             </div>
@@ -535,7 +535,7 @@ export const DemoWalkthroughPage: React.FC = () => {
                 {importMethod === 'csv' ? (
                   <div className="p-6 rounded-xl border-2 border-dashed border-white/10 text-center">
                     <div className="text-2xl mb-2">📄</div>
-                    <p className="text-sm" style={{ color: tokens.color.muted }}>Drop CSV here or click to browse</p>
+                    <p className="text-sm" style={{ color: tokens.color.textDim }}>Drop CSV here or click to browse</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">

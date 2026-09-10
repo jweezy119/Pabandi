@@ -32,7 +32,7 @@ router.get('/sitara/discover', async (req: Request, res: Response) => {
     const [yelpResults, fsqResults, osmResults] = await Promise.allSettled([
       searchYelp(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
       searchFoursquare(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
-      searchOSM(String(numLat), String(numLng), category as String, String(numRadius), String(numLimit)),
+      searchOSM(String(numLat), String(numLng), category as string, String(numRadius), String(numLimit)),
     ]);
 
     // Merge and deduplicate — Foursquare is primary

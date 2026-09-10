@@ -40,7 +40,7 @@ export const ApplicationsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">📋 Applications</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Review and process tenant applications</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Review and process tenant applications</p>
           </div>
           <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
         </div>
@@ -48,7 +48,7 @@ export const ApplicationsPage: React.FC = () => {
         {err && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: tokens.color.danger + '15', color: tokens.color.danger }}>{err}</div>}
 
         {applications.length === 0 ? (
-          <p className="text-center py-8" style={{ color: tokens.color.muted }}>No applications yet. Tenants can apply through your portal.</p>
+          <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No applications yet. Tenants can apply through your portal.</p>
         ) : (
           <div className="space-y-3">
             {applications.map(a => (
@@ -56,11 +56,11 @@ export const ApplicationsPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <div className="font-bold text-slate-100">{a.firstName} {a.lastName}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>{a.email} · Applied {new Date(a.createdAt).toLocaleDateString()}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.email} · Applied {new Date(a.createdAt).toLocaleDateString()}</div>
                   </div>
                   <Badge tone={a.status === 'APPROVED' ? 'success' : a.status === 'DENIED' ? 'danger' : 'info'}>{a.status}</Badge>
                 </div>
-                {a.message && <p className="text-sm mb-2" style={{ color: tokens.color.muted }}>"{a.message}"</p>}
+                {a.message && <p className="text-sm mb-2" style={{ color: tokens.color.textDim }}>"{a.message}"</p>}
                 {a.screeningBand && (
                   <div className="flex items-center gap-3 text-xs mb-2">
                     <span style={{ color: statusColor[a.screeningBand] || '#888' }}>Screening: {a.screeningBand}</span>

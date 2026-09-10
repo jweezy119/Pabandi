@@ -163,41 +163,4 @@ export const sitaraApi = {
   promoterRefLink: () => unwrap<any>(apiClient.get('/promoters/ref-link')),
   promoterRegister: (data: { name: string; phone?: string; instagram?: string; bio?: string }) =>
     unwrap<any>(apiClient.post('/promoters/register', data)),
-
-  // ── Auth (login/register) ─────────────────────────────────────────────────────
-  login: (email: string, password: string) =>
-    unwrap<any>(apiClient.post('/auth/login', { email, password })),
-  register: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string; code?: string }) =>
-    unwrap<any>(apiClient.post('/auth/register', data)),
-  registerWithCode: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string; code: string; role?: string }) =>
-    unwrap<any>(apiClient.post('/auth/register', data)),
-  requestCode: (email: string) =>
-    unwrap<any>(apiClient.post('/auth/request-code', { email })),
-  verifyCode: (data: { email: string; code: string }) =>
-    unwrap<any>(apiClient.post('/auth/verify-code', data)),
 };
-
-export interface AuthState {
-  user: any | null;
-  token: string | null;
-  isAuthenticated: boolean;
-}
-
-export function useSitaraAuth() {
-  const [auth, setAuth] = useState<AuthState>({ user: null, token: null, isAuthenticated: false });
-  const login = async (email: string, password: string) => {
-    const res = await sitaraApi.login(email, password);
-    setAuth({ user: res.user, token: res.token, isAuthenticated: true });
-    return res;
-  };
-  const register = async (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => {
-    const res = await sitaraApi.register(data);
-    setAuth({ user: res.user, token: res.token, isAuthenticated: true });
-    return res;
-  };
-  const logout = () => {
-    setAuth({ user: null, token: null, isAuthenticated: false });
-    localStorage.removeItem('auth-storage');
-  };
-  return { ...auth, login, register, logout };
-}

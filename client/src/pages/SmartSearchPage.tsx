@@ -166,7 +166,7 @@ export const SmartSearchPage: React.FC = () => {
                   <div className="text-xl">{result.icon}</div>
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-slate-100">{result.title}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>{result.subtitle}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{result.subtitle}</div>
                   </div>
                   <Badge tone="info">{result.type}</Badge>
                 </button>

@@ -82,7 +82,7 @@ export const AiChatPage: React.FC = () => {
         <div className="text-center mb-4">
           <Badge tone="info" className="mb-2">🤖 AI Assistant</Badge>
           <h1 className="text-2xl font-black text-slate-100 font-headline">How can I help?</h1>
-          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
+          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
             Ask about properties, leases, maintenance, tenants, investments, market trends
           </p>
         </div>

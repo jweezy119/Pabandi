@@ -147,9 +147,9 @@ export const VenueDetailPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex items-center gap-1">{renderStars(venue.rating)}</div>
-                    <span className="text-sm" style={{ color: tokens.color.muted }}>({venue.rating} · 124 reviews)</span>
+                    <span className="text-sm" style={{ color: tokens.color.textDim }}>({venue.rating} · 124 reviews)</span>
                   </div>
-                  <p className="flex items-center gap-1 text-sm" style={{ color: tokens.color.muted }}>
+                  <p className="flex items-center gap-1 text-sm" style={{ color: tokens.color.textDim }}>
                     <span className="material-symbols-outlined text-sm">location_on</span>
                     {venue.city} · {venue.priceRange} · ${venue.coverCharge} cover
                   </p>
@@ -163,15 +163,15 @@ export const VenueDetailPage: React.FC = () => {
               {/* Quick Info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
                 <div>
-                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.muted }}>Hours</p>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Hours</p>
                   <p className="text-sm text-slate-100">{venue.hours}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.muted }}>Dress Code</p>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Dress Code</p>
                   <p className="text-sm text-slate-100">{venue.dressCode}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.muted }}>Music</p>
+                  <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Music</p>
                   <div className="flex gap-1 flex-wrap">
                     {venue.musicGenres.map(g => (
                       <span key={g} className="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 text-xs">{g}</span>
@@ -218,13 +218,13 @@ export const VenueDetailPage: React.FC = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="text-slate-100 font-bold">{table.name}</h3>
-                          <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>
+                          <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>
                             <span className="material-symbols-outlined text-xs align-middle">group</span> Up to {table.capacity} guests
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-emerald-300">${table.price}</p>
-                          <p className="text-xs" style={{ color: tokens.color.muted }}>${table.deposit} deposit</p>
+                          <p className="text-xs" style={{ color: tokens.color.textDim }}>${table.deposit} deposit</p>
                         </div>
                       </div>
                       <div className="space-y-1.5">
@@ -251,7 +251,7 @@ export const VenueDetailPage: React.FC = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h3 className="text-slate-100 font-bold">{pkg.name}</h3>
-                          <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>{pkg.bottles} bottle{pkg.bottles > 1 ? 's' : ''}</p>
+                          <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{pkg.bottles} bottle{pkg.bottles > 1 ? 's' : ''}</p>
                         </div>
                         <p className="text-lg font-bold text-emerald-300">${pkg.price}</p>
                       </div>
@@ -279,7 +279,7 @@ export const VenueDetailPage: React.FC = () => {
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                           <h3 className="text-slate-100 font-bold text-lg">{event.name}</h3>
-                          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
+                          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
                             <span className="material-symbols-outlined text-sm align-middle">calendar_today</span> {event.date}
                           </p>
                           <div className="flex flex-wrap gap-2 mt-2">
@@ -313,7 +313,7 @@ export const VenueDetailPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-sm font-medium text-slate-100">{review.user}</p>
-                            <p className="text-xs" style={{ color: tokens.color.muted }}>{review.date}</p>
+                            <p className="text-xs" style={{ color: tokens.color.textDim }}>{review.date}</p>
                           </div>
                         </div>
                         <div className="flex gap-0.5">{renderStars(review.rating)}</div>
@@ -328,7 +328,7 @@ export const VenueDetailPage: React.FC = () => {
               {activeTab === 'guestlist' && (
                 <Surface className="p-6">
                   <h3 className="text-lg font-bold text-slate-100 mb-4">Join the Guest List</h3>
-                  <p className="text-sm mb-6" style={{ color: tokens.color.muted }}>Skip the line and get free entry before midnight</p>
+                  <p className="text-sm mb-6" style={{ color: tokens.color.textDim }}>Skip the line and get free entry before midnight</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-slate-300 mb-1">Name</label>

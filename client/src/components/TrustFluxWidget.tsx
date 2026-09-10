@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import apiClient from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { Surface, tokens } from '../design-system';
+import { tokens } from '../design-system';
 import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -43,7 +43,7 @@ export default function TrustFluxWidget({ userId }: { userId?: string }) {
     ? tokens.color.success || '#22c55e'
     : isNegative
       ? tokens.color.danger || '#ef4444'
-      : tokens.color.muted || '#9ca3af';
+      : tokens.color.textDim || '#9ca3af';
 
   const velocityBg = isPositive
     ? 'rgba(34, 197, 94, 0.10)'

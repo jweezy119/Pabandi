@@ -101,7 +101,7 @@ export const CRMPage: React.FC = () => {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">{dash!.profile.companyName || 'My Business'}</h1>
-            <p className="text-xs md:text-sm" style={{ color: tokens.color.muted }}>{config.label}</p>
+            <p className="text-xs md:text-sm" style={{ color: tokens.color.textDim }}>{config.label}</p>
           </div>
           <div className="md:hidden flex gap-1">
             {navItems.slice(0, 4).map((n) => (
@@ -131,14 +131,14 @@ export const CRMPage: React.FC = () => {
         {/* Overview */}
         {tab === 'overview' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{config.entities.properties.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Active</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Available</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{config.entities.tenants.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>High-risk</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{config.entities.appointments.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{config.entities.leases.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-slate-100">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{config.entities.maintenance.label}</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.properties.label}</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Available</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.tenants.label}</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>High-risk</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.appointments.label}</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.leases.label}</div></Surface>
+            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-slate-100">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.maintenance.label}</div></Surface>
           </div>
         )}
 
@@ -167,10 +167,10 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.properties.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.properties.label.toLowerCase()} yet.</p>}
+            {dash!.properties.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.properties.label.toLowerCase()} yet.</p>}
             {dash!.properties.map((p) => (
               <Surface key={p.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{p.title}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{p.address}{p.city ? `, ${p.city}` : ''}</div></div>
+                <div><div className="font-semibold text-slate-100">{p.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{p.address}{p.city ? `, ${p.city}` : ''}</div></div>
                 <div className="text-right">
                   {p.rentAmount && <div className="font-bold text-slate-100">${p.rentAmount}</div>}
                   <Badge tone={p.status === 'VACANT' ? 'info' : p.status === 'OCCUPIED' ? 'success' : 'warning'}>{p.status}</Badge>
@@ -201,14 +201,14 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.tenants.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.tenants.label.toLowerCase()} yet.</p>}
+            {dash!.tenants.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.tenants.label.toLowerCase()} yet.</p>}
             {dash!.tenants.map((t) => (
               <button key={t.id} onClick={() => setSelectedTenant(t)} className="w-full text-left active:scale-[0.98] transition-transform">
                 <Surface className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{t.email}{t.property ? ` · ${t.property.title || ''}` : ''}</div></div>
+                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}{t.property ? ` · ${t.property.title || ''}` : ''}</div></div>
                   <div className="text-right">
                     {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
+                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{t.status}</div>
                   </div>
                 </Surface>
               </button>
@@ -238,32 +238,32 @@ export const CRMPage: React.FC = () => {
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Surface className="p-3">
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Status</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Status</div>
                   <div className="font-semibold text-slate-100 capitalize">{selectedTenant.status}</div>
                 </Surface>
                 <Surface className="p-3">
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Risk Band</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Risk Band</div>
                   <div className="font-semibold text-slate-100">{selectedTenant.riskBand || 'N/A'}</div>
                 </Surface>
                 {selectedTenant.depositHeld > 0 && (
                   <Surface className="p-3">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Deposit Held</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Deposit Held</div>
                     <div className="font-semibold text-slate-100">${selectedTenant.depositHeld.toLocaleString()}</div>
                   </Surface>
                 )}
                 <Surface className="p-3">
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Total Stays</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Total Stays</div>
                   <div className="font-semibold text-slate-100">{selectedTenant.totalStays}</div>
                 </Surface>
                 {selectedTenant.screenedAt && (
                   <Surface className="p-3">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Screened</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Screened</div>
                     <div className="font-semibold text-slate-100 text-sm">{new Date(selectedTenant.screenedAt).toLocaleDateString()}</div>
                   </Surface>
                 )}
                 {selectedTenant.screeningBand && (
                   <Surface className="p-3">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Screening</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Screening</div>
                     <div className="font-semibold text-slate-100">{selectedTenant.screeningBand}</div>
                   </Surface>
                 )}
@@ -324,10 +324,10 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.screenings.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.screen.label.toLowerCase()} yet.</p>}
+            {dash!.screenings.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.screen.label.toLowerCase()} yet.</p>}
             {dash!.screenings.map((sc) => (
               <Surface key={sc.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}</div></div>
+                <div><div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}</div></div>
                 <div className="text-right">
                   <Badge tone={riskTone[sc.band] || 'info'}>{sc.band}</Badge>
                   {sc.depositAdjPct > 0 && <div className="text-xs mt-1 font-semibold" style={{ color: tokens.color.danger }}>+{sc.depositAdjPct}%</div>}
@@ -356,10 +356,10 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.appointments.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.appointments.label.toLowerCase()} yet.</p>}
+            {dash!.appointments.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.appointments.label.toLowerCase()} yet.</p>}
             {dash!.appointments.map((a) => (
               <Surface key={a.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{a.tenantName || a.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(a.startsAt).toLocaleString()}</div></div>
+                <div><div className="font-semibold text-slate-100">{a.tenantName || a.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(a.startsAt).toLocaleString()}</div></div>
                 <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'success' : 'info'}>{a.status}</Badge>
               </Surface>
             ))}
@@ -391,10 +391,10 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.leases.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.leases.label.toLowerCase()} yet.</p>}
+            {dash!.leases.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.leases.label.toLowerCase()} yet.</p>}
             {dash!.leases.map((l) => (
               <Surface key={l.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{l.tenantName || l.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}</div></div>
+                <div><div className="font-semibold text-slate-100">{l.tenantName || l.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}</div></div>
                 <Badge tone={l.status === 'ACTIVE' ? 'success' : 'info'}>{l.status}</Badge>
               </Surface>
             ))}
@@ -422,10 +422,10 @@ export const CRMPage: React.FC = () => {
                 </div>
               </Surface>
             )}
-            {dash!.maintenance.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.maintenance.label.toLowerCase()} yet.</p>}
+            {dash!.maintenance.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.maintenance.label.toLowerCase()} yet.</p>}
             {dash!.maintenance.map((m) => (
               <Surface key={m.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{m.title}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{m.description}{m.cost ? ` · $${m.cost}` : ''}</div></div>
+                <div><div className="font-semibold text-slate-100">{m.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{m.description}{m.cost ? ` · $${m.cost}` : ''}</div></div>
                 <Badge tone={m.priority === 'URGENT' || m.priority === 'HIGH' ? 'danger' : 'warning'}>{m.priority}</Badge>
               </Surface>
             ))}
@@ -435,16 +435,16 @@ export const CRMPage: React.FC = () => {
         {/* Applications */}
         {tab === 'applications' && (
           <div className="space-y-3">
-            {dash!.applications.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.muted }}>No {config.entities.applications.label.toLowerCase()} yet.</p>}
+            {dash!.applications.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.applications.label.toLowerCase()} yet.</p>}
             {dash!.applications.map((a) => (
               <Surface key={a.id} className="flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-slate-100">{a.firstName || ''} {a.lastName || a.email}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>Applied {new Date(a.createdAt).toLocaleDateString()}{a.message ? ` — ${a.message}` : ''}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Applied {new Date(a.createdAt).toLocaleDateString()}{a.message ? ` — ${a.message}` : ''}</div>
                 </div>
                 <div className="text-right">
                   <Badge tone={a.status === 'APPROVED' ? 'success' : a.status === 'DENIED' ? 'danger' : 'info'}>{a.status}</Badge>
-                  {a.screeningBand && <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Band: {a.screeningBand}</div>}
+                  {a.screeningBand && <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Band: {a.screeningBand}</div>}
                 </div>
               </Surface>
             ))}
@@ -455,7 +455,7 @@ export const CRMPage: React.FC = () => {
         {tab === 'portal' && (
           <Surface>
             <h3 className="text-lg font-bold text-slate-100 mb-2">🎨 Your client portal</h3>
-            <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Clients visit this link to see your offerings and apply.</p>
+            <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Clients visit this link to see your offerings and apply.</p>
             <div className="flex gap-2">
               <input readOnly value={portalUrl} className={inputClass} />
               <Button onClick={() => navigator.clipboard?.writeText(portalUrl)} variant="ghost">Copy</Button>
@@ -505,16 +505,16 @@ const WebhooksTab: React.FC = () => {
     <div className="space-y-3">
       <Surface>
         <h3 className="text-lg font-bold text-slate-100 mb-4">🔗 Webhooks</h3>
-        <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Connect your own CRM/external system. Events are signed with HMAC-SHA256.</p>
+        <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Connect your own CRM/external system. Events are signed with HMAC-SHA256.</p>
         <div className="flex gap-2">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://your-crm.com/webhook" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3.5 outline-none font-body text-base" />
           <Button onClick={add}>Add</Button>
         </div>
       </Surface>
-      {wh.length === 0 && <p style={{ color: tokens.color.muted }}>No webhooks yet.</p>}
+      {wh.length === 0 && <p style={{ color: tokens.color.textDim }}>No webhooks yet.</p>}
       {wh.map((w) => (
         <Surface key={w.id} className="flex items-center justify-between">
-          <div><div className="font-semibold text-slate-100">{w.url}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{w.events?.join(', ')} · {w.lastStatus || 'never sent'}</div></div>
+          <div><div className="font-semibold text-slate-100">{w.url}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{w.events?.join(', ')} · {w.lastStatus || 'never sent'}</div></div>
           <Button onClick={() => remove(w.id)} variant="ghost">Delete</Button>
         </Surface>
       ))}
@@ -528,12 +528,12 @@ const ActivityTab: React.FC = () => {
   return (
     <div className="space-y-2">
       <h3 className="text-lg font-bold text-slate-100 mb-4">📜 Activity Log</h3>
-      {acts.length === 0 && <p style={{ color: tokens.color.muted }}>No activity yet.</p>}
+      {acts.length === 0 && <p style={{ color: tokens.color.textDim }}>No activity yet.</p>}
       {acts.map((a) => (
         <Surface key={a.id}>
           <div className="flex items-center justify-between">
-            <div><div className="font-semibold text-slate-100">{a.description}</div><div className="text-xs" style={{ color: tokens.color.muted }}>{a.action} · {a.entityType}</div></div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(a.createdAt).toLocaleString()}</div>
+            <div><div className="font-semibold text-slate-100">{a.description}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{a.action} · {a.entityType}</div></div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(a.createdAt).toLocaleString()}</div>
           </div>
         </Surface>
       ))}

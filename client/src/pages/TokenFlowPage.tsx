@@ -32,13 +32,13 @@ export const TokenFlowPage: React.FC = () => {
 
         {/* Balance Card */}
         <Surface className="p-6 mb-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))', border: '1px solid rgba(99,102,241,0.3)' }}>
-          <div className="text-sm" style={{ color: tokens.color.muted }}>Total Balance</div>
+          <div className="text-sm" style={{ color: tokens.color.textDim }}>Total Balance</div>
           {loading ? (
             <div className="text-3xl font-black text-slate-100 my-3">Loading...</div>
           ) : (
             <>
               <div className="text-5xl font-black text-slate-100 my-3">{balance.toLocaleString()} $PAB</div>
-              <div className="text-sm" style={{ color: tokens.color.muted }}>≈ ${(balance * 0.01).toFixed(2)} USD value</div>
+              <div className="text-sm" style={{ color: tokens.color.textDim }}>≈ ${(balance * 0.01).toFixed(2)} USD value</div>
             </>
           )}
           <div className="flex gap-2 mt-4 justify-center">
@@ -51,19 +51,19 @@ export const TokenFlowPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <Surface className="text-center p-3">
             <div className="text-lg font-bold text-emerald-300">{totalEarned.toLocaleString()}</div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>Total Earned</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>Total Earned</div>
           </Surface>
           <Surface className="text-center p-3">
             <div className="text-lg font-bold text-amber-300">{staked.toLocaleString()}</div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>Staked</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>Staked</div>
           </Surface>
           <Surface className="text-center p-3">
             <div className="text-lg font-bold text-rose-300">{totalSpent.toLocaleString()}</div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>Spent</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>Spent</div>
           </Surface>
           <Surface className="text-center p-3">
             <div className="text-lg font-bold text-indigo-300">{tier}</div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>Current Tier</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>Current Tier</div>
           </Surface>
         </div>
 
@@ -85,22 +85,22 @@ export const TokenFlowPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
                   <div className="text-xl">⬆️</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">On-Ramp</div><div className="text-xs" style={{ color: tokens.color.muted }}>Buy $PAB with SOL or USD</div></div>
+                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">On-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Buy $PAB with SOL or USD</div></div>
                   <Link to="/onramp"><Button size="sm">Buy</Button></Link>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
                   <div className="text-xl">⬇️</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Off-Ramp</div><div className="text-xs" style={{ color: tokens.color.muted }}>Sell $PAB for SOL or USD</div></div>
+                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Off-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Sell $PAB for SOL or USD</div></div>
                   <Link to="/offramp"><Button size="sm">Sell</Button></Link>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
                   <div className="text-xl">💰</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Earn</div><div className="text-xs" style={{ color: tokens.color.muted }}>Complete actions to earn $PAB</div></div>
+                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Earn</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Complete actions to earn $PAB</div></div>
                   <Link to="/promo"><Button size="sm" variant="ghost">Earn</Button></Link>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
                   <div className="text-xl">🏆</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Stake</div><div className="text-xs" style={{ color: tokens.color.muted }}>Stake for trust badges & yield</div></div>
+                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Stake</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Stake for trust badges & yield</div></div>
                   <Button size="sm" variant="ghost" onClick={() => setActiveTab('stake')}>Stake</Button>
                 </div>
               </div>
@@ -113,7 +113,7 @@ export const TokenFlowPage: React.FC = () => {
                     <div key={tx.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
                       <div>
                         <div className="text-sm text-slate-300">{tx.description || tx.action}</div>
-                        <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(tx.createdAt).toLocaleDateString()}</div>
+                        <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(tx.createdAt).toLocaleDateString()}</div>
                       </div>
                       <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                         {tx.amount >= 0 ? '+' : ''}{tx.amount} $PAB
@@ -194,7 +194,7 @@ export const TokenFlowPage: React.FC = () => {
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: t.color + '30', color: t.color }}>{t.tier[0]}</div>
                     <div>
                       <div className="font-semibold text-slate-100 text-sm">{t.tier}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>Stake {t.stake} $PAB</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>Stake {t.stake} $PAB</div>
                     </div>
                   </div>
                   {t.current ? <Badge tone="success">Current</Badge> : <Button size="sm">Stake</Button>}
@@ -214,19 +214,19 @@ export const TokenFlowPage: React.FC = () => {
                   <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                     <div>
                       <div className="text-sm text-slate-300">{tx.description || tx.action}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(tx.createdAt).toLocaleString()}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(tx.createdAt).toLocaleString()}</div>
                     </div>
                     <div className="text-right">
                       <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                         {tx.amount >= 0 ? '+' : ''}{tx.amount} $PAB
                       </span>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>Balance: {tx.balanceAfter}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>Balance: {tx.balanceAfter}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm" style={{ color: tokens.color.muted }}>No transactions yet. Start earning $PAB!</p>
+              <p className="text-sm" style={{ color: tokens.color.textDim }}>No transactions yet. Start earning $PAB!</p>
             )}
           </Surface>
         )}

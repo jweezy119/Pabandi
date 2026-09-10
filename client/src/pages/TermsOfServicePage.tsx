@@ -43,7 +43,7 @@ export default function TermsOfServicePage() {
             <p className="font-semibold" style={{ color: tokens.color.text }}>
               TCPA / FCC Compliance (USA Users):
             </p>
-            <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>
+            <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>
               By providing your phone number, you explicitly consent to receive transactional and informational messages from Pabandi and its partners. Standard message and data rates may apply. You may opt-out at any time by replying "STOP", though this may impact your ability to receive booking confirmations.
             </p>
           </div>
@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
         </div>
         <div className="relative z-10">
           <h2 className="font-headline mb-2 text-2xl font-bold text-on-surface">3. Web3, $PAB Token & Financial Regulations</h2>
-          <div className="space-y-6 font-body" style={{ color: tokens.color.muted }}>
+          <div className="space-y-6 font-body" style={{ color: tokens.color.textDim }}>
             <div>
               <h3 className="mb-2 font-bold text-on-surface">
                 A. Classification as a Utility Token
@@ -86,7 +86,7 @@ export default function TermsOfServicePage() {
         </div>
         <div>
           <h2 className="font-headline mb-2 text-2xl font-bold text-on-surface">4. Smart Contracts & On-Chain Finality</h2>
-          <p className="font-body" style={{ color: tokens.color.muted }}>
+          <p className="font-body" style={{ color: tokens.color.textDim }}>
             Booking deposits are locked via decentralized smart contracts on the Solana blockchain. Transactions on the blockchain are final and immutable. Pabandi Technologies cannot reverse, refund, or modify a transaction once it has been executed by the smart contract rules (e.g., in the event of a verified no-show). You assume all risks associated with cryptographic systems.
           </p>
         </div>

@@ -64,7 +64,7 @@ export const PromoterDashboardPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-100">Promoter Dashboard</h1>
-          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Track your referrals, commissions, and tier progress</p>
+          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Track your referrals, commissions, and tier progress</p>
         </div>
 
         {/* Stats Cards */}
@@ -75,7 +75,7 @@ export const PromoterDashboardPage: React.FC = () => {
                 <span className={`material-symbols-outlined ${stat.color}`}>{stat.icon}</span>
               </div>
               <p className="text-2xl font-bold text-slate-100">{stat.value}</p>
-              <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>{stat.label}</p>
+              <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{stat.label}</p>
             </Surface>
           ))}
         </div>
@@ -101,7 +101,7 @@ export const PromoterDashboardPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm text-slate-400">share</span>
-                <span className="text-xs" style={{ color: tokens.color.muted }}>Share on social media</span>
+                <span className="text-xs" style={{ color: tokens.color.textDim }}>Share on social media</span>
               </div>
               <div className="flex gap-2">
                 <button className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
@@ -128,13 +128,13 @@ export const PromoterDashboardPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <span style={{ color: tokens.color.muted }}>Progress to {nextTier}</span>
+                <span style={{ color: tokens.color.textDim }}>Progress to {nextTier}</span>
                 <span className="text-slate-100">${totalCommission} / ${nextTierThreshold}</span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
               </div>
-              <p className="text-xs text-center" style={{ color: tokens.color.muted }}>${nextTierThreshold - totalCommission} more to unlock {nextTier}</p>
+              <p className="text-xs text-center" style={{ color: tokens.color.textDim }}>${nextTierThreshold - totalCommission} more to unlock {nextTier}</p>
             </div>
           </Surface>
         </div>
@@ -180,7 +180,7 @@ export const PromoterDashboardPage: React.FC = () => {
               </h3>
               <div className="text-center mb-4">
                 <p className="text-3xl font-bold text-emerald-300">${totalCommission}</p>
-                <p className="text-xs" style={{ color: tokens.color.muted }}>Available Balance</p>
+                <p className="text-xs" style={{ color: tokens.color.textDim }}>Available Balance</p>
               </div>
               <Button className="w-full" variant="outline">
                 <span className="material-symbols-outlined text-sm">arrow_downward</span>
@@ -202,7 +202,7 @@ export const PromoterDashboardPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-slate-100 truncate">{entry.name}</p>
-                      <p className="text-[10px]" style={{ color: tokens.color.muted }}>{entry.bookings} bookings</p>
+                      <p className="text-[10px]" style={{ color: tokens.color.textDim }}>{entry.bookings} bookings</p>
                     </div>
                     <span className="text-xs font-medium text-emerald-300">${entry.commission}</span>
                   </div>

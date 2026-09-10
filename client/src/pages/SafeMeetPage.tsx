@@ -27,10 +27,10 @@ export const SafeMeetPage: React.FC = () => {
           <Surface className="text-center">
             <div className="text-5xl mb-4">✅</div>
             <h2 className="text-2xl font-bold text-slate-100 mb-2">SafeMeet Scheduled!</h2>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Your exchange is secured at a verified safe location.</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Your exchange is secured at a verified safe location.</p>
             <div className="mt-6 p-4 rounded-xl bg-white/5 text-left">
               <div className="font-bold text-slate-100 mb-2">{spot.name}</div>
-              <div className="text-sm space-y-1" style={{ color: tokens.color.muted }}>
+              <div className="text-sm space-y-1" style={{ color: tokens.color.textDim }}>
                 <div>📍 {spot.address}</div>
                 <div>🏷️ {spot.type}</div>
                 <div>📅 {new Date(date).toLocaleString()}</div>
@@ -69,9 +69,9 @@ export const SafeMeetPage: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="font-semibold text-slate-100">{spot.name}</div>
-                  <span className="text-xs" style={{ color: tokens.color.muted }}>{spot.distance}</span>
+                  <span className="text-xs" style={{ color: tokens.color.textDim }}>{spot.distance}</span>
                 </div>
-                <div className="text-sm mt-1" style={{ color: tokens.color.muted }}>{spot.address}</div>
+                <div className="text-sm mt-1" style={{ color: tokens.color.textDim }}>{spot.address}</div>
                 <Badge tone="info" className="mt-2">{spot.type}</Badge>
               </button>
             ))}
@@ -93,7 +93,7 @@ export const SafeMeetPage: React.FC = () => {
 
             <Surface className="mt-4">
               <h4 className="font-bold text-slate-100 mb-2">Why SafeMeet?</h4>
-              <div className="space-y-2 text-sm" style={{ color: tokens.color.muted }}>
+              <div className="space-y-2 text-sm" style={{ color: tokens.color.textDim }}>
                 <div>✅ Verified safe locations with security</div>
                 <div>✅ Both parties notified of the meetup</div>
                 <div>✅ GPS verification at check-in</div>

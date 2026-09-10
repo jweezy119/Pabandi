@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
 
         <Surface className="p-6">
           <h1 className="font-headline text-2xl font-bold" style={{ color: tokens.color.text }}>Forgot Password</h1>
-          <p className="mb-6 text-sm" style={{ color: tokens.color.muted }}>
+          <p className="mb-6 text-sm" style={{ color: tokens.color.textDim }}>
             Enter your email address and we'll send you a link to reset your password.
           </p>
 
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
               )}
 
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.muted }}>Email Address</label>
+                <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: tokens.color.textDim }}>Email Address</label>
                 <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="w-full rounded-xl border px-4 py-3 text-sm outline-none transition-colors" style={{ background: tokens.color.background, borderColor: tokens.color.border, color: tokens.color.text }} />
               </div>
 
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </Button>
 
-              <p className="text-center text-xs" style={{ color: tokens.color.muted }}>
+              <p className="text-center text-xs" style={{ color: tokens.color.textDim }}>
                 Remembered your password?{' '}
                 <Link to="/login" className="font-semibold hover:underline" style={{ color: tokens.color.primary }}>
                   Sign in

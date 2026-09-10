@@ -34,33 +34,33 @@ export const TokenomicsPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <Surface className="text-center p-4">
             <div className="text-xl md:text-2xl font-bold text-slate-100">1B</div>
-            <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Total Supply</div>
+            <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Total Supply</div>
           </Surface>
           <Surface className="text-center p-4">
             <div className="text-xl md:text-2xl font-bold text-emerald-300">9</div>
-            <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Decimals</div>
+            <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Decimals</div>
           </Surface>
           <Surface className="text-center p-4">
             <div className="text-xl md:text-2xl font-bold text-indigo-300">SPL</div>
-            <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Token Standard</div>
+            <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Token Standard</div>
           </Surface>
           <Surface className="text-center p-4">
             <div className="text-xl md:text-2xl font-bold text-amber-300">Solana</div>
-            <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Blockchain</div>
+            <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Blockchain</div>
           </Surface>
         </div>
 
         {/* Revenue Flow */}
         <Surface className="p-4 md:p-6 mb-6">
           <h2 className="text-lg font-bold text-slate-100 mb-4">💸 Revenue Flow</h2>
-          <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Every Pabandi transaction generates a 1% platform fee in SOL. Here's where it goes:</p>
+          <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Every Pabandi transaction generates a 1% platform fee in SOL. Here's where it goes:</p>
           <div className="space-y-3">
             {FLOWS.map((flow, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
                 <div className="text-xl">{flow.icon}</div>
                 <div className="flex-1">
                   <div className="font-semibold text-slate-100 text-sm">{flow.from} → {flow.to}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{flow.desc}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{flow.desc}</div>
                 </div>
               </div>
             ))}
@@ -83,12 +83,12 @@ export const TokenomicsPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="font-bold text-slate-100">{tier.name}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Stake: {tier.stake}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Stake: {tier.stake}</div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   {tier.perks.map((perk, i) => (
-                    <div key={i} className="text-xs flex items-center gap-2" style={{ color: tokens.color.muted }}>
+                    <div key={i} className="text-xs flex items-center gap-2" style={{ color: tokens.color.textDim }}>
                       <span style={{ color: tier.color }}>✓</span> {perk}
                     </div>
                   ))}
@@ -118,7 +118,7 @@ export const TokenomicsPage: React.FC = () => {
                 <div className="w-full h-2 rounded-full bg-white/10">
                   <div className="h-full rounded-full" style={{ width: `${item.pct}%`, background: item.color }} />
                 </div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{item.desc}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{item.desc}</div>
               </div>
             ))}
           </div>
@@ -139,7 +139,7 @@ export const TokenomicsPage: React.FC = () => {
               <div key={i} className="p-3 rounded-xl bg-white/5 text-center">
                 <div className="text-2xl mb-2">{u.icon}</div>
                 <div className="font-semibold text-slate-100 text-sm">{u.title}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{u.desc}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{u.desc}</div>
               </div>
             ))}
           </div>

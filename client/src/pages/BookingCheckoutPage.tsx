@@ -79,27 +79,27 @@ export const BookingCheckoutPage: React.FC = () => {
             <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
           </div>
           <h2 className="text-2xl font-bold text-slate-100 mb-2">Booking Confirmed!</h2>
-          <p className="mb-4" style={{ color: tokens.color.muted }}>Your reservation has been secured</p>
+          <p className="mb-4" style={{ color: tokens.color.textDim }}>Your reservation has been secured</p>
           
           <Surface className="p-4 mb-6 text-left">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: tokens.color.muted }}>Confirmation Code</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>Confirmation Code</span>
               <span className="text-sm font-mono font-bold text-indigo-300">{confirmCode}</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: tokens.color.muted }}>Venue</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>Venue</span>
               <span className="text-sm text-slate-100">{venue.name}</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: tokens.color.muted }}>Table</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>Table</span>
               <span className="text-sm text-slate-100">{selectedTable?.name}</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs" style={{ color: tokens.color.muted }}>Party Size</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>Party Size</span>
               <span className="text-sm text-slate-100">{partySize} guests</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: tokens.color.muted }}>Deposit Paid</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>Deposit Paid</span>
               <span className="text-sm font-bold text-emerald-300">${depositAmount.toFixed(2)} $PAB</span>
             </div>
           </Surface>
@@ -137,7 +137,7 @@ export const BookingCheckoutPage: React.FC = () => {
           </div>
           <div className="flex-1">
             <h3 className="text-slate-100 font-bold">{venue.name}</h3>
-            <p className="text-xs" style={{ color: tokens.color.muted }}>{venue.city}</p>
+            <p className="text-xs" style={{ color: tokens.color.textDim }}>{venue.city}</p>
           </div>
           <Badge tone="info">{venue.coverCharge}$ cover/person</Badge>
         </Surface>
@@ -173,13 +173,13 @@ export const BookingCheckoutPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-slate-100 font-bold">{table.name}</h3>
-                        <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>
+                        <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>
                           <span className="material-symbols-outlined text-xs align-middle">group</span> Up to {table.capacity} guests
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-emerald-300">${table.price}</p>
-                        <p className="text-xs" style={{ color: tokens.color.muted }}>${table.deposit} deposit</p>
+                        <p className="text-xs" style={{ color: tokens.color.textDim }}>${table.deposit} deposit</p>
                       </div>
                     </div>
                   </GlassCard>
@@ -192,7 +192,7 @@ export const BookingCheckoutPage: React.FC = () => {
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-slate-100 mb-2">Add Bottle Package</h2>
-              <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>Optional - skip if not needed</p>
+              <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Optional - skip if not needed</p>
               {MOCK_PACKAGES.map(pkg => (
                 <div
                   key={pkg.id}
@@ -207,7 +207,7 @@ export const BookingCheckoutPage: React.FC = () => {
                         </div>
                         <div>
                           <h3 className="text-slate-100 font-bold">{pkg.name}</h3>
-                          {pkg.bottles > 0 && <p className="text-xs" style={{ color: tokens.color.muted }}>{pkg.bottles} bottle{pkg.bottles > 1 ? 's' : ''}</p>}
+                          {pkg.bottles > 0 && <p className="text-xs" style={{ color: tokens.color.textDim }}>{pkg.bottles} bottle{pkg.bottles > 1 ? 's' : ''}</p>}
                         </div>
                       </div>
                       <p className="text-lg font-bold text-emerald-300">{pkg.price > 0 ? `$${pkg.price}` : 'Free'}</p>
@@ -301,17 +301,17 @@ export const BookingCheckoutPage: React.FC = () => {
                 <h3 className="text-sm font-semibold text-slate-100 mb-3">Price Breakdown</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span style={{ color: tokens.color.muted }}>Table ({selectedTable?.name})</span>
+                    <span style={{ color: tokens.color.textDim }}>Table ({selectedTable?.name})</span>
                     <span className="text-slate-100">${selectedTable?.price || 0}</span>
                   </div>
                   {selectedBottle.price > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span style={{ color: tokens.color.muted }}>Bottle ({selectedBottle.name})</span>
+                      <span style={{ color: tokens.color.textDim }}>Bottle ({selectedBottle.name})</span>
                       <span className="text-slate-100">${selectedBottle.price}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span style={{ color: tokens.color.muted }}>Cover charge ({partySize}x ${venue.coverCharge})</span>
+                    <span style={{ color: tokens.color.textDim }}>Cover charge ({partySize}x ${venue.coverCharge})</span>
                     <span className="text-slate-100">${coverChargeTotal}</span>
                   </div>
                   {promoApplied && (
@@ -355,7 +355,7 @@ export const BookingCheckoutPage: React.FC = () => {
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
                   className="mt-0.5 w-4 h-4 rounded border-white/20 bg-white/5 text-indigo-500"
                 />
-                <span className="text-xs" style={{ color: tokens.color.muted }}>
+                <span className="text-xs" style={{ color: tokens.color.textDim }}>
                   I agree to the Terms of Service and Cancellation Policy. I understand that no-shows may result in deposit forfeiture.
                 </span>
               </label>

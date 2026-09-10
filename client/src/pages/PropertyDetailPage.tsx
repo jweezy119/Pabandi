@@ -58,15 +58,15 @@ export const PropertyDetailPage: React.FC = () => {
         {/* Overview */}
         {tab === 'overview' && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{units.length}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Units</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-emerald-300">{units.filter((u) => u.status === 'OCCUPIED').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Occupied</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-indigo-300">{units.filter((u) => u.status === 'VACANT').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Vacant</div></Surface>
-            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{payments.filter((p) => p.status === 'PENDING').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Pending payments</div></Surface>
+            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{units.length}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Units</div></Surface>
+            <Surface className="text-center"><div className="text-2xl font-bold text-emerald-300">{units.filter((u) => u.status === 'OCCUPIED').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Occupied</div></Surface>
+            <Surface className="text-center"><div className="text-2xl font-bold text-indigo-300">{units.filter((u) => u.status === 'VACANT').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Vacant</div></Surface>
+            <Surface className="text-center"><div className="text-2xl font-bold text-slate-100">{payments.filter((p) => p.status === 'PENDING').length}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Pending payments</div></Surface>
             {summary && (
               <>
-                <Surface className="text-center"><div className="text-2xl font-bold text-emerald-300">${summary.income?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Income</div></Surface>
-                <Surface className="text-center"><div className="text-2xl font-bold text-rose-300">${summary.expenses?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Expenses</div></Surface>
-                <Surface className="text-center col-span-2"><div className="text-2xl font-bold text-indigo-300">${summary.noi?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.muted }}>Net Operating Income</div></Surface>
+                <Surface className="text-center"><div className="text-2xl font-bold text-emerald-300">${summary.income?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Income</div></Surface>
+                <Surface className="text-center"><div className="text-2xl font-bold text-rose-300">${summary.expenses?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Expenses</div></Surface>
+                <Surface className="text-center col-span-2"><div className="text-2xl font-bold text-indigo-300">${summary.noi?.toLocaleString()}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Net Operating Income</div></Surface>
               </>
             )}
           </div>
@@ -80,7 +80,7 @@ export const PropertyDetailPage: React.FC = () => {
               <Surface key={u.id} className="flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-slate-100">Unit {u.unitNumber}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{u.bedrooms}bd/{u.bathrooms}ba{u.sqft ? ` · ${u.sqft}sqft` : ''}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{u.bedrooms}bd/{u.bathrooms}ba{u.sqft ? ` · ${u.sqft}sqft` : ''}</div>
                 </div>
                 <div className="text-right">
                   {u.rentAmount && <div className="font-bold text-slate-100">${u.rentAmount}/mo</div>}
@@ -100,7 +100,7 @@ export const PropertyDetailPage: React.FC = () => {
                 <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || t.email}</div></div>
                 <div className="text-right">
                   {t.riskBand && <Badge tone={t.riskBand === 'HIGH' ? 'danger' : t.riskBand === 'MEDIUM' ? 'warning' : 'success'}>{t.riskBand}</Badge>}
-                  <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{t.status}</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{t.status}</div>
                 </div>
               </Surface>
             ))}
@@ -115,13 +115,13 @@ export const PropertyDetailPage: React.FC = () => {
               <Surface key={f.id} className="flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-slate-100">{f.category}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{f.description || '—'}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{f.description || '—'}</div>
                 </div>
                 <div className="text-right">
                   <div className={`font-bold ${f.type === 'INCOME' ? 'text-emerald-300' : 'text-rose-300'}`}>
                     {f.type === 'INCOME' ? '+' : '-'}${f.amount.toLocaleString()}
                   </div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(f.date).toLocaleDateString()}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(f.date).toLocaleDateString()}</div>
                 </div>
               </Surface>
             ))}

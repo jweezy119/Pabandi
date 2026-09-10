@@ -18,7 +18,7 @@ export const TrustPassportPage: React.FC = () => {
         {/* Passport Card */}
         <Surface className="p-6 mb-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))', border: '1px solid rgba(99,102,241,0.3)' }}>
           <div className="text-5xl mb-3">🛂</div>
-          <div className="text-sm" style={{ color: tokens.color.muted }}>Trust Score</div>
+          <div className="text-sm" style={{ color: tokens.color.textDim }}>Trust Score</div>
           <div className="text-6xl font-black text-slate-100 my-2">73.8</div>
           <div className="flex items-center justify-center gap-2 mb-4">
             <Badge tone="success">Tier: Silver</Badge>
@@ -26,15 +26,15 @@ export const TrustPassportPage: React.FC = () => {
           </div>
           <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
             <div className="p-2 rounded-lg bg-white/5">
-              <div className="text-xs" style={{ color: tokens.color.muted }}>Transactions</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>Transactions</div>
               <div className="font-bold text-slate-100">127</div>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
-              <div className="text-xs" style={{ color: tokens.color.muted }}>Success Rate</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>Success Rate</div>
               <div className="font-bold text-emerald-300">98.4%</div>
             </div>
             <div className="p-2 rounded-lg bg-white/5">
-              <div className="text-xs" style={{ color: tokens.color.muted }}>Member Since</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>Member Since</div>
               <div className="font-bold text-slate-100">Jan 2025</div>
             </div>
           </div>
@@ -54,7 +54,7 @@ export const TrustPassportPage: React.FC = () => {
                 <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                   <div>
                     <div className="font-semibold text-slate-100 text-sm">{item.label}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>{item.desc}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{item.desc}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold" style={{ color: item.color }}>{item.score}</div>
@@ -81,7 +81,7 @@ export const TrustPassportPage: React.FC = () => {
                 <div key={i} className="p-3 rounded-xl bg-white/5 text-center">
                   <div className="text-2xl mb-1">{b.icon}</div>
                   <div className="font-semibold text-slate-100 text-xs">{b.label}</div>
-                  <div className="text-xs" style={{ color: tokens.color.muted }}>{b.desc}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{b.desc}</div>
                 </div>
               ))}
             </div>
@@ -102,7 +102,7 @@ export const TrustPassportPage: React.FC = () => {
                 <div className="font-semibold text-slate-100 text-sm mb-2">{cat.title}</div>
                 <ul className="space-y-1">
                   {cat.items.map((item, j) => (
-                    <li key={j} className="text-xs" style={{ color: tokens.color.muted }}>• {item}</li>
+                    <li key={j} className="text-xs" style={{ color: tokens.color.textDim }}>• {item}</li>
                   ))}
                 </ul>
               </div>
@@ -113,7 +113,7 @@ export const TrustPassportPage: React.FC = () => {
         {/* Portable Reputation */}
         <Surface className="p-4 md:p-6">
           <h2 className="text-lg font-bold text-slate-100 mb-4">🌍 Portable Reputation</h2>
-          <p className="text-sm mb-4" style={{ color: tokens.color.muted }}>
+          <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>
             Your Trust Passport works across ALL Pabandi services. A high score here means better deals everywhere.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -126,7 +126,7 @@ export const TrustPassportPage: React.FC = () => {
               <div key={i} className="p-3 rounded-xl bg-white/5 text-center">
                 <div className="text-2xl mb-1">{s.icon}</div>
                 <div className="font-semibold text-slate-100 text-sm">{s.label}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{s.benefit}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{s.benefit}</div>
               </div>
             ))}
           </div>

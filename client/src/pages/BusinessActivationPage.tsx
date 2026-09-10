@@ -44,7 +44,7 @@ export default function BusinessActivationPage({ businessId }: BusinessActivatio
       <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
         <div className="flex flex-col gap-1">
           <h1 className="font-headline text-2xl sm:text-3xl font-black">{biz?.name ? `${biz.name} launch plan` : 'Business launch plan'}</h1>
-          <p className="text-sm" style={{ color: tokens.color.muted }}>Complete these steps to unlock bookings, escrow protection, and $PAB rewards.</p>
+          <p className="text-sm" style={{ color: tokens.color.textDim }}>Complete these steps to unlock bookings, escrow protection, and $PAB rewards.</p>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">

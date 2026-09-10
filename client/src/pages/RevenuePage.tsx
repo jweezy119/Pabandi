@@ -68,9 +68,9 @@ export default function RevenuePage() {
 
   const stat = (label: string, value: string, sub?: string) => (
     <div style={{ ...cell }}>
-      <div style={{ fontSize: 12, color: tokens.color.muted }}>{label}</div>
+      <div style={{ fontSize: 12, color: tokens.color.textDim }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 700, color: tokens.color.text, marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: tokens.color.muted, marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: tokens.color.textDim, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 
@@ -81,7 +81,7 @@ export default function RevenuePage() {
           <span style={{ fontSize: 28 }}>💰</span>
           <h1 style={{ fontSize: 28, margin: 0, letterSpacing: -0.5 }}>Revenue</h1>
         </div>
-        <p style={{ color: tokens.color.muted, margin: 0, fontSize: 15, lineHeight: 1.6 }}>
+        <p style={{ color: tokens.color.textDim, margin: 0, fontSize: 15, lineHeight: 1.6 }}>
           Pabandi makes money three ways — and every stream is live, not a mockup.
         </p>
       </header>
@@ -144,11 +144,11 @@ export default function RevenuePage() {
             <strong style={{ color: result.approved ? tokens.color.success : tokens.color.danger }}>
               {result.approved ? '✓ Policy issued — premium captured' : '✕ Not issued'}
             </strong>
-            <div style={{ fontSize: 13, color: tokens.color.muted, marginTop: 6 }}>
+            <div style={{ fontSize: 13, color: tokens.color.textDim, marginTop: 6 }}>
               {result.reason || `${result.premiumPAB} $PAB premium · ${result.riskBand} · ${result.riskMultiplier}x`}
             </div>
             {result.approved && (
-              <div style={{ fontSize: 12, color: tokens.color.muted, marginTop: 6, fontFamily: tokens.font.mono }}>
+              <div style={{ fontSize: 12, color: tokens.color.textDim, marginTop: 6, fontFamily: tokens.font.mono }}>
                 premium {result.premiumPAB} $PAB ({result.premiumUSD} USD) · coverage ${result.coverageAmount}
               </div>
             )}
@@ -163,7 +163,7 @@ function Stream({ title, body }: { title: string; body: string }) {
   return (
     <div style={{ padding: 14, borderRadius: tokens.radius.md, background: tokens.color.background, border: `1px solid ${tokens.color.border}` }}>
       <div style={{ fontWeight: 600, fontSize: 14, color: tokens.color.primary }}>{title}</div>
-      <div style={{ fontSize: 13, color: tokens.color.muted, marginTop: 6, lineHeight: 1.6 }}>{body}</div>
+      <div style={{ fontSize: 13, color: tokens.color.textDim, marginTop: 6, lineHeight: 1.6 }}>{body}</div>
     </div>
   );
 }
@@ -176,8 +176,8 @@ const card = {
   marginBottom: 18,
 } as const;
 const h2 = { fontSize: 18, margin: '0 0 12px' } as const;
-const muted = { color: tokens.color.muted, fontSize: 14, margin: '0 0 12px', lineHeight: 1.6 } as const;
-const label = { display: 'block', fontSize: 13, color: tokens.color.muted, margin: '12px 0 6px' } as const;
+const muted = { color: tokens.color.textDim, fontSize: 14, margin: '0 0 12px', lineHeight: 1.6 } as const;
+const label = { display: 'block', fontSize: 13, color: tokens.color.textDim, margin: '12px 0 6px' } as const;
 const input = {
   width: '100%',
   background: tokens.color.background,

@@ -160,7 +160,7 @@ export const WalletConnectPage: React.FC = () => {
                   <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-xl">👻</div>
                   <div className="flex-1">
                     <div className="font-semibold text-slate-100">Phantom</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Most popular Solana wallet</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Most popular Solana wallet</div>
                   </div>
                   <Badge tone="success">Recommended</Badge>
                 </button>
@@ -169,7 +169,7 @@ export const WalletConnectPage: React.FC = () => {
                   <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-xl">🔥</div>
                   <div className="flex-1">
                     <div className="font-semibold text-slate-100">Solflare</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Feature-rich Solana wallet</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Feature-rich Solana wallet</div>
                   </div>
                 </button>
 
@@ -177,7 +177,7 @@ export const WalletConnectPage: React.FC = () => {
                   <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-xl">🔗</div>
                   <div className="flex-1">
                     <div className="font-semibold text-slate-100">WalletConnect</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Mobile wallets (Trust, SafePal, etc.)</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Mobile wallets (Trust, SafePal, etc.)</div>
                   </div>
                   <Badge tone="info">Coming Soon</Badge>
                 </button>
@@ -186,7 +186,7 @@ export const WalletConnectPage: React.FC = () => {
 
             <Surface className="p-4">
               <h3 className="text-sm font-bold text-slate-100 mb-2">Don't have a wallet?</h3>
-              <p className="text-xs mb-3" style={{ color: tokens.color.muted }}>Download Phantom or Solflare to get started. Both work on mobile and desktop.</p>
+              <p className="text-xs mb-3" style={{ color: tokens.color.textDim }}>Download Phantom or Solflare to get started. Both work on mobile and desktop.</p>
               <div className="flex gap-2">
                 <Button onClick={() => window.open('https://phantom.app', '_blank')} size="sm" className="flex-1">Get Phantom</Button>
                 <Button onClick={() => window.open('https://solflare.com', '_blank')} size="sm" className="flex-1">Get Solflare</Button>

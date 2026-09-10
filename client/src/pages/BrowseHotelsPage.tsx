@@ -128,7 +128,7 @@ export const BrowseHotelsPage: React.FC = () => {
               >
                 <div className="text-2xl mb-1">{c.emoji}</div>
                 <div className="font-semibold text-slate-100">{c.name}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{c.desc}</div>
+                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{c.desc}</div>
               </button>
             ))}
           </div>
@@ -141,24 +141,24 @@ export const BrowseHotelsPage: React.FC = () => {
             <Surface className="text-center">
               <div className="text-3xl mb-2">🔍</div>
               <h4 className="font-bold text-slate-100">Search</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Enter your destination and dates</p>
+              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Enter your destination and dates</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">🏨</div>
               <h4 className="font-bold text-slate-100">Compare</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Browse hotels with real prices & reviews</p>
+              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Browse hotels with real prices & reviews</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">✅</div>
               <h4 className="font-bold text-slate-100">Book</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Secure your stay on Booking.com</p>
+              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Secure your stay on Booking.com</p>
             </Surface>
           </div>
         </div>
 
         {/* Trust note */}
         <div className="mt-8 p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-          <p className="text-sm" style={{ color: tokens.color.muted }}>
+          <p className="text-sm" style={{ color: tokens.color.textDim }}>
             🔒 You'll be redirected to Booking.com to complete your booking securely.
             Pabandi verifies every booking made through our platform.
           </p>

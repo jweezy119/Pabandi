@@ -45,20 +45,20 @@ export const MarketIntelligencePage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">Supply & Demand</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">{result.supplyDemand?.score}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Score</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">{result.supplyDemand?.monthsOfInventory}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Months Inv.</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.supplyDemand?.daysOnMarket}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Days on Mkt</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-sm font-bold text-slate-100">{result.supplyDemand?.classification}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Class</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">{result.supplyDemand?.score}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Score</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">{result.supplyDemand?.monthsOfInventory}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Months Inv.</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.supplyDemand?.daysOnMarket}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Days on Mkt</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-sm font-bold text-slate-100">{result.supplyDemand?.classification}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Class</div></div>
               </div>
             </Surface>
 
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">Forecasts</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">{result.forecast?.priceNextYear}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Price 1Y</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{result.forecast?.rentNextYear}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Rent 1Y</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{result.forecast?.confidence}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Confidence</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-sm font-bold text-slate-100">{result.seasonality?.bestMonthToSell}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Best Sell</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">{result.forecast?.priceNextYear}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Price 1Y</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{result.forecast?.rentNextYear}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Rent 1Y</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{result.forecast?.confidence}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Confidence</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-sm font-bold text-slate-100">{result.seasonality?.bestMonthToSell}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Best Sell</div></div>
               </div>
             </Surface>
 

@@ -70,7 +70,7 @@ export const DashboardPage: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-black text-slate-100 font-headline">
               Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
             </h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
+            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
               Here's what's happening across your Pabandi ecosystem
             </p>
           </div>
@@ -109,11 +109,11 @@ export const DashboardPage: React.FC = () => {
                 <Surface className="p-4 hover:bg-white/5 transition-all cursor-pointer">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">{widget.icon}</span>
-                    <span className="text-xs" style={{ color: tokens.color.muted }}>{widget.title}</span>
+                    <span className="text-xs" style={{ color: tokens.color.textDim }}>{widget.title}</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: widget.color }}>{widget.value}</div>
                   {widget.change && (
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{widget.change}</div>
+                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{widget.change}</div>
                   )}
                 </Surface>
               </Link>
@@ -134,7 +134,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="text-lg">{activity.icon}</div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-slate-300">{activity.message}</div>
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>{activity.time}</div>
+                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{activity.time}</div>
                   </div>
                 </div>
               ))}
@@ -147,15 +147,15 @@ export const DashboardPage: React.FC = () => {
               <h3 className="text-base font-bold text-slate-100 mb-3">💰 PAB Economy</h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.muted }}>Balance</span>
+                  <span style={{ color: tokens.color.textDim }}>Balance</span>
                   <span className="text-emerald-300 font-bold">2,500 $PAB</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.muted }}>Staked</span>
+                  <span style={{ color: tokens.color.textDim }}>Staked</span>
                   <span className="text-amber-300 font-bold">500 $PAB</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: tokens.color.muted }}>Tier</span>
+                  <span style={{ color: tokens.color.textDim }}>Tier</span>
                   <Badge tone="success">Silver</Badge>
                 </div>
               </div>
@@ -166,11 +166,11 @@ export const DashboardPage: React.FC = () => {
               <h3 className="text-base font-bold text-slate-100 mb-3">🛡️ Trust Passport</h3>
               <div className="text-center mb-3">
                 <div className="text-3xl font-black text-slate-100">73.8</div>
-                <div className="text-xs" style={{ color: tokens.color.muted }}>Trust Score</div>
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>Trust Score</div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div><div className="font-bold text-slate-100">127</div><div style={{ color: tokens.color.muted }}>Transactions</div></div>
-                <div><div className="font-bold text-emerald-300">98.4%</div><div style={{ color: tokens.color.muted }}>Success</div></div>
+                <div><div className="font-bold text-slate-100">127</div><div style={{ color: tokens.color.textDim }}>Transactions</div></div>
+                <div><div className="font-bold text-emerald-300">98.4%</div><div style={{ color: tokens.color.textDim }}>Success</div></div>
               </div>
               <Link to="/passport"><Button size="sm" className="w-full mt-3">View Passport</Button></Link>
             </Surface>

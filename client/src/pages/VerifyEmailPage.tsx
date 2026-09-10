@@ -63,7 +63,7 @@ export default function VerifyEmailPage() {
           <div className="text-center mb-6">
             <div className="text-5xl mb-4">📧</div>
             <h1 className="text-2xl font-bold text-slate-100">Verify Your Email</h1>
-            <p className="mt-2 text-sm" style={{ color: tokens.color.muted }}>
+            <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>
               We've sent a 6-digit code to <strong className="text-slate-100">{user?.email}</strong>. Enter it below to verify your account.
             </p>
           </div>

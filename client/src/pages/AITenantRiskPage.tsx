@@ -62,7 +62,7 @@ export const AITenantRiskPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-slate-100">{form.tenantName}</h3>
-                <p className="text-sm" style={{ color: tokens.color.muted }}>AI predicted risk based on screening signals</p>
+                <p className="text-sm" style={{ color: tokens.color.textDim }}>AI predicted risk based on screening signals</p>
               </div>
               <Badge tone={result.riskBand === 'LOW' ? 'success' : result.riskBand === 'MEDIUM' ? 'warning' : 'danger'}>{result.riskBand}</Badge>
             </div>

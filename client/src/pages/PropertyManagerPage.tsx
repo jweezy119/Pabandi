@@ -165,7 +165,7 @@ export const PropertyManagerPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-100 font-headline">Property Manager</h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>
+            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
               {dash?.profile?.companyName || 'Your Properties'} · {dash?.properties?.length || 0} properties
             </p>
           </div>
@@ -205,10 +205,10 @@ export const PropertyManagerPage: React.FC = () => {
               <Surface className="p-4 md:p-6">
                 <h3 className="text-base font-bold text-slate-100 mb-4">💰 Financial Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(financials.totalIncome / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>Annual Income</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-rose-300">${(financials.totalExpenses / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>Annual Expenses</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${(financials.noi / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>NOI</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Occupancy</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(financials.totalIncome / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Annual Income</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-rose-300">${(financials.totalExpenses / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Annual Expenses</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${(financials.noi / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>NOI</div></div>
+                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Occupancy</div></div>
                 </div>
               </Surface>
             )}
@@ -220,7 +220,7 @@ export const PropertyManagerPage: React.FC = () => {
                   <React.Fragment key={stage.stage}>
                     <div className="flex-shrink-0 p-3 rounded-xl bg-white/5 text-center min-w-[80px]">
                       <div className="text-lg font-bold" style={{ color: stage.color }}>{stage.count}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>{stage.stage}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{stage.stage}</div>
                     </div>
                     {i < pipeline.length - 1 && <div className="text-slate-500">→</div>}
                   </React.Fragment>
@@ -298,9 +298,9 @@ export const PropertyManagerPage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">📊 Financial Overview</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">${financials.avgRent}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Avg Rent</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Occupancy</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{financials.latePayments}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Active Tenants</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">${financials.avgRent}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Avg Rent</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Occupancy</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{financials.latePayments}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Active Tenants</div></div>
               </div>
             </Surface>
             <Link to="/rent-roll"><Button className="w-full">View Detailed Rent Roll →</Button></Link>

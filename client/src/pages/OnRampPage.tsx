@@ -69,7 +69,7 @@ export const OnRampPage: React.FC = () => {
               <div key={i} className="p-2 rounded-lg bg-white/5 text-center">
                 <div className="text-xl">{m.icon}</div>
                 <div className="text-xs font-semibold text-slate-100">{m.name}</div>
-                <div className="text-xs" style={{ color: tokens.color.muted }}>{m.desc}</div>
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>{m.desc}</div>
               </div>
             ))}
           </div>

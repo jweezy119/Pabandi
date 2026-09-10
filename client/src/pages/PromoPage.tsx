@@ -23,7 +23,7 @@ export const PromoPage: React.FC = () => {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">Promo Ambassadors</h1>
-            <p className="text-xs md:text-sm" style={{ color: tokens.color.muted }}>ZK-verified brand promoters — real reviews, zero-knowledge identity</p>
+            <p className="text-xs md:text-sm" style={{ color: tokens.color.textDim }}>ZK-verified brand promoters — real reviews, zero-knowledge identity</p>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/wallet"><Button size="sm" variant="ghost">🔗 Wallet</Button></Link>
@@ -35,11 +35,11 @@ export const PromoPage: React.FC = () => {
       {/* Stats Bar */}
       {stats && (
         <div className="max-w-5xl mx-auto px-4 py-3 grid grid-cols-2 md:grid-cols-5 gap-2">
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalAmbassadors}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Ambassadors</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalJobs}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Jobs</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalSubmissions}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Submissions</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalReviews}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Reviews</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-yellow-300">⭐ {stats.avgRating.toFixed(1)}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Avg Rating</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalAmbassadors}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Ambassadors</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalJobs}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Jobs</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalSubmissions}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Submissions</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalReviews}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Reviews</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-yellow-300">⭐ {stats.avgRating.toFixed(1)}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Avg Rating</div></Surface>
         </div>
       )}
 
@@ -80,16 +80,16 @@ const PromoFeed: React.FC = () => {
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.muted }}>Loading verified reviews...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading verified reviews...</p>;
 
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-bold text-slate-100">📡 Verified Reviews (ZK)</h2>
-      <p className="text-sm" style={{ color: tokens.color.muted }}>Real reviews from verified ambassadors — identities hidden via zero-knowledge proofs.</p>
+      <p className="text-sm" style={{ color: tokens.color.textDim }}>Real reviews from verified ambassadors — identities hidden via zero-knowledge proofs.</p>
       {reviews.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🔏</div>
-          <p style={{ color: tokens.color.muted }}>No verified reviews yet. Be the first to submit work and review!</p>
+          <p style={{ color: tokens.color.textDim }}>No verified reviews yet. Be the first to submit work and review!</p>
         </Surface>
       )}
       {reviews.map((r) => (
@@ -101,7 +101,7 @@ const PromoFeed: React.FC = () => {
               </div>
               <div>
                 <div className="font-semibold text-slate-100">{r.ambassador?.handle || 'Anonymous'}</div>
-                <div className="text-xs" style={{ color: tokens.color.muted }}>{r.workType}</div>
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>{r.workType}</div>
               </div>
             </div>
             <div className="text-right">
@@ -111,7 +111,7 @@ const PromoFeed: React.FC = () => {
           </div>
           {r.text && <p className="mt-3 text-sm text-slate-300">{r.text}</p>}
           {r.zkCommitment && (
-            <div className="mt-2 px-2 py-1 rounded bg-white/5 text-xs font-mono truncate" style={{ color: tokens.color.muted }}>
+            <div className="mt-2 px-2 py-1 rounded bg-white/5 text-xs font-mono truncate" style={{ color: tokens.color.textDim }}>
               Commitment: {r.zkCommitment.slice(0, 24)}...
             </div>
           )}
@@ -133,7 +133,7 @@ const AmbassadorsList: React.FC = () => {
     }).finally(() => setLoading(false));
   }, [filter]);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.muted }}>Loading ambassadors...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading ambassadors...</p>;
 
   return (
     <div className="space-y-3">
@@ -147,7 +147,7 @@ const AmbassadorsList: React.FC = () => {
       {ambassadors.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">👤</div>
-          <p style={{ color: tokens.color.muted }}>No ambassadors yet. Be the first to join!</p>
+          <p style={{ color: tokens.color.textDim }}>No ambassadors yet. Be the first to join!</p>
         </Surface>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -159,11 +159,11 @@ const AmbassadorsList: React.FC = () => {
               </div>
               <div className="flex-1">
                 <div className="font-semibold text-slate-100">{a.handle}</div>
-                <div className="text-xs" style={{ color: tokens.color.muted }}>{a.workType.replace('_', ' ')}</div>
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.workType.replace('_', ' ')}</div>
               </div>
               <div className="text-right">
                 <div className="font-bold text-emerald-300">{a.reputationScore.toFixed(0)}</div>
-                <div className="text-xs" style={{ color: tokens.color.muted }}>rep</div>
+                <div className="text-xs" style={{ color: tokens.color.textDim }}>rep</div>
               </div>
             </div>
             {a.bio && <p className="mt-2 text-sm text-slate-300 line-clamp-2">{a.bio}</p>}
@@ -171,8 +171,8 @@ const AmbassadorsList: React.FC = () => {
               {a.verifiedBadges?.map((b: string) => (
                 <Badge key={b} tone="success" className="text-xs">{b}</Badge>
               ))}
-              <span className="text-xs" style={{ color: tokens.color.muted }}>{a.completedJobs}/{a.totalJobs} jobs</span>
-              <span className="text-xs" style={{ color: tokens.color.muted }}>${a.totalEarnings.toFixed(0)} earned</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>{a.completedJobs}/{a.totalJobs} jobs</span>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>${a.totalEarnings.toFixed(0)} earned</span>
             </div>
           </Surface>
         ))}
@@ -193,7 +193,7 @@ const JobsList: React.FC = () => {
     }).finally(() => setLoading(false));
   }, [filter]);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.muted }}>Loading jobs...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading jobs...</p>;
 
   return (
     <div className="space-y-3">
@@ -207,7 +207,7 @@ const JobsList: React.FC = () => {
       {jobs.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">💼</div>
-          <p style={{ color: tokens.color.muted }}>No open jobs yet. Check back soon or post a job!</p>
+          <p style={{ color: tokens.color.textDim }}>No open jobs yet. Check back soon or post a job!</p>
         </Surface>
       )}
       {jobs.map((j) => (
@@ -215,7 +215,7 @@ const JobsList: React.FC = () => {
           <div className="flex items-start justify-between">
             <div>
               <div className="font-semibold text-slate-100 text-lg">{j.title}</div>
-              <div className="text-xs" style={{ color: tokens.color.muted }}>{j.brandName || 'Anonymous Brand'} · {j.workType.replace('_', ' ')}</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>{j.brandName || 'Anonymous Brand'} · {j.workType.replace('_', ' ')}</div>
             </div>
             <div className="text-right">
               <div className="font-bold text-emerald-300">${j.budgetUsd}</div>
@@ -227,10 +227,10 @@ const JobsList: React.FC = () => {
             {j.requirements?.map((r: string) => (
               <Badge key={r} tone="info" className="text-xs">{r}</Badge>
             ))}
-            <span className="text-xs ml-auto" style={{ color: tokens.color.muted }}>{j._count?.submissions || 0}/{j.maxAmbassadors} spots</span>
+            <span className="text-xs ml-auto" style={{ color: tokens.color.textDim }}>{j._count?.submissions || 0}/{j.maxAmbassadors} spots</span>
           </div>
           {j.deadline && (
-            <div className="mt-2 text-xs" style={{ color: tokens.color.muted }}>
+            <div className="mt-2 text-xs" style={{ color: tokens.color.textDim }}>
               Deadline: {new Date(j.deadline).toLocaleDateString()}
             </div>
           )}
@@ -267,7 +267,7 @@ const MyWork: React.FC = () => {
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🔐</div>
           <p className="text-slate-100 font-semibold">Sign in to get started</p>
-          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Log in or create an account to become an ambassador.</p>
+          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Log in or create an account to become an ambassador.</p>
           <Link to="/login"><Button className="mt-4">Sign In</Button></Link>
         </Surface>
       </div>
@@ -281,7 +281,7 @@ const MyWork: React.FC = () => {
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🚀</div>
           <p className="text-slate-100 font-semibold">Become an ambassador</p>
-          <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
+          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
           <Button className="mt-4" onClick={createAmbassador} disabled={loading}>
             {loading ? 'Creating...' : '+ Become an Ambassador'}
           </Button>
@@ -300,7 +300,7 @@ const MyWork: React.FC = () => {
           </div>
           <div>
             <div className="font-semibold text-slate-100">{ambassador.handle}</div>
-            <div className="text-xs" style={{ color: tokens.color.muted }}>{ambassador.workType} · Rep: {ambassador.reputationScore}</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>{ambassador.workType} · Rep: {ambassador.reputationScore}</div>
           </div>
         </div>
       </Surface>

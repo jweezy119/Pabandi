@@ -68,7 +68,7 @@ export const MaintenancePage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">🔧 Maintenance</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Track requests, assign vendors, and manage costs</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Track requests, assign vendors, and manage costs</p>
           </div>
           <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
         </div>
@@ -137,7 +137,7 @@ export const MaintenancePage: React.FC = () => {
 
         {/* Request List */}
         {filteredRequests.length === 0 ? (
-          <p className="text-center py-8" style={{ color: tokens.color.muted }}>No maintenance requests found.</p>
+          <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No maintenance requests found.</p>
         ) : (
           <div className="space-y-3">
             {filteredRequests.map(r => {
@@ -147,14 +147,14 @@ export const MaintenancePage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-bold text-slate-100">{r.title}</div>
-                      <div className="text-xs" style={{ color: tokens.color.muted }}>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>
                         {property?.title || 'No property'} · {r.tenantEmail || 'No tenant'}
                       </div>
                     </div>
                     <Badge tone={r.status === 'COMPLETED' ? 'success' : r.status === 'IN_PROGRESS' ? 'info' : r.status === 'CANCELLED' ? 'danger' : 'warning'}>{r.status}</Badge>
                   </div>
-                  {r.description && <p className="text-sm mb-2" style={{ color: tokens.color.muted }}>{r.description}</p>}
-                  <div className="flex items-center gap-3 text-xs" style={{ color: tokens.color.muted }}>
+                  {r.description && <p className="text-sm mb-2" style={{ color: tokens.color.textDim }}>{r.description}</p>}
+                  <div className="flex items-center gap-3 text-xs" style={{ color: tokens.color.textDim }}>
                     <span style={{ color: priorityColor[r.priority] || '#888' }}>● {r.priority}</span>
                     {r.vendor && <span>🔧 {r.vendor}</span>}
                     {r.cost && <span>💰 ${r.cost}</span>}

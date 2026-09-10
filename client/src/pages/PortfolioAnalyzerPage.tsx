@@ -62,10 +62,10 @@ export const PortfolioAnalyzerPage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(result.summary?.totalValue / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.muted }}>Total Value</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">{result.summary?.cashOnCashReturn}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Cash-on-Cash</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.summary?.capRate}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Cap Rate</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-purple-300">{result.summary?.weightedDscr}</div><div className="text-xs" style={{ color: tokens.color.muted }}>DSCR</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(result.summary?.totalValue / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Total Value</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">{result.summary?.cashOnCashReturn}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Cash-on-Cash</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.summary?.capRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Cap Rate</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-purple-300">{result.summary?.weightedDscr}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>DSCR</div></div>
               </div>
             </Surface>
 
@@ -73,7 +73,7 @@ export const PortfolioAnalyzerPage: React.FC = () => {
               <h3 className="text-base font-bold text-slate-100 mb-4">Diversification Score: {result.diversification?.score}/100</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {result.diversification?.byType && Object.entries(result.diversification.byType).map(([k, v]) => (
-                  <div key={k} className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{v as number}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>{k}</div></div>
+                  <div key={k} className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{v as number}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{k}</div></div>
                 ))}
               </div>
               {result.diversification?.recommendations?.length > 0 && (
@@ -86,10 +86,10 @@ export const PortfolioAnalyzerPage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">Risk Assessment</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.concentrationRisk}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Concentration</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{result.risk?.leverageRisk}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Leverage</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.risk?.vacancyRisk}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Vacancy</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.overallRisk}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Overall</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.concentrationRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Concentration</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{result.risk?.leverageRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Leverage</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.risk?.vacancyRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Vacancy</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.overallRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Overall</div></div>
               </div>
             </Surface>
           </div>

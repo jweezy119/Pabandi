@@ -56,7 +56,7 @@ export function TrustStampsPanel({
     return (
       <div
         className="rounded-2xl border px-4 py-6 text-sm"
-        style={{ background: `${tokens.color.surface}66`, borderColor: `${tokens.color.border}88`, color: tokens.color.muted }}
+        style={{ background: `${tokens.color.surface}66`, borderColor: `${tokens.color.border}88`, color: tokens.color.textDim }}
       >
         {title} — loading...
       </div>
@@ -67,7 +67,7 @@ export function TrustStampsPanel({
     return (
       <div
         className="rounded-2xl border px-4 py-6 text-sm"
-        style={{ background: `${tokens.color.surface}66`, borderColor: `${tokens.color.border}88`, color: tokens.color.muted }}
+        style={{ background: `${tokens.color.surface}66`, borderColor: `${tokens.color.border}88`, color: tokens.color.textDim }}
       >
         <div className="font-semibold" style={{ color: tokens.color.text }}>
           {title}
@@ -84,7 +84,7 @@ export function TrustStampsPanel({
     >
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${tokens.color.border}66` }}>
         <div className="text-sm font-semibold">{title}</div>
-        <div className="text-xs font-mono" style={{ color: tokens.color.muted }}>
+        <div className="text-xs font-mono" style={{ color: tokens.color.textDim }}>
           {effectiveScore} pts
         </div>
       </div>
@@ -93,7 +93,7 @@ export function TrustStampsPanel({
           <div key={stamp.id} className="flex items-center justify-between gap-4 px-4 py-3">
             <div className="flex flex-col">
               <span className="text-sm">{stamp.stampType.replace(/_/g, ' ').toLowerCase()}</span>
-              <span className="text-xs" style={{ color: tokens.color.muted }}>
+              <span className="text-xs" style={{ color: tokens.color.textDim }}>
                 {stamp.issuer ? `via ${stamp.issuer}` : stamp.context || '—'}
               </span>
             </div>
@@ -101,14 +101,14 @@ export function TrustStampsPanel({
               <span
                 className="inline-flex items-center rounded-full px-2 py-0.5 font-mono"
                 style={{
-                  background: `${tokens.color[stamp.isTrusted ? 'primary' : 'muted']}18`,
-                  color: tokens.color[stamp.isTrusted ? 'primary' : 'muted'],
+                  background: `${tokens.color[stamp.isTrusted ? 'primary' : 'textDim']}18`,
+                  color: tokens.color[stamp.isTrusted ? 'primary' : 'textDim'],
                 }}
               >
                 {stamp.revoked ? 'revoked' : stamp.isExpired ? 'expired' : `${stamp.effectiveWeight} pts`}
               </span>
               {stamp.expiresAt && !stamp.revoked && !stamp.isExpired && (
-                <div style={{ color: tokens.color.muted }}>
+                <div style={{ color: tokens.color.textDim }}>
                   expires {new Date(stamp.expiresAt).toLocaleDateString()}
                 </div>
               )}

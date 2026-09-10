@@ -72,7 +72,7 @@ export const AIRentOptimizerPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-slate-100">Recommended rent</h3>
-                  <p className="text-sm" style={{ color: tokens.color.muted }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
+                  <p className="text-sm" style={{ color: tokens.color.textDim }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-slate-100">${result.recommendedRent.toLocaleString()}</div>

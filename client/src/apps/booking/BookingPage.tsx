@@ -145,7 +145,7 @@ export const BookingOS: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-black text-white">BookOS</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Find and book venues near you</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Find and book venues near you</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/reservations')}>My bookings</Button>

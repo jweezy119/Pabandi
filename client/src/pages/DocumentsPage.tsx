@@ -76,7 +76,7 @@ export const DocumentsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">📁 Documents</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Upload and manage tenant documents</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Upload and manage tenant documents</p>
           </div>
           <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
         </div>
@@ -121,7 +121,7 @@ export const DocumentsPage: React.FC = () => {
               </div>
             </div>
             <div className="p-4 rounded-xl bg-white/5 mt-4">
-              <p className="text-xs" style={{ color: tokens.color.muted }}>
+              <p className="text-xs" style={{ color: tokens.color.textDim }}>
                 💡 <strong>Tip:</strong> Upload files to Google Drive, Dropbox, or any file sharing service and paste the share link above. Make sure the link is publicly accessible.
               </p>
             </div>
@@ -134,7 +134,7 @@ export const DocumentsPage: React.FC = () => {
 
         {/* Document List */}
         {filteredDocs.length === 0 ? (
-          <p className="text-center py-8" style={{ color: tokens.color.muted }}>No documents found.</p>
+          <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No documents found.</p>
         ) : (
           <div className="space-y-3">
             {filteredDocs.map((doc) => (
@@ -142,10 +142,10 @@ export const DocumentsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-semibold text-slate-100">{doc.title || doc.name}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>
                       {getTypeLabel(doc.type)} {doc.tenantEmail && `· ${doc.tenantEmail}`}
                     </div>
-                    <div className="text-xs mt-1" style={{ color: tokens.color.muted }}>
+                    <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>
                       Uploaded {new Date(doc.createdAt).toLocaleDateString()}
                     </div>
                   </div>

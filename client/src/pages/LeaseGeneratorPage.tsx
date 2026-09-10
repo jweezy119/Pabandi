@@ -72,7 +72,7 @@ export const LeaseGeneratorPage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">📝 Lease Agreements</h1>
-            <p className="text-sm" style={{ color: tokens.color.muted }}>Create and manage lease agreements</p>
+            <p className="text-sm" style={{ color: tokens.color.textDim }}>Create and manage lease agreements</p>
           </div>
           <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
         </div>
@@ -164,7 +164,7 @@ export const LeaseGeneratorPage: React.FC = () => {
         {/* Lease List */}
         <h2 className="text-lg font-bold text-slate-100 mb-3">Lease Agreements ({leases.length})</h2>
         {leases.length === 0 ? (
-          <p className="text-center py-8" style={{ color: tokens.color.muted }}>No lease agreements yet.</p>
+          <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No lease agreements yet.</p>
         ) : (
           <div className="space-y-3">
             {leases.map((l) => (
@@ -172,25 +172,25 @@ export const LeaseGeneratorPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <div className="font-bold text-slate-100">{l.tenantName || l.tenantEmail}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Lease #{l.id.slice(-6)}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Lease #{l.id.slice(-6)}</div>
                   </div>
                   <Badge tone={l.status === 'ACTIVE' ? 'success' : l.status === 'DRAFT' ? 'info' : l.status === 'EXPIRED' ? 'danger' : 'warning'}>{l.status}</Badge>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
                   <div className="p-2 rounded-lg bg-white/5">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Rent</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Rent</div>
                     <div className="font-bold text-emerald-300">${l.rentAmount}/mo</div>
                   </div>
                   <div className="p-2 rounded-lg bg-white/5">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Deposit</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Deposit</div>
                     <div className="font-bold text-slate-100">${l.depositAmount}</div>
                   </div>
                   <div className="p-2 rounded-lg bg-white/5">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>Start</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Start</div>
                     <div className="font-bold text-slate-100">{new Date(l.startDate).toLocaleDateString()}</div>
                   </div>
                   <div className="p-2 rounded-lg bg-white/5">
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>End</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>End</div>
                     <div className="font-bold text-slate-100">{new Date(l.endDate).toLocaleDateString()}</div>
                   </div>
                 </div>

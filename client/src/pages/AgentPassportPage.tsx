@@ -119,7 +119,7 @@ export default function AgentPassportPage() {
           <span style={{ fontSize: 28 }}>🛂</span>
           <h1 style={{ fontSize: 28, margin: 0, letterSpacing: -0.5 }}>Agent Capability Passport</h1>
         </div>
-        <p style={{ color: tokens.color.muted, margin: 0, fontSize: 15, lineHeight: 1.6 }}>
+        <p style={{ color: tokens.color.textDim, margin: 0, fontSize: 15, lineHeight: 1.6 }}>
           The trust standard for AI agents on Pabandi. Issue a signed, capability-scoped passport your
           agent presents to book, transfer, or act — verified by any counterparty, metered in $PAB.
         </p>
@@ -160,10 +160,10 @@ export default function AgentPassportPage() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600, fontSize: 13 }}>{o.label}</span>
-                    <span style={{ color: on ? tokens.color.primary : tokens.color.muted, fontSize: 16 }}>{on ? '✓' : '+'}</span>
+                    <span style={{ color: on ? tokens.color.primary : tokens.color.textDim, fontSize: 16 }}>{on ? '✓' : '+'}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: tokens.color.muted, marginTop: 4, fontFamily: tokens.font.mono }}>{o.cap}</div>
-                  <div style={{ fontSize: 11, color: tokens.color.muted }}>{o.hint}</div>
+                  <div style={{ fontSize: 11, color: tokens.color.textDim, marginTop: 4, fontFamily: tokens.font.mono }}>{o.cap}</div>
+                  <div style={{ fontSize: 11, color: tokens.color.textDim }}>{o.hint}</div>
                 </button>
               );
             })}
@@ -179,7 +179,7 @@ export default function AgentPassportPage() {
             <div style={{ marginTop: 18, padding: 16, borderRadius: tokens.radius.md, background: 'rgba(34,197,94,0.08)', border: `1px solid ${tokens.color.success}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <strong style={{ color: tokens.color.success }}>✓ Passport issued</strong>
-                <span style={{ fontSize: 12, color: tokens.color.muted }}>fee {issued.feePab} $PAB · balance {issued.balanceAfter ?? '—'}</span>
+                <span style={{ fontSize: 12, color: tokens.color.textDim }}>fee {issued.feePab} $PAB · balance {issued.balanceAfter ?? '—'}</span>
               </div>
               <label style={{ ...label, fontSize: 12 }}>Passport token (present this to counterparties)</label>
               <textarea readOnly value={issued.token} style={{ ...input, fontFamily: tokens.font.mono, fontSize: 11, height: 90 }} />
@@ -187,7 +187,7 @@ export default function AgentPassportPage() {
                 <button style={miniBtn} onClick={() => copy(issued.token)}>Copy token</button>
                 <button style={miniBtn} onClick={() => { setVerifyToken(issued.token); setVerifyNeed(''); }}>Verify this</button>
               </div>
-              <div style={{ fontSize: 11, color: tokens.color.muted, marginTop: 8, fontFamily: tokens.font.mono }}>
+              <div style={{ fontSize: 11, color: tokens.color.textDim, marginTop: 8, fontFamily: tokens.font.mono }}>
                 idempotency: {issued.idempotencyKey}
               </div>
             </div>
@@ -231,7 +231,7 @@ export default function AgentPassportPage() {
                 <strong style={{ color: verifyResult.valid ? tokens.color.success : tokens.color.danger }}>
                   {verifyResult.valid ? '✓ Valid' : '✕ Invalid'}
                 </strong>
-                {verifyResult.reason && <span style={{ color: tokens.color.muted, marginLeft: 8, fontSize: 13 }}>— {verifyResult.reason}</span>}
+                {verifyResult.reason && <span style={{ color: tokens.color.textDim, marginLeft: 8, fontSize: 13 }}>— {verifyResult.reason}</span>}
               </div>
 
               {verifyResult.valid && (
@@ -250,7 +250,7 @@ export default function AgentPassportPage() {
         {/* HOW IT WORKS */}
         <section style={card}>
           <h2 style={h2}>Why this is the standard</h2>
-          <ul style={{ color: tokens.color.muted, fontSize: 14, lineHeight: 1.8, paddingLeft: 18, margin: 0 }}>
+          <ul style={{ color: tokens.color.textDim, fontSize: 14, lineHeight: 1.8, paddingLeft: 18, margin: 0 }}>
             <li><b style={{ color: tokens.color.text }}>Signed & offline-verifiable</b> — HMAC-signed attestation; counterparties verify without calling us.</li>
             <li><b style={{ color: tokens.color.text }}>Capability-scoped</b> — an agent only gets what you grant; low-trust bands can’t request dangerous caps.</li>
             <li><b style={{ color: tokens.color.text }}>Enforced</b> — booking & value-transfer actions reject agents without a valid passport.</li>
@@ -266,7 +266,7 @@ export default function AgentPassportPage() {
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <div style={{ display: 'flex', gap: 12, fontSize: 13 }}>
-      <span style={{ color: tokens.color.muted, minWidth: 110 }}>{k}</span>
+      <span style={{ color: tokens.color.textDim, minWidth: 110 }}>{k}</span>
       <span style={{ color: tokens.color.text, fontFamily: tokens.font.mono, fontSize: 12, wordBreak: 'break-word' }}>{v}</span>
     </div>
   );
@@ -280,8 +280,8 @@ const card = {
 } as const;
 
 const h2 = { fontSize: 18, margin: '0 0 6px' } as const;
-const muted = { color: tokens.color.muted, fontSize: 14, margin: '0 0 16px', lineHeight: 1.6 } as const;
-const label = { display: 'block', fontSize: 13, color: tokens.color.muted, margin: '14px 0 6px' } as const;
+const muted = { color: tokens.color.textDim, fontSize: 14, margin: '0 0 16px', lineHeight: 1.6 } as const;
+const label = { display: 'block', fontSize: 13, color: tokens.color.textDim, margin: '14px 0 6px' } as const;
 const input = {
   width: '100%',
   background: tokens.color.background,

@@ -62,7 +62,7 @@ export const MyBookingsPage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-100">My Bookings</h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.muted }}>Manage your reservations and check-ins</p>
+            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Manage your reservations and check-ins</p>
           </div>
           <Button variant="ghost" onClick={() => navigate('/booking/venues/search')}>
             <span className="material-symbols-outlined text-sm">add</span>
@@ -122,7 +122,7 @@ export const MyBookingsPage: React.FC = () => {
                       <h3 className="text-slate-100 font-bold">{booking.venueName}</h3>
                       <Badge tone={STATUS_TONES[booking.status]}>{booking.status}</Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: tokens.color.muted }}>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: tokens.color.textDim }}>
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-xs">location_on</span>
                         {booking.venueCity}
@@ -152,7 +152,7 @@ export const MyBookingsPage: React.FC = () => {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <p className="text-lg font-bold text-emerald-300">${booking.total}</p>
-                      <p className="text-xs font-mono" style={{ color: tokens.color.muted }}>{booking.confirmationCode}</p>
+                      <p className="text-xs font-mono" style={{ color: tokens.color.textDim }}>{booking.confirmationCode}</p>
                     </div>
                     <div className="flex flex-col gap-2">
                       {booking.status === 'CONFIRMED' && (
@@ -179,7 +179,7 @@ export const MyBookingsPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-slate-100">Check-in QR Code</p>
-                      <p className="text-xs" style={{ color: tokens.color.muted }}>Show this at the venue entrance</p>
+                      <p className="text-xs" style={{ color: tokens.color.textDim }}>Show this at the venue entrance</p>
                       <p className="text-xs font-mono text-indigo-300 mt-1">{booking.confirmationCode}</p>
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export const MyBookingsPage: React.FC = () => {
           <Surface className="p-12 text-center">
             <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">event_busy</span>
             <h3 className="text-xl font-bold text-slate-100 mb-2">No bookings found</h3>
-            <p className="mb-6" style={{ color: tokens.color.muted }}>
+            <p className="mb-6" style={{ color: tokens.color.textDim }}>
               {statusFilter !== 'ALL' ? 'Try adjusting your filters' : 'Start exploring venues and make your first booking'}
             </p>
             <Button onClick={() => navigate('/booking/venues/search')}>

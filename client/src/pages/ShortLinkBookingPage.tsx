@@ -32,7 +32,7 @@ export default function ShortLinkBookingPage() {
       <h2 className="font-headline mb-2 text-xl font-bold" style={{ color: tokens.color.text }}>
         {error ? 'Link Error' : 'Locating Business...'}
       </h2>
-      <p className="font-body" style={{ color: tokens.color.muted }}>
+      <p className="font-body" style={{ color: tokens.color.textDim }}>
         {error || 'Please wait while we redirect you to the booking page.'}
       </p>
       {error && (

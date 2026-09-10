@@ -76,7 +76,7 @@ export const VenueSearchPage: React.FC = () => {
         <div className="px-4 pt-8 pb-6 md:pt-12 md:pb-8">
           <div className="max-w-6xl mx-auto text-center">
             <h1 className="text-3xl md:text-5xl font-bold text-slate-100 mb-3 tracking-tight">Find Your Night</h1>
-            <p className="text-base md:text-lg mb-8" style={{ color: tokens.color.muted }}>Discover clubs, bars, lounges & rooftop experiences</p>
+            <p className="text-base md:text-lg mb-8" style={{ color: tokens.color.textDim }}>Discover clubs, bars, lounges & rooftop experiences</p>
 
             {/* Search Bar */}
             <GlassCard className="max-w-4xl mx-auto p-4 md:p-6">
@@ -159,7 +159,7 @@ export const VenueSearchPage: React.FC = () => {
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-100">
-                All Venues <span className="text-sm font-normal ml-2" style={{ color: tokens.color.muted }}>({filteredVenues.length})</span>
+                All Venues <span className="text-sm font-normal ml-2" style={{ color: tokens.color.textDim }}>({filteredVenues.length})</span>
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)} className="lg:hidden">
                 <span className="material-symbols-outlined text-sm">tune</span>
@@ -259,7 +259,7 @@ export const VenueSearchPage: React.FC = () => {
                           <h3 className="text-slate-100 font-bold text-base mb-1">{venue.name}</h3>
                           <div className="flex items-center gap-1 mb-2">
                             {renderStars(venue.rating)}
-                            <span className="text-xs ml-1" style={{ color: tokens.color.muted }}>{venue.rating}</span>
+                            <span className="text-xs ml-1" style={{ color: tokens.color.textDim }}>{venue.rating}</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
                             {venue.musicGenres.map(g => (
@@ -268,7 +268,7 @@ export const VenueSearchPage: React.FC = () => {
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-semibold text-emerald-300">${venue.coverCharge} cover</span>
-                            <span className="text-xs" style={{ color: tokens.color.muted }}>{venue.priceRange}</span>
+                            <span className="text-xs" style={{ color: tokens.color.textDim }}>{venue.priceRange}</span>
                           </div>
                         </div>
                       </GlassCard>
@@ -280,7 +280,7 @@ export const VenueSearchPage: React.FC = () => {
                   <Surface className="p-12 text-center">
                     <span className="material-symbols-outlined text-5xl text-slate-600 mb-4 block">search_off</span>
                     <h3 className="text-slate-100 font-bold text-lg mb-2">No venues found</h3>
-                    <p style={{ color: tokens.color.muted }} className="text-sm">Try adjusting your filters or search criteria</p>
+                    <p style={{ color: tokens.color.textDim }} className="text-sm">Try adjusting your filters or search criteria</p>
                   </Surface>
                 )}
               </div>

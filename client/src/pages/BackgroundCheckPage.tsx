@@ -152,7 +152,7 @@ export default function BackgroundCheckPage() {
         <div>
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-100 font-headline">Background Check</h1>
-          <p style={{ color: tokens.color.muted }} className="mt-2 max-w-2xl text-sm">
+          <p style={{ color: tokens.color.textDim }} className="mt-2 max-w-2xl text-sm">
             CourtListener court-record screening, comprehensive Pabandi trust scoring, batch tenant screening, and check history. Some checks may include a $PAB fee.
           </p>
         </div>
@@ -246,7 +246,7 @@ export default function BackgroundCheckPage() {
                     <h3 className="font-bold text-lg text-slate-100 mb-3">Risk Factors</h3>
                     <div className="space-y-2">
                       {courtResult.riskFactors.map((f: string, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: tokens.color.muted }}>
+                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: tokens.color.textDim }}>
                           <span className="text-red-400">•</span> {f}
                         </div>
                       ))}
@@ -264,7 +264,7 @@ export default function BackgroundCheckPage() {
                             <div className="font-semibold text-slate-100">{c.caseName}</div>
                             <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.courtType === 'CRIMINAL' ? 'bg-red-500/20 text-red-300' : c.courtType === 'CIVIL' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-500/20 text-slate-300'}`}>{c.courtType || 'OTHER'}</span>
                           </div>
-                          <div className="text-xs" style={{ color: tokens.color.muted }}>
+                          <div className="text-xs" style={{ color: tokens.color.textDim }}>
                             {c.docketNumber} · {c.court} · Filed {c.dateFiled}
                             {c.dateTerminated && <span> · Terminated {c.dateTerminated}</span>}
                             {c.chapter && <span> · Chapter {c.chapter}</span>}
@@ -301,7 +301,7 @@ export default function BackgroundCheckPage() {
           <div className="space-y-4">
             <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <h3 className="font-bold text-lg text-slate-100 mb-3">Pabandi Trust Screening</h3>
-              <p className="text-xs mb-4" style={{ color: tokens.color.muted }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
+              <p className="text-xs mb-4" style={{ color: tokens.color.textDim }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
@@ -350,7 +350,7 @@ export default function BackgroundCheckPage() {
                     <div>
                       <p className="text-xs uppercase tracking-wide opacity-60">Trust Score</p>
                       <p className="text-4xl font-bold" style={{ color: BAND_COLOR[compResult.riskBand || ''] || '#94a3b8' }}>{compResult.riskScore ?? '—'}</p>
-                      <p className="text-sm" style={{ color: tokens.color.muted }}>{compResult.recommendation} · {compResult.riskBand}</p>
+                      <p className="text-sm" style={{ color: tokens.color.textDim }}>{compResult.recommendation} · {compResult.riskBand}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs uppercase tracking-wide opacity-60">Status</p>
@@ -375,7 +375,7 @@ export default function BackgroundCheckPage() {
         {tab === 'pakistan' && (
           <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="font-bold text-lg text-slate-100">🇵🇰 Pakistan Trust Screening</h3>
-            <p className="text-xs" style={{ color: tokens.color.muted }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
+            <p className="text-xs" style={{ color: tokens.color.textDim }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-wide opacity-60">Party Name</label>
@@ -406,17 +406,17 @@ export default function BackgroundCheckPage() {
               <h3 className="font-bold text-lg text-slate-100">Check History</h3>
               <button onClick={loadHistory} disabled={historyLoading} className="px-3 py-2 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50">Refresh</button>
             </div>
-            {history.length === 0 && !historyLoading && <p style={{ color: tokens.color.muted }} className="text-sm">No checks yet.</p>}
+            {history.length === 0 && !historyLoading && <p style={{ color: tokens.color.textDim }} className="text-sm">No checks yet.</p>}
             <div className="space-y-2">
               {history.map((h) => (
                 <div key={h.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                   <div>
                     <div className="font-semibold text-slate-100">{h.subjectName || h.id}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold" style={{ color: BAND_COLOR[h.riskBand || ''] || '#94a3b8' }}>{h.riskBand || '—'}</div>
-                    <div className="text-xs" style={{ color: tokens.color.muted }}>{h.riskScore ?? '—'}</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{h.riskScore ?? '—'}</div>
                   </div>
                 </div>
               ))}
@@ -427,7 +427,7 @@ export default function BackgroundCheckPage() {
         {tab === 'batch' && (
           <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="font-bold text-lg text-slate-100">Batch Tenant Screening</h3>
-            <p className="text-xs" style={{ color: tokens.color.muted }}>One subject per line: Name, Type, Email</p>
+            <p className="text-xs" style={{ color: tokens.color.textDim }}>One subject per line: Name, Type, Email</p>
             <textarea value={batchText} onChange={(e) => setBatchText(e.target.value)} rows={8} placeholder={'John Doe,GUEST,john@example.com\nJane Smith,FREELANCER,jane@example.com'} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" />
             {batchError && <div className="text-red-400 text-sm">{batchError}</div>}
             <button disabled={batchLoading} onClick={runBatch} className="w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>
@@ -471,7 +471,7 @@ function ModuleGrid({ result, moduleColor }: { result: CheckResult; moduleColor:
             <div key={m.source} className="p-3 rounded-xl bg-white/5">
               <div className="text-xs uppercase tracking-wide opacity-60">{m.label}</div>
               <div className="text-xl font-bold" style={{ color: moduleColor(score) }}>{score ?? '—'}</div>
-              <div className="text-xs" style={{ color: tokens.color.muted }}>{signals[0] || '—'}</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>{signals[0] || '—'}</div>
             </div>
           );
         })}

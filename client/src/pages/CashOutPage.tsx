@@ -29,7 +29,7 @@ export default function CashOutPage() {
       <h1 className="text-3xl font-black font-headline tracking-tight" style={{ color: tokens.color.text }}>
         Cash Out Earned USDC
       </h1>
-      <p className="text-sm mt-2" style={{ color: tokens.color.muted }}>
+      <p className="text-sm mt-2" style={{ color: tokens.color.textDim }}>
         Instant payout to your linked bank at a flat <strong>1.5%</strong> — versus ~7% on Western Union / wire.
         Trust-gated: a clean Trust Passport band keeps fees low and unlocks higher limits.
       </p>
@@ -52,7 +52,7 @@ export default function CashOutPage() {
               className="px-4 py-2 rounded-xl text-sm font-bold"
               style={{
                 background: method === m ? tokens.color.primary : 'transparent',
-                color: method === m ? '#0a0a0a' : tokens.color.muted,
+                color: method === m ? '#0a0a0a' : tokens.color.textDim,
                 border: `1px solid ${method === m ? tokens.color.primary : 'rgba(255,255,255,0.15)'}`,
               }}
             >
@@ -72,7 +72,7 @@ export default function CashOutPage() {
               className="w-full px-4 py-3 rounded-xl font-body"
               style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', color: tokens.color.text }}
             />
-            <p className="text-xs mt-1" style={{ color: tokens.color.muted }}>Routes through Pabandi's P2P off-ramp — a local liquidity provider settles PKR to your account in minutes.</p>
+            <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Routes through Pabandi's P2P off-ramp — a local liquidity provider settles PKR to your account in minutes.</p>
           </div>
         )}
 
@@ -81,7 +81,7 @@ export default function CashOutPage() {
             <div className="flex justify-between text-sm"><span>Band</span><span className="font-bold">{quote.band}</span></div>
             <div className="flex justify-between text-sm mt-1"><span>Fee (1.5%)</span><span>${quote.feeUsdc}</span></div>
             <div className="flex justify-between text-sm mt-1"><span>You receive</span><span className="font-bold text-green-400">${quote.netUsdc}</span></div>
-            <div className="flex justify-between text-xs mt-1" style={{ color: tokens.color.muted }}>
+            <div className="flex justify-between text-xs mt-1" style={{ color: tokens.color.textDim }}>
               <span>Saved vs 7% remittance</span><span className="text-green-400">${quote.vsRemittance}</span>
             </div>
           </div>
@@ -100,14 +100,14 @@ export default function CashOutPage() {
       <div className="mt-8">
         <h2 className="text-lg font-bold mb-3" style={{ color: tokens.color.text }}>Cash-out history</h2>
         {!history || history.length === 0 ? (
-          <p className="text-sm" style={{ color: tokens.color.muted }}>No payouts yet.</p>
+          <p className="text-sm" style={{ color: tokens.color.textDim }}>No payouts yet.</p>
         ) : (
           <div className="space-y-2">
             {history.map((p: any) => (
               <div key={p.id} className="rounded-xl p-3 text-sm" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="flex flex-wrap gap-2 justify-between items-center sm:flex-nowrap">
                   <span className="font-semibold">${p.amountUsdc} → <strong>${p.netUsdc}</strong> ({p.method})</span>
-                  <span className="shrink-0" style={{ color: tokens.color.muted }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
+                  <span className="shrink-0" style={{ color: tokens.color.textDim }}>{new Date(p.createdAt).toLocaleDateString()} · {p.status}</span>
                 </div>
                 <DisputeButton contextType="PAYOUT" contextId={p.id} />
               </div>

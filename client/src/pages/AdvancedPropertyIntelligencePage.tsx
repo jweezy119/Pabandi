@@ -58,10 +58,10 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">💰 Valuation</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${result.valuation?.estimatedValue?.toLocaleString()}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Est. Value</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${result.valuation?.rentalEstimate}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Monthly Rent</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.valuation?.rentalYield}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Rental Yield</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-purple-300">{result.investmentScore}/100</div><div className="text-xs" style={{ color: tokens.color.muted }}>Investment Score</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${result.valuation?.estimatedValue?.toLocaleString()}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Est. Value</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${result.valuation?.rentalEstimate}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Monthly Rent</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.valuation?.rentalYield}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Rental Yield</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-purple-300">{result.investmentScore}/100</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Investment Score</div></div>
               </div>
               <div className="mt-3 p-3 rounded-xl bg-white/5">
                 <div className="text-xs text-slate-400">Confidence Range</div>
@@ -80,7 +80,7 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
                 {result.neighborhood && Object.entries(result.neighborhood).filter(([k]) => ['schools', 'safety', 'walkability', 'transit', 'amenities'].includes(k)).map(([key, val]) => (
                   <div key={key} className="p-3 rounded-xl bg-white/5 text-center">
                     <div className="text-lg font-bold text-slate-100">{val as number}</div>
-                    <div className="text-xs capitalize" style={{ color: tokens.color.muted }}>{key}</div>
+                    <div className="text-xs capitalize" style={{ color: tokens.color.textDim }}>{key}</div>
                   </div>
                 ))}
               </div>
@@ -93,10 +93,10 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-slate-100 mb-4">📈 Price Velocity</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">{result.priceVelocity?.yearlyChange}%</div><div className="text-xs" style={{ color: tokens.color.muted }}>Yearly Change</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.priceVelocity?.daysOnMarket}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Days on Market</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.priceVelocity?.inventoryMonths}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Months Inventory</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{result.priceVelocity?.momentum}</div><div className="text-xs" style={{ color: tokens.color.muted }}>Momentum</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">{result.priceVelocity?.yearlyChange}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Yearly Change</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.priceVelocity?.daysOnMarket}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Days on Market</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.priceVelocity?.inventoryMonths}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Months Inventory</div></div>
+                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{result.priceVelocity?.momentum}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Momentum</div></div>
               </div>
             </Surface>
 
