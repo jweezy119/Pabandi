@@ -306,6 +306,46 @@ export default function PromoterDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Commission feed — every dollar the ledger owes you */}
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden mt-6">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">Commission feed</h3>
+          {wallet?.totalEarnings != null && (
+            <span className="text-sm text-slate-600">
+              Lifetime <strong className="text-green-700">${Number(wallet.totalEarnings).toFixed(2)}</strong>
+            </span>
+          )}
+        </div>
+        {!(wallet?.history || []).length ? (
+          <p className="px-5 py-8 text-sm text-slate-500 text-center">
+            No commissions yet — they land here when your guests complete visits.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-200">
+            {(wallet.history || []).slice(0, 10).map((e: any, i: number) => (
+              <div key={e.id || i} className="px-5 py-3 flex items-center gap-3">
+                <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${e.isReversed ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                  {e.isReversed ? '↩' : '$'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900">
+                    {e.isReversed ? 'Reversed' : 'Booking commission'}
+                    {e.description || e.note ? ` — ${e.description || e.note}` : ''}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {e.createdAt ? new Date(e.createdAt).toLocaleDateString() : ''}
+                    {e.type ? ` · ${String(e.type).replace(/_/g, ' ')}` : ''}
+                  </p>
+                </div>
+                <span className={`text-sm font-bold ${e.isReversed ? 'text-red-600' : 'text-green-700'}`}>
+                  {e.isReversed ? '−' : '+'}${Number(e.amount || 0).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

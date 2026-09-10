@@ -96,6 +96,7 @@ export default function SitaraApp() {
         <Route path="book/:businessId" element={<BookingFlowPage />} />
         <Route path="checkin/:bookingId" element={<CheckInPage />} />
         <Route path="review/:bookingId" element={<ReviewPage />} />
+        <Route path="review/live/:reservationId" element={<ReviewPage />} />
         <Route path="star-card" element={<StarCardPage />} />
         <Route path="my-bookings" element={<MyBookingsPage />} />
         <Route path="promos" element={<PromosInboxPage />} />

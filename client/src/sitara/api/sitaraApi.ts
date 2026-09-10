@@ -115,6 +115,14 @@ export const sitaraApi = {
   verifyCheckIn: (data: { code?: string; reservationId?: string; lat?: number; lng?: number; method?: string }) =>
     unwrap<any>(apiClient.post('/checkin/verify', data)),
 
+  /** Operator: guests currently checked in (on-site now board). */
+  activeCheckins: (businessId: string) =>
+    unwrap<any>(apiClient.get(`/checkin/business/${businessId}/active`)),
+
+  /** Operator: check a guest out — completes the visit, unlocks their review + rewards. */
+  checkoutReservation: (reservationId: string) =>
+    unwrap<any>(apiClient.post(`/checkin/${reservationId}/checkout`)),
+
   /** Operator: list own promos with redemption counts. */
   listPromos: (businessId: string) =>
     unwrap<any[]>(apiClient.get('/sitara/promos', { params: { businessId } })),

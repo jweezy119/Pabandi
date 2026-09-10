@@ -36,6 +36,31 @@ export default function OperatorReservationsPage() {
     setUpdatedAt(new Date());
   };
 
+  const [onSite, setOnSite] = useState<any[]>([]);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+
+  const fetchOnSite = async (bizId: string) => {
+    const raw: any = await sitaraApi.activeCheckins(bizId).catch(() => null);
+    const list = raw?.activeCheckIns || raw?.data?.activeCheckIns || (Array.isArray(raw) ? raw : []);
+    setOnSite(Array.isArray(list) ? list : []);
+  };
+
+  /** Staff taps when the guest leaves — completes the visit, unlocks review + rewards. */
+  const handleCheckoutGuest = async (reservationId: string) => {
+    setCheckingOut(reservationId);
+    setActionError(null);
+    try {
+      await sitaraApi.checkoutReservation(reservationId);
+      if (businessId) {
+        await Promise.all([fetchList(businessId), fetchOnSite(businessId)]);
+      }
+    } catch (e: any) {
+      setActionError(e?.response?.data?.message || e?.message || 'Check-out failed.');
+    } finally {
+      setCheckingOut(null);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -50,11 +75,17 @@ export default function OperatorReservationsPage() {
         }
         if (biz.category) setProfile(profileForCategory(biz.category));
         setBusinessId(biz.id);
-        await fetchList(biz.id);
+        await Promise.all([fetchList(biz.id), fetchOnSite(biz.id)]);
         // Live book: refresh every 30s + on tab focus so walk-ins show up.
-        timer = setInterval(() => void fetchList(biz.id), 30000);
+        timer = setInterval(() => {
+          void fetchList(biz.id);
+          void fetchOnSite(biz.id);
+        }, 30000);
         onFocus = () => {
-          if (!document.hidden) void fetchList(biz.id);
+          if (!document.hidden) {
+            void fetchList(biz.id);
+            void fetchOnSite(biz.id);
+          }
         };
         window.addEventListener('focus', onFocus);
       } finally {
@@ -171,6 +202,37 @@ export default function OperatorReservationsPage() {
       {actionError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 mb-4">
           {actionError}
+        </div>
+      )}
+
+      {/* On-site now — checked-in guests, one tap to complete their visit */}
+      {onSite.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <h2 className="font-semibold text-green-900 mb-3">
+            🟢 On-site now ({onSite.length})
+          </h2>
+          <div className="space-y-2">
+            {onSite.map((g: any) => (
+              <div key={g.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {g.customerName || 'Guest'}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {g.checkInDate ? `since ${new Date(g.checkInDate).toLocaleTimeString()}` : 'checked in'}
+                    {g.numberOfGuests ? ` · ${g.numberOfGuests} guests` : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => void handleCheckoutGuest(g.id)}
+                  disabled={checkingOut === g.id}
+                  className="shrink-0 px-3 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg disabled:opacity-50"
+                >
+                  {checkingOut === g.id ? '…' : 'Check out'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -112,6 +112,16 @@ export default function MyBookingsPage() {
                         </button>
                       </div>
                     )}
+                    {status === 'completed' && (r.businessId?.length || 0) > 10 && (
+                      <div className="mt-3">
+                        <Link
+                          to={`/sitara/review/live/${r.id}`}
+                          className="inline-block px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded hover:bg-amber-600"
+                        >
+                          ★ Review your visit — give them a star
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 );
               })}

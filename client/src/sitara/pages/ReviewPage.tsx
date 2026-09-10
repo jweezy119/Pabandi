@@ -1,15 +1,16 @@
 // Sitara OS — Review Page
 // Verified review with on-chain proof
 
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
 
 export default function ReviewPage() {
-  const { bookingId } = useParams();
+  const { bookingId, reservationId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { bookings, updateBooking, updateStarPower } = useSitaraStore();
   const { isAuthenticated } = useAuthStore();
   const [rating, setRating] = useState(0);
@@ -18,8 +19,47 @@ export default function ReviewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [liveReview, setLiveReview] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  // Live path: /review/live/:reservationId — synthesize from the customer's
+  // own reservations so any completed visit can earn its star, on any device.
+  const [liveBooking, setLiveBooking] = useState<any>(null);
+  const [loadingLive, setLoadingLive] = useState(!!reservationId);
 
-  const booking = bookings.find((b) => b.id === bookingId);
+  const booking = bookings.find((b) => b.id === bookingId) || liveBooking;
+
+  useEffect(() => {
+    if (!reservationId || !isAuthenticated) {
+      setLoadingLive(false);
+      return;
+    }
+    let cancelled = false;
+    sitaraApi
+      .myReservations()
+      .then((list: any[]) => {
+        if (cancelled) return;
+        const r = (Array.isArray(list) ? list : []).find((x: any) => x.id === reservationId);
+        if (r) {
+          setLiveBooking({
+            id: `live-${r.id}`,
+            businessId: r.businessId,
+            businessName:
+              r.business?.name || r.businessName || location.state?.name || 'this business',
+            businessType: 'restaurant' as const,
+            scheduledAt: r.reservationDate || r.createdAt,
+            status: String(r.status || '').toLowerCase(),
+            reservationId: r.id,
+            reviewSubmitted: false,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingLive(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reservationId, isAuthenticated]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -47,7 +87,7 @@ export default function ReviewPage() {
     }
 
     setLiveReview(live);
-    updateBooking(bookingId!, { reviewSubmitted: true });
+    if (bookingId) updateBooking(bookingId, { reviewSubmitted: true });
     updateStarPower(25); // Earn 25 star power for review
 
     setSubmitted(true);
@@ -57,7 +97,9 @@ export default function ReviewPage() {
   if (!booking) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-        <p className="text-slate-600">Booking not found.</p>
+        <p className="text-slate-600">
+          {loadingLive ? 'Loading your visit…' : 'Booking not found.'}
+        </p>
       </div>
     );
   }
