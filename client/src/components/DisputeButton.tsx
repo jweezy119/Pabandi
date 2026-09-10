@@ -25,8 +25,7 @@ export default function DisputeButton({ contextType, contextId, label = 'Dispute
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-2 py-1 rounded-lg text-xs font-bold"
-        style={{ background: 'transparent', color: '#f87171', border: '1px solid rgba(248,113,113,0.4)' }}
+        className="px-2 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
       >
         {label}
       </button>
@@ -34,33 +33,30 @@ export default function DisputeButton({ contextType, contextId, label = 'Dispute
   }
 
   return (
-    <div className="mt-2 rounded-xl p-3" style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.3)' }}>
-      <p className="text-xs font-bold mb-2" style={{ color: '#f87171' }}>File dispute on this {contextType.toLowerCase()}</p>
+    <div className="mt-2 rounded-xl p-3 bg-rose-500/5 border border-rose-500/20">
+      <p className="text-xs font-bold mb-2 text-rose-300">File dispute on this {contextType.toLowerCase()}</p>
       <input
         value={againstId}
         onChange={e => setAgainstId(e.target.value)}
         placeholder="Disputed party user id"
-        className="w-full px-2 py-1.5 rounded-lg text-xs mb-2"
-        style={{ background: 'rgba(0,0,0,0.25)', color: tokens.color.text, border: '1px solid rgba(255,255,255,0.15)' }}
+        className="w-full px-2 py-1.5 rounded-lg text-xs mb-2 bg-white/5 text-slate-200 border border-white/10 focus:outline-none focus:border-rose-400"
       />
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
         placeholder="What went wrong?"
         rows={2}
-        className="w-full px-2 py-1.5 rounded-lg text-xs"
-        style={{ background: 'rgba(0,0,0,0.25)', color: tokens.color.text, border: '1px solid rgba(255,255,255,0.15)' }}
+        className="w-full px-2 py-1.5 rounded-lg text-xs bg-white/5 text-slate-200 border border-white/10 focus:outline-none focus:border-rose-400"
       />
       <div className="flex gap-2 mt-2">
         <button
           onClick={() => mutation.mutate()}
           disabled={mutation.isLoading || !againstId || !description}
-          className="px-3 py-1.5 rounded-lg text-xs font-bold"
-          style={{ background: '#f87171', color: '#0a0a0a', opacity: mutation.isLoading ? 0.6 : 1 }}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50 transition-colors"
         >
           {mutation.isLoading ? 'Filing…' : 'Submit'}
         </button>
-        <button onClick={() => setOpen(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: 'transparent', color: tokens.color.muted, border: '1px solid rgba(255,255,255,0.15)' }}>
+        <button onClick={() => setOpen(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-colors">
           Cancel
         </button>
       </div>
