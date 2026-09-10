@@ -109,6 +109,31 @@ export const createReview = async (req: AuthRequest, res: Response, next: NextFu
       logger.warn(`PAB reward failed for review ${review.id}: ${e.message}`);
     }
 
+    // 6. The business EARNS this star: recompute verified rating + trust.
+    // Sitara stars come only from verified visits — never from anonymous ratings.
+    try {
+      const agg = await prisma.pabandiReview.aggregate({
+        where: { businessId },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+      const verifiedAvg = agg._avg.rating ?? rating;
+      const verifiedCount = agg._count.rating ?? 1;
+      const trustDelta = rating >= 5 ? 1 : rating === 4 ? 0.5 : rating === 3 ? 0.1 : rating === 2 ? -0.5 : -1;
+      const biz = await prisma.business.findUnique({
+        where: { id: businessId },
+        select: { trustScore: true },
+      });
+      const trustScore = Math.min(99, Math.max(5, (biz?.trustScore ?? 50) + trustDelta));
+      await prisma.business.update({
+        where: { id: businessId },
+        data: { rating: verifiedAvg, reviewCount: verifiedCount, trustScore },
+      });
+      logger.info(`[stars] Business ${businessId} earned ★${rating} (avg ${verifiedAvg.toFixed(2)} over ${verifiedCount}, trust ${trustScore.toFixed(1)})`);
+    } catch (e: any) {
+      logger.warn(`Business star update failed for review ${review.id}: ${e.message}`);
+    }
+
     res.status(201).json({
       success: true,
       data: { review, starPoints },

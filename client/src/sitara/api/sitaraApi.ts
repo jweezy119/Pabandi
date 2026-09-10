@@ -182,13 +182,9 @@ export const sitaraApi = {
     unwrap<any>(apiClient.get('/square/status', { params: { businessId } })),
   /** Resolve the Square OAuth URL (authed) then navigate there. */
   squareConnect: async (businessId: string): Promise<string> => {
-    const res: any = await apiClient.get('/square/connect', {
-      params: { businessId },
-      maxRedirects: 0,
-      validateStatus: (s: number) => s === 302,
-    });
-    const url = res?.headers?.location;
-    if (!url) throw new Error('No redirect from Square connect');
+    const res: any = await apiClient.get('/square/connect', { params: { businessId } });
+    const url = res?.data?.data?.url;
+    if (!url) throw new Error('No redirect URL returned from Square connect');
     return url;
   },
   squareSync: (businessId: string) =>

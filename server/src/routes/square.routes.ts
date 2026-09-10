@@ -188,7 +188,7 @@ router.get('/connect', authenticate, async (req: any, res: Response, next: NextF
         redirect_uri: REDIRECT_URI,
         state,
       }).toString();
-    res.redirect(url);
+    res.json({ success: true, data: { url } });
   } catch (error) {
     next(error);
   }

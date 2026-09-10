@@ -318,4 +318,64 @@ router.post('/redemptions/:id/use', authenticate, async (req: any, res: Response
   }
 });
 
+/**
+ * GET /api/v1/sitara/business/:businessId/stars (public)
+ * The stars a business has EARNED from verified customers:
+ * verified average, verified count, 5→1 distribution, trust score.
+ * Sitara = star: only checked-in visits mint stars, so this number
+ * can't be bought or botted — that's the whole point.
+ */
+router.get('/business/:businessId/stars', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { businessId } = req.params;
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, name: true, rating: true, reviewCount: true, trustScore: true },
+    });
+    if (!business) return res.status(404).json({ error: 'Business not found' });
+
+    const groups = await prisma.pabandiReview.groupBy({
+      by: ['rating'],
+      where: { businessId },
+      _count: { rating: true },
+    });
+    const distribution: Record<string, number> = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 };
+    for (const g of groups) distribution[String(g.rating)] = g._count.rating;
+
+    const recent = await prisma.pabandiReview.findMany({
+      where: { businessId },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+      select: {
+        id: true,
+        rating: true,
+        text: true,
+        createdAt: true,
+        customer: { select: { firstName: true, lastName: true } },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        businessId: business.id,
+        name: business.name,
+        verifiedAvg: business.rating ?? 0,
+        verifiedCount: business.reviewCount ?? 0,
+        distribution,
+        trustScore: business.trustScore ?? 50,
+        recent: recent.map((r) => ({
+          id: r.id,
+          rating: r.rating,
+          text: r.text,
+          date: r.createdAt,
+          author: [r.customer?.firstName, r.customer?.lastName].filter(Boolean).join(' ') || 'Verified guest',
+        })),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
