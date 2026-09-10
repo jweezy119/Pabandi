@@ -261,11 +261,11 @@ export default function Layout() {
         <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b shadow-2xl transition-all duration-300 ${scrolled ? 'bg-surface/60 backdrop-blur-2xl border-white/10 scale-[1.01]' : 'bg-surface/30 backdrop-blur-2xl border-white/5 scale-100'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
-              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
+              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
                 {initials}
               </Link>
             ) : (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 touch-target">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 touch-target">
                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">person</span>
               </div>
             )}
@@ -337,7 +337,7 @@ export default function Layout() {
                   <span className="material-symbols-outlined text-[18px]">person</span>
                 </Link>
                 <Link to="/login" className="hidden sm:inline text-sm font-medium px-3 py-1.5 text-on-surface-variant hover:text-primary transition-all duration-200">Sign In</Link>
-                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
+                <Link to="/register" className="px-3 py-1.5 sm:px-4 sm:py-1.5 rounded-xl bg-indigo-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-[1px] transition-all duration-200">Sign Up</Link>
               </div>
             )}
           </div>

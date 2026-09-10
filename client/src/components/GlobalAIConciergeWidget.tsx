@@ -46,11 +46,11 @@ export default function GlobalAIConciergeWidget() {
     }
   };
 
-  return (
+return (
     <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+80px)] md:bottom-6 right-4 md:right-6 z-50">
       {isOpen ? (
-        <div className="bg-white shadow-2xl rounded-2xl w-[calc(100vw-2rem)] sm:w-80 md:w-96 flex flex-col h-[500px] max-h-[calc(100vh-120px)] border border-gray-100 overflow-hidden">
-          <div className="bg-indigo-600 p-4 flex justify-between items-center">
+        <div className="bg-[#0f172a] shadow-2xl rounded-2xl w-[calc(100vw-2rem)] sm:w-80 md:w-96 flex flex-col h-[500px] max-h-[calc(100vh-120px)] border border-white/10 overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 flex justify-between items-center">
             <h3 className="text-white font-bold flex items-center gap-2">
               <span className="text-xl">✨</span> Pabandi AI Concierge
             </h3>
@@ -65,15 +65,15 @@ export default function GlobalAIConciergeWidget() {
               </button>
             </div>
           </div>
-          
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
+           
+          <div className="flex-1 p-4 overflow-y-auto bg-[#020617] flex flex-col gap-3">
             {messages.length === 0 && (
-              <div className="text-center text-gray-500 mt-10">
+              <div className="text-center text-slate-400 mt-10">
                 <p className="text-4xl mb-2">👋</p>
                 <p>Hi! I'm your AI Concierge powered by Qwen.</p>
                 <p className="text-sm mt-2">I can help you find restaurants, book tables, and get 1% crypto cashback on your reservations.</p>
                 {wallet?.address && (
-                  <p className="text-xs mt-3 text-indigo-600 bg-indigo-50 px-3 py-2 rounded-lg font-medium border border-indigo-100">
+                  <p className="text-xs mt-3 text-indigo-300 bg-indigo-500/10 px-3 py-2 rounded-lg font-medium border border-indigo-500/20">
                     Your Solana wallet is connected. I am tailoring recommendations to your on-chain lifestyle.
                   </p>
                 )}
@@ -81,18 +81,18 @@ export default function GlobalAIConciergeWidget() {
             )}
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-none'}`}>
+                <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-br-none' : 'bg-white/5 text-slate-200 border border-white/10 rounded-bl-none'}`}>
                   {msg.content}
                 </div>
                 {msg.proposal && (
-                  <div className="mt-2 p-3 bg-indigo-50 border border-indigo-100 rounded-lg w-full max-w-[85%]">
-                    <p className="text-xs font-bold text-indigo-800 mb-1">PROPOSED RESERVATION</p>
+                  <div className="mt-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg w-full max-w-[85%]">
+                    <p className="text-xs font-bold text-indigo-300 mb-1">PROPOSED RESERVATION</p>
                     <p className="text-sm"><strong>{msg.proposal.businessName}</strong></p>
-                    <p className="text-xs text-gray-600">{msg.proposal.reservationDate} at {msg.proposal.reservationTime}</p>
-                    <p className="text-xs text-gray-600">{msg.proposal.numberOfGuests} Guests</p>
+                    <p className="text-xs text-slate-400">{msg.proposal.reservationDate} at {msg.proposal.reservationTime}</p>
+                    <p className="text-xs text-slate-400">{msg.proposal.numberOfGuests} Guests</p>
                     <button 
                       onClick={() => handleBook(msg.proposal)}
-                      className="mt-2 w-full bg-indigo-600 text-white text-xs font-bold py-1.5 rounded hover:bg-indigo-700 transition-colors"
+                      className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold py-1.5 rounded hover:opacity-90 transition-opacity"
                     >
                       Book Now (1% Cashback)
                     </button>
@@ -102,29 +102,29 @@ export default function GlobalAIConciergeWidget() {
             ))}
             {loading && (
               <div className="flex items-start">
-                <div className="bg-white px-4 py-2 rounded-2xl rounded-bl-none shadow-sm border border-gray-100">
+                <div className="bg-white/5 px-4 py-2 rounded-2xl rounded-bl-none border border-white/10">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 border-t border-gray-100 bg-white flex gap-2">
+          <form onSubmit={handleSubmit} className="p-3 border-t border-white/10 bg-[#0f172a] flex gap-2">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="E.g., Find a romantic Italian place for 2 on Friday at 7pm..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-white/10 rounded-full text-sm bg-white/5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
             <button 
               type="submit" 
               disabled={loading || !query.trim()}
-              className="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full w-10 h-10 flex items-center justify-center hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
             </button>
@@ -133,7 +133,7 @@ export default function GlobalAIConciergeWidget() {
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-indigo-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all duration-200"
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:scale-105 transition-all duration-200"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
         </button>
