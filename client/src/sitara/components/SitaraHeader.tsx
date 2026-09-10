@@ -64,6 +64,26 @@ export default function SitaraHeader() {
           </div>
         </div>
       </div>
+      {/* Mobile nav — swipeable, thumb-reachable */}
+      <nav className="md:hidden border-t border-slate-100">
+        <div className="flex overflow-x-auto no-scrollbar mobile-scroll px-4 py-2 gap-2">
+          {[
+            { to: '/sitara', label: '🔍 Discover' },
+            { to: '/sitara/my-bookings', label: '📅 Bookings' },
+            { to: '/sitara/promos', label: '🎁 Promos' },
+            { to: '/sitara/star-card', label: '⭐ Star Card' },
+            { to: '/sitara/promoter', label: '📣 Promote' },
+          ].map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="shrink-0 px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-full active:bg-amber-100 active:text-amber-800"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }

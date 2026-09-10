@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
+import jwt from 'jsonwebtoken';
 
 // Square OAuth → location import (geo) + future payment rails.
 // Setup: Square Developer Dashboard → create app → set redirect URL to
@@ -178,7 +179,7 @@ router.get('/connect', authenticate, async (req: any, res: Response, next: NextF
     const business = await ensureOwner(String(businessId), req.user!.id);
     if (!business) return res.status(403).json({ error: 'Not your business' });
 
-    const state = Buffer.from(JSON.stringify({ businessId, userId: req.user!.id })).toString('base64');
+    const state = jwt.sign({ businessId, userId: req.user!.id }, process.env.JWT_SECRET || 'fallback', { expiresIn: '10m' });
     const url =
       `${squareBase()}/oauth2/authorize?` +
       new URLSearchParams({
@@ -200,7 +201,15 @@ router.get('/callback', async (req: Request, res: Response) => {
     if (!code || !state) {
       return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Missing code')}`);
     }
-    const { businessId, userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    let businessId: string;
+    let userId: string;
+    try {
+      const decoded: any = jwt.verify(state, process.env.JWT_SECRET || 'fallback');
+      businessId = decoded.businessId;
+      userId = decoded.userId;
+    } catch (e) {
+      return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Invalid state')}`);
+    }
     const business = await ensureOwner(String(businessId), String(userId));
     if (!business) {
       return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Business not found')}`);

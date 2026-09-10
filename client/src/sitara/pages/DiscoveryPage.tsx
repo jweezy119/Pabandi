@@ -149,7 +149,7 @@ export default function DiscoveryPage() {
       </div>
 
       {/* Business Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {loading ? (
           <div className="col-span-full text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-500 border-t-transparent" />
@@ -160,12 +160,13 @@ export default function DiscoveryPage() {
             <Link
               key={business.id}
               to={`/sitara/book/${business.id}`}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+              className="tile tile-img rise bg-white rounded-xl shadow-sm overflow-hidden group"
             >
-              <div className="h-48 bg-slate-200">
+              <div className="h-48 bg-slate-200 overflow-hidden">
                 <img
                   src={business.image}
                   alt={business.name}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
               </div>

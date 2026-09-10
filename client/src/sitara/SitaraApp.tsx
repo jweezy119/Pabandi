@@ -85,6 +85,7 @@ function useLinkedSession() {
 export default function SitaraApp() {
   useLinkedSession();
   return (
+    <div className="sitara">
     <Routes>
       {/* Consumer App — /sitara, /sitara/book/:id, ... */}
       <Route element={<ConsumerLayout />}>
@@ -122,5 +123,6 @@ export default function SitaraApp() {
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/sitara" replace />} />
     </Routes>
+    </div>
   );
 }

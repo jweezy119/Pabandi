@@ -114,14 +114,14 @@ export default function OperatorDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white border border-slate-200 rounded-lg p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className="text-sm text-slate-600">{stat.label}</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
+        {stats.map((stat, i) => (
+          <div key={stat.label} className={`tile rise rise-${Math.min(i, 5)} bg-white border border-slate-200 rounded-lg p-4 sm:p-6`}>
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <span className="text-xl sm:text-2xl">{stat.icon}</span>
+              <span className="text-xs sm:text-sm text-slate-600 leading-tight">{stat.label}</span>
             </div>
-            <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stat.value}</p>
           </div>
         ))}
       </div>

@@ -711,6 +711,11 @@ export const cancelReservation = async (
       throw new CustomError('Unauthorized', 403);
     }
 
+    // Check status
+    if (['CANCELLED', 'COMPLETED', 'CHECKED_IN', 'NO_SHOW'].includes(reservation.status)) {
+      throw new CustomError(`Reservation is already ${reservation.status.toLowerCase()}`, 400);
+    }
+
     // Check cancellation policy
     const business = await prisma.business.findUnique({
       where: { id: reservation.businessId },
