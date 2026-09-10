@@ -1,0 +1,151 @@
+// Sitara OS — Operator reservations
+// Real booking list per business type (reservations / appointments / stays /
+// viewings). Data: GET /businesses/:id/reservations. Vocabulary: profile.
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { sitaraApi } from '../api/sitaraApi';
+import { profileForCategory, OperatorProfile } from '../utils/operatorProfile';
+
+type Filter = 'today' | 'upcoming' | 'all';
+
+function dayKey(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function statusColor(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes('confirm') || s.includes('complete') || s.includes('check')) return 'bg-green-100 text-green-800';
+  if (s.includes('pend')) return 'bg-yellow-100 text-yellow-800';
+  if (s.includes('cancel') || s.includes('no_show') || s.includes('noshow')) return 'bg-slate-100 text-slate-500';
+  return 'bg-blue-100 text-blue-800';
+}
+
+export default function OperatorReservationsPage() {
+  const [profile, setProfile] = useState<OperatorProfile>(profileForCategory(null));
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>('today');
+  const [noBusiness, setNoBusiness] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const biz = await sitaraApi.myBusiness().catch(() => null);
+        if (!biz?.id) {
+          setNoBusiness(true);
+          return;
+        }
+        if (biz.category) setProfile(profileForCategory(biz.category));
+        const list = await sitaraApi.businessReservations(biz.id).catch(() => []);
+        setReservations(Array.isArray(list) ? list : []);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const today = dayKey(new Date());
+  const visible = useMemo(() => {
+    const sorted = [...reservations].sort(
+      (a, b) => +new Date(a.reservationDate || 0) - +new Date(b.reservationDate || 0)
+    );
+    if (filter === 'today') return sorted.filter((r) => dayKey(new Date(r.reservationDate)) === today);
+    if (filter === 'upcoming')
+      return sorted.filter(
+        (r) =>
+          dayKey(new Date(r.reservationDate)) >= today &&
+          !['CANCELLED', 'NO_SHOW'].includes(String(r.status || '').toUpperCase())
+      );
+    return sorted;
+  }, [reservations, filter, today]);
+
+  const tabs: { id: Filter; label: string }[] = [
+    { id: 'today', label: 'Today' },
+    { id: 'upcoming', label: `Upcoming` },
+    { id: 'all', label: 'All' },
+  ];
+
+  if (loading) return <p className="text-slate-500 text-sm p-8">Loading {profile.bookingNounPlural.toLowerCase()}…</p>;
+  if (noBusiness) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center">
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">No business yet</h1>
+        <p className="text-slate-600 mb-6">Register your business to see {profile.bookingNounPlural.toLowerCase()} here.</p>
+        <Link to="/sitara" className="px-6 py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600">
+          Back to Sitara
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-slate-900">{profile.bookingNounPlural}</h1>
+        <p className="text-slate-600 mt-1">
+          {reservations.length} total · who is coming, when, and party size
+        </p>
+      </div>
+
+      <div className="flex gap-2 mb-6">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setFilter(t.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              filter === t.id ? 'bg-amber-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
+          <p className="text-slate-500">No {profile.bookingNounPlural.toLowerCase()} in this view yet.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">{profile.clientNoun}</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">When</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Party</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Deposit</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {visible.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <p className="text-sm font-medium text-slate-900">{r.customerName || '—'}</p>
+                    <p className="text-xs text-slate-500">{r.customerPhone || r.customerEmail || ''}</p>
+                    {r.specialRequests && (
+                      <p className="text-xs text-slate-500 italic mt-0.5">“{r.specialRequests}”</p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : '—'}
+                    {r.reservationTime && ` · ${r.reservationTime}`}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{r.numberOfGuests ?? '—'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {r.depositRequired ? (r.depositPaid ? `✓ $${r.depositAmount ?? ''} paid` : `$${r.depositAmount ?? ''} due`) : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(String(r.status || ''))}`}>
+                      {String(r.status || 'pending').replace(/_/g, ' ').toLowerCase()}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

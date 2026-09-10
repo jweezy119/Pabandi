@@ -123,7 +123,37 @@ export const sitaraApi = {
   businessReservations: (businessId: string, params?: any) =>
     unwrap<any[]>(apiClient.get(`/businesses/${businessId}/reservations`, { params })),
   businessReviews: (businessId: string) =>
-    unwrap<any[]>(apiClient.get(`/businesses/${businessId}/reviews`)),
+    unwrap<any>(apiClient.get(`/businesses/${businessId}/reviews`)),
+
+  /**
+   * Operator: all reviews for a business as one flat list.
+   * Backend returns { reviews (Google), pabandiReviews (verified) } —
+   * merged here, verified first, each tagged with its source.
+   */
+  operatorReviews: async (businessId: string) => {
+    const raw: any = await unwrap<any>(apiClient.get(`/businesses/${businessId}/reviews`));
+    const google = (raw?.reviews || []).map((r: any) => ({
+      id: r.id || r.googleReviewId,
+      author: r.authorName || 'Google reviewer',
+      rating: r.rating,
+      text: r.text,
+      date: r.time,
+      source: 'Google',
+      verified: false,
+    }));
+    const verified = (raw?.pabandiReviews || []).map((r: any) => ({
+      id: r.id,
+      author:
+        [r.customer?.firstName, r.customer?.lastName].filter(Boolean).join(' ') || 'Verified guest',
+      rating: r.rating,
+      text: r.text,
+      date: r.createdAt,
+      source: 'Sitara verified',
+      verified: true,
+      starPoints: r.starPoints,
+    }));
+    return [...verified, ...google];
+  },
 
   getStarFinder: (businessId: string, minTier = 'tara', limit = 50) =>
     unwrap<any[]>(apiClient.get('/sitara/star-finder', { params: { businessId, minTier, limit } })),

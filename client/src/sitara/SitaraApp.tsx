@@ -23,6 +23,8 @@ import PromoterDashboardPage from './pages/PromoterDashboardPage';
 
 // Operator Pages
 import OperatorDashboard from './pages/OperatorDashboard';
+import OperatorReservationsPage from './pages/OperatorReservationsPage';
+import OperatorReviewsPage from './pages/OperatorReviewsPage';
 import UnitsPage from './pages/UnitsPage';
 import TenantsPage from './pages/TenantsPage';
 import LeasesPage from './pages/LeasesPage';
@@ -99,6 +101,8 @@ export default function SitaraApp() {
       {/* Operator App — /sitara/operator/... */}
       <Route path="operator" element={<OperatorLayout />}>
         <Route index element={<OperatorDashboard />} />
+        <Route path="reservations" element={<OperatorReservationsPage />} />
+        <Route path="reviews" element={<OperatorReviewsPage />} />
         <Route path="units" element={<UnitsPage />} />
         <Route path="tenants" element={<TenantsPage />} />
         <Route path="leases" element={<LeasesPage />} />

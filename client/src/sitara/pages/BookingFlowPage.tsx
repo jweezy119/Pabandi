@@ -22,14 +22,13 @@ export default function BookingFlowPage() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [paymentPending, setPaymentPending] = useState(false);
 
-  const handleConfirm = async () => {
+  const handleProcessBooking = async () => {
+    setConfirming(true);
     const localId = `booking-${Date.now()}`;
     let reservationId: string | undefined;
-    // Real platform reservation when signed in and the venue is a live business
-    // (mock discovery ids are single digits; real ids are cuid-length).
     const looksReal = (businessId?.length || 0) > 10;
+    
     if (isAuthenticated && looksReal && date && time) {
-      setConfirming(true);
       try {
         const created: any = await sitaraApi.createReservation({
           businessId: businessId!,
@@ -42,7 +41,6 @@ export default function BookingFlowPage() {
         });
         reservationId = created?.id;
         setLiveReservationId(reservationId || null);
-        // Payment rail: record the escrow deposit against the reservation.
         if (reservationId) {
           try {
             const pay: any = await sitaraApi.createDepositPayment({
@@ -52,16 +50,11 @@ export default function BookingFlowPage() {
             const url = pay?.payment?.paymentUrl || pay?.paymentUrl || null;
             setPaymentUrl(url);
             setPaymentPending(!!pay?.payment);
-          } catch {
-            // Reservation stands; deposit can be settled at the venue.
-          }
+          } catch {}
         }
-      } catch {
-        reservationId = undefined;
-      } finally {
-        setConfirming(false);
-      }
+      } catch {}
     }
+    
     const booking = {
       id: localId,
       businessId: businessId!,
@@ -75,7 +68,12 @@ export default function BookingFlowPage() {
       reservationId,
     };
     addBooking(booking);
-    navigate(`/sitara/checkin/${booking.id}`);
+    setConfirming(false);
+    setStep(3);
+  };
+
+  const handleConfirmClick = async () => {
+     await handleProcessBooking();
   };
 
   return (
@@ -182,10 +180,11 @@ export default function BookingFlowPage() {
               Back
             </button>
             <button
-              onClick={() => setStep(3)}
-              className="flex-1 py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
+              onClick={() => void handleConfirmClick()}
+              disabled={confirming}
+              className="flex-1 py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50"
             >
-              Confirm & Pay Deposit
+              {confirming ? 'Confirming...' : 'Confirm & Pay Deposit'}
             </button>
           </div>
         </div>
@@ -221,15 +220,13 @@ export default function BookingFlowPage() {
             Your deposit is held in escrow. Check in at the venue to complete your visit and earn star power.
           </p>
           <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-600">
-            <p><strong>Booking ID:</strong> booking-123456</p>
             <p><strong>Status:</strong> Pending check-in</p>
           </div>
           <button
-            onClick={() => void handleConfirm()}
-            disabled={confirming}
-            className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50"
+            onClick={() => navigate('/sitara/my-bookings')}
+            className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
           >
-            {confirming ? 'Creating reservation…' : 'Go to Check-In'}
+            Go to Check-In
           </button>
         </div>
       )}

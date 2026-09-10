@@ -1,23 +1,31 @@
 // Sitara OS — Operator Layout
-// Layout for property manager / business operator pages
+// Nav is driven by business type (see utils/operatorProfile) — a salon sees
+// Appointments + Clients, a rental sees Units + Tenants, never mixed.
 
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../../store/sitaraStore';
+import { sitaraApi } from '../../api/sitaraApi';
+import { profileForCategory, OperatorProfile } from '../../utils/operatorProfile';
 import SitaraLogo from '../../components/SitaraLogo';
-
-const operatorNav = [
-  { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
-  { path: '/sitara/operator/units', label: 'Units', icon: '🏢' },
-  { path: '/sitara/operator/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/sitara/operator/leases', label: 'Leases', icon: '📄' },
-  { path: '/sitara/operator/promos', label: 'Promos', icon: '🎁' },
-  { path: '/sitara/operator/star-finder', label: 'Star Finder', icon: '⭐' },
-  { path: '/sitara/operator/customers', label: 'Customers', icon: '💛' },
-];
 
 export default function OperatorLayout() {
   const location = useLocation();
   const { user } = useSitaraStore();
+  const [profile, setProfile] = useState<OperatorProfile>(profileForCategory(null));
+
+  useEffect(() => {
+    let cancelled = false;
+    sitaraApi
+      .myBusiness()
+      .then((biz) => {
+        if (!cancelled && biz?.category) setProfile(profileForCategory(biz.category));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-slate-50">
@@ -28,12 +36,15 @@ export default function OperatorLayout() {
             <SitaraLogo size={32} />
             <span className="font-bold text-xl">Sitara</span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Operator Dashboard</p>
+          <p className="text-xs text-slate-400 mt-1">{profile.title}</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {operatorNav.map((item) => {
-            const isActive = location.pathname === item.path;
+          {profile.nav.map((item) => {
+            const isActive =
+              item.path === '/sitara/operator'
+                ? location.pathname === item.path
+                : location.pathname.startsWith(item.path);
             return (
               <Link
                 key={item.path}
