@@ -442,13 +442,13 @@ export default function PropertyConnectWizard({ onClose, initialPropertyType }: 
                 </button>
               )}
 
-              <button
-                id="wizard-done-btn"
-                onClick={onClose}
-                className="btn-primary w-full py-3 text-xs font-bold"
-              >
-                Done — Start Protecting Bookings 🚀
-              </button>
+<button
+                  id="wizard-done-btn"
+                  onClick={onClose}
+                  className="w-full py-3 text-xs font-bold rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 transition-opacity"
+                >
+                  Done
+                </button>
             </div>
           )}
         </div>

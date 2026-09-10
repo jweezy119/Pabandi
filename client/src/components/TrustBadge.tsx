@@ -44,7 +44,7 @@ export function TrustBadge() {
         style={{ background: tone, boxShadow: `0 0 0 4px ${tone}25` }}
       />
       {trustTierLabel(tier)} Trust
-      <span className="font-mono" style={{ color: tokens.color.muted }}>
+      <span className="font-mono text-slate-400">
         {Math.round(data.score)}
       </span>
     </span>
