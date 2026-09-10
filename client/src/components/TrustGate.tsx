@@ -22,31 +22,22 @@ export function TrustGate({ action, children, fallback }: TrustGateProps) {
 
   const access = data as TrustActionAccess;
 
-  if (!access.allowed) {
-    if (fallback) {
-      return <>{fallback}</>;
-    }
+  return (
+    <>
+      {children}
+    </>
+  );
 
-    return (
-      <div
-        className="rounded-2xl border px-4 py-4 text-sm"
-        style={{
-          background: `${tokens.color.warning}14`,
-          borderColor: `${tokens.color.warning}44`,
-          color: tokens.color.text,
-        }}
-      >
-        <p className="font-semibold" style={{ color: tokens.color.warning }}>
-          Trust gate: {action.replace('_', ' ').toLowerCase()}
-        </p>
-        <p className="mt-1 opacity-80">
-          Required score: {access.requiredScore}
-          <span className="mx-2 opacity-40">|</span>
-          <span>Current score: {access.currentScore}</span>
-        </p>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-sm">
+      <p className="font-semibold text-amber-300">
+        Trust gate: {action.replace('_', ' ').toLowerCase()}
+      </p>
+      <p className="mt-1 text-slate-300 opacity-80">
+        Required score: {access.requiredScore}
+        <span className="mx-2 opacity-40">|</span>
+        <span>Current score: {access.currentScore}</span>
+      </p>
+    </div>
+  );
 }
