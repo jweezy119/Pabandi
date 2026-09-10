@@ -48,6 +48,34 @@
   redemption consumed — the call a future POS will take over.
 - Verified: server tsc clean, client tsc clean, vite build passes.
 
+## ✅ Slice 3 — real booking loop + operator promos + brand mark (uncommitted)
+- Backend: `GET /sitara/promos` (owner promo list w/ redemption counts).
+- Consumer loop is real end-to-end: Discovery loads platform businesses (✓ Live badge,
+  mock fallback) → Booking creates a real reservation when signed in on a live venue
+  (reservationId carried on the local booking) → Check-In attempts platform verify →
+  Review posts a real verified review; every step degrades honestly to demo mode.
+- Operator: Star Finder + Promos pages on live data (send/create/list), mocks as fallback.
+- Brand: `SitaraLogo` SVG monogram in header, footer, both sidebars.
+- Verified: server tsc clean, client tsc clean, vite build passes.
+
+## ✅ Slice 4 — linked sign-in + promoter hub on real backend (uncommitted)
+- One login drives everything: SitaraApp mirrors the Pabandi session (+ live Star Power)
+  into the Sitara store. Demo signed-out state untouched.
+- Promoter API was pointing at dead singular `/promoter/*` endpoints — rewired to the real
+  `/promoters/*` backend (me/stats/bookings/wallet/leaderboard/ref-link/register).
+- Promoter Hub: become-a-promoter onboarding, stats, wallet, referral link + copy,
+  attributed guests, leaderboard, Star Power referral note, jump-off to full PromoterOS.
+- Verified: client tsc clean, vite build passes. (No server change needed.)
+
+## ✅ Slice 5 — payment rails + tenant/operator live data (uncommitted)
+- Payment rails ready: booking creates a deposit payment (`POST /payments`) against the
+  live reservation; Safepay checkout URL surfaces as a Pay button when external.
+  Rail is reservation → payment record → gateway — POS plugs into the same calls.
+- Tenant portal: dashboard + lease pages read real leases from `/tenant/dashboard`
+  (mock fallback). $PAB wallet already visible via linked auth session.
+- Operator dashboard: live reservations/reviews/promos counts per owned business.
+- Verified: server tsc clean, client tsc clean, vite build passes.
+
 ## ❌ Remaining
 - Branding: logo, colors, favicon, CSS variables
 - Frontend pages need API service hooks (currently using mock data + local Zustand state)

@@ -3,6 +3,7 @@
 
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../../store/sitaraStore';
+import SitaraLogo from '../../components/SitaraLogo';
 
 const tenantNav = [
   { path: '/sitara/tenant', label: 'Dashboard', icon: '🏠' },
@@ -21,9 +22,7 @@ export default function TenantLayout() {
       <aside className="w-64 bg-slate-900 text-white flex flex-col">
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">★</span>
-            </div>
+            <SitaraLogo size={32} />
             <span className="font-bold text-xl">Sitara</span>
           </div>
           <p className="text-xs text-slate-400 mt-1">Tenant Portal</p>

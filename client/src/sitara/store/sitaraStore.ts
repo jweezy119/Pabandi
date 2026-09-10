@@ -25,6 +25,8 @@ export interface Booking {
   depositHeld: boolean;
   reviewSubmitted: boolean;
   escrowTxId?: string;
+  /** Real platform reservation id, when booked against a real business. */
+  reservationId?: string;
 }
 
 export interface Unit {

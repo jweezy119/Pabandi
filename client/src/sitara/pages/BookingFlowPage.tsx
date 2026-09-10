@@ -4,20 +4,66 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
+import { useAuthStore } from '../../store/authStore';
+import { sitaraApi } from '../api/sitaraApi';
 
 export default function BookingFlowPage() {
   const { businessId } = useParams();
   const navigate = useNavigate();
   const { addBooking } = useSitaraStore();
+  const { isAuthenticated, user: authUser } = useAuthStore();
   const [step, setStep] = useState(1);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [guests, setGuests] = useState(1);
   const [deposit] = useState(25);
+  const [confirming, setConfirming] = useState(false);
+  const [liveReservationId, setLiveReservationId] = useState<string | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentPending, setPaymentPending] = useState(false);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    const localId = `booking-${Date.now()}`;
+    let reservationId: string | undefined;
+    // Real platform reservation when signed in and the venue is a live business
+    // (mock discovery ids are single digits; real ids are cuid-length).
+    const looksReal = (businessId?.length || 0) > 10;
+    if (isAuthenticated && looksReal && date && time) {
+      setConfirming(true);
+      try {
+        const created: any = await sitaraApi.createReservation({
+          businessId: businessId!,
+          reservationDate: date,
+          reservationTime: time,
+          numberOfGuests: guests,
+          customerName: authUser ? `${authUser.firstName} ${authUser.lastName}` : undefined,
+          customerPhone: authUser?.phone,
+          customerEmail: authUser?.email,
+        });
+        reservationId = created?.id;
+        setLiveReservationId(reservationId || null);
+        // Payment rail: record the escrow deposit against the reservation.
+        if (reservationId) {
+          try {
+            const pay: any = await sitaraApi.createDepositPayment({
+              reservationId,
+              amount: deposit,
+            });
+            const url = pay?.payment?.paymentUrl || pay?.paymentUrl || null;
+            setPaymentUrl(url);
+            setPaymentPending(!!pay?.payment);
+          } catch {
+            // Reservation stands; deposit can be settled at the venue.
+          }
+        }
+      } catch {
+        reservationId = undefined;
+      } finally {
+        setConfirming(false);
+      }
+    }
     const booking = {
-      id: `booking-${Date.now()}`,
+      id: localId,
       businessId: businessId!,
       businessName: 'The Golden Fork',
       businessType: 'restaurant' as const,
@@ -26,6 +72,7 @@ export default function BookingFlowPage() {
       depositAmount: deposit,
       depositHeld: true,
       reviewSubmitted: false,
+      reservationId,
     };
     addBooking(booking);
     navigate(`/sitara/checkin/${booking.id}`);
@@ -149,6 +196,26 @@ export default function BookingFlowPage() {
             <span className="text-3xl">✓</span>
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Booking Confirmed!</h2>
+          {liveReservationId ? (
+            <p className="text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+              ✓ Connected to live reservation {liveReservationId.slice(0, 8)}…
+              {paymentPending && ' · deposit recorded'}
+            </p>
+          ) : (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+              Demo booking — sign in and pick a ✓ Live venue for a real reservation.
+            </p>
+          )}
+          {paymentUrl && paymentUrl.startsWith('http') && (
+            <a
+              href={paymentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block px-6 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800"
+            >
+              Pay ${deposit} Deposit →
+            </a>
+          )}
           <p className="text-slate-600">
             Your deposit is held in escrow. Check in at the venue to complete your visit and earn star power.
           </p>
@@ -157,10 +224,11 @@ export default function BookingFlowPage() {
             <p><strong>Status:</strong> Pending check-in</p>
           </div>
           <button
-            onClick={handleConfirm}
-            className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
+            onClick={() => void handleConfirm()}
+            disabled={confirming}
+            className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50"
           >
-            Go to Check-In
+            {confirming ? 'Creating reservation…' : 'Go to Check-In'}
           </button>
         </div>
       )}

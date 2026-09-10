@@ -1,23 +1,60 @@
 // Sitara OS — Operator Dashboard
-// Main dashboard for property managers / business operators
+// Live business stats with local fallback.
 
+import { useEffect, useState } from 'react';
 import { useSitaraStore } from '../store/sitaraStore';
+import { sitaraApi } from '../api/sitaraApi';
 
 export default function OperatorDashboard() {
   const { user, units, bookings } = useSitaraStore();
+  const [live, setLive] = useState<{ reservations: number; reviews: number; promos: number; businessName: string } | null>(null);
 
-  const stats = [
-    { label: 'Total Units', value: units.length, icon: '🏢' },
-    { label: 'Occupied', value: units.filter(u => u.status === 'occupied').length, icon: '🏠' },
-    { label: 'Available', value: units.filter(u => u.status === 'available').length, icon: '🔑' },
-    { label: 'Bookings This Month', value: bookings.length, icon: '📅' },
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const biz = await sitaraApi.myBusiness().catch(() => null);
+        if (!biz?.id) return;
+        const [res, rev, promos] = await Promise.allSettled([
+          sitaraApi.businessReservations(biz.id),
+          sitaraApi.businessReviews(biz.id),
+          sitaraApi.listPromos(biz.id),
+        ]);
+        setLive({
+          reservations: res.status === 'fulfilled' && Array.isArray(res.value) ? res.value.length : 0,
+          reviews: rev.status === 'fulfilled' && Array.isArray(rev.value) ? rev.value.length : 0,
+          promos: promos.status === 'fulfilled' ? promos.value.length : 0,
+          businessName: biz.name || 'Your business',
+        });
+      } catch {
+        // Local fallback stands.
+      }
+    })();
+  }, []);
+
+  const stats = live
+    ? [
+        { label: 'Reservations', value: live.reservations, icon: '📅' },
+        { label: 'Reviews', value: live.reviews, icon: '⭐' },
+        { label: 'Active Promos', value: live.promos, icon: '🎁' },
+        { label: 'Units (local)', value: units.length, icon: '🏢' },
+      ]
+    : [
+        { label: 'Total Units', value: units.length, icon: '🏢' },
+        { label: 'Occupied', value: units.filter((u) => u.status === 'occupied').length, icon: '🏠' },
+        { label: 'Available', value: units.filter((u) => u.status === 'available').length, icon: '🔑' },
+        { label: 'Bookings This Month', value: bookings.length, icon: '📅' },
+      ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-600 mt-1">Welcome back, {user?.name || 'Operator'}</p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          {live && (
+            <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">✓ Live</span>
+          )}
+        </div>
+        <p className="text-slate-600 mt-1">Welcome back, {live?.businessName || user?.name || 'Operator'}</p>
       </div>
 
       {/* Stats */}

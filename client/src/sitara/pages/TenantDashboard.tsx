@@ -1,10 +1,40 @@
 // Sitara OS — Tenant Dashboard
-// Main dashboard for tenants
+// Real lease data from the tenant portal backend, mock fallback.
 
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
+import { sitaraApi } from '../api/sitaraApi';
+
+function pick(obj: any, keys: string[], fallback = '—'): string {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && v !== '') return String(v);
+  }
+  return fallback;
+}
+
+function fmtDate(v: any): string {
+  if (!v) return '—';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? String(v) : d.toLocaleDateString();
+}
 
 export default function TenantDashboard() {
   const { user } = useSitaraStore();
+  const [lease, setLease] = useState<any>(null);
+  const [appCount, setAppCount] = useState(0);
+
+  useEffect(() => {
+    sitaraApi
+      .tenantDashboard()
+      .then((d: any) => {
+        const leases = d?.leases || [];
+        setLease(leases[0] || null);
+        setAppCount(d?.applications?.length || 0);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -25,44 +55,76 @@ export default function TenantDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <button className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
+        <Link to="/sitara/tenant/payments" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">💳</span>
           <h3 className="font-semibold text-slate-900">Pay Rent</h3>
-          <p className="text-sm text-slate-600">Next payment due in 12 days</p>
-        </button>
-        <button className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
+          <p className="text-sm text-slate-600">{lease ? `${pick(lease, ['rentAmount', 'monthlyRent'], '—')} due monthly` : 'Next payment due in 12 days'}</p>
+        </Link>
+        <Link to="/sitara/tenant/maintenance" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">🔧</span>
           <h3 className="font-semibold text-slate-900">Maintenance</h3>
-          <p className="text-sm text-slate-600">0 open requests</p>
-        </button>
-        <button className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
+          <p className="text-sm text-slate-600">Submit a request</p>
+        </Link>
+        <Link to="/sitara/tenant/lease" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">📄</span>
           <h3 className="font-semibold text-slate-900">My Lease</h3>
           <p className="text-sm text-slate-600">View lease details</p>
-        </button>
+        </Link>
       </div>
 
       {/* Lease Summary */}
       <div className="bg-white border border-slate-200 rounded-lg p-6">
-        <h3 className="font-semibold text-slate-900 mb-4">Lease Summary</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-          <div>
-            <p className="text-slate-500">Unit</p>
-            <p className="font-medium">2A</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Monthly Rent</p>
-            <p className="font-medium">$1,850</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Lease End</p>
-            <p className="font-medium">Jun 30, 2027</p>
-          </div>
-          <div>
-            <p className="text-slate-500">Deposit</p>
-            <p className="font-medium">$1,850</p>
-          </div>
+        <div className="flex items-center gap-3 mb-4">
+          <h3 className="font-semibold text-slate-900">Lease Summary</h3>
+          {lease && (
+            <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">✓ Live</span>
+          )}
         </div>
+        {lease ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-slate-500">Unit</p>
+              <p className="font-medium">{pick(lease, ['unitNumber', 'unit', 'unitId'])}</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Monthly Rent</p>
+              <p className="font-medium">${pick(lease, ['rentAmount', 'monthlyRent'])}</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Lease End</p>
+              <p className="font-medium">{fmtDate(lease.endDate || lease.leaseEnd)}</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Deposit</p>
+              <p className="font-medium">${pick(lease, ['depositAmount', 'deposit'])}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-slate-500">Unit</p>
+              <p className="font-medium">2A</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Monthly Rent</p>
+              <p className="font-medium">$1,850</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Lease End</p>
+              <p className="font-medium">Jun 30, 2027</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Deposit</p>
+              <p className="font-medium">$1,850</p>
+            </div>
+          </div>
+        )}
+        {appCount > 0 && (
+          <p className="text-sm text-slate-600 mt-4">
+            {appCount} rental application{appCount === 1 ? '' : 's'} on file —{' '}
+            <Link to="/tenant/applications" className="text-amber-600 font-medium">view in full portal →</Link>
+          </p>
+        )}
       </div>
     </div>
   );

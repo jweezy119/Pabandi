@@ -4,25 +4,54 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
+import { useAuthStore } from '../../store/authStore';
+import { sitaraApi } from '../api/sitaraApi';
 
 export default function ReviewPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const { bookings, updateBooking, updateStarPower } = useSitaraStore();
+  const { isAuthenticated } = useAuthStore();
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [liveReview, setLiveReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const booking = bookings.find((b) => b.id === bookingId);
 
   const handleSubmit = async () => {
-    // Simulate on-chain review minting
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+    setSubmitting(true);
+    setReviewError(null);
+    // Post a real verified review when the booking is backed by a live reservation.
+    let live = false;
+    if (isAuthenticated && booking?.reservationId && (booking?.businessId?.length || 0) > 10) {
+      try {
+        await sitaraApi.createReview({
+          businessId: booking.businessId,
+          reservationId: booking.reservationId,
+          rating,
+          text: review,
+        });
+        live = true;
+      } catch (e: any) {
+        setReviewError(
+          e?.response?.data?.message ||
+          'Verified review needs a completed checkout — recorded locally for now.'
+        );
+      }
+    } else {
+      // Demo booking: simulate on-chain review minting
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+
+    setLiveReview(live);
     updateBooking(bookingId!, { reviewSubmitted: true });
     updateStarPower(25); // Earn 25 star power for review
-    
+
     setSubmitted(true);
+    setSubmitting(false);
   };
 
   if (!booking) {
@@ -41,8 +70,17 @@ export default function ReviewPage() {
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-4">Review Submitted!</h2>
         <p className="text-slate-600 mb-6">
-          Your review is now on-chain and verified. You earned <strong>+25 Star Power</strong>.
+          {liveReview ? (
+            <>Your review is verified on-platform. You earned <strong>+25 Star Power</strong> plus review points.</>
+          ) : (
+            <>Your review is recorded. You earned <strong>+25 Star Power</strong>.</>
+          )}
         </p>
+        {reviewError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 mb-6">
+            {reviewError}
+          </div>
+        )}
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 mb-6">
           <p><strong>Verification:</strong> Proof-of-attendance NFT minted</p>
           <p><strong>Review hash:</strong> 0x{Math.random().toString(16).slice(2, 10)}...</p>
@@ -112,11 +150,11 @@ export default function ReviewPage() {
           </div>
 
           <button
-            onClick={handleSubmit}
-            disabled={rating === 0 || !review.trim()}
+            onClick={() => void handleSubmit()}
+            disabled={rating === 0 || !review.trim() || submitting}
             className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Review
+            {submitting ? 'Submitting…' : 'Submit Review'}
           </button>
         </div>
       </div>

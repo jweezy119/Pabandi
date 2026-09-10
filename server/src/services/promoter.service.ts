@@ -96,6 +96,50 @@ export const promoterService = {
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : 0;
 
+    // Get bookings with details for enhanced stats
+    const bookings = await prisma.bottleReservation.findMany({
+      where: { promoterId },
+      include: {
+        venue: { select: { id: true, name: true, city: true } },
+        tableType: { select: { id: true, name: true } },
+        bottlePackage: { select: { id: true, name: true } },
+        guestList: { select: { id: true, date: true, status: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Calculate enhanced metrics
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+
+    const thisMonthBookings = bookings.filter(b => b.createdAt >= thisMonth);
+    const thisMonthRevenue = thisMonthBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const thisMonthCommissionEarned = thisMonthBookings.reduce((sum, b) => {
+      const commission = b.totalPrice ? b.totalPrice * 0.5 : 0; // Assuming 50% commission on booking value
+      return sum + commission;
+    }, 0);
+
+    // Get guest list performance
+    const guestLists = await prisma.guestList.findMany({
+      where: { promoterId },
+      include: { venue: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const confirmedGuestLists = guestLists.filter(gl => gl.status === 'CONFIRMED');
+    const arrivedGuestLists = guestLists.filter(gl => gl.status === 'ARRIVED');
+
+    // Calculate average booking value
+    const avgBookingValue = bookings.length > 0
+      ? bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0) / bookings.length
+      : 0;
+
+    // Calculate revenue per guest list
+    const revenuePerGuestList = guestLists.length > 0
+      ? bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0) / guestLists.length
+      : 0;
+
     return {
       promoterId,
       totalBookings,
@@ -104,6 +148,32 @@ export const promoterService = {
       totalGuestLists,
       avgRating: Math.round(avgRating * 10) / 10,
       reviewCount: reviews.length,
+      // Enhanced stats
+      thisMonthBookings: thisMonthBookings.length,
+      thisMonthRevenue,
+      thisMonthCommissionEarned,
+      avgBookingValue,
+      revenuePerGuestList,
+      guestListStats: {
+        total: guestLists.length,
+        confirmed: confirmedGuestLists.length,
+        arrived: arrivedGuestLists.length,
+        confirmationRate: guestLists.length > 0
+          ? Math.round((confirmedGuestLists.length / guestLists.length) * 100) / 100
+          : 0,
+        arrivalRate: confirmedGuestLists.length > 0
+          ? Math.round((arrivedGuestLists.length / confirmedGuestLists.length) * 100) / 100
+          : 0,
+      },
+      recentBookings: bookings.slice(0, 10).map(b => ({
+        id: b.id,
+        date: b.createdAt,
+        venueName: b.venue?.name,
+        tableName: b.tableType?.name,
+        packageName: b.bottlePackage?.name,
+        totalPrice: b.totalPrice || 0,
+        status: b.status,
+      })),
     };
   },
 
@@ -150,20 +220,119 @@ export const promoterService = {
   },
 
   /**
-   * Get all bookings attributed to a promoter
+   * Get all bookings attributed to a promoter with optional filtering
    */
-  async getPromoterBookings(promoterId: string) {
-    return prisma.bottleReservation.findMany({
-      where: { promoterId },
-      include: {
-        venue: {
-          select: { id: true, name: true, city: true },
+  async getPromoterBookings(promoterId: string, options?: {
+    status?: string;
+    startDate?: Date;
+    endDate?: Date;
+    venueId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const where: any = { promoterId };
+    
+    if (options?.status) where.status = options.status;
+    if (options?.startDate && options?.endDate) {
+      where.createdAt = {
+        gte: options.startDate,
+        lte: options.endDate,
+      };
+    } else if (options?.startDate) {
+      where.createdAt = { gte: options.startDate };
+    } else if (options?.endDate) {
+      where.createdAt = { lte: options.endDate };
+    }
+    
+    if (options?.venueId) {
+      where.venueId = options.venueId;
+    }
+
+    const skip = options?.offset || 0;
+    const take = options?.limit || 50;
+
+    const [bookings, total] = await Promise.all([
+      prisma.bottleReservation.findMany({
+        where,
+        include: {
+          venue: { select: { id: true, name: true, city: true, address: true } },
+          tableType: { select: { id: true, name: true, basePrice: true } },
+          bottlePackage: { select: { id: true, name: true, bottleType: true, basePrice: true } },
+          guestList: { select: { id: true, date: true, status: true, partySize: true } },
+          promoter: { select: { id: true, name: true, instagram: true } },
         },
-        tableType: { select: { id: true, name: true } },
-        bottlePackage: { select: { id: true, name: true } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.bottleReservation.count({ where }),
+    ]);
+
+    // Calculate summary statistics
+    const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const totalCommission = bookings.reduce((sum, b) => sum + ((b.totalPrice || 0) * 0.5), 0); // 50% commission
+    const averageBookingValue = bookings.length > 0 ? totalRevenue / bookings.length : 0;
+
+    // Group by venue
+    const venueStats = bookings.reduce((acc, b) => {
+      if (!b.venue?.id) return acc;
+      if (!acc[b.venue.id]) {
+        acc[b.venue.id] = {
+          venueId: b.venue.id,
+          venueName: b.venue.name,
+          city: b.venue.city,
+          address: b.venue.address,
+          bookings: 0,
+          revenue: 0,
+          commission: 0,
+          averageValue: 0,
+        };
+      }
+      acc[b.venue.id].bookings++;
+      acc[b.venue.id].revenue += b.totalPrice || 0;
+      acc[b.venue.id].commission += (b.totalPrice || 0) * 0.5;
+      return acc;
+    }, {} as Record<string, any>);
+
+    // Convert to array
+    const venueStatsArray = Object.values(venueStats);
+
+    // Calculate dates
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Filter bookings by date for month calculations
+    const thisMonthBookings = bookings.filter(b => b.createdAt >= startOfMonth);
+    const lastMonthBookings = bookings.filter(b => b.createdAt >= startOfLastMonth && b.createdAt <= endOfLastMonth);
+
+    // Calculate month-over-month growth
+    const thisMonthRevenue = thisMonthBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const lastMonthRevenue = lastMonthBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const monthOverMonthGrowth = lastMonthRevenue > 0 
+      ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+      : 0;
+
+    return {
+      bookings,
+      pagination: {
+        total,
+        page: Math.floor(skip / take) + 1,
+        limit: take,
+        pages: Math.ceil(total / take),
       },
-      orderBy: { createdAt: 'desc' },
-    });
+      summary: {
+        totalRevenue,
+        totalCommission,
+        averageBookingValue,
+        bookingsCount: bookings.length,
+        thisMonthRevenue,
+        lastMonthRevenue,
+        monthOverMonthGrowth: Math.round(monthOverMonthGrowth * 100) / 100,
+      },
+      venueStats: venueStatsArray,
+    };
   },
 
   /**

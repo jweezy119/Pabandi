@@ -1,7 +1,12 @@
 // Sitara OS — Main App Shell
 // Mounted at /sitara/* in the main app. All inner routes are relative
 // so the whole sub-app moves cleanly if the mount point changes.
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import { useSitaraStore } from './store/sitaraStore';
+import { sitaraApi } from './api/sitaraApi';
+import { calculateTier } from './utils/starPower';
 import ConsumerLayout from './apps/consumer/ConsumerLayout';
 import OperatorLayout from './apps/operator/OperatorLayout';
 import TenantLayout from './apps/tenant/TenantLayout';
@@ -31,7 +36,52 @@ import TenantPaymentsPage from './pages/TenantPaymentsPage';
 import TenantMaintenancePage from './pages/TenantMaintenancePage';
 import CustomersPage from './pages/CustomersPage';
 
+/**
+ * Single sign-in: mirror the main Pabandi session into the Sitara store so
+ * every Sitara page (Star Card, bookings, promos, promoter) just works
+ * after one login. Demo (signed-out) state is left untouched.
+ */
+function useLinkedSession() {
+  const { user: authUser, isAuthenticated } = useAuthStore();
+  const { user, setUser } = useSitaraStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || !authUser) return;
+    if (user?.id === authUser.id) return; // already linked
+    let cancelled = false;
+    (async () => {
+      let starPower = 0;
+      let tier: string | null = null;
+      let checkIns = 0;
+      try {
+        const p = await sitaraApi.getStarPower(authUser.id);
+        starPower = p.totalPoints;
+        tier = p.tier;
+        checkIns = p.starCard?.verifiedCheckIns ?? p.reviews?.length ?? 0;
+      } catch {
+        // New user with no Star Power yet — defaults stand.
+      }
+      if (cancelled) return;
+      setUser({
+        id: authUser.id,
+        email: authUser.email,
+        name: `${authUser.firstName} ${authUser.lastName}`.trim() || authUser.email,
+        role: user?.role || 'consumer',
+        starPower,
+        starTier: ((tier as any) || calculateTier(starPower)) as 'tara' | 'sitara-e-noor' | 'sitara-e-roshan' | 'sitara-e-darakshan' | 'sitara-e-izzat',
+        verifiedCheckIns: checkIns,
+        reliabilityScore: authUser.reliabilityScore ?? user?.reliabilityScore ?? 100,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, authUser?.id]);
+}
+
 export default function SitaraApp() {
+  useLinkedSession();
   return (
     <Routes>
       {/* Consumer App — /sitara, /sitara/book/:id, ... */}

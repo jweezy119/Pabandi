@@ -259,6 +259,33 @@ router.post('/redeem/:code', authenticate, async (req: any, res: Response, next:
 });
 
 /**
+ * GET /api/v1/sitara/promos?businessId=xxx
+ * Operator: list promos for own business with redemption counts.
+ */
+router.get('/promos', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { businessId } = req.query;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId is required' });
+    }
+    const business = await prisma.business.findFirst({
+      where: { id: String(businessId), ownerId: req.user!.id },
+    });
+    if (!business) {
+      return res.status(403).json({ error: 'Not your business' });
+    }
+    const promos = await prisma.starPromo.findMany({
+      where: { businessId: String(businessId) },
+      include: { _count: { select: { redemptions: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: promos });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/v1/sitara/redemptions/:id/use
  * Operator POS seam: mark a customer's promo redemption as consumed at the
  * venue (scan code → verify → mark used). Future POS takes over this call.

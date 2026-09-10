@@ -1,8 +1,10 @@
 // Sitara OS — Discovery Page
-// Map-powered local discovery for guests
+// Map-powered local discovery for guests.
+// Loads real platform businesses; falls back to curated mocks offline.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sitaraApi } from '../api/sitaraApi';
 
 const categories = [
   { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
@@ -22,12 +24,50 @@ const mockBusinesses = [
   { id: '6', name: 'Grand Hotel', category: 'hotel', rating: 4.8, stars: 312, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400', price: '$$$$' },
 ];
 
+interface BizCard {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  stars: number;
+  image: string;
+  price: string;
+  real: boolean;
+}
+
+const FALLBACK_CARDS: BizCard[] = mockBusinesses.map((b) => ({ ...b, real: false }));
+
 export default function DiscoveryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [cards, setCards] = useState<BizCard[]>(FALLBACK_CARDS);
+
+  useEffect(() => {
+    sitaraApi
+      .publicBusinesses()
+      .then((list) => {
+        if (!Array.isArray(list) || list.length === 0) return;
+        setCards(
+          list.slice(0, 24).map((b: any) => ({
+            id: String(b.id),
+            name: b.name || 'Unnamed venue',
+            category: String(b.category || 'restaurant').toLowerCase(),
+            rating: Number(b.rating ?? 4.5),
+            stars: Number(b.reviewCount ?? b._count?.reviews ?? 0),
+            image:
+              b.coverImageUrl ||
+              b.logoUrl ||
+              'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+            price: b.priceRange || '$$',
+            real: true,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   const filteredBusinesses = selectedCategory
-    ? mockBusinesses.filter((b) => b.category === selectedCategory)
-    : mockBusinesses;
+    ? cards.filter((b) => b.category === selectedCategory)
+    : cards;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -93,6 +133,11 @@ export default function DiscoveryPage() {
                 <span>{business.rating}</span>
                 <span>·</span>
                 <span>{business.stars} stars</span>
+                {business.real && (
+                  <span className="ml-auto px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                    ✓ Live
+                  </span>
+                )}
               </div>
             </div>
           </Link>

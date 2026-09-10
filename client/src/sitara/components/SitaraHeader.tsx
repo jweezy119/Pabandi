@@ -3,6 +3,7 @@
 
 import { Link } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
+import SitaraLogo from './SitaraLogo';
 
 export default function SitaraHeader() {
   const { user } = useSitaraStore();
@@ -13,9 +14,7 @@ export default function SitaraHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/sitara" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">★</span>
-            </div>
+            <SitaraLogo size={32} />
             <span className="font-bold text-xl text-slate-900">Sitara</span>
           </Link>
 

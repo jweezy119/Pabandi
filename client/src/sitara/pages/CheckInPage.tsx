@@ -4,27 +4,43 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
+import { useAuthStore } from '../../store/authStore';
+import { sitaraApi } from '../api/sitaraApi';
 
 export default function CheckInPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const { bookings, updateBooking, updateStarPower } = useSitaraStore();
+  const { isAuthenticated } = useAuthStore();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
+  const [liveVerified, setLiveVerified] = useState<boolean | null>(null);
 
   const booking = bookings.find((b) => b.id === bookingId);
 
   const handleCheckIn = async () => {
     setIsCheckingIn(true);
-    // Simulate on-chain verification
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    updateBooking(bookingId!, { 
+    // Real platform check-in when backed by a live reservation, else demo flow.
+    let live = false;
+    if (isAuthenticated && booking?.reservationId) {
+      try {
+        await sitaraApi.verifyCheckIn({ reservationId: booking.reservationId, method: 'manual' });
+        live = true;
+      } catch {
+        live = false;
+      }
+    } else {
+      // Simulate on-chain verification
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    setLiveVerified(live);
+    updateBooking(bookingId!, {
       status: 'checked_in',
       escrowTxId: `sol-tx-${Date.now()}`,
     });
     updateStarPower(10); // Earn 10 star power for checking in
-    
+
     setCheckedIn(true);
     setIsCheckingIn(false);
   };
@@ -95,6 +111,13 @@ export default function CheckInPage() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
             <p><strong>On-chain proof:</strong> {booking.escrowTxId}</p>
             <p><strong>Star Power earned:</strong> +10</p>
+            {liveVerified !== null && (
+              <p className="mt-1">
+                {liveVerified
+                  ? '✓ Verified on platform'
+                  : '· Recorded locally (demo check-in)'}
+              </p>
+            )}
           </div>
           <button
             onClick={() => navigate(`/sitara/review/${bookingId}`)}
