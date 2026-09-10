@@ -1,5 +1,4 @@
 import { useQuery } from 'react-query';
-import { tokens } from '../design-system';
 import { checkTrustActionAccess, type TrustActionAccess } from '../services/trustApi';
 import { getAuthToken } from '../utils/authToken';
 
@@ -22,22 +21,28 @@ export function TrustGate({ action, children, fallback }: TrustGateProps) {
 
   const access = data as TrustActionAccess;
 
+  if (!access.allowed) {
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+
+    return (
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-sm">
+        <p className="font-semibold text-amber-300">
+          Trust gate: {action.replace('_', ' ').toLowerCase()}
+        </p>
+        <p className="mt-1 text-slate-300 opacity-80">
+          Required score: {access.requiredScore}
+          <span className="mx-2 opacity-40">|</span>
+          <span>Current score: {access.currentScore}</span>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       {children}
     </>
-  );
-
-  return (
-    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-4 text-sm">
-      <p className="font-semibold text-amber-300">
-        Trust gate: {action.replace('_', ' ').toLowerCase()}
-      </p>
-      <p className="mt-1 text-slate-300 opacity-80">
-        Required score: {access.requiredScore}
-        <span className="mx-2 opacity-40">|</span>
-        <span>Current score: {access.currentScore}</span>
-      </p>
-    </div>
   );
 }
