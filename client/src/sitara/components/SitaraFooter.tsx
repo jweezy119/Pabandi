@@ -14,7 +14,7 @@ export default function SitaraFooter() {
               <span className="font-bold text-xl text-white">Sitara</span>
             </div>
             <p className="text-sm">
-              The booking OS for the service economy. Secured by trust, powered by stars.
+              The star layer for the service economy. Secured by Pabandi trust, powered by verified visits.
             </p>
           </div>
 

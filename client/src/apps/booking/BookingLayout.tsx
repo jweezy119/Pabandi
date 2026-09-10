@@ -15,8 +15,8 @@ const navigation = [
   { path: '/booking/my-reservations', label: 'My Reservations', icon: FiCalendar, roles: ['USER', 'ADMIN'] },
   { path: '/booking/favorites', label: 'Favorites', icon: FiHeart, roles: ['USER', 'ADMIN'] },
   { path: '/booking/venues', label: 'My Venues', icon: FiGrid, roles: ['BUSINESS_OWNER', 'ADMIN'] },
-  { path: '/booking/check-ins', label: 'Check-Ins', icon: FiStar, roles: ['BUSINESS_OWNER', 'ADMIN'] },
-  { path: '/booking/promotions', label: 'Promotions', icon: FiCreditCard, roles: ['BUSINESS_OWNER', 'ADMIN'] },
+  { path: '/sitara/operator/reservations', label: 'Check-Ins', icon: FiStar, roles: ['BUSINESS_OWNER', 'ADMIN'] },
+  { path: '/sitara/operator/promos', label: 'Promotions', icon: FiCreditCard, roles: ['BUSINESS_OWNER', 'ADMIN'] },
   { path: '/booking/payments', label: 'Payments', icon: FiCreditCard, roles: ['USER', 'ADMIN'] },
   { path: '/booking/settings', label: 'Settings', icon: FiSettings, roles: [] },
 ];
@@ -50,9 +50,9 @@ export const BookingLayout: React.FC = () => {
       <aside className={`fixed lg:static z-50 w-64 h-screen bg-[#0a0f1a] border-r border-white/5 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex items-center justify-between p-4 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">B</div>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">★</div>
             <div>
-              <h1 className="text-xl font-bold text-white">BookingOS</h1>
+              <h1 className="text-xl font-bold text-white">Sitara</h1>
               <p className="text-xs text-slate-400">by Pabandi</p>
             </div>
           </div>
@@ -65,7 +65,7 @@ export const BookingLayout: React.FC = () => {
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="BookingOS navigation">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Sitara navigation">
           {filteredNav.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || 
@@ -137,8 +137,8 @@ export const BookingLayout: React.FC = () => {
               <FiMenu size={24} />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">B</div>
-              <span className="font-bold text-white">BookingOS</span>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">★</div>
+              <span className="font-bold text-white">Sitara</span>
             </div>
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-sm font-bold">
               {user?.firstName?.[0] || '?'}
