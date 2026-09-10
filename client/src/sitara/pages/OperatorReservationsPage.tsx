@@ -26,23 +26,58 @@ export default function OperatorReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('today');
   const [noBusiness, setNoBusiness] = useState(false);
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchList = async (bizId: string) => {
+    const list = await sitaraApi.businessReservations(bizId).catch(() => []);
+    setReservations(Array.isArray(list) ? list : []);
+    setUpdatedAt(new Date());
+  };
 
   useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    let onFocus: (() => void) | null = null;
     (async () => {
       try {
         const biz = await sitaraApi.myBusiness().catch(() => null);
+        if (cancelled) return;
         if (!biz?.id) {
           setNoBusiness(true);
           return;
         }
         if (biz.category) setProfile(profileForCategory(biz.category));
-        const list = await sitaraApi.businessReservations(biz.id).catch(() => []);
-        setReservations(Array.isArray(list) ? list : []);
+        setBusinessId(biz.id);
+        await fetchList(biz.id);
+        // Live book: refresh every 30s + on tab focus so walk-ins show up.
+        timer = setInterval(() => void fetchList(biz.id), 30000);
+        onFocus = () => {
+          if (!document.hidden) void fetchList(biz.id);
+        };
+        window.addEventListener('focus', onFocus);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+      if (timer) clearInterval(timer);
+      if (onFocus) window.removeEventListener('focus', onFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleRefresh = async () => {
+    if (!businessId) return;
+    setRefreshing(true);
+    try {
+      await fetchList(businessId);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const today = dayKey(new Date());
   const visible = useMemo(() => {
@@ -80,11 +115,23 @@ export default function OperatorReservationsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">{profile.bookingNounPlural}</h1>
-        <p className="text-slate-600 mt-1">
-          {reservations.length} total · who is coming, when, and party size
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">{profile.bookingNounPlural}</h1>
+          <p className="text-slate-600 mt-1">
+            {reservations.length} total · who is coming, when, and party size
+            {updatedAt && (
+              <span className="text-slate-400"> · updated {updatedAt.toLocaleTimeString()}</span>
+            )}
+          </p>
+        </div>
+        <button
+          onClick={() => void handleRefresh()}
+          disabled={refreshing}
+          className="shrink-0 px-3 py-2 bg-white border border-slate-200 text-sm font-medium rounded-lg text-slate-700 active:bg-slate-100 disabled:opacity-50"
+        >
+          {refreshing ? '…' : '↻ Refresh'}
+        </button>
       </div>
 
       <div className="flex gap-2 mb-6">

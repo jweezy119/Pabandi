@@ -2,7 +2,7 @@
 // Escrow-backed booking with deposit
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
@@ -10,6 +10,9 @@ import { sitaraApi } from '../api/sitaraApi';
 export default function BookingFlowPage() {
   const { businessId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Real venue name passed from discovery/detail; never a hardcoded demo name.
+  const venueName = (location.state as any)?.name || 'this business';
   const { addBooking } = useSitaraStore();
   const { isAuthenticated, user: authUser } = useAuthStore();
   const [step, setStep] = useState(1);
@@ -58,7 +61,7 @@ export default function BookingFlowPage() {
     const booking = {
       id: localId,
       businessId: businessId!,
-      businessName: 'The Golden Fork',
+      businessName: venueName,
       businessType: 'restaurant' as const,
       scheduledAt: `${date}T${time}`,
       status: 'pending' as const,
@@ -78,7 +81,7 @@ export default function BookingFlowPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">Book Your Experience</h1>
+      <h1 className="text-3xl font-bold text-slate-900 mb-2">Book {venueName}</h1>
       <p className="text-slate-600 mb-8">Secure your booking with Sitara escrow protection.</p>
 
       {/* Progress */}
@@ -155,7 +158,7 @@ export default function BookingFlowPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-600">Business</span>
-                <span className="font-medium">The Golden Fork</span>
+                <span className="font-medium">{venueName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Date & Time</span>

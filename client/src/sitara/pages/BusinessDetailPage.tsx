@@ -37,7 +37,10 @@ export default function BusinessDetailPage() {
         setVenue(vv);
         if (r.status === 'fulfilled' && Array.isArray(r.value)) setReviews(r.value);
         if (p.status === 'fulfilled' && Array.isArray(p.value)) setPhotos(p.value);
-        if (vv?.name) {
+        // Details endpoint already attaches OpenMenu when available; top up if missing.
+        if (vv?.menu) {
+          setMenu(vv.menu);
+        } else if (vv?.name) {
           sitaraApi
             .venueMenu(vv.name, vv.lat, vv.lng)
             .then((m) => !cancelled && m && setMenu(m))
@@ -119,6 +122,7 @@ export default function BusinessDetailPage() {
       <div className="px-4 sm:px-0 mt-4 grid grid-cols-3 gap-2">
         <Link
           to={`/sitara/book/${encodeURIComponent(id)}`}
+          state={{ name: venue.name }}
           className="tile col-span-3 sm:col-span-1 px-4 py-3 bg-amber-500 text-white text-center font-semibold rounded-xl"
         >
           📅 Book a visit
@@ -177,16 +181,42 @@ export default function BusinessDetailPage() {
         </section>
 
         {/* Menu */}
-        {menu && (
+        {menu && (menu.menus?.length || menu.url) && (
           <section className="bg-white border border-slate-200 rounded-xl p-4">
-            <h2 className="font-bold text-slate-900 mb-2">Menu</h2>
-            <p className="text-sm text-slate-600">
-              {typeof menu === 'string' ? menu : menu.url ? (
-                <a href={menu.url} target="_blank" rel="noreferrer" className="text-amber-600 font-medium">
-                  View full menu →
-                </a>
-              ) : 'Menu available at the venue.'}
-            </p>
+            <h2 className="font-bold text-slate-900 mb-1">Menu</h2>
+            {menu.restaurantName && (
+              <p className="text-xs text-slate-500 mb-3">for {menu.restaurantName}</p>
+            )}
+            {menu.menus?.map((m: any, mi: number) => (
+              <div key={mi} className={mi > 0 ? 'mt-4 pt-4 border-t border-slate-100' : ''}>
+                {m.name && <h3 className="font-semibold text-slate-800 text-sm mb-2">{m.name}</h3>}
+                {(m.sections || []).map((s: any, si: number) => (
+                  <div key={si} className="mb-3">
+                    {s.name && <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1.5">{s.name}</p>}
+                    <div className="space-y-2">
+                      {(s.items || []).slice(0, 12).map((item: any, ii: number) => (
+                        <div key={ii} className="flex items-start justify-between gap-3 text-sm">
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900">{item.name}</p>
+                            {item.description && (
+                              <p className="text-xs text-slate-500 truncate">{item.description}</p>
+                            )}
+                          </div>
+                          {item.price && (
+                            <span className="shrink-0 font-semibold text-slate-700">{item.price}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {menu.url && (
+              <a href={menu.url} target="_blank" rel="noreferrer" className="text-amber-600 font-medium text-sm">
+                View full menu →
+              </a>
+            )}
           </section>
         )}
 
@@ -229,6 +259,7 @@ export default function BusinessDetailPage() {
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 p-3 safe-area-bottom">
         <Link
           to={`/sitara/book/${encodeURIComponent(id)}`}
+          state={{ name: venue.name }}
           className="block w-full py-3.5 bg-amber-500 text-white text-center font-semibold rounded-xl active:bg-amber-600"
         >
           📅 Book a visit

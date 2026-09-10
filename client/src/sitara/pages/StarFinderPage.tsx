@@ -88,7 +88,14 @@ export default function StarFinderPage() {
           <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">✓ Live</span>
         )}
       </div>
-      <p className="text-slate-600 mb-8">Find your best customers and send them exclusive promos.</p>
+      <p className="text-slate-600 mb-8">
+        Find your best customers and send them exclusive promos.
+        {!live && !loading && (
+          <span className="ml-2 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-xs font-medium">
+            Demo data — connect a business for live customers
+          </span>
+        )}
+      </p>
 
       {notice && (
         <div className={`rounded-lg p-4 mb-6 text-sm font-medium ${notice.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
