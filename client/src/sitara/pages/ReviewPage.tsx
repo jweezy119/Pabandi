@@ -98,7 +98,7 @@ export default function ReviewPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Leave a Review</h1>
-      <p className="text-slate-600 mb-8">Your verified review helps others and earns you star power.</p>
+      <p className="text-slate-600 mb-8">Your verified visit gives this business a star — and earns you Star Power as a verifier.</p>
 
       <div className="space-y-6">
         <div className="bg-white border border-slate-200 rounded-lg p-6">

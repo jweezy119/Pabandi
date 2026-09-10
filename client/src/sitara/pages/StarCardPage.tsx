@@ -59,7 +59,7 @@ export default function StarCardPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-slate-900 mb-2">Your Star Card</h1>
-      <p className="text-slate-600 mb-8">Your portable, on-chain reputation. Share it anywhere.</p>
+      <p className="text-slate-600 mb-8">Proof you're a verified customer — your reviews give businesses their stars.</p>
 
       {/* Star Card Visual */}
       <div className={`bg-gradient-to-br ${tier.color} rounded-2xl p-8 text-white shadow-xl`}>

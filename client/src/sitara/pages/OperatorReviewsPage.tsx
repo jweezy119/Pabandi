@@ -32,9 +32,9 @@ export default function OperatorReviewsPage() {
         <h1 className="text-3xl font-bold text-slate-900">Reviews</h1>
         <p className="text-slate-600 mt-1">
           {rated.length > 0 ? (
-            <>★ {avg.toFixed(1)} average across {rated.length} reviews</>
+            <>★ {avg.toFixed(1)} average across {rated.length} reviews — every verified one earned you a star</>
           ) : (
-            'Verified reviews from checked-in guests will land here.'
+            'Verified reviews from checked-in guests earn you stars here.'
           )}
         </p>
       </div>

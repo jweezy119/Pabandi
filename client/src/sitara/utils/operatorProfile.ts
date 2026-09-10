@@ -26,9 +26,10 @@ export interface OperatorProfile {
 
 const SERVICE_NAV: OperatorNavItem[] = [
   { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
+  { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
   { path: '/sitara/operator/reservations', label: 'Reservations', icon: '📅' },
   { path: '/sitara/operator/customers', label: 'Customers', icon: '💛' },
-  { path: '/sitara/operator/reviews', label: 'Reviews', icon: '⭐' },
+  { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },
   { path: '/sitara/operator/promos', label: 'Promos', icon: '🎁' },
   { path: '/sitara/operator/star-finder', label: 'Star Finder', icon: '✨' },
 ];
@@ -43,9 +44,10 @@ const DINING: OperatorProfile = {
   rentalStyle: false,
   nav: [
     { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
+    { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
     { path: '/sitara/operator/reservations', label: 'Reservations', icon: '🍽️' },
     { path: '/sitara/operator/customers', label: 'Guests', icon: '💛' },
-    { path: '/sitara/operator/reviews', label: 'Reviews', icon: '⭐' },
+    { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },
     { path: '/sitara/operator/promos', label: 'Promos', icon: '🎁' },
     { path: '/sitara/operator/star-finder', label: 'Star Finder', icon: '✨' },
   ],
@@ -96,6 +98,7 @@ const RENTAL: OperatorProfile = {
   rentalStyle: true,
   nav: [
     { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
+    { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
     { path: '/sitara/operator/units', label: 'Units', icon: '🏢' },
     { path: '/sitara/operator/tenants', label: 'Tenants', icon: '👥' },
     { path: '/sitara/operator/leases', label: 'Leases', icon: '📄' },

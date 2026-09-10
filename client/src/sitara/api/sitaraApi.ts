@@ -158,6 +158,13 @@ export const sitaraApi = {
   getStarFinder: (businessId: string, minTier = 'tara', limit = 50) =>
     unwrap<any[]>(apiClient.get('/sitara/star-finder', { params: { businessId, minTier, limit } })),
 
+  /**
+   * Stars a business has EARNED from verified customers.
+   * { verifiedAvg, verifiedCount, distribution, trustScore, recent }
+   */
+  businessStars: (businessId: string) =>
+    unwrap<any>(apiClient.get(`/sitara/business/${businessId}/stars`)),
+
   sendPromo: (data: {
     businessId: string;
     targetTier?: string | null;
