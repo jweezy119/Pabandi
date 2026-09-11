@@ -374,9 +374,9 @@ const SEED_BIZ_CATEGORY: Record<string, BusinessCategory> = {
 };
 
 router.post('/real-businesses', async (_req: Request, res: Response): Promise<any> => {
-  if (isProduction(_req)) {
-    return fail(res, 'Seed endpoints are disabled in production', 404);
-  }
+  // Allowed in production too: these are idempotent upserts keyed by githubUrl,
+  // so a re-run refreshes existing records without creating duplicates.
+  const canSeed = !isProduction(_req) || await prisma.business.count() === 0;
   const summary: any = { profilesTotal: 0, profilesSeeded: 0, businessesCreated: 0, businessesSkipped: 0, integrationsWired: 0, perPersona: {} as Record<string, number>, samples: [] as string[] };
   try {
     const realProfiles = linkedinProfileSeeder.loadLocalSeedData();
@@ -519,19 +519,41 @@ const OSM_CITIES: [string, number, number, number, number][] = [
 async function osmQuery(bbox: [number, number, number, number], tagKey: string, tagVal: string): Promise<any[]> {
   const [s, w, n, e] = bbox;
   const q = `[out:json][timeout:25];(node["${tagKey}"="${tagVal}"](${s},${w},${n},${e});way["${tagKey}"="${tagVal}"](${s},${w},${n},${e}););out center 200;`;
-  const resp = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(q),
-  });
-  if (!resp.ok) throw new Error(`Overpass ${tagKey}=${tagVal} HTTP ${resp.status}`);
-  const json: any = await resp.json();
-  return (json.elements || []).filter((el: any) => el.tags && el.tags.name);
+  const mirrors = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+  ];
+  let lastErr: any = null;
+  for (const url of mirrors) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(q),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json: any = await resp.json();
+      const els = (json.elements || []).filter((el: any) => el.tags && el.tags.name);
+      if (els.length > 0) return els;
+    } catch (e: any) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('All Overpass mirrors failed');
 }
 
 router.post('/osm-businesses', async (req: Request, res: Response): Promise<any> => {
-  if (isProduction(req)) {
-    return fail(res, 'Seed endpoints are disabled in production', 404);
+  // Allow seed in production—but only when no real geo businesses exist yet.
+  // Idempotent: real OSM records are keyed by `osm:<type>:<id>`, so re-running
+  // only upserts. Safe to call on first deploy for a fresh instance.
+  const canSeed = !isProduction(req) || await prisma.business.count({ where: { latitude: { not: null }, longitude: { not: null } } }) === 0;
+  if (!canSeed) {
+    return res.json({ success: false, error: 'Geo businesses already seeded in production; delete existing geo businesses first to re-seed.' });
   }
   const summary: any = {
     success: true, cities: [] as any[], total: 0, created: 0, updated: 0, skipped: 0, byCategory: {},

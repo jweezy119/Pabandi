@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
+import { prisma } from '../utils/database';
 
 const router = Router();
 
@@ -11,7 +12,218 @@ const OPENMENU_API_KEY = process.env.OPENMENU_API_KEY || '';
 const yelpHeaders = { Authorization: `Bearer ${YELP_API_KEY}` };
 const foursquareHeaders = { Authorization: `Bearer ${FOURSQUARE_API_KEY}`, Accept: 'application/json' };
 
-// ── Sitara Discovery: Real Geo Businesses ──────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// DATABASE-BACKED BUSINESS SEARCH (primary source — no API keys required)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Haversine great-circle distance in meters
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = (deg: number) => deg * Math.PI / 180;
+  const R = 6371000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Frontend category strings → BusinessCategory enum values
+const FRONTEND_CAT_TO_BIZ: Record<string, string> = {
+  restaurant: 'RESTAURANT',
+  bar: 'RESTAURANT',
+  cafe: 'RESTAURANT',
+  club: 'EVENT_VENUE',
+  hotel: 'HOTEL',
+  theater: 'EVENT_VENUE',
+  museum: 'OTHER',
+  salon: 'SALON',
+  spa: 'SPA',
+  fitness: 'FITNESS_CENTER',
+  gym: 'FITNESS_CENTER',
+  event: 'EVENT_VENUE',
+  venue: 'EVENT_VENUE',
+};
+
+// BusinessCategory enum → frontend-friendly category string
+const BIZ_TO_FRONTEND_CAT: Record<string, string> = {
+  RESTAURANT: 'restaurant',
+  SALON: 'salon',
+  SPA: 'spa',
+  CLINIC: 'clinic',
+  FITNESS_CENTER: 'fitness',
+  EVENT_VENUE: 'venue',
+  HOTEL: 'hotel',
+  PROPERTY_RENTAL: 'rental',
+  OTHER: 'other',
+  HOSPITAL: 'hospital',
+  FREELANCE: 'freelance',
+  ECOMMERCE: 'ecommerce',
+  MARKETPLACE: 'marketplace',
+  LIVE_SELLER: 'live_seller',
+};
+
+/** Dedup key: normalized name + rounded coordinates */
+function dedupKey(v: any): string {
+  const name = (v.name || '').toLowerCase().trim();
+  const lat = Math.round((v.lat || 0) * 100);
+  const lng = Math.round((v.lng || 0) * 100);
+  return `${name}|${lat}|${lng}`;
+}
+
+/**
+ * Search businesses from the Pabandi database — primary discovery source.
+ * No external API keys required; ships with real registered businesses.
+ */
+async function searchBusinesses(
+  lat?: number, lng?: number, radiusMeters?: number,
+  limit?: number, categories?: string, q?: string
+): Promise<any[]> {
+  const where: any = { isActive: true };
+
+  // Category filter
+  if (categories && categories.trim()) {
+    const catList = categories.split(',').map(c => c.trim().toLowerCase());
+    const mapped = catList
+      .map(c => FRONTEND_CAT_TO_BIZ[c] || c.toUpperCase())
+      .filter(Boolean);
+    if (mapped.length > 0) {
+      where.category = { in: mapped };
+    }
+  }
+
+  // Text search across name, city, address
+  if (q && q.trim()) {
+    const search = q.trim();
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { city: { contains: search, mode: 'insensitive' } },
+      { address: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  // Only geo-enabled businesses when doing geo search
+  if (lat !== undefined && lng !== undefined && isFinite(lat) && isFinite(lng)) {
+    where.latitude = { not: null };
+    where.longitude = { not: null };
+  }
+
+  const businesses = await prisma.business.findMany({
+    where,
+    orderBy: { rating: 'desc' },
+    take: Math.max(1, limit || 50),
+  });
+
+  // Geo filter + distance sort when coordinates provided
+  if (lat !== undefined && lng !== undefined && isFinite(lat) && isFinite(lng) && radiusMeters !== undefined && isFinite(radiusMeters)) {
+    return businesses
+      .map(b => {
+        if (b.latitude == null || b.longitude == null) return null;
+        const dist = haversineMeters(lat, lng, b.latitude, b.longitude);
+        return { ...b, _distance: dist };
+      })
+      .filter((b): b is any => b != null && b._distance <= radiusMeters)
+      .sort((a, b) => (a._distance || 0) - (b._distance || 0))
+      .slice(0, limit)
+      .map(b => {
+        const d = b._distance;
+        delete (b as any)._distance;
+        return { ...b, distance: d };
+      });
+  }
+
+  return businesses.slice(0, limit);
+}
+
+/** Map a Business record to the venue shape the frontend expects */
+function businessToVenue(b: any): any {
+  return {
+    id: b.id,
+    name: b.name,
+    category: BIZ_TO_FRONTEND_CAT[b.category] || 'other',
+    rating: b.rating || null,
+    reviewCount: b.reviewCount || 0,
+    price: '',
+    phone: b.phone || '',
+    address: b.address || '',
+    city: b.city || '',
+    state: b.state || '',
+    lat: b.latitude || null,
+    lng: b.longitude || null,
+    imageUrl: b.coverImageUrl || b.logoUrl || '',
+    isOpenNow: null,
+    sources: ['database'],
+    amenities: [],
+    distance: b.distance || null,
+    trustScore: b.trustScore ?? 50,
+  };
+}
+
+/**
+ * Merge database results with external API results.
+ * Database results are the primary source; external results enrich or add new entries.
+ */
+function mergeWithDatabase(
+  dbResults: any[],
+  yelp: any[],
+  fsq: any[],
+  osm: any[]
+): any[] {
+  const merged = new Map<string, any>();
+
+  // Database results first (primary source)
+  for (const v of dbResults) {
+    const key = dedupKey(v);
+    merged.set(key, { ...v, sources: ['database'] });
+  }
+
+  // Enrich with external sources
+  const externalSources = [
+    { data: yelp, label: 'yelp' },
+    { data: fsq, label: 'foursquare' },
+    { data: osm, label: 'osm' },
+  ];
+
+  for (const { data, label } of externalSources) {
+    for (const v of data) {
+      const key = dedupKey(v);
+      const existing = merged.get(key);
+      if (existing) {
+        // Enrich: fill missing fields from external source
+        if (!existing.rating && v.rating != null) existing.rating = v.rating;
+        if (!existing.reviewCount && v.reviewCount != null) existing.reviewCount = v.reviewCount;
+        if (!existing.phone && v.phone) existing.phone = v.phone;
+        if (!existing.website && v.website) existing.website = v.website;
+        if (!existing.price && v.price) existing.price = v.price;
+        if (!existing.imageUrl && v.imageUrl) existing.imageUrl = v.imageUrl;
+        if (!existing.address && v.address) existing.address = v.address;
+        if (!existing.city && v.city) existing.city = v.city;
+        if (v.hours && !existing.hours) existing.hours = v.hours;
+        if (!existing.sources.includes(label)) existing.sources.push(label);
+      } else {
+        merged.set(key, {
+          id: v.id || `ext-${key}`,
+          name: v.name || 'Unknown',
+          category: v.category || v.cuisine || v.type || 'restaurant',
+          rating: v.rating || null,
+          reviewCount: v.reviewCount || 0,
+          price: v.price || '',
+          phone: v.phone || '',
+          address: v.address || '',
+          city: v.city || '',
+          lat: v.lat || null,
+          lng: v.lng || null,
+          imageUrl: v.imageUrl || '',
+          isOpenNow: v.isOpenNow || null,
+          sources: [label],
+          amenities: v.amenities || v.features || [],
+          distance: v.distance || null,
+        });
+      }
+    }
+  }
+
+  return Array.from(merged.values());
+}
 // Lightweight endpoint for Sitara OS discovery — returns real geo-located
 // businesses from Foursquare (primary), Yelp (enrichment), and OSM (fallback).
 // Frugal: caches aggressively, limits to free-tier-friendly payloads.
@@ -25,28 +237,34 @@ router.get('/sitara/discover', async (req: Request, res: Response) => {
 
     const numLat = Number(lat);
     const numLng = Number(lng);
-    const numRadius = Math.min(Number(radius), 5000); // Cap for frugality
-    const numLimit = Math.min(Number(limit), 20);
+    const numRadius = Math.min(Number(radius) * 1000, 5000000); // meters, capped at 5000km
+    const numLimit = Math.min(Number(limit), 30);
 
-    // Search Foursquare (primary), Yelp (enrichment), OSM (fallback) in parallel
+    // Primary: database-backed business search (no API keys required)
+    const dbResults = await searchBusinesses(
+      numLat, numLng, numRadius, numLimit,
+      category as string, q as string
+    ).catch(() => []);
+
+    // Secondary: external enrichment (only when keys configured)
     const [yelpResults, fsqResults, osmResults] = await Promise.allSettled([
       searchYelp(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
       searchFoursquare(String(numLat), String(numLng), q as string, String(numRadius), String(numLimit)),
       searchOSM(String(numLat), String(numLng), category as string, String(numRadius), String(numLimit)),
     ]);
 
-    // Merge and deduplicate — Foursquare is primary
-    const merged = mergeResults(
-      yelpResults.status === 'fulfilled' ? yelpResults.value : [],
-      fsqResults.status === 'fulfilled' ? fsqResults.value : [],
-      osmResults.status === 'fulfilled' ? osmResults.value : []
-    );
+    const yelp = yelpResults.status === 'fulfilled' ? yelpResults.value : [];
+    const fsq = fsqResults.status === 'fulfilled' ? fsqResults.value : [];
+    const osm = osmResults.status === 'fulfilled' ? osmResults.value : [];
+
+    // Merge: database primary, external enrichment
+    const merged = mergeWithDatabase(dbResults, yelp, fsq, osm);
 
     // Slim down payload for frugality — only what Sitara needs
     const slim = merged.slice(0, numLimit).map((v: any) => ({
       id: v.id,
       name: v.name,
-      category: v.cuisine || v.categories?.[0] || v.type || 'restaurant',
+      category: v.category || v.cuisine || v.categories?.[0] || v.type || 'restaurant',
       rating: v.rating,
       reviewCount: v.reviewCount,
       price: v.price,
@@ -57,16 +275,18 @@ router.get('/sitara/discover', async (req: Request, res: Response) => {
       lng: v.lng,
       imageUrl: v.imageUrl,
       isOpenNow: v.isOpenNow,
-      sources: v.sources || [v.source],
+      sources: v.sources || [v.source || 'unknown'],
+      distance: v.distance,
     }));
 
     res.json({
       success: true,
       data: slim,
       sources: {
-        yelp: yelpResults.status === 'fulfilled' ? yelpResults.value.length : 0,
-        foursquare: fsqResults.status === 'fulfilled' ? fsqResults.value.length : 0,
-        osm: osmResults.status === 'fulfilled' ? osmResults.value.length : 0,
+        database: dbResults.length,
+        yelp: yelp.length,
+        foursquare: fsq.length,
+        osm: osm.length,
       },
       cached: false,
     });
@@ -77,32 +297,82 @@ router.get('/sitara/discover', async (req: Request, res: Response) => {
 });
 
 // ── Unified Venue Search ──────────────────────────────────────────────────
-// Searches Yelp, Foursquare, and OSM in parallel, deduplicates, and merges data
+// Primary: database-backed business search (no API keys required).
+// Secondary: external enrichment from Yelp, Foursquare, and OSM when keys exist.
 router.get('/search', async (req: Request, res: Response) => {
   try {
     const { lat, lng, q, radius = 5000, limit = 20, categories } = req.query;
 
-    // Search all sources in parallel
+    const numLat = lat ? Number(lat) : undefined;
+    const numLng = lng ? Number(lng) : undefined;
+    const numRadiusMeters = (lat && lng) ? Math.min(Number(radius) * 1000, 5000000) : undefined;
+    const numLimit = Math.min(Number(limit), 50);
+
+    // Primary: database-backed business search
+    const dbResults = await searchBusinesses(
+      numLat, numLng, numRadiusMeters, numLimit,
+      categories as string, q as string
+    ).catch(() => []);
+
+    // Secondary: external enrichment (only when keys configured)
     const [yelpResults, fsqResults, osmResults] = await Promise.allSettled([
       searchYelp(lat as string, lng as string, q as string, radius as string, limit as string),
       searchFoursquare(lat as string, lng as string, q as string, radius as string, limit as string),
       searchOSM(lat as string, lng as string, categories as string, radius as string, limit as string),
     ]);
 
-    // Merge and deduplicate results
-    const merged = mergeResults(
-      yelpResults.status === 'fulfilled' ? yelpResults.value : [],
-      fsqResults.status === 'fulfilled' ? fsqResults.value : [],
-      osmResults.status === 'fulfilled' ? osmResults.value : []
-    );
+    const yelp = yelpResults.status === 'fulfilled' ? yelpResults.value : [];
+    const fsq = fsqResults.status === 'fulfilled' ? fsqResults.value : [];
+    const osm = osmResults.status === 'fulfilled' ? osmResults.value : [];
+
+    // Merge: database primary, external enrichment
+    const merged = mergeWithDatabase(dbResults, yelp, fsq, osm)
+      .slice(0, numLimit)
+      // Map BusinessCategory → frontend category strings for the venue shape
+      .map((v: any) => {
+        // Don't double-map: database results already have frontend category.
+        // External results need BIZ→frontend mapping (they use source/label not category).
+        if (v.sources?.includes('database')) return v;
+        return {
+          ...v,
+          category: v.category || v.cuisine || v.categories?.[0] || v.type || 'restaurant',
+        };
+      });
+
+    // Map database Business records to venue shape for the frontend
+    const venues = merged.map((v: any) => {
+      if (v.sources?.includes('database')) {
+        return businessToVenue(v);
+      }
+      return {
+        id: v.id,
+        name: v.name,
+        category: v.category || v.cuisine || v.categories?.[0] || v.type || 'restaurant',
+        rating: v.rating,
+        reviewCount: v.reviewCount,
+        price: v.price,
+        phone: v.phone,
+        address: v.address,
+        city: v.city,
+        lat: v.lat,
+        lng: v.lng,
+        imageUrl: v.imageUrl,
+        isOpenNow: v.isOpenNow,
+        sources: v.sources || [v.source || 'unknown'],
+        distance: v.distance,
+        amenities: v.amenities || [],
+        trustScore: v.trustScore ?? 50,
+      };
+    });
 
     res.json({
       success: true,
-      data: merged.slice(0, Number(limit)),
+      data: venues,
       sources: {
-        yelp: yelpResults.status === 'fulfilled' ? yelpResults.value.length : 0,
-        foursquare: fsqResults.status === 'fulfilled' ? fsqResults.value.length : 0,
-        osm: osmResults.status === 'fulfilled' ? osmResults.value.length : 0,
+        database: dbResults.length,
+        yelp: yelp.length,
+        foursquare: fsq.length,
+        osm: osm.length,
       },
     });
   } catch (e: any) {
@@ -414,6 +684,16 @@ async function getFoursquarePhotos(id: string) {
 // OPENSTREETMAP (Free, no API key)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── Tiny in-memory cache: Overpass is rate-limited per-IP and Render shares
+// egress IPs, so repeat loads (refresh, back-nav) must not re-hit it. ──────
+const osmCache = new Map<string, { at: number; data: any[] }>();
+const OSM_TTL_MS = 5 * 60 * 1000;
+const OVERPASS_MIRRORS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+];
+
 async function searchOSM(lat: string, lng: string, category?: string, radius?: string, limit?: string) {
   const categoryMap: Record<string, string> = {
     restaurant: 'amenity~"restaurant|fast_food|food_court"',
@@ -427,8 +707,12 @@ async function searchOSM(lat: string, lng: string, category?: string, radius?: s
 
   const osmTag = categoryMap[category || 'restaurant'] || 'amenity="restaurant"';
 
+  const cacheKey = `${lat},${lng}|${osmTag}|${radius}|${limit}`;
+  const cached = osmCache.get(cacheKey);
+  if (cached && Date.now() - cached.at < OSM_TTL_MS) return cached.data;
+
   const query = `
-    [out:json][timeout:15];
+    [out:json][timeout:20];
     (
       node[${osmTag}](around:${radius},${lat},${lng});
       way[${osmTag}](around:${radius},${lat},${lng});
@@ -436,12 +720,15 @@ async function searchOSM(lat: string, lng: string, category?: string, radius?: s
     out center ${limit};
   `;
 
-  const response = await axios.post('https://overpass-api.de/api/interpreter', `data=${encodeURIComponent(query)}`, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    timeout: 15000,
-  });
-
-  return (response.data?.elements || []).map((el: any) => ({
+  const body = `data=${encodeURIComponent(query)}`;
+  let lastErr: any = null;
+  for (const mirror of OVERPASS_MIRRORS) {
+    try {
+      const response = await axios.post(mirror, body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 20000,
+      });
+      const mapped = (response.data?.elements || []).map((el: any) => ({
     id: `osm-${el.id}`,
     source: 'osm',
     name: el.tags?.name || 'Unknown',
@@ -462,7 +749,19 @@ async function searchOSM(lat: string, lng: string, category?: string, radius?: s
     delivery: el.tags?.delivery,
     takeaway: el.tags?.takeaway,
     raw: el.tags,
-  }));
+      }));
+      osmCache.set(cacheKey, { at: Date.now(), data: mapped });
+      // Prune stale entries so the map can't grow unbounded
+      if (osmCache.size > 200) {
+        const now = Date.now();
+        for (const [k, v] of osmCache) if (now - v.at > OSM_TTL_MS) osmCache.delete(k);
+      }
+      return mapped;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('All Overpass mirrors failed');
 }
 
 async function getOSMDetails(id: string) {
