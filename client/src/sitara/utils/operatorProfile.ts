@@ -27,6 +27,7 @@ export interface OperatorProfile {
 const SERVICE_NAV: OperatorNavItem[] = [
   { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
   { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
+  { path: '/sitara/operator/lists', label: 'Door Board', icon: '📋' },
   { path: '/sitara/operator/reservations', label: 'Reservations', icon: '📅' },
   { path: '/sitara/operator/customers', label: 'Customers', icon: '💛' },
   { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },
@@ -46,6 +47,7 @@ const DINING: OperatorProfile = {
     { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
     { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
     { path: '/sitara/operator/menu', label: 'Menu', icon: '📋' },
+    { path: '/sitara/operator/lists', label: 'Door Board', icon: '🎟️' },
     { path: '/sitara/operator/reservations', label: 'Reservations', icon: '🍽️' },
     { path: '/sitara/operator/customers', label: 'Guests', icon: '💛' },
     { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },

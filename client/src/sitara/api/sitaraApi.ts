@@ -264,4 +264,17 @@ export const sitaraApi = {
     unwrap<any>(apiClient.post('/property-manager/leases', data)),
   rentalAddMaintenance: (data: { title: string; description?: string; priority?: string; propertyId?: string }) =>
     unwrap<any>(apiClient.post('/property-manager/maintenance', data)),
+
+  // ── Guest lists (any business or promoter) ──────────────────────
+  createList: (data: { title: string; date: string; capacity?: number | null; businessId?: string; venueName?: string }) =>
+    unwrap<any>(apiClient.post('/sitara/lists', data)),
+  myLists: () => unwrap<any[]>(apiClient.get('/sitara/lists/mine')),
+  listInfo: (code: string) =>
+    unwrap<any>(apiClient.get(`/sitara/lists/code/${encodeURIComponent(code)}`)),
+  joinList: (code: string, data: { name: string; partySize?: number; phone?: string; source?: string }) =>
+    unwrap<any>(apiClient.post(`/sitara/lists/code/${encodeURIComponent(code)}/join`, data)),
+  businessLists: (businessId: string) =>
+    unwrap<any>(apiClient.get(`/sitara/lists/business/${businessId}`)),
+  checkinListJoin: (joinId: string) =>
+    unwrap<any>(apiClient.post(`/sitara/lists/joins/${joinId}/checkin`)),
 };

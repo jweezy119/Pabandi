@@ -15,6 +15,14 @@ export default function PromoterDashboardPage() {
   const [refLink, setRefLink] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [leaders, setLeaders] = useState<any[]>([]);
+  const [lists, setLists] = useState<any[]>([]);
+  const [showListForm, setShowListForm] = useState(false);
+  const [listTitle, setListTitle] = useState('');
+  const [listVenue, setListVenue] = useState('');
+  const [listDate, setListDate] = useState('');
+  const [listCap, setListCap] = useState('');
+  const [savingList, setSavingList] = useState(false);
+  const [listNotice, setListNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [joining, setJoining] = useState(false);
   const [stageName, setStageName] = useState('');
@@ -31,18 +39,20 @@ export default function PromoterDashboardPage() {
       });
       setProfile(me);
       if (me) {
-        const [st, w, ref, books, lb] = await Promise.allSettled([
+        const [st, w, ref, books, lb, li] = await Promise.allSettled([
           sitaraApi.promoterStats(),
           sitaraApi.promoterWallet(),
           sitaraApi.promoterRefLink(),
           sitaraApi.promoterBookings(),
           sitaraApi.promoterLeaderboard(10),
+          sitaraApi.myLists(),
         ]);
         if (st.status === 'fulfilled') setStats(st.value);
         if (w.status === 'fulfilled') setWallet(w.value);
         if (ref.status === 'fulfilled') setRefLink(ref.value);
         if (books.status === 'fulfilled') setBookings(Array.isArray(books.value) ? books.value : []);
         if (lb.status === 'fulfilled') setLeaders(Array.isArray(lb.value) ? lb.value : []);
+        if (li.status === 'fulfilled') setLists(Array.isArray(li.value) ? li.value : []);
       }
     } catch (e: any) {
       setError(e?.response?.data?.error || 'Could not load promoter data.');
@@ -164,6 +174,34 @@ export default function PromoterDashboardPage() {
       /* clipboard unavailable */
     }
   };
+
+  const handleCreateList = async () => {
+    if (!listTitle.trim() || !listDate) return;
+    setSavingList(true);
+    setListNotice(null);
+    try {
+      const created = await sitaraApi.createList({
+        title: listTitle.trim(),
+        date: new Date(listDate).toISOString(),
+        capacity: listCap ? Number(listCap) : null,
+        venueName: listVenue.trim() || undefined,
+      });
+      setListNotice({ ok: true, text: `List live — share code ${created?.code} or the link below.` });
+      setListTitle('');
+      setListVenue('');
+      setListDate('');
+      setListCap('');
+      setShowListForm(false);
+      const mine = await sitaraApi.myLists().catch(() => []);
+      setLists(Array.isArray(mine) ? mine : []);
+    } catch (e: any) {
+      setListNotice({ ok: false, text: e?.response?.data?.error || 'Could not create list.' });
+    } finally {
+      setSavingList(false);
+    }
+  };
+
+  const listUrl = (code: string) => `https://pabandi.com/sitara/list/${code}`;
 
   const cards = [
     { label: 'Total Guests', value: stats?.totalGuests ?? stats?.guests ?? 0, icon: '👥' },
@@ -305,6 +343,72 @@ export default function PromoterDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Guest lists — create in seconds, see exactly what each list pulls */}
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden mt-6">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-900">Guest lists</h3>
+            <p className="text-xs text-slate-500">Name it, date it, share the link — the door board fills itself.</p>
+          </div>
+          <button
+            onClick={() => setShowListForm(!showListForm)}
+            className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 shrink-0"
+          >
+            + New list
+          </button>
+        </div>
+        {listNotice && (
+          <div className={`mx-5 mt-4 rounded-lg p-3 text-sm font-medium ${listNotice.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+            {listNotice.text}
+          </div>
+        )}
+        {showListForm && (
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-2 border-b border-slate-200">
+            <input value={listTitle} onChange={(e) => setListTitle(e.target.value)} placeholder="List title — e.g. Friday Rooftop *" className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+            <input value={listVenue} onChange={(e) => setListVenue(e.target.value)} placeholder="Venue (if not your business)" className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+            <input type="datetime-local" value={listDate} onChange={(e) => setListDate(e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+            <input value={listCap} onChange={(e) => setListCap(e.target.value)} placeholder="Capacity (blank = unlimited)" inputMode="numeric" className="px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" />
+            <button onClick={() => void handleCreateList()} disabled={savingList} className="sm:col-span-2 px-4 py-2.5 bg-slate-900 text-white font-medium rounded-lg disabled:opacity-50">
+              {savingList ? 'Creating…' : 'Create list'}
+            </button>
+          </div>
+        )}
+        {lists.length === 0 ? (
+          <p className="px-5 py-8 text-sm text-slate-500 text-center">
+            No lists yet — create one above and every join, arrival, and source shows up here.
+          </p>
+        ) : (
+          <div className="divide-y divide-slate-200">
+            {lists.map((l: any) => (
+              <div key={l.id} className="px-5 py-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900 truncate">{l.title}</p>
+                    <p className="text-xs text-slate-500">
+                      {l.business?.name || l.venueName || ''} · {l.date ? new Date(l.date).toLocaleString() : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-slate-900 text-white rounded-full text-xs font-mono">{l.code}</span>
+                    <a href={listUrl(l.code)} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg">Open link ↗</a>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`You're on my list for ${l.title} — join here: ${listUrl(l.code)}`)}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg">WhatsApp</a>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 flex-wrap">
+                  <span><strong className="text-slate-900">{l.heads}</strong> heads · <strong className="text-slate-900">{l.joins}</strong> joins</span>
+                  <span><strong className="text-green-700">{l.arrived}</strong> arrived ({l.showRate}%)</span>
+                  {l.bySource && Object.keys(l.bySource).length > 0 && (
+                    <span className="text-xs text-slate-500">
+                      {Object.entries(l.bySource).map(([s, n]) => `${s}: ${n}`).join(' · ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Commission feed — every dollar the ledger owes you */}

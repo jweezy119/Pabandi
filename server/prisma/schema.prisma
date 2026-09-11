@@ -99,6 +99,7 @@ model User {
   starPower              StarPower?
   starPowerTier          String                  @default("tara") // Sitara OS: current star tier for quick lookup
   starPowerPoints        Int                     @default(0) // Sitara OS: cached total points
+  createdLists           SitaraGuestList[]       @relation("ListCreator")
   reviewUpvotes          PabandiReviewUpvote[]
   sentStarPromos         StarPromo[]
   starPromoRedemptions   StarPromoRedemption[]
@@ -184,12 +185,56 @@ model Business {
   vendorPromotions       VendorPromotion[]
   starPromos             StarPromo[]
   squareConnection       SquareConnection?
+  sitaraLists            SitaraGuestList[]
   loyaltyProgram         LoyaltyProgram?
   customerRelations      CustomerVendorRelation[]
 
   @@index([ownerId])
   @@index([city])
   @@index([category])
+}
+
+// Sitara guest lists — any business or promoter runs a list for a night:
+// creator shares a link/code, guests join, door checks them in.
+// Joins carry their source (link vs code vs flyer) so everyone sees which
+// tactic actually fills rooms. Independent of the nightlife-venue GuestList.
+model SitaraGuestList {
+  id          String   @id @default(cuid())
+  creatorId   String
+  creator     User     @relation("ListCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  businessId  String?
+  business    Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  venueName   String? // free-text venue when no Business record exists
+  title       String
+  date        DateTime
+  capacity    Int?
+  code        String   @unique // short join code, e.g. GL-8F3K2A
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  joins SitaraGuestJoin[]
+
+  @@index([creatorId])
+  @@index([businessId])
+  @@index([code])
+  @@index([date])
+}
+
+model SitaraGuestJoin {
+  id            String          @id @default(cuid())
+  listId        String
+  list          SitaraGuestList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  partySize     Int             @default(1)
+  source        String          @default("link") // link | code | flyer | promoter
+  status        String          @default("CONFIRMED") // CONFIRMED | ARRIVED | NO_SHOW | CANCELLED
+  confirmCode   String          @unique
+  createdAt     DateTime        @default(now())
+
+  @@index([listId])
+  @@index([status])
 }
 
 // Square OAuth connection — imports merchant locations (geo) into Pabandi.

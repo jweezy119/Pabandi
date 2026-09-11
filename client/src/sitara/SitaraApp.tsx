@@ -15,6 +15,7 @@ import { applyTextSize, currentTextSize, resetTextSize } from './components/Text
 // Consumer Pages
 import DiscoveryPage from './pages/DiscoveryPage';
 import BusinessDetailPage from './pages/BusinessDetailPage';
+import GuestListJoinPage from './pages/GuestListJoinPage';
 import BookingFlowPage from './pages/BookingFlowPage';
 import CheckInPage from './pages/CheckInPage';
 import ReviewPage from './pages/ReviewPage';
@@ -30,6 +31,7 @@ import OperatorReservationsPage from './pages/OperatorReservationsPage';
 import OperatorReviewsPage from './pages/OperatorReviewsPage';
 import OperatorMaintenancePage from './pages/OperatorMaintenancePage';
 import OperatorMenuPage from './pages/OperatorMenuPage';
+import OperatorListsPage from './pages/OperatorListsPage';
 import UnitsPage from './pages/UnitsPage';
 import TenantsPage from './pages/TenantsPage';
 import LeasesPage from './pages/LeasesPage';
@@ -100,6 +102,7 @@ export default function SitaraApp() {
       {/* Consumer App — /sitara, /sitara/book/:id, ... */}
       <Route element={<ConsumerLayout />}>
         <Route index element={<DiscoveryPage />} />
+        <Route path="list/:code" element={<GuestListJoinPage />} />
         <Route path="place/:source/:id" element={<BusinessDetailPage />} />
         <Route path="book/:businessId" element={<BookingFlowPage />} />
         <Route path="checkin/:bookingId" element={<CheckInPage />} />
@@ -119,6 +122,7 @@ export default function SitaraApp() {
         <Route path="reviews" element={<OperatorReviewsPage />} />
         <Route path="units" element={<UnitsPage />} />
         <Route path="menu" element={<OperatorMenuPage />} />
+        <Route path="lists" element={<OperatorListsPage />} />
         <Route path="maintenance" element={<OperatorMaintenancePage />} />
         <Route path="tenants" element={<TenantsPage />} />
         <Route path="leases" element={<LeasesPage />} />

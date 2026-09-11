@@ -378,4 +378,195 @@ router.get('/business/:businessId/stars', async (req: Request, res: Response, ne
   }
 });
 
+/**
+ * ── Sitara guest lists ──────────────────────────────────────────
+ * Any business or promoter runs a list for a night. Guests join by link or
+ * code, the door checks them in, and every join carries its source so both
+ * sides see which tactic actually fills rooms.
+ */
+import crypto from 'crypto';
+
+function shortCode(prefix: string): string {
+  return `${prefix}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+}
+
+// POST /api/v1/sitara/lists — create a list (auth: promoter or business owner)
+router.post('/lists', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { businessId, venueName, title, date, capacity } = req.body || {};
+    if (!title || !date) return res.status(400).json({ error: 'title and date are required' });
+    if (businessId) {
+      const owned = await prisma.business.findFirst({ where: { id: String(businessId), ownerId: req.user!.id } });
+      // Promoters may run lists for venues they don't own — allow with venueName too.
+      if (!owned && !venueName) return res.status(403).json({ error: 'Not your business' });
+    }
+    let code = shortCode('GL');
+    for (let i = 0; i < 3; i++) {
+      const clash = await prisma.sitaraGuestList.findUnique({ where: { code } });
+      if (!clash) break;
+      code = shortCode('GL');
+    }
+    const list = await prisma.sitaraGuestList.create({
+      data: {
+        creatorId: req.user!.id,
+        businessId: businessId || null,
+        venueName: venueName || null,
+        title: String(title),
+        date: new Date(date),
+        capacity: capacity != null ? Number(capacity) : null,
+        code,
+      },
+    });
+    res.status(201).json({ success: true, data: list });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/sitara/lists/mine — creator's lists with joins/arrivals (tactic report)
+router.get('/lists/mine', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const lists = await prisma.sitaraGuestList.findMany({
+      where: { creatorId: req.user!.id },
+      orderBy: { date: 'desc' },
+      include: {
+        business: { select: { id: true, name: true } },
+        joins: { select: { id: true, partySize: true, status: true, source: true } },
+      },
+    });
+    const data = lists.map((l: any) => {
+      const heads = l.joins.reduce((s: number, j: any) => s + (j.partySize || 1), 0);
+      const arrived = l.joins.filter((j: any) => j.status === 'ARRIVED').length;
+      const bySource: Record<string, number> = {};
+      for (const j of l.joins) bySource[j.source || 'link'] = (bySource[j.source || 'link'] || 0) + 1;
+      return {
+        id: l.id, title: l.title, venueName: l.venueName, date: l.date,
+        capacity: l.capacity, code: l.code, isActive: l.isActive,
+        business: l.business, joins: l.joins.length, heads, arrived,
+        showRate: l.joins.length ? Math.round((arrived / l.joins.length) * 100) : 0,
+        bySource,
+      };
+    });
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/sitara/lists/code/:code — public list info for the join page
+router.get('/lists/code/:code', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const list = await prisma.sitaraGuestList.findUnique({
+      where: { code: String(req.params.code).toUpperCase() },
+      include: {
+        business: { select: { id: true, name: true } },
+        _count: { select: { joins: true } },
+      },
+    });
+    if (!list || !list.isActive) return res.status(404).json({ error: 'List not found' });
+    const heads = await prisma.sitaraGuestJoin.aggregate({
+      where: { listId: list.id, status: { not: 'CANCELLED' } },
+      _sum: { partySize: true },
+    });
+    res.json({
+      success: true,
+      data: {
+        title: list.title, venueName: list.venueName, date: list.date,
+        capacity: list.capacity, business: list.business,
+        joined: list._count.joins, heads: heads._sum.partySize || 0,
+        full: list.capacity != null && (heads._sum.partySize || 0) >= list.capacity,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/sitara/lists/code/:code/join — guest joins (public)
+router.post('/lists/code/:code/join', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const list = await prisma.sitaraGuestList.findUnique({
+      where: { code: String(req.params.code).toUpperCase() },
+    });
+    if (!list || !list.isActive) return res.status(404).json({ error: 'List not found' });
+    const { name, partySize, phone, source } = req.body || {};
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'name is required' });
+    const size = Math.max(1, Math.min(20, Number(partySize) || 1));
+    if (list.capacity != null) {
+      const heads = await prisma.sitaraGuestJoin.aggregate({
+        where: { listId: list.id, status: { not: 'CANCELLED' } },
+        _sum: { partySize: true },
+      });
+      if ((heads._sum.partySize || 0) + size > list.capacity) {
+        return res.status(409).json({ error: 'List is full' });
+      }
+    }
+    const join = await prisma.sitaraGuestJoin.create({
+      data: {
+        listId: list.id,
+        name: String(name).trim(),
+        phone: phone || null,
+        partySize: size,
+        source: ['link', 'code', 'flyer', 'promoter'].includes(source) ? source : 'link',
+        confirmCode: shortCode('CF'),
+      },
+    });
+    res.status(201).json({ success: true, data: { confirmCode: join.confirmCode, name: join.name, partySize: join.partySize } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/sitara/lists/business/:businessId — door board (owner only)
+router.get('/lists/business/:businessId', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const business = await prisma.business.findFirst({
+      where: { id: String(req.params.businessId), ownerId: req.user!.id },
+    });
+    if (!business) return res.status(403).json({ error: 'Not your business' });
+    const lists = await prisma.sitaraGuestList.findMany({
+      where: { businessId: business.id },
+      orderBy: { date: 'desc' },
+      include: {
+        joins: { orderBy: { createdAt: 'asc' } },
+        creator: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    const bySource: Record<string, number> = {};
+    for (const l of lists) {
+      for (const j of l.joins) bySource[j.source || 'link'] = (bySource[j.source || 'link'] || 0) + 1;
+    }
+    res.json({ success: true, data: { lists, bySource } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/sitara/lists/joins/:id/checkin — door checks a guest in
+router.post('/lists/joins/:id/checkin', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const join = await prisma.sitaraGuestJoin.findUnique({
+      where: { id: String(req.params.id) },
+      include: { list: { select: { creatorId: true, businessId: true } } },
+    });
+    if (!join) return res.status(404).json({ error: 'Entry not found' });
+    const mine = join.list.creatorId === req.user!.id;
+    let owned = mine;
+    if (!owned && join.list.businessId) {
+      const b = await prisma.business.findFirst({
+        where: { id: join.list.businessId, ownerId: req.user!.id },
+      });
+      owned = !!b;
+    }
+    if (!owned) return res.status(403).json({ error: 'Not your list' });
+    const updated = await prisma.sitaraGuestJoin.update({
+      where: { id: join.id },
+      data: { status: 'ARRIVED' },
+    });
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
