@@ -153,6 +153,8 @@ model Business {
   externalDetails        Json?
   source                 String?
   externalId             String?
+  menuJson               Json? // Cached Square Catalog import: items + modifiers + prices
+  menuSyncedAt           DateTime?
   checkInTime            String?
   checkOutTime           String?
   channexPropertyId      String?                 @unique

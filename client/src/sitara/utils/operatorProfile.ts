@@ -45,6 +45,7 @@ const DINING: OperatorProfile = {
   nav: [
     { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
     { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
+    { path: '/sitara/operator/menu', label: 'Menu', icon: '📋' },
     { path: '/sitara/operator/reservations', label: 'Reservations', icon: '🍽️' },
     { path: '/sitara/operator/customers', label: 'Guests', icon: '💛' },
     { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },
@@ -61,9 +62,13 @@ const SERVICE: OperatorProfile = {
   clientNoun: 'Client',
   clientNounPlural: 'Clients',
   rentalStyle: false,
-  nav: SERVICE_NAV.map((n) =>
-    n.path.endsWith('/reservations') ? { ...n, label: 'Appointments', icon: '💈' } : n
-  ),
+  nav: [
+    ...SERVICE_NAV.slice(0, 2),
+    { path: '/sitara/operator/menu', label: 'Menu', icon: '📋' },
+    ...SERVICE_NAV.slice(2).map((n) =>
+      n.path.endsWith('/reservations') ? { ...n, label: 'Appointments', icon: '💈' } : n
+    ),
+  ],
 };
 
 const STAY: OperatorProfile = {

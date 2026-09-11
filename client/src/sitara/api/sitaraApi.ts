@@ -138,6 +138,13 @@ export const sitaraApi = {
   squarePaymentLink: (data: { businessId: string; amount: number; reservationId?: string; label?: string }) =>
     unwrap<any>(apiClient.post('/square/payment-link', data)),
 
+  /**
+   * Operator: live menu from Square Catalog — items, variations, modifier
+   * lists. Cached on the business; pass refresh=true to re-pull.
+   */
+  squareCatalog: (businessId: string, refresh = false) =>
+    unwrap<any>(apiClient.get('/square/catalog', { params: { businessId, ...(refresh ? { refresh: '1' } : {}) } })),
+
   // ── Tenant portal (leases by email) ───────────────────────────────
   tenantDashboard: () => unwrap<any>(apiClient.get('/tenant/dashboard')),
 

@@ -184,7 +184,7 @@ router.get('/connect', authenticate, async (req: any, res: Response, next: NextF
       `${squareBase()}/oauth2/authorize?` +
       new URLSearchParams({
         client_id: SQUARE_APP_ID,
-        scope: 'MERCHANT_PROFILE_READ PAYMENTS_READ PAYMENTS_WRITE',
+        scope: 'MERCHANT_PROFILE_READ PAYMENTS_READ PAYMENTS_WRITE ITEMS_READ ORDERS_READ',
         redirect_uri: REDIRECT_URI,
         state,
       }).toString();
@@ -364,6 +364,131 @@ router.post('/payment-link', authenticate, async (req: any, res: Response, next:
       success: true,
       data: { url: data.payment_link.url, id: data.payment_link.id, orderId: data.payment_link.order_id },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/square/catalog?businessId=xxx
+// Import the merchant's live menu: items + variations + modifier lists
+// (the bread/fillings/extras the whole walk-in story depends on).
+// Result is cached on Business.menuJson so storefronts render instantly.
+router.get('/catalog', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { businessId, refresh } = req.query;
+    if (!businessId) return res.status(400).json({ error: 'businessId is required' });
+    const business = await ensureOwner(String(businessId), req.user!.id);
+    if (!business) return res.status(403).json({ error: 'Not your business' });
+
+    // Serve cache unless a refresh is asked for.
+    if (!refresh && (business as any).menuJson && (business as any).menuSyncedAt) {
+      return res.json({ success: true, data: (business as any).menuJson, cached: true });
+    }
+
+    const conn = await prisma.squareConnection.findUnique({ where: { businessId: business.id } });
+    if (!conn) return res.status(404).json({ error: 'Square not connected' });
+
+    let accessToken = unprotectToken(conn.accessToken);
+    if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
+      const refreshed: any = await refreshAccessToken(conn.refreshToken);
+      accessToken = refreshed.access_token;
+      await prisma.squareConnection.update({
+        where: { businessId: business.id },
+        data: {
+          accessToken: protectToken(accessToken),
+          tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
+        },
+      });
+    }
+
+    // Page through the catalog: items, variations, modifier lists, modifiers.
+    const objects: any[] = [];
+    let cursor: string | undefined;
+    do {
+      const url = new URL(`${squareBase()}/v2/catalog/list`);
+      url.searchParams.set('types', 'ITEM,MODIFIER_LIST,MODIFIER,CATEGORY');
+      if (cursor) url.searchParams.set('cursor', cursor);
+      const resp = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+      });
+      const data: any = await resp.json();
+      if (!resp.ok) {
+        const detail = data?.errors?.[0]?.detail || '';
+        if (resp.status === 403 || /permission|scope|authorized/i.test(detail)) {
+          return res.status(403).json({
+            error: 'NO_CATALOG_SCOPE',
+            message: 'Reconnect Square to enable menu import (grant Items access).',
+          });
+        }
+        throw new Error(detail || 'Square catalog fetch failed');
+      }
+      if (Array.isArray(data?.objects)) objects.push(...data.objects);
+      cursor = data?.cursor || undefined;
+    } while (cursor);
+
+    const byId: Record<string, any> = {};
+    for (const o of objects) byId[o.id] = o;
+    const money = (m: any) => (m?.amount != null ? Number(m.amount) / 100 : null);
+
+    const items = objects
+      .filter((o) => o.type === 'ITEM' && o.item_data)
+      .map((o) => {
+        const d = o.item_data;
+        const variations = (d.variations || [])
+          .map((v: any) => byId[v.id]?.item_variation_data)
+          .filter(Boolean)
+          .map((vd: any, i: number) => ({
+            id: d.variations[i].id,
+            name: vd.name,
+            price: money(vd.price_money),
+          }));
+        const modifierLists = (d.modifier_list_info || [])
+          .map((info: any) => {
+            const ml = byId[info.modifier_list_id]?.modifier_list_data;
+            if (!ml) return null;
+            return {
+              id: info.modifier_list_id,
+              name: ml.name,
+              selectionType: ml.selection_type,
+              minSelected: info.min_selected_modifiers ?? (ml.selection_type === 'SINGLE' ? 1 : 0),
+              maxSelected: info.max_selected_modifiers ?? ml.max_selected_modifiers ?? null,
+              modifiers: (ml.modifiers || [])
+                .map((m: any) => byId[m.id]?.modifier_data)
+                .filter(Boolean)
+                .map((md: any, i: number) => ({
+                  id: ml.modifiers[i].id,
+                  name: md.name,
+                  price: money(md.price_money),
+                })),
+            };
+          })
+          .filter(Boolean);
+        return {
+          id: o.id,
+          name: d.name,
+          description: d.description || null,
+          category: d.category_id && byId[d.category_id] ? byId[d.category_id].category_data?.name : null,
+          variations,
+          modifierLists,
+        };
+      });
+
+    const menu = {
+      itemCount: items.length,
+      modifierListCount: objects.filter((o) => o.type === 'MODIFIER_LIST').length,
+      items,
+      syncedAt: new Date().toISOString(),
+    };
+    await prisma.business.update({
+      where: { id: business.id },
+      data: { menuJson: menu as any, menuSyncedAt: new Date() },
+    });
+    await prisma.squareConnection.update({
+      where: { businessId: business.id },
+      data: { lastSyncedAt: new Date() },
+    });
+    logger.info(`[square] Catalog import for ${business.id}: ${items.length} items`);
+    res.json({ success: true, data: menu, cached: false });
   } catch (error) {
     next(error);
   }
