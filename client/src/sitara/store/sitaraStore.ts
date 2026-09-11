@@ -1,7 +1,9 @@
 // Sitara OS — Central Store (Zustand)
-// Manages user auth, app context, and star power state
+// Manages user auth, app context, and star power state.
+// Bookings persist on-device: a dead battery must never eat a reservation.
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface User {
   id: string;
@@ -68,7 +70,9 @@ const calculateTier = (starPower: number): User['starTier'] => {
   return 'tara';
 };
 
-export const useSitaraStore = create<SitaraState>((set, get) => ({
+export const useSitaraStore = create<SitaraState>()(
+  persist(
+    (set, get) => ({
   user: null,
   bookings: [],
   units: [],
@@ -112,4 +116,12 @@ export const useSitaraStore = create<SitaraState>((set, get) => ({
       ),
     }));
   },
-}));
+}),
+    {
+      name: 'sitara:bookings:v1',
+      // Only bookings survive reloads. The session belongs to the auth
+      // store; units live on the backend now.
+      partialize: (s) => ({ bookings: s.bookings }),
+    }
+  )
+);

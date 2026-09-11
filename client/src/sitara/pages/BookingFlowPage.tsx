@@ -169,10 +169,21 @@ export default function BookingFlowPage() {
                 <span className="font-medium">{guests}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 mt-2">
-                <span className="text-slate-600">Deposit (escrow)</span>
+                <span className="text-slate-600">Due today (deposit)</span>
                 <span className="font-medium">${deposit}.00</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Due at venue</span>
+                <span className="font-medium text-green-700">$0 — deposit covers it</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Hidden fees</span>
+                <span className="font-medium text-green-700">None. Ever.</span>
+              </div>
             </div>
+            <p className="text-xs text-slate-500 mt-3">
+              Cancel 24h+ ahead for a full refund. The deposit releases to the business only when you check in.
+            </p>
           </div>
 
           <div className="flex gap-3">

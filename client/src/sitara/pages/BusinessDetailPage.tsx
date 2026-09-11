@@ -160,6 +160,16 @@ export default function BusinessDetailPage() {
       </div>
 
       <div className="px-4 sm:px-0 mt-6 space-y-6">
+        {/* Book safe — anti-scam promise */}
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-900">
+          <p className="font-semibold mb-1">🛡️ Book safe with Sitara</p>
+          <ul className="space-y-1 text-green-800">
+            <li>• Your deposit sits in escrow — the business gets it only when you check in.</li>
+            <li>• Never pay outside Sitara. Anyone asking for cash, gift cards, or direct transfers is scamming you.</li>
+            <li>• Only checked-in visits earn stars, so ratings here can't be bought or faked.</li>
+          </ul>
+        </div>
+
         {/* Verified-stars nudge */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900">
           <p className="font-semibold mb-0.5">★ Verified stars wanted</p>

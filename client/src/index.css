@@ -138,3 +138,6 @@
     justify-content: center;
   }
 }
+
+/* ── Readability scale lives on <html> while Sitara is mounted ────── */
+/* (see TextSizeToggle; root-rems scale the whole Sitara tree) */

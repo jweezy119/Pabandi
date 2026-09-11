@@ -2,6 +2,7 @@
 // Desktop: sidebar. Mobile: top bar + bottom tab bar with real tap targets.
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import SitaraLogo from './SitaraLogo';
+import TextSizeToggle from './TextSizeToggle';
 
 export interface ShellNavItem {
   path: string;
@@ -68,7 +69,8 @@ export default function DashboardShell({ title, nav, footerTitle, footerSub, ava
       <div className="lg:hidden sticky top-0 z-40 bg-slate-900 text-white px-4 py-3 flex items-center gap-2 safe-area-pb">
         <SitaraLogo size={28} />
         <span className="font-bold text-lg">Sitara</span>
-        <span className="text-xs text-slate-400 ml-1 truncate">{title}</span>
+        <span className="text-xs text-slate-400 ml-1 truncate flex-1">{title}</span>
+        <TextSizeToggle dark />
       </div>
 
       {/* Main content (bottom padding clears the tab bar) */}

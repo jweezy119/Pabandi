@@ -10,6 +10,7 @@ import { calculateTier } from './utils/starPower';
 import ConsumerLayout from './apps/consumer/ConsumerLayout';
 import OperatorLayout from './apps/operator/OperatorLayout';
 import TenantLayout from './apps/tenant/TenantLayout';
+import { applyTextSize, currentTextSize, resetTextSize } from './components/TextSizeToggle';
 
 // Consumer Pages
 import DiscoveryPage from './pages/DiscoveryPage';
@@ -88,6 +89,11 @@ function useLinkedSession() {
 
 export default function SitaraApp() {
   useLinkedSession();
+  // Persisted readability choice applies app-wide while Sitara is mounted.
+  useEffect(() => {
+    applyTextSize(currentTextSize());
+    return () => resetTextSize();
+  }, []);
   return (
     <div className="sitara">
     <Routes>

@@ -4,6 +4,7 @@
 import { Link } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import SitaraLogo from './SitaraLogo';
+import TextSizeToggle from './TextSizeToggle';
 
 export default function SitaraHeader() {
   const { user } = useSitaraStore();
@@ -38,7 +39,8 @@ export default function SitaraHeader() {
           </nav>
 
           {/* User / Star Power */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <TextSizeToggle />
             {user ? (
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
