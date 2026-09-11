@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { API_HOST } from '../../services/api';
 import { Surface, Button, Badge, Chip, tokens } from '../../design-system';
 
 const CATEGORIES = [
@@ -81,7 +82,7 @@ export const BookingOS: React.FC = () => {
     setError('');
     try {
       const res = await fetch(
-        `/api/v1/venues/search?lat=${location.lat}&lng=${location.lng}&categories=${selectedCategory}&radius=5000&limit=30`
+        `${API_HOST}/api/v1/venues/search?lat=${location.lat}&lng=${location.lng}&categories=${selectedCategory}&radius=5000&limit=30`
       );
       const data = await res.json();
       const items = data.data || [];
@@ -105,7 +106,7 @@ export const BookingOS: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/v1/maps/geocode?q=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(`${API_HOST}/api/v1/maps/geocode?q=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
       if (data.data) {
         setLocation({ lat: data.data.lat, lng: data.data.lng, name: data.data.displayName });
@@ -144,7 +145,7 @@ export const BookingOS: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-white">BookOS</h1>
+            <h1 className="text-2xl font-black text-white">Sitara</h1>
             <p className="text-sm" style={{ color: tokens.color.textDim }}>Find and book venues near you</p>
           </div>
           <div className="flex items-center gap-2">

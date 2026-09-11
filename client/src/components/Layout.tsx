@@ -218,6 +218,10 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
+  // /booking and /sitara/* bring their own chrome (BookingLayout sidebar,
+  // SitaraHeader). Rendering the main header/footer/nav on top stacks two
+  // top bars and two bottom bars — so stand down here.
+  const isStandalone = /^\/(booking|sitara)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
@@ -257,7 +261,7 @@ export default function Layout() {
          <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-glow blur-3xl opacity-50" />
       </div>
 
-      {!isAuthPage && (
+      {!isAuthPage && !isStandalone && (
         <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b shadow-2xl transition-all duration-300 ${scrolled ? 'bg-surface/60 backdrop-blur-2xl border-white/10 scale-[1.01]' : 'bg-surface/30 backdrop-blur-2xl border-white/5 scale-100'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
@@ -344,14 +348,14 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-grow mobile-safe-bottom pt-14 sm:pt-16 pb-16 sm:pb-0 md:pb-0">
+      <main className={`flex-grow mobile-safe-bottom ${isStandalone ? 'pt-0 pb-0' : 'pt-14 sm:pt-16 pb-16 sm:pb-0 md:pb-0'}`}>
         <PageTransition>
           <Outlet />
         </PageTransition>
         <GlobalAIConciergeWidget />
       </main>
 
-      {!isAuthPage && (
+      {!isAuthPage && !isStandalone && (
         <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb">
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
@@ -377,8 +381,8 @@ export default function Layout() {
         </nav>
       )}
 
-      {/* Desktop Footer — always shown except on auth pages */}
-      {!isAuthPage && (
+      {/* Desktop Footer — always shown except on auth pages + standalone app shells */}
+      {!isAuthPage && !isStandalone && (
         <footer className="hidden md:block bg-surface-bright/30 backdrop-blur-xl border-t border-outline-variant/10 mt-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
             <div className="grid grid-cols-4 gap-8 text-sm">

@@ -103,6 +103,7 @@ import FreightPage from './pages/FreightPage';
 import { FreightLayout } from './apps/freight';
 import { FreightDashboard, LoadBoard, PostLoad, MyLoads } from './apps/freight';
 import { BookingLayout } from './apps/booking';
+import { BookingPage as BookingDiscoverPage } from './apps/booking';
 import VenueSearchPage from './pages/VenueSearchPage';
 import VenueDetailPage from './pages/VenueDetailPage';
 import BookingCheckoutPage from './pages/BookingCheckoutPage';
@@ -235,13 +236,13 @@ function App() {
             <Route path="book" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
             <Route path="booking" element={<BookingLayout />}>
-              <Route index element={<BookingPage />} />
+              <Route index element={<BookingDiscoverPage />} />
               <Route path="my-reservations" element={<ReservationsPage />} />
-              <Route path="favorites" element={<BookingPage />} />
-              <Route path="venues" element={<BookingPage />} />
-              <Route path="analytics" element={<BookingPage />} />
-              <Route path="payments" element={<BookingPage />} />
-              <Route path="settings" element={<BookingPage />} />
+              <Route path="favorites" element={<BookingDiscoverPage />} />
+              <Route path="venues" element={<VenueSearchPage />} />
+              <Route path="analytics" element={<BookingDiscoverPage />} />
+              <Route path="payments" element={<BookingDiscoverPage />} />
+              <Route path="settings" element={<Navigate to="/settings" replace />} />
               <Route path="venues/search" element={<VenueSearchPage />} />
               <Route path="venue/:id" element={<VenueDetailPage />} />
               <Route path="checkout/:venueId" element={<BookingCheckoutPage />} />
