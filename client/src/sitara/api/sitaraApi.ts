@@ -55,6 +55,10 @@ export const sitaraApi = {
   upvoteReview: (reviewId: string) =>
     unwrap<any>(apiClient.post(`/reviews/${reviewId}/upvote`)),
 
+  /** Operator: public reply to a verified review (must own the business). */
+  replyToReview: (reviewId: string, text: string) =>
+    unwrap<any>(apiClient.post(`/reviews/${reviewId}/reply`, { text })),
+
   getBusinessLeaderboard: (businessId: string, tier?: string) =>
     unwrap<any[]>(
       apiClient.get(`/reviews/star-power/business/${businessId}`, { params: tier ? { tier } : {} })
@@ -180,6 +184,8 @@ export const sitaraApi = {
       source: 'Sitara verified',
       verified: true,
       starPoints: r.starPoints,
+      ownerReply: r.ownerReply || null,
+      ownerRepliedAt: r.ownerRepliedAt || null,
     }));
     return [...verified, ...google];
   },

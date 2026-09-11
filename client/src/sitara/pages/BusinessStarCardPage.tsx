@@ -114,6 +114,11 @@ export default function BusinessStarCardPage() {
                 <span className="text-amber-500 text-sm">{'★'.repeat(Math.round(r.rating))}</span>
               </div>
               {r.text && <p className="text-sm text-slate-600">{r.text}</p>}
+              {(r as any).ownerReply && (
+                <p className="text-sm text-slate-600 mt-1.5 pl-3 border-l-2 border-amber-400">
+                  <span className="font-semibold text-amber-800">Owner: </span>{(r as any).ownerReply}
+                </p>
+              )}
               <p className="text-xs text-slate-400 mt-1">✓ Verified visit · {new Date(r.date).toLocaleDateString()}</p>
             </div>
           ))}

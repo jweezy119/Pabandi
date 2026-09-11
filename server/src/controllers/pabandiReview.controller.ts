@@ -401,3 +401,42 @@ async function updateStarPower(userId: string, points: number, reason: string): 
 
   logger.info(`[StarPower] User ${userId} ${reason}: +${points} pts (total: ${updated.totalPoints}, tier: ${newTier})`);
 }
+
+/**
+ * POST /api/v1/reviews/:id/reply
+ * Business owner responds publicly to a verified review (Yelp-style).
+ * Only the owning business may reply, once or updated.
+ */
+export const replyToReview = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id: reviewId } = req.params;
+    const { text } = req.body || {};
+    if (!text || !String(text).trim()) {
+      throw new CustomError('Reply text is required', 400);
+    }
+    if (String(text).length > 1000) {
+      throw new CustomError('Reply must be under 1000 characters', 400);
+    }
+    const review = await prisma.pabandiReview.findUnique({
+      where: { id: reviewId },
+      select: { id: true, businessId: true },
+    });
+    if (!review) {
+      throw new CustomError('Review not found', 404);
+    }
+    const owned = await prisma.business.findFirst({
+      where: { id: review.businessId, ownerId: req.user!.id },
+      select: { id: true },
+    });
+    if (!owned) {
+      throw new CustomError('Only the business owner can reply', 403);
+    }
+    const updated = await prisma.pabandiReview.update({
+      where: { id: reviewId },
+      data: { ownerReply: String(text).trim(), ownerRepliedAt: new Date() },
+    });
+    res.json({ success: true, data: { id: updated.id, ownerReply: updated.ownerReply, ownerRepliedAt: updated.ownerRepliedAt } });
+  } catch (error) {
+    next(error);
+  }
+};

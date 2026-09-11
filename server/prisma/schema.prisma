@@ -1073,6 +1073,8 @@ model PabandiReview {
   txHash        String? // Transaction hash of the SBT mint
   starPoints    Int      @default(0) // Points earned from this review (rating * 10 + upvotes)
   upvoteCount   Int      @default(0)
+  ownerReply    String? // Business owner's public response (Yelp-style)
+  ownerRepliedAt DateTime?
   createdAt     DateTime @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)

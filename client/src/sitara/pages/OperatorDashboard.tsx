@@ -126,6 +126,42 @@ export default function OperatorDashboard() {
         ))}
       </div>
 
+      {/* What's working — last 14 days of real bookings */}
+      {!profile.rentalStyle && live && live.reservations.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-6 mb-8">
+          <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+            <h3 className="font-semibold text-slate-900">What's working</h3>
+            <p className="text-xs text-slate-500">
+              {(() => {
+                const red = live.activePromos;
+                return red > 0 ? `${red} active promo${red === 1 ? '' : 's'} pulling` : 'promos amplify slow days — try one';
+              })()}
+            </p>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">{profile.bookingNounPlural} per day · last 14 days</p>
+          <div className="flex items-end gap-1 h-20">
+            {(() => {
+              const days: number[] = Array(14).fill(0);
+              const now = new Date();
+              for (const r of live.reservations as any[]) {
+                if (!r.reservationDate) continue;
+                const d = Math.floor((now.getTime() - new Date(r.reservationDate).getTime()) / 86400000);
+                if (d >= 0 && d < 14) days[13 - d] += 1;
+              }
+              const max = Math.max(1, ...days);
+              return days.map((n, i) => (
+                <div key={i} className="flex-1 flex flex-col justify-end h-full" title={`${n} on day ${i + 1}`}>
+                  <div
+                    className={`rounded-t ${n > 0 ? 'bg-amber-500' : 'bg-slate-100'}`}
+                    style={{ height: `${Math.max(n > 0 ? 12 : 6, (n / max) * 100)}%` }}
+                  />
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Actions + integrations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-white border border-slate-200 rounded-lg p-6">

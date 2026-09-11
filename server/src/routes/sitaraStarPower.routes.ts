@@ -351,6 +351,7 @@ router.get('/business/:businessId/stars', async (req: Request, res: Response, ne
         rating: true,
         text: true,
         createdAt: true,
+        ownerReply: true,
         customer: { select: { firstName: true, lastName: true } },
       },
     });
@@ -369,6 +370,7 @@ router.get('/business/:businessId/stars', async (req: Request, res: Response, ne
           rating: r.rating,
           text: r.text,
           date: r.createdAt,
+          ownerReply: (r as any).ownerReply || null,
           author: [r.customer?.firstName, r.customer?.lastName].filter(Boolean).join(' ') || 'Verified guest',
         })),
       },

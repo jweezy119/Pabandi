@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createReview,
   upvoteReview,
+  replyToReview,
   getReviewUpvotes,
   getStarPower,
   getBusinessStarLeaderboard,
@@ -18,6 +19,11 @@ router.post('/', authenticate, (req: any, res: any, next: any) => {
 // Upvote a review (must have verified check-in at same business)
 router.post('/:id/upvote', authenticate, (req: any, res: any, next: any) => {
   upvoteReview(req, res, next);
+});
+
+// Owner reply to a verified review (must own the business)
+router.post('/:id/reply', authenticate, (req: any, res: any, next: any) => {
+  replyToReview(req, res, next);
 });
 
 // Get upvotes on a review (public)
