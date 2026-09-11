@@ -243,7 +243,7 @@ export default function DiscoveryPage() {
               onChange={(e) => setCityQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void useCity()}
               placeholder="Enter your city instead — e.g. Austin, TX"
-              className="flex-1 px-4 py-2.5 border border-slate-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-amber-500"
+              className="flex-1 min-w-0 px-4 py-2.5 border border-slate-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-amber-500"
             />
             <button
               onClick={() => void useCity()}

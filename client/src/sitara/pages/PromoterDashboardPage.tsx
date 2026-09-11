@@ -390,7 +390,7 @@ export default function PromoterDashboardPage() {
                       {l.business?.name || l.venueName || ''} · {l.date ? new Date(l.date).toLocaleString() : ''}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2 py-0.5 bg-slate-900 text-white rounded-full text-xs font-mono">{l.code}</span>
                     <a href={listUrl(l.code)} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg">Open link ↗</a>
                     <a href={`https://wa.me/?text=${encodeURIComponent(`You're on my list for ${l.title} — join here: ${listUrl(l.code)}`)}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg">WhatsApp</a>
