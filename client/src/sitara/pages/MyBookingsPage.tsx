@@ -45,6 +45,31 @@ export default function MyBookingsPage() {
       .finally(() => setLoadingReal(false));
   }, [isAuthenticated]);
 
+  // Stripe return: the webhook usually lands within seconds — poll the
+  // payment a few times so "paid" shows without a manual refresh.
+  useEffect(() => {
+    if (payResult !== 'success') return;
+    const ref = searchParams.get('ref');
+    if (!ref) return;
+    let tries = 0;
+    const timer = setInterval(async () => {
+      tries += 1;
+      try {
+        const p: any = await sitaraApi.getPayment(ref).catch(() => null);
+        const paid = p && ['COMPLETED', 'PAID'].includes(String(p.status || '').toUpperCase());
+        if (paid || tries >= 5) {
+          clearInterval(timer);
+          const r = await sitaraApi.myReservations().catch(() => []);
+          if (Array.isArray(r)) setRealBookings(r);
+        }
+      } catch {
+        if (tries >= 5) clearInterval(timer);
+      }
+    }, 2500);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payResult]);
+
   const handleCancel = async (id: string) => {
     if (!window.confirm('Cancel this reservation? Cancellation policy applies.')) return;
     setCancelling(id);
@@ -118,6 +143,7 @@ export default function MyBookingsPage() {
                 const when = r.scheduledAt || r.checkInDate || r.date || r.createdAt;
                 const status = String(r.status || 'pending').toLowerCase();
                 const cancellable = !['cancelled', 'completed', 'no_show'].includes(status);
+                const checkable = ['pending', 'confirmed'].includes(status) && (r.businessId?.length || 0) > 10;
                 return (
                   <div key={r.id} className="bg-white border border-slate-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-1">
@@ -141,6 +167,16 @@ export default function MyBookingsPage() {
                         >
                           {cancelling === r.id ? 'Cancelling…' : 'Cancel reservation'}
                         </button>
+                      </div>
+                    )}
+                    {checkable && (
+                      <div className="mt-3">
+                        <Link
+                          to={`/sitara/checkin/live/${r.id}`}
+                          className="inline-block px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700"
+                        >
+                          ✓ Check in now
+                        </Link>
                       </div>
                     )}
                     {status === 'completed' && (r.businessId?.length || 0) > 10 && (

@@ -67,6 +67,9 @@ export default function DiscoveryPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [view, setView] = useState<'list' | 'map'>('list');
   const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [geoDenied, setGeoDenied] = useState(false);
+  const [cityQuery, setCityQuery] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Favorites live on-device; refresh whenever discovery regains focus.
@@ -85,13 +88,43 @@ export default function DiscoveryPage() {
           setUserLocation(loc);
           loadRealBusinesses({ ...loc });
         },
-        () => setLoading(false)
+        () => {
+          // No geo = no live results. Manual city entry (below) recovers.
+          setGeoDenied(true);
+          setLoading(false);
+        }
       );
     } else {
+      setGeoDenied(true);
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Manual location via free OSM geocoding — for denied/unavailable GPS. */
+  const useCity = async () => {
+    const q = cityQuery.trim();
+    if (!q) return;
+    setGeocoding(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
+        { headers: { Accept: 'application/json' } }
+      );
+      const arr = await res.json();
+      if (Array.isArray(arr) && arr[0]?.lat && arr[0]?.lon) {
+        const loc = { lat: Number(arr[0].lat), lng: Number(arr[0].lon) };
+        setUserLocation(loc);
+        setGeoDenied(false);
+        setLoading(true);
+        await loadRealBusinesses({ ...loc });
+      }
+    } catch {
+      /* leave the prompt up */
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   async function loadRealBusinesses(opts: { lat: number; lng: number; category?: string | null; q?: string }) {
     try {
@@ -202,6 +235,24 @@ export default function DiscoveryPage() {
         </div>
         {userLocation && (
           <p className="text-xs sm:text-sm text-emerald-600 mt-2">📍 Showing venues near you</p>
+        )}
+        {geoDenied && !userLocation && (
+          <div className="max-w-xl mx-auto mt-3 flex gap-2">
+            <input
+              value={cityQuery}
+              onChange={(e) => setCityQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void useCity()}
+              placeholder="Enter your city instead — e.g. Austin, TX"
+              className="flex-1 px-4 py-2.5 border border-slate-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <button
+              onClick={() => void useCity()}
+              disabled={geocoding}
+              className="shrink-0 px-5 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-full disabled:opacity-50"
+            >
+              {geocoding ? '…' : 'Use city'}
+            </button>
+          </div>
         )}
       </div>
 

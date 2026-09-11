@@ -1,22 +1,62 @@
 // Sitara OS — Check-In Page
-// Verified check-in with on-chain proof
+// Verified arrival. Works for local bookings AND live platform reservations
+// (/checkin/live/:reservationId), on any device.
 
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
 
 export default function CheckInPage() {
-  const { bookingId } = useParams();
+  const { bookingId, reservationId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { bookings, updateBooking, updateStarPower } = useSitaraStore();
   const { isAuthenticated } = useAuthStore();
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [checkedIn, setCheckedIn] = useState(false);
   const [liveVerified, setLiveVerified] = useState<boolean | null>(null);
+  const [liveBooking, setLiveBooking] = useState<any>(null);
+  const [loadingLive, setLoadingLive] = useState(!!reservationId);
 
-  const booking = bookings.find((b) => b.id === bookingId);
+  const booking = bookings.find((b) => b.id === bookingId) || liveBooking;
+
+  useEffect(() => {
+    if (!reservationId || !isAuthenticated) {
+      setLoadingLive(false);
+      return;
+    }
+    let cancelled = false;
+    sitaraApi
+      .myReservations()
+      .then((list: any[]) => {
+        if (cancelled) return;
+        const r = (Array.isArray(list) ? list : []).find((x: any) => x.id === reservationId);
+        if (r) {
+          setLiveBooking({
+            id: `live-${r.id}`,
+            businessId: r.businessId,
+            businessName: r.business?.name || r.businessName || location.state?.name || 'this business',
+            businessType: 'restaurant' as const,
+            scheduledAt: r.reservationDate || r.createdAt,
+            status: 'pending' as const,
+            depositAmount: r.depositAmount || 0,
+            depositHeld: !!r.depositRequired,
+            reviewSubmitted: false,
+            reservationId: r.id,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingLive(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reservationId, isAuthenticated]);
 
   const handleCheckIn = async () => {
     setIsCheckingIn(true);
@@ -24,21 +64,32 @@ export default function CheckInPage() {
     let live = false;
     if (isAuthenticated && booking?.reservationId) {
       try {
-        await sitaraApi.verifyCheckIn({ reservationId: booking.reservationId, method: 'manual' });
+        // Attach device location when available — honest proximity, not a claim.
+        const pos: { lat?: number; lng?: number } = await new Promise((resolve) => {
+          if (!navigator.geolocation) return resolve({});
+          navigator.geolocation.getCurrentPosition(
+            (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            () => resolve({}),
+            { timeout: 5000 }
+          );
+        });
+        await sitaraApi.verifyCheckIn({ reservationId: booking.reservationId, method: 'manual', ...pos });
         live = true;
       } catch {
         live = false;
       }
     } else {
-      // Simulate on-chain verification
+      // Demo booking: local simulation
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     setLiveVerified(live);
-    updateBooking(bookingId!, {
-      status: 'checked_in',
-      escrowTxId: `sol-tx-${Date.now()}`,
-    });
+    if (bookingId) {
+      updateBooking(bookingId, {
+        status: 'checked_in',
+        escrowTxId: `sol-tx-${Date.now()}`,
+      });
+    }
     updateStarPower(10); // Earn 10 star power for checking in
 
     setCheckedIn(true);
@@ -48,7 +99,7 @@ export default function CheckInPage() {
   if (!booking) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-        <p className="text-slate-600">Booking not found.</p>
+        <p className="text-slate-600">{loadingLive ? 'Loading your booking…' : 'Booking not found.'}</p>
       </div>
     );
   }
@@ -82,21 +133,21 @@ export default function CheckInPage() {
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">📍</span>
             </div>
-            <h3 className="font-semibold text-amber-900 mb-2">Location Verified</h3>
+            <h3 className="font-semibold text-amber-900 mb-2">At the venue?</h3>
             <p className="text-sm text-amber-800 mb-4">
-              You're within 100m of the venue. Check in now to confirm your arrival.
+              Tap below when you've arrived — we'll attach your location if you allow it, and your visit becomes verified.
             </p>
             <button
               onClick={handleCheckIn}
               disabled={isCheckingIn}
               className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50"
             >
-              {isCheckingIn ? 'Verifying on-chain...' : 'Check In Now'}
+              {isCheckingIn ? 'Checking in...' : 'Check In Now'}
             </button>
           </div>
 
           <p className="text-xs text-slate-500 text-center">
-            Your check-in is recorded on Solana as a proof-of-attendance NFT.
+            Verified visits unlock reviews, stars, and rewards.
           </p>
         </div>
       ) : (
@@ -106,21 +157,26 @@ export default function CheckInPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Checked In!</h2>
           <p className="text-slate-600">
-            Your deposit has been released to the business. You earned <strong>+10 Star Power</strong>.
+            {liveVerified
+              ? 'Your arrival is verified on-platform. You earned '
+              : 'Your arrival is recorded. You earned '}
+            <strong>+10 Star Power</strong>.
           </p>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-            <p><strong>On-chain proof:</strong> {booking.escrowTxId}</p>
-            <p><strong>Star Power earned:</strong> +10</p>
-            {liveVerified !== null && (
-              <p className="mt-1">
-                {liveVerified
-                  ? '✓ Verified on platform'
-                  : '· Recorded locally (demo check-in)'}
-              </p>
+            {liveVerified ? (
+              <p>✓ Verified visit — your review will earn this business a real star.</p>
+            ) : (
+              <p>· Demo check-in — book a ✓ Live venue for verified visits.</p>
             )}
           </div>
           <button
-            onClick={() => navigate(`/sitara/review/${bookingId}`)}
+            onClick={() =>
+              navigate(
+                reservationId
+                  ? `/sitara/review/live/${reservationId}`
+                  : `/sitara/review/${bookingId}`
+              )
+            }
             className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600"
           >
             Leave a Review
