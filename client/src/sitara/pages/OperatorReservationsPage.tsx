@@ -112,6 +112,28 @@ export default function OperatorReservationsPage() {
 
   const [checkingIn, setCheckingIn] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [collecting, setCollecting] = useState<string | null>(null);
+
+  /** Open a Square-hosted checkout (merchant's own account) for a due deposit. */
+  const handleSquareCollect = async (r: any) => {
+    if (!businessId || !r?.depositAmount) return;
+    setCollecting(r.id);
+    setActionError(null);
+    try {
+      const link = await sitaraApi.squarePaymentLink({
+        businessId,
+        amount: Number(r.depositAmount),
+        reservationId: r.id,
+        label: `Deposit — ${r.customerName || 'booking'} ${r.reservationDate ? new Date(r.reservationDate).toLocaleDateString() : ''}`,
+      });
+      if (link?.url) window.open(link.url, '_blank', 'noopener');
+      else setActionError('No checkout URL returned.');
+    } catch (e: any) {
+      setActionError(e?.response?.data?.error || 'Square checkout failed — is Square connected?');
+    } finally {
+      setCollecting(null);
+    }
+  };
 
   /** Staff taps when the guest walks in — marks arrival on the live book. */
   const handleCheckInGuest = async (reservationId: string) => {
@@ -268,7 +290,19 @@ export default function OperatorReservationsPage() {
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">{r.numberOfGuests ?? '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    {r.depositRequired ? (r.depositPaid ? `✓ $${r.depositAmount ?? ''} paid` : `$${r.depositAmount ?? ''} due`) : '—'}
+                    {r.depositRequired ? (r.depositPaid ? `✓ $${r.depositAmount ?? ''} paid` : (
+                      <>
+                        <span>${r.depositAmount ?? ''} due</span>
+                        <button
+                          onClick={() => void handleSquareCollect(r)}
+                          disabled={collecting === r.id}
+                          title="Send the guest a Square checkout on your account"
+                          className="block mt-1.5 px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded disabled:opacity-50"
+                        >
+                          {collecting === r.id ? '…' : '■ Collect via Square'}
+                        </button>
+                      </>
+                    )) : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor(String(r.status || ''))}`}>

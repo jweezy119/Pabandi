@@ -21,6 +21,33 @@ export const receiveStripeWebhook = async (req: Request, res: Response, next: Ne
           where: { id: reservationId },
           data: { status: 'PAID', metadata: { ...(session.metadata || {}), stripeSessionId: session.id } },
         });
+        // Sitara deposit flow: close the payment + mark the deposit paid so
+        // check-in, review, stars, and rewards unlock.
+        try {
+          const pending = await prisma.payment.findFirst({
+            where: { reservationId: String(reservationId), status: 'PENDING' },
+            orderBy: { createdAt: 'desc' },
+          });
+          if (pending) {
+            await prisma.payment.update({
+              where: { id: pending.id },
+              data: {
+                status: 'COMPLETED',
+                gatewayResponse: {
+                  ...((pending.gatewayResponse as Record<string, unknown>) || {}),
+                  stripeSessionId: session.id,
+                  paidAt: new Date().toISOString(),
+                },
+              },
+            });
+          }
+          await prisma.reservation.updateMany({
+            where: { id: String(reservationId) },
+            data: { depositPaid: true },
+          });
+        } catch (e) {
+          console.error('Stripe deposit completion failed:', (e as Error).message);
+        }
       }
     }
 

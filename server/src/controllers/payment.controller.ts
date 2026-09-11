@@ -41,6 +41,7 @@ export const createPayment = async (
 
     // Integrate with Safepay
     let paymentUrl = `/payment/process/${payment.id}`;
+    const FRONTEND = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
     if (paymentMethod === 'safepay') {
       try {
         const checkoutReference = `pay_${payment.id}`;
@@ -51,6 +52,28 @@ export const createPayment = async (
         });
       } catch (err) {
         logger.error(`Safepay initialization failed: ${err}`);
+      }
+    } else {
+      // Card via Stripe Checkout (default). Without STRIPE_SECRET_KEY the
+      // service returns an honest disabled URL instead of failing.
+      try {
+        const { stripeService } = await import('../services/stripe.service');
+        paymentUrl = await stripeService.createCheckoutUrl(
+          Math.round(Number(amount) * 100),
+          'usd',
+          String(reservationId || payment.id),
+          `${FRONTEND}/sitara/my-bookings?pay=success&ref=${payment.id}`,
+          `${FRONTEND}/sitara/my-bookings?pay=cancelled&ref=${payment.id}`
+        );
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            paymentMethod: 'stripe',
+            gatewayResponse: { ...(payment.gatewayResponse as any || {}), stripe: true },
+          },
+        });
+      } catch (err) {
+        logger.error(`Stripe checkout failed: ${err}`);
       }
     }
 

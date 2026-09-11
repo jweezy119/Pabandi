@@ -287,4 +287,86 @@ router.post('/sync', authenticate, async (req: any, res: Response, next: NextFun
   }
 });
 
+// POST /api/v1/square/payment-link { businessId, amount, reservationId?, label? }
+// Creates a Square-hosted checkout on the MERCHANT's own Square account —
+// the business takes the payment on rails they already trust, Sitara tracks it.
+router.post('/payment-link', authenticate, async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { businessId, amount, reservationId, label } = req.body || {};
+    if (!businessId || !amount) return res.status(400).json({ error: 'businessId and amount are required' });
+    const business = await ensureOwner(String(businessId), req.user!.id);
+    if (!business) return res.status(403).json({ error: 'Not your business' });
+    const conn = await prisma.squareConnection.findUnique({ where: { businessId: business.id } });
+    if (!conn) return res.status(404).json({ error: 'Square not connected' });
+
+    let accessToken = unprotectToken(conn.accessToken);
+    if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
+      const refreshed: any = await refreshAccessToken(conn.refreshToken);
+      accessToken = refreshed.access_token;
+      await prisma.squareConnection.update({
+        where: { businessId: business.id },
+        data: {
+          accessToken: protectToken(accessToken),
+          tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
+        },
+      });
+    }
+
+    const cents = Math.round(Number(amount) * 100);
+    if (!Number.isFinite(cents) || cents <= 0) return res.status(400).json({ error: 'Invalid amount' });
+
+    // Location is required by Square — sync it if we never stored one.
+    let locationId = conn.squareLocationId;
+    if (!locationId) {
+      const locations = await fetchLocations(accessToken);
+      const primary = locations.find((l: any) => l.status === 'ACTIVE') || locations[0];
+      locationId = primary?.id;
+      if (locationId) {
+        await prisma.squareConnection.update({
+          where: { businessId: business.id },
+          data: { squareLocationId: locationId, lastSyncedAt: new Date() },
+        });
+      }
+    }
+    if (!locationId) return res.status(400).json({ error: 'No Square location found for this business' });
+
+    const resp = await fetch(`${squareBase()}/v2/online-checkout/payment-links`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        idempotency_key: `sitara-${reservationId || Date.now()}-${cents}`,
+        order: {
+          location_id: locationId,
+          line_items: [
+            {
+              name: label || 'Sitara booking deposit',
+              quantity: '1',
+              base_price_money: { amount: cents, currency: 'USD' },
+            },
+          ],
+          metadata: reservationId ? { sitaraReservationId: String(reservationId) } : undefined,
+        },
+        checkout_options: {
+          redirect_url: `${CLIENT_URL}/sitara/my-bookings?pay=success&ref=${reservationId || ''}`,
+          ask_for_shipping_address: false,
+        },
+      }),
+    });
+    const data: any = await resp.json();
+    if (!resp.ok || !data?.payment_link?.url) {
+      throw new Error(data?.errors?.[0]?.detail || 'Square payment link failed');
+    }
+    res.json({
+      success: true,
+      data: { url: data.payment_link.url, id: data.payment_link.id, orderId: data.payment_link.order_id },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

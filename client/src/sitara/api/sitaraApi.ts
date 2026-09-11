@@ -130,9 +130,13 @@ export const sitaraApi = {
   // ── Payment rails (reservation → payment → gateway) ───────────────
   /** Create a deposit/escrow payment against a reservation. Returns payment + pay URL. */
   createDepositPayment: (data: { reservationId: string; amount: number; paymentMethod?: string }) =>
-    unwrap<any>(apiClient.post('/payments', data)),
+    unwrap<any>(apiClient.post('/payments', { paymentMethod: 'stripe', ...data })),
 
   getPayment: (id: string) => unwrap<any>(apiClient.get(`/payments/${id}`)),
+
+  /** Operator: Square-hosted checkout on the merchant's own account. */
+  squarePaymentLink: (data: { businessId: string; amount: number; reservationId?: string; label?: string }) =>
+    unwrap<any>(apiClient.post('/square/payment-link', data)),
 
   // ── Tenant portal (leases by email) ───────────────────────────────
   tenantDashboard: () => unwrap<any>(apiClient.get('/tenant/dashboard')),
