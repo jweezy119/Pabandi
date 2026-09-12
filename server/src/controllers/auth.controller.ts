@@ -1,6 +1,16 @@
+import { Request, Response, NextFunction } from 'express';
+import { PrismaClient, UserRole } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
+import crypto from 'crypto';
+import { PublicKey, Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+import { prisma } from '../utils/database';
+import { logger } from '../utils/logger';
+import { CustomError } from '../middleware/errorHandler';
+import { encrypt } from '../utils/encryption';
 import { osintService } from '../services/osint.service';
-import { aiNlpService } from '../services/ai.nlp.service';
-import { PublicKey } from '@solana/web3.js';
+import { odooService } from '../services/odoo.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -13,18 +23,50 @@ const isValidSolanaAddress = (address: unknown): address is string =>
 
 const createWalletNonce = () => `${Date.now()}_${crypto.randomBytes(24).toString('hex')}`;
 
-import { Keypair } from '@solana/web3.js';
-import bs58 from 'bs58';
-import { encrypt } from '../utils/encryption';
+// Email helper functions (inline since no email util)
+const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+const sendVerificationEmail = async (email: string, code: string, firstName: string): Promise<boolean> => {
+  try {
+    // In production, integrate with email service (SendGrid, Mailgun, etc.)
+    logger.info(`Verification email sent to ${email}: ${code}`);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const isEmailConfigured = (): boolean => {
+  return !!process.env.SENDGRID_API_KEY || !!process.env.MAILGUN_API_KEY;
+};
 
 interface LoginBody {
   email: string;
   password: string;
 }
 
-import { Keypair } from '@solana/web3.js';
-import bs58 from 'bs58';
-import { encrypt } from '../utils/encryption';
+interface RegisterBody {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role?: string;
+  refCode?: string;
+  code?: string;
+  businessName?: string;
+  googlePlaceId?: string;
+  fiverrUrl?: string;
+  upworkUrl?: string;
+}
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
 
 export const register = async (
   req: Request<{}, {}, RegisterBody>,
