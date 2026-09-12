@@ -35,3 +35,7 @@ services:
         fromDatabase:
           name: pabandi-db
           property: connectionString
+      - key: COURTLISTENER_API_KEY
+        generateValue: true
+      - key: COURTLISTENER_API_KEYS
+        value: ""
