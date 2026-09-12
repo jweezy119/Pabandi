@@ -3,7 +3,7 @@
 
 import { StarPowerProfile, Business } from '../types/index';
 
-// ── Core Mortgage Entities ──────────────────────────────────────────────
+// ── Core Mortgage Entities ──────────────────────────────────────────────────────
 
 export interface MortgageApplication {
   id: string;
@@ -91,7 +91,7 @@ export interface MortgageServicingPlan {
   };
 }
 
-// ── CRM Service ──────────────────────────────────────────────────────────
+// ── CRM Service ──────────────────────────────────────────────────────────────────
 
 export class MortgageCRMService {
   constructor(
@@ -101,6 +101,7 @@ export class MortgageCRMService {
 
   /**
    * Create a new mortgage application linked to a Pabandi user
+   * Supports business owners who also own properties
    */
   async createApplication(
     data: Omit<MortgageApplication, 'id' | 'status'> & {
@@ -117,6 +118,24 @@ export class MortgageCRMService {
       creditScore: number;
       employmentStatus: string;
       debtToIncomeRatio: number;
+      propertyOwnership?: {
+        isOwner: boolean;
+        ownedProperties: string[];
+        primaryPropertyId?: string;
+      };
+      nftReview?: {
+        isVerified: boolean;
+        reviewId?: string;
+        reviewScore?: number;
+        verifiedBy?: string;
+        nftAssetId?: string;
+      };
+      businessVerification?: {
+        isVerifiedBusiness: boolean;
+        complianceScore?: number;
+        riskLevel?: 'low' | 'medium' | 'high';
+        auditTimestamp?: string;
+      };
     }
   ): Promise<MortgageApplication> {
     const app: MortgageApplication = {
@@ -133,13 +152,13 @@ export class MortgageCRMService {
       text: `New mortgage application submitted by ${data.applicantName}`,
     });
 
-    // Update our internal record
     this._updateInternalRecord(app);
     return result;
   }
 
   /**
    * Submit a mortgage application to the Sitara backend
+   * Supports business owners who also own properties
    */
   async submitApplication(
     data: Omit<MortgageApplication, 'id' | 'status'> & {
@@ -156,6 +175,24 @@ export class MortgageCRMService {
       creditScore: number;
       employmentStatus: string;
       debtToIncomeRatio: number;
+      propertyOwnership?: {
+        isOwner: boolean;
+        ownedProperties: string[];
+        primaryPropertyId?: string;
+      };
+      nftReview?: {
+        isVerified: boolean;
+        reviewId?: string;
+        reviewScore?: number;
+        verifiedBy?: string;
+        nftAssetId?: string;
+      };
+      businessVerification?: {
+        isVerifiedBusiness: boolean;
+        complianceScore?: number;
+        riskLevel?: 'low' | 'medium' | 'high';
+        auditTimestamp?: string;
+      };
     }
   ): Promise<MortgageApplication> {
     const app: MortgageApplication = {
@@ -256,7 +293,44 @@ export class MortgageCRMService {
     return result;
   }
 
-  // ── Internal helpers ──────────────────────────────────────────────────
+  /**
+   * Get property ownership details for business owners
+   */
+  async getPropertyOwnership(businessId: string): Promise<PropertyOwnershipInfo> {
+    const result = await this.sitaraApi.getReview(`/property-owners/business/${businessId}`);
+    return result?.data?.data || null;
+  }
+
+  /**
+   * Get NFT review verification status
+   */
+  async getNFTReviewStatus(businessId: string): Promise<NFTReviewStatus> {
+    const result = await this.sitaraApi.getReview(`/nfts/reviews/business/${businessId}`);
+    return result?.data?.data || null;
+  }
+
+  /**
+   * Get business verification status
+   */
+  async getBusinessVerification(businessId: string): Promise<BusinessVerificationInfo> {
+    const result = await this.sitaraApi.getReview(`/businesses/verification/business/${businessId}`);
+    return result?.data?.data || null;
+  }
+
+  /**
+   * Create a new promoter profile (simplified onboarding)
+   */
+  async createPromoterProfile(data: PromoterProfile) {
+    const result = await this.sitaraApi.createReview({
+      businessId: data.businessId,
+      promotionType: data.promotionType,
+      revenueEstimate: data.revenueEstimate,
+      onboardingLevel: 'basic', // Simplified onboarding
+      referralBonus: 0,
+    });
+    this._updateInternalRecord(result?.data?.data || {});
+    return result;
+  }
 
   private _updateInternalRecord(mortgage: MortgageApplication) {
     // Store in local cache for offline use
