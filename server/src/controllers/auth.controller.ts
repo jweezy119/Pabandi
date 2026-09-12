@@ -1,36 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { prisma } from '../utils/database';
-import { UserRole } from '@prisma/client';
-import type { Secret, JwtPayload } from 'jsonwebtoken';
-import { CustomError } from '../middleware/errorHandler';
-import { AuthRequest } from '../middleware/auth.middleware';
-import { logger } from '../utils/logger';
-import { sendVerificationEmail, generateVerificationCode, isEmailConfigured } from '../services/email.service';
-import { odooService } from '../services/odoo.service';
 import { osintService } from '../services/osint.service';
+import { aiNlpService } from '../services/ai.nlp.service';
+import { PublicKey } from '@solana/web3.js';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+const SOLANA_ADDRESS_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-interface RegisterBody {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role?: string;
-  businessName?: string;
-  googlePlaceId?: string;
-  fiverrUrl?: string;
-  upworkUrl?: string;
-  refCode?: string;
-  code?: string; // For code-based registration flow
-}
+const isValidSolanaAddress = (address: unknown): address is string =>
+  typeof address === 'string' && SOLANA_ADDRESS_REGEX.test(address.trim());
+
+const createWalletNonce = () => `${Date.now()}_${crypto.randomBytes(24).toString('hex')}`;
+
+import { Keypair } from '@solana/web3.js';
+import bs58 from 'bs58';
+import { encrypt } from '../utils/encryption';
 
 interface LoginBody {
   email: string;
@@ -932,35 +917,48 @@ export const updateProfile = async (
 
 export const getNonce = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { walletAddress } = req.body;
-    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      throw new CustomError('Invalid wallet address', 400);
+    const walletAddressRaw = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
+    let walletAddress: string;
+
+    try {
+      walletAddress = new PublicKey(walletAddressRaw).toString();
+    } catch {
+      throw new CustomError('Invalid Solana wallet address', 400);
     }
 
-    const nonce = Date.now() + '_' + crypto.randomBytes(32).toString('hex');
-    let user = await prisma.user.findUnique({ where: { walletAddress: walletAddress.toLowerCase() } });
+    const nonce = createWalletNonce();
+    let user = await prisma.user.findUnique({ where: { walletAddress } });
 
     if (!user) {
-      // Create stub user
-      const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
       user = await prisma.user.create({
         data: {
-          email: `${walletAddress.toLowerCase()}@pabandi.local`, // placeholder
-          firstName: 'Web3',
+          email: `${walletAddress}@wallet.pabandi.local`,
+          firstName: 'Wallet',
           lastName: 'User',
-          passwordHash,
-          walletAddress: walletAddress.toLowerCase(),
-          nonce
-        }
+          passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+          walletAddress,
+          role: UserRole.CUSTOMER,
+          reliabilityScore: 750,
+          trustScore: 50.0,
+          verificationTier: 'BASIC',
+          gracePeriodUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
+          wallet: {
+            create: {
+              address: walletAddress,
+              balance: 0,
+              currency: 'PAB',
+            },
+          },
+        },
       });
     } else {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { nonce }
+        data: { nonce },
       });
     }
 
-    res.json({ success: true, data: { nonce: user.nonce } });
+    return res.json({ success: true, data: { nonce: user.nonce, walletAddress } });
   } catch (error) {
     next(error);
   }
@@ -968,63 +966,70 @@ export const getNonce = async (req: Request, res: Response, next: NextFunction) 
 
 export const verifyWallet = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { walletAddress, signature } = req.body;
-    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      throw new CustomError('Invalid wallet address', 400);
-    }
-    
-    if (!signature || !/^0x[a-fA-F0-9]{130}$/.test(signature)) {
-      throw new CustomError('Invalid signature format', 400);
+    const walletAddressRaw = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
+    const signature = typeof req.body?.signature === 'string' ? req.body.signature.trim() : '';
+    let walletAddress: string;
+
+    try {
+      walletAddress = new PublicKey(walletAddressRaw).toString();
+    } catch {
+      throw new CustomError('Invalid Solana wallet address', 400);
     }
 
-    const user = await prisma.user.findUnique({ 
-      where: { walletAddress: walletAddress.toLowerCase() }, 
-      include: { business: true } 
+    if (!signature) {
+      throw new CustomError('Wallet signature is required', 400);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { walletAddress },
+      include: { business: true, wallet: true },
     });
-    
+
     if (!user || !user.nonce) {
-      throw new CustomError('Nonce not found. Please request a new nonce.', 400);
+      throw new CustomError('Nonce not found. Please request a new sign-in code.', 400);
     }
 
-    // Check expiration (5 minutes)
-    const [timestampStr] = user.nonce.split('_');
-    const timestamp = parseInt(timestampStr, 10);
-    if (isNaN(timestamp) || Date.now() - timestamp > 5 * 60 * 1000) {
-      throw new CustomError('Nonce expired. Please request a new one.', 400);
+    const nonceParts = user.nonce.split('_');
+    const timestamp = Number(nonceParts[0]);
+    if (Number.isNaN(timestamp) || Date.now() - timestamp > 5 * 60 * 1000) {
+      await prisma.user.update({ where: { id: user.id }, data: { nonce: null } });
+      throw new CustomError('Sign-in code expired. Please request a new one.', 400);
     }
 
-    // Solana-native signature verification (no ethers needed)
+    const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${walletAddress}\n\nNonce:\n${user.nonce}`;
     const nacl = await import('tweetnacl');
     const bs58 = await import('bs58');
-    const message = `Welcome to Pabandi!\n\nClick to sign in and accept the Pabandi Terms of Service: https://pabandi.app/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address:\n${walletAddress}\n\nNonce:\n${user.nonce}`;
-    const messageBytes = new TextEncoder().encode(message);
-    const signatureBytes = (bs58 as any).default.decode(signature);
-    const publicKeyBytes = (bs58 as any).default.decode(walletAddress);
-    const isValid = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
-    if (!isValid) throw new CustomError('Signature verification failed', 401);
+    const signatureBytes = bs58.default.decode(signature);
+    const isValid = nacl.sign.detached.verify(
+      new TextEncoder().encode(message),
+      signatureBytes,
+      new PublicKey(walletAddress).toBytes(),
+    );
 
-    // Clear nonce to prevent replay attacks
+    if (!isValid) {
+      throw new CustomError('Signature verification failed. Please try again.', 401);
+    }
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { nonce: null }
+      data: { nonce: null },
     });
 
-    // Generate tokens
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role } as JwtPayload,
+      { id: user.id, email: user.email, role: user.role },
       JWT_SECRET as Secret,
-      { expiresIn: JWT_EXPIRES_IN as any }
+      { expiresIn: JWT_EXPIRES_IN as any },
     );
 
     const refreshToken = jwt.sign(
-      { id: user.id } as JwtPayload,
+      { id: user.id },
       JWT_REFRESH_SECRET as Secret,
-      { expiresIn: JWT_REFRESH_EXPIRES_IN as any }
+      { expiresIn: JWT_REFRESH_EXPIRES_IN as any },
     );
 
-    logger.info(`User logged in via wallet: ${user.walletAddress}`);
+    logger.info(`User logged in via wallet: ${walletAddress}`);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Wallet login successful',
       data: {
@@ -1042,7 +1047,7 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
           hospitalityScore: user.hospitalityScore,
           freelanceScore: user.freelanceScore,
           appointmentScore: user.appointmentScore,
-          walletAddress: user.walletAddress,
+          walletAddress: user.walletAddress || walletAddress,
           business: user.business,
         },
         token,

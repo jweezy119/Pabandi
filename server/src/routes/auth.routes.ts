@@ -17,6 +17,7 @@ import {
   getProfileChangeStatus,
   requestLoginCode,
   verifyLoginCode,
+  getAiSignInGuidance,
 } from '../controllers/auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -36,6 +37,9 @@ router.post('/verify-code', verifyLoginCode);
 // Wallet auth routes
 router.post('/wallet/nonce', getNonce);
 router.post('/wallet/verify', verifyWallet);
+
+// AI sign-in guidance (public, no auth required)
+router.post('/ai/signin-guidance', getAiSignInGuidance);
 
 // Protected routes (require authentication) - apply authenticate middleware individually
 router.post('/verify/email', authenticate, verifyEmail);
