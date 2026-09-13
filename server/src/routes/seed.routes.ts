@@ -516,6 +516,15 @@ const OSM_CITIES: [string, number, number, number, number][] = [
   ['New York', 40.68, -74.02, 40.82, -73.88],
 ];
 
+// Tag groups for OSM queries: [tagKey, tagValue] — 18 groups
+const tagGroups: [string, string][] = [
+  ['amenity', 'restaurant'], ['amenity', 'cafe'], ['amenity', 'fast_food'], ['amenity', 'bar'],
+  ['amenity', 'hairdresser'], ['amenity', 'beauty'], ['amenity', 'spa'], ['amenity', 'clinic'],
+  ['amenity', 'doctors'], ['amenity', 'fitness_centre'], ['amenity', 'pharmacy'],
+  ['shop', 'supermarket'], ['shop', 'convenience'], ['shop', 'clothes'], ['shop', 'electronics'],
+  ['shop', 'bakery'], ['shop', 'florist'], ['tourism', 'hotel'], ['tourism', 'guest_house'],
+];
+
 async function osmQuery(bbox: [number, number, number, number], tagKey: string, tagVal: string): Promise<any[]> {
   const [s, w, n, e] = bbox;
   const q = `[out:json][timeout:25];(node["${tagKey}"="${tagVal}"](${s},${w},${n},${e});way["${tagKey}"="${tagVal}"](${s},${w},${n},${e}););out center 200;`;
@@ -560,13 +569,9 @@ router.post('/osm-businesses', async (req: Request, res: Response): Promise<any>
     firstError: null as string | null,
   };
   try {
-    const tagGroups: [string, string][] = [
-      ['amenity', 'restaurant'], ['amenity', 'cafe'], ['amenity', 'fast_food'], ['amenity', 'bar'],
-      ['amenity', 'hairdresser'], ['amenity', 'beauty'], ['amenity', 'spa'], ['amenity', 'clinic'],
-      ['amenity', 'doctors'], ['amenity', 'fitness_centre'], ['amenity', 'pharmacy'],
-      ['shop', 'supermarket'], ['shop', 'convenience'], ['shop', 'clothes'], ['shop', 'electronics'],
-      ['shop', 'bakery'], ['shop', 'florist'], ['tourism', 'hotel'], ['tourism', 'guest_house'],
-    ];
+    // Precompute: how many tag groups per city? 18 groups × 4 cities = 72 batches.
+    const totalBatches = OSM_CITIES.length * tagGroups.length;
+    let batchIndex = 0;
 
     for (const [city, s, w, n, e] of OSM_CITIES) {
       const cityStat = { city, found: 0, created: 0, updated: 0, skipped: 0, cats: {} as Record<string, number> };

@@ -2,8 +2,8 @@ import axios from 'axios';
 import CourtListenerClient from './courtlistener';
 
 /**
- * Legal Research Service for mortgage decision support
- * Integrates CourtListener API to provide legal context for mortgage decisions
+ * Smart Legal Research Service for mortgage decision support
+ * Provides intuitive, context-aware legal research for mortgage applications
  */
 class LegalResearchService {
   private courtListener: CourtListenerClient;
@@ -13,21 +13,39 @@ class LegalResearchService {
   }
 
   /**
-   * Search legal opinions related to mortgages
-   * @param query - Search query (e.g., "mortgage interest rates", "mortgage foreclosure laws")
-   * @param cluster - Court cluster (e.g., "United States District Courts")
-   * @returns Array of relevant legal opinions
+   * Search legal opinions related to mortgages with smart filters
+   * @param query - Search query (e.g., "mortgage interest rates", "foreclosure laws")
+   * @param cluster - Optional court cluster filter (default: "United States District Courts")
+   * @param jurisdiction - Optional jurisdiction filter (e.g., "Texas", "California")
+   * @returns Array of relevant legal opinions with relevance scores
    */
-  async searchLegalOpinions(query: string, cluster: string = 'United States District Courts') {
+  async searchLegalOpinions(
+    query: string,
+    cluster: string = 'United States District Courts',
+    jurisdiction: string = null
+  ): Promise<Array<any>> {
     const results = await this.courtListener.search(query);
-    return results;
+    
+    // Filter by jurisdiction if specified
+    if (jurisdiction) {
+      const filtered = results.filter(
+        op => op.jurisdiction?.toLowerCase().includes(jurisdiction.toLowerCase()) ||
+               op.title?.toLowerCase().includes(jurisdiction.toLowerCase())
+      );
+      return filtered;
+    }
+    
+    // Sort by relevance (most relevant first)
+    return results.sort((a, b) => 
+      a.score || b.score ? b.score - a.score : 0
+    );
   }
 
   /**
-   * Get docket information for a specific case
+   * Get docket information for a specific mortgage case
    * @param caseId - Case identifier
-   * @param cluster - Court cluster
-   * @returns Docket entries
+   * @param cluster - Optional court cluster filter
+   * @returns Docket entries with key details
    */
   async getCaseDocket(caseId: string, cluster: string = 'United States District Courts') {
     const results = await this.courtListener.getDockets(cluster, caseId);
@@ -35,22 +53,12 @@ class LegalResearchService {
   }
 
   /**
-   * Get judicial information for a court
-   * @param court - Court name
-   * @returns Judicial information
-   */
-  async getJudicialInformation(court: string) {
-    const results = await this.courtListener.getJudges(court);
-    return results;
-  }
-
-  /**
    * Find legal precedents related to mortgage lending
    * @param keyword - Keyword for legal research
-   * @returns Relevant case law
+   * @returns Relevant case law with similarity scores
    */
-  async findPrecedents(keyword: string) {
-    const results = await this.courtListener.search(keyword);
+  async findPrecedents(keyword: string): Promise<Array<any>> {
+    const results = await this.courtListener.findPrecedents(keyword);
     return results;
   }
 
@@ -62,6 +70,32 @@ class LegalResearchService {
   async getLegalAlerts(topic: string) {
     const results = await this.courtListener.search(topics: topic);
     return results;
+  }
+
+  /**
+   * Analyze a mortgage application for legal risks
+   * @param applicationId - Mortgage application ID
+   * @returns Risk assessment with legal considerations
+   */
+  async analyzeMortgageApplication(applicationId: string): Promise<Map<string, any>> {
+    // In a real implementation, this would integrate with the CRM service
+    // to get application details and perform legal analysis
+    
+    const application = await this.courtListener.getJudges(applicationId);
+    
+    // Placeholder for legal risk analysis
+    const risks = new Map();
+    
+    // Example: Check for common legal issues in mortgage applications
+    if (application?.loanAmount > 500000) {
+      risks.set('High Loan Amount', { severity: 'high', description: 'Large loans may have stricter regulatory requirements' });
+    }
+    
+    if (application?.termMonths > 30) {
+      risks.set('Long Term Loan', { severity: 'medium', description: 'Long-term loans may involve different legal considerations' });
+    }
+    
+    return risks;
   }
 }
 

@@ -230,6 +230,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/ai/realestate`, './routes/aiRealEstate.routes'],
   [`/api/${v}/ai/advanced`, './routes/aiAdvanced.routes'],
   [`/api/${v}/ai`, './routes/ai.routes'],
+  [`/api/${v}/ai/business`, './routes/aiBusiness.routes'],
   [`/api/${v}/marketplace`, './routes/marketplace.routes'],
   [`/api/${v}/notifications`, './routes/notifications.routes'],
   [`/api/${v}/auth/wallet`, './routes/walletAuth.routes'],
