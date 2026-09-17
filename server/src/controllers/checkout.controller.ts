@@ -7,6 +7,7 @@ import { escrowService } from '../services/escrow.service';
 import { fail, ok } from '../utils/apiResponse';
 import { cashAppService } from '../services/cashapp.service';
 import { onrampService } from '../services/onramp.service';
+import { paylioService } from '../services/paylio.service';
 
 export const createCheckoutSession = async (req: Request, res: Response) => {
   try {
@@ -663,5 +664,118 @@ export const createDemoCheckoutSession = async (_req: Request, res: Response) =>
   } catch (error: any) {
     logger.error('Error creating demo checkout session', error);
     return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const initiatePayLioCheckout = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { walletAddress, email, note } = req.body as {
+      walletAddress?: string;
+      email?: string;
+      note?: string;
+    };
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true },
+    });
+
+    if (!session || session.status !== 'PENDING') {
+      return fail(res, 'Valid checkout session not found', 404);
+    }
+
+    const API_BASE = (process.env.API_URL || process.env.FRONTEND_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+    const callback = `${API_BASE}/checkout/${session.id}/paylio/callback`;
+    const amount = Number(session.amount);
+    const currency = session.currency || 'USD';
+
+    if (!walletAddress) {
+      return fail(res, 'walletAddress is required', 400);
+    }
+
+    const checkout = await paylioService.createCheckout({
+      address: walletAddress,
+      amount,
+      currency,
+      callback,
+      email,
+      note: note || `Pabandi checkout ${session.id}`,
+    });
+
+    await prisma.checkoutSession.update({
+      where: { id: session.id },
+      data: {
+        metadata: {
+          ...(session.metadata as any || {}),
+          gateway: 'paylio',
+          providerUrl: checkout.url,
+          paylioId: checkout.id,
+          ipnToken: checkout.ipnToken,
+          walletAddress,
+        },
+      },
+    });
+
+    return ok(res, { url: checkout.url, gateway: 'paylio', status: checkout.status, ipnToken: checkout.ipnToken }, 201);
+  } catch (error: any) {
+    logger.error('Error initiating PayLio checkout', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const paylioCallback = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const status = String(req.query.status || '').toLowerCase();
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+    });
+
+    if (!session) {
+      return res.status(404).send('Session not found');
+    }
+
+    const metadata = (session.metadata as any) || {};
+    if (metadata.gateway !== 'paylio' || !metadata.ipnToken) {
+      return res.status(400).send('Invalid PayLio session');
+    }
+
+    let finalStatus = session.status;
+    if (status === 'paid') {
+      finalStatus = 'PAID';
+    } else if (['canceled', 'failed'].includes(status)) {
+      finalStatus = 'CANCELLED';
+    }
+
+    if (finalStatus !== session.status) {
+      await prisma.checkoutSession.update({
+        where: { id: session.id },
+        data: {
+          status: finalStatus as any,
+          metadata: {
+            ...metadata,
+            lastCallbackStatus: status,
+            callbackAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      logger.info(`[PayLio] callback for ${id}: ${status} -> ${finalStatus}`);
+    }
+
+    const FRONTEND = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+    const successUrl = `${FRONTEND}/checkout/${id}?status=${finalStatus.toLowerCase()}`;
+    const cancelUrl = `${FRONTEND}/checkout/${id}?status=cancelled`;
+
+    if (finalStatus === 'PAID') {
+      return res.redirect(successUrl);
+    }
+
+    return res.redirect(cancelUrl);
+  } catch (error: any) {
+    logger.error('[PayLio] callback error:', error);
+    return res.status(500).send('Callback processing failed');
   }
 };

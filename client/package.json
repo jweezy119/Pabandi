@@ -66,7 +66,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build --mode production",
+    "build": "vite build --mode production",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   }

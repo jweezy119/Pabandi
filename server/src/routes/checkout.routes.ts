@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, initiateCashAppCheckout, getCheckoutReceipt, createDemoCheckoutSession, getOnrampQuotes, createOnrampSession } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, initiateCashAppCheckout, getCheckoutReceipt, createDemoCheckoutSession, getOnrampQuotes, createOnrampSession, initiatePayLioCheckout, paylioCallback } from '../controllers/checkout.controller';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
@@ -23,6 +23,8 @@ router.post('/session/:id/stripe', optionalAuthenticate, initiateStripeCheckout)
 router.post('/session/:id/cashapp', optionalAuthenticate, initiateCashAppCheckout);
 router.post('/session/:id/crypto', optionalAuthenticate, initiateCryptoCheckout);
 router.post('/session/:id/escrow', optionalAuthenticate, initiateEscrowCheckout);
+router.post('/session/:id/paylio', optionalAuthenticate, initiatePayLioCheckout);
+router.get('/session/:id/paylio/callback', paylioCallback);
 
 // On-ramp quotes and sessions (fiat -> crypto)
 router.get('/onramp/quotes', getOnrampQuotes);

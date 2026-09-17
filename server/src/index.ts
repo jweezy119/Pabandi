@@ -54,6 +54,10 @@ if (process.env.NODE_ENV === 'production') {
   if (!process.env.OFFRAMP__LP_API_KEY) {
     requiredEnvVars.push('OFFRAMP__LP_API_KEY');
   }
+  // PayLio API key for card payments (USDC on Polygon)
+  if (!process.env.PAYLIO_API_KEY) {
+    requiredEnvVars.push('PAYLIO_API_KEY');
+  }
   // Firebase App Check (production)
   if (process.env.REQUIRE_APP_CHECK !== 'false' && !process.env.FIREBASE_APP_CHECK_SECRET) {
     requiredEnvVars.push('FIREBASE_APP_CHECK_SECRET (set REQUIRE_APP_CHECK=false to skip)');

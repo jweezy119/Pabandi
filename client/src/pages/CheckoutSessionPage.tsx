@@ -4,6 +4,7 @@ import { ShieldCheckIcon, ExclamationTriangleIcon, FingerPrintIcon, LockClosedIc
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
+import PaymentService from '../services/payment';
 import toast from 'react-hot-toast';
 import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
@@ -239,6 +240,37 @@ export const CheckoutSessionPage = () => {
     }
   };
 
+  const handlePayLioPayment = async () => {
+    if (!session || !user) return;
+    try {
+      setPaying(true);
+      const walletAddress = user.walletAddress || prompt('Enter your Polygon USDC wallet address:') || '';
+      if (!walletAddress) {
+        toast.error('Wallet address is required for PayLio checkout');
+        setPaying(false);
+        return;
+      }
+
+      const paymentService = new PaymentService();
+      const response = await paymentService.createPayLioPaymentLink(
+        session.id,
+        session.amount,
+        session.currency,
+        walletAddress,
+        user.email
+      );
+
+      if ((response as any).url) {
+        window.location.href = (response as any).url;
+      } else {
+        throw new Error('No checkout URL returned from PayLio');
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.message || 'Failed to initiate PayLio payment');
+      setPaying(false);
+    }
+  };
+
   const shareOnWhatsApp = () => {
     if (!session) return;
     const text = encodeURIComponent(
@@ -460,12 +492,27 @@ export const CheckoutSessionPage = () => {
                   </>
                 )}
               </button>
-              
+
               <div className="relative flex py-2 items-center">
                 <div className="flex-grow border-t border-zinc-800"></div>
                 <span className="flex-shrink-0 mx-4 text-zinc-500 text-xs font-bold uppercase">Or pay with Crypto</span>
                 <div className="flex-grow border-t border-zinc-800"></div>
               </div>
+
+              <button
+                onClick={handlePayLioPayment}
+                disabled={paying}
+                className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {paying ? (
+                  <ArrowPathIcon className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    <CreditCardIcon className="w-5 h-5" />
+                    Pay with Card (USDC)
+                  </>
+                )}
+              </button>
 
               <button
                 onClick={handlePayment}

@@ -1,5 +1,5 @@
 import { CRMService, ContactStatus, LeadSource, ActivityType } from './crm';
-import { PaymentService } from '../services/payment';
+import PaymentService from '../services/payment';
 import { VendorManager } from './vendorManager';
 import { RouteOptimizer } from './routeOptimizer';
 import { EmployeeManager } from './employeeManager';

@@ -92,8 +92,9 @@ class PaymentService {
    * Initialize all supported payment methods
    */
   private initializePaymentMethods() {
-    Object.keys(US_PAYMENT_METHODS).forEach(method => {
-      this.paymentMethods[method] = US_PAYMENT_METHODS[method];
+    const methods = US_PAYMENT_METHODS as Record<string, any>;
+    Object.keys(methods).forEach((method) => {
+      this.paymentMethods[method] = methods[method];
     });
   }
 
@@ -201,7 +202,7 @@ class PaymentService {
    * @param clientId - Client ID
    * @returns Array of available payment methods
    */
-  getAvailablePaymentMethods(clientId: string): string[] {
+  getAvailablePaymentMethods(_clientId: string): string[] {
     return Object.keys(this.paymentMethods);
   }
 
@@ -223,8 +224,21 @@ class PaymentService {
   /**
    * Create a Cash App payment link for a checkout session.
    */
-  async createCashAppPaymentLink(sessionId: string, amount: number, currency = 'USD'): Promise<PaymentResult> {
+  async createCashAppPaymentLink(sessionId: string, _amount: number, _currency = 'USD'): Promise<PaymentResult> {
     const res = await axios.post(`/checkout/${sessionId}/cashapp`, {}, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return (res?.data?.data ?? res?.data) as PaymentResult;
+  }
+
+  /**
+   * Create a PayLio checkout for a session. Expects walletAddress in body.
+   */
+  async createPayLioPaymentLink(sessionId: string, _amount: number, _currency = 'USD', walletAddress: string, email?: string): Promise<PaymentResult> {
+    const res = await axios.post(`/checkout/${sessionId}/paylio`, { walletAddress, email, currency: _currency }, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json'

@@ -138,6 +138,40 @@ export class NotificationService {
     }
   }
 
+  async sendVerificationEmail(
+    email: string,
+    code: string,
+    firstName: string
+  ): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@pabandi.pk',
+        to: email,
+        subject: 'Verify Your Pabandi Account',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #2563eb;">Verify Your Email</h2>
+            <p>Hello ${firstName},</p>
+            <p>Thanks for signing up for Pabandi. Use the code below to verify your email address:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <span style="background-color: #2563eb; color: white; padding: 12px 25px; border-radius: 5px; font-weight: bold; font-size: 18px; letter-spacing: 2px;">${code}</span>
+            </div>
+            <p>This code will expire in 15 minutes. If you didn't create an account, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+            <p style="font-size: 12px; color: #777;">&copy; 2026 Pabandi &middot; United States</p>
+          </div>
+        `,
+      };
+
+      await emailTransporter.sendMail(mailOptions);
+      logger.info(`Verification email sent to ${email}`);
+      return true;
+    } catch (error) {
+      logger.error('Failed to send verification email', error);
+      return false;
+    }
+  }
+
   /**
    * Send confirmation notification when reservation is created
    */

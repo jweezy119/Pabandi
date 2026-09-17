@@ -553,7 +553,7 @@ export class CRMService {
    * @param activityData - Activity information
    * @returns Created activity
    */
-  logActivity(activityData: Omit<Activity, 'id' | 'performedAt' | 'isCompleted'>): Activity {
+  logActivity(activityData: Omit<Activity, 'id'>): Activity {
     const now = new Date();
     const activity: Activity = {
       id: uuidv4(),

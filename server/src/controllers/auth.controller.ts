@@ -11,6 +11,7 @@ import { CustomError } from '../middleware/errorHandler';
 import { encrypt } from '../utils/encryption';
 import { osintService } from '../services/osint.service';
 import { odooService } from '../services/odoo.service';
+import { notificationService } from '../services/notification.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -27,13 +28,7 @@ const createWalletNonce = () => `${Date.now()}_${crypto.randomBytes(24).toString
 const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const sendVerificationEmail = async (email: string, code: string, firstName: string): Promise<boolean> => {
-  try {
-    // In production, integrate with email service (SendGrid, Mailgun, etc.)
-    logger.info(`Verification email sent to ${email}: ${code}`);
-    return true;
-  } catch {
-    return false;
-  }
+  return notificationService.sendVerificationEmail(email, code, firstName);
 };
 
 const isEmailConfigured = (): boolean => {

@@ -1,11 +1,7 @@
-export { default as CRMService } from './service';
+export { default as CRMService, ContactStatus, LeadSource, ActivityType, PipelineStage } from './service';
 export type {
   Contact,
   Lead,
   Activity,
   Note,
-  ContactStatus,
-  LeadSource,
-  PipelineStage,
-  ActivityType
 } from './service';
