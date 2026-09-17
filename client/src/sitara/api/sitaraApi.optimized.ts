@@ -233,8 +233,7 @@ const sitaraApi = {
     unwrap<any>(apiClient.post('/reviews', data)),
 
   upvoteReview: (reviewId: string) =>
-    unwrap<any>(apiClient.post(`/reviews/${reviewId}/upvote`),
-    () => ({ success: true }))
+    unwrap<any>(apiClient.post(`/reviews/${reviewId}/upvote`)),
 
   getBusinessLeaderboard: (businessId: string, tier?: string) =>
     unwrap<GetBusinessLeaderboard>(apiClient.get(`/reviews/star-power/business/${businessId}`, { params: { tier } })),
@@ -424,14 +423,14 @@ const sitaraApi = {
     token: string;
     password: string;
   }) =>
-    unwrap<UpdatePasswordResponse>(apiClient.post('/auth/reset-password', data)),
+    unwrap<any>(apiClient.post('/auth/reset-password', data)),
 
   // ── Wallet verification (protected endpoint) ──────────────────────────
   verifyWallet: (data: {
     walletAddress: string;
     signature: string;
   }) =>
-    unwrap<VerifyWalletResponse>(apiClient.post('/wallet/verify', data));
+    unwrap<any>(apiClient.post('/wallet/verify', data) as any),
 };
 
 export interface AuthState {

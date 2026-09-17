@@ -1,5 +1,3 @@
-import { CleaningBusinessSystem } from '../src/cleaning/businessSystem';
-
 export class ReportingService {
   private reports: Map<string, any> = new Map();
 
@@ -51,7 +49,7 @@ export class ReportingService {
    * Generate a profit and loss summary
    * @returns Financial summary
    */
-  generateP&LReport(): any {
+  generateProfitAndLossReport(): any {
     const pnl = {
       totalRevenue: this.crmService.getTotalRevenue(),
       totalExpenses: this.crmService.getTotalExpenses(),
@@ -59,7 +57,7 @@ export class ReportingService {
       growthRate: this.crmService.getGrowthRate()
     };
 
-    this.reports.set('p&l', pnl);
+    this.reports.set('profitAndLoss', pnl);
     return pnl;
   }
 

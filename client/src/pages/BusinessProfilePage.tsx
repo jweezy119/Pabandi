@@ -296,6 +296,7 @@ export default function BusinessProfilePage() {
   const getCategoryLabel = (c: string) => {
     if (c === 'RESTAURANT') return 'Fine Dining';
     if (c === 'FITNESS_CENTER') return 'Fitness';
+    if (c === 'CLEANING') return 'Cleaning Service';
     return c.charAt(0) + c.slice(1).toLowerCase();
   };
 
@@ -333,6 +334,27 @@ export default function BusinessProfilePage() {
         }
       ];
     }
+    if (business.category === 'CLEANING') {
+      return [
+        ...defaultPromos,
+        {
+          id: 'promo-clean-1',
+          title: 'First Clean 20% Off',
+          desc: 'New client? Get 20% off your first cleaning service. Book now and experience the Pabandi difference.',
+          badge: 'New Client',
+          color: 'from-emerald-500/5 to-teal-500/5',
+          borderColor: 'border-emerald-500/20'
+        },
+        {
+          id: 'promo-clean-2',
+          title: 'Refer a Friend, Get $25',
+          desc: 'Refer a friend who books a cleaning service, and you both get a $25 credit toward your next service.',
+          badge: 'Referral Bonus',
+          color: 'from-blue-500/5 to-indigo-500/5',
+          borderColor: 'border-blue-500/20'
+        }
+      ];
+    }
     return defaultPromos;
   };
 
@@ -358,6 +380,14 @@ export default function BusinessProfilePage() {
         'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=80&w=600',
         'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&q=80&w=600',
         'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=600',
+      ],
+      CLEANING: [
+        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1598928636135-d146006ff4be?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=600'
       ]
     };
     return images[business.category] || images.RESTAURANT;

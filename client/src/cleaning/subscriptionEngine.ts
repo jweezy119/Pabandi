@@ -1,5 +1,3 @@
-import { CleaningBusinessSystem } from '../src/cleaning/businessSystem';
-
 export class SubscriptionEngine {
   private plans = {
     basic: {

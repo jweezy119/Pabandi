@@ -777,6 +777,7 @@ enum BusinessCategory {
   ECOMMERCE
   MARKETPLACE
   LIVE_SELLER
+  CLEANING
 }
 
 enum LiveSellerPlatform {

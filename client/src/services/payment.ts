@@ -43,9 +43,30 @@ const US_PAYMENT_METHODS = {
   }
 };
 
+export interface PaymentResult {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
+}
+
+export interface OnrampPayment {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
+}
+
+export interface RefundResult {
+  id: string;
+  status: string;
+  amount: number;
+  currency: string;
+}
+
 class PaymentService {
   private apiBase = '/api/v1';
-  private paymentMethods = {};
+  private paymentMethods: Record<string, any> = {};
 
   constructor() {
     this.initializePaymentMethods();
@@ -149,7 +170,7 @@ class PaymentService {
    * @returns Refund result
    */
   async refundPayment(paymentId: string): Promise<RefundResult> {
-    const response = await axios.post(`${this.apiBase}/payments/{paymentId}/refund`, {}, {
+    const response = await axios.post(`${this.apiBase}/payments/${paymentId}/refund`, {}, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json'
@@ -165,12 +186,7 @@ class PaymentService {
    * @returns Array of available payment methods
    */
   getAvailablePaymentMethods(clientId: string): string[] {
-    const client = this.crmService.getClient(clientId);
-    if (!client) throw new Error(`Client ${clientId} not found`);
-
-    return Object.keys(this.paymentMethods).filter(m => 
-      client.paymentMethods?.includes(m) || m !== 'cash_on_arrival'
-    );
+    return Object.keys(this.paymentMethods);
   }
 
   /**

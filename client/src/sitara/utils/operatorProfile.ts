@@ -117,6 +117,26 @@ const RENTAL: OperatorProfile = {
   ],
 };
 
+const CLEANING: OperatorProfile = {
+  key: 'cleaning',
+  title: 'Cleaning Dashboard',
+  bookingNoun: 'Job',
+  bookingNounPlural: 'Jobs',
+  clientNoun: 'Client',
+  clientNounPlural: 'Clients',
+  rentalStyle: false,
+  nav: [
+    { path: '/sitara/operator', label: 'Dashboard', icon: '📊' },
+    { path: '/sitara/operator/stars', label: 'Your Stars', icon: '⭐' },
+    { path: '/sitara/operator/reservations', label: 'Jobs', icon: '🧹' },
+    { path: '/sitara/operator/menu', label: 'Services', icon: '📋' },
+    { path: '/sitara/operator/customers', label: 'Clients', icon: '💛' },
+    { path: '/sitara/operator/reviews', label: 'Reviews', icon: '💬' },
+    { path: '/sitara/operator/promos', label: 'Promos', icon: '🎁' },
+    { path: '/sitara/operator/star-finder', label: 'Star Finder', icon: '✨' },
+  ],
+};
+
 const COMMERCE: OperatorProfile = {
   key: 'commerce',
   title: 'Business Dashboard',
@@ -148,6 +168,8 @@ export function profileForCategory(category?: string | null): OperatorProfile {
       return RENTAL;
     case 'EVENT_VENUE':
       return VENUE;
+    case 'CLEANING':
+      return CLEANING;
     default:
       return COMMERCE;
   }

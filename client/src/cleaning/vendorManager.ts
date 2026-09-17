@@ -1,5 +1,3 @@
-import { CleaningBusinessSystem } from '../src/cleaning/businessSystem';
-
 export class VendorManager {
   private vendors: Map<string, any> = new Map();
   private inventory: Map<string, any> = new Map();

@@ -68,7 +68,7 @@ class LegalResearchService {
    * @returns Recent legal developments
    */
   async getLegalAlerts(topic: string) {
-    const results = await this.courtListener.search(topics: topic);
+    const results = await this.courtListener.search(topic);
     return results;
   }
 

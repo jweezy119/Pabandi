@@ -37,6 +37,7 @@ import TenantsPage from './pages/TenantsPage';
 import LeasesPage from './pages/LeasesPage';
 import PromosPage from './pages/PromosPage';
 import StarFinderPage from './pages/StarFinderPage';
+import CleaningDashboardPage from './pages/CleaningDashboardPage';
 
 // Tenant Pages
 import TenantDashboard from './pages/TenantDashboard';
@@ -130,6 +131,7 @@ export default function SitaraApp() {
         <Route path="promos" element={<PromosPage />} />
         <Route path="star-finder" element={<StarFinderPage />} />
         <Route path="customers" element={<CustomersPage />} />
+        <Route path="cleaning" element={<CleaningDashboardPage />} />
       </Route>
 
       {/* Tenant Portal — /sitara/tenant/... */}

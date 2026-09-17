@@ -1,5 +1,3 @@
-import { CleaningBusinessSystem } from '../src/cleaning/businessSystem';
-
 export class DiscountEngine {
   private discountTypes = {
     loyalty: 'loyalty',

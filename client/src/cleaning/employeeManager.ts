@@ -1,5 +1,3 @@
-import { CleaningBusinessSystem } from '../src/cleaning/businessSystem';
-
 export class EmployeeManager {
   private employees: Map<string, any> = new Map();
 

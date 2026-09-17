@@ -83,6 +83,7 @@ const CATEGORIES = [
   { value: 'FITNESS_CENTER', label: '🏋️ Fitness / Gym' },
   { value: 'EVENT_VENUE', label: '🎪 Event Venue / VIP' },
   { value: 'FREELANCE', label: '💻 Freelance / Gig Worker' },
+  { value: 'CLEANING', label: '🧹 Cleaning Service' },
   { value: 'OTHER', label: '📦 Other' },
 ];
 

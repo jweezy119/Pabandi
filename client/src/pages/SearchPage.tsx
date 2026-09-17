@@ -31,6 +31,7 @@ const CATEGORIES = [
   'PROPERTY_RENTAL',
   'LIVE_SELLER',
   'FREELANCE',
+  'CLEANING',
   'OTHER',
 ];
 
@@ -44,6 +45,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   PROPERTY_RENTAL: 'Stays',
   LIVE_SELLER: 'Live selling',
   FREELANCE: 'Freelance',
+  CLEANING: 'Cleaning',
   OTHER: 'Other',
 };
 
