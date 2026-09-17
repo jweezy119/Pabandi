@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/database';
 import { offrampService, offrampEvents } from '../services/offramp.service';
 import { webhookService } from '../services/webhook.service';
+import { cashAppService } from '../services/cashapp.service';
 import { ok, fail } from '../utils/apiResponse';
 import crypto from 'crypto';
 import { logger } from '../utils/logger';
@@ -114,6 +115,26 @@ export const acceptProof = async (req: AuthRequest, res: Response, next: NextFun
     await offrampService.acceptProof(intentId);
     const settled = await prisma.offrampIntent.findUnique({ where: { id: intentId } });
     return ok(res, { intent: settled });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOfframpQuote = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { cryptoAmount, cryptoCurrency = 'USDC', fiatCurrency = 'USD', destinationType = 'BANK' } = req.body;
+
+    if (!cryptoAmount || Number(cryptoAmount) <= 0) {
+      return fail(res, 'cryptoAmount must be greater than 0', 400);
+    }
+
+    const quote = await cashAppService.getOfframpQuote({
+      cryptoAmount: Number(cryptoAmount),
+      cryptoCurrency: String(cryptoCurrency),
+      fiatCurrency: String(fiatCurrency),
+    });
+
+    return ok(res, { quote, destinationType });
   } catch (error) {
     next(error);
   }

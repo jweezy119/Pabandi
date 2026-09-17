@@ -5,6 +5,8 @@ import { stripeService } from '../services/stripe.service';
 import { safepayService } from '../services/safepay.service';
 import { escrowService } from '../services/escrow.service';
 import { fail, ok } from '../utils/apiResponse';
+import { cashAppService } from '../services/cashapp.service';
+import { onrampService } from '../services/onramp.service';
 
 export const createCheckoutSession = async (req: Request, res: Response) => {
   try {
@@ -417,6 +419,91 @@ export const initiateCryptoCheckout = async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error initiating crypto checkout', error);
     return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const initiateCashAppCheckout = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const session = await prisma.checkoutSession.findUnique({
+      where: { id },
+      include: { business: true },
+    });
+
+    if (!session || session.status !== 'PENDING') {
+      return fail(res, 'Valid checkout session not found', 404);
+    }
+
+    const link = await cashAppService.createPaymentLink({
+      amount: session.amount,
+      currency: session.currency || 'USD',
+      reference: session.id,
+      note: `Pabandi checkout ${session.id}`,
+    });
+
+    await prisma.checkoutSession.update({
+      where: { id: session.id },
+      data: {
+        metadata: {
+          ...(session.metadata as any || {}),
+          gateway: 'cashapp',
+          providerUrl: link.url,
+          cashAppPaymentId: link.id,
+        },
+      },
+    });
+
+    return ok(res, { url: link.url, gateway: 'cashapp', status: link.status }, 201);
+  } catch (error: any) {
+    logger.error('Error initiating Cash App checkout', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const getOnrampQuotes = async (req: Request, res: Response) => {
+  try {
+    const { fiatAmount, fiatCurrency = 'USD', cryptoCurrency = 'USDC' } = req.query as Record<string, string>;
+
+    if (!fiatAmount || isNaN(Number(fiatAmount))) {
+      return fail(res, 'fiatAmount is required', 400);
+    }
+
+    const quotes = await onrampService.getQuotes({
+      fiatAmount: Number(fiatAmount),
+      fiatCurrency: fiatCurrency,
+      cryptoCurrency,
+    });
+
+    return ok(res, { quotes });
+  } catch (error: any) {
+    logger.error('Error fetching on-ramp quotes', error);
+    return fail(res, 'Internal server error', 500);
+  }
+};
+
+export const createOnrampSession = async (req: Request, res: Response) => {
+  try {
+    const { provider, fiatAmount, fiatCurrency = 'USD', cryptoCurrency = 'USDC', walletAddress } = req.body;
+
+    if (!provider || !fiatAmount || !walletAddress) {
+      return fail(res, 'provider, fiatAmount, and walletAddress are required', 400);
+    }
+
+    const reference = `onramp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const session = await onrampService.createSession({
+      provider: provider as any,
+      fiatAmount: Number(fiatAmount),
+      fiatCurrency,
+      cryptoCurrency,
+      walletAddress,
+      reference,
+    });
+
+    return ok(res, session, 201);
+  } catch (error: any) {
+    logger.error('Error creating on-ramp session', error);
+    return fail(res, error?.message || 'Internal server error', 500);
   }
 };
 

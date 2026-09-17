@@ -40,9 +40,9 @@ export class PayoutService {
   }
 
   /** Request a cash-out of earned USDC to a real off-ramp rail.
-   *  method: BANK (simulated/local), CONNECT (real Stripe transfer), LOCAL (real P2P off-ramp intent to mobile wallet/bank).
+   *  method: BANK (simulated/local), CONNECT (real Stripe transfer), LOCAL (real P2P off-ramp intent to mobile wallet/bank), CASHAPP (Cash App balance).
    *  destinationRef / mobile optional for LOCAL (JazzCash/Easypaisa/Raast account). */
-  async request(userId: string, amountUsdc: number, method: 'BANK' | 'CONNECT' | 'LOCAL' = 'BANK', destinationRef?: string) {
+  async request(userId: string, amountUsdc: number, method: 'BANK' | 'CONNECT' | 'LOCAL' | 'CASHAPP' = 'BANK', destinationRef?: string) {
     if (amountUsdc <= 0) throw new Error('Invalid amount');
     const band = await this.resolveBand(userId);
     if (band === 'E') throw new Error('Trust band E — build your Trust Passport to unlock cash-outs.');
@@ -96,6 +96,29 @@ export class PayoutService {
         logger.info(`[Payout] Off-ramp intent ${intent.id} created for ${userId} net $${net}.`);
       } catch (e: any) {
         logger.warn(`[Payout] Off-ramp intent failed, simulated fallback: ${e.message}`);
+        destRef = 'SIMULATED';
+      }
+    } else if (method === 'CASHAPP') {
+      // CashApp off-ramp: generate a payment link to receive fiat.
+      try {
+        const { cashAppService } = await import('./cashapp.service');
+        const quote = await cashAppService.getOfframpQuote({
+          cryptoAmount: net,
+          cryptoCurrency: 'USDC',
+          fiatCurrency: 'USD',
+        });
+        const link = await cashAppService.createPaymentLink({
+          amount: quote.netAmount,
+          currency: 'USD',
+          reference: `pabandi-payout-${userId}-${Date.now()}`,
+          note: `Pabandi cash-out ${net} USDC`,
+        });
+        destRef = `CASHAPP:${link.id}`;
+        txHash = link.url;
+        status = 'PENDING'; // real status updates via CashApp webhook
+        logger.info(`[Payout] CashApp payment link ${link.id} created for ${userId} net $${quote.netAmount}.`);
+      } catch (e: any) {
+        logger.warn(`[Payout] CashApp payout failed, simulated fallback: ${e.message}`);
         destRef = 'SIMULATED';
       }
     }

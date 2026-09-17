@@ -40,6 +40,22 @@ const US_PAYMENT_METHODS = {
     processor: 'stripe',
     api_key: 'co_a_xxx',
     supported_methods: ['cash']
+  },
+
+  // Cash App
+  cashapp: {
+    name: 'Cash App',
+    processor: 'cashapp',
+    api_key: '',
+    supported_methods: ['cashapp_pay']
+  },
+
+  // Crypto (USDC on Solana)
+  crypto_usdc: {
+    name: 'USDC',
+    processor: 'solana',
+    api_key: '',
+    supported_methods: ['usdc']
   }
 };
 
@@ -202,6 +218,75 @@ class PaymentService {
       }
     });
     return history.data;
+  }
+
+  /**
+   * Create a Cash App payment link for a checkout session.
+   */
+  async createCashAppPaymentLink(sessionId: string, amount: number, currency = 'USD'): Promise<PaymentResult> {
+    const res = await axios.post(`/checkout/${sessionId}/cashapp`, {}, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return (res?.data?.data ?? res?.data) as PaymentResult;
+  }
+
+  /**
+   * Get crypto on-ramp quotes (fiat -> USDC).
+   */
+  async getCryptoOnrampQuotes(fiatAmount: number, fiatCurrency = 'USD', cryptoCurrency = 'USDC'): Promise<any[]> {
+    const res = await axios.get('/checkout/onramp/quotes', {
+      params: { fiatAmount, fiatCurrency, cryptoCurrency },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return (res?.data?.data?.quotes ?? []) as any[];
+  }
+
+  /**
+   * Create a crypto on-ramp session.
+   */
+  async createCryptoOnrampSession({ provider, fiatAmount, fiatCurrency = 'USD', cryptoCurrency = 'USDC', walletAddress }: {
+    provider: string;
+    fiatAmount: number;
+    fiatCurrency?: string;
+    cryptoCurrency?: string;
+    walletAddress: string;
+  }): Promise<any> {
+    const res = await axios.post('/checkout/onramp/session', {
+      provider,
+      fiatAmount,
+      fiatCurrency,
+      cryptoCurrency,
+      walletAddress,
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return (res?.data?.data ?? res?.data) as any;
+  }
+
+  /**
+   * Get crypto off-ramp quote (USDC -> fiat).
+   */
+  async getCryptoOfframpQuote(cryptoAmount: number, cryptoCurrency = 'USDC', fiatCurrency = 'USD'): Promise<any> {
+    const res = await axios.post('/checkout/offramp/quote', {
+      cryptoAmount,
+      cryptoCurrency,
+      fiatCurrency,
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return (res?.data?.data ?? res?.data) as any;
   }
 }
 

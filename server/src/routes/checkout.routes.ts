@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, getCheckoutReceipt, createDemoCheckoutSession } from '../controllers/checkout.controller';
+import { createCheckoutSession, getCheckoutSession, completeCheckoutSession, createEmbedCheckoutSession, createPartnerEmbedCheckoutSession, initiateStripeCheckout, initiateCryptoCheckout, initiateEscrowCheckout, initiateCashAppCheckout, getCheckoutReceipt, createDemoCheckoutSession, getOnrampQuotes, createOnrampSession } from '../controllers/checkout.controller';
 import { authenticate, optionalAuthenticate } from '../middleware/auth.middleware';
 import { apiKeyAuth } from '../middleware/apiKey.middleware';
 
@@ -20,8 +20,13 @@ router.post('/embed-checkout', createEmbedCheckoutSession);
 router.post('/embed-checkout/public', apiKeyAuth, createPartnerEmbedCheckoutSession);
 
 router.post('/session/:id/stripe', optionalAuthenticate, initiateStripeCheckout);
+router.post('/session/:id/cashapp', optionalAuthenticate, initiateCashAppCheckout);
 router.post('/session/:id/crypto', optionalAuthenticate, initiateCryptoCheckout);
 router.post('/session/:id/escrow', optionalAuthenticate, initiateEscrowCheckout);
+
+// On-ramp quotes and sessions (fiat -> crypto)
+router.get('/onramp/quotes', getOnrampQuotes);
+router.post('/onramp/session', createOnrampSession);
 
 // Deterministic ops/checkout receipt for buyer and seller views
 router.get('/session/:id/receipt', getCheckoutReceipt);

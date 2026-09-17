@@ -13,6 +13,7 @@ import {
   emiWebhook,
   createSettlementReceipt,
   streamLpIntents,
+  getOfframpQuote,
 } from '../controllers/offramp.controller';
 import { logger } from '../utils/logger';
 import { lpAuthRateLimiter } from '../middleware/rateLimiter';
@@ -49,6 +50,7 @@ router.post('/providers/register', authenticate, authorize('BUSINESS_OWNER', 'AD
 router.post('/dev/test-webhook', authenticate, authorize('ADMIN'), testWebhookDelivery);
 router.post('/webhook/emi', emiWebhook);
 router.post('/settlement/receipt', authenticate, authorize('BUSINESS_OWNER', 'ADMIN'), createSettlementReceipt);
+router.post('/quote', authenticate, getOfframpQuote);
 
 // LP Facing Routes — rate-limited at the IP level before LP key check
 router.get('/lp/stream', lpAuthRateLimiter, lpAuthMiddleware, streamLpIntents);
