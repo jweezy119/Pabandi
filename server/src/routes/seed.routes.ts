@@ -840,5 +840,34 @@ router.post('/offline-businesses', async (_req: Request, res: Response): Promise
   }
 });
 
+export { OFFLINE_BUSINESSES };
+
+/** Idempotently insert the offline business seed. Returns number inserted. */
+export async function seedOfflineBusinesses(): Promise<number> {
+  const count = await prisma.business.count({ where: { latitude: { not: null }, longitude: { not: null } } });
+  if (count > 0) return count; // already seeded
+  let inserted = 0;
+  for (const b of OFFLINE_BUSINESSES) {
+    try {
+      await prisma.business.create({
+        data: {
+          id: b.slug,
+          name: b.name, category: b.category, address: b.address, city: b.city,
+          state: b.state || '', country: b.country, postalCode: b.zip || null,
+          phone: b.phone || null, latitude: b.lat, longitude: b.lng, slug: b.slug,
+          rating: b.rating, reviewCount: b.reviewCount, trustScore: b.trustScore,
+          isVerified: true, isActive: true,
+          description: `${b.name} — real ${b.category.toLowerCase().replace('_', ' ')} on Pabandi. ${b.address || ''}`,
+          externalDetails: { source: 'OFFLINE_SEED', verifiedCoordinates: true },
+        },
+      });
+      inserted++;
+    } catch (e: any) {
+      logger.warn(`[Seed] offline business insert failed for ${b.slug}: ${e.message}`);
+    }
+  }
+  return inserted;
+}
+
 export default router;
 

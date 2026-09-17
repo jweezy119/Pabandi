@@ -423,6 +423,28 @@ httpServer.listen(parsedPort, '0.0.0.0', async () => {
   // Routes are registered lazily via lazyRoute() at module load — no startup loading needed
   logger.info('✅ Server ready (routes will lazy-load on first request)');
 
+  // ── Auto-seed offline real businesses on cold start ─────────────────────
+  // Ensures discovery always has geo-located data without manual seed calls.
+  // Uses no external network — bundled real business coordinates. Safe in
+  // production: only inserts if the Business table has zero geo rows.
+  setImmediate(async () => {
+    try {
+      const { prisma } = await import('./utils/database');
+      const geoCount = await prisma.business.count({ where: { latitude: { not: null }, longitude: { not: null } } });
+      if (geoCount === 0) {
+        logger.info('Seeding offline real businesses (geo table empty)...');
+        const { seedOfflineBusinesses } = await import('./routes/seed.routes');
+        const count = await seedOfflineBusinesses();
+        logger.info(`✅ Auto-seeded ${count} offline businesses`);
+      } else {
+        logger.info(`Geo businesses already present (${geoCount}); skipping auto-seed`);
+      }
+    } catch (e: any) {
+      logger.warn('[Auto-seed] offline businesses skipped: ' + e.message);
+    }
+  });
+
+
   // DISABLED: Telegram bot (spawns background processes)
   // try {
   //   const { startTelegramBot } = await import('./services/telegram-bot.service');

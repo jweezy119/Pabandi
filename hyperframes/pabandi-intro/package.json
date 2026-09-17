@@ -1,0 +1,11 @@
+{
+  "name": "pabandi-intro",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "hyperframes:check": "hyperframes check",
+    "hyperframes:preview": "hyperframes preview --background",
+    "hyperframes:render": "hyperframes render",
+    "hyperframes:upgrade": "hyperframes@latest upgrade --project ."
+  }
+}
