@@ -866,3 +866,11 @@ export const guestListService = {
   cancel: (entryId: string) => apiClient.post(`/guest-list/${entryId}/cancel`),
   getQRCode: (entryId: string) => apiClient.get(`/guest-list/${entryId}/qr`),
 };
+
+// Notifications Service
+export const notificationsService = {
+  getNotifications: (email: string, limit?: number) =>
+    apiClient.get(`/notifications`, { params: { email, limit } }),
+  markRead: (ids: string[]) =>
+    apiClient.post('/notifications/read', { ids }),
+};

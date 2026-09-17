@@ -1,65 +1,94 @@
-import { io } from 'socket.io-client';
-import { MortgageCRMService } from '../src/crm/mortgageService';
+import { notificationsService } from './api';
+
+export interface Notification {
+  id: string;
+  type: 'booking' | 'dispute' | 'escrow' | 'review';
+  subject: string;
+  message: string;
+  status: string;
+  createdAt: string;
+}
 
 export class NotificationService {
-  private socket: any;
-  private mortgageService: MortgageCRMService;
-
-  constructor() {
-    this.mortgageService = new MortgageCRMService(
-      null, // sitaraApi - would need to be injected in practice
-      null  // pabandiUser
-    );
-    this.initSocket();
-  }
-
-  private initSocket() {
-    // Initialize Socket.IO connection for real-time notifications
-    this.socket = io('http://localhost:3000');
-    
-    this.socket.on('mortgage.status.update', (data) => {
-      console.log('Mortgage status updated:', data);
-      // Emit notification to frontend
-      this.emitNotification(`Mortgage status updated to ${data.status}`, data);
-    });
-    
-    this.socket.on('payment.processed', (data) => {
-      console.log('Payment processed:', data);
-      this.emitNotification(`Payment of $${data.amount} processed for mortgage ${data.mortgageId}`, data);
-    });
+  /**
+   * Fetch notifications for the current user.
+   */
+  async getNotifications(email: string, limit = 20): Promise<Notification[]> {
+    const res = await notificationsService.getNotifications(email, limit);
+    return (res?.data?.data ?? []) as Notification[];
   }
 
   /**
-   * Send a notification about a mortgage status change
-   * @param recipientId - User ID to notify
-   * @param message - Notification message
-   * @param type - Notification type (info, alert, success)
+   * Mark notifications as read.
    */
-  sendNotification(recipientId: string, message: string, type: string = 'info') {
-    if (this.socket) {
-      this.socket.emit('notification', {
-        userId: recipientId,
-        message,
-        type,
-        timestamp: new Date().toISOString()
+  async markRead(ids: string[]): Promise<void> {
+    await notificationsService.markRead(ids);
+  }
+
+  /**
+   * Trigger a reservation confirmation email + push notification.
+   * Server-side automation handles the actual delivery.
+   */
+  async triggerReservationConfirmation(reservationId: string): Promise<void> {
+    await fetch(`/api/v1/notifications/confirm/${reservationId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {});
+  }
+
+  /**
+   * Trigger a reservation reminder email + push notification.
+   * Server-side automation handles the actual delivery.
+   */
+  async triggerReservationReminder(reservationId: string): Promise<void> {
+    await fetch(`/api/v1/notifications/remind/${reservationId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {});
+  }
+
+  /**
+   * Trigger a review request SMS/WhatsApp after booking completion.
+   * Server-side automation handles the actual delivery.
+   */
+  async triggerReviewRequest(reservationId: string): Promise<void> {
+    await fetch(`/api/v1/notifications/review/${reservationId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {});
+  }
+
+  /**
+   * Send a generic email notification via server-side Nodemailer.
+   */
+  async sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+    try {
+      await fetch('/api/v1/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, subject, html }),
       });
+      return true;
+    } catch {
+      return false;
     }
   }
 
   /**
-   * Send a payment confirmation notification
-   * @param recipientId - User ID
-   * @param paymentId - Payment ID
-   * @param amount - Amount paid
+   * Send an SMS via server-side Twilio or OpenWA fallback.
    */
-  sendPaymentNotification(recipientId: string, paymentId: string, amount: number) {
-    this.sendNotification(recipientId, `Payment of $${amount} processed`, 'success');
-  }
-
-  /**
-   * Listen for mortgage events and forward to notifications
-   */
-  onMortgageEvents(callback: (event: string, data: any) => void) {
-    this.socket.on('mortgage.*', callback);
+  async sendSMS(to: string, message: string): Promise<boolean> {
+    try {
+      await fetch('/api/v1/sms/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, message }),
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
+
+export const notificationService = new NotificationService();
