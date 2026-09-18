@@ -126,6 +126,18 @@ export const mudarabahService = {
 
   getTransparency: (poolId: string) =>
     apiClient.get(`/mudarabah/pools/${poolId}/transparency`),
+
+  // ── Matching Engine ──────────────────────────────────────────────────────
+  getRecommendations: (params?: { limit?: number }) =>
+    apiClient.get('/mudarabah-matcher/recommendations', { params }),
+  getRecommendedInvestors: (poolId: string, params?: { limit?: number }) =>
+    apiClient.get(`/mudarabah-matcher/investors/${poolId}`, { params }),
+  getInvestorProfile: () => apiClient.get('/mudarabah-matcher/profile'),
+  upsertInvestorProfile: (data: any) => apiClient.post('/mudarabah-matcher/profile', data),
+  getMatchInsights: () => apiClient.get('/mudarabah-matcher/insights'),
+  recordMatchFeedback: (data: { poolId: string; action: 'viewed' | 'saved' | 'invested' }) =>
+    apiClient.post('/mudarabah-matcher/feedback', data),
+  getMatchStats: () => apiClient.get('/mudarabah-matcher/stats'),
 };
 
 export default mudarabahService;

@@ -44,6 +44,23 @@ export const MudarabahPoolsPage: React.FC = () => {
     }
   }, [isAuthenticated]);
 
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const loadRecommendations = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const res = await mudarabahService.getRecommendations({ limit: 3 });
+      setRecommendations(res.data?.data || []);
+    } catch (e) {
+      console.error('Failed to load recommendations:', e);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadRecommendations();
+  }, [loadRecommendations]);
+
+  const [showProfile, setShowProfile] = useState(false);
+
   useEffect(() => {
     loadPools();
   }, [loadPools]);
@@ -114,6 +131,43 @@ export const MudarabahPoolsPage: React.FC = () => {
             Invest in real businesses. Earn from real revenue. No interest, no speculation.
           </p>
         </div>
+
+        {/* AI Recommendations */}
+        {isAuthenticated && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-lg">🤖</span>
+              <h2 className="text-lg font-bold text-white">AI-Recommended For You</h2>
+              <span className="text-xs text-slate-500">Powered by Mudarabah Matcher</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommendations.length === 0 ? (
+                <Surface className="p-4 col-span-full">
+                  <p className="text-slate-400 text-sm">Complete your investor profile to get personalized recommendations.</p>
+                  <Button size="sm" onClick={() => setShowProfile(true)} className="mt-2">Set Preferences</Button>
+                </Surface>
+              ) : (
+                recommendations.slice(0, 3).map((rec) => (
+                  <Surface key={rec.poolId} className="p-4 border border-emerald-500/20 bg-emerald-500/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge tone="success">{rec.matchScore}% Match</Badge>
+                      <span className="text-xs text-slate-500">{rec.matchReasons[0]}</span>
+                    </div>
+                    <h3 className="font-bold text-white text-sm">{rec.poolTitle}</h3>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-lg font-bold text-emerald-300">{rec.expectedApy}%</span>
+                      <span className="text-xs text-slate-500">APY</span>
+                      <span className="text-xs text-slate-500">· {rec.profitShareRatio}</span>
+                    </div>
+                    <Button size="sm" className="w-full mt-3" onClick={() => { setSelectedPool(rec.pool); setInvestAmount(''); }}>
+                      Invest Now
+                    </Button>
+                  </Surface>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Risk Filter */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">

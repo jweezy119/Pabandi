@@ -50,6 +50,7 @@ model User {
   nonce                   String?
   referredById            String?
   business                Business?
+  investorMatches         BusinessInvestorMatch[]
   cryptoRewards           CryptoReward[]
   payments                Payment[]
   reservations            Reservation[]
@@ -106,6 +107,7 @@ model User {
   sentStarPromos         StarPromo[]
   starPromoRedemptions   StarPromoRedemption[]
   mudarabahInvestments   MudarabahInvestment[]
+  investorProfile        InvestorProfile?
 
   @@index([email])
   @@index([phone])
@@ -882,8 +884,9 @@ model MudarabahPool {
   distributionFreq  String   @default("MONTHLY") // MONTHLY | QUARTERLY
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  investments       MudarabahInvestment[]
-  distributions     MudarabahProfitDistribution[]
+  investments           MudarabahInvestment[]
+  distributions         MudarabahProfitDistribution[]
+  investorMatches       BusinessInvestorMatch[]
 
   // Step 1: Basic
   category          String   @default("GENERAL") // RESTAURANT | RETAIL | SERVICES | TECH | REAL_ESTATE | OTHER
@@ -931,6 +934,53 @@ model MudarabahInvestment {
   updatedAt           DateTime @updatedAt
   @@index([poolId])
   @@index([investorId])
+}
+
+model InvestorProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredRiskBands    String[] // ['LOW', 'MEDIUM', 'HIGH']
+  preferredCategories   String[] // ['RESTAURANT', 'RETAIL', ...]
+  preferredRegions      String[] // ['Chicago', 'Lahore', ...]
+  minApy                Float    @default(5.0)
+  maxApy                Float    @default(50.0)
+  minInvestment         Float    @default(100)
+  maxInvestment         Float    @default(10000)
+  preferredRatios       String[] // ['70/30', '60/40']
+  riskToleranceScore    Float    @default(50)
+  investmentStyle       String   @default("MODERATE") // CONSERVATIVE | MODERATE | AGGRESSIVE
+  diversificationScore  Float    @default(50)
+  totalInvested         Float    @default(0)
+  totalPoolsInvested    Int      @default(0)
+  avgInvestmentAmount   Float    @default(0)
+  totalProfitReceived   Float    @default(0)
+  lastInvestmentAt      DateTime?
+  profileComplete       Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  @@index([userId])
+}
+
+model BusinessInvestorMatch {
+  id              String   @id @default(cuid())
+  poolId          String
+  pool            MudarabahPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  investorId      String
+  investor        User     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  matchScore      Float    // 0-100
+  matchReasons    String[]
+  matchFactors    Json
+  investorViewed  Boolean  @default(false)
+  investorSaved   Boolean  @default(false)
+  investorInvested Boolean @default(false)
+  businessViewed  Boolean  @default(false)
+  businessContacted Boolean @default(false)
+  createdAt       DateTime @default(now())
+  @@unique([poolId, investorId])
+  @@index([poolId])
+  @@index([investorId])
+  @@index([matchScore])
 }
 
 model MudarabahProfitDistribution {

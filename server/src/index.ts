@@ -220,6 +220,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/reliability`, './routes/reliability.routes'],
   [`/api/${v}/token-staking`, './routes/staking.routes'],
   [`/api/${v}/mudarabah`, './routes/mudarabah.routes'],
+  [`/api/${v}/mudarabah-matcher`, './routes/mudarabahMatcher.routes'],
   [`/api/${v}/airdrop`, './routes/airdrop.routes'],
   [`/api/${v}/sourcing`, './routes/sourcing.routes'],
   [`/api/${v}/waitlist`, './routes/waitlist.routes'],

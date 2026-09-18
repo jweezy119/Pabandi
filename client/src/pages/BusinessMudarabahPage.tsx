@@ -19,6 +19,21 @@ export const BusinessMudarabahPage: React.FC = () => {
   const [editingPool, setEditingPool] = useState<MudarabahPool | null>(null);
   const [editForm, setEditForm] = useState<Partial<CreatePoolData>>({});
   const [editSaving, setEditSaving] = useState(false);
+  const [selectedPoolForInvestors, setSelectedPoolForInvestors] = useState<MudarabahPool | null>(null);
+  const [recommendedInvestors, setRecommendedInvestors] = useState<any[]>([]);
+  const [loadingInvestors, setLoadingInvestors] = useState(false);
+
+  const loadRecommendedInvestors = useCallback(async (poolId: string) => {
+    setLoadingInvestors(true);
+    try {
+      const res = await mudarabahService.getRecommendedInvestors(poolId, { limit: 10 });
+      setRecommendedInvestors(res.data?.data || []);
+    } catch (e) {
+      console.error('Failed to load recommended investors:', e);
+    } finally {
+      setLoadingInvestors(false);
+    }
+  }, []);
 
   const loadPools = useCallback(async () => {
     setLoading(true);
@@ -183,6 +198,13 @@ export const BusinessMudarabahPage: React.FC = () => {
                                 >
                                   Distribute
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => { setSelectedPoolForInvestors(pool); setRecommendedInvestors([]); loadRecommendedInvestors(pool.id); }}
+                                >
+                                  🤖 Find Investors
+                                </Button>
                                 <Button size="sm" variant="ghost" onClick={() => handleClosePool(pool.id)}>
                                   Close
                                 </Button>
@@ -277,6 +299,49 @@ export const BusinessMudarabahPage: React.FC = () => {
                 </Surface>
               ))
             )}
+          </div>
+        )}
+
+        {/* Recommended Investors Modal */}
+        {selectedPoolForInvestors && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPoolForInvestors(null)}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setSelectedPoolForInvestors(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
+              <h2 className="text-xl font-bold text-white mb-2">🤖 Recommended Investors</h2>
+              <p className="text-sm text-slate-400 mb-4">AI-matched to: {selectedPoolForInvestors.title}</p>
+              {loadingInvestors ? (
+                <div className="text-center py-10">
+                  <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-slate-400 text-sm">Finding the best investors...</p>
+                </div>
+              ) : recommendedInvestors.length === 0 ? (
+                <Surface className="p-6 text-center">
+                  <div className="text-3xl mb-3">📊</div>
+                  <p className="text-slate-400">No recommendations yet. The AI learns as more investors join the platform.</p>
+                </Surface>
+              ) : (
+                <div className="space-y-3">
+                  {recommendedInvestors.map((inv: any, idx: number) => (
+                    <Surface key={inv.investorId} className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold">
+                          #{idx + 1}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-sm">{inv.investor?.name || inv.investor?.email || 'Investor'}</div>
+                          <div className="text-xs text-slate-500">{inv.matchReasons?.slice(0, 2).join(' · ')}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge tone="success">{inv.matchScore}% Match</Badge>
+                        <div className="text-xs text-slate-500 mt-1">{inv.matchFactors?.category > 0.7 ? 'Category fit' : 'Diversified'}</div>
+                      </div>
+                    </Surface>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
