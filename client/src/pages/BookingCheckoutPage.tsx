@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { tokens, Surface, Button, Badge, GlassCard } from '../design-system';
+import { tokens, Surface, Button } from '../design-system';
 import { bookingPaymentService, nightlifeVenuesService } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
@@ -19,13 +19,13 @@ export const BookingCheckoutPage: React.FC = () => {
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [partySize, setPartySize] = useState('2');
-  const [specialRequests, setSpecialRequests] = useState('');
-  const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
+  const [specialRequests] = useState('');
+  const [promoApplied] = useState(false);
   const [depositPercent, setDepositPercent] = useState(20);
   const [bookingResult, setBookingResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'paylio' | 'raast'>('paylio');
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -69,6 +69,7 @@ export const BookingCheckoutPage: React.FC = () => {
           selectedBottle && selectedBottle.basePrice > 0 ? `Bottle: ${selectedBottle.name}` : '',
           specialRequests,
         ].filter(Boolean).join('\n'),
+        paymentMethod,
       });
       const data = result.data?.data;
       if (data?.paymentUrl) {
@@ -92,17 +93,29 @@ export const BookingCheckoutPage: React.FC = () => {
           <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-100 mb-2">Booked!</h2>
-          <p className="mb-4 text-sm text-slate-400">Deposit held in escrow until check-in</p>
+          <h2 className="text-2xl font-bold text-slate-100 mb-2">
+            {bookingResult.paymentMethod === 'raast' ? 'Raast Payment Pending' : 'Booked!'}
+          </h2>
+          <p className="mb-4 text-sm text-slate-400">
+            {bookingResult.paymentMethod === 'raast'
+              ? 'Complete your Raast transfer to confirm'
+              : 'Deposit held in escrow until check-in'}
+          </p>
           <Surface className="p-4 mb-6 text-left">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-slate-400">Reference</span>
               <span className="text-sm font-mono font-bold text-indigo-300">{bookingResult.bookingReference}</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-slate-400">Deposit</span>
               <span className="text-sm font-bold text-emerald-300">${depositAmount.toFixed(2)}</span>
             </div>
+            {bookingResult.paymentMethod === 'raast' && bookingResult.raastId && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400">Raast ID</span>
+                <span className="text-sm font-mono font-bold text-indigo-300">{bookingResult.raastId}</span>
+              </div>
+            )}
           </Surface>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/reservations')}>View Bookings</Button>
@@ -248,13 +261,61 @@ export const BookingCheckoutPage: React.FC = () => {
 
             <div className="flex items-center gap-3 my-2">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[10px] text-slate-500 uppercase">or pay with card</span>
+              <span className="text-[10px] text-slate-500 uppercase">or pay with</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
 
-            <Button onClick={handleConfirmBooking} disabled={isProcessing} className="w-full py-3.5 text-base font-semibold">
-              {isProcessing ? 'Processing...' : `Pay $${depositAmount.toFixed(2)} with Card →`}
-            </Button>
+            {/* Payment method selector */}
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setPaymentMethod('paylio')}
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl text-xs font-medium transition-all ${paymentMethod === 'paylio' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+                <span className="text-lg">💳</span>
+                <span className="font-semibold">Card</span>
+                <span className="text-[10px] text-slate-500">Visa, Mastercard</span>
+              </button>
+              <button onClick={() => setPaymentMethod('raast')}
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl text-xs font-medium transition-all ${paymentMethod === 'raast' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+                <span className="text-lg">🏦</span>
+                <span className="font-semibold">Raast</span>
+                <span className="text-[10px] text-slate-500">Instant transfer</span>
+              </button>
+            </div>
+
+            {/* Raast instructions */}
+            {paymentMethod === 'raast' && (
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-400/20">
+                  <h4 className="text-sm font-semibold text-slate-100 mb-2">How to pay with Raast</h4>
+                  <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside">
+                    <li>Open your bank app (HBL, Meezan, ABL, etc.)</li>
+                    <li>Go to Raast transfers</li>
+                    <li>Send <span className="font-bold text-indigo-300">${depositAmount.toFixed(2)}</span> to the venue's Raast ID</li>
+                    <li>Use your booking reference as the memo</li>
+                    <li>Upload screenshot below for instant verification</li>
+                  </ol>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Payment Screenshot</label>
+                  <input type="file" accept="image/*"
+                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-100 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-500/20 file:text-indigo-300 file:text-xs file:font-medium" />
+                  <p className="text-[10px] text-slate-500 mt-1">Upload proof for faster confirmation</p>
+                </div>
+              </div>
+            )}
+
+            {/* Card button */}
+            {paymentMethod === 'paylio' && (
+              <Button onClick={handleConfirmBooking} disabled={isProcessing} className="w-full py-3.5 text-base font-semibold">
+                {isProcessing ? 'Processing...' : `Pay $${depositAmount.toFixed(2)} with Card →`}
+              </Button>
+            )}
+
+            {/* Raast confirm button */}
+            {paymentMethod === 'raast' && (
+              <Button onClick={handleConfirmBooking} disabled={isProcessing} className="w-full py-3.5 text-base font-semibold">
+                {isProcessing ? 'Creating...' : 'Create Booking & Show Raast Details →'}
+              </Button>
+            )}
 
             {/* Trust badge */}
             <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">

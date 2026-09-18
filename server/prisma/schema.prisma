@@ -160,6 +160,7 @@ model Business {
   state                  String                  @default("")
   isClaimed              Boolean                 @default(true)
   externalBookingUrl     String?
+  raastId                String?
   slug                   String?                 @unique
   verifiedAt             DateTime?
   deviceFingerprint      String?

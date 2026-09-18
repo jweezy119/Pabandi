@@ -28,6 +28,7 @@ export const createBooking = async (
       customerPhone,
       depositAmount,
       specialRequests,
+      paymentMethod,
     } = req.body;
 
     if (!businessId || !reservationDate || !reservationTime || !numberOfGuests) {
@@ -52,6 +53,7 @@ export const createBooking = async (
       numberOfGuests: parseInt(numberOfGuests, 10),
       depositAmount: parseFloat(depositAmount) || 25,
       specialRequests,
+      paymentMethod: paymentMethod || 'paylio',
     });
 
     if (!result.success) {
@@ -71,6 +73,8 @@ export const createBooking = async (
         depositAmount: result.depositAmount,
         paymentUrl: result.paymentUrl,
         paymentId: result.paymentId,
+        paymentMethod: result.paymentMethod,
+        raastId: result.raastId,
       },
     });
   } catch (error: any) {

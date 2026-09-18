@@ -179,6 +179,7 @@ export const bookingPaymentService = {
     customerPhone?: string;
     depositAmount: number;
     specialRequests?: string;
+    paymentMethod?: string;
   }) => apiClient.post('/booking/create', data),
 
   confirmBooking: (bookingReference: string) =>

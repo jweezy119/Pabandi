@@ -8,7 +8,7 @@ import BusinessMap from '../components/BusinessMap';
 import ReviewCarousel from '../components/ReviewCarousel';
 import { executeBscDeposit, executeSolanaDeposit, executeStellarFranklinDeposit } from '../utils/web3';
 import { encryptRsa } from '../utils/e2ee';
-import { Button, Chip, Surface, Badge, tokens } from '../design-system';
+import { Button, Chip, Surface, tokens } from '../design-system';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 export default function BookingPage() {
@@ -59,8 +59,8 @@ export default function BookingPage() {
     const res = await walletService.getBalances();
     return res.data?.data;
   }, { enabled: isAuthenticated });
+  void walletData;
 
-  const offChainBalance = Number(walletData?.offChainBalance || 0);
   const REQUIRED_STAKE = 50;
 
   const { data: stakeMultData } = useQuery(
@@ -102,6 +102,27 @@ export default function BookingPage() {
     }
 
     if (!bookingResult) return;
+
+    if (formData.paymentMethod === 'raast') {
+      // For Raast, show instructions — the booking is already created
+      // If screenshot uploaded, we could send it to AI verification endpoint
+      if ((formData as any).paymentScreenshot) {
+        setIsProcessing(true);
+        try {
+          // Upload screenshot for verification
+          const fd = new FormData();
+          fd.append('screenshot', (formData as any).paymentScreenshot);
+          fd.append('reference', bookingResult.bookingReference);
+          fd.append('amount', String(effectiveDeposit || 25));
+          await fetch('/api/v1/payments/raast/verify', { method: 'POST', body: fd });
+        } catch {
+          // Screenshot upload failed, but booking is still pending — user can retry
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+      return;
+    }
 
     if (formData.paymentMethod === 'paylio' && bookingResult.paymentUrl) {
       window.location.href = bookingResult.paymentUrl;
@@ -203,6 +224,7 @@ export default function BookingPage() {
       customerPhone: formData.customerPhone,
       depositAmount: effectiveDeposit || 25,
       specialRequests: formData.specialRequests,
+      paymentMethod: formData.paymentMethod,
     });
   };
 
@@ -233,8 +255,14 @@ export default function BookingPage() {
           <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
             <span className="material-symbols-outlined text-emerald-400 text-3xl">check_circle</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-100 mb-2">Booking Confirmed!</h2>
-          <p className="mb-4 text-sm text-slate-400">Your deposit is held in escrow until check-in</p>
+          <h2 className="text-2xl font-bold text-slate-100 mb-2">
+            {bookingResult.paymentMethod === 'raast' ? 'Raast Payment Pending' : 'Booking Confirmed!'}
+          </h2>
+          <p className="mb-4 text-sm text-slate-400">
+            {bookingResult.paymentMethod === 'raast'
+              ? 'Complete your Raast transfer and upload screenshot to confirm'
+              : 'Your deposit is held in escrow until check-in'}
+          </p>
           <Surface className="p-4 mb-6 text-left">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-slate-400">Reference</span>
@@ -244,10 +272,16 @@ export default function BookingPage() {
               <span className="text-xs text-slate-400">Deposit</span>
               <span className="text-sm font-bold text-emerald-300">${effectiveDeposit || 25}</span>
             </div>
+            {bookingResult.paymentMethod === 'raast' && bookingResult.raastId && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-400">Raast ID</span>
+                <span className="text-sm font-mono font-bold text-indigo-300">{bookingResult.raastId}</span>
+              </div>
+            )}
           </Surface>
           <div className="flex flex-col gap-3">
             <Button onClick={() => navigate('/reservations')}>View My Bookings</Button>
-            <Button variant="ghost" onClick={() => navigate(-1)}>Done</Button>
+            <Button variant="ghost" onClick={() => setBookingResult(null)}>Done</Button>
           </div>
         </Surface>
       </div>
@@ -394,22 +428,72 @@ export default function BookingPage() {
                   </div>
 
                   {/* Payment method selector */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'paylio', label: 'Card', icon: '💳' },
-                      { value: 'solana', label: 'SOL/USDC', icon: '◎' },
-                      { value: 'bsc', label: 'BNB/USDT', icon: '◆' },
+                      { value: 'paylio', label: 'Card / Wallet', icon: '💳', desc: 'Visa, Mastercard, Apple Pay' },
+                      { value: 'raast', label: 'Raast', icon: '🏦', desc: 'Instant bank transfer' },
                     ].map((opt) => (
                       <button
                         key={opt.value}
                         onClick={() => setFormData(prev => ({ ...prev, paymentMethod: opt.value }))}
-                        className={`flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-medium transition-all ${formData.paymentMethod === opt.value ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+                        className={`flex flex-col items-center gap-1 py-3 rounded-xl text-xs font-medium transition-all ${formData.paymentMethod === opt.value ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
                       >
-                        <span className="text-base">{opt.icon}</span>
-                        {opt.label}
+                        <span className="text-lg">{opt.icon}</span>
+                        <span className="font-semibold">{opt.label}</span>
+                        <span className="text-[10px] text-slate-500">{opt.desc}</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* Raast instructions (shown when Raast is selected) */}
+                  {formData.paymentMethod === 'raast' && (
+                    <div className="space-y-3">
+                      <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-400/20">
+                        <h4 className="text-sm font-semibold text-slate-100 mb-2 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-blue-400 text-lg">info</span>
+                          How to pay with Raast
+                        </h4>
+                        <ol className="text-xs text-slate-300 space-y-1.5 list-decimal list-inside">
+                          <li>Open your bank app (HBL, Meezan,ABL, etc.)</li>
+                          <li>Go to Raast transfers</li>
+                          <li>Send <span className="font-bold text-indigo-300">${effectiveDeposit || 25}</span> to Raast ID: <span className="font-mono font-bold text-indigo-300">{business.raastId || 'Not configured'}</span></li>
+                          <li>Use reference: <span className="font-mono text-indigo-300">{bookingResult?.bookingReference || 'Generated after booking'}</span></li>
+                          <li>Upload screenshot below for instant verification</li>
+                        </ol>
+                      </div>
+
+                      {bookingResult?.raastId && (
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                          <p className="text-xs text-slate-400 mb-1">Send to Raast ID</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-mono font-bold text-indigo-300">{bookingResult.raastId}</span>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(bookingResult.raastId)}
+                              className="text-xs text-indigo-400 hover:text-indigo-300"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1">Payment Screenshot</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setFormData(prev => ({ ...prev, paymentScreenshot: file } as any));
+                            }
+                          }}
+                          className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-100 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-500/20 file:text-indigo-300 file:text-xs file:font-medium"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">Upload proof of payment for faster verification</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Deposit summary */}
                   <Surface className="bg-indigo-500/10 border border-indigo-400/20">
@@ -506,7 +590,7 @@ export default function BookingPage() {
             disabled={isProcessing}
             className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-lg active:scale-[0.98]"
           >
-            {isProcessing ? 'Processing...' : `Pay $${effectiveDeposit || 25} →`}
+            {isProcessing ? 'Processing...' : formData.paymentMethod === 'raast' ? 'Show Raast Instructions' : `Pay $${effectiveDeposit || 25} →`}
           </button>
         </div>
       )}

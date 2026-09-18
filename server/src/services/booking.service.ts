@@ -21,6 +21,7 @@ export interface CreateBookingInput {
   numberOfGuests: number;
   depositAmount: number;
   specialRequests?: string;
+  paymentMethod?: 'paylio' | 'raast';
 }
 
 export interface BookingResult {
@@ -30,6 +31,8 @@ export interface BookingResult {
   paymentUrl?: string;
   paymentId?: string;
   depositAmount: number;
+  paymentMethod?: string;
+  raastId?: string;
   message: string;
 }
 
@@ -41,6 +44,7 @@ export async function createBookingWithDeposit(input: CreateBookingInput): Promi
   const {
     businessId, customerId, customerName, customerEmail, customerPhone,
     reservationDate, reservationTime, numberOfGuests, depositAmount, specialRequests,
+    paymentMethod = 'paylio',
   } = input;
 
   const bookingReference = `PAB-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -88,13 +92,13 @@ export async function createBookingWithDeposit(input: CreateBookingInput): Promi
     },
   });
 
-  // Create crypto payment record (type: paylio)
+  // Create crypto payment record
   const cryptoPayment = await prisma.cryptoPayment.create({
     data: {
-      type: 'paylio',
+      type: paymentMethod === 'raast' ? 'manual' : 'paylio',
       amount: depositAmount,
       currency: 'USD',
-      status: 'PENDING',
+      status: paymentMethod === 'raast' ? 'PENDING' : 'PENDING',
       reference: bookingReference,
       payerId: customerId,
       payeeId,
@@ -104,23 +108,29 @@ export async function createBookingWithDeposit(input: CreateBookingInput): Promi
         creationFee,
         netDeposit,
         depositAmount,
+        paymentMethod,
       },
     },
   });
 
-  // Create PayLio checkout session
+  // Create PayLio checkout session (skip for Raast)
   let paymentUrl: string | undefined;
-  try {
-    const paylioResult = await createPayLioPayment({
-      amount: depositAmount,
-      reference: bookingReference,
-      customerEmail,
-    });
-    if (paylioResult.url) {
-      paymentUrl = paylioResult.url;
+  let raastId: string | undefined;
+  if (paymentMethod === 'raast') {
+    raastId = business.raastId || undefined;
+  } else {
+    try {
+      const paylioResult = await createPayLioPayment({
+        amount: depositAmount,
+        reference: bookingReference,
+        customerEmail,
+      });
+      if (paylioResult.url) {
+        paymentUrl = paylioResult.url;
+      }
+    } catch (err: any) {
+      logger.warn(`[BookingService] PayLio creation failed for ${bookingReference}: ${err.message}`);
     }
-  } catch (err: any) {
-    logger.warn(`[BookingService] PayLio creation failed for ${bookingReference}: ${err.message}`);
   }
 
   logger.info(
@@ -134,9 +144,13 @@ export async function createBookingWithDeposit(input: CreateBookingInput): Promi
     paymentUrl,
     paymentId: cryptoPayment.id,
     depositAmount,
+    paymentMethod,
+    raastId,
     message: paymentUrl
       ? 'Reservation created. Redirecting to payment...'
-      : 'Reservation created. Complete payment to confirm booking.',
+      : paymentMethod === 'raast'
+        ? 'Reservation created. Complete Raast payment using the instructions below.'
+        : 'Reservation created. Complete payment to confirm booking.',
   };
 }
 
