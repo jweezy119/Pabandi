@@ -207,6 +207,11 @@ export const socialService = {
 
 export const walletService = {
   getBalances: () => apiClient.get('/wallet/balances'),
+  getWallet: () => apiClient.get('/wallet'),
+  createWallet: () => apiClient.post('/wallet/create'),
+  claimAirdrop: () => apiClient.post('/wallet/claim-airdrop'),
+  send: (data: { to: string; amount: number; currency: string }) => apiClient.post('/wallet/send', data),
+  getTransactions: () => apiClient.get('/wallet/transactions'),
 };
 
 export const pabService = {

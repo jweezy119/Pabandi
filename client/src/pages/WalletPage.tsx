@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Surface, Button, Badge, tokens } from '../design-system';
+import { walletService } from '../services/api';
 
 export const WalletPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,16 +18,9 @@ export const WalletPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-      const res = await fetch(`${backendUrl}/api/v1/wallet`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setWallet(data.wallet);
+      const res = await walletService.getWallet();
+      if (res.data?.success) {
+        setWallet(res.data.wallet);
       } else {
         setShowCreate(true);
       }
@@ -41,21 +35,12 @@ export const WalletPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-      const res = await fetch(`${backendUrl}/api/v1/wallet/create`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setWallet(data.wallet);
+      const res = await walletService.createWallet();
+      if (res.data?.success) {
+        setWallet(res.data.wallet);
         setShowCreate(false);
       } else {
-        setError(data.message || 'Failed to create wallet');
+        setError(res.data?.message || 'Failed to create wallet');
       }
     } catch (err) {
       setError('Network error');
@@ -68,21 +53,12 @@ export const WalletPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const rawBase = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
-      const backendUrl = rawBase.replace(/\/api\/v\d+\/?$/, '');
-      const res = await fetch(`${backendUrl}/api/v1/wallet/claim-airdrop`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(data.message);
+      const res = await walletService.claimAirdrop();
+      if (res.data?.success) {
+        alert(res.data.message);
         fetchWallet();
       } else {
-        setError(data.message || 'Failed to claim airdrop');
+        setError(res.data?.message || 'Failed to claim airdrop');
       }
     } catch (err) {
       setError('Network error');
