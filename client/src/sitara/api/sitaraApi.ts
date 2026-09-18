@@ -211,6 +211,25 @@ export const sitaraApi = {
     maxRedemptions?: number | null;
   }) => unwrap<any>(apiClient.post('/sitara/promos', data)),
 
+  // ── Geo / Maps (OSM + OpenRouteService) ───────────────────────────────
+  geocodeAddress: (query: string) =>
+    unwrap<any>(apiClient.get('/sitara-api/geocode', { params: { q: query } })),
+
+  discoverNearbyBusinesses: (lat: number, lng: number, radius?: number, category?: string) =>
+    unwrap<any[]>(apiClient.get('/sitara-api/discover', {
+      params: { lat, lng, radius: radius ?? 5000, category },
+    })),
+
+  getDistance: (from: { lat: number; lng: number }, to: { lat: number; lng: number }) =>
+    unwrap<any>(apiClient.get('/sitara-api/distance', {
+      params: { from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng },
+    })),
+
+  getIsochrone: (lat: number, lng: number, minutes?: number) =>
+    unwrap<any>(apiClient.get('/sitara-api/isochrone', {
+      params: { lat, lng, minutes: minutes ?? 15 },
+    })),
+
   // ── Passthrough to existing platform services ─────────────────────
   /** Real reservations for the logged-in customer. */
   myReservations: () => unwrap<any[]>(reservationService.getUserReservations()),

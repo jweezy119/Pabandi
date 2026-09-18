@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { mudarabahService, MudarabahPool, RiskBand, Investment } from '../services/mudarabahService';
+import {
+  mudarabahService,
+  MudarabahPool,
+  RiskBand,
+  Investment,
+  PoolInvestment,
+  TransparencyReport,
+} from '../services/mudarabahService';
 import { useAuthStore } from '../store/authStore';
 
 const RISK_TONES: Record<RiskBand, 'success' | 'warning' | 'danger'> = {
@@ -8,13 +15,20 @@ const RISK_TONES: Record<RiskBand, 'success' | 'warning' | 'danger'> = {
   MEDIUM: 'warning',
   HIGH: 'danger',
 };
+
 export const MudarabahPoolsPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const [pools, setPools] = useState<MudarabahPool[]>([]);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [investmentsLoading, setInvestmentsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskBand | ''>('');
   const [selectedPool, setSelectedPool] = useState<MudarabahPool | null>(null);
+  const [poolDetail, setPoolDetail] = useState<MudarabahPool | null>(null);
+  const [poolTransparency, setPoolTransparency] = useState<TransparencyReport | null>(null);
+  const [poolInvestments, setPoolInvestments] = useState<PoolInvestment[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
   const [investing, setInvesting] = useState(false);
   const [investError, setInvestError] = useState('');
@@ -22,13 +36,15 @@ export const MudarabahPoolsPage: React.FC = () => {
 
   const loadPools = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
-      const params: any = { status: 'ACTIVE' };
+      const params: any = {};
       if (riskFilter) params.riskBand = riskFilter;
       const res = await mudarabahService.listPools(params);
       setPools(res.data?.data || []);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load pools:', e);
+      setError('Failed to load pools. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -36,30 +52,43 @@ export const MudarabahPoolsPage: React.FC = () => {
 
   const loadInvestments = useCallback(async () => {
     if (!isAuthenticated) return;
+    setInvestmentsLoading(true);
     try {
       const res = await mudarabahService.myInvestments();
-      setInvestments(res.data?.data || []);
+      const data = res.data?.data;
+      setInvestments(data?.investments || []);
     } catch (e) {
       console.error('Failed to load investments:', e);
+    } finally {
+      setInvestmentsLoading(false);
     }
   }, [isAuthenticated]);
 
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const loadRecommendations = useCallback(async () => {
-    if (!isAuthenticated) return;
+  const loadPoolDetail = useCallback(async (pool: MudarabahPool) => {
+    setDetailLoading(true);
+    setPoolDetail(pool);
     try {
-      const res = await mudarabahService.getRecommendations({ limit: 3 });
-      setRecommendations(res.data?.data || []);
+      const [detailRes, transparencyRes, investmentsRes] = await Promise.allSettled([
+        mudarabahService.getPool(pool.id),
+        mudarabahService.getPoolTransparency(pool.id),
+        mudarabahService.getPoolInvestments(pool.id),
+      ]);
+
+      if (detailRes.status === 'fulfilled') {
+        setPoolDetail(detailRes.value.data?.data || pool);
+      }
+      if (transparencyRes.status === 'fulfilled') {
+        setPoolTransparency(transparencyRes.value.data?.data);
+      }
+      if (investmentsRes.status === 'fulfilled') {
+        setPoolInvestments(investmentsRes.value.data?.data || []);
+      }
     } catch (e) {
-      console.error('Failed to load recommendations:', e);
+      console.error('Failed to load pool detail:', e);
+    } finally {
+      setDetailLoading(false);
     }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    loadRecommendations();
-  }, [loadRecommendations]);
-
-  const [showProfile, setShowProfile] = useState(false);
+  }, []);
 
   useEffect(() => {
     loadPools();
@@ -80,7 +109,7 @@ export const MudarabahPoolsPage: React.FC = () => {
       setInvestError(`Minimum investment is $${selectedPool.minInvestment}`);
       return;
     }
-    if (amount > selectedPool.maxInvestment) {
+    if (selectedPool.maxInvestment && amount > selectedPool.maxInvestment) {
       setInvestError(`Maximum investment is $${selectedPool.maxInvestment}`);
       return;
     }
@@ -97,7 +126,7 @@ export const MudarabahPoolsPage: React.FC = () => {
         loadInvestments();
       }, 2000);
     } catch (e: any) {
-      setInvestError(e?.response?.data?.error || 'Investment failed');
+      setInvestError(e?.response?.data?.error || 'Investment failed. Please try again.');
     } finally {
       setInvesting(false);
     }
@@ -116,6 +145,16 @@ export const MudarabahPoolsPage: React.FC = () => {
 
   const preview = profitPreview();
 
+  const openPoolDetail = (pool: MudarabahPool) => {
+    setSelectedPool(pool);
+    setInvestAmount('');
+    setInvestError('');
+    setInvestSuccess(false);
+    setPoolTransparency(null);
+    setPoolInvestments([]);
+    loadPoolDetail(pool);
+  };
+
   return (
     <div className="min-h-screen pb-24 md:pb-10" style={{ background: tokens.color.background, fontFamily: tokens.font.body }}>
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -131,43 +170,6 @@ export const MudarabahPoolsPage: React.FC = () => {
             Invest in real businesses. Earn from real revenue. No interest, no speculation.
           </p>
         </div>
-
-        {/* AI Recommendations */}
-        {isAuthenticated && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-lg">🤖</span>
-              <h2 className="text-lg font-bold text-white">AI-Recommended For You</h2>
-              <span className="text-xs text-slate-500">Powered by Mudarabah Matcher</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recommendations.length === 0 ? (
-                <Surface className="p-4 col-span-full">
-                  <p className="text-slate-400 text-sm">Complete your investor profile to get personalized recommendations.</p>
-                  <Button size="sm" onClick={() => setShowProfile(true)} className="mt-2">Set Preferences</Button>
-                </Surface>
-              ) : (
-                recommendations.slice(0, 3).map((rec) => (
-                  <Surface key={rec.poolId} className="p-4 border border-emerald-500/20 bg-emerald-500/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge tone="success">{rec.matchScore}% Match</Badge>
-                      <span className="text-xs text-slate-500">{rec.matchReasons[0]}</span>
-                    </div>
-                    <h3 className="font-bold text-white text-sm">{rec.poolTitle}</h3>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-lg font-bold text-emerald-300">{rec.expectedApy}%</span>
-                      <span className="text-xs text-slate-500">APY</span>
-                      <span className="text-xs text-slate-500">· {rec.profitShareRatio}</span>
-                    </div>
-                    <Button size="sm" className="w-full mt-3" onClick={() => { setSelectedPool(rec.pool); setInvestAmount(''); }}>
-                      Invest Now
-                    </Button>
-                  </Surface>
-                ))
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Risk Filter */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -192,18 +194,42 @@ export const MudarabahPoolsPage: React.FC = () => {
           ))}
         </div>
 
+        {/* Error State */}
+        {error && !loading && (
+          <Surface className="p-6 mb-6 text-center border border-rose-500/20">
+            <div className="text-3xl mb-2">⚠️</div>
+            <p className="text-rose-300 mb-3">{error}</p>
+            <Button size="sm" onClick={loadPools}>Retry</Button>
+          </Surface>
+        )}
+
         {/* Pools Grid */}
         {loading ? (
-          <p className="text-slate-400 text-center py-12">Loading pools...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Surface key={i} className="p-5 animate-pulse">
+                <div className="h-4 bg-white/10 rounded w-20 mb-3" />
+                <div className="h-6 bg-white/10 rounded w-3/4 mb-2" />
+                <div className="h-8 bg-white/10 rounded w-1/3 mb-4" />
+                <div className="h-2 bg-white/10 rounded w-full mb-2" />
+                <div className="h-4 bg-white/10 rounded w-2/3" />
+              </Surface>
+            ))}
+          </div>
         ) : pools.length === 0 ? (
           <Surface className="p-8 text-center">
             <div className="text-4xl mb-4">🏦</div>
-            <p className="text-slate-400">No active pools available. Check back soon!</p>
+            <p className="text-slate-400 mb-2">No active pools available right now.</p>
+            <p className="text-sm text-slate-500">New pools are added regularly. Check back soon!</p>
           </Surface>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pools.map((pool) => (
-              <Surface key={pool.id} className="p-5 flex flex-col gap-3" onClick={() => { setSelectedPool(pool); setInvestAmount(''); setInvestError(''); setInvestSuccess(false); }}>
+              <Surface
+                key={pool.id}
+                className="p-5 flex flex-col gap-3 cursor-pointer hover:border-indigo-500/30 transition-all"
+                onClick={() => openPoolDetail(pool)}
+              >
                 <div className="flex items-center justify-between">
                   <Badge tone={RISK_TONES[pool.riskBand]}>{pool.riskBand} RISK</Badge>
                   <span className="text-xs text-slate-500">{pool.profitShareRatio}</span>
@@ -219,8 +245,8 @@ export const MudarabahPoolsPage: React.FC = () => {
                 {/* Progress bar */}
                 <div>
                   <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>${pool.currentAmount.toLocaleString()} raised</span>
-                    <span>${pool.targetAmount.toLocaleString()}</span>
+                    <span>${pool.currentAmount?.toLocaleString() || 0} raised</span>
+                    <span>${pool.targetAmount?.toLocaleString() || 0}</span>
                   </div>
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
@@ -231,9 +257,9 @@ export const MudarabahPoolsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-400">Min: <span className="text-slate-200">${pool.minInvestment}</span></span>
-                  <span className="text-slate-400">{pool.investorCount} investors</span>
+                  <span className="text-slate-400">{pool.investorCount || 0} investors</span>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { setSelectedPool(pool); setInvestAmount(''); setInvestError(''); setInvestSuccess(false); }}>
+                <Button size="sm" variant="outline" onClick={openPoolDetail.bind(null, pool)}>
                   View Details →
                 </Button>
               </Surface>
@@ -245,9 +271,21 @@ export const MudarabahPoolsPage: React.FC = () => {
         {isAuthenticated && (
           <div className="mt-16">
             <h2 className="text-2xl font-bold text-white mb-6">My Investments</h2>
-            {investments.length === 0 ? (
+            {investmentsLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Surface key={i} className="p-4 animate-pulse">
+                    <div className="h-4 bg-white/10 rounded w-1/3 mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-1/4" />
+                  </Surface>
+                ))}
+              </div>
+            ) : investments.length === 0 ? (
               <Surface className="p-6 text-center">
-                <p className="text-slate-400">You haven't invested in any pools yet. Start earning halal returns above!</p>
+                <div className="text-3xl mb-3">💰</div>
+                <p className="text-slate-400 mb-2">You haven't invested in any pools yet.</p>
+                <p className="text-sm text-slate-500 mb-4">Start earning halal returns by investing in a pool above.</p>
+                <Button size="sm" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Browse Pools</Button>
               </Surface>
             ) : (
               <div className="overflow-x-auto">
@@ -265,8 +303,8 @@ export const MudarabahPoolsPage: React.FC = () => {
                       <tr key={inv.id} className="border-b border-white/5">
                         <td className="py-3 text-sm text-slate-100">{inv.pool?.title || inv.poolId}</td>
                         <td className="py-3 text-sm text-slate-200">${inv.amount.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-emerald-300">${inv.profitReceived?.toLocaleString() || '0'}</td>
-                        <td className="py-3"><Badge tone="info">{inv.status}</Badge></td>
+                        <td className="py-3 text-sm text-emerald-300">${inv.totalProfitReceived?.toLocaleString() || '0'}</td>
+                        <td className="py-3"><Badge tone={inv.status === 'ACTIVE' ? 'success' : 'info'}>{inv.status}</Badge></td>
                       </tr>
                     ))}
                   </tbody>
@@ -280,126 +318,202 @@ export const MudarabahPoolsPage: React.FC = () => {
       {/* Pool Detail Modal */}
       {selectedPool && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPool(null)}>
-          <div className="absolute inset-0 bg-black/70" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
-            className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6"
+            className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedPool(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl z-10"
             >
               ✕
             </button>
 
-            <div className="flex items-center gap-3 mb-4">
-              <Badge tone={RISK_TONES[selectedPool.riskBand]}>{selectedPool.riskBand}</Badge>
-              <Badge tone="info">{selectedPool.profitShareRatio}</Badge>
-            </div>
-
-            <h2 className="text-xl font-bold text-white mb-2">{selectedPool.title}</h2>
-            {selectedPool.businessName && (
-              <p className="text-sm text-slate-400 mb-4">{selectedPool.businessName}</p>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-slate-300 mb-1">Description</h4>
-                <p className="text-sm text-slate-400">{selectedPool.description}</p>
+            {detailLoading && !poolDetail ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-white/10 rounded w-2/3" />
+                <div className="h-4 bg-white/10 rounded w-1/2" />
+                <div className="h-20 bg-white/10 rounded" />
               </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge tone={RISK_TONES[selectedPool.riskBand]}>{selectedPool.riskBand}</Badge>
+                  <Badge tone="info">{selectedPool.profitShareRatio}</Badge>
+                  <Badge tone="success">{selectedPool.category}</Badge>
+                </div>
 
-              <div>
-                <h4 className="text-sm font-semibold text-slate-300 mb-1">Revenue Source</h4>
-                <p className="text-sm text-slate-400">{selectedPool.revenueSource}</p>
-              </div>
+                <h2 className="text-xl font-bold text-white mb-2">{selectedPool.title}</h2>
+                {selectedPool.businessName && (
+                  <p className="text-sm text-slate-400 mb-4">by {selectedPool.businessName}</p>
+                )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-slate-500">APY</span>
-                  <p className="text-lg font-bold text-emerald-300">{selectedPool.expectedApy}%</p>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-500">Min Investment</span>
-                  <p className="text-lg font-bold text-white">${selectedPool.minInvestment}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-500">Max Investment</span>
-                  <p className="text-lg font-bold text-white">${selectedPool.maxInvestment}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-500">Investors</span>
-                  <p className="text-lg font-bold text-white">{selectedPool.investorCount}</p>
-                </div>
-              </div>
-
-              {/* Progress */}
-              <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>${selectedPool.currentAmount.toLocaleString()} raised</span>
-                  <span>${selectedPool.targetAmount.toLocaleString()} target</span>
-                </div>
-                <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-                    style={{ width: `${Math.min((selectedPool.currentAmount / selectedPool.targetAmount) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Invest Form */}
-              {isAuthenticated && (
-                <div className="border-t border-white/10 pt-4 space-y-3">
-                  <h4 className="text-sm font-semibold text-slate-300">Invest in this Pool</h4>
-                  {investSuccess ? (
-                    <div className="text-center py-4">
-                      <div className="text-3xl mb-2">✅</div>
-                      <p className="text-emerald-300 font-semibold">Investment successful!</p>
+                <div className="space-y-4">
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs text-slate-500">APY</span>
+                      <p className="text-lg font-bold text-emerald-300">{selectedPool.expectedApy}%</p>
                     </div>
-                  ) : (
+                    <div>
+                      <span className="text-xs text-slate-500">Min Investment</span>
+                      <p className="text-lg font-bold text-white">${selectedPool.minInvestment}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-500">Max Investment</span>
+                      <p className="text-lg font-bold text-white">${selectedPool.maxInvestment || '∞'}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-500">Investors</span>
+                      <p className="text-lg font-bold text-white">{selectedPool.investorCount || poolInvestments.length}</p>
+                    </div>
+                  </div>
+
+                  {/* Progress */}
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>${selectedPool.currentAmount?.toLocaleString() || 0} raised</span>
+                      <span>${selectedPool.targetAmount?.toLocaleString() || 0} target</span>
+                    </div>
+                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        style={{ width: `${Math.min((selectedPool.currentAmount / selectedPool.targetAmount) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-300 mb-1">Description</h4>
+                    <p className="text-sm text-slate-400">{selectedPool.description}</p>
+                  </div>
+
+                  {/* Revenue Source */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-300 mb-1">Revenue Source</h4>
+                    <p className="text-sm text-slate-400">{selectedPool.revenueSource}</p>
+                  </div>
+
+                  {/* Additional Details */}
+                  {poolTransparency && (
                     <>
-                      <div>
-                        <label className="text-xs text-slate-400 mb-1 block">Amount ($)</label>
-                        <input
-                          type="number"
-                          value={investAmount}
-                          onChange={(e) => { setInvestAmount(e.target.value); setInvestError(''); }}
-                          placeholder={`Min $${selectedPool.minInvestment}`}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                          min={selectedPool.minInvestment}
-                          max={selectedPool.maxInvestment}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-xs text-slate-500">Profit Method</span>
+                          <p className="text-sm text-slate-200">{poolTransparency.profitCalcMethod}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500">Distribution</span>
+                          <p className="text-sm text-slate-200">{poolTransparency.distributionFreq}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500">Lockup</span>
+                          <p className="text-sm text-slate-200">{poolTransparency.lockupPeriodDays} days</p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500">Early Withdraw</span>
+                          <p className="text-sm text-slate-200">{poolTransparency.allowEarlyWithdraw ? `Yes (${poolTransparency.earlyWithdrawPenalty}%)` : 'No'}</p>
+                        </div>
                       </div>
-                      {investError && (
-                        <p className="text-xs text-rose-400">{investError}</p>
-                      )}
-                      {preview && (
-                        <div className="bg-white/5 rounded-xl p-3 space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-400">Est. Annual Profit (total)</span>
-                            <span className="text-slate-200">${preview.annualProfit.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-400">Your Share ({selectedPool.profitShareRatio.split('/')[0]}%)</span>
-                            <span className="text-emerald-300 font-bold">${preview.investorShare.toFixed(2)}</span>
+
+                      {/* Distribution History */}
+                      {poolTransparency.distributionHistory && poolTransparency.distributionHistory.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-300 mb-2">Distribution History</h4>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                              <thead>
+                                <tr className="border-b border-white/10">
+                                  <th className="pb-2 text-slate-500">Period</th>
+                                  <th className="pb-2 text-slate-500">Revenue</th>
+                                  <th className="pb-2 text-slate-500">Investor Share</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {poolTransparency.distributionHistory.slice(0, 5).map((d) => (
+                                  <tr key={d.id} className="border-b border-white/5">
+                                    <td className="py-2 text-slate-400">
+                                      {new Date(d.periodStart).toLocaleDateString()} – {new Date(d.periodEnd).toLocaleDateString()}
+                                    </td>
+                                    <td className="py-2 text-slate-200">${d.totalRevenue?.toLocaleString()}</td>
+                                    <td className="py-2 text-emerald-300">${d.investorShare?.toLocaleString()}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       )}
-                      <Button onClick={handleInvest} loading={investing} className="w-full" size="lg">
-                        {investing ? 'Investing...' : 'Invest Now'}
-                      </Button>
+
+                      {/* Sharia Compliance */}
+                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span>☪️</span>
+                          <span className="text-sm font-semibold text-emerald-300">Sharia Compliant</span>
+                        </div>
+                        <p className="text-xs text-slate-400">{poolTransparency.shariaCompliance.model}</p>
+                      </div>
                     </>
                   )}
+
+                  {/* Invest Form */}
+                  {isAuthenticated && (
+                    <div className="border-t border-white/10 pt-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-slate-300">Invest in this Pool</h4>
+                      {investSuccess ? (
+                        <div className="text-center py-4">
+                          <div className="text-3xl mb-2">✅</div>
+                          <p className="text-emerald-300 font-semibold">Investment successful!</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="text-xs text-slate-400 mb-1 block">Amount ($)</label>
+                            <input
+                              type="number"
+                              value={investAmount}
+                              onChange={(e) => { setInvestAmount(e.target.value); setInvestError(''); }}
+                              placeholder={`Min $${selectedPool.minInvestment}`}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
+                              min={selectedPool.minInvestment}
+                              max={selectedPool.maxInvestment || undefined}
+                            />
+                          </div>
+                          {investError && (
+                            <p className="text-xs text-rose-400">{investError}</p>
+                          )}
+                          {preview && (
+                            <div className="bg-white/5 rounded-xl p-3 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-400">Est. Annual Profit (total)</span>
+                                <span className="text-slate-200">${preview.annualProfit.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-slate-400">Your Share ({selectedPool.profitShareRatio.split('/')[0]}%)</span>
+                                <span className="text-emerald-300 font-bold">${preview.investorShare.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          )}
+                          <Button onClick={handleInvest} loading={investing} className="w-full" size="lg">
+                            {investing ? 'Investing...' : 'Invest Now'}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {!isAuthenticated && (
+                    <div className="text-center border-t border-white/10 pt-4">
+                      <p className="text-sm text-slate-400 mb-3">Log in to invest in this pool</p>
+                      <Button onClick={() => (window.location.href = '/login')} variant="outline" size="sm">
+                        Log In
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-              {!isAuthenticated && (
-                <div className="text-center border-t border-white/10 pt-4">
-                  <p className="text-sm text-slate-400 mb-3">Log in to invest in this pool</p>
-                  <Button onClick={() => (window.location.href = '/login')} variant="outline" size="sm">
-                    Log In
-                  </Button>
-                </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}

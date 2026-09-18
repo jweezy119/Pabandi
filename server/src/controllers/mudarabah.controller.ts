@@ -768,3 +768,55 @@ export const getPoolDistributions = async (req: AuthRequest, res: Response) => {
     return fail(res, 'Failed to fetch distributions', 500);
   }
 };
+
+/**
+ * GET /api/v1/mudarabah/pools/:id/investments
+ * Public: list investments for a pool (anonymized, for pool detail page).
+ */
+export const getPoolInvestments = async (req: Request, res: Response) => {
+  try {
+    const investments = await prisma.mudarabahInvestment.findMany({
+      where: { poolId: req.params.id, status: 'ACTIVE' },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        createdAt: true,
+        totalProfitReceived: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return ok(res, investments);
+  } catch (err: any) {
+    logger.error('[Mudarabah] getPoolInvestments error:', err.message);
+    return fail(res, 'Failed to fetch pool investments', 500);
+  }
+};
+
+/**
+ * GET /api/v1/mudarabah/pools/:id/distributions/public
+ * Public: distribution history for a pool (for pool detail page).
+ */
+export const getPoolDistributionsPublic = async (req: Request, res: Response) => {
+  try {
+    const distributions = await prisma.mudarabahProfitDistribution.findMany({
+      where: { poolId: req.params.id },
+      select: {
+        id: true,
+        periodStart: true,
+        periodEnd: true,
+        totalRevenue: true,
+        totalProfit: true,
+        investorShare: true,
+        pabandiShare: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return ok(res, distributions);
+  } catch (err: any) {
+    logger.error('[Mudarabah] getPoolDistributionsPublic error:', err.message);
+    return fail(res, 'Failed to fetch distributions', 500);
+  }
+};

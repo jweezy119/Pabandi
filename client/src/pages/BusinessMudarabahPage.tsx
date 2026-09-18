@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { mudarabahService, MudarabahPool, CreatePoolData, RiskBand, DistributionFreq, Distribution } from '../services/mudarabahService';
+import {
+  mudarabahService,
+  MudarabahPool,
+  CreatePoolData,
+  RiskBand,
+  Distribution,
+} from '../services/mudarabahService';
 import { MudarabahPoolWizard } from '../components/MudarabahPoolWizard';
 
 type Tab = 'myPools' | 'create' | 'distributions';
@@ -9,16 +15,18 @@ export const BusinessMudarabahPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>('myPools');
   const [pools, setPools] = useState<MudarabahPool[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createError, setCreateError] = useState('');
-  const [createSuccess, setCreateSuccess] = useState(false);
+  const [error, setError] = useState('');
+
   const [selectedPoolForDist, setSelectedPoolForDist] = useState<MudarabahPool | null>(null);
   const [distRevenue, setDistRevenue] = useState('');
   const [distStart, setDistStart] = useState('');
   const [distEnd, setDistEnd] = useState('');
   const [distributing, setDistributing] = useState(false);
+  const [distError, setDistError] = useState('');
   const [editingPool, setEditingPool] = useState<MudarabahPool | null>(null);
   const [editForm, setEditForm] = useState<Partial<CreatePoolData>>({});
   const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
   const [selectedPoolForInvestors, setSelectedPoolForInvestors] = useState<MudarabahPool | null>(null);
   const [recommendedInvestors, setRecommendedInvestors] = useState<any[]>([]);
   const [loadingInvestors, setLoadingInvestors] = useState(false);
@@ -37,11 +45,13 @@ export const BusinessMudarabahPage: React.FC = () => {
 
   const loadPools = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await mudarabahService.myPools();
       setPools(res.data?.data || []);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load my pools:', e);
+      setError('Failed to load your pools. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -51,10 +61,8 @@ export const BusinessMudarabahPage: React.FC = () => {
     loadPools();
   }, [loadPools]);
 
-
-
   const handleClosePool = async (poolId: string) => {
-    if (!confirm('Are you sure you want to close this pool?')) return;
+    if (!confirm('Are you sure you want to close this pool? This action cannot be undone.')) return;
     try {
       await mudarabahService.closePool(poolId);
       loadPools();
@@ -66,7 +74,15 @@ export const BusinessMudarabahPage: React.FC = () => {
   const handleDistribute = async () => {
     if (!selectedPoolForDist || !distRevenue || !distStart || !distEnd) return;
     const revenue = parseFloat(distRevenue);
-    if (isNaN(revenue) || revenue <= 0) return;
+    if (isNaN(revenue) || revenue <= 0) {
+      setDistError('Please enter a valid revenue amount');
+      return;
+    }
+    if (new Date(distStart) >= new Date(distEnd)) {
+      setDistError('Period end must be after period start');
+      return;
+    }
+    setDistError('');
     setDistributing(true);
     try {
       await mudarabahService.distributeProfits(selectedPoolForDist.id, {
@@ -80,7 +96,7 @@ export const BusinessMudarabahPage: React.FC = () => {
       setDistEnd('');
       loadPools();
     } catch (e: any) {
-      alert(e?.response?.data?.error || 'Distribution failed');
+      setDistError(e?.response?.data?.error || 'Distribution failed');
     } finally {
       setDistributing(false);
     }
@@ -89,12 +105,13 @@ export const BusinessMudarabahPage: React.FC = () => {
   const handleEditSave = async () => {
     if (!editingPool) return;
     setEditSaving(true);
+    setEditError('');
     try {
       await mudarabahService.updatePool(editingPool.id, editForm);
       setEditingPool(null);
       loadPools();
     } catch (e: any) {
-      alert(e?.response?.data?.error || 'Update failed');
+      setEditError(e?.response?.data?.error || 'Update failed');
     } finally {
       setEditSaving(false);
     }
@@ -132,7 +149,7 @@ export const BusinessMudarabahPage: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-allowed transition-all ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
                 tab === t.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
               }`}
             >
@@ -141,15 +158,32 @@ export const BusinessMudarabahPage: React.FC = () => {
           ))}
         </div>
 
+        {/* Error State */}
+        {error && !loading && (
+          <Surface className="p-6 mb-6 text-center border border-rose-500/20">
+            <div className="text-3xl mb-2">⚠️</div>
+            <p className="text-rose-300 mb-3">{error}</p>
+            <Button size="sm" onClick={loadPools}>Retry</Button>
+          </Surface>
+        )}
+
         {/* My Pools Tab */}
         {tab === 'myPools' && (
           <div className="space-y-4">
             {loading ? (
-              <p className="text-slate-400">Loading your pools...</p>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Surface key={i} className="p-4 animate-pulse">
+                    <div className="h-4 bg-white/10 rounded w-1/3 mb-2" />
+                    <div className="h-3 bg-white/10 rounded w-1/4" />
+                  </Surface>
+                ))}
+              </div>
             ) : pools.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">🏦</div>
-                <p className="text-slate-400 mb-4">You haven't created any pools yet.</p>
+                <p className="text-slate-400 mb-2">You haven't created any pools yet.</p>
+                <p className="text-sm text-slate-500 mb-4">Create your first Mudarabah pool to start raising capital.</p>
                 <Button onClick={() => setTab('create')}>Create Your First Pool</Button>
               </Surface>
             ) : (
@@ -172,29 +206,29 @@ export const BusinessMudarabahPage: React.FC = () => {
                           <div className="text-xs text-slate-500">{pool.profitShareRatio} · {pool.riskBand}</div>
                         </td>
                         <td className="py-3">
-                          <Badge tone={pool.status === 'ACTIVE' ? 'success' : pool.status === 'CLOSED' ? 'danger' : 'warning'}>
+                          <Badge tone={pool.status === 'OPEN' || pool.status === 'ACTIVE' ? 'success' : pool.status === 'CLOSED' ? 'danger' : 'warning'}>
                             {pool.status}
                           </Badge>
                         </td>
                         <td className="py-3 text-sm text-slate-200">
-                          ${pool.currentAmount.toLocaleString()} / ${pool.targetAmount.toLocaleString()}
+                          ${pool.currentAmount?.toLocaleString() || 0} / ${pool.targetAmount?.toLocaleString() || 0}
                         </td>
-                        <td className="py-3 text-sm text-slate-200">{pool.investorCount}</td>
+                        <td className="py-3 text-sm text-slate-200">{pool.investorCount || 0}</td>
                         <td className="py-3">
-                          <div className="flex gap-2">
-                            {pool.status === 'ACTIVE' && (
+                          <div className="flex gap-2 flex-wrap">
+                            {(pool.status === 'OPEN' || pool.status === 'ACTIVE') && (
                               <>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => { setEditingPool(pool); setEditForm(pool); }}
+                                  onClick={() => { setEditingPool(pool); setEditForm({ title: pool.title, description: pool.description, revenueSource: pool.revenueSource, expectedApy: pool.expectedApy, minInvestment: pool.minInvestment }); setEditError(''); }}
                                 >
                                   Edit
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => { setSelectedPoolForDist(pool); setDistRevenue(''); setDistStart(''); setDistEnd(''); }}
+                                  onClick={() => { setSelectedPoolForDist(pool); setDistRevenue(''); setDistStart(''); setDistEnd(''); setDistError(''); }}
                                 >
                                   Distribute
                                 </Button>
@@ -210,7 +244,7 @@ export const BusinessMudarabahPage: React.FC = () => {
                                 </Button>
                               </>
                             )}
-                            {pool.status !== 'ACTIVE' && (
+                            {pool.status !== 'OPEN' && pool.status !== 'ACTIVE' && (
                               <span className="text-xs text-slate-500">Closed</span>
                             )}
                           </div>
@@ -230,7 +264,7 @@ export const BusinessMudarabahPage: React.FC = () => {
             onSubmit={async (data) => {
               try {
                 // Map FormData shape to CreatePoolData shape for API
-                const poolData = {
+                const poolData: CreatePoolData = {
                   title: data.title,
                   description: data.description,
                   profitShareRatio: data.profitShareRatio,
@@ -242,30 +276,26 @@ export const BusinessMudarabahPage: React.FC = () => {
                   category: data.category,
                   useOfFunds: data.useOfFunds,
                   businessPlanUrl: data.businessPlanUrl,
-                  profitCalcMethod: data.profitCalcMethod,
+                  profitCalcMethod: data.profitCalcMethod as any,
                   marginPercent: parseFloat(data.marginPercent),
                   reserveRatio: data.reserveRatio,
                   allowEarlyWithdraw: data.allowEarlyWithdraw,
                   earlyWithdrawPenalty: parseFloat(data.earlyWithdrawPenalty),
-                  riskBand: data.riskBand,
+                  riskBand: data.riskBand as RiskBand,
                   riskDisclosure: data.riskDisclosure,
                   legalDisclaimer: data.legalDisclaimer,
                   shariaCompliant: true,
                   accreditedOnly: data.accreditedOnly,
-                  lockupPeriodDays: data.lockupPeriodDays,
+                  lockupPeriodDays: data.lockupPeriodDays ? parseInt(data.lockupPeriodDays, 10) : 90,
                   autoDistribute: data.autoDistribute,
-                  distributionDay: data.distributionDay,
+                  distributionDay: data.distributionDay ? parseInt(data.distributionDay, 10) : 1,
                   minDistribution: parseFloat(data.minDistribution),
                 };
                 await mudarabahService.createPool(poolData);
-                setCreateSuccess(true);
-                setTimeout(() => {
-                  setCreateSuccess(false);
-                  setTab('myPools');
-                  loadPools();
-                }, 2000);
-              } catch (e: any) {
-                setCreateError(e?.response?.data?.error || 'Failed to create pool');
+                setTab('myPools');
+                loadPools();
+              } catch (_e: any) {
+                // Error handled inside wizard
               }
             }}
           />
@@ -276,7 +306,10 @@ export const BusinessMudarabahPage: React.FC = () => {
           <div className="space-y-6">
             {pools.length === 0 ? (
               <Surface className="p-8 text-center">
-                <p className="text-slate-400">No pools yet. Create a pool first to manage distributions.</p>
+                <div className="text-4xl mb-4">📊</div>
+                <p className="text-slate-400 mb-2">No pools yet.</p>
+                <p className="text-sm text-slate-500 mb-4">Create a pool first to manage distributions.</p>
+                <Button onClick={() => setTab('create')}>Create Pool</Button>
               </Surface>
             ) : (
               pools.map((pool) => (
@@ -287,9 +320,9 @@ export const BusinessMudarabahPage: React.FC = () => {
                       <p className="text-xs text-slate-500">{pool.profitShareRatio} · {pool.distributionFreq}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Badge tone={pool.status === 'ACTIVE' ? 'success' : 'danger'}>{pool.status}</Badge>
-                      {pool.status === 'ACTIVE' && (
-                        <Button size="sm" onClick={() => { setSelectedPoolForDist(pool); setDistRevenue(''); setDistStart(''); setDistEnd(''); }}>
+                      <Badge tone={pool.status === 'OPEN' || pool.status === 'ACTIVE' ? 'success' : 'danger'}>{pool.status}</Badge>
+                      {(pool.status === 'OPEN' || pool.status === 'ACTIVE') && (
+                        <Button size="sm" onClick={() => { setSelectedPoolForDist(pool); setDistRevenue(''); setDistStart(''); setDistEnd(''); setDistError(''); }}>
                           Distribute
                         </Button>
                       )}
@@ -305,7 +338,7 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Recommended Investors Modal */}
         {selectedPoolForInvestors && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPoolForInvestors(null)}>
-            <div className="absolute inset-0 bg-black/70" />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setSelectedPoolForInvestors(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
               <h2 className="text-xl font-bold text-white mb-2">🤖 Recommended Investors</h2>
@@ -348,10 +381,15 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Edit Pool Modal */}
         {editingPool && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setEditingPool(null)}>
-            <div className="absolute inset-0 bg-black/70" />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setEditingPool(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
               <h2 className="text-xl font-bold text-white mb-4">Edit Pool</h2>
+              {editError && (
+                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                  <p className="text-sm text-rose-300">{editError}</p>
+                </div>
+              )}
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-semibold text-slate-300 mb-2 block">Title</label>
@@ -392,18 +430,23 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Distribute Profits Modal */}
         {selectedPoolForDist && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPoolForDist(null)}>
-            <div className="absolute inset-0 bg-black/70" />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div className="relative max-w-lg w-full rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setSelectedPoolForDist(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
               <h2 className="text-xl font-bold text-white mb-2">Distribute Profits</h2>
               <p className="text-sm text-slate-400 mb-4">{selectedPoolForDist.title}</p>
+              {distError && (
+                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                  <p className="text-sm text-rose-300">{distError}</p>
+                </div>
+              )}
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-semibold text-slate-300 mb-2 block">Total Revenue for Period ($)</label>
                   <input
                     type="number"
                     value={distRevenue}
-                    onChange={(e) => setDistRevenue(e.target.value)}
+                    onChange={(e) => { setDistRevenue(e.target.value); setDistError(''); }}
                     placeholder="e.g. 50000"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
                   />
@@ -456,17 +499,25 @@ export const BusinessMudarabahPage: React.FC = () => {
 // Sub-component for distributions per pool
 const PoolDistributions: React.FC<{ poolId: string }> = ({ poolId }) => {
   const [dists, setDists] = useState<Distribution[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    // Direct fetch to avoid parent race
-    mudarabahService.getDistributions(poolId).then((res) => {
-      setDists(res.data?.data || []);
-    }).finally(() => setLoading(false));
+    setError('');
+    mudarabahService.getDistributions(poolId)
+      .then((res) => {
+        setDists(res.data?.data || []);
+      })
+      .catch((e) => {
+        console.error('Failed to load distributions:', e);
+        setError('Failed to load distributions');
+      })
+      .finally(() => setLoading(false));
   }, [poolId]);
 
   if (loading) return <p className="text-sm text-slate-500">Loading distributions...</p>;
+  if (error) return <p className="text-sm text-rose-400">{error}</p>;
   if (dists.length === 0) return <p className="text-sm text-slate-500">No distributions yet.</p>;
 
   return (
@@ -487,10 +538,10 @@ const PoolDistributions: React.FC<{ poolId: string }> = ({ poolId }) => {
               <td className="py-2 text-xs text-slate-400">
                 {new Date(d.periodStart).toLocaleDateString()} – {new Date(d.periodEnd).toLocaleDateString()}
               </td>
-              <td className="py-2 text-slate-200">${d.totalRevenue.toLocaleString()}</td>
-              <td className="py-2 text-slate-200">${d.profitAmount.toLocaleString()}</td>
-              <td className="py-2 text-emerald-300">${d.investorShare.toLocaleString()}</td>
-              <td className="py-2 text-indigo-300">${d.pabandiShare.toLocaleString()}</td>
+              <td className="py-2 text-slate-200">${d.totalRevenue?.toLocaleString()}</td>
+              <td className="py-2 text-slate-200">${d.totalProfit?.toLocaleString()}</td>
+              <td className="py-2 text-emerald-300">${d.investorShare?.toLocaleString()}</td>
+              <td className="py-2 text-indigo-300">${d.pabandiShare?.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>

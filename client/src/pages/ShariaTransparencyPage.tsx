@@ -33,7 +33,7 @@ export const ShariaTransparencyPage: React.FC = () => {
   const loadTransparency = async (poolId: string) => {
     setSelectedPoolId(poolId);
     try {
-      const res = await mudarabahService.getTransparency(poolId);
+      const res = await mudarabahService.getPoolTransparency(poolId);
       setTransparency(res.data?.data || null);
     } catch (e) {
       console.error('Failed to load transparency:', e);
@@ -219,7 +219,7 @@ export const ShariaTransparencyPage: React.FC = () => {
                   {selectedPoolId === pool.id && transparency && (
                     <div className="mt-4 border-t border-white/10 pt-4">
                       <h4 className="text-sm font-semibold text-slate-300 mb-2">Distribution History</h4>
-                      {transparency.distributions.length === 0 ? (
+                      {transparency.distributionHistory.length === 0 ? (
                         <p className="text-xs text-slate-500">No distributions yet.</p>
                       ) : (
                         <div className="overflow-x-auto">
@@ -233,7 +233,7 @@ export const ShariaTransparencyPage: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {transparency.distributions.map((d) => (
+                              {transparency.distributionHistory.map((d: any) => (
                                 <tr key={d.id} className="border-b border-white/5">
                                   <td className="py-2 text-slate-400">
                                     {new Date(d.periodStart).toLocaleDateString()}–{new Date(d.periodEnd).toLocaleDateString()}
@@ -248,7 +248,7 @@ export const ShariaTransparencyPage: React.FC = () => {
                         </div>
                       )}
                       <p className="text-xs text-slate-500 mt-2">
-                        Total distributed to date: ${transparency.totalDistributed?.toLocaleString() || '0'} · Total investors: {transparency.totalInvestors}
+                        Total distributed to date: ${transparency.totalProfitDistributed?.toLocaleString() || '0'} · Total investors: {transparency.investorCount}
                       </p>
                     </div>
                   )}

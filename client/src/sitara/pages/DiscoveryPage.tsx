@@ -10,12 +10,12 @@ import DiscoveryMap from '../components/DiscoveryMap';
 import { getFavorites, Favorite } from '../utils/favorites';
 
 const categories = [
-  { id: 'restaurant', label: 'Restaurants', icon: '🍽️' },
-  { id: 'salon', label: 'Salons', icon: '💇' },
-  { id: 'spa', label: 'Spas', icon: '🧖' },
-  { id: 'nightlife', label: 'Nightlife', icon: '🍸' },
-  { id: 'apartment', label: 'Apartments', icon: '🏢' },
-  { id: 'hotel', label: 'Hotels', icon: '🏨' },
+  { id: 'RESTAURANT', label: 'Restaurants', icon: '🍽️' },
+  { id: 'SALON', label: 'Salons', icon: '💇' },
+  { id: 'SPA', label: 'Spas', icon: '🧖' },
+  { id: 'HOTEL', label: 'Hotels', icon: '🏨' },
+  { id: 'FITNESS_CENTER', label: 'Fitness', icon: '💪' },
+  { id: 'EVENT_VENUE', label: 'Venues', icon: '🎪' },
 ];
 
 const mockBusinesses = [
@@ -41,6 +41,7 @@ interface BizCard {
   lat?: number;
   lng?: number;
   real: boolean;
+  distanceKm?: number;
 }
 
 type SortMode = 'recommended' | 'rating' | 'reviewed';
@@ -70,6 +71,7 @@ export default function DiscoveryPage() {
   const [geoDenied, setGeoDenied] = useState(false);
   const [cityQuery, setCityQuery] = useState('');
   const [geocoding, setGeocoding] = useState(false);
+  const [nearMeLoading, setNearMeLoading] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Favorites live on-device; refresh whenever discovery regains focus.
@@ -101,19 +103,38 @@ export default function DiscoveryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Manual location via free OSM geocoding — for denied/unavailable GPS. */
+  /** "Near me" button — uses browser geolocation to find and show real OSM businesses nearby. */
+  const requestNearMe = () => {
+    if (!navigator.geolocation) {
+      setGeoDenied(true);
+      return;
+    }
+    setNearMeLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
+        setGeoDenied(false);
+        loadRealBusinesses({ ...loc }).finally(() => setNearMeLoading(false));
+      },
+      () => {
+        setNearMeLoading(false);
+        setGeoDenied(true);
+      },
+      { enableHighAccuracy: false, timeout: 8000 }
+    );
+  };
+
+  /** Manual location via OSM geocoding through Sitara API. */
   const useCity = async () => {
     const q = cityQuery.trim();
     if (!q) return;
     setGeocoding(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
-        { headers: { Accept: 'application/json' } }
-      );
-      const arr = await res.json();
-      if (Array.isArray(arr) && arr[0]?.lat && arr[0]?.lon) {
-        const loc = { lat: Number(arr[0].lat), lng: Number(arr[0].lon) };
+      const results = await sitaraApi.geocodeAddress(q);
+      if (Array.isArray(results) && results.length > 0) {
+        const first = results[0];
+        const loc = { lat: first.lat, lng: first.lng };
         setUserLocation(loc);
         setGeoDenied(false);
         setLoading(true);
@@ -128,35 +149,53 @@ export default function DiscoveryPage() {
 
   async function loadRealBusinesses(opts: { lat: number; lng: number; category?: string | null; q?: string }) {
     try {
-      const data = await sitaraApi.discover({
-        lat: opts.lat,
-        lng: opts.lng,
-        radius: 5000,
-        limit: 20,
-        category: opts.category || selectedCategory || undefined,
-        q: opts.q || undefined,
-      });
-      if (Array.isArray(data) && data.length > 0) {
+      const businesses = await sitaraApi.discoverNearbyBusinesses(
+        opts.lat,
+        opts.lng,
+        5000,
+        opts.category || undefined
+      );
+
+      if (Array.isArray(businesses) && businesses.length > 0) {
         setCards(
-          data.map((b: any) => ({
-            id: String(b.id),
-            source: b.sources?.[0] || b.source || 'foursquare',
-            name: b.name || 'Unnamed venue',
-            category: String(b.category || 'restaurant').toLowerCase(),
-            rating: Number(b.rating ?? 4.0),
-            stars: Number(b.reviewCount ?? 0),
-            image: b.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
-            price: b.price || '$$',
-            address: b.address,
-            isOpenNow: b.isOpenNow,
-            lat: b.lat != null ? Number(b.lat) : undefined,
-            lng: b.lng != null ? Number(b.lng) : undefined,
-            real: true,
-          }))
+          businesses.map((b: any) => {
+            // Calculate distance from user to this business
+            let distanceKm: number | undefined;
+            if (opts.lat && opts.lng && b.lat && b.lng) {
+              const R = 6371;
+              const φ1 = (opts.lat * Math.PI) / 180;
+              const φ2 = (b.lat * Math.PI) / 180;
+              const Δφ = ((b.lat - opts.lat) * Math.PI) / 180;
+              const Δλ = ((b.lng - opts.lng) * Math.PI) / 180;
+              const x =
+                Math.sin(Δφ / 2) ** 2 +
+                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+              distanceKm = +((R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))) / 1000).toFixed(1);
+            }
+
+            return {
+              id: String(b.lat && b.lng ? `${b.lat},${b.lng}` : b.name),
+              source: 'osm',
+              name: b.name || 'Unnamed venue',
+              category: String(b.category || 'OTHER').toUpperCase(),
+              rating: Number(b.tags?.rating ?? 4.0),
+              stars: 0,
+              image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+              price: '$$',
+              address: b.address,
+              lat: b.lat != null ? Number(b.lat) : undefined,
+              lng: b.lng != null ? Number(b.lng) : undefined,
+              real: true,
+              distanceKm,
+            };
+          })
         );
+      } else {
+        setCards(FALLBACK_CARDS);
       }
     } catch (err) {
       console.warn('Real discovery failed, using fallback:', err);
+      setCards(FALLBACK_CARDS);
     } finally {
       setLoading(false);
       setSearching(false);
@@ -233,9 +272,20 @@ export default function DiscoveryPage() {
             <span className="absolute right-4 top-1/2 -translate-y-1/2 inline-block animate-spin rounded-full h-5 w-5 border-2 border-amber-500 border-t-transparent" />
           ) : null}
         </div>
-        {userLocation && (
-          <p className="text-xs sm:text-sm text-emerald-600 mt-2">📍 Showing venues near you</p>
-        )}
+        <div className="flex items-center justify-center gap-2 mt-2">
+          {userLocation && (
+            <p className="text-xs sm:text-sm text-emerald-600">📍 Showing venues near you</p>
+          )}
+          {!userLocation && (
+            <button
+              onClick={requestNearMe}
+              disabled={nearMeLoading}
+              className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-full hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {nearMeLoading ? 'Locating…' : '📡 Near me'}
+            </button>
+          )}
+        </div>
         {geoDenied && !userLocation && (
           <div className="max-w-xl mx-auto mt-3 flex gap-2">
             <input
@@ -445,6 +495,12 @@ export default function DiscoveryPage() {
                   <span className="font-medium">{business.rating.toFixed(1)}</span>
                   <span>·</span>
                   <span>{business.stars} reviews</span>
+                  {business.distanceKm != null && (
+                    <>
+                      <span>·</span>
+                      <span>📏 {business.distanceKm} km</span>
+                    </>
+                  )}
                   {business.real && (
                     <span className="ml-auto px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium shrink-0">
                       ✓ Live
