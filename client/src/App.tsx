@@ -55,6 +55,7 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import PublicPropertiesPage from './pages/PublicPropertiesPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
+import EnhancedDashboardPage from './pages/EnhancedDashboardPage';
 import DisputeCenterPage from './pages/DisputeCenterPage';
 import MaintenancePage from './pages/MaintenancePage';
 import ApplicationsPage from './pages/ApplicationsPage';
