@@ -35,6 +35,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
 import ProfileDetailPage from './pages/ProfileDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
