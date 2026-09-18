@@ -330,6 +330,7 @@ export default function Layout() {
                 <Dropdown label={initials} current={false}>
                   <DropdownItem to="/dashboard">Dashboard</DropdownItem>
                   <DropdownItem to="/wallet">Wallet</DropdownItem>
+                  <DropdownItem to="/notifications">🔔 Notifications</DropdownItem>
                   <DropdownItem to="/loans">Halal DeFi</DropdownItem>
                   <DropdownItem to="/mudarabah">💰 Mudarabah Yield</DropdownItem>
                   <DropdownItem to="/mudarabah/business">📊 Business Mudarabah</DropdownItem>

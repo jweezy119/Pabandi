@@ -30,6 +30,7 @@ import BusinessModelPage from './pages/BusinessModelPage';
 import TechnologyPage from './pages/TechnologyPage';
 import ContactPage from './pages/ContactPage';
 import BusinessSettingsPage from './pages/BusinessSettingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
@@ -341,6 +342,7 @@ function App() {
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="passport/dietary" element={<DietaryPassportPage />} />
             <Route path="demo" element={<DemoWalkthroughPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="try" element={<Navigate to="/demo" replace />} />
             <Route path="oauth/authorize" element={<OAuthConsentPage />} />
             <Route path="outreach" element={isAuthenticated && user?.role === 'ADMIN' ? <OutreachCRMPage /> : <Navigate to="/login" />} />
