@@ -58,6 +58,26 @@ export class NotificationService {
   }
 
   /**
+   * Send a generic email via Gmail SMTP.
+   */
+  async sendEmail({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'jay@pabandi.com',
+        to,
+        subject,
+        html,
+      };
+      await emailTransporter.sendMail(mailOptions);
+      logger.info(`Email sent to ${to}: ${subject}`);
+      return true;
+    } catch (error) {
+      logger.error('Failed to send email via Gmail', error);
+      return false;
+    }
+  }
+
+  /**
    * Send email reminder for reservation via Gmail SMTP
    */
   async sendEmailReminder(

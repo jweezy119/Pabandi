@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from './database';
 import { logger } from './logger';
+import { rentAutomationService } from '../services/rentAutomation.service';
 
 // Every 4 days at 03:00 AM
 // Using a variable avoids ts-node misreading "* /" as a comment closer
@@ -15,6 +16,15 @@ export function startDbKeepalive() {
   cron.schedule(EVERY_4_DAYS, () => {
     pingDatabase('scheduled').catch((err) => {
       logger.warn('[Keepalive] Scheduled DB ping failed: ' + (err?.message || err));
+    });
+  });
+
+  // Daily rent automation at 04:00 AM
+  cron.schedule('0 4 * * *', () => {
+    rentAutomationService.runDailyRentAutomation().then((result) => {
+      logger.info('[RentAutomation] Daily run completed', result);
+    }).catch((err) => {
+      logger.error('[RentAutomation] Daily run failed', err);
     });
   });
 

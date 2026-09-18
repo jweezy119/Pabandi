@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth.middleware';
+import { rentAutomationService } from '../services/rentAutomation.service';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -605,6 +606,29 @@ router.get('/communications', async (req: any, res: Response) => {
     res.json({ success: true, data: comms });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Rent Automation ────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/rent/automation/run — trigger rent automation manually
+router.post('/rent/automation/run', authenticate, async (_req: any, res: Response) => {
+  try {
+    const result = await rentAutomationService.runDailyRentAutomation();
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Rent automation failed' });
+  }
+});
+
+// POST /api/v1/property-manager/rent/:id/mark-paid — mark a rent payment as paid
+router.post('/rent/:id/mark-paid', authenticate, async (req: any, res: Response) => {
+  try {
+    const { method, reference } = req.body || {};
+    const payment = await rentAutomationService.markRentPaid(req.params.id, method || 'MANUAL', reference);
+    res.json({ success: true, data: payment });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not mark rent as paid' });
   }
 });
 
