@@ -4,89 +4,88 @@ import { CustomError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { logger } from '../utils/logger';
 import { UserRole } from '@prisma/client';
-import { safepayService } from '../services/safepay.service';
+import { 
+  createUSDCpayment, 
+  createBTCPayInvoice, 
+  createManualPayment,
+  verifyUSDCpayment,
+  verifyBTCPayPayment,
+} from '../services/payment.service';
+import crypto from 'crypto';
 
-export const createPayment = async (
+// Create a new crypto payment request
+export const createPaymentRequest = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { reservationId, amount, paymentMethod } = req.body;
-
-    if (reservationId) {
-      const reservation = await prisma.reservation.findUnique({
-        where: { id: reservationId },
-      });
-
-      if (!reservation) {
-        throw new CustomError('Reservation not found', 404);
-      }
-
-      if (reservation.customerId !== req.user!.id) {
-        throw new CustomError('Unauthorized', 403);
-      }
+    const { amount, currency = 'USDC', type = 'usdc', memo, reference, businessId, payeeId } = req.body;
+    
+    if (!amount || amount <= 0) {
+      throw new CustomError('Amount must be greater than 0', 400);
     }
 
-    // Create payment record
-    const payment = await prisma.payment.create({
+    const paymentRef = reference || `pab_${crypto.randomBytes(8).toString('hex')}`;
+
+    let paymentRequest: any;
+    
+    switch (type) {
+      case 'usdc':
+      case 'solana': {
+        paymentRequest = await createUSDCpayment({ 
+          amount: parseFloat(amount), 
+          reference: paymentRef, 
+          memo 
+        });
+        break;
+      }
+      case 'btcpay':
+      case 'bitcoin': {
+        paymentRequest = await createBTCPayInvoice({ 
+          amount: parseFloat(amount), 
+          currency: currency || 'USD', 
+          reference: paymentRef 
+        });
+        break;
+      }
+      case 'manual': {
+        paymentRequest = createManualPayment({ 
+          amount: parseFloat(amount), 
+          reference: paymentRef,
+          method: req.body.method 
+        });
+        break;
+      }
+      default:
+        throw new CustomError(`Unsupported payment type: ${type}`, 400);
+    }
+
+    // Create crypto payment record in database
+    const payment = await prisma.cryptoPayment.create({
       data: {
-        reservationId,
-        userId: req.user!.id,
-        amount,
-        paymentMethod: paymentMethod || 'credit_card',
+        type: paymentRequest.type,
+        amount: parseFloat(amount),
+        currency,
         status: 'PENDING',
+        reference: paymentRef,
+        payerId: req.user?.id || null,
+        payeeId: payeeId || null,
+        metadata: {
+          ...paymentRequest,
+          ...(memo ? { memo } : {}),
+        },
       },
     });
 
-    // Integrate with Safepay
-    let paymentUrl = `/payment/process/${payment.id}`;
-    const FRONTEND = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
-    if (paymentMethod === 'safepay') {
-      try {
-        const checkoutReference = `pay_${payment.id}`;
-        paymentUrl = await safepayService.createCheckoutUrl(amount, checkoutReference);
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: { gatewayResponse: { ...(payment.gatewayResponse as any || {}), safepayReference: checkoutReference } },
-        });
-      } catch (err) {
-        logger.error(`Safepay initialization failed: ${err}`);
-      }
-    } else {
-      // Card via Stripe Checkout (default). Without STRIPE_SECRET_KEY the
-      // service returns an honest disabled URL instead of failing.
-      try {
-        const { stripeService } = await import('../services/stripe.service');
-        paymentUrl = await stripeService.createCheckoutUrl(
-          Math.round(Number(amount) * 100),
-          'usd',
-          String(reservationId || payment.id),
-          `${FRONTEND}/sitara/my-bookings?pay=success&ref=${payment.id}`,
-          `${FRONTEND}/sitara/my-bookings?pay=cancelled&ref=${payment.id}`
-        );
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            paymentMethod: 'stripe',
-            gatewayResponse: { ...(payment.gatewayResponse as any || {}), stripe: true },
-          },
-        });
-      } catch (err) {
-        logger.error(`Stripe checkout failed: ${err}`);
-      }
-    }
-
-    logger.info(`Payment created: ${payment.id} via ${paymentMethod}`);
+    logger.info(`Crypto payment created: ${payment.id} via ${type}`);
 
     res.status(201).json({
       success: true,
-      message: 'Payment initiated',
+      message: 'Payment request created',
       data: {
-        payment: {
-          ...payment,
-          paymentUrl,
-        },
+        payment,
+        request: paymentRequest,
       },
     });
   } catch (error) {
@@ -94,7 +93,8 @@ export const createPayment = async (
   }
 };
 
-export const getPayment = async (
+// Get crypto payment by ID
+export const getPaymentById = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -102,11 +102,18 @@ export const getPayment = async (
   try {
     const { id } = req.params;
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.cryptoPayment.findUnique({
       where: { id },
       include: {
-        reservation: true,
-        user: {
+        payer: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        payee: {
           select: {
             id: true,
             email: true,
@@ -124,7 +131,8 @@ export const getPayment = async (
     // Check authorization
     if (
       req.user!.role !== UserRole.ADMIN &&
-      payment.userId !== req.user!.id
+      payment.payerId !== req.user?.id &&
+      payment.payeeId !== req.user?.id
     ) {
       throw new CustomError('Unauthorized', 403);
     }
@@ -138,122 +146,325 @@ export const getPayment = async (
   }
 };
 
-export const createSubscriptionCheckout = async (
+// Verify a crypto payment
+export const verifyPayment = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { planId, amount, planName } = req.body as {
-      planId?: string;
-      amount: number;
-      planName?: string;
-    };
+    const { id } = req.params;
+    const { txSig, invoiceId } = req.body;
 
-    if (!amount || amount <= 0) {
-      throw new CustomError('A valid subscription amount is required', 400);
-    }
-
-    const reference = `sub_${planId || 'custom'}_${Date.now()}`;
-
-    const checkoutUrl = await safepayService.createApiSubscriptionCheckoutUrl(amount, reference);
-
-    const payment = await prisma.payment.create({
-      data: {
-        userId: req.user!.id,
-        amount,
-        paymentMethod: 'safepay',
-        status: 'PENDING',
-        gatewayResponse: { planId, planName, reference },
-      },
+    const payment = await prisma.cryptoPayment.findUnique({
+      where: { id },
     });
 
-    res.status(201).json({
+    if (!payment) {
+      throw new CustomError('Payment not found', 404);
+    }
+
+    let verificationResult: any = { verified: false };
+
+    if (payment.type === 'solana' && txSig) {
+      verificationResult = await verifyUSDCpayment({ 
+        reference: payment.reference, 
+        txSig 
+      });
+    } else if (payment.type === 'btcpay' && invoiceId) {
+      const btcpayResult = await verifyBTCPayPayment(invoiceId);
+      verificationResult = { 
+        verified: btcpayResult.confirmed, 
+        status: btcpayResult.status 
+      };
+    } else {
+      throw new CustomError(
+        'Verification requires txSig for USDC or invoiceId for BTCPay',
+        400
+      );
+    }
+
+    if (verificationResult.verified) {
+      await prisma.cryptoPayment.update({
+        where: { id: payment.id },
+        data: { 
+          status: 'COMPLETED', 
+          txSignature: txSig || invoiceId || null,
+        },
+      });
+    }
+
+    res.json({
       success: true,
-      data: { checkoutUrl, payment },
+      data: {
+        verified: verificationResult.verified,
+        status: verificationResult.verified ? 'COMPLETED' : payment.status,
+        details: verificationResult,
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-export const processPaymentWebhook = async (
+// Process BTCPay webhook
+export const processBTCPayWebhook = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const signature = req.headers['x-sfpy-signature'] as string;
-    const rawBody = (req as any).rawBody || JSON.stringify(req.body || {});
-    const isValid = safepayService.verifyWebhook(signature, rawBody);
+    const { invoiceId, status, metadata } = req.body;
+    
+    logger.info(`[BTCPay Webhook] Invoice ${invoiceId} status: ${status}`);
 
-    if (!isValid) {
-      logger.error('Invalid Safepay webhook signature');
-      return res.status(401).json({ success: false, message: 'Invalid signature' });
+    if (!invoiceId) {
+      return res.status(400).json({ success: false, error: 'Missing invoiceId' });
     }
 
-    const payload = req.body || {};
-    const { tracker, reference, state } = payload;
-    const mappedStatus = mapSafePayState(state);
-
-    if (!reference) {
-      return res.status(400).json({ success: false, message: 'Missing reference' });
-    }
-
-    const payment = await prisma.payment.findUnique({
-      where: { id: String(reference) },
+    // Find payment by reference
+    const payment = await prisma.cryptoPayment.findFirst({
+      where: {
+        reference: metadata?.reference || invoiceId,
+      },
     });
 
     if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment not found' });
+      logger.warn(`[BTCPay Webhook] No payment found for invoice ${invoiceId}`);
+      return res.status(404).json({ success: false, error: 'Payment not found' });
     }
 
-    const terminalStatuses = ['COMPLETED', 'FAILED', 'CANCELLED'] as const;
-    const isTerminal = terminalStatuses.includes(payment.status as any);
+    const newStatus = status === 'Settled' || status === 'Complete' ? 'COMPLETED' : 
+                      status === 'Expired' ? 'FAILED' : payment.status;
 
-    const updates: any = {
-      gatewayResponse: {
-        ...((payment.gatewayResponse as Record<string, unknown>) || {}),
-        safepay: payload,
-      },
-    };
-
-    if (!isTerminal) {
-      updates.status = mappedStatus;
-      if (tracker) updates.transactionId = String(tracker);
-    }
-
-    const updated = await prisma.payment.update({
+    await prisma.cryptoPayment.update({
       where: { id: payment.id },
-      data: updates,
+      data: {
+        status: newStatus,
+        txSignature: invoiceId,
+        metadata: {
+          ...((payment.metadata as any) || {}),
+          btcpayWebhook: req.body,
+        },
+      },
     });
 
-    if (mappedStatus === 'COMPLETED' && payment.status !== 'COMPLETED') {
-      const fee = +(updated.amount * 0.03).toFixed(2);
-      await prisma.payment.update({
-        where: { id: updated.id },
-        data: { platformFeeAmount: fee, platformFeeStatus: 'CAPTURED' },
-      });
+    res.json({ success: true, status: newStatus });
+  } catch (error: any) {
+    logger.error(`[BTCPay Webhook] Error: ${error.message}`);
+    next(error);
+  }
+};
 
-      if (updated.reservationId) {
-        await prisma.reservation.update({
-          where: { id: updated.reservationId },
-          data: { depositPaid: true },
-        });
-      }
+// Create escrow for a crypto payment
+export const createEscrow = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { paymentId, payerId, payeeId, amount } = req.body;
+
+    if (!paymentId || !payerId || !payeeId || !amount) {
+      throw new CustomError('paymentId, payerId, payeeId, and amount are required', 400);
     }
 
-    logger.info(`Payment webhook processed: ${updated.id} - ${updated.status}`);
+    const payment = await prisma.cryptoPayment.findUnique({ where: { id: paymentId } });
+    if (!payment) {
+      throw new CustomError('Payment not found', 404);
+    }
 
-    res.json({ success: true, status: updated.status });
+    // Only payer or admin can create escrow
+    if (payerId !== req.user!.id && req.user!.role !== UserRole.ADMIN) {
+      throw new CustomError('Only payer can create escrow', 403);
+    }
+
+    const escrow = await prisma.escrow.create({
+      data: {
+        paymentId,
+        amount: parseFloat(amount),
+        status: 'PENDING',
+        payerId,
+        payeeId,
+      },
+    });
+
+    logger.info(`Escrow created: ${escrow.id} for payment ${paymentId}`);
+
+    res.status(201).json({
+      success: true,
+      data: escrow,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-function mapSafePayState(state: unknown): string {
-  const normalized = String(state || '').toLowerCase();
-  if (normalized === 'completed') return 'COMPLETED';
-  if (normalized === 'cancelled' || normalized === 'canceled') return 'CANCELLED';
-  return 'FAILED';
-}
+// Release escrow
+export const releaseEscrow = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const escrow = await prisma.escrow.findUnique({ where: { id } });
+    if (!escrow) {
+      throw new CustomError('Escrow not found', 404);
+    }
+
+    // Only payee can release (or admin)
+    if (escrow.payeeId !== req.user!.id && req.user!.role !== UserRole.ADMIN) {
+      throw new CustomError('Only payee can release escrow', 403);
+    }
+
+    if (escrow.status !== 'PENDING' && escrow.status !== 'HELD') {
+      throw new CustomError(`Cannot release from status ${escrow.status}`, 400);
+    }
+
+    await prisma.escrow.update({
+      where: { id },
+      data: {
+        status: 'RELEASED',
+        releasedAt: new Date(),
+        releasedBy: req.user!.id,
+      },
+    });
+
+    // Update associated crypto payment status
+    if (escrow.paymentId) {
+      await prisma.cryptoPayment.update({
+        where: { id: escrow.paymentId },
+        data: { status: 'COMPLETED' },
+      });
+    }
+
+    logger.info(`Escrow released: ${id} by ${req.user!.id}`);
+
+    res.json({ success: true, data: { status: 'RELEASED' } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Refund escrow
+export const refundEscrow = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const escrow = await prisma.escrow.findUnique({ where: { id } });
+    if (!escrow) {
+      throw new CustomError('Escrow not found', 404);
+    }
+
+    // Only payer can request refund (or admin)
+    if (escrow.payerId !== req.user!.id && req.user!.role !== UserRole.ADMIN) {
+      throw new CustomError('Only payer can request refund', 403);
+    }
+
+    if (escrow.status === 'RELEASED') {
+      throw new CustomError('Cannot refund an already released escrow', 400);
+    }
+
+    await prisma.escrow.update({
+      where: { id },
+      data: {
+        status: 'REFUNDED',
+        refundReason: reason,
+        releasedAt: new Date(),
+      },
+    });
+
+    // Update associated crypto payment status
+    if (escrow.paymentId) {
+      await prisma.cryptoPayment.update({
+        where: { id: escrow.paymentId },
+        data: { status: 'REFUNDED' },
+      });
+    }
+
+    logger.info(`Escrow refunded: ${id} (reason: ${reason})`);
+
+    res.json({ success: true, data: { status: 'REFUNDED' } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get escrow details
+export const getEscrowById = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const escrow = await prisma.escrow.findUnique({
+      where: { id },
+      include: {
+        payer: { select: { id: true, email: true, firstName: true, lastName: true } },
+        payee: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
+    });
+
+    if (!escrow) {
+      throw new CustomError('Escrow not found', 404);
+    }
+
+    // Only involved parties or admin can view
+    if (
+      escrow.payerId !== req.user!.id &&
+      escrow.payeeId !== req.user!.id &&
+      req.user!.role !== UserRole.ADMIN
+    ) {
+      throw new CustomError('Unauthorized', 403);
+    }
+
+    res.json({ success: true, data: escrow });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get crypto payment status
+export const getPaymentStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const payment = await prisma.cryptoPayment.findUnique({
+      where: { id },
+    });
+
+    if (!payment) {
+      throw new CustomError('Payment not found', 404);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: payment.id,
+        status: payment.status,
+        type: payment.type,
+        amount: payment.amount,
+        currency: payment.currency,
+        reference: payment.reference,
+        txSignature: payment.txSignature,
+        createdAt: payment.createdAt,
+        updatedAt: payment.updatedAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -55,6 +55,7 @@ import { AIAssistantPage } from './pages/AIAssistantPage';
 import { AITenantRiskPage } from './pages/AITenantRiskPage';
 import { AILeaseAnomalyPage } from './pages/AILeaseAnomalyPage';
 import { AIRentOptimizerPage } from './pages/AIRentOptimizerPage';
+import PaymentTestPage from './pages/PaymentTestPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import PublicPropertiesPage from './pages/PublicPropertiesPage';
 import TenantPortalPage from './pages/TenantPortalPage';
@@ -322,6 +323,7 @@ function App() {
             <Route path="lp-terminal" element={<LiquidityTerminalPage />} />
             <Route path="usdy" element={<UsdyPage />} />
             <Route path="airdrop" element={<AirdropPage />} />
+            <Route path="payment-test" element={<PaymentTestPage />} />
             <Route path="rent-roll" element={<RentRollPage />} />
             <Route path="leases" element={<LeaseGeneratorPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />

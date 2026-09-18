@@ -1,11 +1,13 @@
 // Sitara OS — Booking Flow Page
 // Escrow-backed booking with deposit
-
+// Updated to use crypto payment rails (USDC/BTCPay/Manual) instead of Stripe
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
+
+type PaymentMethod = 'usdc' | 'btcpay' | 'manual';
 
 export default function BookingFlowPage() {
   const { businessId } = useParams();
@@ -22,8 +24,9 @@ export default function BookingFlowPage() {
   const [deposit] = useState(25);
   const [confirming, setConfirming] = useState(false);
   const [liveReservationId, setLiveReservationId] = useState<string | null>(null);
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<any>(null);
   const [paymentPending, setPaymentPending] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('usdc');
 
   const handleProcessBooking = async () => {
     setConfirming(true);
@@ -46,14 +49,26 @@ export default function BookingFlowPage() {
         setLiveReservationId(reservationId || null);
         if (reservationId) {
           try {
-            const pay: any = await sitaraApi.createDepositPayment({
-              reservationId,
-              amount: deposit,
-            });
-            const url = pay?.payment?.paymentUrl || pay?.paymentUrl || null;
-            setPaymentUrl(url);
-            setPaymentPending(!!pay?.payment);
-          } catch {}
+            // Use the new payment service (USDC/BTCPay/Manual)
+            const pay: any = await fetch('/api/v1/payments/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                amount: deposit,
+                type: paymentMethod,
+                currency: paymentMethod === 'btcpay' ? 'USD' : 'USDC',
+                businessId,
+                memo: `deposit_${reservationId}`,
+              }),
+            }).then(r => r.json());
+
+            if (pay?.success) {
+              setPaymentData(pay.data);
+              setPaymentPending(true);
+            }
+          } catch (err) {
+            console.error('Payment creation failed:', err);
+          }
         }
       } catch {}
     }
@@ -77,6 +92,62 @@ export default function BookingFlowPage() {
 
   const handleConfirmClick = async () => {
      await handleProcessBooking();
+  };
+
+  const renderPaymentDetails = () => {
+    if (!paymentData) return null;
+
+    return (
+      <div className="space-y-3 mt-3">
+        {/* USDC Payment */}
+        {paymentData.request?.type === 'solana' && paymentData.request?.qrData && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm font-medium text-blue-900 mb-2">Pay with USDC (Solana)</p>
+            <div className="bg-white p-2 border rounded inline-block mb-2">
+              <QRCodeDisplay value={paymentData.request.qrData} size={120} />
+            </div>
+            <p className="text-xs text-blue-700 break-all font-mono">{paymentData.request.qrData}</p>
+            {paymentData.request?.deepLink && (
+              <a
+                href={paymentData.request.deepLink}
+                className="inline-block mt-2 text-xs text-blue-600 hover:underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open in Phantom Wallet →
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* BTCPay Invoice */}
+        {paymentData.request?.type === 'btcpay' && paymentData.request?.url && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <p className="text-sm font-medium text-orange-900 mb-2">Pay with Bitcoin/Lightning</p>
+            <a
+              href={paymentData.request.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded hover:bg-orange-600"
+            >
+              Open BTCPay Invoice →
+            </a>
+          </div>
+        )}
+
+        {/* Manual Payment */}
+        {paymentData.request?.type === 'manual' && paymentData.request?.instructions && (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <p className="text-sm font-medium text-slate-900 mb-2">Manual Payment Instructions</p>
+            <pre className="text-xs text-slate-700 whitespace-pre-wrap">{paymentData.request.instructions}</pre>
+          </div>
+        )}
+
+        <div className="text-xs text-slate-500">
+          Reference: <span className="font-mono">{paymentData.payment?.reference}</span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -142,6 +213,32 @@ export default function BookingFlowPage() {
 
       {step === 2 && (
         <div className="space-y-6">
+          {/* Payment Method Selection */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Payment Method</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: 'usdc', label: 'USDC (Solana)', icon: '◎', desc: 'Fast & cheap' },
+                { id: 'btcpay', label: 'Bitcoin', icon: '₿', desc: 'BTC/Lightning' },
+                { id: 'manual', label: 'Manual', icon: '💵', desc: 'Cash, bank, etc' },
+              ] as const).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setPaymentMethod(m.id)}
+                  className={`p-3 border rounded-lg text-center transition ${
+                    paymentMethod === m.id
+                      ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="text-xl">{m.icon}</div>
+                  <div className="text-xs font-medium mt-1">{m.label}</div>
+                  <div className="text-[10px] text-slate-500">{m.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
             <h3 className="font-semibold text-amber-900 mb-2">Escrow Protection</h3>
             <p className="text-sm text-amber-800 mb-4">
@@ -220,16 +317,7 @@ export default function BookingFlowPage() {
               Demo booking — sign in and pick a ✓ Live venue for a real reservation.
             </p>
           )}
-          {paymentUrl && paymentUrl.startsWith('http') && (
-            <a
-              href={paymentUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block px-6 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800"
-            >
-              Pay ${deposit} Deposit →
-            </a>
-          )}
+          {renderPaymentDetails()}
           <p className="text-slate-600">
             Your deposit is held in escrow. Check in at the venue to complete your visit and earn star power.
           </p>
@@ -246,4 +334,65 @@ export default function BookingFlowPage() {
       )}
     </div>
   );
+}
+
+// Simple QR Code component using inline SVG
+function QRCodeDisplay({ value, size = 120 }: { value: string; size?: number }) {
+  const gridSize = 21;
+  const cellSize = size / gridSize;
+  const pattern = generateQRPattern(value, gridSize);
+  
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <rect width={size} height={size} fill="white" />
+      {pattern.map((row, y) =>
+        row.map((cell, x) =>
+          cell ? (
+            <rect
+              key={`${x}-${y}`}
+              x={x * cellSize}
+              y={y * cellSize}
+              width={cellSize}
+              height={cellSize}
+              fill="black"
+            />
+          ) : null
+        )
+      )}
+    </svg>
+  );
+}
+
+function generateQRPattern(value: string, size: number): boolean[][] {
+  const grid: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+  
+  const addFinder = (ox: number, oy: number) => {
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 7; x++) {
+        const isBorder = y === 0 || y === 6 || x === 0 || x === 6;
+        const isCenter = x >= 2 && x <= 4 && y >= 2 && y <= 4;
+        if (ox + x < size && oy + y < size) {
+          grid[oy + y][ox + x] = isBorder || isCenter;
+        }
+      }
+    }
+  };
+  
+  addFinder(0, 0);
+  addFinder(size - 7, 0);
+  addFinder(0, size - 7);
+  
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  
+  for (let y = 7; y < size - 7; y++) {
+    for (let x = 7; x < size - 7; x++) {
+      const bit = (hash >> ((x + y * size) % 31)) & 1;
+      grid[y][x] = bit === 1;
+    }
+  }
+  
+  return grid;
 }
