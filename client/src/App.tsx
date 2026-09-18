@@ -126,6 +126,7 @@ import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
+import EconomyDashboardPage from './pages/EconomyDashboardPage';
 import BusinessAnalyticsPage from './pages/BusinessAnalyticsPage';
 import { PluginManagerPage } from './pages/PluginManagerPage';
 import ActiveJobsPage from './pages/ActiveJobsPage';
