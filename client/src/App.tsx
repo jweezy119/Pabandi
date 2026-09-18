@@ -52,6 +52,7 @@ import { AITenantRiskPage } from './pages/AITenantRiskPage';
 import { AILeaseAnomalyPage } from './pages/AILeaseAnomalyPage';
 import { AIRentOptimizerPage } from './pages/AIRentOptimizerPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
+import PublicPropertiesPage from './pages/PublicPropertiesPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
 import DisputeCenterPage from './pages/DisputeCenterPage';
@@ -184,11 +185,12 @@ function App() {
             <Route path="login" element={<AuthPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
-            <Route path="property-manager" element={<CRMPage />} />
-            <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
-            <Route path="ai/assistant" element={<AIAssistantPage />} />
-            <Route path="property/:id" element={<PropertyDetailPage />} />
-            <Route path="p/:slug" element={<TenantPortalPage />} />
+             <Route path="property-manager" element={<CRMPage />} />
+             <Route path="properties" element={<PublicPropertiesPage />} />
+             <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
+             <Route path="ai/assistant" element={<AIAssistantPage />} />
+             <Route path="property/:id" element={<PropertyDetailPage />} />
+             <Route path="p/:slug" element={<TenantPortalPage />} />
             <Route path="tenant" element={<TenantDashboardPage />} />
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="marketplace" element={<MarketplacePage />} />

@@ -288,4 +288,324 @@ router.get('/financials/summary', async (req: any, res: Response) => {
   }
 });
 
+// ── Photos ──────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/photos
+router.post('/photos', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, url, caption, sortOrder, isCover, mimeType, fileSize } = req.body || {};
+    if (!propertyId || !url) return res.status(400).json({ error: 'propertyId and url are required' });
+    const photo = await prisma.propertyPhoto.create({ data: { propertyId, unitId, url, caption, sortOrder: sortOrder || 0, isCover: isCover || false, mimeType, fileSize } });
+    res.status(201).json({ success: true, data: photo });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not upload photo' });
+  }
+});
+
+// GET /api/v1/property-manager/photos?propertyId=ID&unitId=ID
+router.get('/photos', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId } = req.query;
+    const photos = await prisma.propertyPhoto.findMany({ where: { propertyId, unitId: unitId || undefined }, orderBy: { sortOrder: 'asc' } });
+    res.json({ success: true, data: photos });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/v1/property-manager/photos/:id
+router.delete('/photos/:id', async (req: any, res: Response) => {
+  try {
+    await prisma.propertyPhoto.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not delete photo' });
+  }
+});
+
+// ── Amenities ──────────────────────────────────────────────────────────────────
+
+// GET /api/v1/amenities — global amenity list
+router.get('/amenities', async (_req: any, res: Response) => {
+  try {
+    const amenities = await prisma.amenity.findMany({ orderBy: { name: 'asc' } });
+    res.json({ success: true, data: amenities });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/property-manager/amenities
+router.post('/amenities', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, amenityId, value, notes } = req.body || {};
+    if (!propertyId || !amenityId) return res.status(400).json({ error: 'propertyId and amenityId are required' });
+    const pa = await prisma.propertyAmenity.create({ data: { propertyId, unitId, amenityId, value, notes } });
+    res.status(201).json({ success: true, data: pa });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not add amenity' });
+  }
+});
+
+// GET /api/v1/property-manager/amenities?propertyId=ID&unitId=ID
+router.get('/amenities', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId } = req.query;
+    const items = await prisma.propertyAmenity.findMany({ where: { propertyId, unitId: unitId || undefined }, include: { amenity: true } });
+    res.json({ success: true, data: items });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Rate Plans ─────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/rate-plans
+router.post('/rate-plans', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, name, description, rentAmount, rentPeriod, currency, rules, isActive, minStayNights, maxStayNights } = req.body || {};
+    if (!propertyId || !name || !rentAmount) return res.status(400).json({ error: 'propertyId, name, and rentAmount are required' });
+    const plan = await prisma.propertyRatePlan.create({ data: { propertyId, unitId, name, description, rentAmount, rentPeriod: rentPeriod || 'MONTH', currency: currency || 'USD', rules, isActive: isActive ?? true, minStayNights, maxStayNights } });
+    res.status(201).json({ success: true, data: plan });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create rate plan' });
+  }
+});
+
+// GET /api/v1/property-manager/rate-plans?propertyId=ID&unitId=ID
+router.get('/rate-plans', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId } = req.query;
+    const plans = await prisma.propertyRatePlan.findMany({ where: { propertyId, unitId: unitId || undefined, isActive: true } });
+    res.json({ success: true, data: plans });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Availability ───────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/availability
+router.post('/availability', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, date, status, rate, currency, minStay, maxStay, note } = req.body || {};
+    if (!propertyId || !date) return res.status(400).json({ error: 'propertyId and date are required' });
+    const avail = await prisma.propertyAvailability.upsert({
+      where: { propertyId_unitId_date: { propertyId, unitId: unitId || '', date: new Date(date) } },
+      update: { status: status || 'AVAILABLE', rate: rate != null ? Number(rate) : null, currency: currency || 'USD', minStay, maxStay, note, updatedAt: new Date() },
+      create: { propertyId, unitId, date: new Date(date), status: status || 'AVAILABLE', rate: rate != null ? Number(rate) : null, currency: currency || 'USD', minStay, maxStay, note },
+    });
+    res.json({ success: true, data: avail });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not update availability' });
+  }
+});
+
+// GET /api/v1/property-manager/availability?propertyId=ID&unitId=ID&start=YYYY-MM-DD&end=YYYY-MM-DD
+router.get('/availability', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, start, end } = req.query;
+    const where: any = { propertyId };
+    if (unitId) where.unitId = unitId;
+    if (start && end) {
+      where.date = { gte: new Date(start as string), lte: new Date(end as string) };
+    }
+    const items = await prisma.propertyAvailability.findMany({ where, orderBy: { date: 'asc' } });
+    res.json({ success: true, data: items });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Reviews ────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/reviews
+router.post('/reviews', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, reviewerId, reviewerName, reviewerEmail, rating, title, comment, stayStartDate, stayEndDate, source } = req.body || {};
+    if (!propertyId || !rating) return res.status(400).json({ error: 'propertyId and rating are required' });
+    const review = await prisma.propertyReview.create({ data: { propertyId, unitId, reviewerId, reviewerName, reviewerEmail, rating, title, comment, stayStartDate: stayStartDate ? new Date(stayStartDate) : null, stayEndDate: stayEndDate ? new Date(stayEndDate) : null, source: source || 'DIRECT' } });
+    res.status(201).json({ success: true, data: review });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create review' });
+  }
+});
+
+// GET /api/v1/property-manager/reviews?propertyId=ID&unitId=ID
+router.get('/reviews', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId } = req.query;
+    const reviews = await prisma.propertyReview.findMany({ where: { propertyId, unitId: unitId || undefined, isPublished: true }, orderBy: { createdAt: 'desc' } });
+    res.json({ success: true, data: reviews });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Favorites ──────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/favorites
+router.post('/favorites', async (req: any, res: Response) => {
+  try {
+    const { userId, propertyId, unitId, note } = req.body || {};
+    if (!userId || !propertyId) return res.status(400).json({ error: 'userId and propertyId are required' });
+    const fav = await prisma.propertyFavorite.create({ data: { userId, propertyId, unitId, note } });
+    res.status(201).json({ success: true, data: fav });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not add favorite' });
+  }
+});
+
+// GET /api/v1/property-manager/favorites?userId=ID
+router.get('/favorites', async (req: any, res: Response) => {
+  try {
+    const { userId } = req.query;
+    const favs = await prisma.propertyFavorite.findMany({ where: { userId: userId as string }, include: { property: true, unit: true } });
+    res.json({ success: true, data: favs });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/v1/property-manager/favorites/:id
+router.delete('/favorites/:id', async (req: any, res: Response) => {
+  try {
+    await prisma.propertyFavorite.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not remove favorite' });
+  }
+});
+
+// ── Messages ───────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/messages
+router.post('/messages', async (req: any, res: Response) => {
+  try {
+    const { propertyId, unitId, conversationId, senderId, senderEmail, senderName, recipientId, recipientEmail, subject, body, mimeType, attachments } = req.body || {};
+    if (!propertyId || !conversationId || !body) return res.status(400).json({ error: 'propertyId, conversationId, and body are required' });
+    const msg = await prisma.propertyMessage.create({ data: { propertyId, unitId, conversationId, senderId, senderEmail, senderName, recipientId, recipientEmail, subject, body, mimeType: mimeType || 'text/plain', attachments } });
+    res.status(201).json({ success: true, data: msg });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not send message' });
+  }
+});
+
+// GET /api/v1/property-manager/messages?conversationId=ID
+router.get('/messages', async (req: any, res: Response) => {
+  try {
+    const { conversationId } = req.query;
+    const msgs = await prisma.propertyMessage.findMany({ where: { conversationId: conversationId as string }, orderBy: { createdAt: 'asc' } });
+    res.json({ success: true, data: msgs });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Vendors ────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/vendors
+router.post('/vendors', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { name, email, phone, company, categories, rating, notes } = req.body || {};
+    const vendor = await prisma.vendor.create({ data: { managerId: profile.id, name, email, phone, company, categories: categories || [], rating: rating != null ? Number(rating) : null, notes } });
+    res.status(201).json({ success: true, data: vendor });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create vendor' });
+  }
+});
+
+// GET /api/v1/property-manager/vendors
+router.get('/vendors', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const vendors = await prisma.vendor.findMany({ where: { managerId: profile.id } });
+    res.json({ success: true, data: vendors });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Tasks ──────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/tasks
+router.post('/tasks', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { contactId, relatedType, relatedId, title, description, status, priority, dueDate, assigneeId } = req.body || {};
+    const task = await prisma.task.create({ data: { managerId: profile.id, contactId, relatedType, relatedId, title, description, status: status || 'OPEN', priority: priority || 'MEDIUM', dueDate: dueDate ? new Date(dueDate) : null, assigneeId } });
+    res.status(201).json({ success: true, data: task });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create task' });
+  }
+});
+
+// GET /api/v1/property-manager/tasks
+router.get('/tasks', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { status } = req.query;
+    const tasks = await prisma.task.findMany({ where: { managerId: profile.id, ...(status ? { status: status as string } : {}) } });
+    res.json({ success: true, data: tasks });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/v1/property-manager/tasks/:id
+router.patch('/tasks/:id', async (req: any, res: Response) => {
+  try {
+    const { status, completedAt } = req.body || {};
+    const task = await prisma.task.update({ where: { id: req.params.id }, data: { status, completedAt: completedAt ? new Date(completedAt) : null } });
+    res.json({ success: true, data: task });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not update task' });
+  }
+});
+
+// ── Communications ─────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/communications
+router.post('/communications', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { contactId, type, direction, subject, body, duration, metadata } = req.body || {};
+    const comm = await prisma.communication.create({ data: { managerId: profile.id, contactId, type, direction, subject, body, duration: duration != null ? Number(duration) : null, metadata } });
+    res.status(201).json({ success: true, data: comm });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not log communication' });
+  }
+});
+
+// GET /api/v1/property-manager/communications
+router.get('/communications', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { contactId, type } = req.query;
+    const comms = await prisma.communication.findMany({ where: { managerId: profile.id, ...(contactId ? { contactId: contactId as string } : {}), ...(type ? { type: type as string } : {}) }, orderBy: { createdAt: 'desc' } });
+    res.json({ success: true, data: comms });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

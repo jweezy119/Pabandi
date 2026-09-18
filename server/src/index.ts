@@ -240,6 +240,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/auth/wallet`, './routes/walletAuth.routes'],
   [`/api/${v}/property-manager`, './routes/propertyManager.routes'],
   [`/api/${v}/property`, './routes/property.routes'],
+  [`/api/${v}/public/property`, './routes/public.property.routes'],
   [`/api/${v}/documents`, './routes/document.routes'],
   [`/api/${v}/tenant`, './routes/tenant.routes'],
   [`/api/${v}/promo`, './routes/promo.routes'],
