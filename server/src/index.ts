@@ -219,6 +219,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/wallet`, './routes/wallet.routes'],
   [`/api/${v}/reliability`, './routes/reliability.routes'],
   [`/api/${v}/token-staking`, './routes/staking.routes'],
+  [`/api/${v}/mudarabah`, './routes/mudarabah.routes'],
   [`/api/${v}/airdrop`, './routes/airdrop.routes'],
   [`/api/${v}/sourcing`, './routes/sourcing.routes'],
   [`/api/${v}/waitlist`, './routes/waitlist.routes'],

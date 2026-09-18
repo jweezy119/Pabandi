@@ -105,6 +105,7 @@ model User {
   reviewUpvotes          PabandiReviewUpvote[]
   sentStarPromos         StarPromo[]
   starPromoRedemptions   StarPromoRedemption[]
+  mudarabahInvestments   MudarabahInvestment[]
 
   @@index([email])
   @@index([phone])
@@ -190,6 +191,7 @@ model Business {
   sitaraLists            SitaraGuestList[]
   loyaltyProgram         LoyaltyProgram?
   customerRelations      CustomerVendorRelation[]
+  mudarabahPools          MudarabahPool[]
 
   @@index([ownerId])
   @@index([city])
@@ -860,6 +862,63 @@ model StakingPosition {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model MudarabahPool {
+  id                String   @id @default(cuid())
+  businessId        String
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title             String
+  description       String
+  profitShareRatio  String   @default("70/30") // investor/pabandi split
+  targetAmount      Float
+  currentAmount     Float    @default(0)
+  minInvestment     Float    @default(100)
+  maxInvestment     Float?
+  expectedApy       Float    @default(8.0) // based on real revenue projections
+  revenueSource     String   // what business activity generates profit
+  riskBand          String   @default("MEDIUM") // LOW | MEDIUM | HIGH
+  status            String   @default("OPEN") // OPEN | FULLY_SUBSCRIBED | ACTIVE | CLOSED
+  distributionFreq  String   @default("MONTHLY") // MONTHLY | QUARTERLY
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  investments       MudarabahInvestment[]
+  distributions     MudarabahProfitDistribution[]
+  @@index([businessId])
+  @@index([status])
+}
+
+model MudarabahInvestment {
+  id                  String   @id @default(cuid())
+  poolId              String
+  pool                MudarabahPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  investorId          String
+  investor            User     @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  amount              Float
+  status              String   @default("ACTIVE") // ACTIVE | WITHDRAWN
+  totalProfitReceived Float    @default(0)
+  lastDistributionAt  DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  @@index([poolId])
+  @@index([investorId])
+}
+
+model MudarabahProfitDistribution {
+  id              String   @id @default(cuid())
+  poolId          String
+  pool            MudarabahPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalRevenue    Float    // actual business revenue in period
+  totalProfit     Float    // profit to distribute
+  investorShare   Float    // investor portion
+  pabandiShare    Float    // pabandi spread
+  perUnitProfit   Float    // profit per unit invested
+  status          String   @default("CALCULATED") // CALCULATED | DISTRIBUTED
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  @@index([poolId])
 }
 
 model TreasuryPosition {

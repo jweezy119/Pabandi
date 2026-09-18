@@ -300,6 +300,7 @@ export default function Layout() {
               <DropdownItem to="/background-check">Background Check</DropdownItem>
               <DropdownItem to="/protected-deposit">Protected Deposit</DropdownItem>
               <DropdownItem to="/arbitration">Arbitration</DropdownItem>
+              <DropdownItem to="/sharia-transparency">Sharia Transparency</DropdownItem>
             </Dropdown>
             <Dropdown label="Money" current={['/cashout', '/payroll', '/economy', '/web3', '/revenue', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/cashout">Cash Out</DropdownItem>

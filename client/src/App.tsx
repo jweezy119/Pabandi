@@ -126,6 +126,9 @@ import AboutPage from './pages/AboutPage';
 import DarazScannerPage from './pages/DarazScannerPage';
 import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
+import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
+import { BusinessMudarabahPage } from './pages/BusinessMudarabahPage';
+import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
 import { PassportDashboardPage } from './pages/PassportDashboardPage';
@@ -185,6 +188,9 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="about" element={<AboutPage />} />
+            <Route path="sharia-transparency" element={<ShariaTransparencyPage />} />
+            <Route path="mudarabah" element={<MudarabahPoolsPage />} />
+            <Route path="mudarabah/business" element={<BusinessMudarabahPage />} />
             <Route path="sharia-compliance" element={<ShariaCompliancePage />} />
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="login" element={<AuthPage />} />
