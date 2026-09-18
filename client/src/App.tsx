@@ -34,8 +34,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilesPage from './pages/ProfilesPage';
 import ProfileDetailPage from './pages/ProfileDetailPage';
-import EconomyDashboardPage from './pages/EconomyDashboardPage';
-import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
+import ProfilePage from './pages/ProfilePage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
@@ -204,8 +203,8 @@ function App() {
             <Route path="onramp" element={<OnRampPage />} />
             <Route path="offramp" element={<OffRampPage />} />
             <Route path="token" element={<TokenFlowPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="dashboard" element={<EnhancedDashboardPage />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="calculator" element={<CalculatorPage />} />
             <Route path="smart-search" element={<SmartSearchPage />} />
             <Route path="ai/chat" element={<AiChatPage />} />

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
 import { CRM_CONFIG, BusinessType } from '../config/crmConfig';
+import { aiRealEstateService } from '../services/api';
 
 interface DashboardWidget {
   id: string;
@@ -37,14 +38,24 @@ export const EnhancedDashboardPage: React.FC = () => {
   });
 
   useEffect(() => {
-    // Simulate loading dashboard data with business type awareness
-    setTimeout(() => {
+    // Load initial dashboard data
+    loadDashboardData();
+  }, [selectedBusinessType]);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      // Fetch real portfolio insights from AI service
+      const insightsResponse = await aiRealEstateService.insights();
+      const insights = insightsResponse.data?.data?.insights || [];
+      
+      // Generate business counts based on user role and business type
       const counts: Record<BusinessType, number> = {
-        PROPERTY_MANAGEMENT: 3,
-        SALES: 5,
-        SERVICE: 2,
-        FREELANCE: 8,
-        GENERAL: 4,
+        PROPERTY_MANAGEMENT: insights.filter(i => i.type === 'property').length,
+        SALES: insights.filter(i => i.type === 'sales').length,
+        SERVICE: insights.filter(i => i.type === 'service').length,
+        FREELANCE: insights.filter(i => i.type === 'freelance').length,
+        GENERAL: insights.filter(i => i.type === 'general').length,
       };
       setBusinessCounts(counts);
 
@@ -82,9 +93,39 @@ export const EnhancedDashboardPage: React.FC = () => {
         { id: '6', type: 'maintenance', message: 'Apartment maintenance request "Leaking faucet" assigned', time: '5 hours ago', icon: '🔧' },
       ]);
 
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      // Fallback to mock data if AI service fails
+      setBusinessCounts({
+        PROPERTY_MANAGEMENT: 3,
+        SALES: 5,
+        SERVICE: 2,
+        FREELANCE: 8,
+        GENERAL: 4,
+      });
+      
+      const mockWidgets: DashboardWidget[] = [
+        { id: '1', title: 'Properties', value: 3, change: '+1 this month', icon: '🏠', color: '#6366f1', link: '/property-manager' },
+        { id: '2', title: 'Active Listings', value: 5, change: '+2 this week', icon: '📋', color: '#10b981', link: '/marketplace' },
+        { id: '3', title: 'PAB Balance', value: '2,500', change: '+125 today', icon: '💰', color: '#f59e0b', link: '/token' },
+        { id: '4', title: 'Trust Score', value: '73.8', change: '+2.1 this month', icon: '🛡️', color: '#ec4899', link: '/passport' },
+        { id: '5', title: 'Open Escrows', value: 3, change: '$750 total', icon: '🔒', color: '#8b5cf6', link: '/escrow' },
+        { id: '6', title: 'Pending Apps', value: 8, change: '2 need review', icon: '📝', color: '#ef4444', link: '/applications' },
+      ];
+      setWidgets(mockWidgets);
+
+      setActivities([
+        { id: '1', type: 'listing', message: 'New rental property "Downtown 2BR" added to listings', time: '2 min ago', icon: '🏠' },
+        { id: '2', type: 'sale', message: 'iPhone 14 Pro sold - $899', time: '15 min ago', icon: '📱' },
+        { id: '3', type: 'escrow', message: 'Property lease escrow #esc-123 funded — $1,500 locked', time: '1 hour ago', icon: '🔒' },
+        { id: '4', type: 'pab', message: 'Earned +15 PAB for completing rental agreement', time: '2 hours ago', icon: '💰' },
+        { id: '5', type: 'screening', message: 'Tenant background check completed for Sarah M. — LOW risk', time: '3 hours ago', icon: '🔍' },
+        { id: '6', type: 'maintenance', message: 'Apartment maintenance request "Leaking faucet" assigned', time: '5 hours ago', icon: '🔧' },
+      ]);
+    } finally {
       setLoading(false);
-    }, 500);
-  }, [selectedBusinessType]);
+    }
+  };
 
   const quickActions = [
     { icon: '🏠', label: 'Add Property', link: '/property-manager' },
