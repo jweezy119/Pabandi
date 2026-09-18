@@ -4,8 +4,24 @@ import { logger } from '../utils/logger';
 import { UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { fail } from '../utils/apiResponse';
+import { setupAdmin } from '../controllers/admin.controller';
 
 const router = Router();
+
+/**
+ * POST /api/v1/seed/admin
+ * PUBLIC bootstrap: create first admin user if and only if zero users exist.
+ * Same logic as POST /api/v1/admin/setup — provides two ways to bootstrap.
+ */
+router.post('/admin', (req: Request, res: Response) => {
+  // Delegate to the same controller function used by admin setup endpoint
+  setupAdmin(req as any, res as any, (err: any) => {
+    if (err) {
+      logger.error('[Seed] admin bootstrap failed', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+});
 
 /** Production guard: block dangerous seed endpoints in production */
 function isProduction(req: Request): boolean {

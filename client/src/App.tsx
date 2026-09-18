@@ -37,6 +37,8 @@ import ProfileDetailPage from './pages/ProfileDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import { ReferAndEarnPage } from './pages/ReferAndEarnPage';
 import { VerifierSandboxPage } from './pages/VerifierSandboxPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminSetupPage } from './pages/AdminSetupPage';
 import DietaryPassportPage from './pages/DietaryPassportPage';
 import DeveloperPortalPage from './pages/DeveloperPortalPage';
 import { TrustPulsePage } from './pages/TrustPulsePage';
@@ -343,6 +345,8 @@ function App() {
             <Route path="r/:code" element={<ReferralLandingPage />} />
             <Route path="city/:slug" element={<CityLandingPage />} />
             <Route path="sitara/*" element={<SitaraApp />} />
+            <Route path="admin" element={isAuthenticated && user?.role === 'ADMIN' ? <AdminDashboardPage /> : <Navigate to="/admin/setup" />} />
+            <Route path="admin/setup" element={<AdminSetupPage />} />
           </Route>
         </Routes>
       </LanguageProvider>

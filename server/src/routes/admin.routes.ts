@@ -11,12 +11,24 @@ import {
   getProfileRequests,
   approveProfileRequest,
   rejectProfileRequest,
+  setupAdmin,
+  getAllProperties,
+  getAllTenants,
+  getAllLeases,
+  deleteUser,
+  softDeleteBusiness,
+  updateBusiness,
+  getAllBookings,
 } from '../controllers/admin.controller';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { Response, NextFunction } from 'express';
 import { listAdminPlugins, getAdminPlugin, updateAdminPlugin } from '../services/openwa_admin.service';
 
 const router = Router();
+
+// ── PUBLIC bootstrap endpoint (no auth required) ──────────────────
+// Must be defined BEFORE auth middleware
+router.post('/setup', setupAdmin);
 
 // All admin routes require auth + ADMIN role
 router.use(authenticate);
@@ -31,13 +43,22 @@ router.get('/stats', getAdminStats);
 router.get('/users', getAllUsers);
 router.get('/users/:id', getUserDetail);
 router.patch('/users/:id/role', updateUserRole);
+router.delete('/users/:id', deleteUser);
 router.get('/reservations', getAllReservations);
 router.get('/businesses', getAllBusinesses);
 router.patch('/businesses/:id/verify', verifyBusiness);
+router.delete('/businesses/:id', softDeleteBusiness);
+router.patch('/businesses/:id', updateBusiness);
+router.get('/bookings', getAllBookings);
 
 router.get('/profile-requests', getProfileRequests);
 router.put('/profile-requests/:id/approve', approveProfileRequest);
 router.put('/profile-requests/:id/reject', rejectProfileRequest);
+
+// Property management
+router.get('/properties', getAllProperties);
+router.get('/tenants', getAllTenants);
+router.get('/leases', getAllLeases);
 
 router.get('/openwa/plugins', (_req: AuthRequest, res: Response, next: NextFunction) => {
   try {
