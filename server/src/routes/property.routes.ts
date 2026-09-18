@@ -2,9 +2,36 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate } from '../middleware/auth.middleware';
 import { rentAutomationService } from '../services/rentAutomation.service';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 const router = Router();
+
+// Configure multer for property photo uploads
+const storage = multer.diskStorage({
+  destination: (req, _file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/properties');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${path.extname(file.originalname)}`;
+    cb(null, unique);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Unsupported file type'));
+  },
+});
 
 // All routes require auth.
 router.use(authenticate);
@@ -290,6 +317,45 @@ router.get('/financials/summary', async (req: any, res: Response) => {
 });
 
 // ── Photos ──────────────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/photos/upload — multipart file upload
+router.post('/photos/upload', upload.single('photo'), async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const file = req.file as any;
+    if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const { propertyId, unitId, caption, sortOrder, isCover } = req.body || {};
+    if (!propertyId) return res.status(400).json({ error: 'propertyId is required' });
+
+    // Validate property belongs to this manager.
+    const property = await prisma.propertyManagerProperty.findFirst({ where: { id: propertyId, managerId: profile.id } });
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    const url = `/uploads/properties/${file.filename}`;
+    const photo = await prisma.propertyPhoto.create({
+      data: {
+        propertyId,
+        unitId: unitId || undefined,
+        url,
+        caption: caption || file.originalname,
+        sortOrder: sortOrder ? Number(sortOrder) : 0,
+        isCover: isCover === 'true',
+        mimeType: file.mimetype,
+        fileSize: file.size,
+      },
+    });
+
+    res.status(201).json({ success: true, data: photo });
+  } catch (e: any) {
+    console.error('[photos] upload failed:', e.message);
+    res.status(500).json({ error: 'Could not upload photo' });
+  }
+});
 
 // POST /api/v1/property-manager/photos
 router.post('/photos', async (req: any, res: Response) => {
@@ -606,6 +672,238 @@ router.get('/communications', async (req: any, res: Response) => {
     res.json({ success: true, data: comms });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/property-manager/rent/:id/pay — create PayLio checkout for rent payment
+router.post('/rent/:id/pay', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const payment = await prisma.rentPayment.findFirst({
+      where: { id: req.params.id, property: { managerId: profile.id } },
+      include: { property: { include: { manager: { include: { user: { select: { email: true } } } } } } },
+    });
+
+    if (!payment) return res.status(404).json({ error: 'Rent payment not found' });
+    if (payment.status === 'PAID') return res.status(400).json({ error: 'Rent already paid' });
+
+    const { paylioService } = await import('../services/paylio.service');
+    const API_BASE = (process.env.API_URL || process.env.FRONTEND_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+    const callback = `${API_BASE}/property/rent/${payment.id}/paylio/callback`;
+
+    const walletAddress = payment.property.manager.user?.email || profile.id;
+    const checkout = await paylioService.createCheckout({
+      address: walletAddress,
+      amount: payment.amount,
+      currency: 'USD',
+      callback,
+      email: payment.tenantEmail,
+      note: `Rent payment for ${payment.property.title || 'property'} - ${payment.tenantEmail}`,
+    });
+
+    // Store PayLio reference in rent payment notes
+    await prisma.rentPayment.update({
+      where: { id: payment.id },
+      data: { notes: `${payment.notes || ''}\nPayLio checkout: ${checkout.url} (${checkout.id})` },
+    });
+
+    res.json({ success: true, data: { url: checkout.url, gateway: 'paylio', paymentId: payment.id, amount: payment.amount } });
+  } catch (e: any) {
+    console.error('[rent] paylio checkout failed:', e.message);
+    res.status(500).json({ error: 'Could not initiate rent payment' });
+  }
+});
+
+// GET /api/v1/property/rent/:id/paylio/callback — PayLio callback for rent payments
+router.get('/rent/:id/paylio/callback', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const status = String(req.query.status || '').toLowerCase();
+
+    const payment = await prisma.rentPayment.findUnique({
+      where: { id },
+      include: { property: { include: { manager: { include: { user: { select: { email: true } } } } } } },
+    });
+
+    if (!payment) return res.status(404).send('Payment not found');
+
+    if (status === 'paid') {
+      await prisma.rentPayment.update({
+        where: { id: payment.id },
+        data: { status: 'PAID', paidAt: new Date(), method: 'ONLINE', notes: `${payment.notes || ''}\nPaid via PayLio` },
+      });
+
+      // Log financial record
+      await prisma.propertyFinancial.create({
+        data: {
+          propertyId: payment.propertyId,
+          unitId: payment.unitId || undefined,
+          type: 'INCOME',
+          category: 'RENT',
+          amount: payment.amount,
+          description: `Rent payment from ${payment.tenantEmail} via PayLio`,
+          tenantEmail: payment.tenantEmail,
+        },
+      });
+
+      // Send receipt
+      try {
+        const { notificationService } = await import('../services/notification.service');
+        await notificationService.sendEmail({
+          to: payment.tenantEmail,
+          subject: `Rent Payment Receipt - ${payment.property.title || 'Property'}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <h2 style="color: #2563eb;">Payment Receipt</h2>
+              <p>Thank you for your rent payment of <strong>$${payment.amount.toFixed(2)}</strong>.</p>
+              <p>Payment method: PayLio (USDC)</p>
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+              <p style="font-size: 12px; color: #777;">Property: ${payment.property.title || 'N/A'}</p>
+            </div>
+          `,
+        });
+      } catch (e: any) {
+        console.warn('[rent] receipt failed:', e.message);
+      }
+    }
+
+    const FRONTEND = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://pabandi.com';
+    const successUrl = `${FRONTEND}/tenant/rent/${payment.id}?status=paid`;
+    const cancelUrl = `${FRONTEND}/tenant/rent/${payment.id}?status=cancelled`;
+
+    if (status === 'paid') return res.redirect(successUrl);
+    return res.redirect(cancelUrl);
+  } catch (e: any) {
+    console.error('[rent] paylio callback error:', e);
+    res.status(500).send('Callback processing failed');
+  }
+});
+
+// ── E-Signature ───────────────────────────────────────────────────────────────
+
+// POST /api/v1/property-manager/leases/:id/sign — create signing request
+router.post('/leases/:id/sign', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const lease = await prisma.propertyLease.findFirst({ where: { id: req.params.id, managerId: profile.id } });
+    if (!lease) return res.status(404).json({ error: 'Lease not found' });
+
+    const { signerEmail, signerName, provider = 'CUSTOM' } = req.body || {};
+    if (!signerEmail) return res.status(400).json({ error: 'signerEmail is required' });
+
+    const callbackToken = crypto.randomBytes(32).toString('hex');
+    const API_BASE = (process.env.API_URL || process.env.FRONTEND_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
+    const signingUrl = `${API_BASE}/property/sign/${callbackToken}`;
+
+    const signingRequest = await prisma.signingRequest.create({
+      data: {
+        managerId: profile.id,
+        leaseId: lease.id,
+        documentType: 'LEASE',
+        signerEmail,
+        signerName,
+        provider,
+        signingUrl,
+        callbackToken,
+        status: 'SENT',
+        metadata: { leaseId: lease.id, tenantEmail: lease.tenantEmail },
+      },
+    });
+
+    res.status(201).json({ success: true, data: signingRequest });
+  } catch (e: any) {
+    console.error('[sign] create failed:', e.message);
+    res.status(500).json({ error: 'Could not create signing request' });
+  }
+});
+
+// GET /api/v1/property/sign/:token — signing page
+router.get('/sign/:token', async (req: Request, res: Response) => {
+  try {
+    const signingRequest = await prisma.signingRequest.findUnique({
+      where: { callbackToken: req.params.token },
+      include: { lease: true },
+    });
+
+    if (!signingRequest) return res.status(404).send('Signing link not found');
+    if (signingRequest.status === 'SIGNED') return res.status(400).send('Document already signed');
+    if (signingRequest.status === 'EXPIRED') return res.status(400).send('Signing link expired');
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Sign Document</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #f5f5f5; }
+          .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+          h1 { color: #333; margin-bottom: 20px; }
+          .status { background: #e3f2fd; color: #1976d2; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
+          button { background: #4caf50; color: white; border: none; padding: 14px 28px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+          button:hover { background: #43a047; }
+          .notice { margin-top: 20px; padding: 12px; background: #fff3cd; color: #856404; border-radius: 8px; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Sign Your Lease</h1>
+          <div class="status">Status: ${signingRequest.status}</div>
+          <p><strong>Property:</strong> ${signingRequest.lease?.propertyId || 'N/A'}</p>
+          <p><strong>Tenant:</strong> ${signingRequest.lease?.tenantEmail || 'N/A'}</p>
+          <p><strong>Lease Period:</strong> ${signingRequest.lease ? new Date(signingRequest.lease.startDate).toLocaleDateString() + ' → ' + new Date(signingRequest.lease.endDate).toLocaleDateString() : 'N/A'}</p>
+          <p><strong>Rent:</strong> $${signingRequest.lease?.rentAmount?.toFixed(2) || 'N/A'}/${signingRequest.lease?.rentPeriod?.toLowerCase() || 'mo'}</p>
+          <form method="POST" action="/api/v1/property/sign/${signingRequest.callbackToken}/confirm">
+            <button type="submit">✓ I Agree - Sign Document</button>
+          </form>
+          <div class="notice">
+            <strong>Note:</strong> This is a demo signing flow. In production, this would integrate with DocuSign, HelloSign, or PandaDoc for legally binding e-signatures.
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (e: any) {
+    res.status(500).send('Error loading signing page');
+  }
+});
+
+// POST /api/v1/property/sign/:token/confirm — confirm signature
+router.post('/sign/:token/confirm', async (req: Request, res: Response) => {
+  try {
+    const signingRequest = await prisma.signingRequest.findUnique({
+      where: { callbackToken: req.params.token },
+      include: { lease: true },
+    });
+
+    if (!signingRequest) return res.status(404).json({ error: 'Signing link not found' });
+    if (signingRequest.status === 'SIGNED') return res.status(400).json({ error: 'Already signed' });
+
+    const updated = await prisma.signingRequest.update({
+      where: { id: signingRequest.id },
+      data: { status: 'SIGNED', signedAt: new Date() },
+    });
+
+    // Update lease status to ACTIVE if it was in DRAFT
+    if (signingRequest.leaseId && signingRequest.lease?.status === 'DRAFT') {
+      await prisma.propertyLease.update({
+        where: { id: signingRequest.leaseId },
+        data: { status: 'ACTIVE' },
+      });
+    }
+
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/tenant/lease?status=signed`);
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not confirm signature' });
   }
 });
 

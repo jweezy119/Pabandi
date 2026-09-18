@@ -46,6 +46,7 @@ import { ReferralLandingPage } from './pages/ReferralLandingPage';
 import MarketplacePartnerPage from './pages/MarketplacePartnerPage';
 import SalePage from './pages/SalePage';
 import CRMPage from './pages/CRMPage';
+import SalesCRMPage from './pages/SalesCRMPage';
 import { TenantWorkflowPage } from './pages/TenantWorkflowPage';
 import { AIAssistantPage } from './pages/AIAssistantPage';
 import { AITenantRiskPage } from './pages/AITenantRiskPage';
@@ -185,8 +186,9 @@ function App() {
             <Route path="login" element={<AuthPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
-             <Route path="property-manager" element={<CRMPage />} />
-             <Route path="properties" element={<PublicPropertiesPage />} />
+            <Route path="property-manager" element={<CRMPage />} />
+            <Route path="sales-crm" element={<SalesCRMPage />} />
+            <Route path="properties" element={<PublicPropertiesPage />} />
              <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
              <Route path="ai/assistant" element={<AIAssistantPage />} />
              <Route path="property/:id" element={<PropertyDetailPage />} />

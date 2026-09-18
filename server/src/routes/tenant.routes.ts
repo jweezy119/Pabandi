@@ -113,13 +113,26 @@ router.get('/dashboard', authenticate, async (req: any, res: Response) => {
     const userEmail = req.user?.email;
     if (!userEmail) return res.status(401).json({ error: 'Unauthorized' });
 
-    const [applications, leases, documents] = await Promise.all([
+    const [applications, leases, documents, rentPayments] = await Promise.all([
       prisma.tenantApplication.findMany({ where: { email: userEmail }, orderBy: { createdAt: 'desc' } }),
       prisma.propertyLease.findMany({ where: { tenantEmail: userEmail }, orderBy: { createdAt: 'desc' } }),
       prisma.tenantDocument.findMany({ where: { tenantEmail: userEmail }, orderBy: { createdAt: 'desc' } }),
+      prisma.rentPayment.findMany({ where: { tenantEmail: userEmail }, orderBy: { dueDate: 'desc' } }),
     ]);
 
-    res.json({ success: true, data: { applications, leases, documents } });
+    res.json({ success: true, data: { applications, leases, documents, rentPayments } });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/tenant/rent-payments — list tenant's rent payments.
+router.get('/rent-payments', authenticate, async (req: any, res: Response) => {
+  try {
+    const userEmail = req.user?.email;
+    if (!userEmail) return res.status(401).json({ error: 'Unauthorized' });
+    const rentPayments = await prisma.rentPayment.findMany({ where: { tenantEmail: userEmail }, orderBy: { dueDate: 'desc' } });
+    res.json({ success: true, data: rentPayments });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
   }

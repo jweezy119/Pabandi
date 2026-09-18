@@ -241,3 +241,7 @@ ALTER TABLE "PropertyMaintenance" ADD CONSTRAINT "PropertyMaintenance_unitId_fke
 
 ALTER TABLE "TenantDocument" ADD COLUMN IF NOT EXISTS "maintenanceId" TEXT;
 ALTER TABLE "TenantDocument" ADD CONSTRAINT "TenantDocument_maintenanceId_fkey" FOREIGN KEY ("maintenanceId") REFERENCES "PropertyMaintenance"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- 13. Add geo coordinates to PropertyManagerProperty
+ALTER TABLE "PropertyManagerProperty" ADD COLUMN IF NOT EXISTS "latitude" DOUBLE PRECISION;
+ALTER TABLE "PropertyManagerProperty" ADD COLUMN IF NOT EXISTS "longitude" DOUBLE PRECISION;

@@ -241,6 +241,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/property-manager`, './routes/propertyManager.routes'],
   [`/api/${v}/property`, './routes/property.routes'],
   [`/api/${v}/public/property`, './routes/public.property.routes'],
+  [`/api/${v}/crm`, './routes/crm.routes'],
   [`/api/${v}/documents`, './routes/document.routes'],
   [`/api/${v}/tenant`, './routes/tenant.routes'],
   [`/api/${v}/promo`, './routes/promo.routes'],
@@ -328,6 +329,7 @@ logger.info(`✅ ${routeMap.length} lazy API routes registered`);
 // Expose public SDK for trust seals
 import path from 'path';
 app.use('/sdk', express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

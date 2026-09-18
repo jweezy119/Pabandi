@@ -572,6 +572,8 @@ export const tenantService = {
   applications: () => apiClient.get('/tenant/applications'),
   application: (id: string) => apiClient.get(`/tenant/applications/${id}`),
   documents: () => apiClient.get('/tenant/documents'),
+  rentPayments: () => apiClient.get('/tenant/rent-payments'),
+  payRent: (paymentId: string) => apiClient.post(`/property/rent/${paymentId}/pay`),
   get: (id: string) => apiClient.get(`/property-manager/tenants/${id}`),
 };
 

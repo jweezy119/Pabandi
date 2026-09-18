@@ -96,7 +96,37 @@ export default function TenantDashboardPage() {
         {tab === 'rent' && (
           <Surface className="p-6">
             <h3 className="text-lg font-bold text-slate-100 mb-4">💳 Rent Payments</h3>
-            <p className="text-sm" style={{ color: tokens.color.textDim }}>Rent payment tracking coming soon. Your landlord will send payment links here.</p>
+            {!data?.rentPayments?.length ? (
+              <p className="text-sm" style={{ color: tokens.color.textDim }}>No rent payments yet. Your landlord will send payment links here.</p>
+            ) : (
+              <div className="space-y-3">
+                {data.rentPayments.map((p: any) => (
+                  <div key={p.id} className="p-4 rounded-xl bg-white/5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-slate-100">${p.amount?.toFixed(2)}</div>
+                      <div className="text-xs" style={{ color: tokens.color.textDim }}>Due {new Date(p.dueDate).toLocaleDateString()} · {p.status}</div>
+                      {p.notes && <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{p.notes}</div>}
+                    </div>
+                    <div className="flex gap-2">
+                      {p.status !== 'PAID' && (
+                        <button onClick={async () => {
+                          try {
+                            const res = await tenantService.payRent(p.id);
+                            const url = res.data?.data?.url;
+                            if (url) window.location.href = url;
+                          } catch (e) {
+                            alert('Could not start payment');
+                          }
+                        }} className="px-4 py-2 rounded-lg bg-indigo-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                          Pay Now
+                        </button>
+                      )}
+                      {p.status === 'PAID' && <span className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-200 text-sm font-semibold">Paid</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Surface>
         )}
 

@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 type Property = {
   id: string;
@@ -8,6 +18,8 @@ type Property = {
   address?: string;
   city?: string;
   state?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   bedrooms: number;
   bathrooms: number;
   rentAmount?: number;
@@ -27,6 +39,7 @@ export const PublicPropertiesPage: React.FC = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [bedrooms, setBedrooms] = useState('');
+  const [view, setView] = useState<'list' | 'map'>('list');
 
   useEffect(() => {
     fetchProperties();
@@ -92,6 +105,12 @@ export const PublicPropertiesPage: React.FC = () => {
         </form>
       </div>
 
+      {/* View Toggle */}
+      <div style={{ maxWidth: 1200, margin: '20px auto 0', padding: '0 20px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <button onClick={() => setView('list')} style={{ padding: '8px 16px', borderRadius: 8, background: view === 'list' ? '#6366f1' : '#1e293b', color: '#fff', border: '1px solid #334155', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>List</button>
+        <button onClick={() => setView('map')} style={{ padding: '8px 16px', borderRadius: 8, background: view === 'map' ? '#6366f1' : '#1e293b', color: '#fff', border: '1px solid #334155', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>Map</button>
+      </div>
+
       {/* Results */}
       <div style={{ maxWidth: 1200, margin: '40px auto', padding: '0 20px' }}>
         {loading ? (
@@ -130,6 +149,33 @@ export const PublicPropertiesPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Map View */}
+      {view === 'map' && properties.length > 0 && (
+        <div style={{ maxWidth: 1200, margin: '20px auto', padding: '0 20px' }}>
+          <div style={{ height: 600, borderRadius: 16, overflow: 'hidden', border: '1px solid #334155' }}>
+            <MapContainer center={[40.7128, -74.006]} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; OpenStreetMap contributors &copy; CARTO" />
+              {properties.filter(p => p.latitude && p.longitude).map((p) => (
+                <Marker key={p.id} position={[p.latitude!, p.longitude!]}>
+                  <Popup>
+                    <div style={{ minWidth: 200 }}>
+                      <Link to={`/property/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{p.title}</div>
+                        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{p.address}{p.city ? `, ${p.city}` : ''}{p.state ? ` ${p.state}` : ''}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#6366f1' }}>${p.rentAmount?.toLocaleString()}/{p.rentPeriod.toLowerCase()}</div>
+                      </Link>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+          {properties.filter(p => p.latitude && p.longitude).length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>No properties with map coordinates available. Properties need latitude/longitude set to appear on the map.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

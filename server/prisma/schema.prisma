@@ -1509,6 +1509,13 @@ model PropertyManagerProfile {
   activities PropertyActivity[]
   applications     TenantApplication[]
   documents        TenantDocument[]
+  signingRequests SigningRequest[]
+  contacts   Contact[]
+  deals      Deal[]
+  campaigns  Campaign[]
+  tasks      Task[]
+  communications Communication[]
+  campaignRecipients CampaignRecipient[]
 
   @@index([userId])
 }
@@ -1529,6 +1536,8 @@ model PropertyManagerProperty {
   rentAmount  Float?
   rentPeriod  String   @default("MONTH") // MONTH | WEEK | NIGHT
   status      String   @default("VACANT") // VACANT | OCCUPIED | MAINTENANCE
+  latitude    Float?
+  longitude   Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -1750,10 +1759,38 @@ model PropertyLease {
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
+  signingRequests SigningRequest[]
 
   @@index([managerId])
   @@index([tenantEmail])
   @@index([status])
+}
+
+// E-signature requests for leases and other documents.
+model SigningRequest {
+  id          String   @id @default(cuid())
+  managerId   String
+  leaseId     String?
+  documentType String  @default("LEASE") // LEASE | RENTAL_AGREEMENT | OTHER
+  signerEmail String
+  signerName  String?
+  status      String   @default("PENDING") // PENDING | SENT | SIGNED | DECLINED | EXPIRED
+  provider    String?  // DOCUSIGN | HELLOSIGN | PANDADOC | CUSTOM
+  providerId  String?  // external document ID from provider
+  signingUrl  String?
+  signedAt    DateTime?
+  callbackToken String? @unique
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  lease   PropertyLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([leaseId])
+  @@index([status])
+  @@index([signerEmail])
 }
 
 // Maintenance request for a property.
@@ -2128,7 +2165,8 @@ model Task {
   id          String   @id @default(cuid())
   managerId   String
   contactId   String?
-  relatedType String?  // TENANT | PROPERTY | LEASE | MAINTENANCE | GENERAL
+  dealId      String?
+  relatedType String?  // TENANT | PROPERTY | LEASE | MAINTENANCE | DEAL | CONTACT | GENERAL
   relatedId   String?
   title       String
   description String?
@@ -2140,7 +2178,13 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
   @@index([managerId])
+  @@index([contactId])
+  @@index([dealId])
   @@index([status])
   @@index([dueDate])
 }
@@ -2150,6 +2194,7 @@ model Communication {
   id          String   @id @default(cuid())
   managerId   String
   contactId   String?
+  dealId      String?
   type        String   // CALL | EMAIL | SMS | MEETING | NOTE
   direction   String?  // INBOUND | OUTBOUND
   subject     String?
@@ -2158,11 +2203,134 @@ model Communication {
   metadata    Json?
   createdAt   DateTime @default(now())
 
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
   @@index([managerId])
   @@index([contactId])
+  @@index([dealId])
   @@index([type])
   @@index([createdAt])
 }
+
+// ── Generic Sales CRM ──────────────────────────────────────────────────────────
+// Contacts: leads, customers, prospects across any business type.
+model Contact {
+  id          String   @id @default(cuid())
+  managerId   String
+  firstName   String?
+  lastName    String?
+  email       String?
+  phone       String?
+  company     String?
+  title       String?
+  source      String?  // WEBSITE | REFERRAL | COLD_OUTREACH | SOCIAL | OTHER
+  status      String   @default("LEAD") // LEAD | PROSPECT | CUSTOMER | CHURNED
+  tags        String[] @default([])
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  activities  Communication[]
+  tasks       Task[]
+  deals       Deal[]
+  campaignRecipients CampaignRecipient[]
+
+  @@index([managerId])
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Sales pipeline deals.
+model Deal {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String?
+  title       String
+  description String?
+  value       Float    @default(0)
+  currency    String   @default("USD")
+  stage       String   @default("LEAD") // LEAD | QUALIFIED | PROPOSAL | NEGOTIATION | WON | LOST
+  probability Int      @default(0) // 0..100
+  expectedCloseDate DateTime?
+  closedAt    DateTime?
+  lostReason  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  tasks    Task[]
+  communications Communication[]
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([stage])
+  @@index([expectedCloseDate])
+}
+
+// Campaigns: bulk email/SMS outreach.
+model Campaign {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  description String?
+  type        String   @default("EMAIL") // EMAIL | SMS | MIXED
+  status      String   @default("DRAFT") // DRAFT | SCHEDULED | SENDING | COMPLETED | FAILED
+  template    String?
+  subject     String?
+  body        String?
+  recipientFilter Json?
+  sentCount   Int      @default(0)
+  openCount   Int      @default(0)
+  clickCount  Int      @default(0)
+  replyCount  Int      @default(0)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  recipients  CampaignRecipient[]
+
+  @@index([managerId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// Campaign recipients tracking.
+model CampaignRecipient {
+  id          String   @id @default(cuid())
+  managerId   String
+  campaignId  String
+  contactId   String?
+  email       String?
+  phone       String?
+  status      String   @default("PENDING") // PENDING | SENT | DELIVERED | OPENED | CLICKED | REPLIED | BOUNCED | FAILED
+  sentAt      DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  repliedAt   DateTime?
+  error       String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  campaign Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status])
+}
+
+// ── END Generic Sales CRM ──────────────────────────────────────────────────────
 
 // ── END Property Suite Additions ──────────────────────────────────────────────
 
