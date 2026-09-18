@@ -117,6 +117,7 @@ import VenueSearchPage from './pages/VenueSearchPage';
 import VenueDetailPage from './pages/VenueDetailPage';
 import BookingCheckoutPage from './pages/BookingCheckoutPage';
 import MyBookingsPage from './pages/MyBookingsPage';
+import RaastConfirmPage from './pages/RaastConfirmPage';
 import PromoterDashboardPage from './pages/PromoterDashboardPage';
 import GuestListPage from './pages/GuestListPage';
 import PpdWizardPage from './pages/PpdWizardPage';
@@ -265,6 +266,7 @@ function App() {
               <Route path="venue/:id" element={<VenueDetailPage />} />
               <Route path="checkout/:venueId" element={<BookingCheckoutPage />} />
               <Route path="my-bookings" element={<MyBookingsPage />} />
+              <Route path="raast-confirm" element={<RaastConfirmPage />} />
               <Route path="promoter" element={<PromoterDashboardPage />} />
               <Route path="guest-list" element={<GuestListPage />} />
             </Route>
