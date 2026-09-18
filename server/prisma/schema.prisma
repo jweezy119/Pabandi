@@ -114,6 +114,8 @@ model User {
   escrowsAsPayer          Escrow[]                @relation("escrowsAsPayer")
   escrowsAsPayee          Escrow[]                @relation("escrowsAsPayee")
   userPayments            Payment[]               @relation("userPayments")
+  escrowBuyer SolanaEscrow[] @relation("escrowBuyer")
+  escrowSeller SolanaEscrow[] @relation("escrowSeller")
   @@index([email])
   @@index([phone])
 }
@@ -201,6 +203,7 @@ model Business {
   mudarabahPools          MudarabahPool[]
   payments                Payment[]               @relation("businessPayments")
   fiatPayments            FiatPayment[]
+  solanaEscrows            SolanaEscrow[]
 
   @@index([ownerId])
   @@index([city])
@@ -5011,6 +5014,30 @@ model FiatPayment {
   escrow        Escrow?  @relation(fields: [escrowId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  @@index([reference])
+  @@index([status])
+}
+
+model SolanaEscrow {
+  id              String   @id @default(cuid())
+  escrowPda       String   @unique // Solana PDA address
+  reference       String   @unique // booking/order ID
+  buyerId         String
+  buyer           User     @relation("escrowBuyer", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          User     @relation("escrowSeller", fields: [sellerId], references: [id])
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id])
+  mint            String   // USDC mint address
+  amount          Float
+  status          String   @default("CREATED") // CREATED, FUNDED, RELEASED, REFUNDED, DISPUTED
+  txCreate        String?  // Solana tx signature
+  txFund          String?
+  txRelease       String?
+  txRefund        String?
+  bump            Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   @@index([reference])
   @@index([status])
 }

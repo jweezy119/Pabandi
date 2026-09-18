@@ -96,6 +96,7 @@ import HospitalityPage from './pages/HospitalityPage';
 import RealEstateScreeningPage from './pages/RealEstateScreeningPage';
 import AirdropPage from './pages/AirdropPage';
 import UsdyPage from './pages/UsdyPage';
+import SolanaEscrowPage from './pages/SolanaEscrowPage';
 import CityLandingPage from './pages/CityLandingPage';
 import LiveSellCustomerPage from './pages/LiveSellCustomerPage';
 import LiveSellingPage from './pages/LiveSellingPage';
@@ -323,6 +324,8 @@ function App() {
             <Route path="web3" element={<Web3Page />} />
             <Route path="lp-terminal" element={<LiquidityTerminalPage />} />
             <Route path="usdy" element={<UsdyPage />} />
+            <Route path="solana-escrow" element={<SolanaEscrowPage />} />
+            <Route path="solana-escrow/:id" element={<SolanaEscrowPage />} />
             <Route path="airdrop" element={<AirdropPage />} />
             <Route path="payment-test" element={<PaymentTestPage />} />
             <Route path="fiat/:reference" element={<FiatPaymentPage />} />

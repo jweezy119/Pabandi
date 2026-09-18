@@ -304,6 +304,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/sitara`, './routes/sitaraStarPower.routes'],
   [`/api/${v}/square`, './routes/square.routes'],
   [`/api/${v}/sitara-api`, './routes/sitaraApi.routes'],
+  [`/api/${v}/solana-escrow`, './routes/solanaEscrow.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {
