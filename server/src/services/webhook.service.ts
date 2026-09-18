@@ -145,6 +145,31 @@ class WebhookService {
       logger.error(`Error initiating OAuth webhook dispatch: ${error.message}`);
     }
   }
+
+  // ── Webhook Endpoint Management (Team/Integration Webhooks) ────────────────
+
+  async create(managerId: string, url: string, events: string[], secret?: string) {
+    return prisma.webhook.create({
+      data: { managerId, url, events, secret },
+    });
+  }
+
+  async list(managerId: string) {
+    return prisma.webhook.findMany({ where: { managerId }, orderBy: { createdAt: 'desc' } });
+  }
+
+  async update(managerId: string, webhookId: string, data: { url?: string; events?: string[]; isActive?: boolean }) {
+    const webhook = await prisma.webhook.findFirst({ where: { id: webhookId, managerId } });
+    if (!webhook) throw new Error('Webhook not found');
+    return prisma.webhook.update({ where: { id: webhookId }, data });
+  }
+
+  async delete(managerId: string, webhookId: string) {
+    const webhook = await prisma.webhook.findFirst({ where: { id: webhookId, managerId } });
+    if (!webhook) throw new Error('Webhook not found');
+    await prisma.webhook.delete({ where: { id: webhookId } });
+    return { success: true };
+  }
 }
 
 export const webhookService = new WebhookService();

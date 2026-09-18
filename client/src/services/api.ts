@@ -893,3 +893,30 @@ export const notificationsService = {
   markRead: (ids: string[]) =>
     apiClient.post('/notifications/read', { ids }),
 };
+
+// Team management service
+export const teamService = {
+  listMembers: () => apiClient.get('/team/members'),
+  invite: (payload: { email: string; firstName?: string; lastName?: string; role?: string }) =>
+    apiClient.post('/team/invite', payload),
+  updateRole: (memberId: string, role: string) =>
+    apiClient.patch(`/team/members/${memberId}/role`, { role }),
+  remove: (memberId: string) => apiClient.delete(`/team/members/${memberId}`),
+};
+
+// Webhook service
+export const webhookService = {
+  list: () => apiClient.get('/team/webhooks'),
+  create: (payload: { url: string; events: string[]; secret?: string }) =>
+    apiClient.post('/team/webhooks', payload),
+  update: (webhookId: string, payload: { url?: string; events?: string[]; isActive?: boolean }) =>
+    apiClient.patch(`/team/webhooks/${webhookId}`, payload),
+  delete: (webhookId: string) => apiClient.delete(`/team/webhooks/${webhookId}`),
+};
+
+// Document AI service
+export const documentAIService = {
+  analyze: (payload: { fileName: string; textContent: string; documentType: string; fileUrl?: string }) =>
+    apiClient.post('/documents/analyze', payload),
+  history: () => apiClient.get('/documents/analyses'),
+};

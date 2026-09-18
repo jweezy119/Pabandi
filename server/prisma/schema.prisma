@@ -89,6 +89,7 @@ model User {
   propertyManagerProfile  PropertyManagerProfile?
   propertyFavorites       PropertyFavorite[]
   marketplaceListings    MarketplaceListing[]
+  teamMembers    TeamMember[]
   pabWallet              PabWallet?
   userRewards            UserReward[]
   freightLoads           FreightLoad[]
@@ -1516,8 +1517,81 @@ model PropertyManagerProfile {
   tasks      Task[]
   communications Communication[]
   campaignRecipients CampaignRecipient[]
+  teamMembers TeamMember[]
+  webhookEndpoints Webhook[]
+  documentAnalyses DocumentAnalysis[]
 
   @@index([userId])
+}
+
+// Team members for collaborative property management.
+model TeamMember {
+  id          String   @id @default(cuid())
+  managerId   String
+  userId      String?
+  email       String   @unique
+  firstName   String?
+  lastName    String?
+  role        String   @default("MEMBER") // OWNER | ADMIN | MANAGER | AGENT | MEMBER | VIEWER
+  permissions Json?    // granular permissions override
+  invitedAt   DateTime @default(now())
+  joinedAt    DateTime?
+  lastActiveAt DateTime?
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  user    User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([email])
+  @@index([role])
+}
+
+// Webhook endpoints for external integrations.
+model Webhook {
+  id          String   @id @default(cuid())
+  managerId   String
+  url         String
+  secret      String?
+  events      String[] // PAYMENT_RECEIVED | LEASE_SIGNED | TENANT_APPLIED | MAINTENANCE_CREATED | RENT_PAID
+  isActive    Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  failureCount Int      @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([isActive])
+}
+
+// Document analysis results from AI.
+model DocumentAnalysis {
+  id          String   @id @default(cuid())
+  managerId   String
+  documentType String  // LEASE | APPLICATION | NOTICE | RECEIPT | OTHER
+  fileName    String
+  fileUrl     String?
+  textContent String?
+  provider    String   @default("dashscope")
+  model       String?
+  analysis    Json     // AI-generated analysis, summary, entities, risks
+  confidence  Float?
+  tokensUsed  Int?
+  latencyMs   Int?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([documentType])
+  @@index([createdAt])
 }
 
 // A property under a manager's portfolio (links to existing Property model).

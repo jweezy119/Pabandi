@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { propertyManagerService } from '../services/api';
+import { propertyManagerService, teamService, webhookService, documentAIService } from '../services/api';
 import { CRM_CONFIG, BUSINESS_TYPES, BusinessType } from '../config/crmConfig';
 import { TenantWorkflowPage } from './TenantWorkflowPage';
 import TenantDashboardPage from './TenantDashboardPage';
@@ -89,7 +89,8 @@ export const CRMPage: React.FC = () => {
     { id: 'leases', icon: config.entities.leases.icon, label: config.entities.leases.label },
     { id: 'maintenance', icon: config.entities.maintenance.icon, label: config.entities.maintenance.label },
     { id: 'applications', icon: config.entities.applications.icon, label: config.entities.applications.label },
-    { id: 'portal', icon: '🎨', label: 'Portal' },
+    { id: 'team', icon: '👥', label: 'Team' },
+    { id: 'documents', icon: '📄', label: 'Documents' },
     { id: 'webhooks', icon: '🔗', label: 'Webhooks' },
     { id: 'activity', icon: '📜', label: 'Activity' },
   ];
@@ -463,6 +464,12 @@ export const CRMPage: React.FC = () => {
           </Surface>
         )}
 
+        {/* Team */}
+        {tab === 'team' && <TeamTab />}
+
+        {/* Documents */}
+        {tab === 'documents' && <DocumentsTab />}
+
         {/* Webhooks */}
         {tab === 'webhooks' && <WebhooksTab />}
 
@@ -537,6 +544,109 @@ const ActivityTab: React.FC = () => {
           </div>
         </Surface>
       ))}
+    </div>
+  );
+};
+
+const TeamTab: React.FC = () => {
+  const [members, setMembers] = useState<any[]>([]);
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('MEMBER');
+
+  const load = () => teamService.listMembers().then(r => setMembers(r.data?.data || []));
+  useEffect(() => { load(); }, []);
+
+  const invite = async () => {
+    if (!email) return;
+    await teamService.invite({ email, firstName, lastName, role });
+    setEmail(''); setFirstName(''); setLastName(''); setRole('MEMBER');
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Surface className="p-6">
+        <h3 className="text-lg font-bold text-slate-100 mb-4">Invite Team Member</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
+          <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
+          <select value={role} onChange={e => setRole(e.target.value)} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
+            <option value="OWNER">Owner</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MANAGER">Manager</option>
+            <option value="AGENT">Agent</option>
+            <option value="MEMBER">Member</option>
+            <option value="VIEWER">Viewer</option>
+          </select>
+        </div>
+        <Button onClick={invite} className="mt-4">Send Invite</Button>
+      </Surface>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {members.map(m => (
+          <Surface key={m.id} className="p-4 flex items-center justify-between">
+            <div>
+              <div className="font-semibold text-slate-100">{m.firstName} {m.lastName}</div>
+              <div className="text-xs" style={{ color: tokens.color.textDim }}>{m.email}</div>
+              <div className="text-xs mt-1"><span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-200">{m.role}</span></div>
+            </div>
+          </Surface>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const DocumentsTab: React.FC = () => {
+  const [fileName, setFileName] = useState('');
+  const [textContent, setTextContent] = useState('');
+  const [documentType, setDocumentType] = useState('LEASE');
+  const [analyses, setAnalyses] = useState<any[]>([]);
+
+  const analyze = async () => {
+    if (!fileName || !textContent) return;
+    const res = await documentAIService.analyze({ fileName, textContent, documentType });
+    setAnalyses([res.data?.data, ...analyses]);
+    setFileName(''); setTextContent('');
+  };
+
+  useEffect(() => { documentAIService.history().then(r => setAnalyses(r.data?.data || [])).catch(() => {}); }, []);
+
+  return (
+    <div className="space-y-4">
+      <Surface className="p-6">
+        <h3 className="text-lg font-bold text-slate-100 mb-4">AI Document Analysis</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input value={fileName} onChange={e => setFileName(e.target.value)} placeholder="File name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
+          <select value={documentType} onChange={e => setDocumentType(e.target.value)} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
+            <option value="LEASE">Lease</option>
+            <option value="APPLICATION">Application</option>
+            <option value="NOTICE">Notice</option>
+            <option value="RECEIPT">Receipt</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <textarea value={textContent} onChange={e => setTextContent(e.target.value)} placeholder="Paste document text here..." rows={6} className="w-full mt-3 bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
+        <Button onClick={analyze} className="mt-4">Analyze Document</Button>
+      </Surface>
+
+      <div className="space-y-3">
+        {analyses.map(a => (
+          <Surface key={a.id} className="p-4">
+            <div className="font-semibold text-slate-100">{a.fileName}</div>
+            <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.documentType} · {new Date(a.createdAt).toLocaleString()}</div>
+            {a.analysis && (
+              <div className="mt-2 text-sm" style={{ color: tokens.color.text }}>
+                <div><strong>Summary:</strong> {a.analysis.summary}</div>
+                {a.analysis.risks?.length > 0 && <div className="mt-1"><strong>Risks:</strong> {a.analysis.risks.join(', ')}</div>}
+              </div>
+            )}
+          </Surface>
+        ))}
+      </div>
     </div>
   );
 };
