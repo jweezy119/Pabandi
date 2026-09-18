@@ -1808,7 +1808,9 @@ model PropertyUnit {
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   leases   PropertyLease[]
   rentPayments RentPayment[]
+  rentSchedules  RentSchedule[]
   inspections  PropertyInspection[]
+  inspectionReports InspectionReport[]
   financials   PropertyFinancial[]
   photos       PropertyPhoto[]
   amenities    PropertyAmenity[]
@@ -1897,6 +1899,9 @@ model PropertyTenant {
   manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   tenantApplications TenantApplication[]
+  rentSchedules  RentSchedule[]
+  ledgers        TenantLedger[]
+  inspectionReports InspectionReport[]
 
   @@unique([managerId, email])
   @@index([managerId])
@@ -1985,6 +1990,7 @@ model PropertyLease {
   unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
   signingRequests SigningRequest[]
+  rentSchedules RentSchedule[]
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -5040,4 +5046,134 @@ model SolanaEscrow {
   updatedAt       DateTime @updatedAt
   @@index([reference])
   @@index([status])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENTERPRISE CRM — ADVANCED PROPERTY MANAGEMENT MODELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Tenant Ledger: tracks all financial transactions per tenant
+model TenantLedger {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
+  type            String   // RENT | LATE_FEE | DEPOSIT | REFUND | CREDIT | ADJUSTMENT
+  amount          Float
+  description     String
+  reference       String?
+  balanceAfter    Float
+  date            DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([date])
+}
+
+// Recurring Rent Schedule: drives monthly rent generation
+model RentSchedule {
+  id              String   @id @default(cuid())
+  unitId          String
+  unit            PropertyUnit @relation(fields: [unitId], references: [id])
+  tenantId        String
+  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
+  leaseId         String
+  lease           PropertyLease @relation(fields: [leaseId], references: [id])
+  amount          Float
+  dueDay          Int      @default(1)
+  lateFeeAmount   Float    @default(50)
+  lateAfterDays   Int      @default(5)
+  graceDays       Int      @default(3)
+  isActive        Boolean  @default(true)
+  lastGenerated   DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([isActive])
+}
+
+// Inspection Report: comprehensive move-in/out/routine inspections
+model InspectionReport {
+  id              String   @id @default(cuid())
+  unitId          String
+  unit            PropertyUnit @relation(fields: [unitId], references: [id])
+  tenantId        String?
+  tenant          PropertyTenant? @relation(fields: [tenantId], references: [id])
+  type            String   // MOVE_IN | MOVE_OUT | ROUTINE | MAINTENANCE
+  inspectorName   String?
+  overallCondition String  @default("GOOD")
+  notes           String?
+  tenantSigned    Boolean  @default(false)
+  tenantSignedAt  DateTime?
+  landlordSigned  Boolean  @default(false)
+  landlordSignedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  items           InspectionItem[]
+
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([type])
+}
+
+// Inspection Item: per-room checklist entries
+model InspectionItem {
+  id              String   @id @default(cuid())
+  reportId        String
+  report          InspectionReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  room            String
+  item            String
+  condition       String   @default("GOOD")
+  notes           String?
+  photos          String[]
+  requiresAction  Boolean  @default(false)
+  actionNotes     String?
+
+  @@index([reportId])
+}
+
+// Maintenance Category: for auto-dispatch
+model MaintenanceCategory {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String?
+  avgCost         Float?
+  urgencyDefault  String   @default("MEDIUM")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+// Maintenance Vendor: contractors and service providers
+model MaintenanceVendor {
+  id              String   @id @default(cuid())
+  managerId       String
+  name            String
+  company         String?
+  phone           String?
+  email           String?
+  specialties     String[]
+  rating          Float    @default(0)
+  jobsCompleted   Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([managerId])
+}
+
+// Automation Rule: triggered actions based on events
+model AutomationRule {
+  id              String   @id @default(cuid())
+  managerId       String
+  name            String
+  trigger         String   // RENT_DUE | RENT_LATE | LEASE_EXPIRING | MAINTENANCE_SUBMITTED | TENANT_ADDED
+  condition       Json?
+  action          String   // SEND_REMINDER | APPLY_LATE_FEE | CREATE_TASK | ASSIGN_VENDOR
+  actionData      Json?
+  isActive        Boolean  @default(true)
+  lastTriggered   DateTime?
+  triggerCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([managerId])
+  @@index([isActive])
 }
