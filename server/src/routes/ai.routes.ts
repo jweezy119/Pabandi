@@ -350,4 +350,87 @@ router.post('/generate-listing', async (req: Request, res: Response) => {
   }
 });
 
+// ── AI Multi-Provider + Memory ────────────────────────────────────────────────
+
+import { aiConversationService } from '../services/ai/aiConversation.service';
+import { aiPropertyPhotoService } from '../services/ai/aiPropertyPhoto.service';
+import { aiRecommendationService } from '../services/ai/aiRecommendation.service';
+import { aiRouter } from '../services/ai/aiRouter.service';
+
+// POST /api/v1/ai/conversation/chat
+router.post('/conversation/chat', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { sessionId, message, systemPrompt } = req.body || {};
+    if (!message) return res.status(400).json({ error: 'message is required' });
+
+    const result = await aiConversationService.chat(
+      sessionId || `user-${userId}-${Date.now()}`,
+      message,
+      systemPrompt,
+      userId
+    );
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    console.error('[ai] conversation chat failed:', e.message);
+    res.status(500).json({ error: 'AI chat failed' });
+  }
+});
+
+// GET /api/v1/ai/conversation/:sessionId/history
+router.get('/conversation/:sessionId/history', async (req: any, res: Response) => {
+  try {
+    const history = await aiConversationService.getHistory(req.params.sessionId);
+    res.json({ success: true, data: history });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not load conversation history' });
+  }
+});
+
+// POST /api/v1/ai/analyze-photo
+router.post('/analyze-photo', async (req: any, res: Response) => {
+  try {
+    const { photoUrl, propertyType, roomType } = req.body || {};
+    if (!photoUrl) return res.status(400).json({ error: 'photoUrl is required' });
+
+    const result = await aiPropertyPhotoService.analyzePhoto(photoUrl, { propertyType, roomType });
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    console.error('[ai] photo analysis failed:', e.message);
+    res.status(500).json({ error: 'Photo analysis failed' });
+  }
+});
+
+// GET /api/v1/ai/providers
+router.get('/providers', async (_req: any, res: Response) => {
+  try {
+    const status = aiRouter.getStatus();
+    res.json({ success: true, data: status });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not load AI provider status' });
+  }
+});
+
+// POST /api/v1/ai/properties/:id/embed
+router.post('/properties/:id/embed', async (req: any, res: Response) => {
+  try {
+    const result = await aiRecommendationService.embedProperty(req.params.id);
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    console.error('[ai] embed property failed:', e.message);
+    res.status(500).json({ error: 'Could not embed property' });
+  }
+});
+
+// GET /api/v1/ai/properties/:id/similar
+router.get('/properties/:id/similar', async (req: any, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const results = await aiRecommendationService.findSimilarProperties(req.params.id, limit);
+    res.json({ success: true, data: results });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not find similar properties' });
+  }
+});
+
 export default router;

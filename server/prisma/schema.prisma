@@ -2214,6 +2214,66 @@ model Communication {
   @@index([createdAt])
 }
 
+// ── AI / ML Models ─────────────────────────────────────────────────────────────
+// Persistent AI conversation memory and cost tracking.
+
+model AIConversation {
+  id          String   @id @default(cuid())
+  userId      String?
+  sessionId   String   @unique
+  provider    String   @default("dashscope")
+  model       String?
+  messages    Json     // full conversation history
+  summary     String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model AIAnalysis {
+  id          String   @id @default(cuid())
+  userId      String?
+  managerId   String?
+  type        String   // TENANT_SCREEN | RENT_OPTIMIZATION | PROPERTY_VALUATION | LEASE_ANALYSIS | MAINTENANCE | MARKET | MAINTENANCE_PREDICTOR
+  provider    String   @default("dashscope")
+  model       String?
+  input       Json
+  output      Json
+  confidence  Float?
+  tokensUsed  Int?
+  costCents   Float?
+  latencyMs   Int?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([managerId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AIEmbedding {
+  id          String   @id @default(cuid())
+  entityType  String   // PROPERTY | LEASE | DOCUMENT | MESSAGE | CONTACT
+  entityId    String
+  provider    String   @default("dashscope")
+  model       String?
+  embedding   Json     // stored as JSON array for portability
+  text        String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@unique([entityType, entityId, provider])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ── END AI / ML Models ─────────────────────────────────────────────────────────
+
 // ── Generic Sales CRM ──────────────────────────────────────────────────────────
 // Contacts: leads, customers, prospects across any business type.
 model Contact {

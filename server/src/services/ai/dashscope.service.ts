@@ -1,8 +1,94 @@
 import { logger } from '../../utils/logger';
 import { prisma } from '../../utils/database';
 import axios from 'axios';
+import { IAIProvider, AICompletionOptions, AICompletionResult, AIEmbeddingResult, AIMessage } from './aiProvider.interface';
 
-export class DashscopeService {
+export class DashscopeService implements IAIProvider {
+  name = 'dashscope';
+  private apiKey: string | undefined;
+
+  constructor() {
+    this.apiKey = process.env.DASHSCOPE_API_KEY;
+  }
+
+  isConfigured(): boolean {
+    return !!this.apiKey && this.apiKey !== 'REPLACE_WITH_YOUR_DASHSCOPE_API_KEY';
+  }
+
+  async complete(messages: AIMessage[], options: AICompletionOptions = {}): Promise<AICompletionResult> {
+    if (!this.isConfigured()) {
+      throw new Error('DashScope API key not configured');
+    }
+
+    const model = options.model || 'qwen-turbo';
+    const response = await axios.post(
+      'https://ws-ueieid4zr4rlge79.ap-southeast-1.maas.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+      {
+        model,
+        input: {
+          messages: messages.map(m => ({ role: m.role, content: m.content })),
+        },
+        parameters: {
+          result_format: 'message',
+          temperature: options.temperature ?? 0.7,
+          max_tokens: options.maxTokens || 1024,
+          stop: options.stop,
+          top_p: options.topP ?? 1,
+        },
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.data && response.data.output && response.data.output.choices && response.data.output.choices.length > 0) {
+      const choice = response.data.output.choices[0];
+      return {
+        text: choice.message.content.trim(),
+        provider: this.name,
+        model,
+        usage: response.data.usage ? {
+          promptTokens: response.data.usage.prompt_tokens,
+          completionTokens: response.data.usage.completion_tokens,
+          totalTokens: response.data.usage.total_tokens,
+        } : undefined,
+        finishReason: choice.finish_reason,
+      };
+    }
+
+    throw new Error('Invalid DashScope response format');
+  }
+
+  async embed(text: string): Promise<AIEmbeddingResult> {
+    // DashScope embedding endpoint
+    const response = await axios.post(
+      'https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/generation',
+      {
+        model: 'text-embedding-v2',
+        input: { texts: [text] },
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const data = response.data;
+    return {
+      embedding: data.output.embeddings[0],
+      provider: this.name,
+      model: data.model || 'text-embedding-v2',
+      usage: data.usage ? {
+        promptTokens: data.usage.prompt_tokens,
+        totalTokens: data.usage.total_tokens,
+      } : undefined,
+    };
+  }
   /**
    * Implementation of Alibaba Cloud DashScope (Qwen) API call for Trust Profiles.
    * Falls back to a heuristic algorithm if the API key is missing or fails.
