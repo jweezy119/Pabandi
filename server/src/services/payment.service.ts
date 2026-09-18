@@ -9,9 +9,10 @@ const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.s
 const PLATFORM_FEE_BPS = 100; // 1% = 100 basis points
 
 // ── PayLio Configuration ─────────────────────────────────────────────────────
-const PAYLIO_API_KEY = process.env.PAYLIO_API_KEY || 'plio_live_gZre99XxAtiwJiLYKoNxNsIHP6iEmfyC';
-const PAYLIO_MERCHANT_ID = process.env.PAYLIO_MERCHANT_ID || 'cmu64bu2v005tuc01ps83lsnb';
+const PAYLIO_API_KEY = process.env.PAYLIO_API_KEY || '';
+const PAYLIO_MERCHANT_ID = process.env.PAYLIO_MERCHANT_ID || '';
 const PAYLIO_API_URL = 'https://api.paylio.org/v1';
+const PAYLIO_WEBHOOK_SECRET = process.env.PAYLIO_WEBHOOK_SECRET || '';
 const BTCPAY_API_URL = process.env.BTCPAY_API_URL || '';
 const BTCPAY_API_KEY = process.env.BTCPAY_API_KEY || '';
 const BTCPAY_STORE_ID = process.env.BTCPAY_STORE_ID || '';

@@ -49,6 +49,9 @@ export const checkInService = {
     }
   },
 
+  /**
+   * Verify check-in and auto-release escrow if deposit was held.
+   */
   async verifyCheckIn(data: {
     code: string;
     reservationId?: string;
@@ -58,7 +61,7 @@ export const checkInService = {
     verifiedBy?: string;
   }) {
     try {
-      const { code, reservationId, lat, lng, method } = data;
+    const { code, reservationId, lat, lng, method, verifiedBy } = data;
 
       let reservation;
       if (reservationId) {
@@ -92,17 +95,17 @@ export const checkInService = {
       const reservationDateTime = new Date(reservation.reservationDate);
       const [hours, minutes] = reservation.reservationTime.split(':').map(Number);
       reservationDateTime.setHours(hours, minutes, 0, 0);
-      
+    
       const thirtyMinBefore = new Date(reservationDateTime.getTime() - 30 * 60 * 1000);
       const twoHoursAfter = new Date(reservationDateTime.getTime() + 2 * 60 * 60 * 1000);
-      
+    
       if (now < thirtyMinBefore) {
         return { 
           success: false, 
           message: `Too early. Check-in opens at ${thirtyMinBefore.toLocaleTimeString()}` 
         };
       }
-      
+    
       if (now > twoHoursAfter) {
         return { success: false, message: 'Check-in window has expired' };
       }
@@ -127,6 +130,36 @@ export const checkInService = {
         },
       });
 
+      // Auto-release escrow if deposit was paid
+      let escrowReleased = false;
+      let escrowResult: any = null;
+      if (reservation.depositStatus === 'PAID' && reservation.depositAmount) {
+        try {
+          const { bookingService } = await import('./booking.service');
+          // Find the escrow for this reservation
+          const cryptoPayment = await prisma.cryptoPayment.findFirst({
+            where: {
+              type: 'paylio',
+              metadata: { path: ['reservationId'], equals: reservation.id },
+            },
+          });
+          if (cryptoPayment) {
+            const escrow = await prisma.escrow.findFirst({
+              where: { paymentId: cryptoPayment.id, status: 'HELD' },
+            });
+            if (escrow) {
+              escrowResult = await bookingService.releaseEscrowToBusiness(
+                escrow.id,
+                verifiedBy || reservation.customerId
+              );
+              escrowReleased = escrowResult.success;
+            }
+          }
+        } catch (escrowErr: any) {
+          logger.warn(`[CheckIn] Auto-release failed for ${reservation.id}: ${escrowErr.message}`);
+        }
+      }
+
       return {
         success: true,
         message: 'Check-in successful!',
@@ -137,6 +170,13 @@ export const checkInService = {
           numberOfGuests: updated.numberOfGuests,
         },
         locationVerified,
+        escrowReleased,
+        escrowDetails: escrowResult
+          ? {
+              netToBusiness: escrowResult.netToBusiness,
+              releaseFee: escrowResult.releaseFee,
+            }
+          : null,
         verifiedAt: now,
       };
     } catch (error: any) {

@@ -520,10 +520,46 @@ export const processPayLioWebhook = async (
   next: NextFunction
 ) => {
   try {
+    // ── Signature verification ─────────────────────────────────────────────
+    const PAYLIO_WEBHOOK_SECRET = process.env.PAYLIO_WEBHOOK_SECRET;
+    if (PAYLIO_WEBHOOK_SECRET) {
+      const signature = String(req.headers['x-paylio-signature'] || req.headers['x-webhook-signature'] || '');
+      if (!signature) {
+        logger.warn('[PayLio Webhook] Missing signature header');
+        return res.status(401).json({ success: false, error: 'Missing signature' });
+      }
+
+      const crypto = await import('crypto');
+      const rawBody = JSON.stringify(req.body);
+      const expected = crypto.createHmac('sha256', PAYLIO_WEBHOOK_SECRET).update(rawBody).digest('hex');
+
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+        logger.warn('[PayLio Webhook] Invalid signature');
+        return res.status(401).json({ success: false, error: 'Invalid signature' });
+      }
+    }
+
     const { event, data } = req.body;
     logger.info(`[PayLio Webhook] Event: ${event}`, data);
+    
     if (event === 'payment.completed' || event === 'payment.success') {
-      logger.info(`[PayLio] Payment completed: ${JSON.stringify(data)}`);
+      const reference = data?.reference || data?.payment_id || data?.id;
+      const paylioId = data?.id || data?.payment_id;
+      logger.info(`[PayLio] Payment completed: reference=${reference}, id=${paylioId}`);
+      
+      if (reference) {
+        try {
+          const { bookingService } = await import('../services/booking.service');
+          const result = await bookingService.confirmPaymentAndCreateEscrow(reference);
+          if (result.success) {
+            logger.info(`[PayLio] Escrow created for ${reference}: ${result.escrowId}`);
+          } else {
+            logger.warn(`[PayLio] Escrow creation failed for ${reference}: ${result.message}`);
+          }
+        } catch (escrowErr: any) {
+          logger.error(`[PayLio] Error creating escrow for ${reference}: ${escrowErr.message}`);
+        }
+      }
     }
     res.json({ received: true });
   } catch (error) {

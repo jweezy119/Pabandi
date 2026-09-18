@@ -18,6 +18,9 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
   };
 }
 
@@ -44,6 +47,9 @@ export const authenticate = (
       id: string;
       email: string;
       role: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
     };
 
     req.user = decoded;
@@ -80,6 +86,9 @@ export const optionalAuthenticate = (
       id: string;
       email: string;
       role: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
     };
 
     req.user = decoded;

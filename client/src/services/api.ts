@@ -168,6 +168,29 @@ export const reservationService = {
     apiClient.patch(`/reservations/${id}/noshow`),
 };
 
+export const bookingPaymentService = {
+  createBooking: (data: {
+    businessId: string;
+    reservationDate: string;
+    reservationTime: string;
+    numberOfGuests: number;
+    customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    depositAmount: number;
+    specialRequests?: string;
+  }) => apiClient.post('/booking/create', data),
+
+  confirmBooking: (bookingReference: string) =>
+    apiClient.post('/booking/confirm', { bookingReference }),
+
+  getBookingStatus: (reference: string) =>
+    apiClient.get(`/booking/${reference}/status`),
+
+  releaseEscrow: (escrowId: string) =>
+    apiClient.post('/booking/escrow/release', { escrowId }),
+};
+
 export const paymentService = {
   createPayment: (data: any) => apiClient.post('/payments', data),
   getPayment: (id: string) => apiClient.get(`/payments/${id}`),
