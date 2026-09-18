@@ -109,6 +109,8 @@ model User {
   investorProfile        InvestorProfile?
   cryptoPaymentsMade      CryptoPayment[]         @relation("cryptoPaymentsMade")
   cryptoPaymentsReceived  CryptoPayment[]         @relation("cryptoPaymentsReceived")
+  fiatPaymentsMade        FiatPayment[]           @relation("fiatPaymentsMade")
+  fiatPaymentsReceived    FiatPayment[]           @relation("fiatPaymentsReceived")
   escrowsAsPayer          Escrow[]                @relation("escrowsAsPayer")
   escrowsAsPayee          Escrow[]                @relation("escrowsAsPayee")
   userPayments            Payment[]               @relation("userPayments")
@@ -198,6 +200,7 @@ model Business {
   customerRelations      CustomerVendorRelation[]
   mudarabahPools          MudarabahPool[]
   payments                Payment[]               @relation("businessPayments")
+  fiatPayments            FiatPayment[]
 
   @@index([ownerId])
   @@index([city])
@@ -4979,8 +4982,35 @@ model Escrow {
   refundReason    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  fiatPayment     FiatPayment?
 
   @@index([status])
   @@index([payerId])
   @@index([payeeId])
+}
+
+model FiatPayment {
+  id            String   @id @default(cuid())
+  method        String   // PAYPAL | VENMO | CASH_APP | ZELLE | ACH | CARD | CASH | CHECK
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("PENDING") // PENDING | SENT | CONFIRMED | REJECTED | CANCELLED
+  reference     String   @unique
+  payerId       String?
+  payer         User?    @relation("fiatPaymentsMade", fields: [payerId], references: [id])
+  payeeId       String
+  payee         User     @relation("fiatPaymentsReceived", fields: [payeeId], references: [id])
+  businessId    String?
+  business      Business? @relation(fields: [businessId], references: [id])
+  paymentUrl    String?
+  instructions  String?
+  confirmedAt   DateTime?
+  confirmedBy   String?
+  rejectionReason String?
+  escrowId      String?  @unique
+  escrow        Escrow?  @relation(fields: [escrowId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([reference])
+  @@index([status])
 }

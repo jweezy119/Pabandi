@@ -106,6 +106,7 @@ import RevenuePage from './pages/RevenuePage';
 import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
+import FiatPaymentPage from './pages/FiatPaymentPage';
 import FreightPage from './pages/FreightPage';
 import { FreightLayout } from './apps/freight';
 import { FreightDashboard, LoadBoard, PostLoad, MyLoads } from './apps/freight';
@@ -324,6 +325,8 @@ function App() {
             <Route path="usdy" element={<UsdyPage />} />
             <Route path="airdrop" element={<AirdropPage />} />
             <Route path="payment-test" element={<PaymentTestPage />} />
+            <Route path="fiat/:reference" element={<FiatPaymentPage />} />
+            <Route path="fiat" element={<FiatPaymentPage />} />
             <Route path="rent-roll" element={<RentRollPage />} />
             <Route path="leases" element={<LeaseGeneratorPage />} />
             <Route path="maintenance" element={<MaintenancePage />} />

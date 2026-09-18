@@ -1,13 +1,26 @@
 // Sitara OS — Booking Flow Page
 // Escrow-backed booking with deposit
-// Updated to use crypto payment rails (USDC/BTCPay/Manual) instead of Stripe
+// Updated to support both crypto and fiat payment rails
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
 
-type PaymentMethod = 'usdc' | 'btcpay' | 'manual';
+type CryptoMethod = 'usdc' | 'btcpay';
+type FiatMethod = 'paypal' | 'venmo' | 'cashapp' | 'zelle' | 'ach' | 'card' | 'cash' | 'check';
+type PaymentCategory = 'crypto' | 'fiat';
+
+const FIAT_METHODS = [
+  { id: 'paypal', label: 'PayPal', icon: '🅿️' },
+  { id: 'venmo', label: 'Venmo', icon: '💙' },
+  { id: 'cashapp', label: 'Cash App', icon: '💚' },
+  { id: 'zelle', label: 'Zelle', icon: '⚡' },
+  { id: 'ach', label: 'ACH Transfer', icon: '🏦' },
+  { id: 'card', label: 'Card (Manual)', icon: '💳' },
+  { id: 'cash', label: 'Cash', icon: '💵' },
+  { id: 'check', label: 'Check', icon: '📝' },
+] as const;
 
 export default function BookingFlowPage() {
   const { businessId } = useParams();
@@ -26,7 +39,10 @@ export default function BookingFlowPage() {
   const [liveReservationId, setLiveReservationId] = useState<string | null>(null);
   const [paymentData, setPaymentData] = useState<any>(null);
   const [paymentPending, setPaymentPending] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('usdc');
+  const [paymentCategory, setPaymentCategory] = useState<PaymentCategory>('crypto');
+  const [cryptoMethod, setCryptoMethod] = useState<CryptoMethod>('usdc');
+  const [fiatMethod, setFiatMethod] = useState<FiatMethod>('paypal');
+  const [fiatReference, setFiatReference] = useState<string | null>(null);
 
   const handleProcessBooking = async () => {
     setConfirming(true);
@@ -47,27 +63,56 @@ export default function BookingFlowPage() {
         });
         reservationId = created?.id;
         setLiveReservationId(reservationId || null);
+        
         if (reservationId) {
-          try {
-            // Use the new payment service (USDC/BTCPay/Manual)
-            const pay: any = await fetch('/api/v1/payments/create', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                amount: deposit,
-                type: paymentMethod,
-                currency: paymentMethod === 'btcpay' ? 'USD' : 'USDC',
-                businessId,
-                memo: `deposit_${reservationId}`,
-              }),
-            }).then(r => r.json());
-
-            if (pay?.success) {
-              setPaymentData(pay.data);
-              setPaymentPending(true);
+          if (paymentCategory === 'fiat') {
+            // Create fiat payment request
+            try {
+              const fiatRes = await fetch('/api/v1/fiat/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  method: fiatMethod.toUpperCase(),
+                  amount: deposit,
+                  businessId,
+                  payeeConfig: {
+                    paypalEmail: 'business@pabandi.com',
+                    venmoHandle: '@pabandi',
+                    cashAppTag: '$pabandi',
+                    zelleEmail: 'zelle@pabandi.com',
+                  },
+                }),
+              });
+              const fiatJson = await fiatRes.json();
+              if (fiatJson?.success) {
+                setFiatReference(fiatJson.data.reference);
+                setPaymentPending(true);
+              }
+            } catch (err) {
+              console.error('Fiat payment creation failed:', err);
             }
-          } catch (err) {
-            console.error('Payment creation failed:', err);
+          } else {
+            // Use crypto payment service (USDC/BTCPay)
+            try {
+              const pay: any = await fetch('/api/v1/payments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  amount: deposit,
+                  type: cryptoMethod,
+                  currency: cryptoMethod === 'btcpay' ? 'USD' : 'USDC',
+                  businessId,
+                  memo: `deposit_${reservationId}`,
+                }),
+              }).then(r => r.json());
+
+              if (pay?.success) {
+                setPaymentData(pay.data);
+                setPaymentPending(true);
+              }
+            } catch (err) {
+              console.error('Payment creation failed:', err);
+            }
           }
         }
       } catch {}
@@ -213,31 +258,91 @@ export default function BookingFlowPage() {
 
       {step === 2 && (
         <div className="space-y-6">
-          {/* Payment Method Selection */}
+          {/* Payment Category Selection */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Payment Method</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { id: 'usdc', label: 'USDC (Solana)', icon: '◎', desc: 'Fast & cheap' },
-                { id: 'btcpay', label: 'Bitcoin', icon: '₿', desc: 'BTC/Lightning' },
-                { id: 'manual', label: 'Manual', icon: '💵', desc: 'Cash, bank, etc' },
-              ] as const).map((m) => (
+            <label className="block text-sm font-medium text-slate-700 mb-2">Payment Category</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPaymentCategory('crypto')}
+                className={`p-3 border rounded-lg text-center transition ${
+                  paymentCategory === 'crypto'
+                    ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="text-xl">◎</div>
+                <div className="text-xs font-medium mt-1">Crypto (USDC/BTC)</div>
+              </button>
+              <button
+                onClick={() => setPaymentCategory('fiat')}
+                className={`p-3 border rounded-lg text-center transition ${
+                  paymentCategory === 'fiat'
+                    ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="text-xl">💵</div>
+                <div className="text-xs font-medium mt-1">Fiat (PayPal/Zelle/etc)</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Crypto Method Selection */}
+          {paymentCategory === 'crypto' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Crypto Method</label>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  key={m.id}
-                  onClick={() => setPaymentMethod(m.id)}
+                  onClick={() => setCryptoMethod('usdc')}
                   className={`p-3 border rounded-lg text-center transition ${
-                    paymentMethod === m.id
+                    cryptoMethod === 'usdc'
                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div className="text-xl">{m.icon}</div>
-                  <div className="text-xs font-medium mt-1">{m.label}</div>
-                  <div className="text-[10px] text-slate-500">{m.desc}</div>
+                  <div className="text-xl">◎</div>
+                  <div className="text-xs font-medium mt-1">USDC (Solana)</div>
+                  <div className="text-[10px] text-slate-500">Fast & cheap</div>
                 </button>
-              ))}
+                <button
+                  onClick={() => setCryptoMethod('btcpay')}
+                  className={`p-3 border rounded-lg text-center transition ${
+                    cryptoMethod === 'btcpay'
+                      ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="text-xl">₿</div>
+                  <div className="text-xs font-medium mt-1">Bitcoin</div>
+                  <div className="text-[10px] text-slate-500">BTC/Lightning</div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Fiat Method Selection */}
+          {paymentCategory === 'fiat' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Fiat Method</label>
+              <div className="grid grid-cols-4 gap-2">
+                {FIAT_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setFiatMethod(m.id)}
+                    className={`p-2 border rounded-lg text-center transition ${
+                      fiatMethod === m.id
+                        ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="text-lg">{m.icon}</div>
+                    <div className="text-[10px] font-medium mt-1">{m.label}</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-amber-700 mt-2">⚠️ Fiat payments require manual business confirmation. No business verification needed.</p>
+            </div>
+          )}
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
             <h3 className="font-semibold text-amber-900 mb-2">Escrow Protection</h3>
@@ -318,6 +423,23 @@ export default function BookingFlowPage() {
             </p>
           )}
           {renderPaymentDetails()}
+          
+          {/* Fiat Payment Redirect */}
+          {fiatReference && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-900 mb-2">Complete your fiat payment</p>
+              <p className="text-xs text-blue-700 mb-3">
+                Reference: <span className="font-mono">{fiatReference}</span>
+              </p>
+              <button
+                onClick={() => navigate(`/fiat/${fiatReference}`)}
+                className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600"
+              >
+                View Payment Instructions →
+              </button>
+            </div>
+          )}
+          
           <p className="text-slate-600">
             Your deposit is held in escrow. Check in at the venue to complete your visit and earn star power.
           </p>
