@@ -1,31 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { mudarabahService, MudarabahPool, CreatePoolData, RiskBand, Distribution, DistributionFreq } from '../services/mudarabahService';
+import { mudarabahService, MudarabahPool, CreatePoolData, RiskBand, DistributionFreq, Distribution } from '../services/mudarabahService';
+import { MudarabahPoolWizard } from '../components/MudarabahPoolWizard';
 
 type Tab = 'myPools' | 'create' | 'distributions';
 
-const PROFIT_RATIOS = ['70/30', '60/40', '50/50'];
-const RISK_BANDS: RiskBand[] = ['LOW', 'MEDIUM', 'HIGH'];
-const DISTRIBUTION_FREQS: DistributionFreq[] = ['MONTHLY', 'QUARTERLY', 'SEMI_ANNUAL', 'ANNUAL'];
-
-const emptyForm: CreatePoolData = {
-  title: '',
-  description: '',
-  profitShareRatio: '70/30',
-  targetAmount: 0,
-  minInvestment: 100,
-  maxInvestment: 10000,
-  expectedApy: 12,
-  revenueSource: '',
-  riskBand: 'MEDIUM',
-  distributionFreq: 'QUARTERLY',
-};
 export const BusinessMudarabahPage: React.FC = () => {
   const [tab, setTab] = useState<Tab>('myPools');
   const [pools, setPools] = useState<MudarabahPool[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<CreatePoolData>(emptyForm);
-  const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState(false);
   const [selectedPoolForDist, setSelectedPoolForDist] = useState<MudarabahPool | null>(null);
@@ -54,33 +37,6 @@ export const BusinessMudarabahPage: React.FC = () => {
   }, [loadPools]);
 
 
-
-  const handleCreatePool = async () => {
-    if (!form.title || !form.description || !form.revenueSource || !form.targetAmount) {
-      setCreateError('Please fill in all required fields');
-      return;
-    }
-    if (form.minInvestment >= form.maxInvestment) {
-      setCreateError('Min investment must be less than max investment');
-      return;
-    }
-    setCreateError('');
-    setCreating(true);
-    try {
-      await mudarabahService.createPool(form);
-      setCreateSuccess(true);
-      setForm(emptyForm);
-      setTimeout(() => {
-        setCreateSuccess(false);
-        setTab('myPools');
-        loadPools();
-      }, 1500);
-    } catch (e: any) {
-      setCreateError(e?.response?.data?.error || 'Failed to create pool');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleClosePool = async (poolId: string) => {
     if (!confirm('Are you sure you want to close this pool?')) return;
@@ -246,144 +202,51 @@ export const BusinessMudarabahPage: React.FC = () => {
           </div>
         )}
 
-        {/* Create Pool Tab */}
+        {/* Create Pool Tab — Advanced Wizard */}
         {tab === 'create' && (
-          <Surface className="p-6">
-            {createSuccess ? (
-              <div className="text-center py-8">
-                <div className="text-5xl mb-4">✅</div>
-                <h3 className="text-xl font-bold text-white mb-2">Pool Created!</h3>
-                <p className="text-slate-400">Your Mudarabah pool is now live.</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-lg font-bold text-white mb-6">Create New Mudarabah Pool</h3>
-                {createError && (
-                  <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-400/20 text-rose-300 text-sm">
-                    {createError}
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Pool Title *</label>
-                    <input
-                      value={form.title}
-                      onChange={(e) => setForm({ ...form, title: e.target.value })}
-                      placeholder="e.g. Restaurant Expansion Fund"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Description *</label>
-                    <textarea
-                      value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      placeholder="Describe the business opportunity..."
-                      rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50 resize-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Profit Share Ratio *</label>
-                      <select
-                        value={form.profitShareRatio}
-                        onChange={(e) => setForm({ ...form, profitShareRatio: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      >
-                        {PROFIT_RATIOS.map((r) => (
-                          <option key={r} value={r} className="bg-slate-800">
-                            {r} (Investor/Business)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Risk Band *</label>
-                      <select
-                        value={form.riskBand}
-                        onChange={(e) => setForm({ ...form, riskBand: e.target.value as RiskBand })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      >
-                        {RISK_BANDS.map((b) => (
-                          <option key={b} value={b} className="bg-slate-800">{b}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Target Amount ($) *</label>
-                      <input
-                        type="number"
-                        value={form.targetAmount || ''}
-                        onChange={(e) => setForm({ ...form, targetAmount: parseFloat(e.target.value) || 0 })}
-                        placeholder="100000"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Min Investment ($)</label>
-                      <input
-                        type="number"
-                        value={form.minInvestment || ''}
-                        onChange={(e) => setForm({ ...form, minInvestment: parseFloat(e.target.value) || 0 })}
-                        placeholder="100"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Max Investment ($)</label>
-                      <input
-                        type="number"
-                        value={form.maxInvestment || ''}
-                        onChange={(e) => setForm({ ...form, maxInvestment: parseFloat(e.target.value) || 0 })}
-                        placeholder="10000"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Expected APY (%) *</label>
-                      <input
-                        type="number"
-                        value={form.expectedApy || ''}
-                        onChange={(e) => setForm({ ...form, expectedApy: parseFloat(e.target.value) || 0 })}
-                        placeholder="12"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-semibold text-slate-300 mb-2 block">Distribution Frequency</label>
-                      <select
-                        value={form.distributionFreq}
-                        onChange={(e) => setForm({ ...form, distributionFreq: e.target.value as DistributionFreq })}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
-                      >
-                        {DISTRIBUTION_FREQS.map((f) => (
-                          <option key={f} value={f} className="bg-slate-800">{f}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Revenue Source *</label>
-                    <textarea
-                      value={form.revenueSource}
-                      onChange={(e) => setForm({ ...form, revenueSource: e.target.value })}
-                      placeholder="Explain what business activity generates the profit. e.g. 'Revenue from food sales, catering contracts, and delivery services...'"
-                      rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50 resize-none"
-                    />
-                  </div>
-                  <Button onClick={handleCreatePool} loading={creating} size="lg" className="w-full">
-                    {creating ? 'Creating...' : 'Create Pool'}
-                  </Button>
-                </div>
-              </>
-            )}
-          </Surface>
+          <MudarabahPoolWizard
+            onSubmit={async (data) => {
+              try {
+                // Map FormData shape to CreatePoolData shape for API
+                const poolData = {
+                  title: data.title,
+                  description: data.description,
+                  profitShareRatio: data.profitShareRatio,
+                  targetAmount: parseFloat(data.targetAmount),
+                  minInvestment: parseFloat(data.minInvestment),
+                  maxInvestment: data.maxInvestment ? parseFloat(data.maxInvestment) : undefined,
+                  expectedApy: parseFloat(data.expectedApy),
+                  revenueSource: data.revenueSource,
+                  category: data.category,
+                  useOfFunds: data.useOfFunds,
+                  businessPlanUrl: data.businessPlanUrl,
+                  profitCalcMethod: data.profitCalcMethod,
+                  marginPercent: parseFloat(data.marginPercent),
+                  reserveRatio: data.reserveRatio,
+                  allowEarlyWithdraw: data.allowEarlyWithdraw,
+                  earlyWithdrawPenalty: parseFloat(data.earlyWithdrawPenalty),
+                  riskBand: data.riskBand,
+                  riskDisclosure: data.riskDisclosure,
+                  legalDisclaimer: data.legalDisclaimer,
+                  shariaCompliant: true,
+                  accreditedOnly: data.accreditedOnly,
+                  lockupPeriodDays: data.lockupPeriodDays,
+                  autoDistribute: data.autoDistribute,
+                  distributionDay: data.distributionDay,
+                  minDistribution: parseFloat(data.minDistribution),
+                };
+                await mudarabahService.createPool(poolData);
+                setCreateSuccess(true);
+                setTimeout(() => {
+                  setCreateSuccess(false);
+                  setTab('myPools');
+                  loadPools();
+                }, 2000);
+              } catch (e: any) {
+                setCreateError(e?.response?.data?.error || 'Failed to create pool');
+              }
+            }}
+          />
         )}
 
         {/* Distributions Tab */}

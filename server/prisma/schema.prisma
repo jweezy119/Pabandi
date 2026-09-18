@@ -884,6 +884,35 @@ model MudarabahPool {
   updatedAt         DateTime @updatedAt
   investments       MudarabahInvestment[]
   distributions     MudarabahProfitDistribution[]
+
+  // Step 1: Basic
+  category          String   @default("GENERAL") // RESTAURANT | RETAIL | SERVICES | TECH | REAL_ESTATE | OTHER
+  useOfFunds        String   @default("")
+  businessPlanUrl   String?  // optional link to business plan
+
+  // Step 2: Financial Terms
+  profitCalcMethod  String   @default("REVENUE_SHARE") // REVENUE_SHARE | PROFIT_SHARE | FIXED_RETURN
+  marginPercent     Float    @default(50.0)
+  reserveRatio      Float    @default(10.0)
+  allowEarlyWithdraw Boolean @default(false)
+  earlyWithdrawPenalty Float  @default(5.0)
+
+  // Step 3: Risk & Compliance
+  shariaCompliant   Boolean  @default(true)
+  riskDisclosure    String   @default("")
+  legalDisclaimer   String   @default("")
+  accreditedOnly    Boolean  @default(false)
+  lockupPeriodDays  Int      @default(90)
+
+  // Step 4: Distribution
+  autoDistribute    Boolean  @default(false)
+  distributionDay   Int      @default(1)
+  minDistribution   Float    @default(100.0)
+
+  // Metadata
+  viewCount         Int      @default(0)
+  featured          Boolean  @default(false)
+
   @@index([businessId])
   @@index([status])
 }

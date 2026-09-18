@@ -33,11 +33,27 @@ export interface CreatePoolData {
   profitShareRatio: string;
   targetAmount: number;
   minInvestment: number;
-  maxInvestment: number;
+  maxInvestment?: number;
   expectedApy: number;
   revenueSource: string;
-  riskBand: RiskBand;
-  distributionFreq: DistributionFreq;
+  riskBand?: RiskBand;
+  distributionFreq?: DistributionFreq;
+  category?: string;
+  useOfFunds?: string;
+  businessPlanUrl?: string;
+  profitCalcMethod?: string;
+  marginPercent?: number;
+  reserveRatio?: number;
+  allowEarlyWithdraw?: boolean;
+  earlyWithdrawPenalty?: number;
+  riskDisclosure?: string;
+  legalDisclaimer?: string;
+  shariaCompliant?: boolean;
+  accreditedOnly?: boolean;
+  lockupPeriodDays?: number;
+  autoDistribute?: boolean;
+  distributionDay?: number;
+  minDistribution?: number;
 }
 
 export interface UpdatePoolData extends Partial<CreatePoolData> {
