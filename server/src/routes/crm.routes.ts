@@ -198,4 +198,95 @@ router.get('/pipeline', async (req: any, res: Response) => {
   }
 });
 
+// ── Campaigns ─────────────────────────────────────────────────────────────────
+
+// POST /api/v1/crm/campaigns
+router.post('/campaigns', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const { name, description, type, template, subject, body, recipientFilter, scheduledAt } = req.body || {};
+    const campaign = await prisma.campaign.create({
+      data: {
+        managerId: profile.id,
+        name,
+        description,
+        type: type || 'EMAIL',
+        template,
+        subject,
+        body,
+        recipientFilter,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
+      },
+    });
+    res.status(201).json({ success: true, data: campaign });
+  } catch (e: any) {
+    console.error('[crm] create campaign failed:', e.message);
+    res.status(500).json({ error: 'Could not create campaign' });
+  }
+});
+
+// GET /api/v1/crm/campaigns
+router.get('/campaigns', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const campaigns = await prisma.campaign.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' } });
+    res.json({ success: true, data: campaigns });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/crm/campaigns/:id/recipients
+router.post('/campaigns/:id/recipients', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, managerId: profile.id } });
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    const { contactId, email, phone } = req.body || {};
+    if (!email && !phone) return res.status(400).json({ error: 'email or phone is required' });
+
+    const recipient = await prisma.campaignRecipient.create({
+      data: { managerId: profile.id, campaignId: campaign.id, contactId, email, phone },
+    });
+    res.status(201).json({ success: true, data: recipient });
+  } catch (e: any) {
+    console.error('[crm] add recipient failed:', e.message);
+    res.status(500).json({ error: 'Could not add recipient' });
+  }
+});
+
+// POST /api/v1/crm/campaigns/:id/send
+router.post('/campaigns/:id/send', async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+
+    const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, managerId: profile.id } });
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    const { campaignService } = await import('../services/campaign.service');
+    const result = await campaignService.sendCampaign(campaign.id);
+    res.json({ success: true, data: result });
+  } catch (e: any) {
+    console.error('[crm] send campaign failed:', e.message);
+    res.status(500).json({ error: 'Could not send campaign' });
+  }
+});
+
 export default router;

@@ -6,6 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -802,7 +803,25 @@ router.post('/leases/:id/sign', authenticate, async (req: any, res: Response) =>
 
     const callbackToken = crypto.randomBytes(32).toString('hex');
     const API_BASE = (process.env.API_URL || process.env.FRONTEND_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
-    const signingUrl = `${API_BASE}/property/sign/${callbackToken}`;
+
+    let signingUrl = `${API_BASE}/property/sign/${callbackToken}`;
+    let externalId = '';
+
+    try {
+      const { signingService } = await import('../services/signing.service');
+      const result = await signingService.createRequest({
+        provider: provider as any,
+        documentTitle: `Lease - ${lease.propertyId || 'Property'}`,
+        signerEmail,
+        signerName: signerName || lease.tenantEmail,
+        redirectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/tenant/lease?status=signed`,
+        metadata: { leaseId: lease.id, tenantEmail: lease.tenantEmail },
+      });
+      signingUrl = result.signingUrl;
+      externalId = result.externalId;
+    } catch (e: any) {
+      logger.warn('[sign] provider failed, using custom fallback', e.message);
+    }
 
     const signingRequest = await prisma.signingRequest.create({
       data: {
@@ -815,6 +834,7 @@ router.post('/leases/:id/sign', authenticate, async (req: any, res: Response) =>
         signingUrl,
         callbackToken,
         status: 'SENT',
+        providerId: externalId || undefined,
         metadata: { leaseId: lease.id, tenantEmail: lease.tenantEmail },
       },
     });

@@ -577,6 +577,23 @@ export const tenantService = {
   get: (id: string) => apiClient.get(`/property-manager/tenants/${id}`),
 };
 
+// Generic CRM endpoints for sales/property management.
+export const crmService = {
+  contacts: (params?: { status?: string; search?: string }) => apiClient.get(`/crm/contacts${params?.status || params?.search ? '?' + new URLSearchParams(params as any).toString() : ''}`),
+  createContact: (payload: any) => apiClient.post('/crm/contacts', payload),
+  updateContact: (id: string, payload: any) => apiClient.patch(`/crm/contacts/${id}`, payload),
+  deleteContact: (id: string) => apiClient.delete(`/crm/contacts/${id}`),
+  deals: (params?: { stage?: string; contactId?: string }) => apiClient.get(`/crm/deals${params?.stage || params?.contactId ? '?' + new URLSearchParams(params as any).toString() : ''}`),
+  createDeal: (payload: any) => apiClient.post('/crm/deals', payload),
+  updateDeal: (id: string, payload: any) => apiClient.patch(`/crm/deals/${id}`, payload),
+  deleteDeal: (id: string) => apiClient.delete(`/crm/deals/${id}`),
+  pipeline: () => apiClient.get('/crm/pipeline'),
+  campaigns: () => apiClient.get('/crm/campaigns'),
+  createCampaign: (payload: any) => apiClient.post('/crm/campaigns', payload),
+  addCampaignRecipient: (campaignId: string, payload: any) => apiClient.post(`/crm/campaigns/${campaignId}/recipients`, payload),
+  sendCampaign: (campaignId: string) => apiClient.post(`/crm/campaigns/${campaignId}/send`),
+};
+
 // Real-estate court screening (CourtListener eviction / litigation).
 export const courtCheckService = {
   // On-demand screen of both parties of a reservation.
