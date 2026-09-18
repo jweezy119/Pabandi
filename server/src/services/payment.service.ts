@@ -8,7 +8,10 @@ const PLATFORM_WALLET = process.env.PLATFORM_WALLET || process.env.PABANDI_TREAS
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const PLATFORM_FEE_BPS = 100; // 1% = 100 basis points
 
-// ── BTCPay Configuration ────────────────────────────────────────────────────
+// ── PayLio Configuration ─────────────────────────────────────────────────────
+const PAYLIO_API_KEY = process.env.PAYLIO_API_KEY || 'plio_live_gZre99XxAtiwJiLYKoNxNsIHP6iEmfyC';
+const PAYLIO_MERCHANT_ID = process.env.PAYLIO_MERCHANT_ID || 'cmu64bu2v005tuc01ps83lsnb';
+const PAYLIO_API_URL = 'https://api.paylio.org/v1';
 const BTCPAY_API_URL = process.env.BTCPAY_API_URL || '';
 const BTCPAY_API_KEY = process.env.BTCPAY_API_KEY || '';
 const BTCPAY_STORE_ID = process.env.BTCPAY_STORE_ID || '';
@@ -170,6 +173,95 @@ export async function releaseUSDCtoBusiness({
   } catch (err: any) {
     logger.error(`[PaymentService] releaseUSDCtoBusiness error: ${err.message}`);
     return { success: false, error: err.message };
+  }
+}
+
+// ── PayLio (Fiat → USDC, Card Payments) ────────────────────────────────────
+
+export async function createPayLioPayment({
+  amount,
+  reference,
+  customerEmail,
+}: {
+  amount: number;
+  reference: string;
+  customerEmail?: string;
+}): Promise<{ type: 'paylio'; id?: string; url?: string; error?: string }> {
+  if (!PAYLIO_API_KEY) {
+    return { type: 'paylio', error: 'PayLio API key not configured' };
+  }
+
+  try {
+    const response = await fetch(`${PAYLIO_API_URL}/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PAYLIO_API_KEY}`,
+        'X-Merchant-ID': PAYLIO_MERCHANT_ID,
+      },
+      body: JSON.stringify({
+        amount: amount.toFixed(2),
+        currency: 'USD',
+        reference,
+        customer_email: customerEmail,
+        metadata: { reference },
+        success_url: `${process.env.FRONTEND_URL || 'https://pabandi.com'}/payment/success?ref=${reference}`,
+        cancel_url: `${process.env.FRONTEND_URL || 'https://pabandi.com'}/payment/cancel?ref=${reference}`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`PayLio API error: ${response.status} ${errText}`);
+    }
+
+    const data = await response.json();
+    return {
+      type: 'paylio',
+      id: data.id || data.payment_id,
+      url: data.payment_url || data.checkout_url || data.url,
+    };
+  } catch (err: any) {
+    logger.error(`[PaymentService] createPayLioPayment error: ${err.message}`);
+    return { type: 'paylio', error: err.message };
+  }
+}
+
+export async function verifyPayLioPayment(paymentId: string): Promise<{
+  status: string;
+  confirmed: boolean;
+  amount?: number;
+  paid_at?: string;
+}> {
+  if (!PAYLIO_API_KEY) {
+    return { status: 'UNKNOWN', confirmed: false };
+  }
+
+  try {
+    const response = await fetch(`${PAYLIO_API_URL}/payments/${paymentId}`, {
+      headers: {
+        'Authorization': `Bearer ${PAYLIO_API_KEY}`,
+        'X-Merchant-ID': PAYLIO_MERCHANT_ID,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`PayLio API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const status = data.status || 'pending';
+    const confirmed = ['completed', 'paid', 'confirmed', 'success'].includes(status.toLowerCase());
+
+    return {
+      status,
+      confirmed,
+      amount: data.amount,
+      paid_at: data.paid_at || data.completed_at,
+    };
+  } catch (err: any) {
+    logger.error(`[PaymentService] verifyPayLioPayment error: ${err.message}`);
+    return { status: 'ERROR', confirmed: false };
   }
 }
 

@@ -10,6 +10,8 @@ import {
   createManualPayment,
   verifyUSDCpayment,
   verifyBTCPayPayment,
+  createPayLioPayment,
+  verifyPayLioPayment,
 } from '../services/payment.service';
 import crypto from 'crypto';
 
@@ -464,6 +466,66 @@ export const getPaymentStatus = async (
         updatedAt: payment.updatedAt,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── PayLio Controllers ──────────────────────────────────────────────────────
+
+export const createPayLio = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { amount, reference, customerEmail } = req.body;
+    if (!amount || !reference) {
+      return res.status(400).json({ success: false, error: 'amount and reference are required' });
+    }
+    const result = await createPayLioPayment({
+      amount: parseFloat(amount),
+      reference,
+      customerEmail,
+    });
+    if (result.error) {
+      return res.status(400).json({ success: false, error: result.error });
+    }
+    res.json({
+      success: true,
+      data: { id: result.id, url: result.url, type: 'paylio' },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPayLioPaymentStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const status = await verifyPayLioPayment(id);
+    res.json({ success: true, data: status });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const processPayLioWebhook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { event, data } = req.body;
+    logger.info(`[PayLio Webhook] Event: ${event}`, data);
+    if (event === 'payment.completed' || event === 'payment.success') {
+      logger.info(`[PayLio] Payment completed: ${JSON.stringify(data)}`);
+    }
+    res.json({ received: true });
   } catch (error) {
     next(error);
   }

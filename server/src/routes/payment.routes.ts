@@ -10,6 +10,9 @@ import {
   refundEscrow, 
   getEscrowById,
   processBTCPayWebhook,
+  createPayLio,
+  getPayLioPaymentStatus,
+  processPayLioWebhook,
 } from '../controllers/payment.controller';
 
 const router = Router();
@@ -27,6 +30,15 @@ router.post('/:id/verify', optionalAuthenticate, verifyPayment);
 
 // GET /api/v1/payments/:id — get payment details
 router.get('/:id', optionalAuthenticate, getPaymentById);
+
+// POST /api/v1/payments/paylio/create — create PayLio fiat payment
+router.post('/paylio/create', optionalAuthenticate, createPayLio);
+
+// GET /api/v1/payments/paylio/:id/status — check PayLio payment status
+router.get('/paylio/:id/status', optionalAuthenticate, getPayLioPaymentStatus);
+
+// POST /api/v1/payments/webhook/paylio — PayLio webhook
+router.post('/webhook/paylio', processPayLioWebhook);
 
 // ── Escrow Routes ───────────────────────────────────────────────────────────
 
