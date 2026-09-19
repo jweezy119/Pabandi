@@ -354,6 +354,11 @@ import { compoundingService } from './services/compounding.service';
 compoundingService.startPeriodicCompounding();
 logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
+// Auto-start DEX auto-trader (continuous trading for LP fees)
+import { startAutoTrader } from './services/autoTrader.service';
+startAutoTrader();
+logger.info('✅ DEX Auto-trader auto-started (continuous LP fee generation)');
+
 // Expose public SDK for trust seals
 import path from 'path';
 app.use('/sdk', express.static(path.join(__dirname, 'public')));

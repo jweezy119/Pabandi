@@ -1,8 +1,3 @@
-/**
- * pabDex.routes.ts — PabDex API Routes
- * 
- * Router for DEX operations: token, pool, agents, trading
- */
 import { Router } from 'express';
 import {
   createToken,

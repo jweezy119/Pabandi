@@ -1,6 +1,3 @@
-/**
- * pabDex.controller.ts — PabDex API Controller
- */
 import { Request, Response, NextFunction } from 'express';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
@@ -11,7 +8,7 @@ import { buyPAB, sellPAB, getPoolInfo, getFees, initializePool } from '../servic
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const USDC_DECIMALS = 6;
 
-function getKeypair() {
+function getKeypair(): Keypair {
   const privateKeyBase58 = process.env.PLATFORM_PRIVATE_KEY || '';
   const secretKey = bs58.decode(privateKeyBase58);
   return Keypair.fromSecretKey(secretKey);
@@ -59,7 +56,7 @@ export const getPoolInfoEndpoint = async (req: Request, res: Response, next: Nex
 export const executeSwap = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { direction, amount, wallet } = req.body;
-    if (!wallet) return res.status(400).json({ success: false, error: 'Agent wallet required' });
+    if (!wallet) return res.status(400).json({ success: false, error: 'Agent ID required' });
     
     const result = direction === 'buy' 
       ? await buyPAB(wallet, amount)
@@ -76,17 +73,13 @@ export const fundAgent = async (req: Request, res: Response, next: NextFunction)
     const { wallet, amount } = req.body;
     if (!wallet || !amount) return res.status(400).json({ success: false, error: 'Wallet and amount required' });
     
-    // wallet can be agent ID or actual wallet address
     let walletAddress = wallet;
-    
-    // If wallet looks like an agent ID (cmu...), look up the actual wallet
     if (wallet.startsWith('cmu')) {
       const { prisma } = await import('../utils/database');
       const agent = await prisma.agentProfile.findUnique({ where: { id: wallet } });
       if (agent) walletAddress = agent.walletAddress;
     }
     
-    // Transfer USDC from platform to agent
     const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
     const owner = getKeypair();
     const usdcMint = new PublicKey(USDC_MINT);
@@ -133,7 +126,58 @@ export const getStats = async (req: Request, res: Response, next: NextFunction) 
 };
 
 export const createAgent = async (req: Request, res: Response, next: NextFunction) => {
-  res.json({ success: false, error: 'Not implemented' });
+  try {
+    const { name, capabilities, initialUsdc } = req.body;
+    
+    // Generate a new Solana keypair for the agent
+    const { Keypair } = await import('@solana/web3.js');
+    const agentKeypair = Keypair.generate();
+    const walletAddress = agentKeypair.publicKey.toBase58();
+    
+    const { prisma } = await import('../utils/database');
+    const agent = await prisma.agentProfile.create({
+      data: {
+        name: name || `Agent-${Date.now()}`,
+        slug: `agent-${Date.now()}`,
+        description: 'Auto-generated trading agent',
+        capabilities: capabilities || ['trading'],
+        walletAddress,
+        publicKey: walletAddress,
+        reputation: 50,
+        balanceUsdc: initialUsdc || 0,
+        balancePab: 0,
+      },
+    });
+    
+    // Fund the agent with USDC if specified
+    if (initialUsdc && initialUsdc > 0) {
+      const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
+      const owner = getKeypair();
+      const usdcMint = new PublicKey(USDC_MINT);
+      
+      const platformUsdcAta = await getAssociatedTokenAddress(usdcMint, owner.publicKey);
+      const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(walletAddress));
+      
+      const tx = new Transaction();
+      try { await connection.getAccountInfo(agentUsdcAta); } catch {
+        tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, new PublicKey(walletAddress), usdcMint));
+      }
+      
+      const usdcRaw = Math.floor(initialUsdc * Math.pow(10, USDC_DECIMALS));
+      tx.add(createTransferInstruction(platformUsdcAta, agentUsdcAta, owner.publicKey, BigInt(usdcRaw)));
+      
+      const { blockhash } = await connection.getRecentBlockhash();
+      tx.recentBlockhash = blockhash;
+      tx.feePayer = owner.publicKey;
+      tx.sign(owner);
+      
+      await sendAndConfirmTransaction(connection, tx, [owner]);
+    }
+    
+    res.json({ success: true, data: { id: agent.id, name: agent.name, walletAddress, balanceUsdc: agent.balanceUsdc } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 export const startAgent = async (req: Request, res: Response, next: NextFunction) => {
@@ -149,21 +193,32 @@ export const stopAgent = async (req: Request, res: Response, next: NextFunction)
 };
 
 export const getAgents = async (req: Request, res: Response, next: NextFunction) => {
-  res.json({ success: true, data: [] });
+  try {
+    const { prisma } = await import('../utils/database');
+    const agents = await prisma.agentProfile.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, balanceUsdc: true, balancePab: true, reputation: true },
+    });
+    res.json({ success: true, data: agents });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 export const getAgent = async (req: Request, res: Response, next: NextFunction) => {
-  res.json({ success: true, data: null });
+  try {
+    const { prisma } = await import('../utils/database');
+    const agent = await prisma.agentProfile.findUnique({ where: { id: req.params.id } });
+    res.json({ success: true, data: agent });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 export const executeTrade = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { direction, amount } = req.body;
     const agentId = req.params.id;
-    
-    const { prisma } = await import('../utils/database');
-    const agent = await prisma.agentProfile.findUnique({ where: { id: agentId } });
-    if (!agent) return res.status(404).json({ success: false, error: 'Agent not found' });
     
     const result = direction === 'buy' 
       ? await buyPAB(agentId, amount)

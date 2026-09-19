@@ -1,87 +1,78 @@
 import { prisma } from '../utils/database';
 import { buyPAB, sellPAB, getPoolInfo, getFees } from './raydiumPool.service';
 
-/**
- * PabDex Auto-Trader
- * ==================
- * 
- * Continuously runs trades to generate LP fees.
- * Trades are executed from the platform wallet on behalf of agents.
- * All profits stay in the platform wallet as USDC.
- */
-
-const TRADE_INTERVAL_MS = 5000; // 5 seconds between trades
-const MIN_TRADE_USDC = 0.10;
-const MAX_TRADE_USDC = 1.00;
+const TRADE_INTERVAL_MS = 3000;
+const MIN_TRADE_USDC = 0.05;
+const MAX_TRADE_USDC = 0.50;
+const MIN_PAB_SELL = 50;
+const MAX_PAB_SELL = 500;
 
 let running = false;
 let interval: NodeJS.Timeout | null = null;
-let totalTrades = 0;
-let totalVolume = 0;
-let totalFees = 0;
+let stats = { totalTrades: 0, totalVolume: 0, totalFees: 0, startTime: Date.now() };
 
 export async function startAutoTrader(): Promise<void> {
   if (running) return;
   running = true;
-  
-  console.log('[AutoTrader] Starting...');
-  
-  interval = setInterval(async () => {
-    try {
-      await executeRandomTrade();
-    } catch (err: any) {
-      console.error('[AutoTrader] Error:', err.message);
-    }
-  }, TRADE_INTERVAL_MS);
+  stats.startTime = Date.now();
+  console.log('[AutoTrader] 🚀 Starting continuous trading...');
+  interval = setInterval(async () => { await tick(); }, TRADE_INTERVAL_MS);
 }
 
 export function stopAutoTrader(): void {
   if (interval) clearInterval(interval);
   running = false;
-  console.log('[AutoTrader] Stopped');
+  console.log('[AutoTrader] ⏹ Stopped');
 }
 
 export function getAutoTraderStats() {
-  return {
-    running,
-    totalTrades,
-    totalVolume,
-    totalFees,
-  };
+  return { ...stats, running, uptimeMs: Date.now() - stats.startTime };
 }
 
-async function executeRandomTrade() {
-  // Get active agents with balances
-  const agents = await prisma.agentProfile.findMany({
-    where: { isActive: true },
-    select: { id: true, name: true, balanceUsdc: true, balancePab: true },
-  });
-  
-  if (agents.length === 0) return;
-  
-  // Pick a random agent
-  const agent = agents[Math.floor(Math.random() * agents.length)];
-  
-  // Decide direction based on balances
-  const direction = agent.balanceUsdc > agent.balancePab ? 'buy' : 'sell';
-  
-  let amount: number;
-  if (direction === 'buy') {
-    amount = Math.min(agent.balanceUsdc * 0.5, MAX_TRADE_USDC);
-    if (amount < MIN_TRADE_USDC) return;
-  } else {
-    amount = Math.min(agent.balancePab * 0.5, 1000); // Sell up to 1000 PAB
-    if (amount < 100) return;
-  }
-  
-  const result = direction === 'buy'
-    ? await buyPAB(agent.id, amount)
-    : await sellPAB(agent.id, amount);
-  
-  if (result.success) {
-    totalTrades++;
-    totalVolume += amount;
-    const fees = amount * 0.0025; // 0.25%
-    totalFees += fees;
+async function tick() {
+  try {
+    const agents = await prisma.agentProfile.findMany({ where: { isActive: true } });
+    if (agents.length === 0) return;
+
+    for (const agent of agents) {
+      try {
+        const usdcBal = agent.balanceUsdc ?? 0;
+        const pabBal = agent.balancePab ?? 0;
+
+        // Recycle: if low on USDC but has PAB → sell PAB
+        if (usdcBal < MIN_TRADE_USDC && pabBal > MIN_PAB_SELL) {
+          const sellAmount = Math.min(pabBal * 0.5, MAX_PAB_SELL);
+          const r = await sellPAB(agent.id, sellAmount);
+          if (r.success) { stats.totalTrades++; stats.totalVolume += sellAmount; stats.totalFees += sellAmount * 0.0025; }
+          continue;
+        }
+
+        // Recycle: if low on PAB but has USDC → buy PAB
+        if (pabBal < MIN_PAB_SELL && usdcBal > MIN_TRADE_USDC) {
+          const buyAmount = Math.min(usdcBal * 0.3, MAX_TRADE_USDC);
+          const r = await buyPAB(agent.id, buyAmount);
+          if (r.success) { stats.totalTrades++; stats.totalVolume += buyAmount; stats.totalFees += buyAmount * 0.0025; }
+          continue;
+        }
+
+        // Both balances healthy → random trade
+        if (usdcBal > MIN_TRADE_USDC && pabBal > MIN_PAB_SELL) {
+          const direction = Math.random() > 0.5 ? 'buy' : 'sell';
+          if (direction === 'buy') {
+            const amt = Math.min(usdcBal * 0.2, MAX_TRADE_USDC);
+            const r = await buyPAB(agent.id, amt);
+            if (r.success) { stats.totalTrades++; stats.totalVolume += amt; stats.totalFees += amt * 0.0025; }
+          } else {
+            const amt = Math.min(pabBal * 0.2, MAX_PAB_SELL);
+            const r = await sellPAB(agent.id, amt);
+            if (r.success) { stats.totalTrades++; stats.totalVolume += amt; stats.totalFees += amt * 0.0025; }
+          }
+        }
+      } catch (e: any) {
+        // Skip agent errors silently
+      }
+    }
+  } catch (e: any) {
+    console.error('[AutoTrader] tick error:', e.message);
   }
 }
