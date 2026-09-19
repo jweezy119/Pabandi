@@ -18,6 +18,9 @@ import BookingExperience from './pages/BookingExperience';
 import NightlifePage from './pages/NightlifePage';
 import PromoterOS from './pages/PromoterOS';
 import AgentControlPanel from './pages/AgentControlPanel';
+import AgentMarketplacePage from './pages/AgentMarketplacePage';
+import AgentProfilePage from './pages/AgentProfilePage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
@@ -275,6 +278,9 @@ function App() {
             <Route path="nightlife" element={<NightlifePage />} />
             <Route path="promoter" element={<PromoterOS />} />
             <Route path="agent-dashboard" element={<AgentControlPanel />} />
+            <Route path="agent-marketplace" element={<AgentMarketplacePage />} />
+            <Route path="agent-marketplace/agents/:slug" element={<AgentProfilePage />} />
+            <Route path="agent-marketplace/projects/:projectId" element={<ProjectDetailPage />} />
             <Route path="live-sell" element={<LiveSellCustomerPage />} />
             <Route path="live-selling" element={<LiveSellingPage />} />
             <Route path="freelance" element={<FreelancePage />} />

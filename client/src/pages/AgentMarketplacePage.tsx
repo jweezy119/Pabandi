@@ -1,249 +1,196 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import StatsBar from '../components/StatsBar';
+import LeaderboardTable from '../components/LeaderboardTable';
+import ProjectCard from '../components/ProjectCard';
+import AgentCard from '../components/AgentCard';
 
-type Agent = {
-  id: string;
-  name: string;
-  category: string;
-  balancePab: number;
-  stakePab: number;
-  completionRate: number;
-  noShowRate: number;
-  completedJobs: number;
-  openBids: number;
-  trustScore: number;
-  rating?: number;
-  activeVariant?: string | null;
+type Stats = {
+  totalAgents: number;
+  openProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  totalVolume: number;
+  totalFees: number;
 };
 
-type Feedback = { id: string; rating: number; comment?: string | null; tags: string[]; createdAt: string };
-type Variant = { id: string; variant: string; metrics: Record<string, any>; deployed: boolean; createdAt: string };
+type LeaderboardEntry = {
+  id: string;
+  name: string;
+  slug: string;
+  capabilities: string[];
+  reputation: number;
+  totalEarned: number;
+  projectsCompleted: number;
+};
+
+type Project = {
+  id: string;
+  title: string;
+  description: string;
+  budgetUsd: number;
+  budgetPab: number;
+  deadline: string;
+  status: string;
+  category: string;
+  complexity: string;
+  bids: any[];
+  poster: { name: string; slug: string };
+};
 
 export default function AgentMarketplacePage() {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [learning, setLearning] = useState<any>(null);
-  const [feedback, setFeedback] = useState<Feedback[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ outcome: 'COMPLETED' as 'COMPLETED' | 'NO_SHOW' | 'CANCELLED', rating: 5, tags: '' });
+  const [filter, setFilter] = useState({ category: '', complexity: '', minBudget: '', maxBudget: '' });
 
   useEffect(() => {
-    fetch('/api/v1/agents')
-      .then((r) => r.json())
-      .then((d) => setAgents(Array.isArray(d) ? d : d.agents || []))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch('/api/v1/agent-marketplace/stats').then(r => r.json()),
+      fetch('/api/v1/agent-marketplace/leaderboard').then(r => r.json()),
+      fetch('/api/v1/agent-marketplace/projects/open').then(r => r.json()),
+    ]).then(([statsData, lbData, projData]) => {
+      if (statsData.success) setStats(statsData.stats);
+      if (lbData.success) setLeaderboard(lbData.leaderboard);
+      if (projData.success) setProjects(projData.projects);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!selected) return;
-    Promise.all([
-      fetch(`/api/v1/agents/${selected}`).then((r) => r.json()),
-      fetch(`/api/v1/agents/${selected}/learning`).then((r) => (r.ok ? r.json() : null)),
-    ]).then(([detail, learn]) => {
-      setAgents((prev) => prev.map((a) => (a.id === selected ? { ...a, ...detail } : a)));
-      setLearning(learn);
-      setFeedback(learn?.feedback || []);
-    });
-  }, [selected]);
-
-  const submitFeedback = async () => {
-    if (!selected) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/v1/agents/${selected}/feedback`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          outcome: form.outcome,
-          rating: form.rating,
-          tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-          bookingId: `ui-${Date.now()}`,
-        }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        const refresh = await fetch(`/api/v1/agents/${selected}/learning`).then((r) => r.json());
-        setLearning(refresh);
-        setFeedback(refresh.feedback || []);
-        setForm((f) => ({ ...f, tags: '' }));
-      } else {
-        alert(data.message || data.error || 'Failed');
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const filteredProjects = projects.filter(p => {
+    if (filter.category && p.category !== filter.category) return false;
+    if (filter.complexity && p.complexity !== filter.complexity) return false;
+    if (filter.minBudget && p.budgetUsd < Number(filter.minBudget)) return false;
+    if (filter.maxBudget && p.budgetUsd > Number(filter.maxBudget)) return false;
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white p-6">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold mb-1">Agent Marketplace</h1>
-        <p className="text-slate-400 mb-6">Autonomous agents staked in PAB. Performance, trust, and learning in one rail.</p>
-
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
-                <div className="h-4 w-24 bg-white/10 rounded mb-3" />
-                <div className="h-3 w-32 bg-white/10 rounded" />
-              </div>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-purple-600/20 to-orange-600/20 blur-3xl" />
+        <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-emerald-400 via-purple-400 to-orange-400 bg-clip-text text-transparent mb-4">
+              AI Agent Marketplace
+            </h1>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+              Self-healing economy where AI agents transact, compete, and earn. Every trade generates platform fees.
+            </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {agents.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => setSelected(a.id === selected ? null : a.id)}
-                className={`text-left rounded-2xl border transition hover:scale-[1.01] hover:-translate-y-0.5 ${
-                  selected === a.id ? 'border-white/40 bg-white/10' : 'border-white/10 bg-white/5'
-                }`}
-              >
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold">{a.name || `Agent ${a.id.slice(0, 6)}`}</div>
-                      <div className="text-xs text-slate-400">{a.category}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400">Trust</div>
-                      <div className="text-sm font-bold">{a.trustScore}</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
-                    <span className="rounded-full bg-white/10 px-2 py-0.5">PAB {a.balancePab}</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5">Stake {a.stakePab}</span>
-                    {typeof a.rating === 'number' && (
-                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-200">★ {a.rating.toFixed(1)}</span>
-                    )}
-                  </div>
-                  <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
-                    <div
-                      className="h-1.5 rounded-full bg-emerald-400"
-                      style={{ width: `${Math.min(100, Math.max(0, a.completionRate || 0))}%` }}
-                    />
-                  </div>
-                  <div className="mt-1 flex justify-between text-[10px] text-slate-400">
-                    <span>Completed: {a.completedJobs}</span>
-                    <span>Open: {a.openBids}</span>
-                  </div>
-                </div>
-              </button>
-            ))}
+
+          {/* Stats Bar */}
+          {stats && <StatsBar stats={stats} />}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <Link
+              to="/agent-marketplace/post-project"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
+            >
+              Post Project
+            </Link>
+            <Link
+              to="/agent-marketplace/register-agent"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:scale-105"
+            >
+              Register Agent
+            </Link>
           </div>
-        )}
+        </div>
+      </div>
 
-        {selected && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">
-                  {agents.find((a) => a.id === selected)?.name || `Agent ${selected.slice(0, 6)}`}
-                </div>
-                <div className="text-xs text-slate-400">Learning state + recent feedback</div>
-              </div>
-              <button className="text-xs text-slate-300 hover:text-white" onClick={() => setSelected(null)}>
-                Close
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="text-xs text-slate-400">Active variant</div>
-                <div className="text-sm font-semibold">{learning?.activeVariant || '—'}</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="text-xs text-slate-400">Feedback count</div>
-                <div className="text-sm font-semibold">{feedback.length}</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="text-xs text-slate-400">Latest rating</div>
-                <div className="text-sm font-semibold">{feedback[0] ? `★ ${feedback[0].rating}` : '—'}</div>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs text-slate-400 mb-2">Submit outcome feedback</div>
-              <div className="flex flex-wrap gap-2">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Filters */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <h3 className="text-sm font-semibold text-slate-300 mb-3">Filter Projects</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <select
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                  value={form.outcome}
-                  onChange={(e) => setForm((f) => ({ ...f, outcome: e.target.value as any }))}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  value={filter.category}
+                  onChange={e => setFilter(f => ({ ...f, category: e.target.value }))}
                 >
-                  <option value="COMPLETED">COMPLETED</option>
-                  <option value="NO_SHOW">NO_SHOW</option>
-                  <option value="CANCELLED">CANCELLED</option>
+                  <option value="">All Categories</option>
+                  <option value="coding">Coding</option>
+                  <option value="design">Design</option>
+                  <option value="research">Research</option>
+                  <option value="writing">Writing</option>
+                  <option value="analysis">Analysis</option>
                 </select>
                 <select
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                  value={form.rating}
-                  onChange={(e) => setForm((f) => ({ ...f, rating: Number(e.target.value) }))}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  value={filter.complexity}
+                  onChange={e => setFilter(f => ({ ...f, complexity: e.target.value }))}
                 >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>{n} ★</option>
-                  ))}
+                  <option value="">All Complexity</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
                 </select>
                 <input
-                  className="flex-1 min-w-[180px] rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                  placeholder="Tags: fast, quality, communicated"
-                  value={form.tags}
-                  onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+                  type="number"
+                  placeholder="Min Budget ($)"
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500"
+                  value={filter.minBudget}
+                  onChange={e => setFilter(f => ({ ...f, minBudget: e.target.value }))}
                 />
-                <button
-                  onClick={submitFeedback}
-                  disabled={submitting}
-                  className="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-60"
-                >
-                  {submitting ? 'Saving...' : 'Save feedback'}
-                </button>
+                <input
+                  type="number"
+                  placeholder="Max Budget ($)"
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500"
+                  value={filter.maxBudget}
+                  onChange={e => setFilter(f => ({ ...f, maxBudget: e.target.value }))}
+                />
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs text-slate-400 mb-2">Recent feedback</div>
-                <div className="space-y-2">
-                  {feedback.length === 0 && <div className="text-xs text-slate-500">No feedback yet.</div>}
-                  {feedback.map((f) => (
-                    <div key={f.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
-                      <div className="flex items-center justify-between">
-                        <span>★ {f.rating}</span>
-                        <span className="text-slate-500">{new Date(f.createdAt).toLocaleString()}</span>
-                      </div>
-                      {f.comment && <div className="mt-1 text-slate-300">{f.comment}</div>}
-                      {!!f.tags?.length && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {f.tags.map((t) => (
-                            <span key={t} className="rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{t}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+            {/* Projects Grid */}
+            <div>
+              <h2 className="text-xl font-bold mb-4">Open Projects</h2>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse h-48" />
                   ))}
                 </div>
-              </div>
+              ) : filteredProjects.length === 0 ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-400">
+                  No open projects match your filters.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {filteredProjects.map(project => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-              <div>
-                <div className="text-xs text-slate-400 mb-2">Variant history</div>
-                <div className="space-y-2">
-                  {(learning?.variants || []).map((v: Variant) => (
-                    <div key={v.id} className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-200">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">{v.variant}</span>
-                        <span className={`rounded-full px-2 py-0.5 ${v.deployed ? 'bg-emerald-500/15 text-emerald-200' : 'bg-white/10 text-slate-300'}`}>
-                          {v.deployed ? 'active' : 'inactive'}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-slate-400">
-                        bookings: {(v.metrics?.bookings || 0)} · revenue: {(v.metrics?.revenue || 0)} · rating: {(v.metrics?.rating || 0).toFixed?.(1) ?? v.metrics?.rating}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Leaderboard */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
+              <LeaderboardTable entries={leaderboard} />
+            </div>
+
+            {/* Top Agents */}
+            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <h2 className="text-lg font-bold mb-4">Top Agents</h2>
+              <div className="space-y-3">
+                {leaderboard.slice(0, 5).map(entry => (
+                  <AgentCard key={entry.id} agent={entry} compact />
+                ))}
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

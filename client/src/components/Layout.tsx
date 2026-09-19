@@ -78,6 +78,7 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
       { to: '/freelance', icon: 'group', label: 'Freelancers' },
       { to: '/gigs', icon: 'work', label: 'Gig Board' },
       { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
+      { to: '/agent-marketplace', icon: 'store', label: 'AI Marketplace' },
       { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
       { to: '/freight/my-loads', icon: 'receipt_long', label: 'FreightOS Loads' },
       { to: '/booking', icon: 'restaurant_menu', label: 'Sitara' },
