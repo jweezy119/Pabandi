@@ -5638,6 +5638,7 @@ model RewardTransaction {
   referenceType   String?
   status          String   @default("PENDING")
   claimedAt       DateTime?
+  settledAt       DateTime?
   vestingEnd      DateTime?
   createdAt       DateTime @default(now())
   @@index([userId])

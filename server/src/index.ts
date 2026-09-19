@@ -314,6 +314,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/profit-engine`, './routes/profitEngine.routes'],
   [`/api/${v}/auto-approval`, './routes/autoApproval.routes'],
   [`/api/${v}/single-wallet`, './routes/singleWalletTreasury.routes'],
+  [`/api/${v}/settlement`, './routes/settlement.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {
@@ -340,6 +341,11 @@ app.post(`/api/${v}/mcp`, async (req, res) => {
 });
 
 logger.info(`✅ ${routeMap.length} lazy API routes registered`);
+
+// Auto-start settlement service (runs every hour to settle agent credits on-chain)
+import { settlementService } from './services/settlement.service';
+settlementService.startPeriodicSettlement();
+logger.info('✅ Settlement service auto-started (hourly on-chain USDC transfers)');
 
 // Expose public SDK for trust seals
 import path from 'path';

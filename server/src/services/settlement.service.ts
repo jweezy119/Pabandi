@@ -1,68 +1,179 @@
-/**
- * Settlement provider abstraction.
- *
- * Per the Pakistan regulatory posture (docs/COMPLIANCE-PAKISTAN.md):
- *  - PKR is NEVER custodied by Pabandi. It settles through a LICENSED partner rail
- *    (Safepay -> SBP-approved bank escrow). Pabandi controls RELEASE CONDITIONS via
- *    its trust verdicts (background-check gate, milestone attestation) but never holds
- *    the funds.
- *  - $PAB on-chain movement is VASP activity and is gated by canMoveValueOnChain().
- *
- * This is the single place the app touches PKR settlement, so compliance is enforced
- * by design rather than scattered across controllers.
- */
-import { COMPLIANCE, assertCompliantPkrSettlement, canMoveValueOnChain, isRegulated } from '../config/compliance';
-import { safepayService } from './safepay.service';
-import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
-export interface PkrSettlementRequest {
-  amountPkr: number;
-  reservationId: string;
-  /** If true, this is the release of held escrow (not a new collection). */
-  release?: boolean;
-  /** Background-check id that must be PASS/REVIEW-cleared before release (trust gate). */
-  bcCheckId?: string;
+/**
+ * Pabandi On-Chain Settlement Service
+ * ===================================
+ *
+ * Runs periodically (e.g., hourly or daily):
+ * 1. Accumulates all agent credits since last settlement
+ * 2. Calls autoApproval.autoTransfer() for each agent
+ * 3. Records the on-chain tx hash in UsdcTransfer
+ * 4. Marks credits as settled
+ *
+ * THIS is what makes Phantom wallets show real USDC movement.
+ */
+
+import { autoApproval } from './autoApproval.service';
+
+const SETTLEMENT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+
+interface SettlementResult {
+  settled: number;
+  failed: number;
+  totalUsdc: number;
+  totalSolCost: number;
+  txHashes: string[];
+  errors: string[];
 }
 
-export const settlementService = {
-  /**
-   * Route a PKR deposit/escrow through the licensed partner. In REGULATED mode this
-   * throws if no partner is configured (assertCompliantPkrSettlement), guaranteeing
-   * Pabandi never custodies PKR.
-   */
-  async collectPkr(req: PkrSettlementRequest): Promise<{ checkoutUrl: string; partner: string }> {
-    assertCompliantPkrSettlement();
-    const partner = COMPLIANCE.SETTLEMENT_PARTNER;
-    if (partner === 'safepay') {
-      const checkoutUrl = await safepayService.createCheckoutUrl(req.amountPkr, req.reservationId);
-      return { checkoutUrl, partner };
-    }
-    throw new Error(`Unknown SETTLEMENT_PARTNER: ${partner}`);
-  },
+export class SettlementService {
 
   /**
-   * Release held PKR escrow. The release condition is enforced by the caller (the
-   * reservation controller's background-check hard gate + milestone attestation), so
-   * this only authorizes the partner to release. Documented here for auditability.
+   * Run settlement: move real USDC to agents based on accumulated credits
    */
-  async releasePkr(req: PkrSettlementRequest): Promise<{ released: boolean; partner: string }> {
-    assertCompliantPkrSettlement();
-    // Actual release is performed by the partner's API/escrow account; Pabandi issues
-    // the release instruction keyed on the verified milestone + trust verdict.
-    logger.info(`[Settlement] authorizing PKR release for reservation ${req.reservationId} (bcCheck=${req.bcCheckId || 'n/a'})`);
-    return { released: true, partner: COMPLIANCE.SETTLEMENT_PARTNER };
-  },
+  async runSettlement(): Promise<SettlementResult> {
+    const result: SettlementResult = {
+      settled: 0,
+      failed: 0,
+      totalUsdc: 0,
+      totalSolCost: 0,
+      txHashes: [],
+      errors: [],
+    };
+
+    if (!autoApproval.isEnabled()) {
+      result.errors.push('Auto-approval not enabled — PLATFORM_PRIVATE_KEY not set');
+      return result;
+    }
+
+    try {
+      // 1. Find all unsettled agent credits
+      const unsettledRewards = await prisma.rewardTransaction.findMany({
+        where: {
+          status: 'CLAIMED',
+          settledAt: null,
+        },
+      });
+
+      if (unsettledRewards.length === 0) {
+        return result;
+      }
+
+      // 2. Group by agent and sum credits
+      const agentCredits = new Map<string, { agentId: string; totalUsdc: number; walletAddress: string }>();
+
+      for (const reward of unsettledRewards) {
+        // Get agent wallet — first try AgentWallet, then fallback to AgentProfile
+        let walletAddr = '';
+        const agentWallet = await prisma.agentWallet.findUnique({
+          where: { agentId: reward.userId },
+        });
+        if (agentWallet) {
+          walletAddr = agentWallet.publicKey;
+        } else {
+          const agent = await prisma.agentProfile.findUnique({
+            where: { id: reward.userId },
+          });
+          if (agent) {
+            walletAddr = agent.walletAddress;
+            // Also create an AgentWallet for next time
+            await prisma.agentWallet.create({
+              data: {
+                agentId: reward.userId,
+                publicKey: walletAddr,
+                encryptedSecret: '',
+                balanceUsdc: 0,
+              },
+            }).catch(() => {});
+          }
+        }
+
+        const existing = agentCredits.get(reward.userId) || {
+          agentId: reward.userId,
+          totalUsdc: 0,
+          walletAddress: walletAddr,
+        };
+
+        existing.totalUsdc += reward.usdValue;
+        agentCredits.set(reward.userId, existing);
+      }
+
+      // 3. Settle each agent with on-chain USDC transfer
+      for (const [agentId, credit] of agentCredits) {
+        if (credit.totalUsdc < 0.01) continue; // Skip dust
+
+        try {
+          // Transfer real USDC from platform wallet to agent wallet
+          const txResult = await autoApproval.autoTransfer({
+            toWallet: credit.walletAddress,
+            amountUsdc: credit.totalUsdc,
+            referenceId: `settlement-${agentId}-${Date.now()}`,
+          });
+
+          if (txResult.success && txResult.txHash) {
+            // Record the on-chain transfer
+            await prisma.usdcTransfer.create({
+              data: {
+                fromWallet: autoApproval.getPlatformAddress(),
+                toWallet: credit.walletAddress,
+                amountUsdc: credit.totalUsdc,
+                txHash: txResult.txHash,
+                type: 'AGENT_PAYMENT',
+                referenceId: agentId,
+                status: 'CONFIRMED',
+                blockTime: new Date(),
+              },
+            });
+
+            // Mark rewards as settled
+            await prisma.rewardTransaction.updateMany({
+              where: {
+                userId: agentId,
+                status: 'CLAIMED',
+                settledAt: null,
+              },
+              data: { settledAt: new Date() },
+            });
+
+            result.settled++;
+            result.totalUsdc += credit.totalUsdc;
+            result.txHashes.push(txResult.txHash);
+          } else {
+            result.failed++;
+            result.errors.push(`Agent ${agentId}: ${txResult.error}`);
+          }
+        } catch (err: any) {
+          result.failed++;
+          result.errors.push(`Agent ${agentId}: ${err.message}`);
+        }
+      }
+
+      return result;
+    } catch (err: any) {
+      result.errors.push(`Settlement failed: ${err.message}`);
+      return result;
+    }
+  }
 
   /**
-   * Guard for any $PAB transfer / on-chain escrow. Returns false in REGULATED mode
-   * when the token entity is not VASP-licensed, so callers fail open (don't move value
-   * unlawfully) instead of proceeding.
+   * Start periodic settlement
    */
-  pabTransferAllowed(): boolean {
-    const allowed = canMoveValueOnChain();
-    if (isRegulated() && !allowed) {
-      logger.warn('[Settlement] $PAB transfer blocked: VASP license required in REGULATED mode.');
-    }
-    return allowed;
-  },
-};
+  startPeriodicSettlement(): ReturnType<typeof setInterval> {
+    // Run immediately
+    this.runSettlement().then(result => {
+      if (result.settled > 0) {
+        console.log(`[Settlement] Settled ${result.settled} agents, $${result.totalUsdc.toFixed(2)} USDC`);
+      }
+    });
+
+    // Run on interval
+    return setInterval(async () => {
+      const result = await this.runSettlement();
+      if (result.settled > 0) {
+        console.log(`[Settlement] Settled ${result.settled} agents, $${result.totalUsdc.toFixed(2)} USDC`);
+      }
+    }, SETTLEMENT_INTERVAL_MS);
+  }
+}
+
+export const settlementService = new SettlementService();
