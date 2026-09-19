@@ -1,19 +1,15 @@
 import { prisma } from '../utils/database';
 
 /**
- * Pabandi On-Chain Settlement Service
- * ===================================
+ * Pabandi Settlement Service
+ * ==========================
  *
- * Runs periodically (e.g., hourly or daily):
- * 1. Accumulates all agent credits since last settlement
- * 2. Calls autoApproval.autoTransfer() for each agent
- * 3. Records the on-chain tx hash in UsdcTransfer
- * 4. Marks credits as settled
- *
- * THIS is what makes Phantom wallets show real USDC movement.
+ * NEW MODEL: Profits stay in the platform wallet.
+ * - Agents work on internal credits only
+ * - All fees/profits compound back to platform wallet
+ * - No on-chain transfers to agents
+ * - Settlement just marks credits as settled in DB
  */
-
-import { autoApproval } from './autoApproval.service';
 
 const SETTLEMENT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -28,9 +24,6 @@ interface SettlementResult {
 
 export class SettlementService {
 
-  /**
-   * Run settlement: move real USDC to agents based on accumulated credits
-   */
   async runSettlement(): Promise<SettlementResult> {
     const result: SettlementResult = {
       settled: 0,
@@ -41,23 +34,12 @@ export class SettlementService {
       errors: [],
     };
 
-    if (!autoApproval.isEnabled()) {
-      result.errors.push('Auto-approval not enabled — PLATFORM_PRIVATE_KEY not set');
-      return result;
-    }
-
     try {
-      // 1. Find all unsettled agent credits (only for agents with valid Solana addresses)
-      const validAgents = await prisma.agentProfile.findMany({
-        where: { isActive: true, walletAddress: { not: { startsWith: '0x' } } },
-        select: { id: true },
-      });
-      const validAgentIds = validAgents.map(a => a.id);
-
+      // 1. Find all unsettled reward transactions
       const unsettledRewards = await prisma.rewardTransaction.findMany({
         where: {
           status: 'CLAIMED',
-          userId: { in: validAgentIds },
+          settledAt: null,
         },
       });
 
@@ -65,100 +47,40 @@ export class SettlementService {
         return result;
       }
 
-      // 2. Group by agent and sum credits
-      const agentCredits = new Map<string, { agentId: string; totalUsdc: number; walletAddress: string }>();
-
+      // 2. Sum up all profits
+      let totalProfits = 0;
       for (const reward of unsettledRewards) {
-        // Get agent wallet — first try AgentWallet, then fallback to AgentProfile
-        let walletAddr = '';
-        const agentWallet = await prisma.agentWallet.findUnique({
-          where: { agentId: reward.userId },
+        totalProfits += reward.usdValue;
+      }
+
+      // 3. Mark all as settled (profits stay in platform wallet)
+      await prisma.rewardTransaction.updateMany({
+        where: {
+          status: 'CLAIMED',
+          settledAt: null,
+        },
+        data: { settledAt: new Date() },
+      });
+
+      // 4. Record in treasury
+      if (totalProfits > 0) {
+        await prisma.treasuryPosition.create({
+          data: {
+            bucket: 'OPERATING',
+            amount: totalProfits,
+            status: 'CONFIRMED',
+            meta: { 
+              source: 'SETTLEMENT_COMPOUND', 
+              totalRewards: unsettledRewards.length,
+              totalProfits,
+              note: 'Profits retained in platform wallet - no agent payouts'
+            },
+          },
         });
-        if (agentWallet) {
-          walletAddr = agentWallet.publicKey;
-        } else {
-          const agent = await prisma.agentProfile.findUnique({
-            where: { id: reward.userId },
-          });
-          if (agent) {
-            walletAddr = agent.walletAddress;
-            // Also create an AgentWallet for next time
-            await prisma.agentWallet.create({
-              data: {
-                agentId: reward.userId,
-                publicKey: walletAddr,
-                encryptedSecret: '',
-                balanceUsdc: 0,
-              },
-            }).catch(() => {});
-          }
-        }
-
-        const existing = agentCredits.get(reward.userId) || {
-          agentId: reward.userId,
-          totalUsdc: 0,
-          walletAddress: walletAddr,
-        };
-
-        existing.totalUsdc += reward.usdValue;
-        agentCredits.set(reward.userId, existing);
       }
 
-      // 3. Settle each agent with on-chain USDC transfer
-      for (const [agentId, credit] of agentCredits) {
-        if (credit.totalUsdc < 0.01) continue; // Skip dust
-
-        // Skip agents with invalid wallet addresses
-        if (!credit.walletAddress || credit.walletAddress.startsWith('0x') || credit.walletAddress.length < 32) {
-          result.errors.push(`Agent ${agentId}: invalid wallet address, skipping`);
-          continue;
-        }
-
-        try {
-          // Transfer real USDC from platform wallet to agent wallet
-          const txResult = await autoApproval.autoTransfer({
-            toWallet: credit.walletAddress,
-            amountUsdc: credit.totalUsdc,
-            referenceId: `settlement-${agentId}-${Date.now()}`,
-          });
-
-          if (txResult.success && txResult.txHash) {
-            // Record the on-chain transfer
-            await prisma.usdcTransfer.create({
-              data: {
-                fromWallet: autoApproval.getPlatformAddress(),
-                toWallet: credit.walletAddress,
-                amountUsdc: credit.totalUsdc,
-                txHash: txResult.txHash,
-                type: 'AGENT_PAYMENT',
-                referenceId: agentId,
-                status: 'CONFIRMED',
-                blockTime: new Date(),
-              },
-            });
-
-            // Mark rewards as settled
-            await prisma.rewardTransaction.updateMany({
-              where: {
-                userId: agentId,
-                status: 'CLAIMED',
-                settledAt: null,
-              },
-              data: { settledAt: new Date() },
-            });
-
-            result.settled++;
-            result.totalUsdc += credit.totalUsdc;
-            result.txHashes.push(txResult.txHash);
-          } else {
-            result.failed++;
-            result.errors.push(`Agent ${agentId}: ${txResult.error}`);
-          }
-        } catch (err: any) {
-          result.failed++;
-          result.errors.push(`Agent ${agentId}: ${err.message}`);
-        }
-      }
+      result.settled = unsettledRewards.length;
+      result.totalUsdc = totalProfits;
 
       return result;
     } catch (err: any) {
@@ -167,22 +89,17 @@ export class SettlementService {
     }
   }
 
-  /**
-   * Start periodic settlement
-   */
   startPeriodicSettlement(): ReturnType<typeof setInterval> {
-    // Run immediately
     this.runSettlement().then(result => {
       if (result.settled > 0) {
-        console.log(`[Settlement] Settled ${result.settled} agents, $${result.totalUsdc.toFixed(2)} USDC`);
+        console.log(`[Settlement] Settled ${result.settled} rewards, $${result.totalUsdc.toFixed(4)} retained in platform wallet`);
       }
     });
 
-    // Run on interval
     return setInterval(async () => {
       const result = await this.runSettlement();
       if (result.settled > 0) {
-        console.log(`[Settlement] Settled ${result.settled} agents, $${result.totalUsdc.toFixed(2)} USDC`);
+        console.log(`[Settlement] Settled ${result.settled} rewards, $${result.totalUsdc.toFixed(4)} retained in platform wallet`);
       }
     }, SETTLEMENT_INTERVAL_MS);
   }
