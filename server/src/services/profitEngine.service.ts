@@ -1,13 +1,12 @@
 import { prisma } from '../utils/database';
+import { compoundingService } from './compounding.service';
 
 // ─── Configuration ───────────────────────────────────────
-const DEFAULT_FEE_RATE = 0.02;
+const DEFAULT_FEE_RATE = 0.10; // 10% — managed by compounding service
 const MIN_CYCLE_TIME = 30;
 const TARGET_CYCLE_TIME = 60;
 const PAB_REWARD_RATE = 0.05;
 const PAB_PRICE = 0.10;
-const MAX_PROJECT_USD = 5;
-const MIN_PROJECT_USD = 0.50;
 
 // ─── Rate Limiting Protection ────────────────────────────
 const MIN_CYCLE_INTERVAL_MS = 200;
@@ -41,7 +40,6 @@ interface ProfitReport {
 }
 
 export class ProfitEngine {
-  private feeRate = DEFAULT_FEE_RATE;
   private cycleCount = 0;
   private totalRevenue = 0;
   private totalPabIssued = 0;
@@ -49,6 +47,16 @@ export class ProfitEngine {
   private lastCycleTime = 0;
   private cyclesThisMinute = 0;
   private minuteResetTime = Date.now();
+
+  // Use dynamic fee rate from compounding service
+  private get feeRate(): number {
+    return compoundingService.getCurrentSettings().feeRate;
+  }
+  
+  // Use dynamic task value from compounding service
+  private get taskValue(): number {
+    return compoundingService.getCurrentSettings().taskValue;
+  }
 
   // ─── RATE LIMIT CHECK ──────────────────────────────────
   private isRateLimited(): boolean {
@@ -112,9 +120,9 @@ export class ProfitEngine {
       ) || agents[1];
 
       const avgCycleTime = this.getAvgCycleTime();
-      let projectValue = MIN_PROJECT_USD;
+      let projectValue = this.taskValue;
       if (avgCycleTime < TARGET_CYCLE_TIME && this.cycleCount > 10) {
-        projectValue = Math.min(MAX_PROJECT_USD, MIN_PROJECT_USD * (1 + this.cycleCount / 100));
+        projectValue = Math.min(this.taskValue * 2, this.taskValue * (1 + this.cycleCount / 100));
       }
 
       const project = await prisma.agentProject.create({
@@ -242,13 +250,9 @@ export class ProfitEngine {
   }
 
   // ─── SELF-LEARNING ─────────────────────────────────────
+  // Fee rate is managed by compounding service
   private adjustFeeRate() {
-    const avgCycleTime = this.getAvgCycleTime();
-    if (avgCycleTime < TARGET_CYCLE_TIME * 0.8) {
-      this.feeRate = Math.max(0.01, this.feeRate - 0.001);
-    } else if (avgCycleTime > TARGET_CYCLE_TIME * 1.2) {
-      this.feeRate = Math.min(0.05, this.feeRate + 0.001);
-    }
+    // Compounding service adjusts fee rate based on reserve growth
   }
 
   private getAvgCycleTime(): number {

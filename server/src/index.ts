@@ -315,6 +315,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/auto-approval`, './routes/autoApproval.routes'],
   [`/api/${v}/single-wallet`, './routes/singleWalletTreasury.routes'],
   [`/api/${v}/settlement`, './routes/settlement.routes'],
+  [`/api/${v}/compounding`, './routes/compounding.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {
@@ -346,6 +347,11 @@ logger.info(`✅ ${routeMap.length} lazy API routes registered`);
 import { settlementService } from './services/settlement.service';
 settlementService.startPeriodicSettlement();
 logger.info('✅ Settlement service auto-started (hourly on-chain USDC transfers)');
+
+// Auto-start compounding service (runs every hour to compound fees back to reserve)
+import { compoundingService } from './services/compounding.service';
+compoundingService.startPeriodicCompounding();
+logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
 // Expose public SDK for trust seals
 import path from 'path';
