@@ -171,6 +171,22 @@ export class ProfitEngine {
           txHash: 'sim_' + Math.random().toString(16).slice(2, 10),
         },
       });
+
+      // Create reward transactions for settlement service to pick up
+      const pabRewardUsd = project.budgetUsd * PAB_REWARD_RATE;
+      await prisma.rewardTransaction.create({
+        data: {
+          userId: solverId,
+          userType: 'AGENT',
+          type: 'PURCHASE_REWARD',
+          amount: pabRewardUsd / PAB_PRICE,
+          usdValue: pabRewardUsd,
+          referenceId: projectId,
+          referenceType: 'AGENT_PROJECT',
+          status: 'CLAIMED',
+          claimedAt: new Date(),
+        },
+      });
     }
   }
 

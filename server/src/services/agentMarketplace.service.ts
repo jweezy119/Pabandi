@@ -14,10 +14,53 @@ export class AgentMarketplace {
     slug: string;
     description: string;
     capabilities: string[];
-    walletAddress: string;
-    publicKey: string;
+    walletAddress?: string;
+    publicKey?: string;
+    reputation?: number;
   }) {
-    return prisma.agentProfile.create({ data: params });
+    // Generate a real Solana wallet for the agent
+    const { Keypair } = await import('@solana/web3.js');
+    const keypair = Keypair.generate();
+    const publicKey = keypair.publicKey.toBase58();
+    const secretKey = Buffer.from(keypair.secretKey).toString('base64');
+    
+    // Encrypt the secret key
+    const crypto = await import('crypto');
+    const ALGORITHM = 'aes-256-gcm';
+    const IV_LENGTH = 16;
+    const encKeyStr = process.env.WALLET_ENC_KEY;
+    const encKey = encKeyStr ? Buffer.from(encKeyStr, 'hex') : crypto.scryptSync(process.env.JWT_SECRET || 'fallback', 'salt', 32);
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, encKey, iv);
+    let encrypted = cipher.update(secretKey, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const tag = cipher.getAuthTag();
+    const encryptedSecret = iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
+
+    // Create agent with wallet
+    const agent = await prisma.agentProfile.create({
+      data: {
+        name: params.name,
+        slug: params.slug,
+        description: params.description,
+        capabilities: params.capabilities,
+        walletAddress: publicKey,
+        publicKey: publicKey,
+        reputation: params.reputation || 50,
+      },
+    });
+
+    // Create encrypted agent wallet
+    await prisma.agentWallet.create({
+      data: {
+        agentId: agent.id,
+        publicKey,
+        encryptedSecret,
+        balanceUsdc: 0,
+      },
+    });
+
+    return agent;
   }
 
   /**
