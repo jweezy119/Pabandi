@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Surface, Button, Badge, tokens } from '../design-system';
-import { propertyManagerService, teamService, webhookService, documentAIService } from '../services/api';
+import { propertyManagerService, teamService, documentAIService } from '../services/api';
 import { CRM_CONFIG, BUSINESS_TYPES, BusinessType } from '../config/crmConfig';
 import { TenantWorkflowPage } from './TenantWorkflowPage';
 import TenantDashboardPage from './TenantDashboardPage';
 import { AIAssistantPage } from './AIAssistantPage';
+import { crmService } from '../services/api';
+import { Link } from 'react-router-dom';
 
 type Profile = { id: string; companyName?: string | null; businessType: BusinessType; slug?: string | null; domain?: string | null; brandColor?: string | null; logoUrl?: string | null; tagline?: string | null; active: boolean; };
 type Property = { id: string; title: string; address?: string | null; city?: string | null; state?: string | null; bedrooms: number; bathrooms: number; rentAmount?: number | null; rentPeriod: string; status: string; unit?: { id: string; unitNumber?: string | null; title?: string | null } | null; };
@@ -32,11 +34,32 @@ export const CRMPage: React.FC = () => {
   const [leaseForm, setLeaseForm] = useState({ tenantEmail: '', tenantName: '', startDate: '', endDate: '', rentAmount: '', rentPeriod: 'MONTH', depositAmount: '' });
   const [maintForm, setMaintForm] = useState({ title: '', description: '', priority: 'MEDIUM', tenantEmail: '' });
   const [bizType, setBizType] = useState<BusinessType>('GENERAL');
+  const [crmDeals, setCrmDeals] = useState<any[]>([]);
+  const [crmPipeline, setCrmPipeline] = useState<any[]>([]);
+  const [crmTasks, setCrmTasks] = useState<any[]>([]);
+
+  const loadCrm = async () => {
+    try {
+      const [dealsRes, pipelineRes, tasksRes] = await Promise.all([
+        crmService.deals().catch(() => ({ data: { data: [] } })),
+        crmService.pipeline().catch(() => ({ data: { data: { pipeline: [] } } })),
+        crmService.tasks().catch(() => ({ data: { data: [] } })),
+      ]);
+      setCrmDeals(dealsRes.data?.data || []);
+      setCrmPipeline(pipelineRes.data?.data?.pipeline || []);
+      setCrmTasks(tasksRes.data?.data || []);
+    } catch (e) {
+      console.error('Failed to load CRM data', e);
+    }
+  };
+
+  useEffect(() => { loadCrm(); }, []);
 
   const config = dash?.profile ? CRM_CONFIG[dash.profile.businessType] || CRM_CONFIG.GENERAL : CRM_CONFIG.GENERAL;
 
   const load = () => {
     propertyManagerService.dashboard().then((r) => setDash(r.data?.data)).catch((e) => { if (e?.response?.status === 404) setDash(null); else setErr(e?.response?.data?.error || 'Could not load dashboard'); });
+    loadCrm();
   };
   useEffect(load, []);
 
@@ -89,6 +112,8 @@ export const CRMPage: React.FC = () => {
     { id: 'leases', icon: config.entities.leases.icon, label: config.entities.leases.label },
     { id: 'maintenance', icon: config.entities.maintenance.icon, label: config.entities.maintenance.label },
     { id: 'applications', icon: config.entities.applications.icon, label: config.entities.applications.label },
+    { id: 'pipeline', icon: '📈', label: 'Pipeline' },
+    { id: 'tasks', icon: '✅', label: 'Tasks' },
     { id: 'team', icon: '👥', label: 'Team' },
     { id: 'documents', icon: '📄', label: 'Documents' },
     { id: 'webhooks', icon: '🔗', label: 'Webhooks' },
@@ -131,15 +156,42 @@ export const CRMPage: React.FC = () => {
 
         {/* Overview */}
         {tab === 'overview' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.properties.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Available</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.tenants.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>High-risk</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.appointments.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.leases.label}</div></Surface>
-            <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-slate-100">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.maintenance.label}</div></Surface>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.properties.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Available</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.tenants.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>High-risk</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.appointments.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.leases.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-slate-100">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.maintenance.label}</div></Surface>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Link to="/sales-crm">
+                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                  <div className="text-2xl mb-2">📈</div>
+                  <div className="text-lg font-bold text-slate-100">Sales CRM</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Pipeline · Deals · Tasks · Campaigns</div>
+                  <div className="text-xs mt-2 text-indigo-300">{crmDeals.length} deals · ${crmPipeline.reduce((sum: number, p: any) => sum + p.value, 0).toLocaleString()} pipeline</div>
+                </Surface>
+              </Link>
+              <Link to="/dashboard">
+                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                  <div className="text-2xl mb-2">📊</div>
+                  <div className="text-lg font-bold text-slate-100">Dashboard</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Business overview · Multi-type</div>
+                </Surface>
+              </Link>
+              <Link to="/tenant-workflow">
+                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                  <div className="text-2xl mb-2">🔄</div>
+                  <div className="text-lg font-bold text-slate-100">Workflows</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Tenant lifecycle automation</div>
+                </Surface>
+              </Link>
+            </div>
           </div>
         )}
 
@@ -446,6 +498,80 @@ export const CRMPage: React.FC = () => {
                 <div className="text-right">
                   <Badge tone={a.status === 'APPROVED' ? 'success' : a.status === 'DENIED' ? 'danger' : 'info'}>{a.status}</Badge>
                   {a.screeningBand && <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Band: {a.screeningBand}</div>}
+                </div>
+              </Surface>
+            ))}
+          </div>
+        )}
+
+        {/* Applications */}
+        {tab === 'applications' && (
+          <div className="space-y-3">
+            {dash!.applications.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.applications.label.toLowerCase()} yet.</p>}
+            {dash!.applications.map((a) => (
+              <Surface key={a.id} className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-slate-100">{a.firstName || ''} {a.lastName || a.email}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>Applied {new Date(a.createdAt).toLocaleDateString()}{a.message ? ` — ${a.message}` : ''}</div>
+                </div>
+                <div className="text-right">
+                  <Badge tone={a.status === 'APPROVED' ? 'success' : a.status === 'DENIED' ? 'danger' : 'info'}>{a.status}</Badge>
+                  {a.screeningBand && <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Band: {a.screeningBand}</div>}
+                </div>
+              </Surface>
+            ))}
+          </div>
+        )}
+
+        {/* Pipeline */}
+        {tab === 'pipeline' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-100">📈 Sales Pipeline</h3>
+              <Link to="/sales-crm" className="text-sm text-indigo-300 hover:text-indigo-200">Open full CRM →</Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {crmPipeline.map((p: any) => (
+                <Surface key={p.stage} className="text-center p-4">
+                  <div className="text-2xl font-bold text-slate-100">{p.count}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{p.stage}</div>
+                  <div className="text-sm font-semibold text-indigo-300 mt-1">${p.value.toLocaleString()}</div>
+                </Surface>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {crmDeals.map((d: any) => (
+                <Surface key={d.id} className="p-4">
+                  <div className="font-semibold text-slate-100">{d.title}</div>
+                  <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{d.description}</div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-lg font-bold text-indigo-300">${d.value.toLocaleString()}</div>
+                    <Badge tone={d.stage === 'WON' ? 'success' : d.stage === 'LOST' ? 'danger' : 'info'}>{d.stage}</Badge>
+                  </div>
+                  {d.contact && <div className="text-xs mt-2" style={{ color: tokens.color.textDim }}>Contact: {d.contact.firstName} {d.contact.lastName}</div>}
+                </Surface>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tasks */}
+        {tab === 'tasks' && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-100">✅ Tasks</h3>
+              <Link to="/sales-crm" className="text-sm text-indigo-300 hover:text-indigo-200">Manage in Sales CRM →</Link>
+            </div>
+            {crmTasks.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No tasks yet.</p>}
+            {crmTasks.map((t: any) => (
+              <Surface key={t.id} className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-slate-100">{t.title}</div>
+                  <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.description} {t.dueDate && `· Due: ${new Date(t.dueDate).toLocaleDateString()}`}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge tone={t.priority === 'URGENT' || t.priority === 'HIGH' ? 'danger' : t.priority === 'MEDIUM' ? 'warning' : 'info'}>{t.priority}</Badge>
+                  <Badge tone={t.status === 'COMPLETED' ? 'success' : 'info'}>{t.status}</Badge>
                 </div>
               </Surface>
             ))}

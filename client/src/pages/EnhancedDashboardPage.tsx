@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Surface, Button, Badge, tokens } from '../design-system';
 import { useAuthStore } from '../store/authStore';
 import { CRM_CONFIG, BusinessType } from '../config/crmConfig';
-import { aiRealEstateService } from '../services/api';
+import { crmService } from '../services/api';
 
 interface DashboardWidget {
   id: string;
@@ -36,6 +36,9 @@ export const EnhancedDashboardPage: React.FC = () => {
     FREELANCE: 0,
     GENERAL: 0,
   });
+  const [crmPipeline, setCrmPipeline] = useState<any[]>([]);
+  const [crmDeals, setCrmDeals] = useState<any[]>([]);
+  const [crmTasks, setCrmTasks] = useState<any[]>([]);
 
   useEffect(() => {
     // Load initial dashboard data
@@ -45,19 +48,23 @@ export const EnhancedDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch real portfolio insights from AI service
-      const insightsResponse = await aiRealEstateService.insights();
-      const insights = insightsResponse.data?.data?.insights || [];
-      
-      // Generate business counts based on user role and business type
       const counts: Record<BusinessType, number> = {
-        PROPERTY_MANAGEMENT: insights.filter(i => i.type === 'property').length,
-        SALES: insights.filter(i => i.type === 'sales').length,
-        SERVICE: insights.filter(i => i.type === 'service').length,
-        FREELANCE: insights.filter(i => i.type === 'freelance').length,
-        GENERAL: insights.filter(i => i.type === 'general').length,
+        PROPERTY_MANAGEMENT: 0,
+        SALES: 0,
+        SERVICE: 0,
+        FREELANCE: 0,
+        GENERAL: 0,
       };
       setBusinessCounts(counts);
+
+      const [pipelineRes, dealsRes, tasksRes] = await Promise.all([
+        crmService.pipeline().catch(() => ({ data: { data: { pipeline: [] } } })),
+        crmService.deals().catch(() => ({ data: { data: [] } })),
+        crmService.tasks().catch(() => ({ data: { data: [] } })),
+      ]);
+      setCrmPipeline(pipelineRes.data?.data?.pipeline || []);
+      setCrmDeals(dealsRes.data?.data || []);
+      setCrmTasks(tasksRes.data?.data || []);
 
       const allWidgets: DashboardWidget[] = [
         // Property Management Widgets
@@ -287,6 +294,27 @@ export const EnhancedDashboardPage: React.FC = () => {
               </div>
               <Link to="/token"><Button size="sm" className="w-full mt-3">View Dashboard</Button></Link>
             </Surface>
+
+            <Link to="/sales-crm">
+              <Surface className="p-4 hover:bg-white/10 transition-colors cursor-pointer">
+                <h3 className="text-base font-bold text-slate-100 mb-3">📈 Sales CRM</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: tokens.color.textDim }}>Pipeline</span>
+                    <span className="text-indigo-300 font-bold">${crmPipeline.reduce((sum, p) => sum + p.value, 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: tokens.color.textDim }}>Deals</span>
+                    <span className="text-slate-100 font-bold">{crmDeals.length}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{ color: tokens.color.textDim }}>Open Tasks</span>
+                    <span className="text-amber-300 font-bold">{crmTasks.filter((t: any) => t.status !== 'COMPLETED').length}</span>
+                  </div>
+                </div>
+                <Button size="sm" className="w-full mt-3">Open CRM</Button>
+              </Surface>
+            </Link>
 
             <Surface className="p-4">
               <h3 className="text-base font-bold text-slate-100 mb-3">🛡️ Trust Passport</h3>

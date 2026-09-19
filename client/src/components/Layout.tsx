@@ -208,6 +208,9 @@ export default function Layout() {
   const { isAuthenticated, user, logout, fetchWalletData } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [offline, setOffline] = useState(!navigator.onLine);
+  const [showInstall, setShowInstall] = useState(false);
+  const deferredInstall = useRef<any>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -215,7 +218,31 @@ export default function Layout() {
     }
   }, [isAuthenticated, fetchWalletData]);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  useEffect(() => {
+    const onOffline = () => setOffline(true);
+    const onOnline = () => setOffline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    const handler = (e: any) => {
+      e.preventDefault();
+      deferredInstall.current = e;
+      setShowInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler as EventListener);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('beforeinstallprompt', handler as EventListener);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredInstall.current) return;
+    await deferredInstall.current.prompt();
+    const result = await deferredInstall.current.userChoice;
+    if (result.outcome === 'accepted') setShowInstall(false);
+    deferredInstall.current = null;
+  };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
   // /booking and /sitara/* bring their own chrome (BookingLayout sidebar,
@@ -252,8 +279,20 @@ export default function Layout() {
     return () => observer.disconnect();
   }, [location.pathname]);
 
-  return (
+   return (
     <div className="bg-transparent text-on-surface font-body antialiased min-h-screen flex flex-col relative w-full overflow-x-hidden">
+      {offline && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500 text-white text-center text-xs font-bold py-1.5 px-4">
+          You are offline — some features may be limited
+        </div>
+      )}
+      {showInstall && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-primary text-on-primary text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-3">
+          <span>Install Pabandi CRM</span>
+          <button onClick={handleInstall} className="px-3 py-1 rounded-lg bg-white/20 text-white text-xs">Install</button>
+          <button onClick={() => setShowInstall(false)} className="text-white/70 hover:text-white">Dismiss</button>
+        </div>
+      )}
       {/* Deep Space & Neon Background Layer */}
       <div className="fixed inset-0 z-[-1] pointer-events-none bg-background overflow-hidden">
          <img src="/assets/bg_abstract.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen" />

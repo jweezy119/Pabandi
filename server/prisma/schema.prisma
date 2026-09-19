@@ -1672,6 +1672,24 @@ model PropertyManagerProfile {
   teamMembers TeamMember[]
   webhookEndpoints Webhook[]
   documentAnalyses DocumentAnalysis[]
+  emailTemplates EmailTemplate[]
+  sequences Sequence[]
+  forms Form[]
+  formSubmissions FormSubmission[]
+  leadScores LeadScore[]
+  sequenceEnrollments SequenceEnrollment[]
+  reports Report[]
+  reportExecutions ReportExecution[]
+  tickets Ticket[]
+  ticketComments TicketComment[]
+  knowledgeArticles KnowledgeArticle[]
+  calendarEvents CalendarEvent[]
+  integrations Integration[]
+  apiKeys ApiKey[]
+  scorePredictions LeadScorePrediction[]
+  insights AIInsight[]
+  nextBestActions NextBestAction[]
+  anomalyAlerts AnomalyAlert[]
 
   @@index([userId])
 }
@@ -2529,6 +2547,12 @@ model Contact {
   tasks       Task[]
   deals       Deal[]
   campaignRecipients CampaignRecipient[]
+  sequenceEnrollments SequenceEnrollment[]
+  leadScores LeadScore[]
+  tickets     Ticket[]
+  events      CalendarEvent[]
+  scorePredictions LeadScorePrediction[]
+  nextBestActions NextBestAction[]
 
   @@index([managerId])
   @@index([email])
@@ -2558,6 +2582,8 @@ model Deal {
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   tasks    Task[]
   communications Communication[]
+  events   CalendarEvent[]
+  nextBestActions NextBestAction[]
 
   @@index([managerId])
   @@index([contactId])
@@ -2620,6 +2646,412 @@ model CampaignRecipient {
   @@index([campaignId])
   @@index([contactId])
   @@index([status])
+}
+
+// Email templates for campaigns, sequences, and one-off sends.
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  subject     String
+  body        String
+  category    String?  // FOLLOW_UP | WELCOME | PROPOSAL | INVOICE | REVIEW_REQUEST | OTHER
+  isDefault   Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([category])
+}
+
+// Outreach sequences (multi-step automation).
+model Sequence {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  description String?
+  status      String   @default("DRAFT") // DRAFT | ACTIVE | PAUSED | ARCHIVED
+  trigger     String?  // LEAD_CREATED | DEAL_STAGE_CHANGED | TAG_ADDED | MANUAL
+  enrollments SequenceEnrollment[]
+  steps       SequenceStep[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([status])
+}
+
+model SequenceStep {
+  id           String   @id @default(cuid())
+  sequenceId   String
+  order        Int
+  type         String   // EMAIL | SMS | TASK | WAIT | WEBHOOK
+  templateId   String?
+  subject      String?
+  body         String?
+  delayDays    Int      @default(0)
+  delayHours   Int      @default(0)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  sequence     Sequence           @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@index([sequenceId])
+}
+
+model SequenceEnrollment {
+  id           String   @id @default(cuid())
+  managerId    String
+  sequenceId   String
+  contactId    String
+  dealId       String?
+  status       String   @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | CANCELLED
+  currentStep  Int      @default(0)
+  enrolledAt   DateTime @default(now())
+  completedAt  DateTime?
+  exitReason   String?
+  metadata     Json?
+
+  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  sequence Sequence              @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contact  Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([sequenceId])
+  @@index([contactId])
+  @@index([status])
+}
+
+// Lead capture forms / landing pages.
+model Form {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  slug        String   @unique
+  fields      Json     // array of { name, label, type, required }
+  thankYou    String?
+  redirectUrl String?
+  status      String   @default("ACTIVE") // ACTIVE | DRAFT | ARCHIVED
+  submissions Int      @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  formSubmissions FormSubmission[]
+
+  @@index([managerId])
+  @@index([slug])
+}
+
+model FormSubmission {
+  id          String   @id @default(cuid())
+  managerId   String
+  formId      String
+  data        Json
+  ip          String?
+  userAgent   String?
+  source      String?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  form    Form                   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([formId])
+  @@index([createdAt])
+}
+
+// Lead score snapshot (time-series for trends).
+model LeadScore {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String
+  score       Int
+  factors     Json?
+  modelVersion String?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([createdAt])
+}
+
+// Saved reports and report executions.
+model Report {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  description String?
+  type        String   // CONTACTS | DEALS | PIPELINE | CAMPAIGNS | TASKS | FINANCIAL
+  config      Json     // { groupBy, filters, metrics, dateRange }
+  chartType   String?  // bar | line | pie | funnel | table
+  isDefault   Boolean  @default(false)
+  isPublic    Boolean  @default(false)
+  lastRunAt   DateTime?
+  executions  ReportExecution[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([type])
+}
+
+model ReportExecution {
+  id          String   @id @default(cuid())
+  reportId    String
+  managerId   String
+  result      Json
+  rowCount    Int?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  durationMs  Int?
+  error       String?
+
+  report   Report                @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([managerId])
+  @@index([startedAt])
+}
+
+// Support tickets / help desk.
+model Ticket {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String?
+  subject     String
+  description String?
+  status      String   @default("OPEN") // OPEN | IN_PROGRESS | WAITING | RESOLVED | CLOSED
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  category    String?  // BILLING | TECHNICAL | FEATURE | GENERAL
+  assigneeId  String?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  comments TicketComment[]
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model TicketComment {
+  id          String   @id @default(cuid())
+  ticketId    String
+  managerId   String
+  authorId    String?
+  body        String
+  isInternal  Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  ticket Ticket                 @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([managerId])
+  @@index([createdAt])
+}
+
+// Knowledge base articles.
+model KnowledgeArticle {
+  id          String   @id @default(cuid())
+  managerId   String
+  title       String
+  slug        String   @unique
+  content     String
+  category    String?
+  tags        String[] @default([])
+  status      String   @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  viewCount   Int      @default(0)
+  helpfulCount Int     @default(0)
+  notHelpfulCount Int  @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([slug])
+  @@index([status])
+}
+
+// Calendar events for appointments and scheduling.
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String?
+  dealId      String?
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime?
+  location    String?
+  type        String   @default("MEETING") // MEETING | CALL | APPOINTMENT | REMINDER
+  status      String   @default("SCHEDULED") // SCHEDULED | COMPLETED | CANCELLED
+  attendees   String[] @default([])
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([startAt])
+}
+
+// Integration settings (Google Calendar, QuickBooks, Zapier, etc.)
+model Integration {
+  id          String   @id @default(cuid())
+  managerId   String
+  type        String   // GOOGLE_CALENDAR | OUTLOOK | QUICKBOOKS | XERO | ZAPIER | SLACK | OTHER
+  name        String
+  config      Json     // encrypted or masked credentials
+  isActive    Boolean  @default(true)
+  lastSyncAt  DateTime?
+  error       String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([type])
+  @@index([isActive])
+}
+
+// API keys for public API access.
+model ApiKey {
+  id          String   @id @default(cuid())
+  managerId   String
+  name        String
+  key         String   @unique
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  permissions Json?    // e.g. { contacts: ["read", "write"], deals: ["read"] }
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([key])
+}
+
+// AI predictions and insights for CRM intelligence.
+model LeadScorePrediction {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String
+  score       Int      // 0..100 predicted likelihood to convert
+  confidence  Float    // model confidence 0..1
+  modelVersion String  @default("v1")
+  features    Json?    // input features used for prediction
+  explanation String?  // human-readable reason for score
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([createdAt])
+}
+
+model AIInsight {
+  id          String   @id @default(cuid())
+  managerId   String
+  type        String   // LEAD_SCORE | NEXT_BEST_ACTION | ANOMALY | FORECAST | CHURN_RISK
+  entityType  String?  // CONTACT | DEAL | CAMPAIGN
+  entityId    String?
+  title       String
+  description String?
+  confidence  Float?
+  actionData  Json?    // structured action payload
+  isRead      Boolean  @default(false)
+  isDismissed Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model NextBestAction {
+  id          String   @id @default(cuid())
+  managerId   String
+  contactId   String?
+  dealId      String?
+  actionType  String   // EMAIL | CALL | MEETING | TASK | FOLLOW_UP
+  title       String
+  description String?
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH
+  reasoning   String?  // why this action is recommended
+  context     Json?    // additional context data
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  contact Contact?                @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  deal    Deal?                   @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([managerId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([isCompleted])
+}
+
+model AnomalyAlert {
+  id          String   @id @default(cuid())
+  managerId   String
+  type        String   // PIPELINE_DROP | CHURN_RISK | UNUSUAL_ACTIVITY | REVENUE_ANOMALY
+  severity    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | CRITICAL
+  entityType  String?  // CONTACT | DEAL | CAMPAIGN
+  entityId    String?
+  title       String
+  description String?
+  metricValue Float?
+  threshold   Float?
+  isResolved  Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId])
+  @@index([type])
+  @@index([isResolved])
+  @@index([createdAt])
 }
 
 // ── END Generic Sales CRM ──────────────────────────────────────────────────────

@@ -22,6 +22,10 @@
     min-height: 44px;
     min-width: 44px;
   }
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 /* Smooth horizontal scroll on mobile */
