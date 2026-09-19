@@ -47,22 +47,17 @@ export class SettlementService {
     }
 
     try {
-      // 0. Clean up reward transactions for agents with invalid wallets
-      await prisma.rewardTransaction.deleteMany({
-        where: {
-          userType: 'AGENT',
-          settledAt: null,
-          agent: {
-            walletAddress: { startsWith: '0x' },
-          },
-        },
+      // 1. Find all unsettled agent credits (only for agents with valid Solana addresses)
+      const validAgents = await prisma.agentProfile.findMany({
+        where: { isActive: true, walletAddress: { not: { startsWith: '0x' } } },
+        select: { id: true },
       });
+      const validAgentIds = validAgents.map(a => a.id);
 
-      // 1. Find all unsettled agent credits
       const unsettledRewards = await prisma.rewardTransaction.findMany({
         where: {
           status: 'CLAIMED',
-          settledAt: null,
+          userId: { in: validAgentIds },
         },
       });
 
