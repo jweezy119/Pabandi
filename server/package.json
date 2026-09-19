@@ -25,6 +25,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
     "@prisma/client": "^5.22.0",
+    "@raydium-io/raydium-sdk-v2": "^0.2.71-alpha",
     "@shopify/shopify-api": "^13.1.0",
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
