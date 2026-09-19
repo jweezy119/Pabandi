@@ -1,13 +1,19 @@
 import { prisma } from '../utils/database';
 
 // ─── Configuration ───────────────────────────────────────
-const DEFAULT_FEE_RATE = 0.02;        // 2% per transaction
-const MIN_CYCLE_TIME = 30;            // seconds (Solana speed)
-const TARGET_CYCLE_TIME = 60;          // target 60s per cycle
-const PAB_REWARD_RATE = 0.05;         // 5% PAB to each side
-const PAB_PRICE = 0.10;               // $0.10 per PAB
-const MAX_PROJECT_USD = 5;            // micro-tasks only
-const MIN_PROJECT_USD = 0.50;         // minimum task value
+const DEFAULT_FEE_RATE = 0.02;
+const MIN_CYCLE_TIME = 30;
+const TARGET_CYCLE_TIME = 60;
+const PAB_REWARD_RATE = 0.05;
+const PAB_PRICE = 0.10;
+const MAX_PROJECT_USD = 5;
+const MIN_PROJECT_USD = 0.50;
+
+// ─── Rate Limiting Protection ────────────────────────────
+const MIN_CYCLE_INTERVAL_MS = 200;
+const MAX_CYCLES_PER_MINUTE = 100;
+const RPC_RETRY_DELAY_MS = 1000;
+const MAX_RETRIES = 3;
 
 interface CycleResult {
   cycleNumber: number;
@@ -30,6 +36,8 @@ interface ProfitReport {
   roiPercent: number;
   efficiency: number;
   currentFeeRate: number;
+  protectedDailyRevenue: number;
+  protectedMonthlyRevenue: number;
 }
 
 export class ProfitEngine {
@@ -38,11 +46,54 @@ export class ProfitEngine {
   private totalRevenue = 0;
   private totalPabIssued = 0;
   private cycleTimes: number[] = [];
+  private lastCycleTime = 0;
+  private cyclesThisMinute = 0;
+  private minuteResetTime = Date.now();
+
+  // ─── RATE LIMIT CHECK ──────────────────────────────────
+  private isRateLimited(): boolean {
+    const now = Date.now();
+    
+    // Reset minute counter
+    if (now - this.minuteResetTime > 60000) {
+      this.cyclesThisMinute = 0;
+      this.minuteResetTime = now;
+    }
+    
+    // Check per-minute limit
+    if (this.cyclesThisMinute >= MAX_CYCLES_PER_MINUTE) {
+      return true;
+    }
+    
+    // Check minimum interval
+    if (now - this.lastCycleTime < MIN_CYCLE_INTERVAL_MS) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  private recordCycleExecution(): void {
+    this.lastCycleTime = Date.now();
+    this.cyclesThisMinute++;
+  }
 
   // ─── CORE: Run One Profit Cycle ────────────────────────
   async runCycle(): Promise<CycleResult> {
+    if (this.isRateLimited()) {
+      return {
+        cycleNumber: this.cycleCount,
+        cycleTime: 0,
+        projectId: '',
+        revenue: 0,
+        pabIssued: 0,
+        success: false,
+      };
+    }
+
     const startTime = Date.now();
     this.cycleCount++;
+    this.recordCycleExecution();
 
     try {
       const agents = await prisma.agentProfile.findMany({
@@ -172,7 +223,7 @@ export class ProfitEngine {
         },
       });
 
-      // Create reward transactions for settlement service to pick up
+      // Create reward transaction for settlement service
       const pabRewardUsd = project.budgetUsd * PAB_REWARD_RATE;
       await prisma.rewardTransaction.create({
         data: {
@@ -218,6 +269,11 @@ export class ProfitEngine {
     const capitalVelocity = 86400 / avgCycleTime;
     const dailyRevenue = capitalVelocity * (this.totalRevenue / (this.cycleCount || 1)) * (this.cycleCount > 0 ? 1 : 0) || (this.totalRevenue / (this.cycleCount || 1)) * capitalVelocity;
     const roiPercent = (dailyRevenue / 100) * 100;
+    
+    // Protected: account for rate limiting
+    const protectedCyclesPerDay = MAX_CYCLES_PER_MINUTE * 60 * 24;
+    const protectedDailyRevenue = Math.min(dailyRevenue, protectedCyclesPerDay * (this.totalRevenue / (this.cycleCount || 1)));
+    
     return {
       totalCycles: this.cycleCount,
       totalRevenue: this.totalRevenue,
@@ -230,6 +286,8 @@ export class ProfitEngine {
       roiPercent,
       efficiency: Math.max(0, 100 - ((avgCycleTime - TARGET_CYCLE_TIME) / TARGET_CYCLE_TIME) * 100),
       currentFeeRate: this.feeRate,
+      protectedDailyRevenue: protectedDailyRevenue,
+      protectedMonthlyRevenue: protectedDailyRevenue * 30,
     };
   }
 
@@ -268,7 +326,7 @@ export class ProfitEngine {
       reinvestSol,
       retainPab: params.collectedPab - reinvestPab,
       retainSol: params.collectedSol - reinvestSol,
-      reason: `Reinvesting ${(reinvestPab).toFixed(2)} PAB + ${(reinvestSol).toFixed(4)} SOL`,
+      reason: `Reinvesting ${reinvestPab.toFixed(2)} PAB + ${reinvestSol.toFixed(4)} SOL`,
     };
   }
 

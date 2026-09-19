@@ -12,6 +12,8 @@ interface ProfitReport {
   roiPercent: number;
   efficiency: number;
   currentFeeRate: number;
+  protectedDailyRevenue: number;
+  protectedMonthlyRevenue: number;
 }
 
 interface CycleResult {
@@ -194,13 +196,13 @@ const ProfitDashboard: React.FC = () => {
           <div style={{
             padding: '8px 16px',
             borderRadius: '8px',
-            background: (report?.efficiency || 0) > 90 ? 'rgba(20, 241, 149, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-             border: `1px solid ${(report?.efficiency || 0) > 90 ? 'rgba(20, 241, 149, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
-             color: (report?.efficiency || 0) > 90 ? '#14f195' : '#fbbf24',
+            background: report?.protectedDailyRevenue < report?.dailyRevenue ? 'rgba(20, 241, 149, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+            border: `1px solid ${report?.protectedDailyRevenue < report?.dailyRevenue ? 'rgba(20, 241, 149, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+            color: report?.protectedDailyRevenue < report?.dailyRevenue ? '#14f195' : '#fbbf24',
             fontSize: '13px',
             fontWeight: 600,
           }}>
-            {report?.efficiency > 90 ? '● LIVE' : '○ STANDBY'}
+            {report?.protectedDailyRevenue < report?.dailyRevenue ? '🛡️ Protected' : '⚠️ Unprotected'}
           </div>
           <button
             onClick={runCycle}
@@ -259,8 +261,8 @@ const ProfitDashboard: React.FC = () => {
         marginBottom: '30px',
       }}>
         {[
-          { label: 'Daily Revenue', value: fmt(report?.dailyRevenue || 0), color: '#14f195', icon: '💰' },
-          { label: 'Monthly Revenue', value: fmt(report?.monthlyRevenue || 0), color: '#a855f7', icon: '📈' },
+          { label: 'Daily Revenue (Protected)', value: fmt(report?.protectedDailyRevenue || 0), color: '#14f195', icon: '🛡️' },
+          { label: 'Monthly Revenue (Protected)', value: fmt(report?.protectedMonthlyRevenue || 0), color: '#a855f7', icon: '📈' },
           { label: 'Annual Revenue', value: fmt(report?.annualRevenue || 0), color: '#f59e0b', icon: '🎯' },
           { label: 'Total Cycles', value: report?.totalCycles.toLocaleString() || '0', color: '#3b82f6', icon: '🔄' },
           { label: 'Avg Cycle Time', value: `${((report?.avgCycleTime || 0) * 1000).toFixed(0)}ms`, color: '#14f195', icon: '⚡' },
