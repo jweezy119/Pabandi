@@ -102,6 +102,12 @@ export class SettlementService {
       for (const [agentId, credit] of agentCredits) {
         if (credit.totalUsdc < 0.01) continue; // Skip dust
 
+        // Skip agents with invalid wallet addresses
+        if (!credit.walletAddress || credit.walletAddress.startsWith('0x') || credit.walletAddress.length < 32) {
+          result.errors.push(`Agent ${agentId}: invalid wallet address, skipping`);
+          continue;
+        }
+
         try {
           // Transfer real USDC from platform wallet to agent wallet
           const txResult = await autoApproval.autoTransfer({
