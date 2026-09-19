@@ -1,13 +1,11 @@
 /**
- * raydiumPool.service.ts — Backend-Managed AMM Pool
- * ==================================================
+ * raydiumPool.service.ts — Backend-Managed AMM with Platform Custody
+ * ==================================================================
  * 
- * The pool is NOT a smart contract. It's a backend simulation where:
- * - Platform wallet holds all PAB and USDC
- * - Agents trade directly with the platform wallet
- * - Price determined by constant product formula
- * - 0.25% fee on every swap → real USDC retained by platform
- * - All transfers are REAL on-chain SPL token transfers
+ * ALL funds are custodied by the platform wallet.
+ * Agents track internal balances in the database.
+ * Swaps execute from the platform wallet on behalf of agents.
+ * LP fees accumulate as REAL USDC in the platform wallet.
  */
 
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
@@ -22,10 +20,10 @@ const SWAP_FEE_BPS = 25; // 0.25%
 let _connection: Connection | null = null;
 let _keypair: Keypair | null = null;
 
-// Pool state (backend-managed)
-let poolPabReserve = 10000 * Math.pow(10, TOKEN_DECIMALS); // 10,000 PAB
-let poolUsdcReserve = 1 * Math.pow(10, USDC_DECIMALS); // 1 USDC
-let poolK = poolPabReserve * poolUsdcReserve; // Constant product
+// Pool state (backend-managed, platform custody)
+let poolPabReserve = 10000 * Math.pow(10, TOKEN_DECIMALS);
+let poolUsdcReserve = 1 * Math.pow(10, USDC_DECIMALS);
+let poolK = poolPabReserve * poolUsdcReserve;
 let poolTotalFeesUsdc = 0;
 let poolTotalVolumeUsd = 0;
 
@@ -46,9 +44,25 @@ function getKeypair(): Keypair {
   return _keypair;
 }
 
-async function getPlatformAta(mint: PublicKey): Promise<PublicKey> {
-  const owner = getKeypair().publicKey;
-  return getAssociatedTokenAddress(mint, owner);
+// ─── INITIALIZE POOL ────────────────────────────────────
+export async function initializePool(pabAmount: number, usdcAmount: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const pabMintStr = process.env.PAB_MINT_ADDRESS || '';
+    if (!pabMintStr) return { success: false, error: 'PAB_MINT_ADDRESS not set' };
+
+    const connection = getConnection();
+    const owner = getKeypair();
+    const pabMint = new PublicKey(pabMintStr);
+
+    // Create pool state
+    poolPabReserve = pabAmount * Math.pow(10, TOKEN_DECIMALS);
+    poolUsdcReserve = usdcAmount * Math.pow(10, USDC_DECIMALS);
+    poolK = poolPabReserve * poolUsdcReserve;
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 }
 
 // ─── GET POOL INFO ──────────────────────────────────────
@@ -63,54 +77,18 @@ export async function getPoolInfo() {
   };
 }
 
-// ─── BUY PAB (Agent sends USDC, receives PAB) ──────────
-export async function buyPAB(agentWallet: string, usdcAmount: number): Promise<{ success: boolean; pabReceived?: number; txHash?: string; error?: string }> {
+// ─── BUY PAB ────────────────────────────────────────────
+export async function buyPAB(agentId: string, usdcAmount: number): Promise<{ success: boolean; pabReceived?: number; error?: string }> {
   try {
-    const connection = getConnection();
-    const owner = getKeypair();
-    const pabMintStr = process.env.PAB_MINT_ADDRESS || '';
-    if (!pabMintStr) return { success: false, error: 'PAB_MINT_ADDRESS not set' };
-
-    const pabMint = new PublicKey(pabMintStr);
-    const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
-
     const usdcRawNum = Math.floor(usdcAmount * Math.pow(10, USDC_DECIMALS));
+    
+    // Calculate PAB output (constant product formula with fee)
     const usdcAfterFee = usdcRawNum * (10000 - SWAP_FEE_BPS) / 10000;
     const pabOut = poolPabReserve - (poolK / (poolUsdcReserve + usdcAfterFee));
     
     if (pabOut <= 0 || pabOut >= poolPabReserve) {
       return { success: false, error: 'Insufficient liquidity' };
     }
-
-    // Execute real on-chain transfers
-    const agentPubkey = new PublicKey(agentWallet);
-    const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, agentPubkey);
-    const agentPabAta = await getAssociatedTokenAddress(pabMint, agentPubkey);
-    const platformUsdcAta = await getAssociatedTokenAddress(usdcMint, owner.publicKey);
-    const platformPabAta = await getAssociatedTokenAddress(pabMint, owner.publicKey);
-
-    const tx = new Transaction();
-
-    // Create agent ATAs if needed
-    try { await getAccount(connection, agentUsdcAta); } catch {
-      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, agentPubkey, usdcMint));
-    }
-    try { await getAccount(connection, agentPabAta); } catch {
-      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentPabAta, agentPubkey, pabMint));
-    }
-
-    // Transfer USDC from agent to platform
-    tx.add(createTransferInstruction(agentUsdcAta, platformUsdcAta, agentPubkey, BigInt(usdcRawNum)));
-    
-    // Transfer PAB from platform to agent
-    tx.add(createTransferInstruction(platformPabAta, agentPabAta, owner.publicKey, BigInt(Math.floor(pabOut))));
-
-    const { blockhash } = await connection.getRecentBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = owner.publicKey;
-    tx.sign(owner);
-
-    const txHash = await sendAndConfirmTransaction(connection, tx, [owner]);
 
     // Update pool state
     poolPabReserve -= pabOut;
@@ -121,63 +99,36 @@ export async function buyPAB(agentWallet: string, usdcAmount: number): Promise<{
     poolTotalFeesUsdc += feeUsdc;
     poolTotalVolumeUsd += usdcRawNum;
 
+    // Update agent balance in database
+    await prisma.agentProfile.update({
+      where: { id: agentId },
+      data: {
+        balanceUsdc: { decrement: usdcAmount },
+        balancePab: { increment: pabOut / Math.pow(10, TOKEN_DECIMALS) },
+      },
+    });
+
     return {
       success: true,
-      pabReceived: Number(pabOut) / Math.pow(10, TOKEN_DECIMALS),
-      txHash,
+      pabReceived: pabOut / Math.pow(10, TOKEN_DECIMALS),
     };
   } catch (err: any) {
-    console.error('[Pool] Buy PAB failed:', err.message);
     return { success: false, error: err.message };
   }
 }
 
-// ─── SELL PAB (Agent sends PAB, receives USDC) ─────────
-export async function sellPAB(agentWallet: string, pabAmount: number): Promise<{ success: boolean; usdcReceived?: number; txHash?: string; error?: string }> {
+// ─── SELL PAB ───────────────────────────────────────────
+export async function sellPAB(agentId: string, pabAmount: number): Promise<{ success: boolean; usdcReceived?: number; error?: string }> {
   try {
-    const connection = getConnection();
-    const owner = getKeypair();
-    const pabMintStr = process.env.PAB_MINT_ADDRESS || '';
-    if (!pabMintStr) return { success: false, error: 'PAB_MINT_ADDRESS not set' };
-
-    const pabMint = new PublicKey(pabMintStr);
-    const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
-
     const pabRawNum = Math.floor(pabAmount * Math.pow(10, TOKEN_DECIMALS));
+    
+    // Calculate USDC output (constant product formula with fee)
     const pabAfterFee = pabRawNum * (10000 - SWAP_FEE_BPS) / 10000;
     const usdcOut = poolUsdcReserve - (poolK / (poolPabReserve + pabAfterFee));
     
     if (usdcOut <= 0 || usdcOut >= poolUsdcReserve) {
       return { success: false, error: 'Insufficient liquidity' };
     }
-
-    const agentPubkey = new PublicKey(agentWallet);
-    const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, agentPubkey);
-    const agentPabAta = await getAssociatedTokenAddress(pabMint, agentPubkey);
-    const platformUsdcAta = await getAssociatedTokenAddress(usdcMint, owner.publicKey);
-    const platformPabAta = await getAssociatedTokenAddress(pabMint, owner.publicKey);
-
-    const tx = new Transaction();
-
-    try { await getAccount(connection, agentUsdcAta); } catch {
-      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, agentPubkey, usdcMint));
-    }
-    try { await getAccount(connection, agentPabAta); } catch {
-      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentPabAta, agentPubkey, pabMint));
-    }
-
-    // Transfer PAB from agent to platform
-    tx.add(createTransferInstruction(agentPabAta, platformPabAta, agentPubkey, BigInt(pabRawNum)));
-    
-    // Transfer USDC from platform to agent
-    tx.add(createTransferInstruction(platformUsdcAta, agentUsdcAta, owner.publicKey, BigInt(Math.floor(usdcOut))));
-
-    const { blockhash } = await connection.getRecentBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = owner.publicKey;
-    tx.sign(owner);
-
-    const txHash = await sendAndConfirmTransaction(connection, tx, [owner]);
 
     // Update pool state
     poolPabReserve += pabRawNum;
@@ -188,13 +139,20 @@ export async function sellPAB(agentWallet: string, pabAmount: number): Promise<{
     poolTotalFeesUsdc += feeUsdc;
     poolTotalVolumeUsd += usdcOut;
 
+    // Update agent balance in database
+    await prisma.agentProfile.update({
+      where: { id: agentId },
+      data: {
+        balancePab: { decrement: pabAmount },
+        balanceUsdc: { increment: usdcOut / Math.pow(10, USDC_DECIMALS) },
+      },
+    });
+
     return {
       success: true,
       usdcReceived: usdcOut / Math.pow(10, USDC_DECIMALS),
-      txHash,
     };
   } catch (err: any) {
-    console.error('[Pool] Sell PAB failed:', err.message);
     return { success: false, error: err.message };
   }
 }
