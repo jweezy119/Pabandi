@@ -136,6 +136,7 @@ import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
 import { BusinessMudarabahPage } from './pages/BusinessMudarabahPage';
+import ProfitDashboardPage from './pages/ProfitDashboardPage';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
@@ -198,8 +199,8 @@ function App() {
             <Route path="about" element={<AboutPage />} />
             <Route path="sharia-transparency" element={<ShariaTransparencyPage />} />
             <Route path="mudarabah" element={<MudarabahPoolsPage />} />
-            <Route path="mudarabah/business" element={<BusinessMudarabahPage />} />
-            <Route path="sharia-compliance" element={<ShariaCompliancePage />} />
+            <Route path="profit" element={<ProfitDashboardPage />} />
+
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="login" element={<AuthPage />} />
             <Route path="register" element={<RegisterPage />} />
