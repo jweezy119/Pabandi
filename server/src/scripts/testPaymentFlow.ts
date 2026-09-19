@@ -44,7 +44,7 @@ async function runTest() {
     customer = await prisma.user.create({
       data: {
         email: `test-customer-${Date.now()}@pabandi.com`,
-        password: 'hashed',
+        passwordHash: 'hashed',
         firstName: 'Test',
         lastName: 'Customer',
         role: 'CUSTOMER',
@@ -143,7 +143,7 @@ async function runTest() {
   const escrow = await prisma.escrow.findUnique({ where: { id: confirmResult.escrowId } });
   console.log(`  Escrow status: ${escrow?.status}`);
 
-  const wallet = await prisma.wallet.findUnique({ where: { userId: business.ownerId } });
+  const wallet = await prisma.wallet.findUnique({ where: { userId: business.ownerId ?? '' } });
   console.log(`  Business wallet balance: $${wallet?.usdcBalance || 0}`);
 
   // Fee summary
