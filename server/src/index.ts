@@ -259,6 +259,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/venues`, './routes/venues.routes'],
   [`/api/${v}/venue`, './routes/venue.routes'],
   [`/api/${v}/bookings`, './routes/bottleBooking.routes'],
+  [`/api/${v}/core-bookings`, './routes/coreBooking.routes'],
   [`/api/${v}/promoters`, './routes/promoter.routes'],
   [`/api/${v}/guest-list`, './routes/guestList.routes'],
   [`/api/${v}/nightlife/integrations`, './routes/nightlifeIntegration.routes'],

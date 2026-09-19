@@ -1,10 +1,7 @@
 // Sitara OS — Discovery Page
-// Yelp-style discovery: search, filter, sort, shelves.
-// Stars = exposure: higher verified ratings rank higher, free promo for
-// businesses that earn them. (PAB linkage comes later — no mechanism now.)
-
+// Updated with Book Now button linking to booking flow
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { sitaraApi } from '../api/sitaraApi';
 import DiscoveryMap from '../components/DiscoveryMap';
 import { getFavorites, Favorite } from '../utils/favorites';
@@ -73,8 +70,8 @@ export default function DiscoveryPage() {
   const [geocoding, setGeocoding] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigate = useNavigate();
 
-  // Favorites live on-device; refresh whenever discovery regains focus.
   useEffect(() => {
     const sync = () => setFavorites(getFavorites());
     sync();
@@ -91,7 +88,6 @@ export default function DiscoveryPage() {
           loadRealBusinesses({ ...loc });
         },
         () => {
-          // No geo = no live results. Manual city entry (below) recovers.
           setGeoDenied(true);
           setLoading(false);
         }
@@ -103,7 +99,6 @@ export default function DiscoveryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** "Near me" button — uses browser geolocation to find and show real OSM businesses nearby. */
   const requestNearMe = () => {
     if (!navigator.geolocation) {
       setGeoDenied(true);
@@ -125,7 +120,6 @@ export default function DiscoveryPage() {
     );
   };
 
-  /** Manual location via OSM geocoding through Sitara API. */
   const useCity = async () => {
     const q = cityQuery.trim();
     if (!q) return;
@@ -159,7 +153,6 @@ export default function DiscoveryPage() {
       if (Array.isArray(businesses) && businesses.length > 0) {
         setCards(
           businesses.map((b: any) => {
-            // Calculate distance from user to this business
             let distanceKm: number | undefined;
             if (opts.lat && opts.lng && b.lat && b.lng) {
               const R = 6371;
@@ -202,7 +195,6 @@ export default function DiscoveryPage() {
     }
   }
 
-  // Debounced text search against the live API
   const onQueryChange = (q: string) => {
     setQuery(q);
     if (!userLocation) return;
@@ -228,8 +220,6 @@ export default function DiscoveryPage() {
       list = list.filter((b) => b.name.toLowerCase().includes(q) || b.category.includes(q));
     }
     if (openNow) list = list.filter((b) => b.isOpenNow !== false);
-    // Stars = exposure: recommended blends rating + review volume so
-    // highly-starred businesses float to the top for free.
     const score = (b: BizCard) => b.rating * 2 + Math.min(5, Math.log10((b.stars || 0) + 1) * 2);
     if (sort === 'rating') list.sort((a, b) => b.rating - a.rating || b.stars - a.stars);
     else if (sort === 'reviewed') list.sort((a, b) => b.stars - a.stars);
@@ -241,6 +231,10 @@ export default function DiscoveryPage() {
     () => [...cards].sort((a, b) => b.rating - a.rating || b.stars - a.stars).slice(0, 5),
     [cards]
   );
+
+  const handleBookNow = (business: BizCard) => {
+    navigate(`/book/${business.id}`, { state: { name: business.name } });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -404,7 +398,7 @@ export default function DiscoveryPage() {
         </div>
       )}
 
-      {/* Top-rated shelf (exposure for earned stars) */}
+      {/* Top-rated shelf */}
       {!query && !selectedCategory && topRated.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
@@ -413,26 +407,33 @@ export default function DiscoveryPage() {
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar mobile-scroll pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             {topRated.map((b, i) => (
-              <Link
-                key={b.id}
-                to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`}
-                className="tile shrink-0 w-56 bg-white rounded-xl shadow-sm overflow-hidden"
-              >
-                <div className="h-28 bg-slate-200 relative overflow-hidden tile-img">
-                  <img src={b.image} alt={b.name} loading="lazy" className="w-full h-full object-cover" />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 bg-slate-900/80 text-white rounded-full text-xs font-bold">
-                    #{i + 1}
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p className="font-semibold text-slate-900 text-sm truncate">{b.name}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1">
-                    <Stars value={b.rating} />
-                    <span className="font-medium">{b.rating.toFixed(1)}</span>
-                    <span>({b.stars})</span>
+              <div key={b.id} className="tile shrink-0 w-56 bg-white rounded-xl shadow-sm overflow-hidden relative group">
+                <Link
+                  to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`}
+                  className="block"
+                >
+                  <div className="h-28 bg-slate-200 relative overflow-hidden tile-img">
+                    <img src={b.image} alt={b.name} loading="lazy" className="w-full h-full object-cover" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-slate-900/80 text-white rounded-full text-xs font-bold">
+                      #{i + 1}
+                    </span>
                   </div>
-                </div>
-              </Link>
+                  <div className="p-3">
+                    <p className="font-semibold text-slate-900 text-sm truncate">{b.name}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1">
+                      <Stars value={b.rating} />
+                      <span className="font-medium">{b.rating.toFixed(1)}</span>
+                      <span>({b.stars})</span>
+                    </div>
+                  </div>
+                </Link>
+                <button
+                  onClick={(e) => { e.preventDefault(); handleBookNow(b); }}
+                  className="absolute bottom-2 right-2 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full hover:bg-amber-600 transition opacity-0 group-hover:opacity-100"
+                >
+                  Book Now
+                </button>
+              </div>
             ))}
           </div>
         </div>
@@ -440,7 +441,7 @@ export default function DiscoveryPage() {
 
       {/* Results */}
       <h2 className="font-bold text-slate-900 mb-3">
-        {query ? `Results for “${query}”` : selectedCategory ? 'Browse' : 'Recommended for you'}
+        {query ? `Results for "${query}"` : selectedCategory ? 'Browse' : 'Recommended for you'}
         <span className="ml-2 text-sm font-normal text-slate-500">{visible.length} places</span>
       </h2>
       {loading ? (
@@ -467,51 +468,64 @@ export default function DiscoveryPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {visible.map((business) => (
-            <Link
+            <div
               key={business.id}
-              to={`/sitara/place/${business.source}/${encodeURIComponent(business.id)}`}
               className="tile tile-img rise bg-white rounded-xl shadow-sm overflow-hidden group"
             >
-              <div className="h-44 sm:h-48 bg-slate-200 overflow-hidden relative">
-                <img
-                  src={business.image}
-                  alt={business.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
-                {business.isOpenNow && (
-                  <span className="absolute top-2 right-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-xs font-medium">
-                    Open now
-                  </span>
-                )}
-              </div>
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <h3 className="font-semibold text-slate-900 truncate mr-2">{business.name}</h3>
-                  <span className="text-sm text-slate-500 shrink-0">{business.price}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <Stars value={business.rating} />
-                  <span className="font-medium">{business.rating.toFixed(1)}</span>
-                  <span>·</span>
-                  <span>{business.stars} reviews</span>
-                  {business.distanceKm != null && (
-                    <>
-                      <span>·</span>
-                      <span>📏 {business.distanceKm} km</span>
-                    </>
+              <Link
+                to={`/sitara/place/${business.source}/${encodeURIComponent(business.id)}`}
+                className="block"
+              >
+                <div className="h-44 sm:h-48 bg-slate-200 overflow-hidden relative">
+                  <img
+                    src={business.image}
+                    alt={business.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                  {business.isOpenNow && (
+                    <span className="absolute top-2 right-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-xs font-medium">
+                      Open now
+                    </span>
                   )}
                   {business.real && (
-                    <span className="ml-auto px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium shrink-0">
+                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-600 text-white rounded-full text-xs font-medium">
                       ✓ Live
                     </span>
                   )}
                 </div>
-                {business.address && (
-                  <p className="text-xs text-slate-500 mt-1.5 truncate">{business.address}</p>
-                )}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h3 className="font-semibold text-slate-900 truncate mr-2">{business.name}</h3>
+                    <span className="text-sm text-slate-500 shrink-0">{business.price}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <Stars value={business.rating} />
+                    <span className="font-medium">{business.rating.toFixed(1)}</span>
+                    <span>·</span>
+                    <span>{business.stars} reviews</span>
+                    {business.distanceKm != null && (
+                      <>
+                        <span>·</span>
+                        <span>📏 {business.distanceKm} km</span>
+                      </>
+                    )}
+                  </div>
+                  {business.address && (
+                    <p className="text-xs text-slate-500 mt-1.5 truncate">{business.address}</p>
+                  )}
+                </div>
+              </Link>
+              {/* Book Now Button */}
+              <div className="px-4 pb-4">
+                <button
+                  onClick={() => handleBookNow(business)}
+                  className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-amber-500/20"
+                >
+                  Book Now →
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

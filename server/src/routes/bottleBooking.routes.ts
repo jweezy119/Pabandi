@@ -1,6 +1,80 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import {
+  createBookingWithPayment,
+  confirmPaymentAndIssueRewards,
+  checkInAndReleaseEscrow,
+} from '../controllers/bookingWithPayment.controller';
 
 const router = Router();
+
+// ── POST /api/v1/bookings/create-with-payment ────────────────────────────
+router.post('/create-with-payment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await createBookingWithPayment(req as any, res, next);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'Failed to create booking' });
+  }
+});
+
+// ── POST /api/v1/bookings/confirm-payment ────────────────────────────────
+router.post('/confirm-payment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await confirmPaymentAndIssueRewards(req as any, res, next);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'Failed to confirm payment' });
+  }
+});
+
+// ── GET /api/v1/bookings/confirm-payment ────────────────────────────────
+// Square sends a browser GET redirect after payment — process and redirect to frontend.
+router.get('/confirm-payment', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const ref = req.query.ref as string;
+    const paymentId = req.query.paymentId as string;
+    const demo = req.query.demo === 'true';
+
+    if (!ref) {
+      return res.redirect(`${frontendUrl}/sitara/book?pay=error&reason=missing_ref`);
+    }
+
+    // Build a synthetic POST-style request and call the core logic
+    const syntheticReq = {
+      method: 'POST',
+      body: { ref, paymentId, demo },
+      query: req.query,
+      headers: req.headers,
+      protocol: req.protocol,
+      get: req.get,
+    } as any;
+
+    let capturedResult: any = null;
+    const fakeRes = {
+      status: () => fakeRes,
+      json: (data: any) => { capturedResult = data; return data; },
+    } as any;
+
+    await confirmPaymentAndIssueRewards(syntheticReq, fakeRes, next);
+
+    if (capturedResult?.success) {
+      const bookingRef = capturedResult.data?.bookingRef || ref;
+      return res.redirect(`${frontendUrl}/sitara/book/confirmed?ref=${bookingRef}`);
+    }
+    return res.redirect(`${frontendUrl}/sitara/book?pay=failed`);
+  } catch (err: any) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${frontendUrl}/sitara/book?pay=error`);
+  }
+});
+
+// ── POST /api/v1/bookings/checkin ─────────────────────────────────────────
+router.post('/checkin', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await checkInAndReleaseEscrow(req as any, res, next);
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message || 'Failed to check in' });
+  }
+});
 
 // ── POST /api/v1/bookings/bottle (auth required) ──────────────────────────
 router.post('/bottle', async (req: Request, res: Response, next: NextFunction) => {
