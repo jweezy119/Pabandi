@@ -180,7 +180,10 @@ export class AgentEconomyService {
       data: {
         title: params.title,
         description: params.description,
+        requirements: 'Auto-generated',
         budgetUsd: params.budget,
+        budgetPab: params.budget * 10,
+        deadline: new Date(Date.now() + 7 * 86400000),
         posterId: params.posterId,
         category: 'micro',
         complexity: 'LOW',
