@@ -1,10 +1,10 @@
 import { Connection, PublicKey, Transaction, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import bs58 from 'bs58';
 import crypto from 'crypto';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
-// ─── Encryption ──────────────────────────────────────────
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 
@@ -23,19 +23,6 @@ function encrypt(text: string): string {
   return iv.toString('hex') + ':' + tag.toString('hex') + ':' + encrypted;
 }
 
-function decrypt(text: string): string {
-  const parts = text.split(':');
-  const iv = Buffer.from(parts[0], 'hex');
-  const tag = Buffer.from(parts[1], 'hex');
-  const encrypted = parts[2];
-  const decipher = crypto.createDecipheriv(ALGORITHM, getEncKey(), iv);
-  decipher.setAuthTag(tag);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
-
-// ─── Auto-Approval Service ───────────────────────────────
 export class AutoApprovalService {
   private connection: Connection | null = null;
   private platformKeypair: Keypair | null = null;
@@ -52,41 +39,29 @@ export class AutoApprovalService {
     return this.connection;
   }
 
-  /**
-   * Load platform private key from environment
-   */
   private loadPlatformKey() {
-    const privateKeyBase64 = process.env.PLATFORM_PRIVATE_KEY;
-    if (!privateKeyBase64) {
-      console.warn('[AutoApproval] PLATFORM_PRIVATE_KEY not set — auto-approval disabled');
+    const privateKeyBase58 = process.env.PLATFORM_PRIVATE_KEY;
+    if (!privateKeyBase58) {
+      console.warn('[AutoApproval] PLATFORM_PRIVATE_KEY not set');
       return;
     }
     try {
-      const secretKey = Buffer.from(privateKeyBase64, 'base64');
+      const secretKey = bs58.decode(privateKeyBase58);
       this.platformKeypair = Keypair.fromSecretKey(secretKey);
-      console.log(`[AutoApproval] Platform wallet loaded: ${this.platformKeypair.publicKey.toBase58()}`);
-    } catch (err) {
-      console.error('[AutoApproval] Failed to load platform key:', err);
+      console.log(`[AutoApproval] Wallet: ${this.platformKeypair.publicKey.toBase58()}`);
+    } catch (err: any) {
+      console.error('[AutoApproval] Key load failed:', err.message);
     }
   }
 
-  /**
-   * Check if auto-approval is enabled
-   */
   isEnabled(): boolean {
     return this.platformKeypair !== null;
   }
 
-  /**
-   * Get platform wallet public address
-   */
   getPlatformAddress(): string {
     return this.platformKeypair?.publicKey.toBase58() || '';
   }
 
-  /**
-   * Get USDC balance for any wallet address
-   */
   async getUsdcBalance(walletAddress?: string): Promise<number> {
     try {
       const mintKey = new PublicKey(USDC_MINT);
@@ -101,17 +76,13 @@ export class AutoApprovalService {
     }
   }
 
-  /**
-   * AUTO-APPROVE: Sign and submit USDC transfer
-   * No Phantom popup — fully automatic
-   */
   async autoTransfer(params: {
     toWallet: string;
     amountUsdc: number;
     referenceId?: string;
   }): Promise<{ success: boolean; txHash?: string; error?: string }> {
     if (!this.platformKeypair) {
-      return { success: false, error: 'Auto-approval not enabled — PLATFORM_PRIVATE_KEY not set' };
+      return { success: false, error: 'Auto-approval not enabled' };
     }
 
     try {
@@ -124,68 +95,34 @@ export class AutoApprovalService {
 
       const transaction = new Transaction();
 
-      // Create destination token account if it doesn't exist
       const toAccountInfo = await this.getConnection().getAccountInfo(toTokenAccount);
       if (!toAccountInfo) {
         transaction.add(
-          createAssociatedTokenAccountInstruction(
-            fromKey,
-            toTokenAccount,
-            toKey,
-            mintKey
-          )
+          createAssociatedTokenAccountInstruction(fromKey, toTokenAccount, toKey, mintKey)
         );
       }
 
-      // Add transfer instruction (USDC has 6 decimals)
       const amountRaw = Math.round(params.amountUsdc * 1_000_000);
       transaction.add(
         createTransferInstruction(
-          fromTokenAccount,
-          toTokenAccount,
-          fromKey,
-          amountRaw,
-          [],
-          TOKEN_PROGRAM_ID
+          fromTokenAccount, toTokenAccount, fromKey, amountRaw, [], TOKEN_PROGRAM_ID
         )
       );
 
-      // Sign with platform key (auto-approve)
       const { blockhash } = await this.getConnection().getRecentBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = fromKey;
       transaction.sign(this.platformKeypair);
 
-      // Submit to Solana
       const txHash = await this.getConnection().sendRawTransaction(transaction.serialize());
-
-      // Confirm the transaction
       await this.getConnection().confirmTransaction(txHash, 'confirmed');
-
-      console.log(`[AutoApproval] Transferred ${params.amountUsdc} USDC to ${params.toWallet.slice(0, 8)}... — tx: ${txHash}`);
 
       return { success: true, txHash };
     } catch (err: any) {
-      console.error('[AutoApproval] Transfer failed:', err);
       return { success: false, error: err.message };
     }
   }
 
-  /**
-   * Generate a new dedicated platform wallet
-   * Returns the address to fund (private key is shown ONCE)
-   */
-  static generateWallet(): { publicKey: string; privateKeyBase64: string } {
-    const keypair = Keypair.generate();
-    return {
-      publicKey: keypair.publicKey.toBase58(),
-      privateKeyBase64: Buffer.from(keypair.secretKey).toString('base64'),
-    };
-  }
-
-  /**
-   * Get full platform balance (USDC + SOL)
-   */
   async getFullBalance(): Promise<{ usdc: number; sol: number }> {
     if (!this.platformKeypair) return { usdc: 0, sol: 0 };
     const usdc = await this.getUsdcBalance();
