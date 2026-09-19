@@ -46,7 +46,7 @@ export class ProfitEngine {
 
     try {
       const agents = await prisma.agentProfile.findMany({
-        where: { isActive: true, reputation: { gt: 30 } },
+        where: { isActive: true, reputation: { gt: 30 }, walletAddress: { not: { startsWith: '0x' } } },
         orderBy: { reputation: 'desc' },
         take: 10,
       });
