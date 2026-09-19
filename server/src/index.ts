@@ -312,6 +312,8 @@ const routeMap: [string, string][] = [
   [`/api/${v}/solana-escrow`, './routes/solanaEscrow.routes'],
   [`/api/${v}/solana-usdc`, './routes/solanaUsdc.routes'],
   [`/api/${v}/profit-engine`, './routes/profitEngine.routes'],
+  [`/api/${v}/auto-approval`, './routes/autoApproval.routes'],
+  [`/api/${v}/single-wallet`, './routes/singleWalletTreasury.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {
