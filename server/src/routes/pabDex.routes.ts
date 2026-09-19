@@ -8,7 +8,7 @@ import {
   createToken,
   getTokenInfo,
   createPool,
-  getPoolInfo,
+  getPoolInfoEndpoint,
   addLiquidity,
   collectFees,
   executeSwap,
@@ -32,7 +32,7 @@ router.get('/token/info', getTokenInfo);
 
 // Pool endpoints
 router.post('/pool/create', createPool);
-router.get('/pool/info', getPoolInfo);
+router.get('/pool/info', getPoolInfoEndpoint);
 router.post('/pool/liquidity/add', addLiquidity);
 router.post('/pool/fees/collect', collectFees);
 
