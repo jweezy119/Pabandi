@@ -1,32 +1,8 @@
-/**
- * Pabandi Auto-Approval System
- * ============================
- *
- * HOW IT WORKS:
- * 1. You generate a dedicated platform wallet (or use existing)
- * 2. You provide the private key ONCE (encrypted at rest)
- * 3. Server signs + submits transactions automatically
- * 4. No Phantom popups — fully automated
- *
- * SECURITY:
- * - Private key is encrypted with AES-256-GCM
- * - Key is stored in environment variable (not DB)
- * - Server decrypts in memory only when signing
- * - All transfers are logged in UsdcTransfer for audit
- *
- * WALLET OPTIONS:
- * A) Use your Phantom (0x5d838a...) — export private key
- * B) Generate new dedicated wallet — we give you the address to fund
- *
- * We recommend B for clean separation.
- */
-
 import { Connection, PublicKey, Transaction, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedTokenAccountInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import crypto from 'crypto';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
-const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 
 // ─── Encryption ──────────────────────────────────────────
 const ALGORITHM = 'aes-256-gcm';
@@ -61,17 +37,23 @@ function decrypt(text: string): string {
 
 // ─── Auto-Approval Service ───────────────────────────────
 export class AutoApprovalService {
-  private connection: Connection;
+  private connection: Connection | null = null;
   private platformKeypair: Keypair | null = null;
 
   constructor() {
-    this.connection = new Connection(SOLANA_RPC, 'confirmed');
     this.loadPlatformKey();
+  }
+
+  private getConnection(): Connection {
+    if (!this.connection) {
+      const url = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+      this.connection = new Connection(url, 'confirmed');
+    }
+    return this.connection;
   }
 
   /**
    * Load platform private key from environment
-   * Set PLATFORM_PRIVATE_KEY in Render dashboard
    */
   private loadPlatformKey() {
     const privateKeyBase64 = process.env.PLATFORM_PRIVATE_KEY;
@@ -103,16 +85,16 @@ export class AutoApprovalService {
   }
 
   /**
-   * Get USDC balance of platform wallet
+   * Get USDC balance for any wallet address
    */
   async getUsdcBalance(walletAddress?: string): Promise<number> {
     try {
       const mintKey = new PublicKey(USDC_MINT);
       const walletKey = new PublicKey(walletAddress || this.platformKeypair?.publicKey.toBase58() || '');
       const tokenAddress = await getAssociatedTokenAddress(mintKey, walletKey);
-      const accountInfo = await this.connection.getAccountInfo(tokenAddress);
+      const accountInfo = await this.getConnection().getAccountInfo(tokenAddress);
       if (!accountInfo) return 0;
-      const balance = await this.connection.getTokenAccountBalance(tokenAddress);
+      const balance = await this.getConnection().getTokenAccountBalance(tokenAddress);
       return parseFloat(balance.value.uiAmount?.toString() || '0');
     } catch {
       return 0;
@@ -143,7 +125,7 @@ export class AutoApprovalService {
       const transaction = new Transaction();
 
       // Create destination token account if it doesn't exist
-      const toAccountInfo = await this.connection.getAccountInfo(toTokenAccount);
+      const toAccountInfo = await this.getConnection().getAccountInfo(toTokenAccount);
       if (!toAccountInfo) {
         transaction.add(
           createAssociatedTokenAccountInstruction(
@@ -169,16 +151,16 @@ export class AutoApprovalService {
       );
 
       // Sign with platform key (auto-approve)
-      const { blockhash } = await this.connection.getRecentBlockhash();
+      const { blockhash } = await this.getConnection().getRecentBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = fromKey;
       transaction.sign(this.platformKeypair);
 
       // Submit to Solana
-      const txHash = await this.connection.sendRawTransaction(transaction.serialize());
+      const txHash = await this.getConnection().sendRawTransaction(transaction.serialize());
 
       // Confirm the transaction
-      await this.connection.confirmTransaction(txHash, 'confirmed');
+      await this.getConnection().confirmTransaction(txHash, 'confirmed');
 
       console.log(`[AutoApproval] Transferred ${params.amountUsdc} USDC to ${params.toWallet.slice(0, 8)}... — tx: ${txHash}`);
 
@@ -208,7 +190,7 @@ export class AutoApprovalService {
     if (!this.platformKeypair) return { usdc: 0, sol: 0 };
     const usdc = await this.getUsdcBalance();
     try {
-      const sol = await this.connection.getBalance(this.platformKeypair.publicKey) / LAMPORTS_PER_SOL;
+      const sol = await this.getConnection().getBalance(this.platformKeypair.publicKey) / LAMPORTS_PER_SOL;
       return { usdc, sol };
     } catch {
       return { usdc, sol: 0 };

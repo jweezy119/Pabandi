@@ -3,11 +3,20 @@ import { getAssociatedTokenAddress, createTransferInstruction, createAssociatedT
 import { prisma } from '../utils/database';
 import crypto from 'crypto';
 
-const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // USDC on Solana mainnet
-const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
+
+let _connection: Connection | null = null;
+
+function getConnection(): Connection {
+  if (!_connection) {
+    const url = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+    _connection = new Connection(url, 'confirmed');
+  }
+  return _connection;
+}
 
 function getEncKey(): Buffer {
   const key = process.env.WALLET_ENC_KEY;
@@ -25,12 +34,6 @@ function encrypt(text: string): string {
 }
 
 export class SolanaUsdcService {
-  private connection: Connection;
-
-  constructor() {
-    this.connection = new Connection(SOLANA_RPC, 'confirmed');
-  }
-
   /**
    * Generate a new Solana keypair for an agent
    * Returns public key, stores encrypted secret
@@ -72,9 +75,9 @@ export class SolanaUsdcService {
       const mintKey = new PublicKey(USDC_MINT);
       const walletKey = new PublicKey(walletAddress);
       const tokenAddress = await getAssociatedTokenAddress(mintKey, walletKey);
-      const accountInfo = await this.connection.getAccountInfo(tokenAddress);
+      const accountInfo = await getConnection().getAccountInfo(tokenAddress);
       if (!accountInfo) return 0;
-      const balance = await this.connection.getTokenAccountBalance(tokenAddress);
+      const balance = await getConnection().getTokenAccountBalance(tokenAddress);
       return parseFloat(balance.value.uiAmount?.toString() || '0');
     } catch {
       return 0;
@@ -83,8 +86,6 @@ export class SolanaUsdcService {
 
   /**
    * Record an on-chain USDC transfer in our treasury
-   * The actual transfer is signed client-side by Phantom
-   * This just records the result
    */
   async recordTransfer(params: {
     fromWallet: string;
@@ -110,7 +111,6 @@ export class SolanaUsdcService {
 
   /**
    * Build a transfer instruction for Phantom to sign
-   * Returns the transaction that Phantom will sign
    */
   async buildTransferTransaction(params: {
     fromWallet: string;
@@ -126,33 +126,31 @@ export class SolanaUsdcService {
 
     const transaction = new Transaction();
 
-    // Check if destination token account exists
-    const toAccountInfo = await this.connection.getAccountInfo(toTokenAccount);
+    const toAccountInfo = await getConnection().getAccountInfo(toTokenAccount);
     if (!toAccountInfo) {
       transaction.add(
         createAssociatedTokenAccountInstruction(
-          fromKey, // payer
+          fromKey,
           toTokenAccount,
-          toKey, // owner
+          toKey,
           mintKey
         )
       );
     }
 
-    // Add transfer instruction (amount in USDC decimals = 6)
     const amountRaw = Math.round(params.amountUsdc * 1_000_000);
     transaction.add(
       createTransferInstruction(
         fromTokenAccount,
         toTokenAccount,
-        fromKey, // owner (Phantom signs)
+        fromKey,
         amountRaw,
         [],
         TOKEN_PROGRAM_ID
       )
     );
 
-    const { blockhash } = await this.connection.getRecentBlockhash();
+    const { blockhash } = await getConnection().getRecentBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = fromKey;
 
@@ -170,7 +168,7 @@ export class SolanaUsdcService {
     if (!platformWallet) return { usdc: 0, sol: 0 };
     const usdc = await this.getUsdcBalance(platformWallet);
     try {
-      const sol = await this.connection.getBalance(new PublicKey(platformWallet)) / LAMPORTS_PER_SOL;
+      const sol = await getConnection().getBalance(new PublicKey(platformWallet)) / LAMPORTS_PER_SOL;
       return { usdc, sol };
     } catch {
       return { usdc, sol: 0 };
