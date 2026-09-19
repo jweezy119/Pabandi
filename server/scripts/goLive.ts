@@ -8,7 +8,7 @@
  * This script configures the system for immediate go-live.
  */
 
-import { prisma } from '../utils/database';
+import { prisma } from '../src/utils/database';
 
 const GO_LIVE_CONFIG = {
   // Wallet

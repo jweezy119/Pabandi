@@ -29,6 +29,7 @@ interface ProfitReport {
   annualRevenue: number;
   roiPercent: number;
   efficiency: number;
+  currentFeeRate: number;
 }
 
 export class ProfitEngine {
@@ -212,6 +213,7 @@ export class ProfitEngine {
       annualRevenue: dailyRevenue * 365,
       roiPercent,
       efficiency: Math.max(0, 100 - ((avgCycleTime - TARGET_CYCLE_TIME) / TARGET_CYCLE_TIME) * 100),
+      currentFeeRate: this.feeRate,
     };
   }
 
@@ -229,6 +231,46 @@ export class ProfitEngine {
 
   getSettlementSpeed(): { chain: string; finalityMs: number; costPerTx: number } {
     return { chain: 'Solana', finalityMs: 400, costPerTx: 0.00025 };
+  }
+
+  // ─── AGENT LOOP INTEGRATION ────────────────────────────
+  quoteFee(amountPab: number): { feePab: number; rate: number } {
+    return { feePab: amountPab * this.feeRate, rate: this.feeRate };
+  }
+
+  decideReinvestment(params: {
+    collectedPab: number;
+    collectedSol: number;
+    agentPabPoolAvg: number;
+    treasurySol: number;
+    avgBookingPab: number;
+  }): { reinvestPab: number; reinvestSol: number; retainPab: number; retainSol: number; reason: string } {
+    const reinvestPab = params.collectedPab * 0.5;
+    const reinvestSol = params.collectedSol * 0.3;
+    return {
+      reinvestPab,
+      reinvestSol,
+      retainPab: params.collectedPab - reinvestPab,
+      retainSol: params.collectedSol - reinvestSol,
+      reason: `Reinvesting ${(reinvestPab).toFixed(2)} PAB + ${(reinvestSol).toFixed(4)} SOL`,
+    };
+  }
+
+  async applyReinvestmentCycle(params: {
+    collectedPab: number;
+    collectedSol: number;
+    reinvestPab: number;
+    reinvestSol: number;
+    cycle: number;
+  }): Promise<void> {
+    await prisma.treasuryPosition.create({
+      data: {
+        bucket: 'REINVESTED',
+        amount: params.reinvestPab,
+        status: 'DEPLOYED',
+        meta: { solAmount: params.reinvestSol, cycle: params.cycle, source: 'AUTO_REINVEST' },
+      },
+    });
   }
 }
 
