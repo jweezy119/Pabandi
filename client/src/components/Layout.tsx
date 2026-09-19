@@ -244,6 +244,8 @@ export default function Layout() {
     deferredInstall.current = null;
   };
 
+  const handleLogout = () => { logout(); navigate('/'); };
+
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
   // /booking and /sitara/* bring their own chrome (BookingLayout sidebar,
   // SitaraHeader). Rendering the main header/footer/nav on top stacks two
