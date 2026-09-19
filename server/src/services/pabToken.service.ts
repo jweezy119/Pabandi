@@ -1,10 +1,7 @@
-import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { createMint, createAssociatedTokenAccountInstruction, createTransferInstruction, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token';
+import { Connection, Keypair, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { createInitializeMintInstruction, createAssociatedTokenAccountInstruction, createMintToInstruction, TOKEN_PROGRAM_ID, getAssociatedTokenAddress, MINT_SIZE } from '@solana/spl-token';
 import bs58 from 'bs58';
-import crypto from 'crypto';
 import { prisma } from '../utils/database';
-
-const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 export class PabTokenService {
   private connection: Connection;
@@ -21,40 +18,51 @@ export class PabTokenService {
 
   async createToken(): Promise<{ mint: string; txHash: string }> {
     const mintAuthority = this.platformKeypair.publicKey;
-    const freezeAuthority = null;
     const decimals = 9;
 
-    const mint = await createMint(
-      this.connection,
-      this.platformKeypair,
-      mintAuthority,
-      freezeAuthority,
-      decimals
+    const mintKeypair = Keypair.generate();
+    const mintRent = await this.connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+    const platformAta = await getAssociatedTokenAddress(mintKeypair.publicKey, mintAuthority);
+
+    const transaction = new Transaction();
+
+    // 1. Create mint account
+    transaction.add(
+      SystemProgram.createAccount({
+        fromPubkey: mintAuthority,
+        newAccountPubkey: mintKeypair.publicKey,
+        lamports: mintRent,
+        space: MINT_SIZE,
+        programId: TOKEN_PROGRAM_ID,
+      })
     );
 
-    // Mint 1 billion tokens to platform wallet
-    const platformAta = await getAssociatedTokenAddress(mint, mintAuthority);
-    
-    const transaction = new Transaction();
-    
-    // Create ATA if needed
-    const ataInfo = await this.connection.getAccountInfo(platformAta);
-    if (!ataInfo) {
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          mintAuthority,
-          platformAta,
-          mintAuthority,
-          mint
-        )
-      );
-    }
+    // 2. Initialize mint
+    transaction.add(
+      createInitializeMintInstruction(
+        mintKeypair.publicKey,
+        decimals,
+        mintAuthority,
+        null,
+        TOKEN_PROGRAM_ID
+      )
+    );
 
-    // Mint 1B tokens
+    // 3. Create ATA
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        mintAuthority,
+        platformAta,
+        mintAuthority,
+        mintKeypair.publicKey
+      )
+    );
+
+    // 4. Mint 1B tokens
     const mintAmount = 1_000_000_000 * Math.pow(10, decimals);
     transaction.add(
-      createTransferInstruction(
-        platformAta,
+      createMintToInstruction(
+        mintKeypair.publicKey,
         platformAta,
         mintAuthority,
         mintAmount,
@@ -66,67 +74,18 @@ export class PabTokenService {
     const { blockhash } = await this.connection.getRecentBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = mintAuthority;
-    transaction.sign(this.platformKeypair);
+    transaction.sign(this.platformKeypair, mintKeypair);
 
     const txHash = await this.connection.sendRawTransaction(transaction.serialize());
     await this.connection.confirmTransaction(txHash, 'confirmed');
 
-    // Save to database
     await prisma.systemConfig.upsert({
       where: { key: 'pabMint' },
-      create: { key: 'pabMint', value: mint.toBase58(), description: 'PAB token mint address' },
-      update: { value: mint.toBase58() },
+      create: { key: 'pabMint', value: mintKeypair.publicKey.toBase58(), description: 'PAB token mint address' },
+      update: { value: mintKeypair.publicKey.toBase58() },
     });
 
-    return { mint: mint.toBase58(), txHash };
-  }
-
-  async mintToAgent(agentWallet: string, amount: number): Promise<string> {
-    const mintConfig = await prisma.systemConfig.findUnique({ where: { key: 'pabMint' } });
-    if (!mintConfig) throw new Error('PAB token not created yet');
-
-    const mint = new PublicKey(mintConfig.value);
-    const agentAta = await getAssociatedTokenAddress(mint, new PublicKey(agentWallet));
-
-    const transaction = new Transaction();
-
-    // Create ATA if needed
-    const ataInfo = await this.connection.getAccountInfo(agentAta);
-    if (!ataInfo) {
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          this.platformKeypair.publicKey,
-          agentAta,
-          new PublicKey(agentWallet),
-          mint
-        )
-      );
-    }
-
-    // Transfer PAB to agent
-    const platformAta = await getAssociatedTokenAddress(mint, this.platformKeypair.publicKey);
-    const mintAmount = Math.round(amount * Math.pow(10, 9));
-    
-    transaction.add(
-      createTransferInstruction(
-        platformAta,
-        agentAta,
-        this.platformKeypair.publicKey,
-        mintAmount,
-        [],
-        TOKEN_PROGRAM_ID
-      )
-    );
-
-    const { blockhash } = await this.connection.getRecentBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = this.platformKeypair.publicKey;
-    transaction.sign(this.platformKeypair);
-
-    const txHash = await this.connection.sendRawTransaction(transaction.serialize());
-    await this.connection.confirmTransaction(txHash, 'confirmed');
-
-    return txHash;
+    return { mint: mintKeypair.publicKey.toBase58(), txHash };
   }
 
   getPlatformAddress(): string {
