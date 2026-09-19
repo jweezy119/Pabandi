@@ -21,6 +21,7 @@
  */
 
 import { prisma } from '../utils/database';
+import { autoApproval } from './autoApproval.service';
 
 const COMPOUND_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const BASE_FEE_RATE = 0.15; // 15% — maximized for profit
