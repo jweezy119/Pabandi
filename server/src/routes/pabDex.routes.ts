@@ -12,6 +12,7 @@ import {
   addLiquidity,
   collectFees,
   executeSwap,
+  fundAgent,
   createAgent,
   startAgent,
   pauseAgent,
@@ -37,6 +38,7 @@ router.post('/pool/fees/collect', collectFees);
 
 // Swap endpoint
 router.post('/swap', executeSwap);
+router.post('/agents/fund', fundAgent);
 
 // Agent endpoints
 router.post('/agents/create', createAgent);

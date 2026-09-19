@@ -1,11 +1,21 @@
 /**
  * pabDex.controller.ts — PabDex API Controller
- * 
- * Endpoints for token creation, pool management, agent trading, and LP fee collection.
  */
 import { Request, Response, NextFunction } from 'express';
+import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
+import bs58 from 'bs58';
 import { pabToken } from '../services/pabToken.service';
 import { buyPAB, sellPAB, getPoolInfo, getFees } from '../services/raydiumPool.service';
+
+const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const USDC_DECIMALS = 6;
+
+function getKeypair(): Keypair {
+  const privateKeyBase58 = process.env.PLATFORM_PRIVATE_KEY || '';
+  const secretKey = bs58.decode(privateKeyBase58);
+  return Keypair.fromSecretKey(secretKey);
+}
 
 export const createToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -55,6 +65,40 @@ export const executeSwap = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const fundAgent = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { wallet, amount } = req.body;
+    if (!wallet || !amount) return res.status(400).json({ success: false, error: 'Wallet and amount required' });
+    
+    const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
+    const owner = getKeypair();
+    const usdcMint = new PublicKey(USDC_MINT);
+    
+    const platformUsdcAta = await getAssociatedTokenAddress(usdcMint, owner.publicKey);
+    const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(wallet));
+    
+    const tx = new Transaction();
+    
+    try { await connection.getAccountInfo(agentUsdcAta); } catch {
+      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, new PublicKey(wallet), usdcMint));
+    }
+    
+    const usdcRaw = Math.floor(amount * Math.pow(10, USDC_DECIMALS));
+    tx.add(createTransferInstruction(platformUsdcAta, agentUsdcAta, owner.publicKey, BigInt(usdcRaw)));
+    
+    const { blockhash } = await connection.getRecentBlockhash();
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = owner.publicKey;
+    tx.sign(owner);
+    
+    const txHash = await sendAndConfirmTransaction(connection, tx, [owner]);
+    
+    res.json({ success: true, txHash, amount });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const collectFees = async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json({ success: true, data: getFees() });
@@ -71,7 +115,6 @@ export const getStats = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-// Agent endpoints
 export const createAgent = async (req: Request, res: Response, next: NextFunction) => {
   res.json({ success: false, error: 'Not implemented' });
 };
@@ -101,7 +144,6 @@ export const executeTrade = async (req: Request, res: Response, next: NextFuncti
     const { direction, amount } = req.body;
     const agentId = req.params.id;
     
-    // Get agent wallet from database
     const { prisma } = await import('../utils/database');
     const agent = await prisma.agentProfile.findUnique({ where: { id: agentId } });
     if (!agent) return res.status(404).json({ success: false, error: 'Agent not found' });
@@ -119,8 +161,6 @@ export const executeTrade = async (req: Request, res: Response, next: NextFuncti
 export const addLiquidity = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { pabAmount, usdcAmount } = req.body;
-    // Transfer PAB from platform to pool reserve
-    // Transfer USDC from platform to pool reserve
     res.json({ success: true, data: { pabAdded: pabAmount, usdcAdded: usdcAmount } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
