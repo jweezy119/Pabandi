@@ -1,130 +1,168 @@
-import React, { useState, useEffect } from 'react';
-import { Surface, Button, Badge, tokens } from '../design-system';
-import { partnerRewardsService } from '../services/api';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import RewardCard from '../components/RewardCard';
+import FeeOffsetCalculator from '../components/FeeOffsetCalculator';
+import TierProgress from '../components/TierProgress';
 
-const CATEGORIES = ['FOOD', 'RETAIL', 'SERVICES', 'TRAVEL', 'HEALTH', 'OTHER'];
+interface RewardTransaction {
+  id: string;
+  type: string;
+  amount: number;
+  usdValue: number;
+  status: string;
+  createdAt: string;
+  referenceType?: string;
+}
 
-export const RewardsPage: React.FC = () => {
-  const [offers, setOffers] = useState<any[]>([]);
+interface RewardBalance {
+  totalEarned: number;
+  totalClaimed: number;
+  currentTier: string;
+  stakedAmount: number;
+  totalVesting: number;
+}
+
+interface RewardTier {
+  id: string;
+  name: string;
+  minStake: number;
+  feeDiscount: number;
+  rewardMultiplier: number;
+  color: string;
+  icon: string;
+}
+
+export default function RewardsPage() {
+  useAuthStore(); // check auth state
+  const [balance, setBalance] = useState<RewardBalance | null>(null);
+  const [history, setHistory] = useState<RewardTransaction[]>([]);
+  const [tiers, setTiers] = useState<RewardTier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<string>('');
-  const [redeeming, setRedeeming] = useState<string | null>(null);
-  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    loadOffers();
-  }, [category]);
+    fetchRewardsData();
+  }, []);
 
-  const loadOffers = async () => {
-    setLoading(true);
+  const fetchRewardsData = async () => {
     try {
-      const res = await partnerRewardsService.listOffers({ category: category || undefined });
-      setOffers(res.data?.data || []);
-    } catch (e) {
-      console.error('Failed to load offers:', e);
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [balanceRes, historyRes, tiersRes] = await Promise.all([
+        fetch('/api/v1/rewards/balance', { headers }),
+        fetch('/api/v1/rewards/history', { headers }),
+        fetch('/api/v1/rewards/tiers'),
+      ]);
+
+      if (balanceRes.ok) {
+        const data = await balanceRes.json();
+        setBalance(data.balance);
+      }
+      if (historyRes.ok) {
+        const data = await historyRes.json();
+        setHistory(data.history || []);
+      }
+      if (tiersRes.ok) {
+        const data = await tiersRes.json();
+        setTiers(data.tiers || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch rewards data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const redeemOffer = async (offerId: string) => {
-    if (!isAuthenticated) {
-      window.location.href = '/login';
-      return;
-    }
-    setRedeeming(offerId);
-    try {
-      const res = await partnerRewardsService.redeem(offerId);
-      const code = res.data?.data?.redemptionCode;
-      alert(`Offer redeemed! Your code: ${code}\nShow this at the business to claim your reward.`);
-      loadOffers();
-    } catch (e: any) {
-      alert(e?.response?.data?.error || 'Failed to redeem');
-    } finally {
-      setRedeeming(null);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="animate-pulse text-amber-400 text-xl">Loading your rewards...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10" style={{ background: tokens.color.background, fontFamily: tokens.font.body }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Rewards & Offers</h1>
-          <p className="mt-2 text-slate-400">Earn rewards at businesses you already shop at.</p>
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold text-white mb-2">$PAB Rewards</h1>
+          <p className="text-slate-400">Earn tokens on every payment. Stake to unlock fee discounts.</p>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          <button
-            onClick={() => setCategory('')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${!category ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-          >
-            All
-          </button>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${category === cat ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Offers Grid */}
-        {loading ? (
-          <p className="text-slate-400">Loading offers...</p>
-        ) : offers.length === 0 ? (
-          <Surface className="p-8 text-center">
-            <div className="text-4xl mb-4">🎁</div>
-            <p className="text-slate-400">No offers available yet. Check back soon!</p>
-          </Surface>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {offers.map((offer) => (
-              <Surface key={offer.id} className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge tone="info">{offer.category}</Badge>
-                  <span className="text-xs text-slate-500">
-                    {offer.totalRedeemed}/{offer.maxRedeemed} claimed
-                  </span>
-                </div>
-                <h3 className="font-bold text-white text-lg">{offer.title}</h3>
-                <p className="text-sm text-slate-400 mt-1">{offer.description}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-emerald-300 font-bold">
-                      {offer.rewardType === 'PERCENTAGE_OFF' && `${offer.rewardValue}% OFF`}
-                      {offer.rewardType === 'FIXED_OFF' && `$${offer.rewardValue} OFF`}
-                      {offer.rewardType === 'CASHBACK_PAB' && `${offer.rewardValue}% Cashback`}
-                      {offer.rewardType === 'FREE_ITEM' && 'FREE ITEM'}
-                    </span>
-                    {offer.minPurchase && (
-                      <span className="text-xs text-slate-500 ml-2">
-                        Min. purchase ${offer.minPurchase}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => redeemOffer(offer.id)}
-                    disabled={redeeming === offer.id}
-                  >
-                    {redeeming === offer.id ? '...' : 'Redeem'}
-                  </Button>
-                </div>
-                <div className="mt-2 text-xs text-slate-500">
-                  Valid until {new Date(offer.endsAt).toLocaleDateString()}
-                </div>
-              </Surface>
-            ))}
+        {/* Hero Balance Card */}
+        <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-lg rounded-2xl p-8 border border-amber-500/30 mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div>
+              <p className="text-amber-300 text-sm font-medium mb-1">Your $PAB Balance</p>
+              <p className="text-5xl font-bold text-white">
+                {balance?.totalEarned?.toFixed(2) || '0.00'}
+                <span className="text-2xl text-amber-400 ml-2">$PAB</span>
+              </p>
+              <p className="text-slate-400 mt-2">
+                Current Tier: <span className="text-amber-400 font-semibold">{balance?.currentTier || 'Bronze'}</span>
+                {balance?.stakedAmount ? ` • ${balance.stakedAmount.toFixed(0)} staked` : ''}
+              </p>
+            </div>
+            <div className="mt-6 md:mt-0">
+              <button className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-amber-500/25">
+                Stake $PAB →
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Tier Progress */}
+        <TierProgress tiers={tiers} currentTier={balance?.currentTier || 'Bronze'} stakedAmount={balance?.stakedAmount || 0} />
+
+        {/* Fee Offset Calculator */}
+        <FeeOffsetCalculator />
+
+        {/* How It Works */}
+        <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-8">
+          <h2 className="text-xl font-bold text-white mb-4">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">💳</span>
+              </div>
+              <h3 className="text-white font-semibold mb-1">Pay with Card</h3>
+              <p className="text-slate-400 text-sm">Use your regular credit/debit card via Square checkout</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🪙</span>
+              </div>
+              <h3 className="text-white font-semibold mb-1">Earn $PAB</h3>
+              <p className="text-slate-400 text-sm">Get 10% back in $PAB tokens automatically after payment</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">⚡</span>
+              </div>
+              <h3 className="text-white font-semibold mb-1">Save on Fees</h3>
+              <p className="text-slate-400 text-sm">Stake $PAB to unlock up to 50% fee discounts</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reward History */}
+        <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700">
+          <h2 className="text-xl font-bold text-white mb-4">Reward History</h2>
+          {history.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500 text-lg">No rewards yet</p>
+              <p className="text-slate-600 text-sm mt-1">Make your first booking to start earning $PAB!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {history.map((tx) => (
+                <RewardCard key={tx.id} transaction={tx} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default RewardsPage;
+}

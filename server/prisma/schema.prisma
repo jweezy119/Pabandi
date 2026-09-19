@@ -5610,3 +5610,61 @@ model AutomationRule {
   @@index([managerId])
   @@index([isActive])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PABANDI REWARDS ENGINE — $PAB token reward system for Square payments
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model RewardTier {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  minStake        Float
+  feeDiscount     Float
+  rewardMultiplier Float
+  color           String
+  icon            String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model RewardTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  userType        String
+  type            String
+  amount          Float
+  usdValue        Float
+  referenceId     String?
+  referenceType   String?
+  status          String   @default("PENDING")
+  claimedAt       DateTime?
+  vestingEnd      DateTime?
+  createdAt       DateTime @default(now())
+  @@index([userId])
+  @@index([type])
+}
+
+model UserRewardBalance {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  userType        String
+  totalEarned     Float    @default(0)
+  totalClaimed    Float    @default(0)
+  totalVesting    Float    @default(0)
+  currentTier     String   @default("Bronze")
+  stakedAmount    Float    @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model FeeOffsetRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  userType        String
+  originalFee     Float
+  offsetAmount    Float
+  offsetUsdValue  Float
+  finalFee        Float
+  referenceId     String?
+  createdAt       DateTime @default(now())
+  @@index([userId])
+}

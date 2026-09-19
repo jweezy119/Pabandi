@@ -59,6 +59,7 @@
     "nodemailer": "^6.10.1",
     "prisma": "^5.22.0",
     "resend": "^4.0.1",
+    "square": "^46.0.0",
     "stripe": "^22.3.2",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",

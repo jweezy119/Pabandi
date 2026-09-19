@@ -1,17 +1,20 @@
 // Sitara OS — Booking Flow Page
 // Escrow-backed booking with deposit
 // Updated to support both crypto and fiat payment rails
+// Square is the primary card processor for hosted checkout
 import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSitaraStore } from '../store/sitaraStore';
 import { useAuthStore } from '../../store/authStore';
 import { sitaraApi } from '../api/sitaraApi';
+import SquareCheckout from '../../components/SquareCheckout';
 
 type CryptoMethod = 'usdc' | 'btcpay';
-type FiatMethod = 'paypal' | 'venmo' | 'cashapp' | 'zelle' | 'ach' | 'card' | 'cash' | 'check';
+type FiatMethod = 'square' | 'paypal' | 'venmo' | 'cashapp' | 'zelle' | 'ach' | 'card' | 'cash' | 'check';
 type PaymentCategory = 'crypto' | 'fiat';
 
 const FIAT_METHODS = [
+  { id: 'square', label: 'Card (Square)', icon: '💳', primary: true },
   { id: 'paypal', label: 'PayPal', icon: '🅿️' },
   { id: 'venmo', label: 'Venmo', icon: '💙' },
   { id: 'cashapp', label: 'Cash App', icon: '💚' },
@@ -41,7 +44,7 @@ export default function BookingFlowPage() {
   const [paymentPending, setPaymentPending] = useState(false);
   const [paymentCategory, setPaymentCategory] = useState<PaymentCategory>('crypto');
   const [cryptoMethod, setCryptoMethod] = useState<CryptoMethod>('usdc');
-  const [fiatMethod, setFiatMethod] = useState<FiatMethod>('paypal');
+  const [fiatMethod, setFiatMethod] = useState<FiatMethod>('square');
   const [fiatReference, setFiatReference] = useState<string | null>(null);
 
   const handleProcessBooking = async () => {
@@ -65,8 +68,8 @@ export default function BookingFlowPage() {
         setLiveReservationId(reservationId || null);
         
         if (reservationId) {
-          if (paymentCategory === 'fiat') {
-            // Create fiat payment request
+          if (paymentCategory === 'fiat' && fiatMethod !== 'square') {
+            // Create fiat payment request (non-Square methods)
             try {
               const fiatRes = await fetch('/api/v1/fiat/create', {
                 method: 'POST',
@@ -91,7 +94,7 @@ export default function BookingFlowPage() {
             } catch (err) {
               console.error('Fiat payment creation failed:', err);
             }
-          } else {
+          } else if (paymentCategory === 'crypto') {
             // Use crypto payment service (USDC/BTCPay)
             try {
               const pay: any = await fetch('/api/v1/payments/create', {
@@ -114,6 +117,7 @@ export default function BookingFlowPage() {
               console.error('Payment creation failed:', err);
             }
           }
+          // Square checkout is handled by the SquareCheckout component directly
         }
       } catch {}
     }
@@ -282,7 +286,7 @@ export default function BookingFlowPage() {
                 }`}
               >
                 <div className="text-xl">💵</div>
-                <div className="text-xs font-medium mt-1">Fiat (PayPal/Zelle/etc)</div>
+                <div className="text-xs font-medium mt-1">Fiat (Card/PayPal/etc)</div>
               </button>
             </div>
           </div>
@@ -324,7 +328,7 @@ export default function BookingFlowPage() {
           {paymentCategory === 'fiat' && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Fiat Method</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {FIAT_METHODS.map((m) => (
                   <button
                     key={m.id}
@@ -340,7 +344,11 @@ export default function BookingFlowPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-amber-700 mt-2">⚠️ Fiat payments require manual business confirmation. No business verification needed.</p>
+              <p className="text-xs text-amber-700 mt-2">
+                {fiatMethod === 'square'
+                  ? '🔒 Secured by Square — hosted checkout, card data never touches Pabandi.'
+                  : '⚠️ Non-Square methods require manual business confirmation.'}
+              </p>
             </div>
           )}
 
@@ -422,7 +430,30 @@ export default function BookingFlowPage() {
               Demo booking — sign in and pick a ✓ Live venue for a real reservation.
             </p>
           )}
-          {renderPaymentDetails()}
+
+          {/* Square Checkout */}
+          {fiatMethod === 'square' && paymentCategory === 'fiat' && liveReservationId && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <SquareCheckout
+                referenceId={liveReservationId}
+                amount={deposit}
+                customerEmail={authUser?.email}
+                redirectUrl={window.location.origin + '/sitara/my-bookings?pay=success&ref=' + liveReservationId}
+                cancelUrl={window.location.origin + '/sitara/booking/' + businessId + '?pay=cancelled'}
+                onSuccess={(paymentId) => {
+                  console.log('Square payment completed:', paymentId);
+                  setPaymentPending(false);
+                }}
+                onError={(error) => {
+                  console.error('Square payment failed:', error);
+                  setPaymentPending(false);
+                }}
+              />
+            </div>
+          )}
+
+          {/* Other payment methods details */}
+          {fiatMethod !== 'square' && renderPaymentDetails()}
           
           {/* Fiat Payment Redirect */}
           {fiatReference && (
