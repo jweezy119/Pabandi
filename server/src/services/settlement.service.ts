@@ -47,6 +47,17 @@ export class SettlementService {
     }
 
     try {
+      // 0. Clean up reward transactions for agents with invalid wallets
+      await prisma.rewardTransaction.deleteMany({
+        where: {
+          userType: 'AGENT',
+          settledAt: null,
+          agent: {
+            walletAddress: { startsWith: '0x' },
+          },
+        },
+      });
+
       // 1. Find all unsettled agent credits
       const unsettledRewards = await prisma.rewardTransaction.findMany({
         where: {
