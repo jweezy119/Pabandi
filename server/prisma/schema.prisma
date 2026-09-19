@@ -5693,6 +5693,7 @@ model AgentProfile {
   bids                 AgentProjectBid[]        @relation("AgentProjectBid_bidder")
   sentTransactions     AgentMarketTransaction[] @relation("sentTransactions")
   receivedTransactions AgentMarketTransaction[] @relation("receivedTransactions")
+  wallet                AgentWallet?
   @@index([walletAddress])
   @@index([slug])
 }
@@ -5770,4 +5771,35 @@ model AgentMarketTransaction {
   createdAt      DateTime @default(now())
   @@index([fromAgentId])
   @@index([toAgentId])
+}
+
+model AgentWallet {
+  id              String   @id @default(cuid())
+  agentId         String   @unique
+  agent           AgentProfile @relation(fields: [agentId], references: [id])
+  publicKey       String   @unique
+  encryptedSecret String
+  balanceUsdc     Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  transfers       UsdcTransfer[]
+  @@index([publicKey])
+}
+
+model UsdcTransfer {
+  id            String   @id @default(cuid())
+  fromWallet    String
+  toWallet      String
+  amountUsdc    Float
+  txHash        String   @unique
+  type          String   // FUNDING | AGENT_PAYMENT | FEE_COLLECTION | REFUND
+  referenceId   String?
+  status        String   @default("PENDING")
+  blockTime     DateTime?
+  createdAt     DateTime @default(now())
+  agentId       String?
+  agent         AgentWallet? @relation(fields: [agentId], references: [id])
+  @@index([fromWallet])
+  @@index([toWallet])
+  @@index([type])
 }
