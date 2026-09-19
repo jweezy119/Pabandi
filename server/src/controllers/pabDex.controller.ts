@@ -6,12 +6,12 @@ import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction 
 import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
 import bs58 from 'bs58';
 import { pabToken } from '../services/pabToken.service';
-import { buyPAB, sellPAB, getPoolInfo, getFees } from '../services/raydiumPool.service';
+import { buyPAB, sellPAB, getPoolInfo, getFees, initializePool } from '../services/raydiumPool.service';
 
 const USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 const USDC_DECIMALS = 6;
 
-function getKeypair(): Keypair {
+function getKeypair() {
   const privateKeyBase58 = process.env.PLATFORM_PRIVATE_KEY || '';
   const secretKey = bs58.decode(privateKeyBase58);
   return Keypair.fromSecretKey(secretKey);
@@ -36,7 +36,13 @@ export const getTokenInfo = async (req: Request, res: Response, next: NextFuncti
 
 export const createPool = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json({ success: true, data: await getPoolInfo() });
+    const { pabAmount, usdcAmount } = req.body;
+    const result = await initializePool(pabAmount || 10000, usdcAmount || 1);
+    if (result.success) {
+      res.json({ success: true, data: await getPoolInfo() });
+    } else {
+      res.json({ success: false, error: result.error });
+    }
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -70,17 +76,28 @@ export const fundAgent = async (req: Request, res: Response, next: NextFunction)
     const { wallet, amount } = req.body;
     if (!wallet || !amount) return res.status(400).json({ success: false, error: 'Wallet and amount required' });
     
+    // wallet can be agent ID or actual wallet address
+    let walletAddress = wallet;
+    
+    // If wallet looks like an agent ID (cmu...), look up the actual wallet
+    if (wallet.startsWith('cmu')) {
+      const { prisma } = await import('../utils/database');
+      const agent = await prisma.agentProfile.findUnique({ where: { id: wallet } });
+      if (agent) walletAddress = agent.walletAddress;
+    }
+    
+    // Transfer USDC from platform to agent
     const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
     const owner = getKeypair();
     const usdcMint = new PublicKey(USDC_MINT);
     
     const platformUsdcAta = await getAssociatedTokenAddress(usdcMint, owner.publicKey);
-    const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(wallet));
+    const agentUsdcAta = await getAssociatedTokenAddress(usdcMint, new PublicKey(walletAddress));
     
     const tx = new Transaction();
     
     try { await connection.getAccountInfo(agentUsdcAta); } catch {
-      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, new PublicKey(wallet), usdcMint));
+      tx.add(createAssociatedTokenAccountInstruction(owner.publicKey, agentUsdcAta, new PublicKey(walletAddress), usdcMint));
     }
     
     const usdcRaw = Math.floor(amount * Math.pow(10, USDC_DECIMALS));
@@ -149,8 +166,8 @@ export const executeTrade = async (req: Request, res: Response, next: NextFuncti
     if (!agent) return res.status(404).json({ success: false, error: 'Agent not found' });
     
     const result = direction === 'buy' 
-      ? await buyPAB(agent.walletAddress, amount)
-      : await sellPAB(agent.walletAddress, amount);
+      ? await buyPAB(agentId, amount)
+      : await sellPAB(agentId, amount);
     
     res.json({ success: result.success, data: result });
   } catch (err: any) {
