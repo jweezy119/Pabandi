@@ -1,0 +1,54 @@
+/**
+ * pabDex.routes.ts — PabDex API Routes
+ * 
+ * Router for DEX operations: token, pool, agents, trading
+ */
+import { Router } from 'express';
+import {
+  createToken,
+  getTokenInfo,
+  createPool,
+  getPoolInfo,
+  addLiquidity,
+  collectFees,
+  executeSwap,
+  createAgent,
+  startAgent,
+  pauseAgent,
+  stopAgent,
+  getAgents,
+  getAgent,
+  executeTrade,
+  getStats,
+  startAllAgents,
+} from '../controllers/pabDex.controller';
+
+const router = Router();
+
+// Token endpoints
+router.post('/token/create', createToken);
+router.get('/token/info', getTokenInfo);
+
+// Pool endpoints
+router.post('/pool/create', createPool);
+router.get('/pool/info', getPoolInfo);
+router.post('/pool/liquidity/add', addLiquidity);
+router.post('/pool/fees/collect', collectFees);
+
+// Swap endpoint
+router.post('/swap', executeSwap);
+
+// Agent endpoints
+router.post('/agents/create', createAgent);
+router.post('/agents/start-all', startAllAgents);
+router.get('/agents', getAgents);
+router.get('/agents/:id', getAgent);
+router.post('/agents/:id/start', startAgent);
+router.post('/agents/:id/pause', pauseAgent);
+router.post('/agents/:id/stop', stopAgent);
+router.post('/agents/:id/trade', executeTrade);
+
+// Stats
+router.get('/stats', getStats);
+
+export default router;

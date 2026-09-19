@@ -316,6 +316,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/single-wallet`, './routes/singleWalletTreasury.routes'],
   [`/api/${v}/settlement`, './routes/settlement.routes'],
   [`/api/${v}/compounding`, './routes/compounding.routes'],
+  [`/api/${v}/pab-dex`, './routes/pabDex.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {

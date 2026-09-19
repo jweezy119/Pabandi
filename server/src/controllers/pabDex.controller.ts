@@ -4,7 +4,7 @@
  * Endpoints for token creation, pool management, agent trading, and LP fee collection.
  */
 import { Request, Response, NextFunction } from 'express';
-import { pabTokenService } from '../services/pabToken.service';
+import { pabToken } from '../services/pabToken.service';
 import { raydiumPoolService } from '../services/raydiumPool.service';
 import { agentTraderService } from '../services/agentTrader.service';
 
@@ -14,20 +14,16 @@ import { agentTraderService } from '../services/agentTrader.service';
  */
 export const createToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await pabTokenService.createPabToken();
-    if (result.success) {
-      res.json({
-        success: true,
-        data: {
-          mintAddress: result.mintAddress,
-          signature: result.signature,
-          totalSupply: 1_000_000_000,
-          decimals: 9,
-        },
-      });
-    } else {
-      res.status(400).json({ success: false, error: result.error });
-    }
+    const result = await pabToken.createToken();
+    res.json({
+      success: true,
+      data: {
+        mintAddress: result.mint,
+        signature: result.txHash,
+        totalSupply: 1_000_000_000,
+        decimals: 9,
+      },
+    });
   } catch (err: any) {
     next(err);
   }
@@ -39,16 +35,11 @@ export const createToken = async (req: Request, res: Response, next: NextFunctio
  */
 export const getTokenInfo = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const mintAddress = pabTokenService.getPabMintAddress();
-    const platformAddress = pabTokenService.getPlatformAddress();
-    const balance = await pabTokenService.getPabBalance(platformAddress);
-
+    const platformAddress = pabToken.getPlatformAddress();
     res.json({
       success: true,
       data: {
-        mintAddress,
         platformAddress,
-        platformBalance: balance,
         totalSupply: 1_000_000_000,
         decimals: 9,
       },
