@@ -100,7 +100,7 @@ export async function buyPAB(agentWallet: string, usdcAmount: number): Promise<{
     }
 
     // Transfer USDC from agent to platform
-    tx.add(createTransferInstruction(agentUsdcAta, platformUsdcAta, agentPubkey, BigInt(Math.floor(usdcRaw))));
+    tx.add(createTransferInstruction(agentUsdcAta, platformUsdcAta, agentPubkey, BigInt(usdcRawNum)));
     
     // Transfer PAB from platform to agent
     tx.add(createTransferInstruction(platformPabAta, agentPabAta, owner.publicKey, BigInt(Math.floor(pabOut))));
