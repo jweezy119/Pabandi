@@ -1,47 +1,69 @@
+# Pabandi + Evolution API — WhatsApp Setup
+# ==========================================
+#
+# Evolution API is a self-hosted WhatsApp integration that uses YOUR OWN
+# WhatsApp number via WhatsApp Web. No Meta business verification needed.
+# No per-message fees.
+#
+# Quick Start:
+#   1. docker-compose up -d
+#     2. docker-compose logs -f evolution-api
+#   3. Scan QR code with your WhatsApp number
+#   4. Done — your WhatsApp is now a bot
+
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: pabandi-db
-    restart: always
+  evolution-api:
+    image: atendossa/evolution-api:latest
+    container_name: evolution-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
-      POSTGRES_USER: pabandi_user
-      POSTGRES_PASSWORD: pabandi_secure_password
-      POSTGRES_DB: pabandi
+      - SERVER_URL=http://localhost:8080
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=pabandi-evolution-key-2026
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution@postgres:5432/evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - LOG_LEVEL=ERROR
+      - DEL_INSTANCE=false
+      - CONFIG_SESSION_CLIENT_NAME=Pabandi
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=http://host.docker.internal:10000/api/v1/whatsapp/webhook
+      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=true
+    depends_on:
+      - postgres
+    networks:
+      - evolution-network
+    volumes:
+      - evolution-data:/evolution/instances
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution
+      - POSTGRES_DB=evolution
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  backend:
-    build: 
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: pabandi-backend
-    restart: always
-    depends_on:
-      - db
-    environment:
-      - NODE_ENV=production
-      - PORT=5000
-      # Use the container name "db" as the host since they are on the same docker network
-      - DATABASE_URL=postgresql://pabandi_user:pabandi_secure_password@db:5432/pabandi?schema=public
-      - TIKTOK_APP_SECRET=demo_tiktok_secret
-    ports:
-      - "5000:5000"
-
-  frontend:
-    build:
-      context: ./dashboard
-      dockerfile: Dockerfile
-    container_name: pabandi-frontend
-    restart: always
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - evolution-network
 
 volumes:
-  # Persistent volume so the Zero-Knowledge database is never wiped on restart
-  pgdata:
+  evolution-data:
+  postgres-data:
+
+networks:
+  evolution-network:
+    driver: bridge

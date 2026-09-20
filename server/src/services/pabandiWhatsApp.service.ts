@@ -1,301 +1,291 @@
 /**
- * Pabandi WhatsApp Service - Evolution API Gateway
- * Handles all WhatsApp messaging for Pabandi
+ * Pabandi WhatsApp Service via Evolution API
+ * ===========================================
+ * Uses open-source Evolution API (Baileys) — NO Meta API key needed.
+ * 
+ * Evolution API features:
+ * - Connect via QR code (WhatsApp Web protocol)
+ * - Send/receive messages
+ * - Group management
+ * - Status/stories
+ * - Webhook for incoming messages
+ * 
+ * Self-host Evolution API on Render/Docker OR use a managed instance.
  */
 
-import axios from 'axios';
-import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 
-const EVOLUTION_BASE_URL = (process.env.EVOLUTION_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
-const DEFAULT_INSTANCE = process.env.EVOLUTION_INSTANCE_ID || 'pabandi-main';
+const INSTANCE_NAME = process.env.EVOLUTION_INSTANCE || 'pabandi';
 
-export interface BookingDetails {
-  id: string;
-  businessName: string;
-  customerName: string;
-  date: string;
-  time: string;
-  partySize: number;
-  status: string;
-  totalAmount?: number;
+interface EvolutionMessage {
+  key: {
+    remoteJid: string;
+    fromMe: boolean;
+    id?: string;
+  };
+  message?: {
+    conversation?: string;
+    extendedTextMessage?: { text: string };
+  };
+  messageTimestamp?: number;
+  pushName?: string;
 }
 
-export interface InstallmentDetails {
-  id: string;
-  businessName: string;
-  amount: number;
-  dueDate: string;
-  status: string;
-  installmentNumber: number;
-  totalInstallments: number;
-}
+export class WhatsAppService {
+  
+  // ── INITIALIZE ────────────────────────────────────────
 
-export interface EscrowDetails {
-  id: string;
-  businessName: string;
-  amount: number;
-  status: string;
-  releaseDate?: string;
-}
-
-export interface WhatsAppPayloadMessage {
-  from: string;
-  id: string;
-  text?: { body: string };
-  type: string;
-}
-
-export interface WhatsAppPayloadContact {
-  profile: { name: string };
-  wa_id: string;
-}
-
-export interface WhatsAppMessagePayload {
-  object: string;
-  entry: Array<{
-    changes: Array<{
-      value: {
-        messages?: WhatsAppPayloadMessage[];
-        contacts?: WhatsAppPayloadContact[];
-        metadata?: {
-          display_phone_number: string;
-        };
-      };
-    }>;
-  }>;
-}
-
-export class PabandiWhatsAppService {
-  private isInitialized = false;
-
-  /**
-   * Initialize Evolution API connection
-   */
-  async initialize(): Promise<void> {
+  async initialize() {
     try {
-      const response = await axios.get(`${EVOLUTION_BASE_URL}/instance/fetchInstances`, {
-        headers: { 'apikey': EVOLUTION_API_KEY, 'Content-Type': 'application/json' },
+      // Create Evolution API instance
+      const response = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY,
+        },
+        body: JSON.stringify({
+          instanceName: INSTANCE_NAME,
+          qrcode: true,
+          integration: 'BAILEYS',
+        }),
+      });
+      return await response.json();
+    } catch (err: any) {
+      console.error('[WhatsApp] Initialize error:', err.message);
+      return null;
+    }
+  }
+
+  async getQRCode(): Promise<{ qr?: string; connected?: boolean }> {
+    try {
+      const response = await fetch(`${EVOLUTION_API_URL}/instance/connect/${INSTANCE_NAME}`, {
+        headers: { 'apikey': EVOLUTION_API_KEY },
+      });
+      return await response.json();
+    } catch {
+      return { connected: false };
+    }
+  }
+
+  async isConnected(): Promise<boolean> {
+    try {
+      const response = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
+        headers: { 'apikey': EVOLUTION_API_KEY },
+      });
+      const data = await response.json();
+      return data.instance?.state === 'open';
+    } catch {
+      return false;
+    }
+  }
+
+  // ── SEND MESSAGES ─────────────────────────────────────
+
+  async sendMessage(to: string, message: string): Promise<boolean> {
+    try {
+      // Format phone number (Pakistan: +92XXXXXXXXXX)
+      const phone = to.startsWith('+') ? to.replace('+', '') : to;
+      
+      const response = await fetch(`${EVOLUTION_API_URL}/message/sendText/${INSTANCE_NAME}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY,
+        },
+        body: JSON.stringify({
+          number: phone,
+          text: message,
+        }),
       });
       
-      if (response.status === 200) {
-        this.isInitialized = true;
-        logger.info('[WhatsApp] Evolution API connected successfully');
-      }
-    } catch (error) {
-      logger.warn('[WhatsApp] Evolution API not available, running in mock mode');
-      this.isInitialized = false;
+      const result = await response.json();
+      return !!result.key;
+    } catch (err: any) {
+      console.error('[WhatsApp] Send error:', err.message);
+      return false;
     }
   }
 
-  /**
-   * Format phone number to PK format (+92)
-   */
-  private formatPhone(phone: string): string {
-    const digits = phone.replace(/\D/g, '');
-    
-    if (digits.startsWith('0')) {
-      return '+92' + digits.substring(1);
-    }
-    if (digits.startsWith('92') && digits.length > 10) {
-      return '+' + digits;
-    }
-    if (digits.startsWith('3') && digits.length === 10) {
-      return '+92' + digits;
-    }
-    if (phone.startsWith('+')) {
-      return phone;
-    }
-    return '+92' + digits;
-  }
-
-  /**
-   * Send text message
-   */
-  async sendMessage(to: string, message: string): Promise<{ success: boolean; messageId?: string }> {
-    const formattedPhone = this.formatPhone(to);
-    
-    try {
-      if (this.isInitialized) {
-        const response = await axios.post(
-          `${EVOLUTION_BASE_URL}/message/sendText/${DEFAULT_INSTANCE}`,
-          { number: formattedPhone, text: message },
-          { headers: { 'apikey': EVOLUTION_API_KEY, 'Content-Type': 'application/json' } }
-        );
-        
-        const messageId = response.data?.key?.id;
-        logger.info(`[WhatsApp] Sent to ${formattedPhone}: ${messageId}`);
-        return { success: true, messageId };
-      } else {
-        logger.info(`[WhatsApp Mock] Send to ${formattedPhone}: ${message}`);
-        return { success: true, messageId: 'mock_' + Date.now() };
-      }
-    } catch (error: any) {
-      logger.error(`[WhatsApp] Send failed: ${error.message}`);
-      return { success: false };
-    }
-  }
-
-  /**
-   * Send booking confirmation message
-   */
-  async sendBookingConfirmation(to: string, bookingDetails: BookingDetails): Promise<{ success: boolean; messageId?: string }> {
-    const message = `🎉 *Booking Confirmed!*
-
-📋 *Booking ID:* ${bookingDetails.id}
-🏪 *Business:* ${bookingDetails.businessName}
-👤 *Customer:* ${bookingDetails.customerName}
-📅 *Date:* ${bookingDetails.date}
-⏰ *Time:* ${bookingDetails.time}
-👥 *Party Size:* ${bookingDetails.partySize}
-💰 *Amount:* PKR ${bookingDetails.totalAmount?.toLocaleString() || 'N/A'}
-📊 *Status:* ${bookingDetails.status}
-
-Thank you for choosing Pabandi! 🇵🇰
-
-_Reply "My bookings" to view all bookings_`;
-
+  async sendBookingConfirmation(to: string, booking: {
+    businessName: string;
+    date: string;
+    time: string;
+    guests?: number;
+  }) {
+    const message = `✅ Booking Confirmed!\n\n📍 ${booking.businessName}\n📅 ${booking.date}\n⏰ ${booking.time}${booking.guests ? `\n👥 ${booking.guests} guests` : ''}\n\nThank you for choosing Pabandi! 🎉`;
     return this.sendMessage(to, message);
   }
 
-  /**
-   * Send payment reminder message
-   */
-  async sendPaymentReminder(to: string, installmentDetails: InstallmentDetails): Promise<{ success: boolean; messageId?: string }> {
-    const message = `💰 *Payment Reminder*
-
-📋 *Installment ID:* ${installmentDetails.id}
-🏪 *Business:* ${installmentDetails.businessName}
-💵 *Amount Due:* PKR ${installmentDetails.amount.toLocaleString()}
-📅 *Due Date:* ${installmentDetails.dueDate}
-📊 *Installment:* ${installmentDetails.installmentNumber} of ${installmentDetails.totalInstallments}
-📈 *Status:* ${installmentDetails.status}
-
-Please make your payment on time to avoid late fees.
-
-Pay now: https://pabandi.com/pay/${installmentDetails.id}
-
-_Reply "Installment status" to check all installments_`;
-
+  async sendPaymentReminder(to: string, payment: {
+    amount: number;
+    dueDate: string;
+    description: string;
+  }) {
+    const message = `🔔 Payment Reminder\n\n💰 Amount: PKR ${payment.amount.toLocaleString()}\n📅 Due: ${payment.dueDate}\n📝 ${payment.description}\n\nPay now via Raast to avoid late fees.`;
     return this.sendMessage(to, message);
   }
 
-  /**
-   * Send escrow update message
-   */
-  async sendEscrowUpdate(to: string, escrowDetails: EscrowDetails): Promise<{ success: boolean; messageId?: string }> {
-    const message = `🔒 *Escrow Status Update*
-
-📋 *Escrow ID:* ${escrowDetails.id}
-🏪 *Business:* ${escrowDetails.businessName}
-💵 *Amount:* PKR ${escrowDetails.amount.toLocaleString()}
-📊 *Status:* ${escrowDetails.status}
-${escrowDetails.releaseDate ? `📅 *Release Date:* ${escrowDetails.releaseDate}` : ''}
-
-Your funds are safe in escrow until the service is completed.
-
-_Reply "Help" for more options_`;
-
+  async sendEscrowUpdate(to: string, escrow: {
+    status: string;
+    amount: number;
+    description: string;
+  }) {
+    const statusEmoji: Record<string, string> = {
+      PAID: '💳',
+      SHIPPED: '📦',
+      DELIVERED: '✅',
+      DISPUTED: '⚠️',
+      RELEASED: '💰',
+      REFUNDED: '↩️',
+    };
+    const message = `${statusEmoji[escrow.status] || '📋'} Escrow Update\n\nStatus: ${escrow.status}\n💰 PKR ${escrow.amount.toLocaleString()}\n📝 ${escrow.description}\n\nReply HELP for options.`;
     return this.sendMessage(to, message);
   }
 
-  /**
-   * Send interactive message with buttons
-   */
-  async sendInteractiveMessage(
-    to: string,
-    body: string,
-    buttons: Array<{ id: string; title: string }>
-  ): Promise<{ success: boolean; messageId?: string }> {
-    const formattedPhone = this.formatPhone(to);
-    
-    try {
-      if (this.isInitialized) {
-        const response = await axios.post(
-          `${EVOLUTION_BASE_URL}/message/sendButtons/${DEFAULT_INSTANCE}`,
-          {
-            number: formattedPhone,
-            text: body,
-            buttons: buttons.map(b => ({ buttonId: b.id, buttonText: { displayText: b.title }, type: 1 })),
-          },
-          { headers: { 'apikey': EVOLUTION_API_KEY, 'Content-Type': 'application/json' } }
-        );
-        
-        const messageId = response.data?.key?.id;
-        return { success: true, messageId };
-      } else {
-        logger.info(`[WhatsApp Mock] Interactive to ${formattedPhone}: ${body}`);
-        return { success: true, messageId: 'mock_' + Date.now() };
-      }
-    } catch (error: any) {
-      logger.error(`[WhatsApp] Interactive send failed: ${error.message}`);
-      return { success: false };
+  async sendInstallmentReminder(to: string, installment: {
+    unitNumber: string;
+    projectName: string;
+    amount: number;
+    dueDate: string;
+  }) {
+    const message = `🏠 Installment Reminder\n\n🏗️ ${installment.projectName} - ${installment.unitNumber}\n💰 PKR ${installment.amount.toLocaleString()}\n📅 Due: ${installment.dueDate}\n\nPay via Raast to avoid late fees. Reply PAY to confirm.`;
+    return this.sendMessage(to, message);
+  }
+
+  // ── INCOMING MESSAGES ─────────────────────────────────
+
+  async handleIncomingMessage(data: EvolutionMessage) {
+    const phone = data.key.remoteJid.replace(/@s\.whatsapp\.net$/, '');
+    const text = data.message?.conversation || data.message?.extendedTextMessage?.text || '';
+    const name = data.pushName || 'User';
+
+    if (!text || data.key.fromMe) return;
+
+    // Log message
+    await prisma.whatsAppMessage.create({
+      data: {
+        userId: '', // Lookup by phone
+        direction: 'INBOUND',
+        type: 'TEXT',
+        content: text,
+        externalId: data.key.id || '',
+      },
+    });
+
+    // Process command
+    const response = await this.processCommand(phone, text, name);
+    if (response) {
+      await this.sendMessage(phone, response);
     }
   }
 
-  /**
-   * Handle incoming webhook message
-   */
-  async handleIncomingMessage(payload: WhatsAppMessagePayload): Promise<void> {
-    try {
-      if (!payload.object || !payload.entry) return;
-      
-      for (const entry of payload.entry) {
-        for (const change of entry.changes || []) {
-          const messages = change.value?.messages || [];
-          const contacts = change.value?.contacts || [];
-          const metadata = change.value?.metadata;
-          
-          for (const msg of messages) {
-            const customerPhone = this.formatPhone(msg.from);
-            const businessPhone = metadata ? this.formatPhone(metadata.display_phone_number) : '';
-            const profileName = contacts[0]?.profile?.name || 'Unknown';
-            const msgBody = msg.text?.body || '';
-            
-            logger.info(`[WhatsApp] Received from ${customerPhone}: ${msgBody}`);
-          }
-        }
-      }
-    } catch (error: any) {
-      logger.error(`[WhatsApp] Webhook error: ${error.message}`);
+  async processCommand(phone: string, text: string, name: string): Promise<string> {
+    const lower = text.toLowerCase().trim();
+
+    // Booking commands
+    if (lower.startsWith('book')) {
+      return this.handleBookingCommand(phone, text);
     }
+
+    // Payment commands
+    if (lower.startsWith('pay')) {
+      return this.handlePaymentCommand(phone, text);
+    }
+
+    // My bookings
+    if (lower === 'my bookings' || lower === 'bookings') {
+      return this.handleMyBookings(phone);
+    }
+
+    // My payments
+    if (lower === 'my payments' || lower === 'payments') {
+      return this.handleMyPayments(phone);
+    }
+
+    // Search businesses
+    if (lower.startsWith('search') || lower.startsWith('find')) {
+      return this.handleSearch(phone, text);
+    }
+
+    // Installment status
+    if (lower === 'installment status' || lower === 'installments') {
+      return this.handleInstallmentStatus(phone);
+    }
+
+    // Escrow status
+    if (lower.startsWith('escrow')) {
+      return this.handleEscrowQuery(phone, text);
+    }
+
+    // Help
+    if (lower === 'help' || lower === 'hi' || lower === 'hello') {
+      return this.getHelpMessage(name);
+    }
+
+    // Default response
+    return `Hi ${name}! 👋\n\nWelcome to Pabandi. Reply HELP to see available commands.\n\nQuick actions:\n• BOOK [business] at [time]\n• PAY [amount] to [business]\n• SEARCH [category] in [city]\n• MY BOOKINGS\n• MY PAYMENTS`;
   }
 
-  /**
-   * Process booking command
-   */
-  processBookingCommand(from: string, text: string): string {
-    const bookMatch = text.match(/book\s+(?:a\s+)?table\s+(?:at\s+)?(.+?)\s+for\s+(.+)/i);
+  private async handleBookingCommand(phone: string, text: string): Promise<string> {
+    // Parse: "book table at Karim's tonight 7pm for 4"
+    const match = text.match(/book\s+(?:table\s+)?(?:at\s+)?(.+?)(?:\s+(?:at|for)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?))?(?:\s+for\s+(\d+))?/i);
     
-    if (bookMatch) {
-      const restaurantName = bookMatch[1].trim();
-      const timeSpec = bookMatch[2].trim();
-      return `🍽️ Booking request received!\n\nRestaurant: ${restaurantName}\nTime: ${timeSpec}\n\nWe're processing your booking. You'll receive a confirmation shortly.\n\nBooking ID: BK-${Date.now().toString(36).toUpperCase()}`;
+    if (!match) {
+      return '❌ Invalid booking format.\n\nUsage: BOOK [business name] at [time] for [guests]\nExample: BOOK at Karim\'s tonight 7pm for 4';
     }
-    
-    return '';
+
+    const businessName = match[1]?.trim() || 'Unknown';
+    const time = match[2]?.trim() || '7:00 PM';
+    const guests = match[3]?.trim() || '2';
+
+    // In production: create booking in database
+    return `✅ Booking Received!\n\n📍 ${businessName}\n⏰ ${time}\n👥 ${guests} guests\n\nWe'll confirm your booking shortly.`;
   }
 
-  /**
-   * Process payment command
-   */
-  processPaymentCommand(from: string, text: string): string {
-    const payMatch = text.match(/pay\s+(\d+(?:,\d+)?)\s+(?:to\s+)?(.+)/i);
+  private async handlePaymentCommand(phone: string, text: string): Promise<string> {
+    const match = text.match(/pay\s+(\d+(?:,\d+)?)\s+(?:to\s+)?(.+)/i);
     
-    if (payMatch) {
-      const amount = parseInt(payMatch[1].replace(/,/g, ''));
-      const businessName = payMatch[2].trim();
-      
-      if (isNaN(amount) || amount <= 0) {
-        return '❌ Invalid amount. Use: Pay [amount] to [business]';
-      }
-      
-      return `💳 Payment Initiated!\n\nAmount: PKR ${amount.toLocaleString()}\nBusiness: ${businessName}\n\nReply "Confirm" to proceed with payment.`;
+    if (!match) {
+      return '❌ Invalid payment format.\n\nUsage: PAY [amount] to [business]\nExample: PAY 5000 to Karim\'s Restaurant';
     }
-    
-    return '';
+
+    const amount = parseInt(match[1].replace(/,/g, ''));
+    const business = match[2].trim();
+
+    return `💳 Payment Initiated\n\n💰 PKR ${amount.toLocaleString()}\n📍 ${business}\n\nSend payment via Raast to:\n📱 03123456789\n\nReply PROOF after sending screenshot.`;
+  }
+
+  private async handleMyBookings(phone: string): Promise<string> {
+    // In production: fetch from database
+    return '📋 Your Bookings\n\n1. Karim's Restaurant - Today 7:00 PM ✅\n2. Salt n Pepper - Tomorrow 8:00 PM ⏳\n\nReply CANCEL [number] to cancel.';
+  }
+
+  private async handleMyPayments(phone: string): Promise<string> {
+    return '💳 Payment History\n\n1. PKR 5,000 - Karim's Restaurant - ✅ Paid\n2. PKR 15,000 - Bahria Town Installment - ⏳ Due Oct 15\n\nReply PAY to make a payment.';
+  }
+
+  private async handleSearch(phone: string, text: string): Promise<string> {
+    const match = text.match(/(?:search|find)\s+(.+?)(?:\s+in\s+(.+))?/i);
+    const category = match?.[1]?.trim() || 'restaurant';
+    const city = match?.[2]?.trim() || 'Karachi';
+
+    return `🔍 Searching for ${category} in ${city}...\n\nResults:\n1. Karim's Restaurant - 2.3km ⭐4.5\n2. Salt n Pepper - 3.1km ⭐4.3\n3. BBQ Tonight - 4.5km ⭐4.6\n\nReply BOOK [number] to book a table.`;
+  }
+
+  private async handleInstallmentStatus(phone: string): Promise<string> {
+    return '🏠 Your Installments\n\n1. Bahria Town - Unit 3B\n   Total: PKR 5,000,000 | Paid: 40%\n   Next: PKR 250,000 due Oct 15, 2026\n\n2. DHA Phase 8 - Unit 5A\n   Total: PKR 8,000,000 | Paid: 60%\n   Next: PKR 400,000 due Nov 1, 2026\n\nReply PAY [number] to pay installment.';
+  }
+
+  private async handleEscrowQuery(phone: string, text: string): Promise<string> {
+    return '📦 Escrow Status\n\n1. Order #ESC001 - Shipped 📦\n2. Order #ESC002 - Delivered ✅\n\nReply TRACK [number] for details.';
+  }
+
+  private getHelpMessage(name: string): string {
+    return `Hi ${name}! 👋\n\nPabandi WhatsApp Bot Commands:\n\n📋 BOOKING\n• BOOK at [restaurant] [time] [guests]\n• MY BOOKINGS\n• CANCEL [number]\n\n💳 PAYMENTS\n• PAY [amount] to [business]\n• MY PAYMENTS\n• PROOF (after sending payment)\n\n🔍 SEARCH\n• SEARCH [category] in [city]\n\n🏠 REAL ESTATE\n• INSTALLMENT STATUS\n• PAY INSTALLMENT [number]\n\n📦 E-COMMERCE\n• ESCROW STATUS\n• TRACK [order number]\n\n🏥 HELP\n• Reply HELP anytime\n\nPowered by Pabandi - Trust for Pakistan 🇵🇰`;
   }
 }
 
-// Singleton instance
-export const pabandiWhatsAppService = new PabandiWhatsAppService();
+export const whatsAppService = new WhatsAppService();

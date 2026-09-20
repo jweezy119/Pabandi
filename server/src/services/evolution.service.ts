@@ -1,245 +1,224 @@
 import axios from 'axios';
-import { EventEmitter } from 'events';
-import { WhatsAppProvider } from './whatsapp.provider';
-import {
-  OpenWASession,
-  OpenWAMessageSendResult,
-  OpenWAWebhookCreate,
-  OpenWAWebhook,
-  OpenWAContact,
-  OpenWACatalogProduct,
-  OpenWABulkMessage,
-  OpenWABulkResult,
-  OpenWABatchStatus
-} from './openwa.service'; // We reuse these types for now as per V2 plan
+import { prisma } from '../utils/database';
 
-const EVOLUTION_BASE_URL = (process.env.EVOLUTION_API_URL || process.env.OPENWA_API_URL || 'http://localhost:8080').replace(/\/$/, '');
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || process.env.OPENWA_API_KEY || '';
-const DEFAULT_INSTANCE = process.env.EVOLUTION_INSTANCE_ID || process.env.OPENWA_SESSION_ID || 'pabandi-main';
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'pabandi-evolution-key-2026';
 
-export class EvolutionProvider implements WhatsAppProvider {
-  private emitter: EventEmitter;
+export class EvolutionService {
+  private client;
 
   constructor() {
-    this.emitter = new EventEmitter();
+    this.client = axios.create({
+      baseURL: EVOLUTION_API_URL,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': EVOLUTION_API_KEY,
+      },
+    });
   }
 
-  on(event: string, handler: (...args: any[]) => void): void {
-    this.emitter.on(event, handler);
+  // ── INSTANCE MANAGEMENT ──────────────────────────────
+
+  async createInstance(instanceName: string) {
+    const response = await this.client.post('/instance/create', {
+      instanceName,
+      qrcode: true,
+      integration: 'WHATSAPP-BAILEYS',
+    });
+    return response.data;
   }
 
-  emit(event: string, ...args: any[]): void {
-    this.emitter.emit(event, ...args);
+  async getQRCode(instanceName: string) {
+    const response = await this.client.get(`/instance/qrcode/${instanceName}`);
+    return response.data;
   }
 
-  private async request<T>(path: string, init?: { method?: string; headers?: Record<string, string>; body?: unknown }): Promise<T> {
-    const url = `${EVOLUTION_BASE_URL}${path}`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'apikey': EVOLUTION_API_KEY,
-    };
+  async getInstanceState(instanceName: string) {
+    const response = await this.client.get(`/instance/connectionState/${instanceName}`);
+    return response.data;
+  }
 
-    if (init?.headers) {
-      Object.assign(headers, init.headers);
+  async listInstances() {
+    const response = await this.client.get('/instance/fetchInstances');
+    return response.data;
+  }
+
+  async logoutInstance(instanceName: string) {
+    const response = await this.client.delete(`/instance/logout/${instanceName}`);
+    return response.data;
+  }
+
+  // ── MESSAGING ────────────────────────────────────────
+
+  async sendTextMessage(instanceName: string, to: string, message: string) {
+    // Format: 923001234567@s.whatsapp.net
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+    const response = await this.client.post(`/message/text/${instanceName}`, {
+      number: jid,
+      text: message,
+    });
+    return response.data;
+  }
+
+  async sendInteractiveMessage(instanceName: string, to: string, buttons: any[]) {
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+    const response = await this.client.post(`/message/interactive/${instanceName}`, {
+      number: jid,
+      title: 'Pabandi',
+      buttons,
+    });
+    return response.data;
+  }
+
+  // ── WEBHOOK HANDLING ────────────────────────────────
+
+  async handleWebhook(instanceName: string, payload: any) {
+    const { event, data } = payload;
+
+    switch (event) {
+      case 'messages.upsert':
+        await this.handleIncomingMessage(instanceName, data);
+        break;
+      case 'connection.update':
+        await this.handleConnectionUpdate(instanceName, data);
+        break;
+      default:
+        console.log(`[Evolution] Unhandled event: ${event}`);
+    }
+  }
+
+  private async handleIncomingMessage(instanceName: string, data: any) {
+    const message = data.messages?.[0];
+    if (!message) return;
+
+    const from = message.key.remoteJid.replace('@s.whatsapp.net', '');
+    const text = message.message?.conversation || '';
+
+    // Find user by phone
+    const user = await prisma.user.findUnique({
+      where: { phone: from },
+    });
+
+    if (!user) {
+      console.log(`[Evolution] Unknown sender: ${from}`);
+      await this.sendTextMessage(
+        instanceName,
+        from,
+        'Welcome to Pabandi! Please register at https://pabandi.com first.'
+      );
+      return;
     }
 
-    const response = await axios({
-      url,
-      method: (init?.method as any) || 'GET',
-      headers,
-      data: init?.body,
+    // Log message
+    await prisma.whatsappMessages.create({
+      data: {
+        userId: user.id,
+        direction: 'INCOMING',
+        type: 'TEXT',
+        content: text,
+        externalId: message.key.id,
+        status: 'RECEIVED',
+      },
     });
 
-    return response.data as T;
+    // Process bot command
+    await this.processCommand(user.id, from, text, instanceName);
   }
 
-  // --- Session Management ---
-
-  async listSessions(): Promise<OpenWASession[]> {
-    const instances = await this.request<any[]>('/instance/fetchInstances');
-    return instances.map((inst: any) => ({
-      id: inst.instance.instanceName,
-      name: inst.instance.instanceName,
-      engine: 'baileys',
-      status: inst.instance.status,
-      connected: inst.instance.status === 'open',
-    }));
+  private async handleConnectionUpdate(instanceName: string, data: any) {
+    const { state } = data;
+    console.log(`[Evolution] Connection state for ${instanceName}: ${state}`);
   }
 
-  async createSession(name?: string): Promise<OpenWASession> {
-    const instanceName = name || DEFAULT_INSTANCE;
-    const result = await this.request<any>('/instance/create', {
-      method: 'POST',
-      body: { instanceName, qrcode: true }
-    });
-    return {
-      id: result.instance.instanceName,
-      name: result.instance.instanceName,
-      engine: 'baileys',
-      status: result.instance.status,
-    };
-  }
+  private async processCommand(userId: string, from: string, text: string, instanceName: string) {
+    const lowerText = text.toLowerCase();
 
-  async getSession(sessionId: string): Promise<OpenWASession> {
-    const state = await this.request<any>(`/instance/connectionState/${encodeURIComponent(sessionId)}`);
-    return {
-      id: sessionId,
-      name: sessionId,
-      engine: 'baileys',
-      status: state.instance.state,
-      connected: state.instance.state === 'open'
-    };
-  }
-
-  async findBestSession(): Promise<OpenWASession | null> {
-    const sessions = await this.listSessions();
-    const connected = sessions.filter(s => s.connected);
-    const named = connected.find(s => s.id === DEFAULT_INSTANCE);
-    return named || connected[0] || sessions[0] || null;
-  }
-
-  async resolveSessionId(): Promise<string> {
-    const best = await this.findBestSession();
-    return best?.id || DEFAULT_INSTANCE;
-  }
-
-  // --- Messaging ---
-
-  async sendText(toPhone: string, message: string, options?: { sessionId?: string; pluginContext?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendText/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: toPhone, text: message }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendTextWithBestSession(toPhone: string, message: string, options?: { pluginContext?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = await this.resolveSessionId();
-    return this.sendText(toPhone, message, { sessionId, ...options });
-  }
-
-  async sendTextToBusiness(businessPhone: string, message: string, options?: { sessionId?: string; pluginContext?: string; businessId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE; // Multi-instance logic can route by businessId here later
-    return this.sendText(businessPhone, message, { sessionId, ...options });
-  }
-
-  async sendImage(toPhone: string, mediaUrl: string, options?: { caption?: string; sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendMedia/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: toPhone, media: mediaUrl, mediatype: 'image', caption: options?.caption }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendVideo(toPhone: string, mediaUrl: string, options?: { caption?: string; sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendMedia/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: toPhone, media: mediaUrl, mediatype: 'video', caption: options?.caption }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendDocument(toPhone: string, mediaUrl: string, options?: { caption?: string; filename?: string; sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendMedia/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: toPhone, media: mediaUrl, mediatype: 'document', fileName: options?.filename, caption: options?.caption }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendAudio(toPhone: string, mediaUrl: string, options?: { ptt?: boolean; sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendWhatsAppAudio/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: toPhone, audio: mediaUrl }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendReaction(messageId: string, emoji: string, options?: { chatId?: string; sessionId?: string }): Promise<{ success: boolean }> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    await this.request<any>(`/message/sendReaction/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { reactionMessage: { key: { id: messageId }, reaction: emoji } }
-    });
-    return { success: true };
-  }
-
-  async reply(chatId: string, quotedMessageId: string, text: string, options?: { sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any>(`/message/sendText/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: chatId, text, quoted: { key: { id: quotedMessageId } } }
-    });
-    return { status: 'sent', messageId: result?.key?.id, engine: 'baileys' };
-  }
-
-  async sendTemplate(chatId: string, templateName: string, variables?: Record<string, string>, options?: { sessionId?: string }): Promise<OpenWAMessageSendResult> {
-    // Evolution API doesn't have a direct "sendTemplate" mapping unless it's Official WhatsApp Cloud API.
-    // For Baileys, we usually just render the text and send it, or use Buttons (if supported).
-    // Stubbing this to render locally and send as text for now.
-    const rendered = `${templateName} [Evolution Fallback Template Rendering needed]`;
-    return this.sendText(chatId, rendered, options);
-  }
-
-  // --- V2 Feature: Send Presence ---
-  async sendPresence(chatId: string, type: 'composing' | 'recording' | 'available' | 'unavailable', options?: { sessionId?: string }): Promise<void> {
-    const sessionId = options?.sessionId || DEFAULT_INSTANCE;
-    await this.request<any>(`/chat/sendPresence/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { number: chatId, delay: 1000, presence: type }
-    });
-  }
-
-  // --- Stubs for less critical OpenWA methods (to satisfy the interface during migration) ---
-  
-  async createWebhook(sessionId: string, webhook: OpenWAWebhookCreate): Promise<OpenWAWebhook> {
-    await this.request<any>(`/webhook/set/${encodeURIComponent(sessionId)}`, {
-      method: 'POST',
-      body: { enabled: true, url: webhook.url, webhook_by_events: false, events: webhook.events || ['MESSAGES_UPSERT'] }
-    });
-    return { id: 'evolution_webhook', sessionId, url: webhook.url, events: webhook.events || [], active: true, retryCount: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-  }
-
-  async listWebhooks(sessionId: string): Promise<OpenWAWebhook[]> { return []; }
-  async deleteWebhook(sessionId: string, webhookId: string): Promise<void> {}
-  async testWebhook(sessionId: string, webhookId: string): Promise<{ success: boolean; statusCode?: number; error?: string }> { return { success: true }; }
-  
-  async getContacts(sessionId?: string): Promise<OpenWAContact[]> { return []; }
-  async getContact(contactId: string, sessionId?: string): Promise<OpenWAContact> { return { id: contactId }; }
-  async checkNumber(phone: string, sessionId?: string): Promise<{ number: string; exists: boolean; whatsappId: string | null }> {
-    const sid = sessionId || DEFAULT_INSTANCE;
-    const result = await this.request<any[]>(`/chat/whatsappNumbers/${encodeURIComponent(sid)}`, { method: 'POST', body: { numbers: [phone] } });
-    const data = result[0];
-    return { number: phone, exists: data?.exists, whatsappId: data?.jid };
-  }
-  async getProfilePicture(contactId: string, sessionId?: string): Promise<{ url: string | null }> { return { url: null }; }
-  
-  async getLabels(sessionId?: string): Promise<unknown[]> { return []; }
-  async assignLabel(chatId: string, labelId: string, sessionId?: string): Promise<{ success: boolean }> { return { success: true }; }
-  
-  async getCatalog(sessionId?: string): Promise<unknown> { console.warn('[Evolution] getCatalog not supported'); return null; }
-  async getProducts(sessionId?: string, page?: number, limit?: number): Promise<{ products: OpenWACatalogProduct[]; total: number }> { console.warn('[Evolution] getProducts not supported'); return { products: [], total: 0 }; }
-  async sendProduct(chatId: string, productId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { console.warn('[Evolution] sendProduct not supported'); return { status: 'failed' }; }
-  async sendCatalog(chatId: string, body?: string, sessionId?: string): Promise<OpenWAMessageSendResult> { console.warn('[Evolution] sendCatalog not supported'); return { status: 'failed' }; }
-  
-  async sendBulk(messages: OpenWABulkMessage[], options?: { delayBetweenMessages?: number; sessionId?: string }): Promise<OpenWABulkResult> { return { batchId: 'evolution_bulk', status: 'queued', totalMessages: messages.length }; }
-  async getBatchStatus(batchId: string, sessionId?: string): Promise<OpenWABatchStatus> { return { batchId, status: 'completed' }; }
-  async cancelBatch(batchId: string, sessionId?: string): Promise<OpenWABatchStatus> { return { batchId, status: 'cancelled' }; }
-  
-  async getChatHistory(chatId: string, options?: { limit?: number; includeMedia?: boolean; sessionId?: string }): Promise<unknown[]> { return []; }
-  async getAudit(params?: { action?: string; sessionId?: string }): Promise<unknown> { return null; }
-  
-  async healthCheck(): Promise<{ status: string; sessions?: number }> {
-    try {
-      await this.listSessions();
-      return { status: 'ok' };
-    } catch {
-      return { status: 'unreachable' };
+    if (lowerText.startsWith('book ')) {
+      // Book table at <restaurant> for <time>
+      await this.sendTextMessage(instanceName, from, `🔍 Searching for ${text.replace('book ', '')}...`);
+      // In production: search restaurants, create booking
+    } else if (lowerText.startsWith('pay ')) {
+      await this.sendTextMessage(instanceName, from, `💳 Processing payment...`);
+      // In production: process payment
+    } else if (lowerText === 'my bookings') {
+      const bookings = await prisma.bookingPabRecord.findMany({
+        where: { userId },
+        take: 5,
+      });
+      let message = '📋 Your Bookings:\n';
+      bookings.forEach((b: any, i: number) => {
+        message += `${i + 1}. ${b.description || 'Booking'} - ${b.status}\n`;
+      });
+      await this.sendTextMessage(instanceName, from, message);
+    } else if (lowerText === 'my payments') {
+      await this.sendTextMessage(instanceName, from, '💳 Fetching payment history...');
+    } else if (lowerText.startsWith('search ')) {
+      const query = text.replace('search ', '');
+      await this.sendTextMessage(instanceName, from, `🔍 Searching for "${query}" near you...`);
+    } else if (lowerText === 'help') {
+      const helpMessage = `🤖 Pabandi Bot Commands:
+      
+book <restaurant> - Book a table
+pay <amount> - Make a payment
+my bookings - View your bookings
+my payments - Payment history
+search <category> - Find businesses
+installment status - Check installments
+help - Show this menu`;
+      await this.sendTextMessage(instanceName, from, helpMessage);
+    } else {
+      await this.sendTextMessage(instanceName, from, 'Hi! I\'m the Pabandi bot. Type "help" for commands.');
     }
+  }
+
+  // ── TEMPLATES ────────────────────────────────────────
+
+  async sendBookingConfirmation(instanceName: string, to: string, bookingDetails: any) {
+    const message = `✅ Booking Confirmed!
+
+📍 ${bookingDetails.restaurant || 'Restaurant'}
+📅 ${bookingDetails.date || 'Today'}
+⏰ ${bookingDetails.time || '8:00 PM'}
+👥 ${bookingDetails.guests || 2} guests
+
+Show this at the door. Enjoy! 🍽️`;
+    return this.sendTextMessage(instanceName, to, message);
+  }
+
+  async sendPaymentReminder(instanceName: string, to: string, details: any) {
+    const message = `💳 Payment Reminder
+
+Amount: Rs. ${details.amount?.toLocaleString() || '0'}
+Due: ${details.dueDate || 'Today'}
+Status: Pending
+
+Pay now to avoid late fees. 📱`;
+    return this.sendTextMessage(instanceName, to, message);
+  }
+
+  async sendEscrowUpdate(instanceName: string, to: string, details: any) {
+    const message = `🔒 Escrow Update
+
+Status: ${details.status || 'Updated'}
+Amount: Rs. ${details.amount?.toLocaleString() || '0'}
+${details.message || ''}
+
+Track at: pabandi.com/cod/${details.escrowId || ''}`;
+    return this.sendTextMessage(instanceName, to, message);
+  }
+
+  // ── USER STATUS ──────────────────────────────────────
+
+  async getUserStatus(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { whatsappMessages: { orderBy: { createdAt: 'desc' }, take: 5 } },
+    });
+    return {
+      connected: true,
+      messages: user?.whatsappMessages || [],
+    };
   }
 }
+
+export const evolutionAPI = new EvolutionService();
