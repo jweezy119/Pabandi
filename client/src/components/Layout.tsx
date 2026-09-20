@@ -78,10 +78,9 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
       { to: '/freelance', icon: 'group', label: 'Freelancers' },
       { to: '/gigs', icon: 'work', label: 'Gig Board' },
       { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
-      { to: '/agent-marketplace', icon: 'store', label: 'AI Marketplace' },
-      { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
-      { to: '/freight/my-loads', icon: 'receipt_long', label: 'FreightOS Loads' },
-      { to: '/booking', icon: 'restaurant_menu', label: 'Sitara' },
+      { to: '/saf', icon: 'local_shipping', label: 'Saf OS' },
+      { to: '/haq', icon: 'apartment', label: 'Haq OS' },
+      { to: '/discovery', icon: 'restaurant_menu', label: 'Sitara' },
     ]},
     { title: 'Trust & Safety', items: [
       { to: '/trust', icon: 'verified', label: 'Trust Passports' },
@@ -323,7 +322,7 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles', '/freight', '/booking'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles', '/saf', '/haq', '/discovery', '/booking'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>
@@ -332,9 +331,9 @@ export default function Layout() {
               <DropdownItem to="/promo">Promo Ambassadors</DropdownItem>
               <DropdownItem to="/rewards">Rewards</DropdownItem>
               <DropdownItem to="/promotions">Promotions</DropdownItem>
-              <DropdownItem to="/freight">Freight & Logistics</DropdownItem>
-              <DropdownItem to="/freight/my-loads">FreightOS Load Board</DropdownItem>
-              <DropdownItem to="/booking">Sitara</DropdownItem>
+              <DropdownItem to="/saf">Saf OS (Freight)</DropdownItem>
+              <DropdownItem to="/haq">Haq OS (Property)</DropdownItem>
+              <DropdownItem to="/discovery">Sitara</DropdownItem>
             </Dropdown>
             <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>
@@ -405,7 +404,8 @@ export default function Layout() {
         <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb">
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
-            <MobileTab to="/live-sell" icon="videocam" label="Live" current={location.pathname === '/live-sell'} />
+            <MobileTab to="/saf" icon="local_shipping" label="Saf" current={location.pathname.startsWith('/saf')} />
+            <MobileTab to="/haq" icon="apartment" label="Haq" current={location.pathname.startsWith('/haq')} />
             <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
               <span className="material-symbols-outlined text-[24px]">search</span>
               <span className="font-body text-[10px] font-semibold tracking-wide">Search</span>
@@ -443,9 +443,9 @@ export default function Layout() {
                 <Link to="/freelance" className="block text-on-surface-variant hover:text-primary py-1">Freelancers</Link>
                 <Link to="/gigs" className="block text-on-surface-variant hover:text-primary py-1">Gig Board</Link>
                 <Link to="/hospitality" className="block text-on-surface-variant hover:text-primary py-1">Hospitality</Link>
-                <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">Freight</Link>
-                <Link to="/freight/my-loads" className="block text-on-surface-variant hover:text-primary py-1">FreightOS Load Board</Link>
-                <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">Sitara</Link>
+                <Link to="/saf" className="block text-on-surface-variant hover:text-primary py-1">Saf OS</Link>
+                <Link to="/haq" className="block text-on-surface-variant hover:text-primary py-1">Haq OS</Link>
+                <Link to="/discovery" className="block text-on-surface-variant hover:text-primary py-1">Sitara</Link>
                 <Link to="/marketplace" className="block text-on-surface-variant hover:text-primary py-1">Marketplace</Link>
               </div>
               <div>
