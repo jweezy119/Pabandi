@@ -128,6 +128,7 @@ model User {
   stakingRecords             StakingRecord[]
   bookingPabRecords          BookingPabRecord[]
   agentRewards               AgentReward[]
+  whatsappMessages           WhatsAppMessage[]
   @@index([email])
   @@index([phone])
 }
@@ -6160,7 +6161,7 @@ model CODEscrow {
   id            String   @id @default(cuid())
   sellerId      String
   seller        User     @relation("sellerEscrow", fields: [sellerId], references: [id])
-  buyerId       String
+  buyerId      String
   buyer         User     @relation("buyerEscrow", fields: [buyerId], references: [id])
   amount        Float
   description   String
@@ -6169,4 +6170,55 @@ model CODEscrow {
   trackingNumber String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// =============================================
+// WHATSAPP MODELS
+// =============================================
+
+model WhatsAppMessage {
+  id            String         @id @default(cuid())
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  direction     WhatsAppDirection
+  type          WhatsAppType   @default(TEXT)
+  content       String
+  status        WhatsAppStatus @default(PENDING)
+  externalId    String?        // Evolution API message key ID
+  mediaUrl      String?
+  metadata      Json?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  createdAt     DateTime       @default(now())
+  
+  @@index([userId])
+  @@index([direction])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum WhatsAppDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WhatsAppType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  TEMPLATE
+  INTERACTIVE
+  LOCATION
+  CONTACT
+}
+
+enum WhatsAppStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
