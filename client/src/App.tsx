@@ -63,6 +63,13 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import PublicPropertiesPage from './pages/PublicPropertiesPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
+import TenantLayout from './components/TenantLayout';
+import TenantPortalDashboard from './pages/TenantPortal';
+import RentPayment from './pages/RentPayment';
+import MaintenanceRequest from './pages/MaintenanceRequest';
+import LeaseView from './pages/LeaseView';
+import TrustStakingPortal from './components/TrustStaking';
+import PaymentHistory from './pages/PaymentHistory';
 import EnhancedDashboardPage from './pages/EnhancedDashboardPage';
 import DisputeCenterPage from './pages/DisputeCenterPage';
 import MaintenancePage from './pages/MaintenancePage';
@@ -213,6 +220,15 @@ function App() {
              <Route path="property/:id" element={<PropertyDetailPage />} />
              <Route path="p/:slug" element={<TenantPortalPage />} />
             <Route path="tenant" element={<TenantDashboardPage />} />
+            {/* New Tenant Portal with Layout */}
+            <Route path="tenant-portal" element={<TenantLayout />}>
+              <Route index element={<TenantPortalDashboard />} />
+              <Route path="pay-rent" element={<RentPayment />} />
+              <Route path="maintenance" element={<MaintenanceRequest />} />
+              <Route path="lease" element={<LeaseView />} />
+              <Route path="staking" element={<TrustStakingPortal />} />
+              <Route path="history" element={<PaymentHistory />} />
+            </Route>
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="listing/:id" element={<ListingDetailPage />} />
