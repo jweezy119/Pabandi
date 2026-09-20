@@ -63,8 +63,7 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import PublicPropertiesPage from './pages/PublicPropertiesPage';
 import TenantPortalPage from './pages/TenantPortalPage';
 import TenantDashboardPage from './pages/TenantDashboardPage';
-import TenantLayout from './components/TenantLayout';
-import TenantPortalDashboard from './pages/TenantPortal';
+import TenantPortalDashboard from './pages/TenantPortalDashboard';
 import RentPayment from './pages/RentPayment';
 import MaintenanceRequest from './pages/MaintenanceRequest';
 import LeaseView from './pages/LeaseView';
@@ -118,11 +117,6 @@ import BackgroundCheckReportPage from './pages/BackgroundCheckReportPage';
 import PromoPage from './pages/PromoPage';
 import PromotionsPage from './pages/PromotionsPage';
 import FiatPaymentPage from './pages/FiatPaymentPage';
-import FreightPage from './pages/FreightPage';
-import { FreightLayout } from './apps/freight';
-import { FreightDashboard, LoadBoard, PostLoad, MyLoads } from './apps/freight';
-import { BookingLayout } from './apps/booking';
-import { BookingPage as BookingDiscoverPage } from './apps/booking';
 import VenueSearchPage from './pages/VenueSearchPage';
 import VenueDetailPage from './pages/VenueDetailPage';
 import BookingCheckoutPage from './pages/BookingCheckoutPage';
@@ -158,10 +152,14 @@ import JobDetailsPage from './pages/JobDetailsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { useEffect } from 'react';
-import ProtocolDashboard from './pages/ProtocolDashboard';
 import StakingInterface from './components/StakingInterface';
 import EscrowInterface from './components/EscrowInterface';
 import AgentInterface from './components/AgentInterface';
+import SafOSPage from './pages/saf/SafOSPage';
+import HaqOSPage from './pages/haq/HaqOSPage';
+import SitaraDiscoveryPage from './pages/sitara/SitaraDiscoveryPage';
+import SitaraBookingPage from './pages/sitara/SitaraBookingPage';
+import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
 
 function App() {
   const { isAuthenticated, user, fetchWalletData } = useAuthStore();
@@ -184,9 +182,9 @@ function App() {
   const DashboardPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
-    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/property-manager" replace />;
+    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/haq" replace />;
     if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
-    return <Navigate to="/property-manager" replace />;
+    return <Navigate to="/haq" replace />;
   };
 
   const AuthRequiredProfilesPage = () => {
@@ -203,7 +201,17 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <Routes>
-          {/* ALL routes inside Layout so every page gets header+footer */}
+          {/* OS Pages with their own DashboardLayout - OUTSIDE main Layout */}
+          <Route path="saf" element={<SafOSPage />} />
+          <Route path="haq" element={<HaqOSPage />} />
+          <Route path="discovery" element={<SitaraDiscoveryPage />} />
+          <Route path="booking" element={<SitaraBookingPage />} />
+          <Route path="protocol" element={<ProtocolDashboardPage />} />
+          <Route path="protocol/staking" element={<StakingInterface />} />
+          <Route path="protocol/escrow" element={<EscrowInterface />} />
+          <Route path="protocol/agents" element={<AgentInterface />} />
+
+          {/* ALL other routes inside Layout */}
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
@@ -219,14 +227,12 @@ function App() {
             <Route path="property-manager" element={<CRMPage />} />
             <Route path="sales-crm" element={<SalesCRMPage />} />
             <Route path="properties" element={<PublicPropertiesPage />} />
-             <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
-             <Route path="ai/assistant" element={<AIAssistantPage />} />
-             <Route path="property/:id" element={<PropertyDetailPage />} />
-             <Route path="p/:slug" element={<TenantPortalPage />} />
+            <Route path="tenant-workflow" element={<TenantWorkflowPage />} />
+            <Route path="ai/assistant" element={<AIAssistantPage />} />
+            <Route path="property/:id" element={<PropertyDetailPage />} />
+            <Route path="p/:slug" element={<TenantPortalPage />} />
             <Route path="tenant" element={<TenantDashboardPage />} />
-            {/* New Tenant Portal with Layout */}
-            <Route path="tenant-portal" element={<TenantLayout />}>
-              <Route index element={<TenantPortalDashboard />} />
+            <Route path="tenant-portal" element={<TenantPortalDashboard />}>
               <Route path="pay-rent" element={<RentPayment />} />
               <Route path="maintenance" element={<MaintenanceRequest />} />
               <Route path="lease" element={<LeaseView />} />
@@ -238,10 +244,6 @@ function App() {
             <Route path="listing/:id" element={<ListingDetailPage />} />
             <Route path="escrow" element={<EscrowPage />} />
             <Route path="escrow/:id" element={<EscrowDetailPage />} />
-            <Route path="protocol" element={<ProtocolDashboard />} />
-            <Route path="protocol/staking" element={<StakingInterface />} />
-            <Route path="protocol/escrow" element={<EscrowInterface />} />
-            <Route path="protocol/agents" element={<AgentInterface />} />
             <Route path="tokenomics" element={<TokenomicsPage />} />
             <Route path="my-wallet" element={<WalletPage />} />
             <Route path="onramp" element={<OnRampPage />} />
@@ -282,22 +284,6 @@ function App() {
             <Route path="verifier" element={<VerifierSandboxPage />} />
             <Route path="book" element={<BookingExperience />} />
             <Route path="book/:id" element={<BookingExperience />} />
-            <Route path="booking" element={<BookingLayout />}>
-              <Route index element={<BookingDiscoverPage />} />
-              <Route path="my-reservations" element={<ReservationsPage />} />
-              <Route path="favorites" element={<BookingDiscoverPage />} />
-              <Route path="venues" element={<VenueSearchPage />} />
-              <Route path="analytics" element={<BookingDiscoverPage />} />
-              <Route path="payments" element={<BookingDiscoverPage />} />
-              <Route path="settings" element={<Navigate to="/settings" replace />} />
-              <Route path="venues/search" element={<VenueSearchPage />} />
-              <Route path="venue/:id" element={<VenueDetailPage />} />
-              <Route path="checkout/:venueId" element={<BookingCheckoutPage />} />
-              <Route path="my-bookings" element={<MyBookingsPage />} />
-              <Route path="raast-confirm" element={<RaastConfirmPage />} />
-              <Route path="promoter" element={<PromoterDashboardPage />} />
-              <Route path="guest-list" element={<GuestListPage />} />
-            </Route>
             <Route path="reservations" element={<ReservationsPage />} />
             <Route path="reservations/new" element={<NewReservationPage />} />
             <Route path="nightlife" element={<NightlifePage />} />
@@ -318,22 +304,6 @@ function App() {
             <Route path="hotels" element={<BrowseHotelsPage />} />
             <Route path="hospitality" element={<HospitalityPage />} />
             <Route path="real-estate/screening/:reservationId" element={<RealEstateScreeningPage />} />
-            <Route path="freight" element={<FreightLayout />}>
-              <Route index element={<FreightDashboard />} />
-              <Route path="loads" element={<LoadBoard />} />
-              <Route path="loads/:id" element={<FreightPage />} />
-              <Route path="post" element={<PostLoad />} />
-              <Route path="my-loads" element={<MyLoads />} />
-              <Route path="carriers" element={<FreightPage />} />
-              <Route path="bids" element={<FreightPage />} />
-              <Route path="tracking" element={<FreightPage />} />
-              <Route path="tracking/:id" element={<FreightPage />} />
-              <Route path="documents" element={<FreightPage />} />
-              <Route path="escrow" element={<FreightPage />} />
-              <Route path="insurance" element={<FreightPage />} />
-              <Route path="analytics" element={<FreightPage />} />
-              <Route path="settings" element={<FreightPage />} />
-            </Route>
             <Route path="business/join" element={<BusinessJoinPage />} />
             <Route path="business/join-claim" element={<BusinessJoinPage />} />
             <Route path="business/register" element={isAuthenticated ? <BusinessActivationPage /> : <Navigate to="/login" />} />
