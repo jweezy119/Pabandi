@@ -120,8 +120,6 @@ model User {
   userPayments            Payment[]               @relation("userPayments")
   escrowBuyer SolanaEscrow[] @relation("escrowBuyer")
   escrowSeller SolanaEscrow[] @relation("escrowSeller")
-  pabStaked                  Float                   @default(0)
-  pabEarned                  Float                   @default(0)
   stakingRecords             StakingRecord[]
   bookingPabRecords          BookingPabRecord[]
   agentRewards               AgentReward[]
