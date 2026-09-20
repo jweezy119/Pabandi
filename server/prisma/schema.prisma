@@ -5867,6 +5867,7 @@ model BookingPabRecord {
   business        Business? @relation(fields: [businessId], references: [id])
   checkinAt       DateTime?
   cancelledAt     DateTime?
+  description     String?  // For frictionless payments
   txHash          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

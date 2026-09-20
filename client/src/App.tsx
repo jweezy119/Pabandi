@@ -158,6 +158,10 @@ import JobDetailsPage from './pages/JobDetailsPage';
 import { LanguageProvider } from './context/LanguageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { useEffect } from 'react';
+import ProtocolDashboard from './pages/ProtocolDashboard';
+import StakingInterface from './components/StakingInterface';
+import EscrowInterface from './components/EscrowInterface';
+import AgentInterface from './components/AgentInterface';
 
 function App() {
   const { isAuthenticated, user, fetchWalletData } = useAuthStore();
@@ -234,6 +238,10 @@ function App() {
             <Route path="listing/:id" element={<ListingDetailPage />} />
             <Route path="escrow" element={<EscrowPage />} />
             <Route path="escrow/:id" element={<EscrowDetailPage />} />
+            <Route path="protocol" element={<ProtocolDashboard />} />
+            <Route path="protocol/staking" element={<StakingInterface />} />
+            <Route path="protocol/escrow" element={<EscrowInterface />} />
+            <Route path="protocol/agents" element={<AgentInterface />} />
             <Route path="tokenomics" element={<TokenomicsPage />} />
             <Route path="my-wallet" element={<WalletPage />} />
             <Route path="onramp" element={<OnRampPage />} />
