@@ -1,56 +1,52 @@
-import { Router, Request, Response } from 'express';
-import { runAutogenLoop, recommendForSpec } from '../services/recommendation/recommendation.service';
-import { stakeAgent, slashAgent } from '../services/recommendation/stakeSlashing.service';
-import { STAKE_REQUIRED_PAB } from '../services/recommendation/agentScorer.service';
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.middleware';
+import { recommendationEngine } from '../services/recommendation.service';
 
 const router = Router();
 
-// Run the closed loop: generate demand-driven projects -> agents auto-bid -> recommend best.
-router.post('/autogen-run', async (req: Request, res: Response) => {
+// Property recommendations
+router.get('/properties', authenticate, async (req, res) => {
   try {
-    const limit = Math.min(Number(req.body?.limit) || 8, 20);
-    const projects = await runAutogenLoop(limit);
-    res.json({ success: true, count: projects.length, projects });
+    const properties = [
+      { id: '1', name: 'Downtown Loft', monthlyRent: 1500, minTrustScore: 0 },
+      { id: '2', name: 'Suburban House', monthlyRent: 2200, minTrustScore: 200 },
+      { id: '3', name: 'Luxury Penthouse', monthlyRent: 5000, minTrustScore: 500 },
+    ];
+    const result = await recommendationEngine.recommendProperties(req.user!.id, properties);
+    res.json({ success: true, data: result });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'autogen failed' });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Recommend the best agent for an adhoc project spec.
-router.post('/recommend', async (req: Request, res: Response) => {
+// Trust tier recommendation
+router.get('/trust-tier', authenticate, async (req, res) => {
   try {
-    const spec = req.body;
-    if (!spec?.requiredSkills || !Array.isArray(spec.requiredSkills)) {
-      return res.status(400).json({ success: false, error: 'requiredSkills[] required' });
-    }
-    const rec = await recommendForSpec(spec);
-    res.json({ success: true, best: rec.best, candidatesEvaluated: rec.candidatesEvaluated, top5: rec.ranked });
+    const result = await recommendationEngine.recommendTrustTier(req.user!.id);
+    res.json({ success: true, data: result });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'recommend failed' });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Stake an agent (skin in the game) to be indexed by the engine.
-router.post('/stake', async (req: Request, res: Response) => {
+// Payment method recommendation
+router.post('/payment-method', authenticate, async (req, res) => {
   try {
-    const { agentId, amountPab } = req.body || {};
-    if (!agentId || !amountPab) return res.status(400).json({ success: false, error: 'agentId + amountPab required' });
-    const r = await stakeAgent(agentId, Number(amountPab));
-    res.json({ success: r.ok, ...(r.error ? { error: r.error } : {}), minStake: STAKE_REQUIRED_PAB });
+    const { amount } = req.body;
+    const result = await recommendationEngine.recommendPaymentMethod(req.user!.id, amount);
+    res.json({ success: true, data: result });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'stake failed' });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Slash an agent on milestone failure (partial burn + client comp).
-router.post('/slash', async (req: Request, res: Response) => {
+// Next feature recommendation (for onboarding)
+router.get('/next-feature', authenticate, async (req, res) => {
   try {
-    const { agentId, penaltyPct } = req.body || {};
-    if (!agentId) return res.status(400).json({ success: false, error: 'agentId required' });
-    const r = await slashAgent(agentId, penaltyPct ? Number(penaltyPct) : 0.3);
-    res.json({ success: r.ok, ...(r.error ? { error: r.error } : {}), slashedPab: r.slashedPab, toClientPab: r.toClientPab, burnedPab: r.burnedPab });
+    const result = await recommendationEngine.recommendNextFeature(req.user!.id);
+    res.json({ success: true, data: result });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || 'slash failed' });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
