@@ -1,0 +1,116 @@
+// ── Pakistan Real Estate Builder Models ──────────────────────────────────────
+
+model BuilderProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  companyName   String
+  licenseNumber String?
+  trustScore    Float    @default(50)
+  totalProjects Int      @default(0)
+  totalUnits    Int      @default(0)
+  totalSold     Int      @default(0)
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  projects      BuilderProject[]
+}
+
+model BuilderProject {
+  id            String   @id @default(cuid())
+  builderId     String
+  builder       BuilderProfile @relation(fields: [builderId], references: [id])
+  name          String
+  location      String
+  description   String?
+  totalUnits    Int
+  soldUnits     Int      @default(0)
+  bookedUnits   Int      @default(0)
+  status        String   @default("ACTIVE")
+  startDate     DateTime
+  expectedCompletion DateTime
+  actualCompletion DateTime?
+  trustScore    Float    @default(50)
+  createdAt     DateTime @default(now())
+  units         BuilderUnit[]
+  milestones    BuilderProjectMilestone[]
+}
+
+model BuilderUnit {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       BuilderProject @relation(fields: [projectId], references: [id])
+  unitNumber    String
+  type          String
+  size          Int
+  price         Float
+  status        String   @default("AVAILABLE")
+  floor        Int?
+  buyerId       String?
+  buyer         BuyerProfile? @relation(fields: [buyerId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model BuyerProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  cnic          String?  @unique
+  phone         String?
+  address       String?
+  verified      Boolean  @default(false)
+  units         BuilderUnit[]
+  installments  Installment[]
+  documents     BuyerDocument[]
+  createdAt     DateTime @default(now())
+}
+
+model Installment {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         BuyerProfile @relation(fields: [buyerId], references: [id])
+  unitId        String
+  amount        Float
+  dueDate       DateTime
+  paidAt        DateTime?
+  status        String   @default("PENDING")
+  method        String?
+  txHash        String?
+  createdAt     DateTime @default(now())
+}
+
+model BuilderProjectMilestone {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       BuilderProject @relation(fields: [projectId], references: [id])
+  title         String
+  description   String?
+  dueDate       DateTime
+  completedAt   DateTime?
+  status        String   @default("PENDING")
+  photos        String[]
+  createdAt     DateTime @default(now())
+}
+
+model BuyerDocument {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         BuyerProfile @relation(fields: [buyerId], references: [id])
+  type          String
+  fileUrl       String
+  uploadedAt    DateTime @default(now())
+}
+
+model CODEscrow {
+  id            String   @id @default(cuid())
+  sellerId      String
+  seller        User     @relation("sellerEscrow", fields: [sellerId], references: [id])
+  buyerId       String
+  buyer         User     @relation("buyerEscrow", fields: [buyerId], references: [id])
+  amount        Float
+  description   String
+  status        String   @default("PENDING")
+  shippingAddress String?
+  trackingNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

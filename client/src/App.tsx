@@ -98,6 +98,12 @@ import TokenFlowPage from './pages/TokenFlowPage';
 import EscrowDetailPage from './pages/EscrowDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import BrowseHotelsPage from './pages/BrowseHotelsPage';
+import BuilderDashboard from './pages/realestate/BuilderDashboard';
+import BuilderProjectPage from './pages/realestate/BuilderProjectPage';
+import BuyerPortal from './pages/realestate/BuyerPortal';
+import CODMarketplace from './pages/cod/CODMarketplace';
+import CreateEscrow from './pages/cod/CreateEscrow';
+import EscrowDetail from './pages/cod/EscrowDetail';
 import DemoWalkthroughPage from './pages/DemoWalkthroughPage';
 import Web3Page from './pages/Web3Page';
 import LiquidityTerminalPage from './pages/LiquidityTerminalPage';
@@ -222,6 +228,12 @@ function App() {
           <Route path="haq/leases" element={<HaqLeasesPage />} />
           <Route path="haq/maintenance" element={<HaqMaintenancePage />} />
           <Route path="haq/financials" element={<HaqFinancialsPage />} />
+          <Route path="builder" element={<BuilderDashboard />} />
+          <Route path="builder/projects/:id" element={<BuilderProjectPage />} />
+          <Route path="buyer" element={<BuyerPortal />} />
+          <Route path="cod" element={<CODMarketplace />} />
+          <Route path="cod/create" element={<CreateEscrow />} />
+          <Route path="cod/:id" element={<EscrowDetail />} />
           <Route path="discovery" element={<SitaraDiscoveryPage />} />
           <Route path="booking" element={<SitaraBookingPage />} />
           <Route path="protocol" element={<ProtocolDashboardPage />} />
