@@ -212,11 +212,11 @@ Track at: pabandi.com/cod/${details.escrowId || ''}`;
   async getUserStatus(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { whatsappMessages: { orderBy: { createdAt: 'desc' }, take: 5 } },
+      include: { whatsAppMessages: { orderBy: { createdAt: 'desc' }, take: 5 } },
     });
     return {
       connected: true,
-      messages: user?.whatsappMessages || [],
+      messages: user?.whatsAppMessages || [],
     };
   }
 }
