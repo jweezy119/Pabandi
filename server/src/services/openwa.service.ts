@@ -560,3 +560,5 @@ export class OpenWAService implements WhatsAppProvider {
   }
 }
 
+export const openwaService = new OpenWAService();
+

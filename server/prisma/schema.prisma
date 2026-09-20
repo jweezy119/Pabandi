@@ -125,7 +125,7 @@ model User {
   buyerProfile BuyerProfile?
   sellerEscrows CODEscrow[] @relation("sellerEscrow")
   buyerEscrows CODEscrow[] @relation("buyerEscrow")
-  whatsappMessages           WhatsAppMessage[]
+  whatsAppMessages           WhatsAppMessage[]
   stakingRecords             StakingRecord[]
   bookingPabRecords          BookingPabRecord[]
   agentRewards               AgentReward[]

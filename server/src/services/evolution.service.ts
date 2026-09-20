@@ -110,14 +110,14 @@ export class EvolutionService {
     }
 
     // Log message
-    await prisma.whatsappMessages.create({
+    await prisma.whatsAppMessage.create({
       data: {
         userId: user.id,
-        direction: 'INCOMING',
+        direction: 'INBOUND',
         type: 'TEXT',
         content: text,
         externalId: message.key.id,
-        status: 'RECEIVED',
+        status: 'DELIVERED',
       },
     });
 
