@@ -157,6 +157,15 @@ import EscrowInterface from './components/EscrowInterface';
 import AgentInterface from './components/AgentInterface';
 import SafOSPage from './pages/saf/SafOSPage';
 import HaqOSPage from './pages/haq/HaqOSPage';
+import HaqTenantsPage from './pages/haq/HaqTenantsPage';
+import HaqTenantDetailPage from './pages/haq/HaqTenantDetailPage';
+import HaqLeasesPage from './pages/haq/HaqLeasesPage';
+import HaqMaintenancePage from './pages/haq/HaqMaintenancePage';
+import HaqFinancialsPage from './pages/haq/HaqFinancialsPage';
+import SafPostLoadPage from './pages/saf/SafPostLoadPage';
+import SafMyLoadsPage from './pages/saf/SafMyLoadsPage';
+import SafCarriersPage from './pages/saf/SafCarriersPage';
+import SafRateCalculatorPage from './pages/saf/SafRateCalculatorPage';
 import SitaraDiscoveryPage from './pages/sitara/SitaraDiscoveryPage';
 import SitaraBookingPage from './pages/sitara/SitaraBookingPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
@@ -203,7 +212,16 @@ function App() {
         <Routes>
           {/* OS Pages with their own DashboardLayout - OUTSIDE main Layout */}
           <Route path="saf" element={<SafOSPage />} />
+          <Route path="saf/post-load" element={<SafPostLoadPage />} />
+          <Route path="saf/my-loads" element={<SafMyLoadsPage />} />
+          <Route path="saf/carriers" element={<SafCarriersPage />} />
+          <Route path="saf/rates" element={<SafRateCalculatorPage />} />
           <Route path="haq" element={<HaqOSPage />} />
+          <Route path="haq/tenants" element={<HaqTenantsPage />} />
+          <Route path="haq/tenants/:id" element={<HaqTenantDetailPage />} />
+          <Route path="haq/leases" element={<HaqLeasesPage />} />
+          <Route path="haq/maintenance" element={<HaqMaintenancePage />} />
+          <Route path="haq/financials" element={<HaqFinancialsPage />} />
           <Route path="discovery" element={<SitaraDiscoveryPage />} />
           <Route path="booking" element={<SitaraBookingPage />} />
           <Route path="protocol" element={<ProtocolDashboardPage />} />
