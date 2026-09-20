@@ -116,6 +116,11 @@ model User {
   userPayments            Payment[]               @relation("userPayments")
   escrowBuyer SolanaEscrow[] @relation("escrowBuyer")
   escrowSeller SolanaEscrow[] @relation("escrowSeller")
+  pabStaked                  Float                   @default(0)
+  pabEarned                  Float                   @default(0)
+  stakingRecords             StakingRecord[]
+  bookingPabRecords          BookingPabRecord[]
+  agentRewards               AgentReward[]
   @@index([email])
   @@index([phone])
 }
@@ -205,6 +210,7 @@ model Business {
   payments                Payment[]               @relation("businessPayments")
   fiatPayments            FiatPayment[]
   solanaEscrows            SolanaEscrow[]
+  bookingPabRecords        BookingPabRecord[]
 
   @@index([ownerId])
   @@index([city])
@@ -5814,4 +5820,69 @@ model SystemConfig {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAB UTILITY INTEGRATION — Staking, Booking PAB, Agent Rewards
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model StakingRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier            String   // BRONZE | SILVER | GOLD | PLATINUM
+  amountPab       Float
+  trustBoost      Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE | UNSTAKED | LOCKED
+  stakedAt        DateTime @default(now())
+  unlockAt        DateTime
+  unstakedAt      DateTime?
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([tier])
+}
+
+model BookingPabRecord {
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingValue    Float
+  depositPab      Float
+  rewardPab       Float    @default(0)
+  status          String   @default("PENDING") // PENDING | CHECKED_IN | NO_SHOW | CANCELLED
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id])
+  checkinAt       DateTime?
+  cancelledAt     DateTime?
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([businessId])
+}
+
+model AgentReward {
+  id              String   @id @default(cuid())
+  agentId         String
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType        String
+  taskValue       Float
+  rewardPab       Float
+  txHash          String?
+  status          String   @default("PENDING") // PENDING | DISTRIBUTED | FAILED
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([userId])
+  @@index([status])
 }
