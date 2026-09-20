@@ -77,7 +77,7 @@ router.get('/admin/pending', authenticate, async (req, res) => {
   try {
     const payments = await prisma.pakistanPayment.findMany({
       where: { status: 'PENDING' },
-      include: { user: { select: { email: true, name: true } } },
+      include: { user: { select: { email: true, firstName: true, lastName: true } } },
       orderBy: { createdAt: 'asc' },
     });
 
