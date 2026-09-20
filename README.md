@@ -1,168 +1,177 @@
-# Pabandi: The Decentralized Trust & Escrow Ecosystem
+# Pabandi: The Trust & Payments Protocol for Emerging Markets
 
 ![Pabandi Banner](https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&q=80&w=2000&h=600)
 
-**Pabandi** is an algorithmic, Sharia-compliant Open Finance Agent and Trust Protocol. While traditional exchanges (like Binance P2P or Bybit) force users into slow, manual C2C arbitration for fiat off-ramping, Pabandi provides a Zero-UI, API-first **B2B settlement layer**. By integrating directly with real-time domestic clearing webhooks (like Pakistan's Raast) and employing Agentic AI for fallback vision verification, Pabandi achieves instant 0-second atomic settlements between global stablecoins (USDC/Solana) and local fiat rails.
+**Pabandi** is a decentralized trust, escrow, and payments protocol for emerging markets. It combines AI-powered fraud detection, trust scoring, and mobile money integration to create a seamless payment experience for users in Pakistan and beyond.
 
-In markets where digital trust is low, legacy escrow creates too much friction. Pabandi bridges this gap by acting as an impartial, automated, and decentralized middleman. Liquidity Providers (LPs) earn a passive, **Mudarabah-compliant Halal yield** strictly from real trade execution spreads—never interest (Riba).
+The protocol operates through three core OS layers:
+- **Sitara** — Booking & discovery for services, hospitality, and rentals
+- **Saf OS** — Freight & logistics management for carriers and shippers
+- **Haq OS** — Property management for landlords and tenants
 
-From deep Shopify integrations to Live Selling widgets and WhatsApp AI concierges, Pabandi is not just a destination app—it is a B2B integration wedge designed to be embedded directly into the checkouts merchants already use every single day.
-
----
-
-## 🌟 The Pabandi Vision & Architecture
-
-Pabandi operates on three core pillars:
-1. **Agentic Escrow & Settlement (0-Second Clearing)**: Securing funds via Multi-chain (BTC, Solana) smart contracts and utilizing Agentic AI to parse real-time Raast/Easypaisa webhooks (or Qwen-VL vision fallbacks) for instant fiat-to-crypto release.
-2. **Mudarabah Halal Staking**: A purely Sharia-compliant liquidity pool where LPs earn yield from active B2B trade spreads, completely eliminating Riba (interest).
-3. **The Omni-Channel Wedge**: Delivering Pabandi’s functionality directly to where transactions happen (Shopify, WhatsApp, TikTok Live) via frictionless SDKs and embeddable widgets, skipping the need for standalone apps like Binance P2P.
+Users earn **$PAB rewards** for every transaction, while Jev AI handles all security and decision-making behind the scenes — 400x cheaper than traditional LLMs.
 
 ---
 
-## 🚀 Core Features
+## The Pabandi Vision
 
-### 1. Escrow Smart Contract (Multi-chain)
-The core of Pabandi is a lightning-fast, gas-efficient escrow mechanism built on multi-chain infrastructure (BTC, Solana, BNB, ETH, Stellar). When a customer books a service or buys a product, their funds are locked securely in an un-upgradable smart contract. Funds are released automatically only upon successful mutual fulfillment. This instantly eliminates no-shows for service providers and eliminates product fraud for e-commerce buyers.
+Pabandi exists because trust is the most expensive thing in the world — especially for people who don't have money to spare.
 
-### 2. OSINT AI Trust Oracle & Soulbound Passports
-Pabandi assigns every user and business a dynamic, Soulbound Trust Passport based on deep, cross-platform intelligence rather than just basic KYC.
-- **On-Chain Wallet Analytics:** Verifies a user's true Web3 footprint (wallet age, transaction velocity) to prevent Sybil attacks and bot farms.
-- **Gig Economy Aggregation:** Parses verified, real-world work history from platforms like Upwork, Fiverr, and Field Nation to establish Proof of Competence.
-- **AI Temporal Alignment:** An integrated LLM (Qwen) evaluates the chronological consistency of a user's entire digital footprint (GitHub, Domains, Wallet) to calculate Identity, Competence, and Integrity vectors. High scores automatically drop platform fees and unlock instant payouts.
+When a freelancer in Pakistan finishes a job and gets ghosted, it's groceries they can't buy. When a landlord has a no-show, they can't make rent. Current platforms punish the people who are trying the hardest.
 
-### 3. Decentralized Peer Jury (Dispute Resolution)
-If an escrow transaction goes wrong (e.g., the product was broken, or the buyer is attempting friendly fraud), Pabandi leverages a decentralized Peer Jury system rather than centralized support agents.
-- Highly-ranked community members (Jurors) review evidence and vote to resolve disputes.
-- Consensus (3 matching votes) slashes the Trust Score of the malicious party and distributes the escrowed funds appropriately, while rewarding the jurors for their time.
-
-### 4. Zero-Config Shopify Native Integration
-Pabandi serves as a powerful B2B integration for e-commerce stores, seamlessly wedging into the Shopify ecosystem.
-- **Embedded Admin Dashboard:** Merchants manage their Pabandi escrow orders and view their overall Trust Score directly inside their native Shopify Admin panel.
-- **Storefront Widget SDK:** A copy-paste Javascript snippet (`shopify-widget.js`) allows merchants to inject the Pabandi Trust Badge and Escrow Checkout button directly onto their Shopify product pages without requiring a complex App Store review.
-- **Order Intercept:** Pabandi intercepts the checkout, secures the funds in escrow, and uses webhooks to instantly push a "Paid" order back into the merchant's Shopify dashboard.
-
-### 5. Live Selling Hub & Conversational Commerce
-Pabandi transforms high-energy live streams and chat interactions into instant, trusted commerce.
-- **Universal Escrow Checkout:** A single, frictionless link (`pabandi.com/s/:id?mode=instant`) that sellers can drop into TikTok Live, YouTube Shopping, Instagram, or Amazon Live.
-- **WhatsApp AI Agent:** Built-in LLM integration powers a conversational agent that detects purchase intent via chat and automatically generates secure Escrow checkout links for customers over WhatsApp.
-- **Social Proof Receipts:** Upon a successful checkout, the platform generates a beautiful DOM-based receipt card that buyers can one-click share to WhatsApp, creating a viral loop.
-
-### 6. Universal Hospitality APIs
-Pabandi offers seamless synchronization for property managers and hotels worldwide, replacing outdated deposit models.
-- **PMS Sync:** Connects directly with leading Property Management Systems including Channex, Beds24, Cloudbeds, Lodgify, Hostaway, and Guesty.
-- **Escrow-Backed Stays:** Replaces standard credit card holds and hotel deposits with smart, verifiable escrow check-ins, fully integrated with the property's booking calendar.
-
-### 7. AI Concierge & Voicebox Automation
-A multimodal, context-aware AI widget designed for custom business websites.
-- **Voice & Chat:** Handles inbound customer inquiries 24/7 using advanced, human-like voice synthesis and conversational AI.
-- **Direct Booking Routing:** The AI understands the customer's scheduling needs, checks availability, and routes them directly to a secure Pabandi escrow checkout link.
-
-### 8. Zero-Fee Meld Off-Ramp (API Aggregation)
-Built to save freelancers in emerging markets (Pakistan, MENA, LATAM) from the predatory 7-10% fees charged by legacy remittance tools.
-- **Smart Routing:** Integrates directly with Meld's unified API to route users to the best local fiat off-ramp (e.g., JazzCash, Easypaisa).
-- **Sub-2% Cash Outs:** Freelancers can withdraw their USDC/USDT earnings straight to their local bank accounts for a ~1.5% fee.
-
-### 9. Token Liquidity & DEX Integration
-Deep liquidity and seamless off-ramps for the $PAB ecosystem token.
-- **Raydium Integration:** Instant swaps between $PAB and SOL/USDC on Solana's leading decentralized exchange.
-- **Liquidity Pools:** Transparent, on-chain economics with yield farming rewards for community liquidity providers.
+Pabandi fixes this with:
+- **Escrow smart contracts** — Funds locked until both parties fulfill
+- **AI Trust Oracle** — Dynamic trust scoring based on real behavior
+- **Mobile money integration** — Raast, JazzCash, EasyPaisa for PKR
+- **Frictionless payments** — 1-click checkout, no crypto jargon
+- **Jev security** — 400x cheaper than LLMs for fraud detection
 
 ---
 
-## 🛠️ Tech Stack
+## The Three OS Layers
 
-- **Frontend Ecosystem:** React 18, Vite, TailwindCSS, TypeScript, Zustand, React Query
-- **Backend Infrastructure:** Node.js, Express, Prisma ORM, PostgreSQL
-- **Blockchain & Web3:** Multi-chain (BTC, Solana, BNB, ETH, Stellar), Ethers.js, Solana Web3.js
-- **Integrations:** Shopify Admin API, Twilio/WhatsApp API, Google Maps, Firebase Authentication
-- **Cloud & Deployment:** Google Cloud Run (Backend API), Firebase Hosting (Frontend SPA)
+### 1. Sitara (Emerald)
+Booking, discovery, and hospitality. Find restaurants, hotels, and services. Book with one click. Earn $PAB rewards.
+
+**Key Features:**
+- Discovery feed with "Near me" search
+- 3-step booking flow
+- QR code check-in
+- Review and rating system
+
+### 2. Saf OS (Amber)
+Freight and logistics management. Post loads, find carriers, track shipments.
+
+**Key Features:**
+- Load board with search/filter
+- AI-powered carrier matching
+- Rate calculator
+- Shipment tracking
+- Carrier directory with ratings
+
+### 3. Haq OS (Violet)
+Property management for landlords. Manage tenants, leases, maintenance, and revenue.
+
+**Key Features:**
+- Revenue dashboard (weekly/monthly/yearly)
+- Tenant management with risk scores
+- Lease management (create/renew/terminate)
+- Maintenance request Kanban board
+- Financial reporting
+- Communication tools
 
 ---
 
-## 🌐 Live Platform
+## Core Protocol Features
+
+### Jev Decision Engine
+All security and AI decisions use Jev — a decision-only model that's 400x cheaper and 200x faster than LLMs.
+
+| Decision | What Jev Does |
+|----------|---------------|
+| Fraud detection | Flags suspicious transactions |
+| Agent risk scoring | Rates carrier/tenant reliability |
+| Payment routing | Chooses USDC vs PAB vs PKR |
+| Recommendations | Suggests next features to users |
+| Anomaly detection | Identifies unusual behavior |
+
+### Pakistan Payments (Raast-First)
+Pabandi uses Pakistan's national payment rail — **Raast** — for free, instant transfers. Falls back to JazzCash/EasyPaisa for mobile wallet users.
+
+| Method | Cost | Integration |
+|--------|------|-------------|
+| Raast | FREE | QR code / phone number |
+| JazzCash | 1% | Manual verification |
+| EasyPaisa | 1% | Manual verification |
+
+**Frictionless flow:** User clicks "Pay" → Sees Raast QR → Sends payment → Uploads screenshot → Admin verifies → PAB rewarded.
+
+### Frictionless Payment Agent
+Users NEVER see crypto. The agent handles all complexity:
+
+| User Sees | Agent Does (Hidden) |
+|-----------|---------------------|
+| "Pay $25" | Converts USDC → PAB → Lock in escrow |
+| "Balance: $500" | Calculates USDC + PAB value at DEX rate |
+| "5% PAB discount" | Auto-routes payment through DEX |
+| "Trust score: Gold" | Manages staking lock, calculates APY |
+
+### $PAB Token & DEX
+- **Token:** SPL token on Solana mainnet (mint: `G811FHWiZrqY1DZKz6dQySpJFPTDfe21B8LRnDqa1z5Y`)
+- **Pool:** PAB/USDC pair on Raydium
+- **Staking:** Bronze/Silver/Gold/Platinum tiers with APY
+- **Rewards:** Earn $PAB for bookings, check-ins, and referrals
+- **Discounts:** 5% off when paying with PAB
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, Vite, TailwindCSS, TypeScript |
+| **Backend** | Node.js, Express, Prisma ORM, PostgreSQL |
+| **AI** | Jev (TypeSafe) for decisions, 400x cheaper than LLMs |
+| **Blockchain** | Solana, Anchor, Raydium DEX |
+| **Payments** | Raast, JazzCash, EasyPaisa, PayLio, Square |
+| **Deployment** | Firebase Hosting (client), Render (server) |
+
+---
+
+## Live Platform
 
 - **Production App:** [https://pabandi.com](https://pabandi.com) (or `https://pabandi-42c5b.web.app`)
-- **Backend API:** `https://pabandi-backend-97129395003.asia-south1.run.app`
-
-> **⚠️ Deploy architecture (read before deploying):** `pabandi.com` is served by **Firebase Hosting**
-> (project `pabandi-42c5b`, `public: client/dist`). Render only serves the **API** (`pabandi.onrender.com`).
-> Pushing the SPA to Render does **NOT** update `pabandi.com` — you must deploy `client/dist` to Firebase.
-> The combined `./deploy.sh` does this in one step.
+- **Backend API:** `https://pabandi.onrender.com`
 
 ### Deploy (one command)
 ```bash
-./deploy.sh            # build client + deploy SPA to Firebase Hosting (updates pabandi.com)
+./deploy.sh            # build client + deploy SPA to Firebase Hosting
 ./deploy.sh --push     # also git push origin main (triggers Render API rebuild)
 ```
+
 Manual equivalent:
 ```bash
 cd client && npm run build
 firebase use pabandi-42c5b && firebase deploy --only hosting
 ```
+
 After deploy, hard-refresh `pabandi.com` (Cmd/Ctrl+Shift+R). The SPA shell is served `no-cache`, so it reflects instantly.
 
 ---
-- **CoCreate 2026 Judge Quick Start**
-  - Open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
-  - If that business ID isn’t seeded, open any valid `/business/:id` from admin or search.
-  - Use **Claim Listing** → WhatsApp claim overlay
-  - Use **Pay with Tap** → hosted checkout
-  - Use **Payment Link Card** → copy/share checkout on WhatsApp
-  - Open **Passport Dashboard** → trust score + category axes
-- **Submission Artifacts (on deadline)**
-  - README judge summary + quick start + live links
-  - Pitch deck + generation scripts in `marketing/`
-  - Migration SQL + deploy runbook in `COCREATE_DEPLOY.md`
-- **Live Health**
-  - Backend health: `https://pabandi-backend-97129395003.asia-south1.run.app/health`
-  - Backend docs: `https://pabandi-backend-97129395003.asia-south1.run.app/api/docs`
-- **Pre-Submission Checklist**
-  - Run locally:
-    - `cd server && npm run build`
-    - `cd client && npm run build`
-  - Live health:
-    - `curl -I https://pabandi-backend-97129395003.asia-south1.run.app/health`
-    - `curl -I https://pabandi-backend-97129395003.asia-south1.run.app/api/docs`
-  - Browser smoke test:
-    - Open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
-    - Confirm profile, claim CTA, and checkout surfaces load
-- **60-Second Judge Verify**
-  - Mobile: open `https://pabandi-42c5b.web.app/business/2a3b4c5d-1111-2222-3333-444455556666`
-  - Open `/passport/dashboard` while logged in to review the AI risk score dashboard
-  - Tap `Claim Listing` → confirm WhatsApp claim overlay opens
-  - Open `JUDGE.md` and `COCREATE_DEPLOY.md` from repo root
 
-## 👨‍💻 Quick Start (Local Development)
+## Quick Start (Local Development)
 
 ### 1. Clone the Repository
-\`\`\`bash
+```bash
 git clone https://github.com/jweezy119/Pabandi.git
 cd Pabandi
-\`\`\`
+```
 
 ### 2. Backend Setup
 Ensure you have PostgreSQL running locally or update the `DATABASE_URL` in your `.env` file.
-\`\`\`bash
+
+```bash
 cd server
 npm install
 npx prisma generate
 npx prisma db push
 npm run dev
-\`\`\`
+```
 
 ### 3. Frontend Setup
-In a new terminal window, spin up the Vite development server.
-\`\`\`bash
+In a new terminal window:
+```bash
 cd client
 npm install
 npm run dev
-\`\`\`
+```
+
 The application will be available at `http://localhost:5500` or `http://localhost:3000`.
 
 ---
 
-## 🤝 Contributing & License
-Pabandi was built with rapid iteration in mind. Contributions are welcome via pull requests. 
+## License
+
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for full terms.
 
-Public-good modules: see [docs/PUBLIC_GOOD.md](./docs/PUBLIC_GOOD.md).
+Built with ❤️ for the builders, creators, and service providers of the world.

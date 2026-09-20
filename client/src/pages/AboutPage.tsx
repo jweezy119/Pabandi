@@ -5,7 +5,7 @@ export default function AboutPage() {
   const heroRef = useScrollReveal() as any;
   const storyRef1 = useScrollReveal() as any;
   const storyRef2 = useScrollReveal() as any;
-  const liveSellingRef = useScrollReveal() as any;
+  const featuresRef = useScrollReveal() as any;
   const socialsRef = useScrollReveal() as any;
 
   return (
@@ -81,7 +81,7 @@ export default function AboutPage() {
                 When a freelancer in an emerging market finishes a job and gets ghosted by a client, it's not just an inconvenience—it's groceries they can't buy. When a local barber has three no-shows on a Saturday morning, they can't make rent. The current system punishes the people who are trying the hardest.
               </p>
               <p>
-                Pabandi is my love letter to the builders, the creators, and the service providers of the world. It’s an ecosystem designed to protect you. By using smart escrows, the money is guaranteed. By using our AI Trust Oracle, you finally get rewarded for being a reliable human being. And by integrating zero-fee off-ramps, you get to keep the money you actually earned.
+                Pabandi is my love letter to the builders, the creators, and the service providers of the world. It's an ecosystem designed to protect you. By using smart escrows, the money is guaranteed. By using our AI Trust Oracle, you finally get rewarded for being a reliable human being. And by integrating zero-fee off-ramps, you get to keep the money you actually earned.
               </p>
               <p className="text-xl font-medium text-white italic border-l-4 border-emerald-500 pl-4 py-2 my-8">
                 "We aren't just building an app. We are trying to restore humanity and accountability to the digital economy."
@@ -93,8 +93,8 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* ── LIVE SELLING ASPECT ─────────────────────────────────────────────── */}
-        <div ref={liveSellingRef} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/20 transform transition-transform duration-500 hover:scale-[1.02]">
+        {/* ── THE PABANDI ECOSYSTEM ─────────────────────────────────────────────── */}
+        <div ref={featuresRef} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/20 transform transition-transform duration-500 hover:scale-[1.02]">
           <div className="rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-xl" style={{ background: "rgba(15,23,42,0.9)" }}>
             <div className="absolute top-0 right-0 p-6 opacity-20">
               <svg className="w-24 h-24 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -106,20 +106,34 @@ export default function AboutPage() {
               <span className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/30">
                 🌍
               </span>
-              The Global Evolution: Live Selling & Seamless Rentals
+              The Pabandi Ecosystem: Three OS, One Trust Layer
             </h2>
             <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light relative z-10">
               <p>
-                Pabandi isn't just stopping at reservations. The service economy thrives on engagement, and we are integrating a <strong className="text-white font-medium">Live Selling and Social Commerce</strong> aspect into the core Pabandi experience — scaling beyond services into <strong className="text-white font-medium">physical product sales</strong>.
+                Pabandi has evolved into a comprehensive trust and payments protocol, operating through three specialized OS layers:
               </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
+                  <h3 className="text-xl font-bold text-emerald-400 mb-3">🟢 Sitara</h3>
+                  <p className="text-sm text-slate-300">Booking & discovery for restaurants, hotels, and services. Earn $PAB rewards for every check-in and review.</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                  <h3 className="text-xl font-bold text-amber-400 mb-3">🟡 Saf OS</h3>
+                  <p className="text-sm text-slate-300">Freight & logistics management. Post loads, find carriers, track shipments — all with trust scoring.</p>
+                </div>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20">
+                  <h3 className="text-xl font-bold text-violet-400 mb-3">🟣 Haq OS</h3>
+                  <p className="text-sm text-slate-300">Property management for landlords. Manage tenants, leases, maintenance, and revenue in one dashboard.</p>
+                </div>
+              </div>
+
               <p>
-                Imagine a salon owner demonstrating a new bridal makeup technique on a live stream, directly to an audience of highly reliable customers. Viewers can instantly book an appointment or <strong className="text-emerald-400 font-medium">purchase the featured beauty products</strong> right from the stream, locking in their spot or order with a smart deposit powered by Pabandi's escrow.
+                Underneath all three is the <strong className="text-white font-medium">Pabandi Protocol</strong> — powered by Jev AI for fraud detection, $PAB token for rewards, and Solana escrow for trustless settlements.
               </p>
+              
               <p>
-                But our vision extends even further into <strong className="text-white font-medium">hotel and apartment rentals</strong>. No-shows and last-minute cancellations are just as devastating to property managers and hosts. By applying Pabandi's trust layer to the hospitality sector, guests can secure premium stays using their on-chain reliability score, while hosts are protected by automated smart-contract deposits.
-              </p>
-              <p>
-                This bridges the gap between digital discovery and physical fulfillment. Whether you're booking a venue, buying services, or renting anywhere in the world, Pabandi is building a <strong className="text-white font-medium">truly global product</strong>. By combining Web3 trust mechanics with modern commerce and hospitality, Pabandi is becoming the ultimate operating system for the service and rental economy worldwide.
+                For users in Pakistan, we've integrated <strong className="text-white font-medium">Raast, JazzCash, and EasyPaisa</strong> for seamless PKR payments. No crypto knowledge needed — just scan, pay, and earn.
               </p>
             </div>
           </div>
