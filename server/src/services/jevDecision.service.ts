@@ -7,7 +7,7 @@ const MODEL = 'jev-latest';
 
 interface JevQuestion {
   type: 'choice' | 'score' | 'noul';
-  instructions: string | { question: string; inspect?: string; scope?: string[] };
+  instructions: string;
   criteria?: any;
 }
 
@@ -17,33 +17,11 @@ interface JevRequest {
   questions: Record<string, JevQuestion>;
 }
 
-interface JevAnswer {
-  type: string;
-  choice?: string;
-  score?: number;
-  noul?: number;
-  probabilities?: Record<string, number>;
-  confidence?: number;
-}
-
 interface JevResponse {
   model: string;
-  answers: Record<string, JevAnswer>;
-  usage: { input_tokens: number; output_tokens: number };
+  answers: Record<string, any>;
 }
 
-/**
- * Pabandi Jev Decision Service
- * ============================
- * 
- * Uses TypeSafe Jev for all routine decisions:
- * - Agent trading decisions (buy/sell/hold, size)
- * - Tenant risk scoring (deposit requirements)
- * - Payment routing (USDC vs PAB)
- * - Booking acceptance (fraud detection)
- * - Quality scoring (agent work)
- * - Dispute classification (severity)
- */
 export class JevDecisionService {
   private apiKey: string;
   private baseUrl: string;
@@ -166,12 +144,12 @@ export class JevDecisionService {
     const request: JevRequest = {
       model: this.model,
       state: {
-        trust_score: tenant.reputation ?? 50,
+        trust_score: 50,
         pab_staked: tenant.balancePab ?? 0,
         usdc_balance: tenant.balanceUsdc ?? 0,
-        total_payments: 0,
+        total_payments: tenant.totalStays,
         late_payments: 0,
-        disputes: 0,
+        disputes: tenant.totalDisputes,
       },
       questions: {
         risk_level: {
@@ -284,7 +262,7 @@ export class JevDecisionService {
     };
   }
 
-  // ── AGENT QUALITY SCORING ──────────────────────────────
+  // ── AGENT QUALITY ──────────────────────────────────────
 
   async getAgentQualityScore(agentId: string): Promise<{
     qualityScore: number;
@@ -343,9 +321,9 @@ export class JevDecisionService {
     };
   }
 
-  // ── GENERIC DECISION ───────────────────────────────────
+  // ── GENERIC ────────────────────────────────────────────
 
-  async decide(state: Record<string, any>, questions: Record<string, JevQuestion>): Promise<Record<string, JevAnswer> | null> {
+  async decide(state: Record<string, any>, questions: Record<string, JevQuestion>): Promise<Record<string, any> | null> {
     const request: JevRequest = {
       model: this.model,
       state,
