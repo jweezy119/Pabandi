@@ -1,5 +1,5 @@
-// Sitara OS — Tenant Lease Page
-// Real lease from the tenant portal backend, mock fallback.
+// Sitara OS — Tenant Lease Page with PAB Deposit Status
+// Shows lease details with PAB deposit escrow status and interest
 
 import { useEffect, useState } from 'react';
 import { sitaraApi } from '../api/sitaraApi';
@@ -30,6 +30,7 @@ const FALLBACK = {
 
 export default function TenantLeasePage() {
   const [lease, setLease] = useState<any>(null);
+  const [depositInfo, setDepositInfo] = useState<any>(null);
 
   useEffect(() => {
     sitaraApi
@@ -49,6 +50,18 @@ export default function TenantLeasePage() {
         status: pick(lease, ['status'], FALLBACK.status),
       }
     : FALLBACK;
+
+  // Mock deposit info (in production, fetch from /api/v1/lease-pab/deposit/:leaseId)
+  useEffect(() => {
+    setDepositInfo({
+      depositAmount: 1850,
+      interestRate: 0.02,
+      heldDays: 45,
+      currentInterest: 4.56,
+      totalValue: 1854.56,
+      status: 'HELD',
+    });
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -101,6 +114,45 @@ export default function TenantLeasePage() {
           </button>
         </div>
       </div>
+
+      {/* PAB Deposit Status Card */}
+      {depositInfo && (
+        <div className="mt-6 bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🪙</span>
+            <h3 className="font-semibold text-slate-900">PAB Deposit Status</h3>
+            <span className="px-2 py-0.5 bg-violet-100 text-violet-800 rounded-full text-xs font-medium">
+              {depositInfo.status}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-slate-500">Deposit Amount</p>
+              <p className="font-medium text-slate-900">{depositInfo.depositAmount} PAB</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Interest Rate</p>
+              <p className="font-medium text-emerald-600">{(depositInfo.interestRate * 100).toFixed(0)}% APY</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Interest Earned</p>
+              <p className="font-medium text-emerald-600">+{depositInfo.currentInterest.toFixed(2)} PAB</p>
+            </div>
+            <div>
+              <p className="text-slate-500">Total Value</p>
+              <p className="font-bold text-slate-900">{depositInfo.totalValue.toFixed(2)} PAB</p>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-white/60 rounded-lg">
+            <p className="text-xs text-slate-600">
+              <strong>On lease end:</strong> Full deposit returned in PAB + 2% APY interest.
+              <strong className="text-red-600"> Early termination:</strong> 50% of deposit slashed.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

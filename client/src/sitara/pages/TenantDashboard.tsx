@@ -1,5 +1,5 @@
-// Sitara OS — Tenant Dashboard
-// Real lease data from the tenant portal backend, mock fallback.
+// Sitara OS — Tenant Dashboard with PAB Metrics
+// Shows PAB balance, staking, and payment options
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -24,6 +24,8 @@ export default function TenantDashboard() {
   const { user } = useSitaraStore();
   const [lease, setLease] = useState<any>(null);
   const [appCount, setAppCount] = useState(0);
+  const [pabBalance] = useState(1250);
+  const [pabStaked] = useState(527.25);
 
   useEffect(() => {
     sitaraApi
@@ -44,7 +46,7 @@ export default function TenantDashboard() {
       </div>
 
       {/* Star Power Card */}
-      <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-6 text-white mb-8">
+      <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-6 text-white mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">Your Star Power</h3>
           <span className="text-sm opacity-80">★ {user?.starPower || 0}</span>
@@ -53,12 +55,37 @@ export default function TenantDashboard() {
         <p className="text-sm opacity-80">Verified check-ins: {user?.verifiedCheckIns || 0}</p>
       </div>
 
+      {/* PAB Metrics Card */}
+      <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-6 text-white mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold">PAB Token Overview</h3>
+          <span className="text-sm opacity-80">🪙 PAB</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm opacity-80">Available Balance</p>
+            <p className="text-2xl font-bold">{pabBalance.toLocaleString()} PAB</p>
+          </div>
+          <div>
+            <p className="text-sm opacity-80">Staked (Trust Boost)</p>
+            <p className="text-2xl font-bold">{pabStaked.toLocaleString()} PAB</p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/20">
+          <div className="flex items-center justify-between text-sm">
+            <span className="opacity-80">Trust Score Boost</span>
+            <span className="font-medium">+{Math.round(pabStaked / 10)} points</span>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-8">
         <Link to="/sitara/tenant/payments" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">💳</span>
           <h3 className="font-semibold text-slate-900">Pay Rent</h3>
           <p className="text-sm text-slate-600">{lease ? `${pick(lease, ['rentAmount', 'monthlyRent'], '—')} due monthly` : 'Next payment due in 12 days'}</p>
+          <p className="text-xs text-violet-600 mt-1 font-medium">Pay with PAB for 5% discount</p>
         </Link>
         <Link to="/sitara/tenant/maintenance" className="bg-white border border-slate-200 rounded-lg p-6 text-left hover:shadow-md transition-shadow">
           <span className="text-2xl mb-2 block">🔧</span>

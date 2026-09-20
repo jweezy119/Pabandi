@@ -1696,6 +1696,7 @@ model PropertyManagerProfile {
   insights AIInsight[]
   nextBestActions NextBestAction[]
   anomalyAlerts AnomalyAlert[]
+  crmPabRewards CrmPabReward[]
 
   @@index([userId])
 }
@@ -1871,6 +1872,7 @@ model RentPayment {
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  pabPayment PabPayment?
 
   @@index([propertyId])
   @@index([tenantEmail])
@@ -2016,6 +2018,7 @@ model PropertyLease {
   documents TenantDocument[]
   signingRequests SigningRequest[]
   rentSchedules RentSchedule[]
+  leaseDeposit  LeaseDeposit?
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -5703,6 +5706,7 @@ model AgentProfile {
   sentTransactions     AgentMarketTransaction[] @relation("sentTransactions")
   receivedTransactions AgentMarketTransaction[] @relation("receivedTransactions")
   wallet                AgentWallet?
+  agentPabTaskRewards        AgentPabTaskReward[]
   @@index([walletAddress])
   @@index([slug])
 }
@@ -5886,3 +5890,136 @@ model AgentReward {
   @@index([userId])
   @@index([status])
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRM PAB INTEGRATION — PAB token wired into CRM, lease deposits, agent rewards
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// CRM PAB Reward — bulk PAB rewards distribution to tenants
+model CrmPabReward {
+  id              String   @id @default(cuid())
+  managerId       String
+  manager         PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  totalAmount     Float
+  recipientCount  Int
+  status          String   @default("DRAFT") // DRAFT | DISTRIBUTED | PARTIAL | FAILED
+  txHash          String?
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  recipients      CrmPabRewardRecipient[]
+
+  @@index([managerId])
+  @@index([status])
+}
+
+model CrmPabRewardRecipient {
+  id              String   @id @default(cuid())
+  rewardId        String
+  reward          CrmPabReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  contactId       String?
+  email           String
+  amount          Float
+  status          String   @default("PENDING") // PENDING | SENT | FAILED
+  txHash          String?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([rewardId])
+  @@index([status])
+}
+
+// Lease PAB Deposit — PAB held in escrow for lease
+model LeaseDeposit {
+  id              String   @id @default(cuid())
+  leaseId         String   @unique
+  lease           PropertyLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenantEmail     String
+  depositAmount   Float
+  interestRate    Float    @default(0.02) // 2% APY
+  interestEarned  Float    @default(0)
+  status          String   @default("HELD") // HELD | RETURNED | SLASHED | PARTIAL_RETURN
+  heldAt          DateTime @default(now())
+  releasedAt      DateTime?
+  releaseType     String?  // FULL | PARTIAL | SLASHED
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([leaseId])
+  @@index([tenantEmail])
+  @@index([status])
+}
+
+// PAB Payment Record — tracks PAB vs USDC payments for rent
+model PabPayment {
+  id              String   @id @default(cuid())
+  rentPaymentId   String?  @unique
+  rentPayment     RentPayment? @relation(fields: [rentPaymentId], references: [id], onDelete: SetNull)
+  tenantEmail     String
+  propertyId      String
+  unitId          String?
+  amountUsdc      Float
+  amountPab       Float
+  tokenUsed       String   // USDC | PAB
+  discountApplied Float    @default(0) // 5% discount if PAB
+  stakedAmount    Float    @default(0) // 10% auto-staked for trust
+  txHash          String?
+  status          String   @default("PENDING") // PENDING | CONFIRMED | FAILED
+  confirmedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantEmail])
+  @@index([propertyId])
+  @@index([tokenUsed])
+  @@index([status])
+}
+
+// Agent PAB Task Reward — PAB rewards for property management tasks
+model AgentPabTaskReward {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           AgentProfile @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  taskType        String   // TENANT_SCREENING | LEASE_SIGNING | INSPECTION_COMPLETION | MAINTENANCE_COORDINATION
+  taskDescription String
+  propertyId      String?
+  unitId          String?
+  tenantEmail     String?
+  rewardAmount    Float
+  autoConvert     Boolean  @default(false) // auto-convert to USDC
+  usdcEquivalent  Float?
+  status          String   @default("PENDING") // PENDING | DISTRIBUTED | CONVERTED | FAILED
+  txHash          String?
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([taskType])
+  @@index([status])
+}
+
+// Payment Flow Log — tracks all payment flows for verification
+model PaymentFlowLog {
+  id              String   @id @default(cuid())
+  flowType        String   // BOOKING_PAB | LEASE_DEPOSIT | RENT_PAYMENT | LEASE_END | AGENT_REWARD
+  referenceId     String
+  referenceType   String
+  amount          Float
+  token           String   // USDC | PAB
+  fromAddress     String?
+  toAddress       String?
+  txHash          String?
+  status          String   @default("INITIATED") // INITIATED | PROCESSING | COMPLETED | FAILED
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([flowType])
+  @@index([referenceId])
+  @@index([status])
+}
+
