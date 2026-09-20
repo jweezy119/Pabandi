@@ -1922,6 +1922,8 @@ model PropertyTenant {
   depositHeld     Float    @default(0)
   totalStays      Int      @default(0)
   totalDisputes   Int      @default(0)
+  balanceUsdc     Float    @default(0)
+  balancePab      Float    @default(0)
   lastStayAt      DateTime?
   notes           String?
   createdAt       DateTime @default(now())
