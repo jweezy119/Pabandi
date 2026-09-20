@@ -48,6 +48,10 @@ model User {
   stripeCustomerId        String?
   bountyPaid              Boolean                 @default(false)
   nonce                   String?
+  pabBalance              Float                   @default(0)
+  pabStaked               Float                   @default(0)
+  pabEarned               Float                   @default(0)
+  usdcBalance             Float                   @default(0)
   referredById            String?
   business                Business?
   investorMatches         BusinessInvestorMatch[]
