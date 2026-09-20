@@ -5877,6 +5877,25 @@ model BookingPabRecord {
   @@index([businessId])
 }
 
+model PakistanPayment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        String   // RAAST, JAZZCASH, EASYPAISA
+  description   String?
+  status        String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  screenshot    String?
+  verifiedBy    String?
+  verifiedAt    DateTime?
+  rejectReason  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
 model AgentReward {
   id              String   @id @default(cuid())
   agentId         String

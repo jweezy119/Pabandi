@@ -326,6 +326,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/crm-pab`, './routes/crmPab.routes'],
   [`/api/${v}/lease-pab`, './routes/leasePab.routes'],
   [`/api/${v}/security`, './routes.security.routes'],
+  [`/api/${v}/pakistan`, './routes/pakistanPayment.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {
