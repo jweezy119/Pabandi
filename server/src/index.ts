@@ -366,6 +366,11 @@ app.post(`/api/${v}/mcp`, async (req, res) => {
 
 logger.info(`✅ ${routeMap.length} lazy API routes registered`);
 
+// Initialize TrustCore event handlers
+import { initializeTrustCore } from './services/trust-core.service';
+initializeTrustCore();
+logger.info('✅ TrustCore event pipeline initialized');
+
 // Auto-start settlement service (runs every hour to settle agent credits on-chain)
 import { settlementService } from './services/settlement.service';
 settlementService.startPeriodicSettlement();

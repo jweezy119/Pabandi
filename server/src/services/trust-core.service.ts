@@ -1,119 +1,173 @@
+import { eventBus, TrustEvent } from './event-bus.service';
 import { prisma } from '../utils/database';
-import { eventBus } from './event-bus.service';
+import { logger } from '../utils/logger';
 
-export class TrustCoreService {
-  // ── PASSPORT ─────────────────────────────────────────
+// ─── Reliability Score Calculator ────────────────────────────────────────────
 
-  async getPassport(userId: string) {
-    let passport = await prisma.walletPassport.findUnique({
-      where: { holderId: userId },
-    });
+export function calculateClientScore(jobs: any[]): number {
+  let score = 50;
+  const completed = jobs.filter(j => j.status === 'COMPLETED');
+  const cancelled = jobs.filter(j => j.status === 'CANCELLED');
+  const total = jobs.length;
 
-    if (!passport) {
-      passport = await prisma.walletPassport.create({
-        data: {
-          holderId: userId,
-          score: 50,
-          level: 'bronze',
-          verified: false,
-        },
-      });
-    }
+  if (total === 0) return score;
 
-    return passport;
-  }
+  // Completion rate: +30 max
+  score += (completed.length / total) * 30;
 
-  async calculateScore(userId: string): Promise<number> {
-    const passport = await this.getPassport(userId);
-    return passport.score;
-  }
+  // Cancel penalty: -15 max
+  score -= (cancelled.length / total) * 15;
 
-  async updateScore(userId: string, delta: number, reason: string) {
-    const passport = await this.getPassport(userId);
-    const newScore = Math.max(0, Math.min(100, passport.score + delta));
-    const level = this.getLevel(newScore);
+  // Repeat bonus: +5 for 3+ jobs, +10 for 10+
+  if (total >= 10) score += 10;
+  else if (total >= 3) score += 5;
 
-    const updated = await prisma.walletPassport.update({
-      where: { holderId: userId },
-      data: {
-        score: newScore,
-        level,
-      },
-    });
+  // Default penalty: -20 per refunded escrow
+  const defaults = jobs.filter(j => j.escrowStatus === 'REFUNDED' || j.escrowStatus === 'DISPUTED').length;
+  score -= defaults * 20;
 
-    await eventBus.emitEvent('trust.score.changed', { userId, newScore, delta, reason });
-    return updated;
-  }
-
-  // ── RISK ASSESSMENT ─────────────────────────────────
-
-  async checkRisk(userId: string): Promise<'low' | 'medium' | 'high'> {
-    const score = await this.calculateScore(userId);
-    if (score >= 70) return 'low';
-    if (score >= 40) return 'medium';
-    return 'high';
-  }
-
-  // ── REWARDS ─────────────────────────────────────────
-
-  async awardPAB(userId: string, amount: number, reason: string) {
-    console.log(`[TrustCore] Awarding ${amount} PAB to ${userId} for: ${reason}`);
-    return { success: true, amount, reason };
-  }
-
-  // ── ESCROW ──────────────────────────────────────────
-
-  async getEscrowAvailable(userId: string): Promise<boolean> {
-    const score = await this.calculateScore(userId);
-    return score >= 30;
-  }
-
-  async getDiscountTier(userId: string): Promise<number> {
-    const score = await this.calculateScore(userId);
-    if (score >= 90) return 0.15;
-    if (score >= 70) return 0.10;
-    if (score >= 50) return 0.05;
-    return 0;
-  }
-
-  // ── CROSS-MODULE LINKS ──────────────────────────────
-
-  async linkToPipeline(passportId: string) {
-    const passport = await prisma.walletPassport.findUnique({
-      where: { id: passportId },
-    });
-    if (!passport) return null;
-
-    return {
-      passportId: passport.id,
-      score: passport.score,
-      level: passport.level,
-      verified: passport.verified,
-    };
-  }
-
-  async linkToLedger(passportId: string) {
-    const passport = await prisma.walletPassport.findUnique({
-      where: { id: passportId },
-    });
-    if (!passport) return null;
-
-    return {
-      passportId: passport.id,
-      score: passport.score,
-      suggestedTerms: passport.score >= 80 ? 'net-30' : passport.score >= 50 ? 'net-15' : 'prepayment',
-      creditLimit: passport.score * 100,
-    };
-  }
-
-  // ── HELPERS ─────────────────────────────────────────
-
-  private getLevel(score: number): string {
-    if (score >= 90) return 'platinum';
-    if (score >= 70) return 'gold';
-    if (score >= 50) return 'silver';
-    return 'bronze';
-  }
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-export const trustCore = new TrustCoreService();
+// ─── Client Lifecycle Stage ─────────────────────────────────────────────────
+
+export function getClientStage(client: any, jobs: any[]): string {
+  const completed = jobs.filter((j: any) => j.status === 'COMPLETED');
+  const hasDefaults = jobs.some((j: any) => j.escrowStatus === 'REFUNDED' || j.escrowStatus === 'DISPUTED');
+
+  if (jobs.length === 0) return 'lead';
+  if (client.phone || client.phoneVerified) return 'verified';
+  if (completed.length >= 10 && (client.reliabilityScore || 50) > 80) return 'vip';
+  if (hasDefaults || (client.reliabilityScore || 50) < 30) return 'at_risk';
+  if (completed.length >= 2) return 'repeat';
+  if (jobs.length >= 1) return 'booked';
+  return 'lead';
+}
+
+// ─── Event Handlers ─────────────────────────────────────────────────────────
+
+export function initializeTrustCore(): void {
+  // score.changed → update CrmClient.reliabilityScore
+  eventBus.subscribe('score.changed', async (event: TrustEvent) => {
+    const clientId = event.clientId || event.data?.clientId;
+    if (!clientId) return;
+
+    try {
+      const jobs = await prisma.crmJob.findMany({ where: { clientId } });
+      const score = calculateClientScore(jobs);
+
+      await prisma.crmClient.update({
+        where: { id: clientId },
+        data: { reliabilityScore: score },
+      });
+
+      logger.info(`[TrustCore] Updated client ${clientId} score → ${score}`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Score update failed for ${clientId}: ${err.message}`);
+    }
+  });
+
+  // escrow.funded → update CrmJob.escrowStatus
+  eventBus.subscribe('escrow.funded', async (event: TrustEvent) => {
+    const jobId = event.jobId || event.data?.jobId;
+    if (!jobId) return;
+
+    try {
+      await prisma.crmJob.update({
+        where: { id: jobId },
+        data: { escrowStatus: 'HELD' },
+      });
+
+      logger.info(`[TrustCore] Job ${jobId} escrow funded → HELD`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Escrow fund update failed for ${jobId}: ${err.message}`);
+    }
+  });
+
+  // escrow.released → update CrmJob.escrowStatus + trigger score recalculation
+  eventBus.subscribe('escrow.released', async (event: TrustEvent) => {
+    const jobId = event.jobId || event.data?.jobId;
+    const clientId = event.clientId || event.data?.clientId;
+    if (!jobId) return;
+
+    try {
+      await prisma.crmJob.update({
+        where: { id: jobId },
+        data: { escrowStatus: 'RELEASED' },
+      });
+
+      // Recalculate score on release (positive signal)
+      if (clientId) {
+        eventBus.publish({
+          type: 'score.changed',
+          clientId,
+          data: { trigger: 'escrow.released', jobId },
+          timestamp: new Date(),
+        });
+      }
+
+      logger.info(`[TrustCore] Job ${jobId} escrow released → RELEASED`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Escrow release update failed for ${jobId}: ${err.message}`);
+    }
+  });
+
+  // escrow.disputed → flag client + update job status
+  eventBus.subscribe('escrow.disputed', async (event: TrustEvent) => {
+    const jobId = event.jobId || event.data?.jobId;
+    const clientId = event.clientId || event.data?.clientId;
+    if (!jobId) return;
+
+    try {
+      await prisma.crmJob.update({
+        where: { id: jobId },
+        data: { escrowStatus: 'DISPUTED' },
+      });
+
+      // Recalculate score (dispute is negative)
+      if (clientId) {
+        eventBus.publish({
+          type: 'score.changed',
+          clientId,
+          data: { trigger: 'escrow.disputed', jobId },
+          timestamp: new Date(),
+        });
+      }
+
+      logger.info(`[TrustCore] Job ${jobId} escrow disputed`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Escrow dispute update failed for ${jobId}: ${err.message}`);
+    }
+  });
+
+  // checkin.verified → mark job complete + update provider stats
+  eventBus.subscribe('checkin.verified', async (event: TrustEvent) => {
+    const jobId = event.jobId || event.data?.jobId;
+    if (!jobId) return;
+
+    try {
+      await prisma.crmJob.update({
+        where: { id: jobId },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
+
+      logger.info(`[TrustCore] Job ${jobId} check-in verified → COMPLETED`);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Checkin verify failed for ${jobId}: ${err.message}`);
+    }
+  });
+
+  // passport.linked → enrich client with cross-module data
+  eventBus.subscribe('passport.linked', async (event: TrustEvent) => {
+    const clientId = event.clientId || event.data?.clientId;
+    if (!clientId) return;
+
+    try {
+      logger.info(`[TrustCore] Passport linked for client ${clientId}`, event.data?.passportData);
+    } catch (err: any) {
+      logger.error(`[TrustCore] Passport link failed for ${clientId}: ${err.message}`);
+    }
+  });
+
+  logger.info('[TrustCore] All event handlers initialized');
+}

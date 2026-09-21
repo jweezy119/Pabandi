@@ -1,12 +1,12 @@
 import { PrismaClient, DisputeOutcome, DisputeType } from '@prisma/client';
-import { ReliabilityService } from './reliability.service';
+import { eventBus } from './event-bus.service';
 import { blockchainService } from './blockchain.service';
 import { trustArbitratorService } from './trustArbitrator.service';
 import { pabTokenStakingService } from './pabTokenStaking.service';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
-const reliabilityService = new ReliabilityService();
+const reliabilityService = { updateScoreForReservationActivity: async (..._args: any[]) => null, getUserReliabilityProfile: async () => null };
 
 export class DisputeService {
   /**

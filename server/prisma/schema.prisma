@@ -6514,6 +6514,7 @@ model CrmServiceBusiness {
   jobs       CrmJob[]
   payrolls   CrmPayroll[]
   expenses   CrmExpense[]
+  alerts     CrmAlert[]
 
   @@index([businessId])
   @@index([ownerId])
@@ -6533,6 +6534,7 @@ model CrmEmployee {
   isActive          Boolean            @default(true)
   rating            Float              @default(5.0)
   jobsCompleted     Int                @default(0)
+  lastBookingAt     DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -6555,6 +6557,9 @@ model CrmClient {
   totalJobs         Int                @default(0)
   totalSpent        Float              @default(0)
   lastJobAt         DateTime?
+  reliabilityScore  Float?
+  stage             String?
+  phoneVerified     Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -6579,6 +6584,7 @@ model CrmJob {
   notes             String?
   price             Float
   status            String             @default("SCHEDULED")
+  escrowStatus      String?            // HELD | RELEASED | REFUNDED | DISPUTED
   completedAt       DateTime?
   rating            Int?
   feedback          String?
@@ -6733,4 +6739,27 @@ model CleaningExpense {
 
   @@index([businessId])
   @@map("cleaning_expenses")
+}
+
+// ── CRM Alerts ───────────────────────────────────────────────────────────────────
+// Trust-aware revenue engine alerts: triggered by client reliability scores,
+// escrow hold durations, VIP status, and cross-module trust signals.
+
+model CrmAlert {
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  type              String             // info | warning | critical | opportunity
+  title             String
+  message           String
+  entityType        String             // client | job | payment | provider
+  entityId          String
+  dismissed         Boolean            @default(false)
+  dismissedAt       DateTime?
+  createdAt         DateTime           @default(now())
+
+  @@index([serviceBusinessId, dismissed])
+  @@index([serviceBusinessId, type])
+  @@index([entityId])
+  @@map("crm_alerts")
 }

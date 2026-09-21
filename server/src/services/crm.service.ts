@@ -1,5 +1,7 @@
 import { prisma } from '../utils/database';
 import { CustomError } from '../middleware/errorHandler';
+import { eventBus } from './event-bus.service';
+import { getClientStage } from './reliability.service';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -106,10 +108,25 @@ export async function addClient(
 }
 
 export async function getClients(serviceBusinessId: string) {
-  return prisma.crmClient.findMany({
+  const clients = await prisma.crmClient.findMany({
     where: { serviceBusinessId },
     orderBy: { createdAt: 'desc' },
   });
+
+  // Attach lifecycle stage for each client
+  const clientsWithStage = await Promise.all(
+    clients.map(async (client) => {
+      const jobs = await prisma.crmJob.findMany({
+        where: { clientId: client.id },
+      });
+      return {
+        ...client,
+        stage: getClientStage(client, jobs),
+      };
+    })
+  );
+
+  return clientsWithStage;
 }
 
 // ─── Job Management ──────────────────────────────────────────────────────────
@@ -182,11 +199,24 @@ export async function updateJobStatus(jobId: string, status: string) {
     data.completedAt = new Date();
   }
 
-  return prisma.crmJob.update({
+  const job = await prisma.crmJob.update({
     where: { id: jobId },
     data,
     include: { client: true },
   });
+
+  // Emit events
+  if (status === 'COMPLETED') {
+    eventBus.publish({
+      type: 'checkin.verified',
+      jobId,
+      clientId: job.clientId || undefined,
+      data: { job, completedAt: job.completedAt },
+      timestamp: new Date(),
+    });
+  }
+
+  return job;
 }
 
 export async function getJobs(

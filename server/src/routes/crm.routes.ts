@@ -16,6 +16,11 @@ import {
   getExpensesHandler,
   getDashboardStatsHandler,
 } from '../controllers/crm.controller';
+import {
+  getAlertsHandler,
+  dismissAlertHandler,
+  getClientStageHandler,
+} from '../controllers/revenue.controller';
 
 const router = Router();
 
@@ -77,5 +82,16 @@ router.get('/expenses', getExpensesHandler);
 
 // GET /api/v1/crm/dashboard — Get dashboard statistics
 router.get('/dashboard', getDashboardStatsHandler);
+
+// ── Trust-Aware Revenue Engine ──────────────────────────────────────────────
+
+// GET /api/v1/crm/alerts — Get active trust & revenue alerts
+router.get('/alerts', getAlertsHandler);
+
+// POST /api/v1/crm/alerts/:id/dismiss — Dismiss an alert
+router.post('/alerts/:id/dismiss', dismissAlertHandler);
+
+// GET /api/v1/crm/clients/:id/stage — Get client lifecycle stage
+router.get('/clients/:id/stage', getClientStageHandler);
 
 export default router;

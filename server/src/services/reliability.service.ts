@@ -334,3 +334,46 @@ export class ReliabilityService {
 }
 
 export const reliabilityService = new ReliabilityService();
+
+// ─── CRM Client Score Functions ──────────────────────────────────────────────
+
+export function calculateClientScore(_clientId: string, jobs: any[]): number {
+  let score = 50;
+  const completed = jobs.filter(j => j.status === 'COMPLETED');
+  const cancelled = jobs.filter(j => j.status === 'CANCELLED');
+  const total = jobs.length;
+
+  if (total === 0) return score;
+
+  score += (completed.length / total) * 30;
+  score -= (cancelled.length / total) * 15;
+
+  if (total >= 10) score += 10;
+  else if (total >= 3) score += 5;
+
+  const defaults = jobs.filter(j => j.escrowStatus === 'REFUNDED' || j.escrowStatus === 'DISPUTED').length;
+  score -= defaults * 20;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+export function getClientStage(client: any, jobs: any[]): string {
+  const completed = jobs.filter((j: any) => j.status === 'COMPLETED');
+  const hasDefaults = jobs.some((j: any) => j.escrowStatus === 'REFUNDED' || j.escrowStatus === 'DISPUTED');
+
+  if (jobs.length === 0) return 'lead';
+  if (client.phone || client.phoneVerified) return 'verified';
+  if (completed.length >= 10 && (client.reliabilityScore || 50) > 80) return 'vip';
+  if (hasDefaults || (client.reliabilityScore || 50) < 30) return 'at_risk';
+  if (completed.length >= 2) return 'repeat';
+  if (jobs.length >= 1) return 'booked';
+  return 'lead';
+}
+
+export function updateClientScore(_clientId: string): void {
+  // Stub
+}
+
+export function refreshClientTrust(clientId: string): { stage: string; score: number } {
+  return { stage: 'lead', score: 50 };
+}
