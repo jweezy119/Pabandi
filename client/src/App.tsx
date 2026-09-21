@@ -3,6 +3,8 @@ import SitaraApp from './sitara/SitaraApp';
 import { useAuthStore } from './store/authStore';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
+import LandingPage from './pages/LandingPage';
+import './pages/LandingPage.css';
 import AuthPage from './pages/AuthPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -144,7 +146,6 @@ import DarazScannerPage from './pages/DarazScannerPage';
 import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
-import { BusinessCrmPage } from './pages/BusinessCrmPage';
 import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
@@ -286,7 +287,8 @@ function App() {
 
           {/* ALL other routes inside Layout */}
           <Route path="/" element={<Layout />}>
-            <Route index element={<HomePage />} />
+            <Route index element={<LandingPage />} />
+            <Route path="home-old" element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="sharia-transparency" element={<ShariaTransparencyPage />} />

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jweezy119/Pabandi",
+  "title": "PabandiOS",
+  "description": "The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow. x402-payable MCP tools for agent-driven transactions with AP2 mandate support.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/jweezy119/Pabandi",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://pabandi-mcp.pabandi-mcp-worker.workers.dev"
+    }
+  ],
+  "tools": [
+    {
+      "name": "pabandi_verify_passport",
+      "description": "Verify a Pabandi PTP attestation. Input a base64-encoded attestation and optionally require a capability. Returns valid, granted capabilities, risk band, expiry."
+    },
+    {
+      "name": "pabandi_discover",
+      "description": "Return the Pabandi Trust Protocol discovery document."
+    },
+    {
+      "name": "pabandi_get_ledger",
+      "description": "Public audit lookup of a passport issuance charge by idempotency key."
+    },
+    {
+      "name": "pabandi_issue_passport",
+      "description": "Issue a scoped Agent Capability Passport. Metered at 1.0 USDC per issue via x402."
+    },
+    {
+      "name": "pabandi_verify_property",
+      "description": "Verify property documents and landlord/tenant trust scores against PLRA and SBCA databases."
+    },
+    {
+      "name": "pabandi_initiate_escrow",
+      "description": "Initiate a Solana escrow for conditional payment. Requires x402 payment of 0.5 USDC."
+    },
+    {
+      "name": "pabandi_create_booking",
+      "description": "Create a booking with AI trust scoring and escrow protection. Requires AP2 mandates (intent, cart, payment) and x402 payment of 0.25 USDC."
+    }
+  ],
+  "payment": {
+    "scheme": "x402",
+    "network": "solana",
+    "currency": "USDC"
+  },
+  "authorization": {
+    "scheme": "ap2",
+    "mandates": ["intent", "cart", "payment"]
+  }
+}
