@@ -285,7 +285,7 @@ server.tool(
 
 server.tool(
   'verify_trust',
-  'Verify a user's or business's reliability score',
+  "Verify a user's or business's reliability score",
   {
     passportId: z.string().describe('Trust Passport ID'),
   },
