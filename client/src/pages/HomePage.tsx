@@ -5,7 +5,6 @@ export default function HomePage() {
   const [stats, setStats] = useState({ users: 0, transactions: 0, volume: 0 });
 
   useEffect(() => {
-    // In production: fetch from API
     setStats({ users: 1250, transactions: 5400, volume: 2800000 });
   }, []);
 
@@ -23,36 +22,27 @@ export default function HomePage() {
             Pabandi
           </h1>
           <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            The Trust Layer for Pakistan's Digital Economy
+            The Global Trust Layer for the Digital Economy
           </p>
           <p className="text-lg text-slate-400 mb-12 max-w-xl mx-auto">
             Every transaction protected. Every user verified. Every business empowered.
-            Powered by $PAB — the trust token.
+            Available in 50+ countries. Powered by $PAB.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 mb-12">
-            <Link
-              to="/discovery"
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:-translate-y-1 transition-all"
-            >
+            <Link to="/discovery" className="px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-bold text-lg shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:-translate-y-1 transition-all">
               🍽️ Book a Table
             </Link>
-            <Link
-              to="/saf"
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg shadow-lg shadow-amber-500/20 hover:shadow-xl hover:-translate-y-1 transition-all"
-            >
+            <Link to="/saf" className="px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg shadow-lg shadow-amber-500/20 hover:shadow-xl hover:-translate-y-1 transition-all">
               🚛 Post a Load
             </Link>
-            <Link
-              to="/haq"
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold text-lg shadow-lg shadow-violet-500/20 hover:shadow-xl hover:-translate-y-1 transition-all"
-            >
+            <Link to="/haq" className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold text-lg shadow-lg shadow-violet-500/20 hover:shadow-xl hover:-translate-y-1 transition-all">
               🏠 Manage Property
             </Link>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
             <div>
               <p className="text-3xl font-bold text-emerald-400">{stats.users.toLocaleString()}+</p>
               <p className="text-sm text-slate-400">Users</p>
@@ -62,8 +52,12 @@ export default function HomePage() {
               <p className="text-sm text-slate-400">Transactions</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-purple-400">Rs. {(stats.volume / 1000000).toFixed(1)}M+</p>
-              <p className="text-sm text-slate-400">Volume</p>
+              <p className="text-3xl font-bold text-purple-400">${(stats.volume / 1000000).toFixed(1)}M+</p>
+              <p className="text-sm text-slate-400">Volume (USD)</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-amber-400">50+</p>
+              <p className="text-sm text-slate-400">Countries</p>
             </div>
           </div>
         </div>
@@ -157,6 +151,57 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Global Markets */}
+      <section className="py-16 px-4 border-t border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">Available Worldwide</h2>
+          <p className="text-slate-400 text-center mb-12 max-w-2xl mx-auto">Local payments, local compliance, global trust.</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇺🇸</p>
+              <p className="font-medium">United States</p>
+              <p className="text-xs text-slate-400">USD • Stripe</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇵🇰</p>
+              <p className="font-medium">Pakistan</p>
+              <p className="text-xs text-slate-400">PKR • Raast • JazzCash</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇮🇳</p>
+              <p className="font-medium">India</p>
+              <p className="text-xs text-slate-400">INR • UPI</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇬🇧</p>
+              <p className="font-medium">United Kingdom</p>
+              <p className="text-xs text-slate-400">GBP • Open Banking</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇦🇪</p>
+              <p className="font-medium">UAE</p>
+              <p className="text-xs text-slate-400">AED • Local Rails</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇧🇩</p>
+              <p className="font-medium">Bangladesh</p>
+              <p className="text-xs text-slate-400">BDT • bKash</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🇳🇬</p>
+              <p className="font-medium">Nigeria</p>
+              <p className="text-xs text-slate-400">NGN • Local Rails</p>
+            </div>
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <p className="text-3xl mb-2">🌍</p>
+              <p className="font-medium">50+ More</p>
+              <p className="text-xs text-slate-400">Local payments</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* $PAB Token */}
       <section className="py-16 px-4 border-t border-white/5">
         <div className="max-w-4xl mx-auto text-center">
@@ -227,12 +272,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className="pt-8 border-t border-white/5 text-center text-sm text-slate-500">
-            <p>© 2026 Pabandi. All rights reserved. The trust layer for Pakistan's digital economy.</p>
+            <p>© 2026 Pabandi. All rights reserved. The global trust layer for the digital economy.</p>
             <p className="mt-2">
-              <a href="https://wa.me/13124896967" className="hover:text-white transition">WhatsApp</a> • 
-              <a href="https://x.com/pabandiglobal" className="hover:text-white transition">X/Twitter</a> • 
-              <a href="https://instagram.com/pabandiglobal" className="hover:text-white transition">Instagram</a> • 
-              <a href="https://linkedin.com/company/pabandi" className="hover:text-white transition">LinkedIn</a>
+              <a href="https://wa.me/13124896967" className="hover:text-white transition mx-2">WhatsApp</a>
+              <a href="https://x.com/pabandiglobal" className="hover:text-white transition mx-2">X/Twitter</a>
+              <a href="https://instagram.com/pabandiglobal" className="hover:text-white transition mx-2">Instagram</a>
+              <a href="https://linkedin.com/company/pabandi" className="hover:text-white transition mx-2">LinkedIn</a>
             </p>
           </div>
         </div>

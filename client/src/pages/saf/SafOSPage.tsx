@@ -25,19 +25,18 @@ export default function SafOSPage() {
   };
 
   return (
-    <DashboardLayout osName="SafOS" osIcon="S" osColor="amber" navItems={navItems}>
+    <DashboardLayout osName="Saf OS" osIcon="S" osColor="amber" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-            <p className="text-slate-400">Welcome to Saf OS — your freight management platform</p>
+            <p className="text-slate-400">Freight & logistics management platform</p>
           </div>
           <Link to="/saf/post-load" className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium transition">
             + Post Load
           </Link>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-slate-400">Active Loads</p>
@@ -49,7 +48,7 @@ export default function SafOSPage() {
           </div>
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-slate-400">Total Spent</p>
-            <p className="text-2xl font-bold text-white">Rs. 0</p>
+            <p className="text-2xl font-bold text-white">$0</p>
           </div>
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-slate-400">Trust Score</p>
@@ -57,7 +56,6 @@ export default function SafOSPage() {
           </div>
         </div>
 
-        {/* Recent Loads */}
         <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-bold text-white">Recent Loads</h2>
@@ -87,10 +85,9 @@ export default function SafOSPage() {
           )}
         </div>
 
-        {/* Footer */}
         <footer className="pt-8 border-t border-white/5 text-center">
           <p className="text-sm text-slate-500">
-            Powered by <Link to="/" className="text-amber-400 hover:text-amber-300 transition">Pabandi</Link> — The Trust Layer
+            Powered by <Link to="/" className="text-amber-400 hover:text-amber-300 transition">Pabandi</Link> — The Global Trust Layer
           </p>
           <p className="text-xs text-slate-600 mt-2">
             © 2026 Pabandi. All rights reserved.

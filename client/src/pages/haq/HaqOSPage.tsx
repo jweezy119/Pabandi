@@ -40,14 +40,13 @@ export default function HaqOSPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-            <p className="text-slate-400">Welcome to Haq OS — your property management platform</p>
+            <p className="text-slate-400">Property management for landlords and builders</p>
           </div>
           <Link to="/haq/tenants" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium transition">
             + Add Tenant
           </Link>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-slate-400">Total Properties</p>
@@ -63,11 +62,10 @@ export default function HaqOSPage() {
           </div>
           <div className="p-4 rounded-xl bg-white/5 border border-white/10">
             <p className="text-sm text-slate-400">Revenue</p>
-            <p className="text-2xl font-bold text-white">Rs. {summary?.totalRevenue?.toLocaleString() || 0}</p>
+            <p className="text-2xl font-bold text-white">${summary?.totalRevenue?.toLocaleString() || 0}</p>
           </div>
         </div>
 
-        {/* Period selector */}
         <div className="flex gap-2">
           {(['week', 'month', 'year'] as const).map((p) => (
             <button key={p} onClick={() => setPeriod(p)}
@@ -77,7 +75,6 @@ export default function HaqOSPage() {
           ))}
         </div>
 
-        {/* Top Properties */}
         <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-bold text-white">Properties</h2>
@@ -95,7 +92,7 @@ export default function HaqOSPage() {
                 <div key={prop.id} className="p-4 flex items-center justify-between">
                   <div>
                     <p className="text-white font-medium">{prop.unitNumber || prop.name}</p>
-                    <p className="text-sm text-slate-400">Rs. {prop.rentAmount?.toLocaleString() || 0}/month • {prop.status}</p>
+                    <p className="text-sm text-slate-400">${prop.rentAmount?.toLocaleString() || 0}/month • {prop.status}</p>
                   </div>
                   <span className="px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-sm">{prop.status}</span>
                 </div>
@@ -104,10 +101,9 @@ export default function HaqOSPage() {
           )}
         </div>
 
-        {/* Footer */}
         <footer className="pt-8 border-t border-white/5 text-center">
           <p className="text-sm text-slate-500">
-            Powered by <Link to="/" className="text-violet-400 hover:text-violet-300 transition">Pabandi</Link> — The Trust Layer
+            Powered by <Link to="/" className="text-violet-400 hover:text-violet-300 transition">Pabandi</Link> — The Global Trust Layer
           </p>
           <p className="text-xs text-slate-600 mt-2">
             © 2026 Pabandi. All rights reserved.
