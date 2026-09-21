@@ -173,7 +173,7 @@ model User {
   @@index([phone])
 }
 
-model BookingBusiness {
+model Business {
   @@map("Business")
   id                     String                  @id @default(cuid())
   ownerId                String?                 @unique
