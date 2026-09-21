@@ -331,6 +331,9 @@ const routeMap: [string, string][] = [
   [`/api/${v}/saf`, './routes/safOS.routes'],
   [`/api/${v}/builder`, './routes/builder.routes'],
   [`/api/${v}/cod`, './routes/codEscrow.routes'],
+  [`/api/${v}/telegram`, './routes/telegram.routes'],
+  [`/api/${v}/sms`, './routes/sms.routes'],
+  [`/api/${v}/channels`, './routes/channel.routes'],
 ];
 
 for (const [routePath, importPath] of routeMap) {

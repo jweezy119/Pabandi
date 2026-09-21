@@ -219,6 +219,9 @@ model Business {
   fiatPayments            FiatPayment[]
   solanaEscrows            SolanaEscrow[]
   bookingPabRecords        BookingPabRecord[]
+  telegramBot              TelegramBot?
+  channelMessages          ChannelMessage[]
+  smsLogs                  SMSLog[]
 
   @@index([ownerId])
   @@index([city])
@@ -6221,4 +6224,80 @@ enum WhatsAppStatus {
   DELIVERED
   READ
   FAILED
+}
+
+// =============================================
+// TELEGRAM MODELS
+// =============================================
+
+model TelegramBot {
+  id            String   @id @default(cuid())
+  businessId    String   @unique
+  botToken      String
+  botUsername   String?
+  isActive      Boolean  @default(true)
+  settings      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([isActive])
+}
+
+// =============================================
+// CHANNEL MESSAGING MODELS (Multi-channel inbox)
+// =============================================
+
+model ChannelMessage {
+  id            String   @id @default(cuid())
+  businessId    String
+  customerId    String
+  channel       String   // WHATSAPP, TELEGRAM, SMS
+  direction     String   // INCOMING, OUTGOING
+  content       String
+  status        String   @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+  externalId    String?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  failedAt      DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SMSLog {
+  id            String   @id @default(cuid())
+  businessId    String
+  to            String
+  message       String
+  provider      String   // TWILIO, VONAGE
+  status        String   @default("PENDING")
+  externalId    String?
+  cost          Float?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
+  @@index([provider])
+}
+
+// User channel preference
+model UserChannelPreference {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  channel       String   @default("WHATSAPP") // WHATSAPP, TELEGRAM, SMS
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
 }
