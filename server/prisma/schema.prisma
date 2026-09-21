@@ -8,6 +8,46 @@ datasource db {
   // directUrl = env("DIRECT_URL")
 }
 
+
+enum PipelineStage {
+  new
+  contacted
+  qualified
+  proposal
+  won
+  lost
+}
+
+enum DealStage {
+  open
+  negotiation
+  contract_sent
+  won
+  lost
+}
+
+enum ActivityType {
+  call
+  email
+  meeting
+  note
+  task
+}
+
+enum AccountType {
+  asset
+  liability
+  income
+  expense
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+}
+
 model User {
   id                      String                  @id @default(cuid())
   email                   String                  @unique
@@ -54,10 +94,10 @@ model User {
   usdcBalance             Float                   @default(0)
   pakistanPayments        PakistanPayment[]
   referredById            String?
-  business                Business?
+  business                BookingBusiness?
   investorMatches         BusinessInvestorMatch[]
   cryptoRewards           CryptoReward[]
-  reservations            Reservation[]
+  reservations            BookingReservation[]
   venueReviews            VenueReview[]
   socialIdentities        SocialIdentity[]
   socialAccounts          SocialAccount[]
@@ -91,7 +131,7 @@ model User {
   verifiableCredentials   VerifiableCredential[]
   renterEquityWallets     RenterEquityWallet[]
   courtChecks             CourtCheck[]
-  propertyManagerProfile  PropertyManagerProfile?
+  propertyManagerProfile  AbodeManager?
   propertyFavorites       PropertyFavorite[]
   marketplaceListings    MarketplaceListing[]
   teamMembers    TeamMember[]
@@ -121,19 +161,20 @@ model User {
   userPayments            Payment[]               @relation("userPayments")
   escrowBuyer SolanaEscrow[] @relation("escrowBuyer")
   escrowSeller SolanaEscrow[] @relation("escrowSeller")
-  builderProfile BuilderProfile?
-  buyerProfile BuyerProfile?
+  builderProfile AbodeBuilder?
+  buyerProfile AbodeBuyer?
   sellerEscrows CODEscrow[] @relation("sellerEscrow")
   buyerEscrows CODEscrow[] @relation("buyerEscrow")
   whatsAppMessages           WhatsAppMessage[]
   stakingRecords             StakingRecord[]
-  bookingPabRecords          BookingPabRecord[]
+  bookingPabRecords          BookingRecord[]
   agentRewards               AgentReward[]
   @@index([email])
   @@index([phone])
 }
 
-model Business {
+model BookingBusiness {
+  @@map("Business")
   id                     String                  @id @default(cuid())
   ownerId                String?                 @unique
   name                   String
@@ -189,7 +230,7 @@ model Business {
   businessHours          BusinessHours[]
   settings               BusinessSettings?
   googleReviews          GoogleReview[]
-  reservations           Reservation[]
+  reservations           BookingReservation[]
   sourcingOrders         SourcingOrder[]
   tables                 Table[]
   trendSuggestions       TrendSuggestion[]
@@ -218,7 +259,7 @@ model Business {
   payments                Payment[]               @relation("businessPayments")
   fiatPayments            FiatPayment[]
   solanaEscrows            SolanaEscrow[]
-  bookingPabRecords        BookingPabRecord[]
+  bookingPabRecords        BookingRecord[]
   telegramBot              TelegramBot?
   channelMessages          ChannelMessage[]
   smsLogs                  SMSLog[]
@@ -237,8 +278,8 @@ model SitaraGuestList {
   creatorId   String
   creator     User     @relation("ListCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   businessId  String?
-  business    Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  venueName   String? // free-text venue when no Business record exists
+  business    BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  venueName   String? // free-text venue when no BookingBusiness record exists
   title       String
   date        DateTime
   capacity    Int?
@@ -276,7 +317,7 @@ model SitaraGuestJoin {
 model SquareConnection {
   id           String   @id @default(cuid())
   businessId   String   @unique
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   merchantId   String
   accessToken  String   // encrypted at rest when ENCRYPTION_KEY is configured
   refreshToken String?
@@ -299,7 +340,7 @@ model BusinessHours {
   isClosed   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, dayOfWeek])
   @@index([businessId])
@@ -314,13 +355,14 @@ model Table {
   metadata     Json?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  reservations Reservation[]
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reservations BookingReservation[]
+  business     BookingBusiness      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
 
-model Reservation {
+model BookingReservation {
+  @@map("Reservation")
   id                  String               @id @default(cuid())
   businessId          String
   customerId          String
@@ -358,7 +400,7 @@ model Reservation {
   isConcierge         Boolean              @default(false)
   totalAmount         Float?
   cryptoRewards       CryptoReward[]
-  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business            BookingBusiness             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer            User                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
   table               Table?               @relation(fields: [tableId], references: [id])
   services            ReservationService[]
@@ -406,7 +448,7 @@ model Property {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
-  business          Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          BookingBusiness               @relation(fields: [businessId], references: [id], onDelete: Cascade)
   financeConnection OpenFinanceConnection? @relation(fields: [financeConnectionId], references: [id])
   bookings          StayBooking[]
 
@@ -415,7 +457,7 @@ model Property {
   @@index([category])
 }
 
-// A confirmed stay = a Reservation (existing model) + a Property + a guest deposit escrow.
+// A confirmed stay = a BookingReservation (existing model) + a Property + a guest deposit escrow.
 model StayBooking {
   id            String            @id @default(cuid())
   reservationId String            @unique
@@ -433,7 +475,7 @@ model StayBooking {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation BookingReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
@@ -455,7 +497,7 @@ model OpenFinanceConnection {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   BookingBusiness   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   properties Property[]
 
   @@index([businessId])
@@ -480,9 +522,9 @@ model Payment {
   platformFeeStatus String?       @default("NONE")
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-  reservation       Reservation?  @relation(fields: [reservationId], references: [id])
+  reservation       BookingReservation?  @relation(fields: [reservationId], references: [id])
   user              User          @relation("userPayments", fields: [userId], references: [id], onDelete: Cascade)
-  business          Business?     @relation("businessPayments", fields: [businessId], references: [id])
+  business          BookingBusiness?     @relation("businessPayments", fields: [businessId], references: [id])
 
   @@index([reservationId])
   @@index([userId])
@@ -518,7 +560,7 @@ model BusinessSettings {
   faqRules                    Json?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
-  business                    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business                    BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -567,7 +609,7 @@ model CryptoReward {
   txHash        String?
   createdAt     DateTime     @default(now())
   metadata      Json?
-  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  reservation   BookingReservation? @relation(fields: [reservationId], references: [id])
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -582,7 +624,7 @@ model GoogleReview {
   sentimentLabel String?
   processed      Boolean  @default(false)
   createdAt      DateTime @default(now())
-  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business       BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -596,7 +638,7 @@ model WebhookEndpoint {
   signingSecret    String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -637,7 +679,7 @@ model ApiClient {
   usageLogs         ApiUsageLog[]
   disputes          Dispute[]
 
-  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([apiKey])
   @@index([email])
@@ -710,7 +752,7 @@ model LiveSellerIntegration {
   metadata     Json?
   connectedAt  DateTime           @default(now())
   revokedAt    DateTime?
-  business     Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     BookingBusiness           @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, platform])
   @@index([businessId])
@@ -725,7 +767,7 @@ model SourcingOrder {
   accioWorkOrderId String?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
-  business         Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         BookingBusiness            @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -743,7 +785,7 @@ model TrendSuggestion {
   accioWorkUrl          String?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
-  business              Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business              BookingBusiness    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -900,7 +942,7 @@ model StakingPosition {
 model MudarabahPool {
   id                String   @id @default(cuid())
   businessId        String
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   title             String
   description       String
   profitShareRatio  String   @default("70/30") // investor/pabandi split
@@ -1109,7 +1151,7 @@ model Dispute {
   hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
   reporter         User?           @relation("DisputesFiled", fields: [reportedById], references: [id])
   apiClient        ApiClient?      @relation(fields: [apiClientId], references: [id])
-  reservation      Reservation?    @relation(fields: [reservationId], references: [id])
+  reservation      BookingReservation?    @relation(fields: [reservationId], references: [id])
   votes            JuryVote[]
 
   @@index([userId])
@@ -1245,11 +1287,11 @@ model PabandiReview {
   txHash        String? // Transaction hash of the SBT mint
   starPoints    Int      @default(0) // Points earned from this review (rating * 10 + upvotes)
   upvoteCount   Int      @default(0)
-  ownerReply    String? // Business owner's public response (Yelp-style)
+  ownerReply    String? // BookingBusiness owner's public response (Yelp-style)
   ownerRepliedAt DateTime?
   createdAt     DateTime @default(now())
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   upvotes PabandiReviewUpvote[]
 
@@ -1288,8 +1330,8 @@ model StarPower {
 model StarPromo {
   id            String   @id @default(cuid())
   businessId    String
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  senderId      String   // Business owner user
+  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  senderId      String   // BookingBusiness owner user
   sender        User     @relation(fields: [senderId], references: [id])
   targetTier    String?  // null = all tiers; else filter by tier
   title         String
@@ -1351,7 +1393,7 @@ model BusinessService {
   isActive            Boolean              @default(true)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business            BookingBusiness             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   reservationServices ReservationService[]
 
   @@index([businessId])
@@ -1362,7 +1404,7 @@ model ReservationService {
   reservationId  String
   serviceId      String
   priceAtBooking Float
-  reservation    Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation    BookingReservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   service        BusinessService @relation(fields: [serviceId], references: [id])
 
   @@unique([reservationId, serviceId])
@@ -1384,7 +1426,7 @@ model CheckoutSession {
   updatedAt    DateTime       @updatedAt
   escrowEvents EscrowEvent[]
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])
@@ -1495,7 +1537,7 @@ model ShopifyStore {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -1629,7 +1671,7 @@ model AccountManagerProfile {
   updatedAt    DateTime      @updatedAt
 
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessesReferred Business[]
+  businessesReferred BookingBusiness[]
   ledgers            ReferralLedger[]
   payouts            ReferralPayout[]
 }
@@ -1651,7 +1693,8 @@ model PartnerProgramConfig {
 // tenant history, screening records, and disputes. White-label lets them offer
 // a branded portal (their domain/slug) so tenants book through their own brand.
 
-model PropertyManagerProfile {
+model AbodeManager {
+  @@map("PropertyManagerProfile")
   id          String   @id @default(cuid())
   userId      String   @unique
   companyName String?
@@ -1670,11 +1713,11 @@ model PropertyManagerProfile {
 
   user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties PropertyManagerProperty[]
-  tenants    PropertyTenant[]
+  tenants    AbodeTenant[]
   screenings PropertyScreening[]
   appointments PropertyAppointment[]
-  leases     PropertyLease[]
-  maintenance PropertyMaintenance[]
+  leases     AbodeLease[]
+  maintenance AbodeMaintenance[]
   webhooks   PropertyWebhook[]
   activities PropertyActivity[]
   applications     TenantApplication[]
@@ -1730,7 +1773,7 @@ model TeamMember {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   user    User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -1752,7 +1795,7 @@ model Webhook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([isActive])
@@ -1775,7 +1818,7 @@ model DocumentAnalysis {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([documentType])
@@ -1803,17 +1846,17 @@ model PropertyManagerProperty {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager          PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
-  tenants          PropertyTenant[]
+  manager          AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  tenants          AbodeTenant[]
   screeningRecords PropertyScreening[]
   appointments     PropertyAppointment[]
-  leases           PropertyLease[]
-  maintenance      PropertyMaintenance[]
+  leases           AbodeLease[]
+  maintenance      AbodeMaintenance[]
   applications     TenantApplication[]
-  units            PropertyUnit[]
+  units            AbodeUnit[]
   rentPayments     RentPayment[]
-  inspections      PropertyInspection[]
-  financials       PropertyFinancial[]
+  inspections      AbodeInspection[]
+  financials       AbodeFinancial[]
   photos           PropertyPhoto[]
   amenities        PropertyAmenity[]
   ratePlans        PropertyRatePlan[]
@@ -1828,7 +1871,8 @@ model PropertyManagerProperty {
 
 // ── Deep Property-Specific Models ─────────────────────────────────────────────
 // Individual units within a property (e.g. Unit 2A, Unit 3B).
-model PropertyUnit {
+model AbodeUnit {
+  @@map("PropertyUnit")
   id          String   @id @default(cuid())
   propertyId  String
   unitNumber  String   // e.g. "2A", "3B"
@@ -1843,19 +1887,19 @@ model PropertyUnit {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  leases   PropertyLease[]
+  leases   AbodeLease[]
   rentPayments RentPayment[]
   rentSchedules  RentSchedule[]
-  inspections  PropertyInspection[]
+  inspections  AbodeInspection[]
   inspectionReports InspectionReport[]
-  financials   PropertyFinancial[]
+  financials   AbodeFinancial[]
   photos       PropertyPhoto[]
   amenities    PropertyAmenity[]
   availabilities PropertyAvailability[]
   ratePlans    PropertyRatePlan[]
   reviews      PropertyReview[]
   messages     PropertyMessage[]
-  maintenances PropertyMaintenance[]
+  maintenances AbodeMaintenance[]
   favorites    PropertyFavorite[]
 
   @@index([propertyId])
@@ -1882,7 +1926,7 @@ model RentPayment {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   pabPayment PabPayment?
 
   @@index([propertyId])
@@ -1892,7 +1936,8 @@ model RentPayment {
 }
 
 // Property inspection reports.
-model PropertyInspection {
+model AbodeInspection {
+  @@map("PropertyInspection")
   id          String   @id @default(cuid())
   propertyId  String
   unitId      String?
@@ -1907,14 +1952,15 @@ model PropertyInspection {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([inspectedAt])
 }
 
 // Tenant history for a property manager (past + current tenants).
-model PropertyTenant {
+model AbodeTenant {
+  @@map("PropertyTenant")
   id              String    @id @default(cuid())
   managerId       String
   propertyId      String?
@@ -1936,7 +1982,7 @@ model PropertyTenant {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   tenantApplications TenantApplication[]
   rentSchedules  RentSchedule[]
@@ -1963,7 +2009,7 @@ model PropertyScreening {
   notes           String?
   createdAt       DateTime @default(now())
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -1988,7 +2034,7 @@ model PropertyAppointment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -1997,7 +2043,8 @@ model PropertyAppointment {
 }
 
 // Lease tracking for a tenant at a property.
-model PropertyLease {
+model AbodeLease {
+  @@map("PropertyLease")
   id            String   @id @default(cuid())
   managerId     String
   propertyId    String?
@@ -2025,9 +2072,9 @@ model PropertyLease {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit     AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
   signingRequests SigningRequest[]
   rentSchedules RentSchedule[]
@@ -2056,8 +2103,8 @@ model SigningRequest {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
-  lease   PropertyLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  lease   AbodeLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
   @@index([leaseId])
@@ -2066,7 +2113,8 @@ model SigningRequest {
 }
 
 // Maintenance request for a property.
-model PropertyMaintenance {
+model AbodeMaintenance {
+  @@map("PropertyMaintenance")
   id          String   @id @default(cuid())
   managerId   String
   propertyId  String?
@@ -2088,10 +2136,10 @@ model PropertyMaintenance {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   vendor    Vendor?                @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit     AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
 
   @@index([managerId])
@@ -2100,7 +2148,8 @@ model PropertyMaintenance {
 }
 
 // Property financials (income/expense tracking).
-model PropertyFinancial {
+model AbodeFinancial {
+  @@map("PropertyFinancial")
   id          String   @id @default(cuid())
   propertyId  String
   unitId      String?
@@ -2114,7 +2163,7 @@ model PropertyFinancial {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([date])
@@ -2138,7 +2187,7 @@ model PropertyWebhook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
 }
@@ -2171,9 +2220,9 @@ model TenantApplication {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenant   AbodeTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
 
   @@index([managerId])
@@ -2202,10 +2251,10 @@ model TenantDocument {
   uploadedBy      String   @default("TENANT") // TENANT | MANAGER
   createdAt       DateTime @default(now())
 
-  manager     PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   application TenantApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  lease       PropertyLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
-  maintenance PropertyMaintenance?    @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
+  lease       AbodeLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  maintenance AbodeMaintenance?    @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -2225,7 +2274,7 @@ model PropertyActivity {
   actorEmail  String?  // who performed the action (if not the manager)
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([entityType, entityId])
@@ -2247,7 +2296,7 @@ model PropertyPhoto {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2277,7 +2326,7 @@ model PropertyAmenity {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   amenity   Amenity                @relation(fields: [amenityId], references: [id], onDelete: Cascade)
 
   @@unique([propertyId, unitId, amenityId])
@@ -2304,7 +2353,7 @@ model PropertyRatePlan {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2327,7 +2376,7 @@ model PropertyAvailability {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@unique([propertyId, unitId, date])
   @@index([propertyId, date])
@@ -2356,7 +2405,7 @@ model PropertyReview {
   updatedAt     DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2374,7 +2423,7 @@ model PropertyFavorite {
   createdAt  DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId, unitId])
@@ -2402,7 +2451,7 @@ model PropertyMessage {
   createdAt     DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([propertyId])
@@ -2427,7 +2476,7 @@ model Vendor {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  maintenanceRequests PropertyMaintenance[]
+  maintenanceRequests AbodeMaintenance[]
 
   @@index([managerId])
 }
@@ -2450,7 +2499,7 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2475,7 +2524,7 @@ model Communication {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2564,7 +2613,7 @@ model Contact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   activities  Communication[]
   tasks       Task[]
   deals       Deal[]
@@ -2600,7 +2649,7 @@ model Deal {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   tasks    Task[]
   communications Communication[]
@@ -2636,7 +2685,7 @@ model Campaign {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   recipients  CampaignRecipient[]
 
   @@index([managerId])
@@ -2661,7 +2710,7 @@ model CampaignRecipient {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   campaign Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contact  Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
@@ -2683,7 +2732,7 @@ model EmailTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([category])
@@ -2702,7 +2751,7 @@ model Sequence {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([status])
@@ -2739,7 +2788,7 @@ model SequenceEnrollment {
   exitReason   String?
   metadata     Json?
 
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   sequence Sequence              @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   contact  Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
@@ -2764,7 +2813,7 @@ model Form {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   formSubmissions FormSubmission[]
 
   @@index([managerId])
@@ -2781,7 +2830,7 @@ model FormSubmission {
   source      String?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   form    Form                   @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -2799,7 +2848,7 @@ model LeadScore {
   modelVersion String?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -2823,7 +2872,7 @@ model Report {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -2841,7 +2890,7 @@ model ReportExecution {
   error       String?
 
   report   Report                @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
   @@index([managerId])
@@ -2865,7 +2914,7 @@ model Ticket {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   comments TicketComment[]
 
@@ -2887,7 +2936,7 @@ model TicketComment {
   createdAt   DateTime @default(now())
 
   ticket Ticket                 @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([managerId])
@@ -2911,7 +2960,7 @@ model KnowledgeArticle {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([slug])
@@ -2936,7 +2985,7 @@ model CalendarEvent {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2960,7 +3009,7 @@ model Integration {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -2980,7 +3029,7 @@ model ApiKey {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([key])
@@ -2998,7 +3047,7 @@ model LeadScorePrediction {
   explanation String?  // human-readable reason for score
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -3020,7 +3069,7 @@ model AIInsight {
   isDismissed Boolean @default(false)
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -3043,7 +3092,7 @@ model NextBestAction {
   completedAt DateTime?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?                @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                   @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -3068,7 +3117,7 @@ model AnomalyAlert {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -3612,8 +3661,8 @@ model CourtCheck {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  reservation Reservation? @relation(fields: [reservationId], references: [id])
-  business    Business?    @relation(fields: [businessId], references: [id])
+  reservation BookingReservation? @relation(fields: [reservationId], references: [id])
+  business    BookingBusiness?    @relation(fields: [businessId], references: [id])
   customer    User?        @relation(fields: [customerId], references: [id])
 
   @@index([reservationId])
@@ -4201,7 +4250,7 @@ model MarketplaceListing {
   // Escrow protection.
   escrowEnabled Boolean  @default(true)
   escrowId      String?  // LocalSaleEscrow.id when funded
-  // Reservation / booking fields (for rental/service listings).
+  // BookingReservation / booking fields (for rental/service listings).
   availableFrom DateTime?
   availableTo   DateTime?
   // Engagement.
@@ -4359,7 +4408,7 @@ model PromoReview {
 model PartnerOffer {
   id              String   @id @default(cuid())
   businessId      String
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Offer details
   title           String
@@ -4425,7 +4474,7 @@ model UserReward {
 model PartnerEnrollment {
   id              String   @id @default(cuid())
   businessId      String   @unique
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Enrollment status
   status          String   // PENDING, ACTIVE, SUSPENDED
@@ -4624,7 +4673,7 @@ model CarrierProfile {
 model VendorPromotion {
   id              String   @id @default(cuid())
   businessId      String
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Promotion details
   title           String
@@ -4693,7 +4742,7 @@ model PromotionRedemption {
 model LoyaltyProgram {
   id              String   @id @default(cuid())
   businessId      String   @unique
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Program details
   name            String
@@ -4745,7 +4794,7 @@ model CustomerVendorRelation {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId      String
-  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Relationship metrics
   totalPurchases  Int      @default(0)
@@ -4986,7 +5035,8 @@ model FreightTemplate {
 // ── Nightlife & Club Scene ─────────────────────────────────────────────────
 // Venues, bottle service, cover charges, guest lists, events
 
-model NightlifeVenue {
+model BookingVenue {
+  @@map("NightlifeVenue")
   id              String   @id @default(cuid())
   name            String
   address         String
@@ -5032,7 +5082,7 @@ model NightlifeVenue {
 model BottlePackage {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   description     String
@@ -5052,7 +5102,7 @@ model BottlePackage {
 model TableType {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String   // VIP, Mezzanine, Dance Floor, Patio
   basePrice       Float
@@ -5071,7 +5121,7 @@ model BottleReservation {
   id              String   @id @default(cuid())
   userId          String
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   tableTypeId     String
   tableType       TableType @relation(fields: [tableTypeId], references: [id], onDelete: Cascade)
   bottlePackageId String
@@ -5104,7 +5154,7 @@ model BottleReservation {
 model CoverCharge {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   amount          Float
@@ -5125,7 +5175,7 @@ model GuestList {
   id              String   @id @default(cuid())
   userId          String
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   eventId         String?
   promoterId      String?
   promoter        Promoter? @relation(fields: [promoterId], references: [id], onDelete: Cascade)
@@ -5156,7 +5206,7 @@ model GuestList {
 model NightlifeEvent {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   date            DateTime
@@ -5179,7 +5229,7 @@ model NightlifeEvent {
 model VenueAnalytics {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   date            DateTime
   totalAttendees  Int
@@ -5233,7 +5283,7 @@ model PromoterReview {
 model VenueReview {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   rating          Int      // 1-5
@@ -5465,7 +5515,7 @@ model FiatPayment {
   payeeId       String
   payee         User     @relation("fiatPaymentsReceived", fields: [payeeId], references: [id])
   businessId    String?
-  business      Business? @relation(fields: [businessId], references: [id])
+  business      BookingBusiness? @relation(fields: [businessId], references: [id])
   paymentUrl    String?
   instructions  String?
   confirmedAt   DateTime?
@@ -5488,7 +5538,7 @@ model SolanaEscrow {
   sellerId        String
   seller          User     @relation("escrowSeller", fields: [sellerId], references: [id])
   businessId      String?
-  business        Business? @relation(fields: [businessId], references: [id])
+  business        BookingBusiness? @relation(fields: [businessId], references: [id])
   mint            String   // USDC mint address
   amount          Float
   status          String   @default("CREATED") // CREATED, FUNDED, RELEASED, REFUNDED, DISPUTED
@@ -5511,7 +5561,7 @@ model SolanaEscrow {
 model TenantLedger {
   id              String   @id @default(cuid())
   tenantId        String
-  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
+  tenant          AbodeTenant @relation(fields: [tenantId], references: [id])
   type            String   // RENT | LATE_FEE | DEPOSIT | REFUND | CREDIT | ADJUSTMENT
   amount          Float
   description     String
@@ -5528,11 +5578,11 @@ model TenantLedger {
 model RentSchedule {
   id              String   @id @default(cuid())
   unitId          String
-  unit            PropertyUnit @relation(fields: [unitId], references: [id])
+  unit            AbodeUnit @relation(fields: [unitId], references: [id])
   tenantId        String
-  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
+  tenant          AbodeTenant @relation(fields: [tenantId], references: [id])
   leaseId         String
-  lease           PropertyLease @relation(fields: [leaseId], references: [id])
+  lease           AbodeLease @relation(fields: [leaseId], references: [id])
   amount          Float
   dueDay          Int      @default(1)
   lateFeeAmount   Float    @default(50)
@@ -5551,9 +5601,9 @@ model RentSchedule {
 model InspectionReport {
   id              String   @id @default(cuid())
   unitId          String
-  unit            PropertyUnit @relation(fields: [unitId], references: [id])
+  unit            AbodeUnit @relation(fields: [unitId], references: [id])
   tenantId        String?
-  tenant          PropertyTenant? @relation(fields: [tenantId], references: [id])
+  tenant          AbodeTenant? @relation(fields: [tenantId], references: [id])
   type            String   // MOVE_IN | MOVE_OUT | ROUTINE | MAINTENANCE
   inspectorName   String?
   overallCondition String  @default("GOOD")
@@ -5863,7 +5913,8 @@ model StakingRecord {
   @@index([tier])
 }
 
-model BookingPabRecord {
+model BookingRecord {
+  @@map("BookingPabRecord")
   id              String   @id @default(cuid())
   bookingId       String   @unique
   userId          String
@@ -5873,7 +5924,7 @@ model BookingPabRecord {
   rewardPab       Float    @default(0)
   status          String   @default("PENDING") // PENDING | CHECKED_IN | NO_SHOW | CANCELLED
   businessId      String?
-  business        Business? @relation(fields: [businessId], references: [id])
+  business        BookingBusiness? @relation(fields: [businessId], references: [id])
   checkinAt       DateTime?
   cancelledAt     DateTime?
   description     String?  // For frictionless payments
@@ -5932,7 +5983,7 @@ model AgentReward {
 model CrmPabReward {
   id              String   @id @default(cuid())
   managerId       String
-  manager         PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager         AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   name            String
   description     String?
   totalAmount     Float
@@ -5968,7 +6019,7 @@ model CrmPabRewardRecipient {
 model LeaseDeposit {
   id              String   @id @default(cuid())
   leaseId         String   @unique
-  lease           PropertyLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  lease           AbodeLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   tenantEmail     String
   depositAmount   Float
   interestRate    Float    @default(0.02) // 2% APY
@@ -6058,7 +6109,8 @@ model PaymentFlowLog {
 
 // ── Pakistan Real Estate Builder Models ──────────────────────────────────────
 
-model BuilderProfile {
+model AbodeBuilder {
+  @@map("BuilderProfile")
   id            String   @id @default(cuid())
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id])
@@ -6070,13 +6122,14 @@ model BuilderProfile {
   totalSold     Int      @default(0)
   verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
-  projects      BuilderProject[]
+  projects      AbodeProject[]
 }
 
-model BuilderProject {
+model AbodeProject {
+  @@map("BuilderProject")
   id            String   @id @default(cuid())
   builderId     String
-  builder       BuilderProfile @relation(fields: [builderId], references: [id])
+  builder       AbodeBuilder @relation(fields: [builderId], references: [id])
   name          String
   location      String
   description   String?
@@ -6089,14 +6142,15 @@ model BuilderProject {
   actualCompletion DateTime?
   trustScore    Float    @default(50)
   createdAt     DateTime @default(now())
-  units         BuilderUnit[]
+  units         AbodeBuilderUnit[]
   milestones    BuilderProjectMilestone[]
 }
 
-model BuilderUnit {
+model AbodeBuilderUnit {
+  @@map("BuilderUnit")
   id            String   @id @default(cuid())
   projectId     String
-  project       BuilderProject @relation(fields: [projectId], references: [id])
+  project       AbodeProject @relation(fields: [projectId], references: [id])
   unitNumber    String
   type          String
   size          Int
@@ -6104,12 +6158,13 @@ model BuilderUnit {
   status        String   @default("AVAILABLE")
   floor        Int?
   buyerId       String?
-  buyer         BuyerProfile? @relation(fields: [buyerId], references: [id])
+  buyer         AbodeBuyer? @relation(fields: [buyerId], references: [id])
   installments  Installment[]
   createdAt     DateTime @default(now())
+  @@map("BuyerProfile")
 }
 
-model BuyerProfile {
+model AbodeBuyer {
   id            String   @id @default(cuid())
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id])
@@ -6117,7 +6172,7 @@ model BuyerProfile {
   phone         String?
   address       String?
   verified      Boolean  @default(false)
-  units         BuilderUnit[]
+  units         AbodeBuilderUnit[]
   installments  Installment[]
   documents     BuyerDocument[]
   createdAt     DateTime @default(now())
@@ -6126,9 +6181,9 @@ model BuyerProfile {
 model Installment {
   id            String   @id @default(cuid())
   buyerId       String
-  buyer         BuyerProfile @relation(fields: [buyerId], references: [id])
+  buyer         AbodeBuyer @relation(fields: [buyerId], references: [id])
   unitId        String
-  unit          BuilderUnit @relation(fields: [unitId], references: [id])
+  unit          AbodeBuilderUnit @relation(fields: [unitId], references: [id])
   amount        Float
   dueDate       DateTime
   paidAt        DateTime?
@@ -6141,7 +6196,7 @@ model Installment {
 model BuilderProjectMilestone {
   id            String   @id @default(cuid())
   projectId     String
-  project       BuilderProject @relation(fields: [projectId], references: [id])
+  project       AbodeProject @relation(fields: [projectId], references: [id])
   title         String
   description   String?
   dueDate       DateTime
@@ -6154,7 +6209,7 @@ model BuilderProjectMilestone {
 model BuyerDocument {
   id            String   @id @default(cuid())
   buyerId       String
-  buyer         BuyerProfile @relation(fields: [buyerId], references: [id])
+  buyer         AbodeBuyer @relation(fields: [buyerId], references: [id])
   type          String
   fileUrl       String
   uploadedAt    DateTime @default(now())
@@ -6239,7 +6294,7 @@ model TelegramBot {
   settings      Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([isActive])
@@ -6263,7 +6318,7 @@ model ChannelMessage {
   failedAt      DateTime?
   error         String?
   createdAt     DateTime @default(now())
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([customerId])
@@ -6285,7 +6340,7 @@ model SMSLog {
   deliveredAt   DateTime?
   error         String?
   createdAt     DateTime @default(now())
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])
@@ -6300,4 +6355,102 @@ model UserChannelPreference {
   updatedAt     DateTime @updatedAt
 
   @@index([userId])
+}
+
+
+model TrustPassport {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  score         Float    @default(50)
+  level         String   @default("bronze")
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model PipelineLead {
+  id            String   @id @default(cuid())
+  passportId    String
+  passport      TrustPassport @relation(fields: [passportId], references: [id])
+  name          String
+  email         String?
+  phone         String?
+  source        String?
+  stage         String   @default("new")
+  value         Float?
+  ownerId       String
+  businessId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deals         PipelineDeal[]
+  activities    PipelineActivity[]
+  @@index([businessId, stage])
+}
+
+model PipelineDeal {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  title         String
+  amount        Float
+  stage         String   @default("open")
+  closeDate     DateTime?
+  escrowId      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([leadId, stage])
+}
+
+model PipelineActivity {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  type          String
+  content       String?
+  dueAt         DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model LedgerAccount {
+  id            String   @id @default(cuid())
+  businessId    String
+  name          String
+  type          String
+  balance       Float    @default(0)
+  currency      String   @default("USD")
+  createdAt     DateTime @default(now())
+  @@index([businessId])
+}
+
+model LedgerInvoice {
+  id            String   @id @default(cuid())
+  businessId    String
+  clientId      String?
+  number        String   @unique
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("draft")
+  dueDate       DateTime
+  paidAt        DateTime?
+  escrowId      String?
+  lineItems     Json
+  createdAt     DateTime @default(now())
+  @@index([businessId, status])
+}
+
+model LedgerExpense {
+  id            String   @id @default(cuid())
+  businessId    String
+  category      String
+  amount        Float
+  currency      String   @default("USD")
+  description   String?
+  receiptUrl    String?
+  incurredAt    DateTime
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  @@index([businessId, category])
 }

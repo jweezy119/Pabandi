@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/saf', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/saf/post-load', label: 'Post Load', icon: 'add_circle' },
-  { path: '/saf/my-loads', label: 'My Loads', icon: 'receipt_long' },
-  { path: '/saf/carriers', label: 'Carriers', icon: 'local_shipping' },
-  { path: '/saf/rates', label: 'Rate Calculator', icon: 'calculate' },
+  { path: '/freight', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/freight/post-load', label: 'Post Load', icon: 'add_circle' },
+  { path: '/freight/my-loads', label: 'My Loads', icon: 'receipt_long' },
+  { path: '/freight/carriers', label: 'Carriers', icon: 'local_shipping' },
+  { path: '/freight/rates', label: 'Rate Calculator', icon: 'calculate' },
 ];
 
-export default function SafOSPage() {
+export default function FreightOSPage() {
   const [loads, setLoads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +25,7 @@ export default function SafOSPage() {
   };
 
   return (
-    <DashboardLayout osName="Saf OS" osIcon="S" osColor="amber" navItems={navItems}>
+    <DashboardLayout osName="FreightOS" osIcon="S" osColor="amber" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

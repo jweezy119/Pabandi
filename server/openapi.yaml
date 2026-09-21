@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: PabandiOS API
+  description: |
+    The trust operating system for bookings, freight, property, CRM, and finance.
+    All endpoints accept USDC via x402 or AP2-compatible authorization.
+  version: 1.0.0
+  contact:
+    name: Pabandi Agents
+    email: agents@pabandi.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.pabandi.com
+    description: Production
+  - url: https://staging-api.pabandi.com
+    description: Staging
+
+tags:
+  - name: BookingOS
+    description: Restaurant, hotel, and service bookings
+  - name: FreightOS
+    description: Freight and logistics management
+  - name: AbodeOS
+    description: Property management
+  - name: PipelineOS
+    description: CRM and sales pipeline
+  - name: LedgerOS
+    description: Finance, invoicing, and expenses
+  - name: TrustOS
+    description: Shared trust engine
+  - name: Payments
+    description: x402 and AP2 payment endpoints
+
+paths:
+  /api/v1/booking:
+    post:
+      tags: [BookingOS]
+      summary: Create a booking
+      description: Create a booking with AI trust scoring and escrow protection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '200':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '402':
+          description: Payment required (x402)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRequired'
+
+  /api/v1/freight/quote:
+    post:
+      tags: [FreightOS]
+      summary: Get freight quote
+      description: Calculate freight rate with carrier matching
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FreightQuoteRequest'
+      responses:
+        '200':
+          description: Quote provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreightQuoteResponse'
+
+  /api/v1/abode/listings:
+    get:
+      tags: [AbodeOS]
+      summary: List properties
+      description: Search available properties with tenant trust scores
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: minTrustScore
+          in: query
+          schema:
+            type: number
+        - name: maxRent
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Property listings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertyListings'
+
+  /api/v1/pipeline/leads:
+    post:
+      tags: [PipelineOS]
+      summary: Create lead
+      description: Create a CRM lead with trust-enriched data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadRequest'
+      responses:
+        '200':
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadResponse'
+    get:
+      tags: [PipelineOS]
+      summary: List leads
+      description: List all CRM leads
+      responses:
+        '200':
+          description: Lead list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeadResponse'
+
+  /api/v1/ledger/invoices:
+    post:
+      tags: [LedgerOS]
+      summary: Create invoice
+      description: Create an invoice with escrow backing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceRequest'
+      responses:
+        '200':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+    get:
+      tags: [LedgerOS]
+      summary: List invoices
+      description: List all invoices
+      responses:
+        '200':
+          description: Invoice list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvoiceResponse'
+
+  /api/v1/escrow:
+    post:
+      tags: [Payments]
+      summary: Initiate escrow
+      description: Create a Solana escrow for conditional payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscrowRequest'
+      responses:
+        '200':
+          description: Escrow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscrowResponse'
+
+  /api/v1/passport/{passportId}/trust-score:
+    get:
+      tags: [TrustOS]
+      summary: Get trust score
+      description: Verify a user's or business's reliability score
+      parameters:
+        - name: passportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trust score data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrustScore'
+
+  /api/v1/mcp:
+    get:
+      tags: [Payments]
+      summary: MCP Server
+      description: Model Context Protocol endpoint for AI agents
+      responses:
+        '200':
+          description: MCP server info
+
+components:
+  schemas:
+    BookingRequest:
+      type: object
+      properties:
+        restaurant:
+          type: string
+        date:
+          type: string
+          format: date-time
+        guests:
+          type: number
+        customerWallet:
+          type: string
+        specialRequests:
+          type: string
+      required: [restaurant, date, guests, customerWallet]
+
+    BookingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, CANCELLED]
+        escrowId:
+          type: string
+        trustScore:
+          type: number
+
+    FreightQuoteRequest:
+      type: object
+      properties:
+        origin:
+          type: string
+        destination:
+          type: string
+        weight:
+          type: number
+        cargoType:
+          type: string
+      required: [origin, destination, weight, cargoType]
+
+    FreightQuoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        estimatedRate:
+          type: number
+        currency:
+          type: string
+          default: USD
+        carriers:
+          type: array
+          items:
+            type: string
+        trustRequired:
+          type: number
+
+    PropertyListings:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          rentAmount:
+            type: number
+          tenantScore:
+            type: number
+
+    LeadRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        source:
+          type: string
+        value:
+          type: number
+      required: [name]
+
+    LeadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        stage:
+          type: string
+        value:
+          type: number
+        trustScore:
+          type: number
+
+    InvoiceRequest:
+      type: object
+      properties:
+        clientId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+          default: USD
+        dueDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+      required: [amount, dueDate]
+
+    InvoiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+
+    EscrowRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+          default: USDC
+        conditions:
+          type: string
+        payer:
+          type: string
+        payee:
+          type: string
+      required: [amount, conditions, payer, payee]
+
+    EscrowResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+
+    TrustScore:
+      type: object
+      properties:
+        passportId:
+          type: string
+        score:
+          type: number
+        level:
+          type: string
+          enum: [bronze, silver, gold, platinum]
+        verified:
+          type: boolean
+        transactionCount:
+          type: number
+
+    PaymentRequired:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Payment required
+        scheme:
+          type: string
+          example: x402
+        price:
+          type: string
+          example: 0.05 USDC
+        network:
+          type: string
+          example: solana
+        recipient:
+          type: string

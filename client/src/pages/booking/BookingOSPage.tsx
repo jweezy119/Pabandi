@@ -3,15 +3,15 @@ import DiscoveryPage from '../../sitara/pages/DiscoveryPage';
 import { Link } from 'react-router-dom';
 
 const NAV_ITEMS = [
-  { path: '/discovery', label: 'Discovery', icon: 'explore', end: true },
+  { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
   { path: '/booking', label: 'Bookings', icon: 'event' },
   { path: '/discovery#favorites', label: 'Favorites', icon: 'favorite' },
   { path: '/discovery#map', label: 'Map', icon: 'map' },
 ];
 
-export default function SitaraDiscoveryPage() {
+export default function BookingDiscoveryPage() {
   return (
-    <DashboardLayout osName="Sitara" osIcon="★" osColor="emerald" navItems={NAV_ITEMS}>
+    <DashboardLayout osName="BookingOS" osIcon="★" osColor="emerald" navItems={NAV_ITEMS}>
       <DiscoveryPage />
       <footer className="pt-8 border-t border-white/5 text-center">
         <p className="text-sm text-slate-500">

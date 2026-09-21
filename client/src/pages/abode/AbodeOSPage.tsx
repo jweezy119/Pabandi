@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/haq', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/haq/tenants', label: 'Tenants', icon: 'people' },
-  { path: '/haq/leases', label: 'Leases', icon: 'description' },
-  { path: '/haq/maintenance', label: 'Maintenance', icon: 'build' },
-  { path: '/haq/financials', label: 'Financials', icon: 'bar_chart' },
+  { path: '/abode', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/abode/tenants', label: 'Tenants', icon: 'people' },
+  { path: '/abode/leases', label: 'Leases', icon: 'description' },
+  { path: '/abode/maintenance', label: 'Maintenance', icon: 'build' },
+  { path: '/abode/financials', label: 'Financials', icon: 'bar_chart' },
 ];
 
-export default function HaqOSPage() {
+export default function AbodeOSPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [summary, setSummary] = useState<any>(null);
   const [collectionRate, setCollectionRate] = useState<any>(null);
@@ -35,7 +35,7 @@ export default function HaqOSPage() {
   };
 
   return (
-    <DashboardLayout osName="Haq OS" osIcon="H" osColor="violet" navItems={navItems}>
+    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="violet" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

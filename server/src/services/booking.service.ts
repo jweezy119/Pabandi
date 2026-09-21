@@ -1,354 +1,453 @@
-// Pabandi Booking Flow Service
-// Orchestrates the end-to-end booking → payment → escrow → check-in → release flow
+/**
+ * booking.service.ts — BookingOS Service
+ * Renamed from sitaraApiService.ts
+ * Provides geocoding, routing, and email services for the BookingOS module.
+ */
 
-import crypto from 'crypto';
 import { prisma } from '../utils/database';
-import { logger } from '../utils/logger';
-import { createPayLioPayment, verifyPayLioPayment } from './payment.service';
 
-const CREATION_FEE_BPS = 100; // 1% = 100 basis points
-const RELEASE_FEE_BPS = 100; // 1% = 100 basis points
-const TOTAL_FEE_BPS = 200; // 2% total
+// ── Types ──────────────────────────────────────────────────────────────────
 
-export interface CreateBookingInput {
-  businessId: string;
-  customerId: string;
-  customerName: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  reservationDate: string;
-  reservationTime: string;
-  numberOfGuests: number;
-  depositAmount: number;
-  specialRequests?: string;
-  paymentMethod?: 'paylio' | 'raast';
+export interface LatLng {
+  lat: number;
+  lng: number;
 }
 
-export interface BookingResult {
-  success: boolean;
-  reservationId?: string;
-  bookingReference: string;
-  paymentUrl?: string;
-  paymentId?: string;
-  depositAmount: number;
-  paymentMethod?: string;
-  raastId?: string;
-  message: string;
+export interface GeocodeResult {
+  lat: number;
+  lng: number;
+  displayName: string;
+  type?: string;
 }
 
-/**
- * Create a reservation + deposit payment in one call.
- * Returns the reservation id, a unique booking reference, and a PayLio checkout URL.
- */
-export async function createBookingWithDeposit(input: CreateBookingInput): Promise<BookingResult> {
-  const {
-    businessId, customerId, customerName, customerEmail, customerPhone,
-    reservationDate, reservationTime, numberOfGuests, depositAmount, specialRequests,
-    paymentMethod = 'paylio',
-  } = input;
-
-  const bookingReference = `PAB-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
-
-  // Verify business exists and is active
-  const business = await prisma.business.findFirst({
-    where: { OR: [{ id: businessId }, { googlePlaceId: businessId }] },
-    include: { settings: true, owner: true },
-  });
-
-  if (!business) {
-    return { success: false, bookingReference, depositAmount: 0, message: 'Business not found' };
-  }
-  if (!business.isActive) {
-    return { success: false, bookingReference, depositAmount: 0, message: 'Business is inactive' };
-  }
-
-  // Find the business owner to use as payee
-  const payeeId = business.ownerId;
-  if (!payeeId) {
-    return { success: false, bookingReference, depositAmount: 0, message: 'Business has no owner' };
-  }
-
-  // Calculate fees
-  const creationFee = (depositAmount * CREATION_FEE_BPS) / 10000;
-  const netDeposit = depositAmount - creationFee;
-
-  // Create reservation
-  const reservation = await prisma.reservation.create({
-    data: {
-      businessId: business.id,
-      customerId,
-      reservationDate: new Date(`${reservationDate}T${reservationTime}:00`),
-      reservationTime,
-      numberOfGuests,
-      status: 'PENDING',
-      customerName,
-      customerPhone: customerPhone || '',
-      customerEmail: customerEmail,
-      specialRequests,
-      depositRequired: true,
-      depositAmount,
-      depositStatus: 'PENDING',
-      source: 'web',
-    },
-  });
-
-  // Create crypto payment record
-  const cryptoPayment = await prisma.cryptoPayment.create({
-    data: {
-      type: paymentMethod === 'raast' ? 'manual' : 'paylio',
-      amount: depositAmount,
-      currency: 'USD',
-      status: paymentMethod === 'raast' ? 'PENDING' : 'PENDING',
-      reference: bookingReference,
-      payerId: customerId,
-      payeeId,
-      metadata: {
-        reservationId: reservation.id,
-        businessId: business.id,
-        creationFee,
-        netDeposit,
-        depositAmount,
-        paymentMethod,
-      },
-    },
-  });
-
-  // Create PayLio checkout session (skip for Raast)
-  let paymentUrl: string | undefined;
-  let raastId: string | undefined;
-  if (paymentMethod === 'raast') {
-    raastId = business.raastId || undefined;
-  } else {
-    try {
-      const paylioResult = await createPayLioPayment({
-        amount: depositAmount,
-        reference: bookingReference,
-        customerEmail,
-      });
-      if (paylioResult.url) {
-        paymentUrl = paylioResult.url;
-      }
-    } catch (err: any) {
-      logger.warn(`[BookingService] PayLio creation failed for ${bookingReference}: ${err.message}`);
-    }
-  }
-
-  logger.info(
-    `[BookingService] Booking ${bookingReference} created: reservation=${reservation.id}, payment=${cryptoPayment.id}, amount=$${depositAmount}`
-  );
-
-  return {
-    success: true,
-    reservationId: reservation.id,
-    bookingReference,
-    paymentUrl,
-    paymentId: cryptoPayment.id,
-    depositAmount,
-    paymentMethod,
-    raastId,
-    message: paymentUrl
-      ? 'Reservation created. Redirecting to payment...'
-      : paymentMethod === 'raast'
-        ? 'Reservation created. Complete Raast payment using the instructions below.'
-        : 'Reservation created. Complete payment to confirm booking.',
-  };
+export interface ReverseGeocodeResult {
+  displayName: string;
+  address?: Record<string, string>;
 }
 
-/**
- * Confirm payment when PayLio sends webhook or frontend polls.
- * Updates reservation, creates escrow record (HELD).
- */
-export async function confirmPaymentAndCreateEscrow(bookingReference: string): Promise<{
-  success: boolean;
-  escrowId?: string;
-  message: string;
-}> {
-  const payment = await prisma.cryptoPayment.findFirst({
-    where: { reference: bookingReference },
-  });
-
-  if (!payment) {
-    return { success: false, message: 'Payment not found' };
-  }
-
-  const reservationId = (payment.metadata as any)?.reservationId;
-  if (!reservationId) {
-    return { success: false, message: 'No reservation linked to payment' };
-  }
-
-  const reservation = await prisma.reservation.findUnique({ where: { id: reservationId } });
-  if (!reservation) {
-    return { success: false, message: 'Reservation not found' };
-  }
-
-  // Update payment status
-  await prisma.cryptoPayment.update({
-    where: { id: payment.id },
-    data: { status: 'COMPLETED' },
-  });
-
-  // Update reservation
-  await prisma.reservation.update({
-    where: { id: reservationId },
-    data: {
-      depositStatus: 'PAID',
-      status: 'CONFIRMED',
-      depositPaid: true,
-    },
-  });
-
-  // Calculate creation fee
-  const depositAmount = payment.amount;
-  const creationFee = (depositAmount * CREATION_FEE_BPS) / 10000;
-  const heldAmount = depositAmount - creationFee;
-
-  // Create escrow record (HELD)
-  const escrow = await prisma.escrow.create({
-    data: {
-      paymentId: payment.id,
-      amount: heldAmount,
-      status: 'HELD',
-      payerId: payment.payerId!,
-      payeeId: payment.payeeId!,
-    },
-  });
-
-  logger.info(
-    `[BookingService] Escrow created for ${bookingReference}: escrow=${escrow.id}, held=$${heldAmount} (fee: $${creationFee})`
-  );
-
-  return {
-    success: true,
-    escrowId: escrow.id,
-    message: 'Payment confirmed. Deposit held in escrow.',
-  };
+export interface POIResult {
+  name: string;
+  lat: number;
+  lng: number;
+  category: string;
+  tags: Record<string, string>;
 }
 
-/**
- * Poll PayLio for payment status. Returns true if payment is confirmed.
- */
-export async function pollPaymentStatus(paylioPaymentId: string): Promise<{
-  confirmed: boolean;
-  status: string;
-  amount?: number;
-}> {
-  const result = await verifyPayLioPayment(paylioPaymentId);
-  return {
-    confirmed: result.confirmed,
-    status: result.status,
-    amount: result.amount,
-  };
+export interface DiscoveredBusiness {
+  name: string;
+  lat: number;
+  lng: number;
+  category: string;
+  tags: Record<string, string>;
+  phone?: string;
+  website?: string;
+  email?: string;
+  address?: string;
 }
 
-/**
- * Release escrow to business after check-in.
- * Deducts 1% release fee, sends remaining to business wallet.
- */
-export async function releaseEscrowToBusiness(escrowId: string, releasedBy: string): Promise<{
-  success: boolean;
-  releasedAmount?: number;
-  releaseFee?: number;
-  netToBusiness?: number;
-  message: string;
-}> {
-  const escrow = await prisma.escrow.findUnique({
-    where: { id: escrowId },
-  });
-
-  if (!escrow) {
-    return { success: false, message: 'Escrow not found' };
-  }
-  if (escrow.status !== 'HELD') {
-    return { success: false, message: `Cannot release from status ${escrow.status}` };
-  }
-
-  // Get the crypto payment for fee calculation
-  const cryptoPayment = escrow.paymentId
-    ? await prisma.cryptoPayment.findUnique({ where: { id: escrow.paymentId } })
-    : null;
-
-  const heldAmount = escrow.amount;
-  const releaseFee = (heldAmount * RELEASE_FEE_BPS) / 10000;
-  const netToBusiness = heldAmount - releaseFee;
-  const originalAmount = cryptoPayment?.amount || heldAmount;
-  const totalFees = originalAmount * (TOTAL_FEE_BPS / 10000);
-
-  // Update escrow
-  await prisma.escrow.update({
-    where: { id: escrowId },
-    data: {
-      status: 'RELEASED',
-      releasedAt: new Date(),
-      releasedBy,
-    },
-  });
-
-  // Update reservation if linked
-  if (cryptoPayment) {
-    const meta = cryptoPayment.metadata as any;
-    if (meta?.reservationId) {
-      await prisma.reservation.update({
-        where: { id: meta.reservationId },
-        data: {
-          status: 'COMPLETED',
-          depositStatus: 'APPLIED_TO_SERVICE',
-        },
-      });
-    }
-  }
-
-  // Credit business owner wallet
-  try {
-    await prisma.wallet.upsert({
-      where: { userId: escrow.payeeId },
-      update: { balance: { increment: netToBusiness }, usdcBalance: { increment: netToBusiness } },
-      create: { userId: escrow.payeeId, balance: netToBusiness, usdcBalance: netToBusiness },
-    });
-  } catch (walletErr: any) {
-    logger.warn(`[BookingService] Wallet credit failed for ${escrow.payeeId}: ${walletErr.message}`);
-  }
-
-  logger.info(
-    `[BookingService] Escrow ${escrowId} released: gross=$${heldAmount}, releaseFee=$${releaseFee}, netToBusiness=$${netToBusiness}, totalFees=$${totalFees}`
-  );
-
-  return {
-    success: true,
-    releasedAmount: heldAmount,
-    releaseFee,
-    netToBusiness,
-    message: `Released $${netToBusiness} to business (total fees: $${totalFees.toFixed(2)})`,
-  };
+export interface RouteResult {
+  distance: number;
+  duration: number;
+  geometry?: any;
 }
 
-/**
- * Get booking details by reservation ID or booking reference.
- */
-export async function getBookingDetails(reservationId?: string, bookingReference?: string) {
-  if (bookingReference) {
-    const payment = await prisma.cryptoPayment.findFirst({
-      where: { reference: bookingReference },
-    });
-    if (!payment) return null;
-    const meta = payment.metadata as any;
-    return prisma.reservation.findUnique({
-      where: { id: meta.reservationId },
-      include: { business: true },
-    });
+export interface DistanceMatrixResult {
+  distances: number[][];
+  durations: number[][];
+}
+
+export interface IsochroneResult {
+  type: 'FeatureCollection';
+  features: any[];
+}
+
+export interface BookingConfirmationEmail {
+  to: string;
+  businessName: string;
+  date: string;
+  time: string;
+  guests: number;
+}
+
+export interface PromoEmail {
+  to: string;
+  businessName: string;
+  promoTitle: string;
+  promoDescription: string;
+}
+
+export enum BusinessCategory {
+  RESTAURANT = 'RESTAURANT',
+  SALON = 'SALON',
+  SPA = 'SPA',
+  CLINIC = 'CLINIC',
+  FITNESS_CENTER = 'FITNESS_CENTER',
+  EVENT_VENUE = 'EVENT_VENUE',
+  HOTEL = 'HOTEL',
+  PROPERTY_RENTAL = 'PROPERTY_RENTAL',
+  OTHER = 'OTHER',
+}
+
+// ── Category mapping from OSM tags ────────────────────────────────────────
+
+const CATEGORY_TO_OSM: Record<string, string> = {
+  [BusinessCategory.RESTAURANT]: 'amenity~"restaurant|fast_food|food_cood_court"',
+  [BusinessCategory.SALON]: 'shop~"hairdresser|beauty"',
+  [BusinessCategory.SPA]: 'leisure~"spa|fitness_centre"',
+  [BusinessCategory.CLINIC]: 'amenity~"clinic|doctors|hospital"',
+  [BusinessCategory.FITNESS_CENTER]: 'leisure~"fitness_centre|sports_centre"',
+  [BusinessCategory.EVENT_VENUE]: 'amenity~"events_venue|conference_centre|theatre"',
+  [BusinessCategory.HOTEL]: 'tourism~"hotel|motel|guest_house"',
+  [BusinessCategory.PROPERTY_RENTAL]: 'building~"apartments|commercial"',
+  [BusinessCategory.OTHER]: 'amenity',
+};
+
+const TAG_TO_CATEGORY: Record<string, BusinessCategory> = {
+  restaurant: BusinessCategory.RESTAURANT,
+  fast_food: BusinessCategory.RESTAURANT,
+  food_court: BusinessCategory.RESTAURANT,
+  hairdresser: BusinessCategory.SALON,
+  beauty: BusinessCategory.SALON,
+  spa: BusinessCategory.SPA,
+  fitness_centre: BusinessCategory.FITNESS_CENTER,
+  sports_centre: BusinessCategory.FITNESS_CENTER,
+  clinic: BusinessCategory.CLINIC,
+  doctors: BusinessCategory.CLINIC,
+  hospital: BusinessCategory.CLINIC,
+  events_venue: BusinessCategory.EVENT_VENUE,
+  conference_centre: BusinessCategory.EVENT_VENUE,
+  theatre: BusinessCategory.EVENT_VENUE,
+  cinema: BusinessCategory.EVENT_VENUE,
+  hotel: BusinessCategory.HOTEL,
+  motel: BusinessCategory.HOTEL,
+  guest_house: BusinessCategory.HOTEL,
+  bar: BusinessCategory.OTHER,
+  cafe: BusinessCategory.RESTAURANT,
+  pub: BusinessCategory.OTHER,
+  nightclub: BusinessCategory.OTHER,
+  shop: BusinessCategory.OTHER,
+  supermarket: BusinessCategory.OTHER,
+  bank: BusinessCategory.OTHER,
+  pharmacy: BusinessCategory.OTHER,
+};
+
+// ── Rate limiter (simple in-memory queue) ─────────────────────────────────
+
+let lastRequestTime = 0;
+const MIN_INTERVAL_MS = 1000;
+
+async function rateLimited<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const wait = Math.max(0, MIN_INTERVAL_MS - (now - lastRequestTime));
+  if (wait > 0) {
+    await new Promise((r) => setTimeout(r, wait));
   }
-  if (reservationId) {
-    return prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { business: true, payments: true },
-    });
+  lastRequestTime = Date.now();
+  return fn();
+}
+
+// ── In-memory cache (geocode, 1 hour TTL) ─────────────────────────────────
+
+const CACHE_TTL_MS = 60 * 60 * 1000;
+const geocodeCache = new Map<string, { result: any; timestamp: number }>();
+
+function cacheGet<T>(key: string): T | null {
+  const entry = geocodeCache.get(key);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.result as T;
   }
+  if (entry) geocodeCache.delete(key);
   return null;
 }
 
-export const bookingService = {
-  createBookingWithDeposit,
-  confirmPaymentAndCreateEscrow,
-  pollPaymentStatus,
-  releaseEscrowToBusiness,
-  getBookingDetails,
-};
+function cacheSet<T>(key: string, value: T): void {
+  geocodeCache.set(key, { result: value, timestamp: Date.now() });
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────
+
+const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+const OVERPASS_BASE = 'https://overpass-api.de/api/interpreter';
+const ORS_BASE = 'https://api.openrouteservice.org';
+const RESEND_BASE = 'https://api.resend.com';
+
+const USER_AGENT = 'Pabandi/1.0 (contact@pabandi.com)';
+const REQUEST_TIMEOUT = 10000;
+
+// ── BookingOS Service Class ───────────────────────────────────────────────
+
+export class BookingService {
+  async geocodeAddress(address: string): Promise<GeocodeResult[]> {
+    const cached = cacheGet<GeocodeResult[]>(`geo:${address}`);
+    if (cached) return cached;
+
+    return rateLimited(async () => {
+      try {
+        const axios = (await import('axios')).default;
+        const response = await axios.get(`${NOMINATIM_BASE}/search`, {
+          params: { q: address, format: 'json', limit: 5, addressdetails: 1 },
+          headers: { 'User-Agent': USER_AGENT, 'Accept-Language': 'en' },
+          timeout: REQUEST_TIMEOUT,
+        });
+
+        const results: GeocodeResult[] = (response.data || []).map((item: any) => ({
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          displayName: item.display_name,
+          type: item.type,
+        }));
+
+        cacheSet(`geo:${address}`, results);
+        return results;
+      } catch (err: any) {
+        console.warn(`[BookingService] geocodeAddress failed: ${err?.message || err}`);
+        return [];
+      }
+    });
+  }
+
+  async reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult | null> {
+    const cacheKey = `revgeo:${lat.toFixed(5)},${lng.toFixed(5)}`;
+    const cached = cacheGet<ReverseGeocodeResult>(cacheKey);
+    if (cached) return cached;
+
+    return rateLimited(async () => {
+      try {
+        const axios = (await import('axios')).default;
+        const response = await axios.get(`${NOMINATIM_BASE}/reverse`, {
+          params: { lat, lon: lng, format: 'json', addressdetails: 1 },
+          headers: { 'User-Agent': USER_AGENT, 'Accept-Language': 'en' },
+          timeout: REQUEST_TIMEOUT,
+        });
+
+        const result: ReverseGeocodeResult = {
+          displayName: response.data.display_name,
+          address: response.data.address,
+        };
+        cacheSet(cacheKey, result);
+        return result;
+      } catch (err: any) {
+        console.warn(`[BookingService] reverseGeocode failed: ${err?.message || err}`);
+        return null;
+      }
+    });
+  }
+
+  async searchPOI(query: string, lat?: number, lng?: number, radius?: number): Promise<POIResult[]> {
+    return rateLimited(async () => {
+      try {
+        const axios = (await import('axios')).default;
+        const params: Record<string, any> = { q: query, format: 'json', limit: 20, addressdetails: 1 };
+
+        if (lat != null && lng != null) {
+          params.viewbox = `${lng - 0.1},${lat + 0.1},${lng + 0.1},${lat - 0.1}`;
+          params.bounded = 1;
+        }
+
+        const response = await axios.get(`${NOMINATIM_BASE}/search`, {
+          params,
+          headers: { 'User-Agent': USER_AGENT, 'Accept-Language': 'en' },
+          timeout: REQUEST_TIMEOUT,
+        });
+
+        return (response.data || []).map((item: any) => ({
+          name: item.display_name.split(',')[0] || query,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          category: item.type || item.class || 'poi',
+          tags: { osmType: item.type, osmClass: item.class, osmId: String(item.osm_id || ''), importance: String(item.importance || '') },
+        }));
+      } catch (err: any) {
+        console.warn(`[BookingService] searchPOI failed: ${err?.message || err}`);
+        return [];
+      }
+    });
+  }
+
+  async discoverBusinesses(lat: number, lng: number, radius: number, category?: string): Promise<DiscoveredBusiness[]> {
+    try {
+      const osmTag = category ? (CATEGORY_TO_OSM[category] || `amenity="${category.toLowerCase()}"`) : 'amenity';
+
+      const query = `
+        [out:json][timeout:25];
+        (
+          node[${osmTag}](around:${radius},${lat},${lng});
+          way[${osmTag}](around:${radius},${lat},${lng});
+          relation[${osmTag}](around:${radius},${lat},${lng});
+        );
+        out center 30;
+      `;
+
+      const axios = (await import('axios')).default;
+      const response = await axios.post(
+        OVERPASS_BASE,
+        `data=${encodeURIComponent(query)}`,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT }, timeout: REQUEST_TIMEOUT + 5000 },
+      );
+
+      const elements = response.data?.elements || [];
+      return elements
+        .filter((el: any) => el.tags?.name)
+        .map((el: any) => {
+          const tags = el.tags || {};
+          const amenity = tags.amenity || tags.shop || tags.tourism || tags.leisure || tags.building || '';
+          const mappedCategory = TAG_TO_CATEGORY[amenity] || BusinessCategory.OTHER;
+
+          return {
+            name: tags.name,
+            lat: el.lat || el.center?.lat,
+            lng: el.lon || el.center?.lon,
+            category: mappedCategory,
+            tags,
+            phone: tags.phone || tags['contact:phone'],
+            website: tags.website || tags['contact:website'],
+            email: tags.email || tags['contact:email'],
+            address: tags['addr:street'] ? `${tags['addr:street']}${tags['addr:housenumber'] ? ' ' + tags['addr:housenumber'] : ''}` : undefined,
+          } as DiscoveredBusiness;
+        })
+        .filter((b: DiscoveredBusiness) => b.lat != null && b.lng != null);
+    } catch (err: any) {
+      console.warn(`[BookingService] discoverBusinesses failed: ${err?.message || err}`);
+      return [];
+    }
+  }
+
+  async getDistanceMatrix(origins: LatLng[], destinations: LatLng[]): Promise<DistanceMatrixResult | null> {
+    try {
+      const axios = (await import('axios')).default;
+      const apiKey = process.env.OPENROUTESERVICE_API_KEY;
+
+      const coordinates = [
+        ...origins.map((o) => [o.lng, o.lat]),
+        ...destinations.map((d) => [d.lng, d.lat]),
+      ];
+
+      const response = await axios.post(
+        `${ORS_BASE}/v2/matrix/driving-car`,
+        {
+          locations: coordinates,
+          sources: origins.map((_, i) => i),
+          destinations: origins.map((_, i) => i + origins.length),
+          metrics: ['distance', 'duration'],
+        },
+        { headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: apiKey } : {}), 'User-Agent': USER_AGENT }, timeout: REQUEST_TIMEOUT },
+      );
+
+      return { distances: response.data.distances || [], durations: response.data.durations || [] };
+    } catch (err: any) {
+      console.warn(`[BookingService] getDistanceMatrix failed: ${err?.message || err}`);
+      return null;
+    }
+  }
+
+  async getRoute(from: LatLng, to: LatLng): Promise<RouteResult | null> {
+    try {
+      const axios = (await import('axios')).default;
+      const apiKey = process.env.OPENROUTESERVICE_API_KEY;
+
+      const response = await axios.post(
+        `${ORS_BASE}/v2/directions/driving-car`,
+        { coordinates: [[from.lng, from.lat], [to.lng, to.lat]] },
+        { headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: apiKey } : {}), 'User-Agent': USER_AGENT }, timeout: REQUEST_TIMEOUT },
+      );
+
+      const route = response.data?.routes?.[0];
+      if (!route) return null;
+
+      return { distance: route.summary?.distance ?? 0, duration: route.summary?.duration ?? 0, geometry: route.geometry };
+    } catch (err: any) {
+      console.warn(`[BookingService] getRoute failed: ${err?.message || err}`);
+      return null;
+    }
+  }
+
+  async getIsochrone(lat: number, lng: number, minutes: number): Promise<IsochroneResult | null> {
+    try {
+      const axios = (await import('axios')).default;
+      const apiKey = process.env.OPENROUTESERVICE_API_KEY;
+
+      const response = await axios.post(
+        `${ORS_BASE}/v2/isochrones/driving-car`,
+        { locations: [[lng, lat]], range: [minutes * 60], range_type: 'time' },
+        { headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: apiKey } : {}), 'User-Agent': USER_AGENT }, timeout: REQUEST_TIMEOUT },
+      );
+
+      return response.data as IsochroneResult;
+    } catch (err: any) {
+      console.warn(`[BookingService] getIsochrone failed: ${err?.message || err}`);
+      return null;
+    }
+  }
+
+  async sendBookingConfirmation(data: BookingConfirmationEmail): Promise<boolean> {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      console.log(
+        `[BookingService] RESEND_API_KEY not set — booking confirmation email logged to console only.\n` +
+        `  To: ${data.to}\n  Business: ${data.businessName}\n  Date: ${data.date}\n  Time: ${data.time}\n  Guests: ${data.guests}`,
+      );
+      return true;
+    }
+
+    try {
+      const axios = (await import('axios')).default;
+      await axios.post(
+        `${RESEND_BASE}/emails`,
+        {
+          from: 'BookingOS <bookings@pabandi.com>',
+          to: [data.to],
+          subject: `Booking confirmed: ${data.businessName}`,
+          html: `<div style="font-family: system-ui, sans-serif; padding: 20px;"><h1 style="color: #1a1a1a;">Booking Confirmed</h1><p>Your reservation at <strong>${data.businessName}</strong> is confirmed.</p><table style="margin: 16px 0;"><tr><td><strong>Date:</strong></td><td>${data.date}</td></tr><tr><td><strong>Time:</strong></td><td>${data.time}</td></tr><tr><td><strong>Guests:</strong></td><td>${data.guests}</td></tr></table><p style="color: #666; font-size: 12px;">Powered by BookingOS</p></div>`,
+        },
+        { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, timeout: REQUEST_TIMEOUT },
+      );
+      return true;
+    } catch (err: any) {
+      console.warn(`[BookingService] sendBookingConfirmation failed: ${err?.message || err}`);
+      return false;
+    }
+  }
+
+  async sendPromoEmail(data: PromoEmail): Promise<boolean> {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      console.log(
+        `[BookingService] RESEND_API_KEY not set — promo email logged to console only.\n` +
+        `  To: ${data.to}\n  Business: ${data.businessName}\n  Promo: ${data.promoTitle}\n  Description: ${data.promoDescription}`,
+      );
+      return true;
+    }
+
+    try {
+      const axios = (await import('axios')).default;
+      await axios.post(
+        `${RESEND_BASE}/emails`,
+        {
+          from: 'BookingOS <promos@pabandi.com>',
+          to: [data.to],
+          subject: `Special offer from ${data.businessName}`,
+          html: `<div style="font-family: system-ui, sans-serif; padding: 20px;"><h1 style="color: #1a1a1a;">${data.promoTitle}</h1><p>${data.businessName} has a special offer for you!</p><div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;"><p>${data.promoDescription}</p></div><p style="color: #666; font-size: 12px;">Powered by BookingOS</p></div>`,
+        },
+        { headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, timeout: REQUEST_TIMEOUT },
+      );
+      return true;
+    } catch (err: any) {
+      console.warn(`[BookingService] sendPromoEmail failed: ${err?.message || err}`);
+      return false;
+    }
+  }
+
+  haversineDistance(a: LatLng, b: LatLng): number {
+    const R = 6371e3;
+    const φ1 = (a.lat * Math.PI) / 180;
+    const φ2 = (b.lat * Math.PI) / 180;
+    const Δφ = ((b.lat - a.lat) * Math.PI) / 180;
+    const Δλ = ((b.lng - a.lng) * Math.PI) / 180;
+    const x = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  }
+}
+
+export const bookingService = new BookingService();

@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/saf', label: 'Dashboard', icon: '📦', end: true },
-  { path: '/saf/post-load', label: 'Post Load', icon: '➕' },
-  { path: '/saf/my-loads', label: 'My Loads', icon: '📋' },
-  { path: '/saf/carriers', label: 'Carriers', icon: '🚛' },
-  { path: '/saf/rates', label: 'Rate Calculator', icon: '💰' },
+  { path: '/freight', label: 'Dashboard', icon: '📦', end: true },
+  { path: '/freight/post-load', label: 'Post Load', icon: '➕' },
+  { path: '/freight/my-loads', label: 'My Loads', icon: '📋' },
+  { path: '/freight/carriers', label: 'Carriers', icon: '🚛' },
+  { path: '/freight/rates', label: 'Rate Calculator', icon: '💰' },
 ];
 
-export default function SafPostLoadPage() {
+export default function FreightPostLoadPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: '', description: '', cargoType: 'GENERAL', weightLbs: '', dimensions: '', valueUsd: '',
@@ -49,7 +49,7 @@ export default function SafPostLoadPage() {
   };
 
   return (
-    <DashboardLayout osName="SafOS" osIcon="S" osColor="amber" navItems={navItems}>
+    <DashboardLayout osName="FreightOS" osIcon="S" osColor="amber" navItems={navItems}>
       <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl">
         <h1 className="text-xl font-bold text-white">Post New Load</h1>
 

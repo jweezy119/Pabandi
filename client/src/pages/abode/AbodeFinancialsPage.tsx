@@ -3,14 +3,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/haq', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
   { path: '/haq/tenants', label: 'Tenants', icon: '👥' },
   { path: '/haq/leases', label: 'Leases', icon: '📝' },
   { path: '/haq/maintenance', label: 'Maintenance', icon: '🔧' },
   { path: '/haq/financials', label: 'Financials', icon: '💰' },
 ];
 
-export default function HaqFinancialsPage() {
+export default function AbodeFinancialsPage() {
   const [period, setPeriod] = useState<'month' | 'year'>('month');
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -24,10 +24,10 @@ export default function HaqFinancialsPage() {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  if (loading) return <DashboardLayout osName="HaqOS" osIcon="H" osColor="emerald" navItems={navItems}><div className="text-center py-8"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" /></div></DashboardLayout>;
+  if (loading) return <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}><div className="text-center py-8"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" /></div></DashboardLayout>;
 
   return (
-    <DashboardLayout osName="HaqOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Financials</h1>

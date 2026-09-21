@@ -3,14 +3,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/saf', label: 'Dashboard', icon: '📦', end: true },
-  { path: '/saf/post-load', label: 'Post Load', icon: '➕' },
-  { path: '/saf/my-loads', label: 'My Loads', icon: '📋' },
-  { path: '/saf/carriers', label: 'Carriers', icon: '🚛' },
-  { path: '/saf/rates', label: 'Rate Calculator', icon: '💰' },
+  { path: '/freight', label: 'Dashboard', icon: '📦', end: true },
+  { path: '/freight/post-load', label: 'Post Load', icon: '➕' },
+  { path: '/freight/my-loads', label: 'My Loads', icon: '📋' },
+  { path: '/freight/carriers', label: 'Carriers', icon: '🚛' },
+  { path: '/freight/rates', label: 'Rate Calculator', icon: '💰' },
 ];
 
-export default function SafRateCalculatorPage() {
+export default function FreightRateCalculatorPage() {
   const [form, setForm] = useState({ distance: '', weight: '', cargoType: 'GENERAL' });
   const [estimate, setEstimate] = useState<any>(null);
   const [calculating, setCalculating] = useState(false);
@@ -24,7 +24,7 @@ export default function SafRateCalculatorPage() {
   };
 
   return (
-    <DashboardLayout osName="SafOS" osIcon="S" osColor="amber" navItems={navItems}>
+    <DashboardLayout osName="FreightOS" osIcon="S" osColor="amber" navItems={navItems}>
       <div className="space-y-4 max-w-lg">
         <h1 className="text-xl font-bold text-white">Shipping Rate Calculator</h1>
         <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 space-y-3">

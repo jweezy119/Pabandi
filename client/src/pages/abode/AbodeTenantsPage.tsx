@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/haq', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/haq/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/haq/leases', label: 'Leases', icon: '📝' },
-  { path: '/haq/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/haq/financials', label: 'Financials', icon: '💰' },
+  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/abode/tenants', label: 'Tenants', icon: '👥' },
+  { path: '/abode/leases', label: 'Leases', icon: '📝' },
+  { path: '/abode/maintenance', label: 'Maintenance', icon: '🔧' },
+  { path: '/abode/financials', label: 'Financials', icon: '💰' },
 ];
 
-export default function HaqTenantsPage() {
+export default function AbodeTenantsPage() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -48,7 +48,7 @@ export default function HaqTenantsPage() {
   });
 
   return (
-    <DashboardLayout osName="HaqOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Tenants</h1>

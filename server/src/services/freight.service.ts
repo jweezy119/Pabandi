@@ -1,510 +1,121 @@
-// ── Comprehensive Freight Service ─────────────────────────────────────────
-// One-stop shop: loads, bids, escrow, documents, messaging, tracking,
-// insurance, rate cards, carrier scorecards, fuel surcharges, multi-stop
+import { prisma } from '../utils/database';
 
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+export class FreightLoadService {
+  async postLoad(data: any) {
+    return prisma.freightLoad.create({ data: { ...data, status: 'OPEN' } });
+  }
 
-const prisma = new PrismaClient();
-
-export const freightService = {
-  // ── Load Management ──────────────────────────────────────────────────────
-  
-  async createLoad(data: any) {
-    // Calculate distance (simplified - would use Google Maps API)
-    const distanceMiles = data.distanceMiles || calculateDistance(
-      data.originLat, data.originLng, data.destLat, data.destLng
-    );
-    
-    // Calculate fuel surcharge
-    const fuelSurcharge = calculateFuelSurcharge(data.weightLbs, distanceMiles);
-    
-    return prisma.freightLoad.create({
-      data: {
-        ...data,
-        distanceMiles,
-        fuelSurcharge,
-        status: 'OPEN',
-      },
-    });
-  },
-
-  async listLoads(params?: { 
-    status?: string; 
-    shipperId?: string; 
-    originCity?: string; 
-    destCity?: string;
-    cargoType?: string;
-    minWeight?: number;
-    maxWeight?: number;
-    pickupDate?: string;
-  }) {
+  async getLoads(filters?: { status?: string; shipperId?: string; originCity?: string; destCity?: string; cargoType?: string }) {
     const where: any = {};
-    if (params?.status) where.status = params.status;
-    if (params?.shipperId) where.shipperId = params.shipperId;
-    if (params?.originCity) where.originCity = params.originCity;
-    if (params?.destCity) where.destCity = params.destCity;
-    if (params?.cargoType) where.cargoType = params.cargoType;
-    if (params?.minWeight) where.weightLbs = { gte: params.minWeight };
-    if (params?.maxWeight) where.weightLbs = { ...where.weightLbs, lte: params.maxWeight };
-    if (params?.pickupDate) where.pickupDate = { gte: new Date(params.pickupDate) };
-
+    if (filters?.status) where.status = filters.status;
+    if (filters?.shipperId) where.shipperId = filters.shipperId;
+    if (filters?.originCity) where.originCity = filters.originCity;
+    if (filters?.destCity) where.destCity = filters.destCity;
+    if (filters?.cargoType) where.cargoType = filters.cargoType;
     return prisma.freightLoad.findMany({
       where,
-      include: {
-        shipper: { select: { id: true, firstName: true, lastName: true } },
-        _count: { select: { bids: true, documents: true } },
-        bids: { 
-          select: { id: true, amountUsd: true, status: true, carrier: { select: { id: true, companyName: true } } },
-          orderBy: { amountUsd: 'asc' },
-          take: 3,
-        },
-        stops: true,
-      },
+      include: { shipper: { select: { id: true, firstName: true, lastName: true, companyName: true } }, _count: { select: { bids: true } } },
       orderBy: { createdAt: 'desc' },
     });
-  },
+  }
 
-  async getLoad(id: string) {
+  async getLoadDetail(loadId: string) {
     return prisma.freightLoad.findUnique({
-      where: { id },
+      where: { id: loadId },
       include: {
-        shipper: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
-        bids: {
-          include: { 
-            carrier: { 
-              select: { id: true, firstName: true, lastName: true },
-            } 
-          },
-          orderBy: { amountUsd: 'asc' },
-        },
+        shipper: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
+        bids: { include: { carrier: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { amountUsd: 'asc' } },
         tracking: { orderBy: { createdAt: 'desc' } },
         documents: true,
-        escrow: true,
-        stops: { orderBy: { sequence: 'asc' } },
-        messages: { 
-          orderBy: { createdAt: 'desc' } 
-        },
-        insurance: true,
-        scorecard: true,
       },
     });
-  },
+  }
 
-  async updateLoadStatus(id: string, status: string, location?: string) {
-    const load = await prisma.freightLoad.update({
-      where: { id },
-      data: { status },
-    });
-    
-    // Add tracking update for status changes
-    if (['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(status)) {
-      await prisma.freightTracking.create({
-        data: {
-          loadId: id,
-          status,
-          location: location || 'Unknown',
-        },
-      });
-    }
-    
-    return load;
-  },
+  async updateLoadStatus(loadId: string, status: string) {
+    return prisma.freightLoad.update({ where: { id: loadId }, data: { status: status.toUpperCase() } });
+  }
 
-  // ── Multi-Stop Loads ─────────────────────────────────────────────────────
-  
-  async addStop(loadId: string, data: {
-    sequence: number;
-    address: string;
-    city: string;
-    state: string;
-    zip: string;
-    type: 'PICKUP' | 'DROPOFF';
-    cargoDescription?: string;
-    weightLbs?: number;
-    scheduledTime?: Date;
-  }) {
-    return prisma.freightStop.create({
-      data: { loadId, ...data },
-    });
-  },
+  async deleteLoad(loadId: string) {
+    return prisma.freightLoad.delete({ where: { id: loadId } });
+  }
+}
 
-  async updateStop(stopId: string, data: { status: string; actualTime?: Date; notes?: string }) {
-    return prisma.freightStop.update({
-      where: { id: stopId },
-      data,
-    });
-  },
-
-  // ── Bid Management ───────────────────────────────────────────────────────
-  
-  async placeBid(data: {
-    loadId: string;
-    carrierId: string;
-    amountUsd: number;
-    currency?: string;
-    deliveryDays: number;
-    notes?: string;
-    expiresAt?: Date;
-  }) {
-    return prisma.freightBid.create({
-      data: { ...data, status: 'PENDING' },
-    });
-  },
-
-  async listBids(params?: { loadId?: string; carrierId?: string; status?: string }) {
-    const where: any = {};
-    if (params?.loadId) where.loadId = params.loadId;
-    if (params?.carrierId) where.carrierId = params.carrierId;
-    if (params?.status) where.status = params.status;
-
-    return prisma.freightBid.findMany({
-      where,
-      include: {
-        load: { select: { id: true, title: true, originCity: true, destCity: true, status: true, budgetUsd: true } },
-        carrier: { select: { id: true, firstName: true, lastName: true } },
-      },
-      orderBy: { amountUsd: 'asc' },
-    });
-  },
-
-  async acceptBid(bidId: string) {
-    const bid = await prisma.freightBid.findUnique({ where: { id: bidId } });
-    if (!bid) throw new Error('Bid not found');
-
-    const [updatedBid] = await prisma.$transaction([
-      prisma.freightBid.update({ where: { id: bidId }, data: { status: 'ACCEPTED' } }),
-      prisma.freightBid.updateMany({
-        where: { loadId: bid.loadId, id: { not: bidId } },
-        data: { status: 'REJECTED' },
-      }),
-      prisma.freightLoad.update({
-        where: { id: bid.loadId },
-        data: { status: 'ASSIGNED', acceptedBidId: bidId },
-      }),
-    ]);
-
-    return updatedBid;
-  },
-
-  async rejectBid(bidId: string) {
-    return prisma.freightBid.update({
-      where: { id: bidId },
-      data: { status: 'REJECTED' },
-    });
-  },
-
-  // ── Escrow Management ────────────────────────────────────────────────────
-  
-  async createEscrow(data: { loadId: string; amountUsd: number; currency: string; shipperId: string; carrierId: string }) {
-    return prisma.freightEscrow.create({
-      data: { ...data, status: 'PENDING' },
-    });
-  },
-
-  async fundEscrow(loadId: string) {
-    return prisma.freightEscrow.update({
-      where: { loadId },
-      data: { status: 'FUNDED', fundedAt: new Date() },
-    });
-  },
-
-  async releaseEscrow(loadId: string) {
-    const [escrow] = await prisma.$transaction([
-      prisma.freightEscrow.update({
-        where: { loadId },
-        data: { status: 'RELEASED', releasedAt: new Date() },
-      }),
-      prisma.freightLoad.update({
-        where: { id: loadId },
-        data: { status: 'COMPLETED' },
-      }),
-    ]);
-    return escrow;
-  },
-
-  async disputeEscrow(loadId: string, reason: string) {
-    return prisma.freightEscrow.update({
-      where: { loadId },
-      data: { status: 'DISPUTED', disputeReason: reason },
-    });
-  },
-
-  async refundEscrow(loadId: string) {
-    const [escrow] = await prisma.$transaction([
-      prisma.freightEscrow.update({
-        where: { loadId },
-        data: { status: 'REFUNDED', releasedAt: new Date() },
-      }),
-      prisma.freightLoad.update({
-        where: { id: loadId },
-        data: { status: 'CANCELLED' },
-      }),
-    ]);
-    return escrow;
-  },
-
-  // ── Documents ────────────────────────────────────────────────────────────
-  
-  async uploadDocument(data: {
-    loadId?: string;
-    carrierId?: string;
-    uploadedById: string;
-    documentType: string;
-    fileName: string;
-    fileUrl: string;
-    fileSize?: number;
-  }) {
-    return prisma.freightDocument.create({ data });
-  },
-
-  async getDocuments(loadId?: string, carrierId?: string) {
-    const where: any = {};
-    if (loadId) where.loadId = loadId;
-    if (carrierId) where.carrierId = carrierId;
-    
-    return prisma.freightDocument.findMany({ where, orderBy: { uploadedAt: 'desc' } });
-  },
-
-  // ── Messages ─────────────────────────────────────────────────────────────
-  
-  async sendMessage(data: {
-    loadId: string;
-    senderId: string;
-    message: string;
-    messageType?: string;
-  }) {
-    return prisma.freightMessage.create({
-      data: { ...data, messageType: data.messageType || 'MESSAGE' },
-    });
-  },
-
-  async getMessages(loadId: string) {
-    return prisma.freightMessage.findMany({
-      where: { loadId },
-      orderBy: { createdAt: 'asc' },
-    });
-  },
-
-  // ── Tracking ─────────────────────────────────────────────────────────────
-  
-  async addTrackingUpdate(data: { loadId: string; status: string; location?: string; notes?: string }) {
-    return prisma.freightTracking.create({ data });
-  },
-
-  async getTracking(loadId: string) {
-    return prisma.freightTracking.findMany({
-      where: { loadId },
-      orderBy: { createdAt: 'desc' },
-    });
-  },
-
-  // ── Insurance ────────────────────────────────────────────────────────────
-  
-  async purchaseInsurance(data: {
-    loadId: string;
-    provider: string;
-    coverageAmount: number;
-    premium: number;
-    policyNumber: string;
-  }) {
-    return prisma.freightInsurance.create({ data });
-  },
-
-  async getInsurance(loadId: string) {
-    return prisma.freightInsurance.findUnique({ where: { loadId } });
-  },
-
-  // ── Carrier Scorecard ────────────────────────────────────────────────────
-  
-  async createScorecard(data: {
-    loadId: string;
-    shipperId: string;
-    carrierId: string;
-    onTimeDelivery?: number;
-    cargoCondition?: number;
-    communication?: number;
-    professionalism?: number;
-    notes?: string;
-  }) {
-    const overallRating = ((data.onTimeDelivery || 0) + (data.cargoCondition || 0) + (data.communication || 0) + (data.professionalism || 0)) / 4;
-    
-    const scorecard = await prisma.carrierScorecard.create({
-      data: { ...data, overallRating },
-    });
-    
-    // Update carrier's aggregate rating
-    await this.updateCarrierRating(data.carrierId);
-    
-    return scorecard;
-  },
-
-  async updateCarrierRating(carrierId: string) {
-    const scorecards = await prisma.carrierScorecard.findMany({
-      where: { carrierId },
-      select: { overallRating: true },
-    });
-    
-    if (scorecards.length === 0) return;
-    
-    const avgRating = scorecards.reduce((sum, s) => sum + s.overallRating, 0) / scorecards.length;
-    
-    await prisma.carrierProfile.update({
-      where: { userId: carrierId },
-      data: { rating: Math.round(avgRating) },
-    });
-  },
-
-  // ── Carrier Management ───────────────────────────────────────────────────
-  
-  async createCarrierProfile(data: any) {
+export class FreightCarrierService {
+  async registerCarrier(data: any) {
     return prisma.carrierProfile.create({ data });
-  },
+  }
 
-  async getCarrierProfile(userId: string) {
-    return prisma.carrierProfile.findUnique({
-      where: { userId },
-      include: {
-        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
-        documents: true,
-        scorecards: { orderBy: { createdAt: 'desc' }, take: 10 },
-      },
-    });
-  },
-
-  async listCarriers(params?: { verified?: boolean; state?: string; equipmentType?: string }) {
+  async getCarriers(filters?: { verified?: boolean; state?: string }) {
     const where: any = {};
-    if (params?.verified !== undefined) where.verified = params.verified;
-    if (params?.state) where.operatingStates = { has: params.state };
-    if (params?.equipmentType) where.equipmentType = { has: params.equipmentType };
-
+    if (filters?.verified !== undefined) where.verified = filters.verified;
+    if (filters?.state) where.operatingStates = { has: filters.state };
     return prisma.carrierProfile.findMany({
       where,
-      include: { user: { select: { id: true, firstName: true, lastName: true } } },
+      include: { user: { select: { firstName: true, lastName: true, email: true } }, _count: { select: { scorecards: true } } },
       orderBy: { rating: 'desc' },
     });
-  },
+  }
 
-  async verifyCarrier(userId: string) {
-    return prisma.carrierProfile.update({
-      where: { userId },
-      data: { verified: true },
+  async getCarrierDetail(carrierId: string) {
+    return prisma.carrierProfile.findUnique({
+      where: { id: carrierId },
+      include: { user: { select: { firstName: true, lastName: true, email: true, phone: true } }, scorecards: { orderBy: { createdAt: 'desc' }, take: 10 }, availability: true },
     });
-  },
+  }
 
-  async updateCarrierAvailability(userId: string, data: {
-    availableFrom?: Date;
-    availableTo?: Date;
-    preferredRegions?: string[];
-    maxDistance?: number;
-  }) {
-    return prisma.carrierProfile.update({
-      where: { userId },
-      data: {
-        operatingStates: data.preferredRegions,
-        maxLoadLbs: data.maxDistance,
-      },
-    });
-  },
-
-  // ── Rate Cards ───────────────────────────────────────────────────────────
-  
-  async createRateCard(data: {
-    carrierId: string;
-    originRegion: string;
-    destRegion: string;
-    ratePerMile: number;
-    minimumCharge: number;
-    cargoType?: string;
-  }) {
-    return prisma.carrierRateCard.create({ data });
-  },
-
-  async getRateCards(carrierId: string) {
-    return prisma.carrierRateCard.findMany({ where: { carrierId } });
-  },
-
-  async calculateRate(carrierId: string, origin: string, dest: string, cargoType?: string) {
-    const rateCard = await prisma.carrierRateCard.findFirst({
-      where: {
-        carrierId,
-        OR: [
-          { originRegion: origin, destRegion: dest },
-          { originRegion: 'ANY', destRegion: 'ANY' },
-        ],
-        cargoType: cargoType || undefined,
-      },
-    });
-    return rateCard;
-  },
-
-  // ── Fuel Surcharge ───────────────────────────────────────────────────────
-  
-  async getFuelSurchargeRate() {
-    // In production, this would fetch from EIA API
-    return 0.45; // $0.45 per mile current national average
-  },
-
-  // ── Stats & Analytics ────────────────────────────────────────────────────
-  
-  async getStats() {
-    const [totalLoads, activeLoads, completedLoads, totalCarriers, totalRevenue] = await Promise.all([
-      prisma.freightLoad.count(),
-      prisma.freightLoad.count({ where: { status: { in: ['OPEN', 'ASSIGNED', 'IN_TRANSIT'] } } }),
-      prisma.freightLoad.count({ where: { status: 'COMPLETED' } }),
-      prisma.carrierProfile.count({ where: { verified: true } }),
-      prisma.freightEscrow.aggregate({ where: { status: 'RELEASED' }, _sum: { amountUsd: true } }),
-    ]);
-
-    return {
-      totalLoads,
-      activeLoads,
-      completedLoads,
-      verifiedCarriers: totalCarriers,
-      totalRevenue: totalRevenue._sum.amountUsd || 0,
-    };
-  },
-
-  async getCarrierStats(carrierId: string) {
-    const [scorecards, loads, revenue] = await Promise.all([
-      prisma.carrierScorecard.findMany({ where: { carrierId } }),
-      prisma.freightLoad.count({ where: { acceptedBidId: { contains: carrierId } } }),
-      prisma.freightEscrow.aggregate({ where: { carrierId, status: 'RELEASED' }, _sum: { amountUsd: true } }),
-    ]);
-    
-    const avgRating = scorecards.length > 0 
-      ? scorecards.reduce((sum, s) => sum + s.overallRating, 0) / scorecards.length 
-      : 0;
-    
-    return {
-      totalLoads: loads,
-      avgRating: Math.round(avgRating * 10) / 10,
-      totalRevenue: revenue._sum.amountUsd || 0,
-      completedScorecards: scorecards.length,
-    };
-  },
-};
-
-// ── Helper Functions ───────────────────────────────────────────────────────
-
-function calculateDistance(lat1?: number, lng1?: number, lat2?: number, lng2?: number): number {
-  if (!lat1 || !lng1 || !lat2 || !lng2) return 0;
-  
-  const R = 3959; // Earth's radius in miles
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
+  async rateCarrier(carrierId: string, rating: number, review?: string) {
+    const carrier = await prisma.carrierProfile.findUnique({ where: { id: carrierId } });
+    if (!carrier) throw new Error('Carrier not found');
+    const newRating = carrier.rating ? (carrier.rating + rating) / 2 : rating;
+    return prisma.carrierProfile.update({ where: { id: carrierId }, data: { rating: newRating } });
+  }
 }
 
-function toRad(deg: number): number {
-  return deg * (Math.PI / 180);
+export class FreightMatchingService {
+  async matchLoadToCarrier(loadId: string) {
+    const load = await prisma.freightLoad.findUnique({ where: { id: loadId }, include: { bids: true } });
+    if (!load) throw new Error('Load not found');
+    return prisma.carrierProfile.findMany({
+      where: { verified: true, maxLoadLbs: { gte: load.weightLbs } },
+      orderBy: { rating: 'desc' },
+      take: 5,
+    });
+  }
+
+  async acceptLoad(carrierId: string, loadId: string, amountUsd: number) {
+    return prisma.freightBid.create({ data: { loadId, carrierId, amountUsd, deliveryDays: 3, status: 'PENDING' } });
+  }
+
+  async getMatchingHistory(shipperId: string) {
+    return prisma.freightLoad.findMany({
+      where: { shipperId, status: { in: ['ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED'] } },
+      include: { bids: { where: { status: 'ACCEPTED' } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
 }
 
-function calculateFuelSurcharge(weightLbs: number, distanceMiles: number): number {
-  const ratePerMile = 0.45;
-  return Math.round(ratePerMile * distanceMiles * (weightLbs / 40000) * 100) / 100;
+export class FreightRateService {
+  async calculateRate(distance: number, weight: number, cargoType: string) {
+    const baseRate = distance * 1.5;
+    const weightFactor = weight / 1000;
+    const cargoMultipliers: Record<string, number> = { GENERAL: 1.0, REFRIGERATED: 1.3, HAZARDOUS: 1.5, OVERSIZED: 1.4, FRAGILE: 1.2 };
+    const multiplier = cargoMultipliers[cargoType] || 1.0;
+    const total = baseRate * weightFactor * multiplier;
+    return { distance, weight, cargoType, baseRate, multiplier, total: Math.round(total * 100) / 100, currency: 'USD' };
+  }
+
+  async getRateHistory(shipperId: string) {
+    return prisma.freightLoad.findMany({
+      where: { shipperId },
+      select: { id: true, originCity: true, destCity: true, distanceMiles: true, weightLbs: true, budgetUsd: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  }
 }
+
+export const freightLoad = new FreightLoadService();
+export const freightCarrier = new FreightCarrierService();
+export const freightMatching = new FreightMatchingService();
+export const freightRate = new FreightRateService();

@@ -1,38 +1,31 @@
-# Pabandi — LLM-readable brand brief
+# PabandiOS
+> The trust operating system for bookings, freight, property, CRM, and finance.
 
-Brand: Pabandi
-Tagline: Commitment, secured.
-Domain: https://pabandi.com
-Core: informal economy bookings, trust score, $PAB rewards, cross-platform live selling, hospitality, freelance, gigs.
+## What we do
+PabandiOS provides AI-powered reliability scoring, Solana escrow, and PAB reward 
+distribution for service businesses. Five modules, one trust engine:
+- BookingOS: Book services with trust protection
+- FreightOS: Move goods with escrow-protected logistics
+- AbodeOS: Manage property with tenant trust scoring
+- PipelineOS: CRM and sales pipeline management
+- LedgerOS: Finance, invoicing, and expense tracking
 
-What we are:
-- trust-and-commitment layer for informal economy bookings
-- portable Passport reputation for sellers, live sellers, and hosts
-- answer engine for local trust discovery and reliable booking
-- WhatsApp Business enabled with Meta Cloud API
+## API
+- Base URL: https://api.pabandi.com
+- OpenAPI spec: https://api.pabandi.com/openapi.yaml
+- MCP server: https://api.pabandi.com/mcp
 
-Public pages:
-- https://pabandi.com
-- https://pabandi.com/search
-- https://pabandi.com/hospitality
-- https://pabandi.com/live-sell
-- https://pabandi.com/freelance
-- https://pabandi.com/trust
-- https://pabandi.com/join
-- https://pabandi.com/contact
-- https://pabandi.com/about
-- https://pabandi.com/privacy
-- https://pabandi.com/terms
-- https://pabandi.com/developer
+## Payments
+We accept USDC on Solana via x402 and AP2-compatible authorization.
+Agent escrow is available for all service bookings.
 
-Seller entry points:
-- https://pabandi.com/s/:sellerId
-- https://pabandi.com/b/:slug
+## Trust Score
+Every agent can query the Reliability Score of any Pabandi Passport holder.
+Endpoint: GET /api/v1/passport/{id}/trust-score
 
-Support:
-- jay@pabandi.com
-- WhatsApp via Meta Cloud API from business/notification settings
+## Agent Discovery
+- agents.json: https://pabandi.com/agents.json
+- Capabilities: booking.create, freight.quote, property.list, pipeline.ledger, escrow.initiate
 
-Tokens:
-- currency: USD
-- rewards: $PAB tokens, not points
+## Contact
+agents@pabandi.com

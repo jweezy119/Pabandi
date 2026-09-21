@@ -1,328 +1,124 @@
 import { Router, Request, Response } from 'express';
-import { freightService } from '../services/freight.service';
 import { authenticate } from '../middleware/auth.middleware';
+import { freightLoad, freightCarrier, freightMatching, freightRate } from '../services/freight.service';
 
 const router = Router();
 
-// ── Loads ─────────────────────────────────────────────────────────────────
-router.get('/loads', async (req: Request, res: Response) => {
+// Loads
+router.get('/loads', authenticate, async (req: any, res: Response) => {
   try {
-    const { status, shipperId, originCity, destCity, cargoType, minWeight, maxWeight, pickupDate } = req.query;
-    const loads = await freightService.listLoads({
-      status: status as string,
-      shipperId: shipperId as string,
-      originCity: originCity as string,
-      destCity: destCity as string,
-      cargoType: cargoType as string,
-      minWeight: minWeight ? Number(minWeight) : undefined,
-      maxWeight: maxWeight ? Number(maxWeight) : undefined,
-      pickupDate: pickupDate as string,
-    });
+    const { status, originCity, destCity, cargoType } = req.query;
+    const loads = await freightLoad.getLoads({ status: status as string, originCity: originCity as string, destCity: destCity as string, cargoType: cargoType as string });
     res.json({ success: true, data: loads });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load freight' });
-  }
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get loads' }); }
 });
 
-router.get('/loads/:id', async (req: Request, res: Response) => {
+router.get('/loads/:id', authenticate, async (req: any, res: Response) => {
   try {
-    const load = await freightService.getLoad(req.params.id);
+    const load = await freightLoad.getLoadDetail(req.params.id);
     if (!load) return res.status(404).json({ error: 'Load not found' });
     res.json({ success: true, data: load });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load details' });
-  }
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get load details' }); }
 });
 
 router.post('/loads', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const load = await freightService.createLoad({
-      shipperId: userId,
-      ...req.body,
-      pickupDate: new Date(req.body.pickupDate),
-      deliveryDate: new Date(req.body.deliveryDate),
-    });
+    const load = await freightLoad.postLoad({ ...req.body, shipperId: userId });
     res.status(201).json({ success: true, data: load });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to create load' });
-  }
+  } catch (e: any) { res.status(500).json({ error: e.message || 'Failed to post load' }); }
 });
 
-router.patch('/loads/:id/status', authenticate, async (req: any, res: Response) => {
+router.put('/loads/:id/status', authenticate, async (req: any, res: Response) => {
   try {
-    const { status, location } = req.body;
-    const load = await freightService.updateLoadStatus(req.params.id, status, location);
+    const { status } = req.body;
+    const load = await freightLoad.updateLoadStatus(req.params.id, status);
     res.json({ success: true, data: load });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to update status' });
-  }
+  } catch (e: any) { res.status(500).json({ error: 'Failed to update load status' }); }
 });
 
-// ── Bids ──────────────────────────────────────────────────────────────────
-router.post('/bids', authenticate, async (req: any, res: Response) => {
+router.delete('/loads/:id', authenticate, async (req: any, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const bid = await freightService.placeBid({
-      carrierId: userId,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: bid });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to place bid' });
-  }
+    await freightLoad.deleteLoad(req.params.id);
+    res.json({ success: true, message: 'Load deleted' });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to delete load' }); }
 });
 
-router.post('/bids/:id/accept', authenticate, async (req: any, res: Response) => {
+// Carriers
+router.get('/carriers', authenticate, async (req: any, res: Response) => {
   try {
-    const bid = await freightService.acceptBid(req.params.id);
-    res.json({ success: true, data: bid });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to accept bid' });
-  }
+    const { verified, state } = req.query;
+    const carriers = await freightCarrier.getCarriers({ verified: verified === 'true' ? true : verified === 'false' ? false : undefined, state: state as string });
+    res.json({ success: true, data: carriers });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get carriers' }); }
 });
 
-router.post('/bids/:id/reject', authenticate, async (req: any, res: Response) => {
+router.get('/carriers/:id', authenticate, async (req: any, res: Response) => {
   try {
-    const bid = await freightService.rejectBid(req.params.id);
-    res.json({ success: true, data: bid });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to reject bid' });
-  }
+    const carrier = await freightCarrier.getCarrierDetail(req.params.id);
+    if (!carrier) return res.status(404).json({ error: 'Carrier not found' });
+    res.json({ success: true, data: carrier });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get carrier details' }); }
 });
 
-// ── Tracking ───────────────────────────────────────────────────────────────
-router.post('/loads/:id/tracking', authenticate, async (req: any, res: Response) => {
-  try {
-    const tracking = await freightService.addTrackingUpdate({
-      loadId: req.params.id,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: tracking });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to add tracking' });
-  }
-});
-
-router.get('/loads/:id/tracking', async (req: Request, res: Response) => {
-  try {
-    const tracking = await freightService.getTracking(req.params.id);
-    res.json({ success: true, data: tracking });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load tracking' });
-  }
-});
-
-// ── Documents ──────────────────────────────────────────────────────────────
-router.post('/documents', authenticate, async (req: any, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    const doc = await freightService.uploadDocument({
-      uploadedById: userId,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: doc });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to upload document' });
-  }
-});
-
-router.get('/documents', async (req: Request, res: Response) => {
-  try {
-    const { loadId, carrierId } = req.query;
-    const docs = await freightService.getDocuments(loadId as string, carrierId as string);
-    res.json({ success: true, data: docs });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load documents' });
-  }
-});
-
-// ── Messages ───────────────────────────────────────────────────────────────
-router.post('/messages', authenticate, async (req: any, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    const message = await freightService.sendMessage({
-      senderId: userId,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: message });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to send message' });
-  }
-});
-
-router.get('/messages/:loadId', async (req: Request, res: Response) => {
-  try {
-    const messages = await freightService.getMessages(req.params.loadId);
-    res.json({ success: true, data: messages });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load messages' });
-  }
-});
-
-// ── Escrow ────────────────────────────────────────────────────────────────
-router.post('/escrow', authenticate, async (req: any, res: Response) => {
-  try {
-    const escrow = await freightService.createEscrow(req.body);
-    res.status(201).json({ success: true, data: escrow });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to create escrow' });
-  }
-});
-
-router.post('/escrow/:loadId/fund', authenticate, async (req: any, res: Response) => {
-  try {
-    const escrow = await freightService.fundEscrow(req.params.loadId);
-    res.json({ success: true, data: escrow });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to fund escrow' });
-  }
-});
-
-router.post('/escrow/:loadId/release', authenticate, async (req: any, res: Response) => {
-  try {
-    const escrow = await freightService.releaseEscrow(req.params.loadId);
-    res.json({ success: true, data: escrow });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to release escrow' });
-  }
-});
-
-router.post('/escrow/:loadId/dispute', authenticate, async (req: any, res: Response) => {
-  try {
-    const { reason } = req.body;
-    const escrow = await freightService.disputeEscrow(req.params.loadId, reason);
-    res.json({ success: true, data: escrow });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to dispute escrow' });
-  }
-});
-
-// ── Insurance ──────────────────────────────────────────────────────────────
-router.post('/insurance', authenticate, async (req: any, res: Response) => {
-  try {
-    const insurance = await freightService.purchaseInsurance(req.body);
-    res.status(201).json({ success: true, data: insurance });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to purchase insurance' });
-  }
-});
-
-router.get('/insurance/:loadId', async (req: Request, res: Response) => {
-  try {
-    const insurance = await freightService.getInsurance(req.params.loadId);
-    res.json({ success: true, data: insurance });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load insurance' });
-  }
-});
-
-// ── Scorecards ─────────────────────────────────────────────────────────────
-router.post('/scorecards', authenticate, async (req: any, res: Response) => {
-  try {
-    const scorecard = await freightService.createScorecard(req.body);
-    res.status(201).json({ success: true, data: scorecard });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to create scorecard' });
-  }
-});
-
-// ── Carriers ───────────────────────────────────────────────────────────────
 router.post('/carriers', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const profile = await freightService.createCarrierProfile({
-      userId,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: profile });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to create profile' });
-  }
+    const carrier = await freightCarrier.registerCarrier({ ...req.body, userId });
+    res.status(201).json({ success: true, data: carrier });
+  } catch (e: any) { res.status(500).json({ error: e.message || 'Failed to register carrier' }); }
 });
 
-router.get('/carriers', async (req: Request, res: Response) => {
+router.post('/carriers/:id/rate', authenticate, async (req: any, res: Response) => {
   try {
-    const { verified, state, equipmentType } = req.query;
-    const carriers = await freightService.listCarriers({
-      verified: verified === 'true',
-      state: state as string,
-      equipmentType: equipmentType as string,
-    });
-    res.json({ success: true, data: carriers });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load carriers' });
-  }
+    const { rating, review } = req.body;
+    const carrier = await freightCarrier.rateCarrier(req.params.id, rating, review);
+    res.json({ success: true, data: carrier });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to rate carrier' }); }
 });
 
-router.get('/carriers/:id', async (req: Request, res: Response) => {
+// Matching
+router.post('/match', authenticate, async (req: any, res: Response) => {
   try {
-    const profile = await freightService.getCarrierProfile(req.params.id);
-    if (!profile) return res.status(404).json({ error: 'Carrier not found' });
-    res.json({ success: true, data: profile });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load carrier' });
-  }
+    const { loadId } = req.body;
+    const matches = await freightMatching.matchLoadToCarrier(loadId);
+    res.json({ success: true, data: matches });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to match load' }); }
 });
 
-router.patch('/carriers/:id/verify', authenticate, async (req: any, res: Response) => {
+router.post('/accept', authenticate, async (req: any, res: Response) => {
   try {
-    const profile = await freightService.verifyCarrier(req.params.id);
-    res.json({ success: true, data: profile });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to verify carrier' });
-  }
+    const { carrierId, loadId, amountUsd } = req.body;
+    const bid = await freightMatching.acceptLoad(carrierId, loadId, amountUsd);
+    res.json({ success: true, data: bid });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to accept load' }); }
 });
 
-router.patch('/carriers/:id/availability', authenticate, async (req: any, res: Response) => {
-  try {
-    const profile = await freightService.updateCarrierAvailability(req.params.id, req.body);
-    res.json({ success: true, data: profile });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to update availability' });
-  }
-});
-
-// ── Rate Cards ─────────────────────────────────────────────────────────────
-router.post('/rate-cards', authenticate, async (req: any, res: Response) => {
+router.get('/matching-history', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const rateCard = await freightService.createRateCard({
-      carrierId: userId,
-      ...req.body,
-    });
-    res.status(201).json({ success: true, data: rateCard });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message || 'Failed to create rate card' });
-  }
+    const history = await freightMatching.getMatchingHistory(userId);
+    res.json({ success: true, data: history });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get matching history' }); }
 });
 
-router.get('/rate-cards/:carrierId', async (req: Request, res: Response) => {
+// Rates
+router.get('/rates', authenticate, async (req: any, res: Response) => {
   try {
-    const rateCards = await freightService.getRateCards(req.params.carrierId);
-    res.json({ success: true, data: rateCards });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load rate cards' });
-  }
+    const distance = Number(req.query.distance) || 0;
+    const weight = Number(req.query.weight) || 0;
+    const type = (req.query.type as string) || 'GENERAL';
+    const rate = await freightRate.calculateRate(distance, weight, type);
+    res.json({ success: true, data: rate });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to calculate rate' }); }
 });
 
-// ── Stats ──────────────────────────────────────────────────────────────────
-router.get('/stats', async (_req: Request, res: Response) => {
+router.get('/rates/history', authenticate, async (req: any, res: Response) => {
   try {
-    const stats = await freightService.getStats();
-    res.json({ success: true, data: stats });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load stats' });
-  }
-});
-
-router.get('/stats/:carrierId', async (req: Request, res: Response) => {
-  try {
-    const stats = await freightService.getCarrierStats(req.params.carrierId);
-    res.json({ success: true, data: stats });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to load carrier stats' });
-  }
+    const userId = req.user?.id;
+    const history = await freightRate.getRateHistory(userId);
+    res.json({ success: true, data: history });
+  } catch (e: any) { res.status(500).json({ error: 'Failed to get rate history' }); }
 });
 
 export default router;
