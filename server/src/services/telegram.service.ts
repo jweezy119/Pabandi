@@ -272,7 +272,7 @@ export class TelegramService {
       content: `${command} ${args.join(' ')}`,
     });
 
-    const business = await prisma.bookingBusiness.findUnique({ where: { id: businessId } });
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
     const businessName = business?.name || 'Pabandi';
 
     switch (command.toLowerCase()) {
@@ -360,7 +360,7 @@ export class TelegramService {
   }
 
   private async showMenu(ctx: Context, businessId: string, businessName: string): Promise<void> {
-    const services = await prisma.bookingBusinessService.findMany({
+    const services = await prisma.businessService.findMany({
       where: { businessId, isActive: true },
       orderBy: { price: 'asc' },
     });
@@ -399,7 +399,7 @@ export class TelegramService {
     const chatId = String(ctx.from?.id);
 
     if (data === 'cmd_menu') {
-      const business = await prisma.bookingBusiness.findUnique({ where: { id: businessId } });
+      const business = await prisma.business.findUnique({ where: { id: businessId } });
       await this.showMenu(ctx, businessId, business?.name || 'Pabandi');
     } else if (data === 'cmd_book') {
       await ctx.reply('📅 To book a table, please share:\n1. Date & time\n2. Number of guests\n3. Contact number (+92...)');

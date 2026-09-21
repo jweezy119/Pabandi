@@ -6,10 +6,10 @@ export class BuilderService {
     companyName: string;
     licenseNumber?: string;
   }) {
-    const existing = await prisma.builderProfile.findUnique({ where: { userId } });
+    const existing = await prisma.abodeBuilder.findUnique({ where: { userId } });
     if (existing) return existing;
 
-    const profile = await prisma.builderProfile.create({
+    const profile = await prisma.abodeBuilder.create({
       data: {
         userId,
         companyName: data.companyName,
@@ -20,7 +20,7 @@ export class BuilderService {
   }
 
   async getProfile(userId: string) {
-    return prisma.builderProfile.findUnique({
+    return prisma.abodeBuilder.findUnique({
       where: { userId },
       include: {
         projects: {
@@ -40,7 +40,7 @@ export class BuilderService {
     startDate: Date;
     expectedCompletion: Date;
   }) {
-    const project = await prisma.builderProject.create({
+    const project = await prisma.abodeProject.create({
       data: {
         builderId,
         name: data.name,
@@ -52,7 +52,7 @@ export class BuilderService {
       },
     });
 
-    await prisma.builderProfile.update({
+    await prisma.abodeBuilder.update({
       where: { id: builderId },
       data: { totalProjects: { increment: 1 } },
     });
@@ -61,7 +61,7 @@ export class BuilderService {
   }
 
   async getProjects(builderId: string) {
-    return prisma.builderProject.findMany({
+    return prisma.abodeProject.findMany({
       where: { builderId },
       include: {
         _count: { select: { units: true, milestones: true } },
@@ -71,7 +71,7 @@ export class BuilderService {
   }
 
   async getProjectDetail(projectId: string) {
-    return prisma.builderProject.findUnique({
+    return prisma.abodeProject.findUnique({
       where: { id: projectId },
       include: {
         units: {
@@ -92,7 +92,7 @@ export class BuilderService {
     price: number;
     floor?: number;
   }) {
-    const unit = await prisma.builderUnit.create({
+    const unit = await prisma.abodeBuilderUnit.create({
       data: {
         projectId,
         unitNumber: data.unitNumber,
@@ -103,7 +103,7 @@ export class BuilderService {
       },
     });
 
-    await prisma.builderProject.update({
+    await prisma.abodeProject.update({
       where: { id: projectId },
       data: { totalUnits: { increment: 1 } },
     });
@@ -112,16 +112,16 @@ export class BuilderService {
   }
 
   async bookUnit(unitId: string, buyerId: string) {
-    const unit = await prisma.builderUnit.findUnique({ where: { id: unitId } });
+    const unit = await prisma.abodeBuilderUnit.findUnique({ where: { id: unitId } });
     if (!unit) throw new Error('Unit not found');
     if (unit.status !== 'AVAILABLE') throw new Error('Unit not available');
 
-    const updated = await prisma.builderUnit.update({
+    const updated = await prisma.abodeBuilderUnit.update({
       where: { id: unitId },
       data: { status: 'BOOKED', buyerId },
     });
 
-    await prisma.builderProject.update({
+    await prisma.abodeProject.update({
       where: { id: unit.projectId },
       data: { bookedUnits: { increment: 1 } },
     });
@@ -130,15 +130,15 @@ export class BuilderService {
   }
 
   async sellUnit(unitId: string, buyerId: string) {
-    const unit = await prisma.builderUnit.findUnique({ where: { id: unitId }, include: { project: true } });
+    const unit = await prisma.abodeBuilderUnit.findUnique({ where: { id: unitId }, include: { project: true } });
     if (!unit) throw new Error('Unit not found');
 
-    const updated = await prisma.builderUnit.update({
+    const updated = await prisma.abodeBuilderUnit.update({
       where: { id: unitId },
       data: { status: 'SOLD', buyerId },
     });
 
-    await prisma.builderProject.update({
+    await prisma.abodeProject.update({
       where: { id: unit.projectId },
       data: {
         soldUnits: { increment: 1 },
@@ -147,7 +147,7 @@ export class BuilderService {
     });
 
     if (unit.project?.builderId) {
-      await prisma.builderProfile.update({
+      await prisma.abodeBuilder.update({
         where: { id: unit.project.builderId },
         data: { totalSold: { increment: 1 } },
       }).catch(() => {});
@@ -179,13 +179,13 @@ export class BuilderService {
   }
 
   async getBuyers(builderId: string) {
-    const projects = await prisma.builderProject.findMany({
+    const projects = await prisma.abodeProject.findMany({
       where: { builderId },
       select: { id: true },
     });
     const projectIds = projects.map((p) => p.id);
 
-    return prisma.buyerProfile.findMany({
+    return prisma.abodeBuyer.findMany({
       where: { units: { some: { projectId: { in: projectIds } } } },
       include: {
         user: { select: { firstName: true, lastName: true, email: true } },
@@ -196,7 +196,7 @@ export class BuilderService {
   }
 
   async getInstallments(builderId: string, status?: string) {
-    const projects = await prisma.builderProject.findMany({
+    const projects = await prisma.abodeProject.findMany({
       where: { builderId },
       select: { id: true },
     });
@@ -233,7 +233,7 @@ export class BuilderService {
   }
 
   async getTrustScore(builderId: string) {
-    const builder = await prisma.builderProfile.findUnique({
+    const builder = await prisma.abodeBuilder.findUnique({
       where: { id: builderId },
       include: {
         projects: {
@@ -297,7 +297,7 @@ export class BuilderService {
       };
     }
 
-    return prisma.builderProject.findMany({
+    return prisma.abodeProject.findMany({
       where,
       include: {
         builder: { include: { user: { select: { firstName: true, lastName: true } } } },

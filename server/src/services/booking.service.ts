@@ -450,4 +450,55 @@ export class BookingService {
   }
 }
 
+// ── Stub Functions (for controller imports) ────────────────────────────────
+
+export async function createBookingWithDeposit(data: any): Promise<any> {
+  console.log('[BookingService] createBookingWithDeposit called (stub)', data);
+  return {
+    success: true,
+    message: 'Booking created (stub)',
+    bookingReference: `BK-${Date.now()}`,
+    reservationId: null,
+    depositAmount: data?.depositAmount || 0,
+    paymentUrl: null,
+    paymentId: null,
+    paymentMethod: data?.paymentMethod || null,
+    raastId: null,
+  };
+}
+
+export async function confirmPaymentAndCreateEscrow(
+  bookingReference: string,
+  paymentData?: any,
+): Promise<any> {
+  console.log('[BookingService] confirmPaymentAndCreateEscrow called (stub)', bookingReference, paymentData);
+  return {
+    success: true,
+    message: 'Payment confirmed (stub)',
+    escrowId: null,
+  };
+}
+
+export async function releaseEscrowToBusiness(
+  escrowId: string,
+  userId: string,
+): Promise<any> {
+  console.log('[BookingService] releaseEscrowToBusiness called (stub)', escrowId, userId);
+  return {
+    success: true,
+    message: 'Escrow released (stub)',
+    releasedAmount: 0,
+    releaseFee: 0,
+    netToBusiness: 0,
+  };
+}
+
+export async function getBookingDetails(
+  id: string | undefined,
+  reference?: string,
+): Promise<any> {
+  console.log('[BookingService] getBookingDetails called (stub)', id, reference);
+  return null;
+}
+
 export const bookingService = new BookingService();

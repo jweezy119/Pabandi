@@ -23,7 +23,7 @@ export const guestListService = {
     const { userId, venueId, eventId, date, partySize, guestNames, email, phone } = data;
 
     // Validate venue exists
-    const venue = await prisma.nightlifeVenue.findUnique({
+    const venue = await prisma.bookingVenue.findUnique({
       where: { id: venueId },
     });
 

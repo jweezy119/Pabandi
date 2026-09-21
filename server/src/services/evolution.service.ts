@@ -141,7 +141,7 @@ export class EvolutionService {
       await this.sendTextMessage(instanceName, from, `💳 Processing payment...`);
       // In production: process payment
     } else if (lowerText === 'my bookings') {
-      const bookings = await prisma.bookingPabRecord.findMany({
+      const bookings = await prisma.bookingRecord.findMany({
         where: { userId },
         take: 5,
       });

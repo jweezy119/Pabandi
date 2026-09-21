@@ -15,7 +15,7 @@ router.post('/contacts', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { firstName, lastName, email, phone, company, title, source, status, tags, metadata } = req.body || {};
@@ -34,7 +34,7 @@ router.get('/contacts', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { status, search } = req.query;
@@ -61,7 +61,7 @@ router.patch('/contacts/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const contact = await prisma.contact.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -79,7 +79,7 @@ router.delete('/contacts/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const contact = await prisma.contact.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -99,7 +99,7 @@ router.post('/deals', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { contactId, title, description, value, currency, stage, probability, expectedCloseDate, lostReason, metadata } = req.body || {};
@@ -118,7 +118,7 @@ router.get('/deals', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { stage, contactId } = req.query;
@@ -138,7 +138,7 @@ router.patch('/deals/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const deal = await prisma.deal.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -161,7 +161,7 @@ router.delete('/deals/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const deal = await prisma.deal.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -181,7 +181,7 @@ router.get('/pipeline', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const deals = await prisma.deal.findMany({ where: { managerId: profile.id }, include: { contact: true } });
@@ -205,7 +205,7 @@ router.post('/campaigns', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { name, description, type, template, subject, body, recipientFilter, scheduledAt } = req.body || {};
@@ -235,7 +235,7 @@ router.get('/campaigns', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const campaigns = await prisma.campaign.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' } });
@@ -250,7 +250,7 @@ router.post('/campaigns/:id/recipients', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -274,7 +274,7 @@ router.post('/campaigns/:id/send', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -296,7 +296,7 @@ router.get('/tasks', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { status, contactId, dealId, assigneeId } = req.query;
@@ -318,7 +318,7 @@ router.post('/tasks', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { contactId, dealId, relatedType, relatedId, title, description, status, priority, dueDate, assigneeId } = req.body || {};
@@ -339,7 +339,7 @@ router.patch('/tasks/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const task = await prisma.task.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -363,7 +363,7 @@ router.delete('/tasks/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const task = await prisma.task.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -383,7 +383,7 @@ router.get('/communications', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { contactId, dealId, type } = req.query;
@@ -404,7 +404,7 @@ router.post('/communications', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { contactId, dealId, type, direction, subject, body, duration, metadata } = req.body || {};
@@ -427,7 +427,7 @@ router.patch('/deals/:id/move', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const deal = await prisma.deal.findFirst({ where: { id: req.params.id, managerId: profile.id } });
@@ -454,7 +454,7 @@ router.get('/email-templates', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { category } = req.query;
     const where: any = { managerId: profile.id };
@@ -471,7 +471,7 @@ router.post('/email-templates', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { name, subject, body, category, isDefault, metadata } = req.body || {};
     if (!name || !subject || !body) return res.status(400).json({ error: 'Name, subject, and body are required' });
@@ -488,7 +488,7 @@ router.patch('/email-templates/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const template = await prisma.emailTemplate.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!template) return res.status(404).json({ error: 'Template not found' });
@@ -504,7 +504,7 @@ router.delete('/email-templates/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const template = await prisma.emailTemplate.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!template) return res.status(404).json({ error: 'Template not found' });
@@ -522,7 +522,7 @@ router.get('/sequences', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { status } = req.query;
     const where: any = { managerId: profile.id };
@@ -539,7 +539,7 @@ router.post('/sequences', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { name, description, status, trigger, steps } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
@@ -566,7 +566,7 @@ router.patch('/sequences/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const sequence = await prisma.sequence.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!sequence) return res.status(404).json({ error: 'Sequence not found' });
@@ -588,7 +588,7 @@ router.delete('/sequences/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const sequence = await prisma.sequence.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!sequence) return res.status(404).json({ error: 'Sequence not found' });
@@ -604,7 +604,7 @@ router.post('/sequences/:id/enroll', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const sequence = await prisma.sequence.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!sequence) return res.status(404).json({ error: 'Sequence not found' });
@@ -623,7 +623,7 @@ router.get('/sequences/:id/enrollments', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const enrollments = await prisma.sequenceEnrollment.findMany({ where: { sequenceId: req.params.id, managerId: profile.id }, include: { contact: true } });
     res.json({ success: true, data: enrollments });
@@ -639,7 +639,7 @@ router.get('/forms', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const forms = await prisma.form.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' } });
     res.json({ success: true, data: forms });
@@ -653,7 +653,7 @@ router.post('/forms', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { name, slug, fields, thankYou, redirectUrl, status, metadata } = req.body || {};
     if (!name || !slug || !fields) return res.status(400).json({ error: 'Name, slug, and fields are required' });
@@ -670,7 +670,7 @@ router.get('/forms/:id/submissions', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const form = await prisma.form.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!form) return res.status(404).json({ error: 'Form not found' });
@@ -703,7 +703,7 @@ router.post('/contacts/:id/score', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const contact = await prisma.contact.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
@@ -722,7 +722,7 @@ router.get('/contacts/:id/scores', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const scores = await prisma.leadScore.findMany({ where: { contactId: req.params.id, managerId: profile.id }, orderBy: { createdAt: 'desc' }, take: 50 });
     res.json({ success: true, data: scores });
@@ -738,7 +738,7 @@ router.get('/reports', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { type } = req.query;
     const where: any = { managerId: profile.id };
@@ -755,7 +755,7 @@ router.post('/reports', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { name, description, type, config, chartType, isDefault, isPublic } = req.body || {};
     if (!name || !type) return res.status(400).json({ error: 'Name and type are required' });
@@ -772,7 +772,7 @@ router.post('/reports/:id/run', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const report = await prisma.report.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!report) return res.status(404).json({ error: 'Report not found' });
@@ -849,7 +849,7 @@ router.delete('/reports/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const report = await prisma.report.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!report) return res.status(404).json({ error: 'Report not found' });
@@ -867,7 +867,7 @@ router.get('/tickets', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { status, priority, contactId } = req.query;
     const where: any = { managerId: profile.id };
@@ -886,7 +886,7 @@ router.post('/tickets', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { contactId, subject, description, status, priority, category, assigneeId } = req.body || {};
     if (!subject) return res.status(400).json({ error: 'Subject is required' });
@@ -903,7 +903,7 @@ router.patch('/tickets/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const ticket = await prisma.ticket.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
@@ -924,7 +924,7 @@ router.post('/tickets/:id/comments', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const ticket = await prisma.ticket.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
@@ -943,7 +943,7 @@ router.get('/tickets/:id/comments', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const comments = await prisma.ticketComment.findMany({ where: { ticketId: req.params.id, managerId: profile.id }, orderBy: { createdAt: 'asc' } });
     res.json({ success: true, data: comments });
@@ -959,7 +959,7 @@ router.get('/knowledge', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { category, status } = req.query;
     const where: any = { managerId: profile.id };
@@ -977,7 +977,7 @@ router.post('/knowledge', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { title, slug, content, category, tags, status } = req.body || {};
     if (!title || !slug || !content) return res.status(400).json({ error: 'Title, slug, and content are required' });
@@ -994,7 +994,7 @@ router.patch('/knowledge/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const article = await prisma.knowledgeArticle.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!article) return res.status(404).json({ error: 'Article not found' });
@@ -1010,7 +1010,7 @@ router.delete('/knowledge/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const article = await prisma.knowledgeArticle.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!article) return res.status(404).json({ error: 'Article not found' });
@@ -1028,7 +1028,7 @@ router.get('/events', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { startDate, endDate, contactId, dealId } = req.query;
     const where: any = { managerId: profile.id };
@@ -1048,7 +1048,7 @@ router.post('/events', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { contactId, dealId, title, description, startAt, endAt, location, type, status, attendees } = req.body || {};
     if (!title || !startAt) return res.status(400).json({ error: 'Title and startAt are required' });
@@ -1065,7 +1065,7 @@ router.patch('/events/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const event = await prisma.calendarEvent.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!event) return res.status(404).json({ error: 'Event not found' });
@@ -1085,7 +1085,7 @@ router.delete('/events/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const event = await prisma.calendarEvent.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!event) return res.status(404).json({ error: 'Event not found' });
@@ -1103,7 +1103,7 @@ router.get('/integrations', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const integrations = await prisma.integration.findMany({ where: { managerId: profile.id } });
     res.json({ success: true, data: integrations });
@@ -1117,7 +1117,7 @@ router.post('/integrations', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { type, name, config, isActive } = req.body || {};
     if (!type || !name) return res.status(400).json({ error: 'Type and name are required' });
@@ -1134,7 +1134,7 @@ router.patch('/integrations/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const integration = await prisma.integration.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!integration) return res.status(404).json({ error: 'Integration not found' });
@@ -1150,7 +1150,7 @@ router.delete('/integrations/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const integration = await prisma.integration.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!integration) return res.status(404).json({ error: 'Integration not found' });
@@ -1168,7 +1168,7 @@ router.get('/api-keys', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const keys = await prisma.apiKey.findMany({ where: { managerId: profile.id } });
     res.json({ success: true, data: keys });
@@ -1182,7 +1182,7 @@ router.post('/api-keys', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { name, permissions, expiresAt } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
@@ -1200,7 +1200,7 @@ router.delete('/api-keys/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const apiKey = await prisma.apiKey.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!apiKey) return res.status(404).json({ error: 'API key not found' });
@@ -1218,7 +1218,7 @@ router.get('/ai/insights', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const { type, isRead, limit } = req.query;
     const where: any = { managerId: profile.id };
@@ -1236,7 +1236,7 @@ router.patch('/ai/insights/:id/read', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const insight = await prisma.aIInsight.findFirst({ where: { id: req.params.id, managerId: profile.id } });
     if (!insight) return res.status(404).json({ error: 'Insight not found' });
@@ -1252,7 +1252,7 @@ router.post('/ai/next-action/:contactId', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const contact = await prisma.contact.findFirst({ where: { id: req.params.contactId, managerId: profile.id } });
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
@@ -1280,7 +1280,7 @@ router.post('/ai/score/:contactId', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const contact = await prisma.contact.findFirst({ where: { id: req.params.contactId, managerId: profile.id } });
     if (!contact) return res.status(404).json({ error: 'Contact not found' });
@@ -1306,7 +1306,7 @@ router.post('/ai/email-draft', async (req: any, res: Response) => {
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     const { contactId, context, tone } = req.body || {};
     if (!contactId) return res.status(400).json({ error: 'contactId is required' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     const contact = await prisma.contact.findFirst({ where: { id: contactId, managerId: profile.id } });
     if (!contact) return res.status(404).json({ error: 'Contact not found' });

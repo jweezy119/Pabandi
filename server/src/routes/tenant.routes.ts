@@ -11,11 +11,11 @@ const router = Router();
 // GET /api/v1/tenant/portal/:slug — public listing info (tenant-facing).
 router.get('/portal/:slug', async (req: Request, res: Response) => {
   try {
-    const profile = await prisma.propertyManagerProfile.findUnique({
+    const profile = await prisma.propertyManagerProperty.findUnique({
       where: { slug: req.params.slug },
       include: {
-        properties: { where: { status: 'VACANT' } },
-        _count: { select: { properties: true } },
+        units: { where: { status: 'VACANT' } },
+        _count: { select: { units: true } },
       },
     });
     if (!profile || !profile.active) return res.status(404).json({ error: 'Portal not found' });
@@ -27,7 +27,7 @@ router.get('/portal/:slug', async (req: Request, res: Response) => {
         brandColor: profile.brandColor,
         logoUrl: profile.logoUrl,
         tagline: profile.tagline,
-        listings: profile.properties.map((p: any) => ({
+        listings: profile.units.map((p: any) => ({
           id: p.id, title: p.title, address: p.address, city: p.city, state: p.state,
           bedrooms: p.bedrooms, bathrooms: p.bathrooms, rentAmount: p.rentAmount, rentPeriod: p.rentPeriod,
         })),
@@ -47,7 +47,7 @@ router.post('/apply', async (req: Request, res: Response) => {
     const { slug, propertyId, email, firstName, lastName, phone, message, desiredMoveIn, monthlyIncome } = req.body || {};
     if (!slug || !email) return res.status(400).json({ error: 'slug and email are required' });
 
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { slug: String(slug).toLowerCase() } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { slug: String(slug).toLowerCase() } });
     if (!profile || !profile.active) return res.status(404).json({ error: 'Portal not found' });
 
     // If propertyId provided, validate it belongs to this manager.

@@ -14,7 +14,7 @@ router.use(authenticate);
 // GET /api/v1/crm/pab/balance
 router.get('/balance', async (req: AuthRequest, res: Response) => {
   try {
-    const profile = await (await import('../utils/database')).prisma.propertyManagerProfile.findUnique({
+    const profile = await (await import('../utils/database')).prisma.propertyManagerProperty.findUnique({
       where: { userId: req.user!.id },
     });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
@@ -30,7 +30,7 @@ router.get('/balance', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/crm/pab/staking-overview
 router.get('/staking-overview', async (req: AuthRequest, res: Response) => {
   try {
-    const profile = await (await import('../utils/database')).prisma.propertyManagerProfile.findUnique({
+    const profile = await (await import('../utils/database')).prisma.propertyManagerProperty.findUnique({
       where: { userId: req.user!.id },
     });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
@@ -46,7 +46,7 @@ router.get('/staking-overview', async (req: AuthRequest, res: Response) => {
 // GET /api/v1/crm/pab/revenue-analytics
 router.get('/revenue-analytics', async (req: AuthRequest, res: Response) => {
   try {
-    const profile = await (await import('../utils/database')).prisma.propertyManagerProfile.findUnique({
+    const profile = await (await import('../utils/database')).prisma.propertyManagerProperty.findUnique({
       where: { userId: req.user!.id },
     });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
@@ -74,7 +74,7 @@ router.get('/tenant-risk/:tenantId', async (req: AuthRequest, res: Response) => 
 // POST /api/v1/crm/pab/bulk-rewards
 router.post('/bulk-rewards', async (req: AuthRequest, res: Response) => {
   try {
-    const profile = await (await import('../utils/database')).prisma.propertyManagerProfile.findUnique({
+    const profile = await (await import('../utils/database')).prisma.propertyManagerProperty.findUnique({
       where: { userId: req.user!.id },
     });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });

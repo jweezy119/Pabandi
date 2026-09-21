@@ -8,7 +8,7 @@ const router = Router();
 router.get('/invoices', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const invoices = await prisma.invoice.findMany({
+    const invoices = await prisma.ledgerInvoice.findMany({
       where: { OR: [{ senderId: userId }, { recipientId: userId }] },
       orderBy: { createdAt: 'desc' },
     });
@@ -19,7 +19,7 @@ router.get('/invoices', authenticate, async (req: any, res: Response) => {
 router.post('/invoices', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const invoice = await prisma.invoice.create({
+    const invoice = await prisma.ledgerInvoice.create({
       data: { ...req.body, senderId: userId, status: 'DRAFT' },
     });
     res.status(201).json({ success: true, data: invoice });
@@ -29,7 +29,7 @@ router.post('/invoices', authenticate, async (req: any, res: Response) => {
 router.put('/invoices/:id/status', authenticate, async (req: any, res: Response) => {
   try {
     const { status } = req.body;
-    const invoice = await prisma.invoice.update({
+    const invoice = await prisma.ledgerInvoice.update({
       where: { id: req.params.id },
       data: { status },
     });
@@ -41,7 +41,7 @@ router.put('/invoices/:id/status', authenticate, async (req: any, res: Response)
 router.get('/expenses', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const expenses = await prisma.expense.findMany({
+    const expenses = await prisma.ledgerExpense.findMany({
       where: { userId },
       orderBy: { date: 'desc' },
     });
@@ -52,7 +52,7 @@ router.get('/expenses', authenticate, async (req: any, res: Response) => {
 router.post('/expenses', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const expense = await prisma.expense.create({
+    const expense = await prisma.ledgerExpense.create({
       data: { ...req.body, userId },
     });
     res.status(201).json({ success: true, data: expense });
@@ -63,7 +63,7 @@ router.post('/expenses', authenticate, async (req: any, res: Response) => {
 router.get('/accounts', authenticate, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
-    const accounts = await prisma.financialAccount.findMany({
+    const accounts = await prisma.ledgerAccount.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });

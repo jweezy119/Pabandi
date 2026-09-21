@@ -44,7 +44,7 @@ export const bottleBookingService = {
     }
 
     // Validate venue
-    const venue = await prisma.nightlifeVenue.findUnique({
+    const venue = await prisma.bookingVenue.findUnique({
       where: { id: venueId },
       include: { coverCharges: { where: { isActive: true } } },
     });
@@ -217,7 +217,7 @@ export const bottleBookingService = {
       },
     });
 
-    const venue = await prisma.nightlifeVenue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.bookingVenue.findUnique({ where: { id: venueId } });
     if (venue && venue.capacity > 0) {
       const demandRatio = reservations / (venue.capacity * 0.3);
       if (demandRatio > 0.8) multiplier *= 1.3;

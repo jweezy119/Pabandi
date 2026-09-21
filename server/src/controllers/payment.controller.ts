@@ -549,8 +549,8 @@ export const processPayLioWebhook = async (
       
       if (reference) {
         try {
-          const { bookingService } = await import('../services/booking.service');
-          const result = await bookingService.confirmPaymentAndCreateEscrow(reference);
+          const { confirmPaymentAndCreateEscrow } = await import('../services/booking.service');
+          const result = await confirmPaymentAndCreateEscrow(reference);
           if (result.success) {
             logger.info(`[PayLio] Escrow created for ${reference}: ${result.escrowId}`);
           } else {

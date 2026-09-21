@@ -2,7 +2,11 @@
 // Tests: create reservation → PayLio payment → escrow → check-in → release
 
 import { prisma } from '../utils/database';
-import { bookingService } from '../services/booking.service';
+import {
+  createBookingWithDeposit,
+  confirmPaymentAndCreateEscrow,
+  releaseEscrowToBusiness,
+} from '../services/booking.service';
 import { checkInService } from '../services/checkin.service';
 import { logger } from '../utils/logger';
 
@@ -55,7 +59,7 @@ async function runTest() {
 
   // 3. Create booking with deposit
   console.log('\n--- Step 1: Create Booking ---');
-  const bookingResult = await bookingService.createBookingWithDeposit({
+  const bookingResult = await createBookingWithDeposit({
     businessId: business.id,
     customerId: customer.id,
     customerName: 'Test Customer',
@@ -82,7 +86,7 @@ async function runTest() {
 
   // 4. Simulate payment confirmation
   console.log('\n--- Step 2: Confirm Payment & Create Escrow ---');
-  const confirmResult = await bookingService.confirmPaymentAndCreateEscrow(bookingResult.bookingReference);
+  const confirmResult = await confirmPaymentAndCreateEscrow(bookingResult.bookingReference);
   console.log(`  Escrow ID: ${confirmResult.escrowId || 'N/A'}`);
   console.log(`  Message: ${confirmResult.message}`);
 
@@ -122,7 +126,7 @@ async function runTest() {
 
   // 6. Release escrow
   console.log('\n--- Step 4: Release Escrow to Business ---');
-  const releaseResult = await bookingService.releaseEscrowToBusiness(confirmResult.escrowId!, customer.id);
+  const releaseResult = await releaseEscrowToBusiness(confirmResult.escrowId!, customer.id);
   console.log(`  Released amount: $${releaseResult.releasedAmount}`);
   console.log(`  Release fee: $${releaseResult.releaseFee}`);
   console.log(`  Net to business: $${releaseResult.netToBusiness}`);

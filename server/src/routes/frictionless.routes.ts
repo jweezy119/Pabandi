@@ -41,7 +41,7 @@ router.post('/pay', authenticate, async (req, res) => {
     const savings = (amount * pabPercent / 100) * 0.05;
 
     // Record payment (using BookingPabRecord as a generic payment log)
-    const payment = await prisma.bookingPabRecord.create({
+    const payment = await prisma.bookingRecord.create({
       data: {
         bookingId: 'frictionless_' + Date.now(),
         userId,
@@ -80,7 +80,7 @@ router.post('/retry', authenticate, async (req, res) => {
     const { amount, description } = req.body;
     const userId = req.user!.id;
 
-    const payment = await prisma.bookingPabRecord.create({
+    const payment = await prisma.bookingRecord.create({
       data: {
         bookingId: 'retry_' + Date.now(),
         userId,

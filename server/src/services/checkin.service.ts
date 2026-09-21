@@ -135,7 +135,7 @@ export const checkInService = {
       let escrowResult: any = null;
       if (reservation.depositStatus === 'PAID' && reservation.depositAmount) {
         try {
-          const { bookingService } = await import('./booking.service');
+          const { releaseEscrowToBusiness } = await import('./booking.service');
           // Find the escrow for this reservation
           const cryptoPayment = await prisma.cryptoPayment.findFirst({
             where: {
@@ -148,7 +148,8 @@ export const checkInService = {
               where: { paymentId: cryptoPayment.id, status: 'HELD' },
             });
             if (escrow) {
-              escrowResult = await bookingService.releaseEscrowToBusiness(
+              const { releaseEscrowToBusiness } = await import('../services/booking.service');
+              escrowResult = await releaseEscrowToBusiness(
                 escrow.id,
                 verifiedBy || reservation.customerId
               );

@@ -84,7 +84,7 @@ export const promoterAutonService = {
 
     // Get venue relationships
     const venueIds = [...new Set(recentLists.map((g: any) => g.venueId))];
-    const venues = await prisma.nightlifeVenue.findMany({
+    const venues = await prisma.bookingVenue.findMany({
       where: { id: { in: venueIds } },
     });
 
@@ -148,7 +148,7 @@ export const promoterAutonService = {
       });
 
       const totalPartySize = eventGuestLists.reduce((sum: number, g: any) => sum + g.partySize, 0);
-      const venue = await prisma.nightlifeVenue.findUnique({ where: { id: event.venueId } });
+      const venue = await prisma.bookingVenue.findUnique({ where: { id: event.venueId } });
 
       if (venue && totalPartySize > venue.capacity * 0.8) {
         actions.push({
@@ -328,7 +328,7 @@ export const venueBrainService = {
     const signals: string[] = [];
     const anomalies: string[] = [];
 
-    const venue = await prisma.nightlifeVenue.findUnique({
+    const venue = await prisma.bookingVenue.findUnique({
       where: { id: context.venueId },
       include: {
         guestLists: { where: { date: { gte: new Date() } } },
@@ -947,7 +947,7 @@ export const agentOrchestrator = {
 
   // Run agents for all active venues
   async runAllVenues() {
-    const venues = await prisma.nightlifeVenue.findMany({
+    const venues = await prisma.bookingVenue.findMany({
       where: { isActive: true },
       select: { id: true },
     });

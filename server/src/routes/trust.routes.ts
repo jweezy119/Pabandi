@@ -185,7 +185,7 @@ router.get('/passport/:userId', async (req, res) => {
     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
     if (!passport) {
       passport = await prisma.trustPassport.create({
-        data: { userId, score: 50, level: 'bronze', verified: false },
+        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
       });
     }
     res.json({ success: true, data: passport });
@@ -205,10 +205,10 @@ router.put('/score/:userId', async (req, res) => {
     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
     if (!passport) {
       passport = await prisma.trustPassport.create({
-        data: { userId, score: 50, level: 'bronze', verified: false },
+        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
       });
     }
-    const newScore = Math.max(0, Math.min(100, passport.score + (delta || 0)));
+    const newScore = Math.max(0, Math.min(100, (passport.score || 0) + (delta || 0)));
     const level = newScore >= 90 ? 'platinum' : newScore >= 70 ? 'gold' : newScore >= 50 ? 'silver' : 'bronze';
     const updated = await prisma.trustPassport.update({
       where: { userId },
@@ -230,10 +230,10 @@ router.get('/risk/:userId', async (req, res) => {
     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
     if (!passport) {
       passport = await prisma.trustPassport.create({
-        data: { userId, score: 50, level: 'bronze', verified: false },
+        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
       });
     }
-    const risk = passport.score >= 70 ? 'low' : passport.score >= 40 ? 'medium' : 'high';
+    const risk = (passport.score ?? 0) >= 70 ? 'low' : (passport.score ?? 0) >= 40 ? 'medium' : 'high';
     res.json({ success: true, data: { userId, score: passport.score, risk, level: passport.level } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -250,11 +250,11 @@ router.get('/escrow/:userId', async (req, res) => {
     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
     if (!passport) {
       passport = await prisma.trustPassport.create({
-        data: { userId, score: 50, level: 'bronze', verified: false },
+        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
       });
     }
-    const eligible = passport.score >= 30;
-    res.json({ success: true, data: { userId, eligible, score: passport.score } });
+    const eligible = (passport.score || 0) >= 30;
+    res.json({ success: true, data: { userId, eligible, score: passport.score || 0 } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -283,14 +283,14 @@ router.get('/report/:businessId', async (req, res) => {
   try {
     const { businessId } = req.params;
     const passports = await prisma.trustPassport.findMany({
-      where: { user: { businessId } },
+      where: { providerRef: businessId },
     });
     res.json({
       success: true,
       data: {
         businessId,
         totalPassports: passports.length,
-        averageScore: passports.reduce((sum, p) => sum + p.score, 0) / Math.max(1, passports.length),
+        averageScore: passports.reduce((sum, p) => sum + (p.score || 0), 0) / Math.max(1, passports.length),
         passports,
       },
     });

@@ -7,7 +7,7 @@ export const nightlifeService = {
   // ── Venue Management ─────────────────────────────────────────────────────
   
   async createVenue(data: any) {
-    return prisma.nightlifeVenue.create({ data });
+    return prisma.bookingVenue.create({ data });
   },
 
   async listVenues(params?: { city?: string; type?: string; genre?: string }) {
@@ -16,7 +16,7 @@ export const nightlifeService = {
     if (params?.type) where.type = params.type;
     if (params?.genre) where.musicGenres = { has: params.genre };
 
-    return prisma.nightlifeVenue.findMany({
+    return prisma.bookingVenue.findMany({
       where,
       include: {
         bottlePackages: { where: { isActive: true } },
@@ -29,7 +29,7 @@ export const nightlifeService = {
   },
 
   async getVenue(id: string) {
-    return prisma.nightlifeVenue.findUnique({
+    return prisma.bookingVenue.findUnique({
       where: { id },
       include: {
         bottlePackages: { where: { isActive: true } },
@@ -141,7 +141,7 @@ export const nightlifeService = {
       },
     });
 
-    const venue = await prisma.nightlifeVenue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.bookingVenue.findUnique({ where: { id: venueId } });
     if (venue && venue.capacity > 0) {
       const demandRatio = reservations / (venue.capacity * 0.3);
       if (demandRatio > 0.8) multiplier *= 1.3;
@@ -281,7 +281,7 @@ export const nightlifeService = {
   // ── Wait Time Estimation ─────────────────────────────────────────────────
   
   async estimateWaitTime(venueId: string): Promise<{ estimatedMinutes: number; confidence: number }> {
-    const venue = await prisma.nightlifeVenue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.bookingVenue.findUnique({ where: { id: venueId } });
     if (!venue) return { estimatedMinutes: 0, confidence: 0 };
 
     const now = new Date();
@@ -362,7 +362,7 @@ export const nightlifeService = {
   // ── Recommendations ──────────────────────────────────────────────────────
   
   async getRecommendations(userId: string, limit: number = 10) {
-    const allVenues = await prisma.nightlifeVenue.findMany({
+    const allVenues = await prisma.bookingVenue.findMany({
       where: { isActive: true },
       include: { events: { where: { date: { gte: new Date() } }, take: 3 } },
     });

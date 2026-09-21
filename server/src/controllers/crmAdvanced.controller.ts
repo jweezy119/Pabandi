@@ -87,7 +87,7 @@ export async function createInspection(req: any, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { unitId, tenantId, type, inspectorName, overallCondition, notes, items } = req.body;
@@ -164,7 +164,7 @@ export async function listVendors(req: any, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const vendors = await prisma.maintenanceVendor.findMany({
@@ -181,7 +181,7 @@ export async function addVendor(req: any, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { name, company, phone, email, specialties } = req.body;
@@ -256,7 +256,7 @@ export async function createAutomation(req: any, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { name, trigger, condition, action, actionData } = req.body;
@@ -280,7 +280,7 @@ export async function listAutomations(req: any, res: Response) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const rules = await prisma.automationRule.findMany({

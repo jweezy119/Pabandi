@@ -1713,11 +1713,11 @@ model AbodeManager {
 
   user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   properties PropertyManagerProperty[]
-  tenants    AbodeTenant[]
+  tenants    PropertyTenant[]
   screenings PropertyScreening[]
   appointments PropertyAppointment[]
-  leases     AbodeLease[]
-  maintenance AbodeMaintenance[]
+  leases     PropertyLease[]
+  maintenance PropertyMaintenance[]
   webhooks   PropertyWebhook[]
   activities PropertyActivity[]
   applications     TenantApplication[]
@@ -1828,8 +1828,9 @@ model DocumentAnalysis {
 // A property under a manager's portfolio (links to existing Property model).
 model PropertyManagerProperty {
   id          String   @id @default(cuid())
-  managerId   String
-  propertyId  String?  // links to Property.id (optional, for discovery-linked)
+  managerId   String?
+  userId      String?  @unique
+  propertyId  String?
   title       String
   address     String?
   city        String?
@@ -1839,24 +1840,32 @@ model PropertyManagerProperty {
   bedrooms    Int      @default(1)
   bathrooms   Float    @default(1)
   rentAmount  Float?
-  rentPeriod  String   @default("MONTH") // MONTH | WEEK | NIGHT
-  status      String   @default("VACANT") // VACANT | OCCUPIED | MAINTENANCE
+  rentPeriod  String   @default("MONTH")
+  status      String   @default("VACANT")
   latitude    Float?
   longitude   Float?
+  companyName String?
+  slug        String?  @unique
+  domain      String?  @unique
+  brandColor  String?
+  logoUrl     String?
+  tagline     String?
+  active      Boolean  @default(true)
+  businessType String  @default("GENERAL")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager          AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
-  tenants          AbodeTenant[]
+  manager          AbodeManager? @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  tenants          PropertyTenant[]
   screeningRecords PropertyScreening[]
   appointments     PropertyAppointment[]
-  leases           AbodeLease[]
-  maintenance      AbodeMaintenance[]
+  leases           PropertyLease[]
+  maintenance      PropertyMaintenance[]
   applications     TenantApplication[]
-  units            AbodeUnit[]
+  units            PropertyUnit[]
   rentPayments     RentPayment[]
-  inspections      AbodeInspection[]
-  financials       AbodeFinancial[]
+  inspections      PropertyInspection[]
+  financials       PropertyFinancial[]
   photos           PropertyPhoto[]
   amenities        PropertyAmenity[]
   ratePlans        PropertyRatePlan[]
@@ -1871,8 +1880,7 @@ model PropertyManagerProperty {
 
 // ── Deep Property-Specific Models ─────────────────────────────────────────────
 // Individual units within a property (e.g. Unit 2A, Unit 3B).
-model AbodeUnit {
-  @@map("PropertyUnit")
+model PropertyUnit {
   id          String   @id @default(cuid())
   propertyId  String
   unitNumber  String   // e.g. "2A", "3B"
@@ -1887,24 +1895,25 @@ model AbodeUnit {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  leases   AbodeLease[]
+  leases   PropertyLease[]
   rentPayments RentPayment[]
   rentSchedules  RentSchedule[]
-  inspections  AbodeInspection[]
+  inspections  PropertyInspection[]
   inspectionReports InspectionReport[]
-  financials   AbodeFinancial[]
+  financials   PropertyFinancial[]
   photos       PropertyPhoto[]
   amenities    PropertyAmenity[]
   availabilities PropertyAvailability[]
   ratePlans    PropertyRatePlan[]
   reviews      PropertyReview[]
   messages     PropertyMessage[]
-  maintenances AbodeMaintenance[]
+  maintenances PropertyMaintenance[]
   favorites    PropertyFavorite[]
 
   @@index([propertyId])
   @@index([status])
 }
+
 
 // Rent payment tracking for tenants.
 model RentPayment {
@@ -1926,7 +1935,7 @@ model RentPayment {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   pabPayment PabPayment?
 
   @@index([propertyId])
@@ -1936,8 +1945,7 @@ model RentPayment {
 }
 
 // Property inspection reports.
-model AbodeInspection {
-  @@map("PropertyInspection")
+model PropertyInspection {
   id          String   @id @default(cuid())
   propertyId  String
   unitId      String?
@@ -1952,15 +1960,14 @@ model AbodeInspection {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([inspectedAt])
 }
 
 // Tenant history for a property manager (past + current tenants).
-model AbodeTenant {
-  @@map("PropertyTenant")
+model PropertyTenant {
   id              String    @id @default(cuid())
   managerId       String
   propertyId      String?
@@ -1988,6 +1995,8 @@ model AbodeTenant {
   rentSchedules  RentSchedule[]
   ledgers        TenantLedger[]
   inspectionReports InspectionReport[]
+  leases         PropertyLease[]
+  maintenances   PropertyMaintenance[]
 
   @@unique([managerId, email])
   @@index([managerId])
@@ -2043,8 +2052,7 @@ model PropertyAppointment {
 }
 
 // Lease tracking for a tenant at a property.
-model AbodeLease {
-  @@map("PropertyLease")
+model PropertyLease {
   id            String   @id @default(cuid())
   managerId     String
   propertyId    String?
@@ -2074,7 +2082,9 @@ model AbodeLease {
 
   manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit     AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId String?
   documents TenantDocument[]
   signingRequests SigningRequest[]
   rentSchedules RentSchedule[]
@@ -2104,7 +2114,7 @@ model SigningRequest {
   updatedAt   DateTime @updatedAt
 
   manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
-  lease   AbodeLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  lease   PropertyLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
   @@index([leaseId])
@@ -2113,8 +2123,7 @@ model SigningRequest {
 }
 
 // Maintenance request for a property.
-model AbodeMaintenance {
-  @@map("PropertyMaintenance")
+model PropertyMaintenance {
   id          String   @id @default(cuid())
   managerId   String
   propertyId  String?
@@ -2139,7 +2148,9 @@ model AbodeMaintenance {
   manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   vendor    Vendor?                @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  unit     AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId String?
   documents TenantDocument[]
 
   @@index([managerId])
@@ -2148,8 +2159,7 @@ model AbodeMaintenance {
 }
 
 // Property financials (income/expense tracking).
-model AbodeFinancial {
-  @@map("PropertyFinancial")
+model PropertyFinancial {
   id          String   @id @default(cuid())
   propertyId  String
   unitId      String?
@@ -2163,7 +2173,7 @@ model AbodeFinancial {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([date])
@@ -2222,7 +2232,7 @@ model TenantApplication {
 
   manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  tenant   AbodeTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
 
   @@index([managerId])
@@ -2253,8 +2263,8 @@ model TenantDocument {
 
   manager     AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   application TenantApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  lease       AbodeLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
-  maintenance AbodeMaintenance?    @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
+  lease       PropertyLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  maintenance PropertyMaintenance?    @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -2296,7 +2306,7 @@ model PropertyPhoto {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2326,7 +2336,7 @@ model PropertyAmenity {
   createdAt   DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   amenity   Amenity                @relation(fields: [amenityId], references: [id], onDelete: Cascade)
 
   @@unique([propertyId, unitId, amenityId])
@@ -2353,7 +2363,7 @@ model PropertyRatePlan {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2376,7 +2386,7 @@ model PropertyAvailability {
   updatedAt   DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@unique([propertyId, unitId, date])
   @@index([propertyId, date])
@@ -2405,7 +2415,7 @@ model PropertyReview {
   updatedAt     DateTime @updatedAt
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([propertyId])
   @@index([unitId])
@@ -2423,7 +2433,7 @@ model PropertyFavorite {
   createdAt  DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
   user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId, unitId])
@@ -2451,7 +2461,7 @@ model PropertyMessage {
   createdAt     DateTime @default(now())
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit      AbodeUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([propertyId])
@@ -2476,7 +2486,7 @@ model Vendor {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  maintenanceRequests AbodeMaintenance[]
+  maintenanceRequests PropertyMaintenance[]
 
   @@index([managerId])
 }
@@ -3863,6 +3873,10 @@ model TrustPassport {
   riskScore     Int?
   riskBand      String?
   lastCheckedAt DateTime?
+  userId        String?  @unique
+  score         Float?
+  level         String?
+  verified      Boolean?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -5561,7 +5575,7 @@ model SolanaEscrow {
 model TenantLedger {
   id              String   @id @default(cuid())
   tenantId        String
-  tenant          AbodeTenant @relation(fields: [tenantId], references: [id])
+  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
   type            String   // RENT | LATE_FEE | DEPOSIT | REFUND | CREDIT | ADJUSTMENT
   amount          Float
   description     String
@@ -5578,11 +5592,11 @@ model TenantLedger {
 model RentSchedule {
   id              String   @id @default(cuid())
   unitId          String
-  unit            AbodeUnit @relation(fields: [unitId], references: [id])
+  unit            PropertyUnit @relation(fields: [unitId], references: [id])
   tenantId        String
-  tenant          AbodeTenant @relation(fields: [tenantId], references: [id])
+  tenant          PropertyTenant @relation(fields: [tenantId], references: [id])
   leaseId         String
-  lease           AbodeLease @relation(fields: [leaseId], references: [id])
+  lease           PropertyLease @relation(fields: [leaseId], references: [id])
   amount          Float
   dueDay          Int      @default(1)
   lateFeeAmount   Float    @default(50)
@@ -5601,9 +5615,9 @@ model RentSchedule {
 model InspectionReport {
   id              String   @id @default(cuid())
   unitId          String
-  unit            AbodeUnit @relation(fields: [unitId], references: [id])
+  unit            PropertyUnit @relation(fields: [unitId], references: [id])
   tenantId        String?
-  tenant          AbodeTenant? @relation(fields: [tenantId], references: [id])
+  tenant          PropertyTenant? @relation(fields: [tenantId], references: [id])
   type            String   // MOVE_IN | MOVE_OUT | ROUTINE | MAINTENANCE
   inspectorName   String?
   overallCondition String  @default("GOOD")
@@ -6019,7 +6033,7 @@ model CrmPabRewardRecipient {
 model LeaseDeposit {
   id              String   @id @default(cuid())
   leaseId         String   @unique
-  lease           AbodeLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  lease           PropertyLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   tenantEmail     String
   depositAmount   Float
   interestRate    Float    @default(0.02) // 2% APY
@@ -6357,9 +6371,21 @@ model UserChannelPreference {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 model WalletPassport {
   id            String   @id @default(cuid())
   holderId      String   @unique
+  userId        String?  @unique
   score         Float    @default(50)
   level         String   @default("bronze")
   verified      Boolean  @default(false)
@@ -6417,6 +6443,7 @@ model PipelineActivity {
 model LedgerAccount {
   id            String   @id @default(cuid())
   businessId    String
+  userId        String?
   name          String
   type          String
   balance       Float    @default(0)
@@ -6429,6 +6456,8 @@ model LedgerInvoice {
   id            String   @id @default(cuid())
   businessId    String
   clientId      String?
+  senderId      String?
+  recipientId   String?
   number        String   @unique
   amount        Float
   currency      String   @default("USD")
@@ -6444,6 +6473,7 @@ model LedgerInvoice {
 model LedgerExpense {
   id            String   @id @default(cuid())
   businessId    String
+  userId        String?
   category      String
   amount        Float
   currency      String   @default("USD")
@@ -6451,6 +6481,7 @@ model LedgerExpense {
   receiptUrl    String?
   incurredAt    DateTime
   paidAt        DateTime?
+  date          DateTime @default(now())
   createdAt     DateTime @default(now())
   @@index([businessId, category])
 }

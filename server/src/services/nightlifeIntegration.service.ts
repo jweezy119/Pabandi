@@ -71,7 +71,7 @@ export const nightlifeIntegrationService = {
     const noShowProbability = await this.predictNoShow(userId, venueId);
 
     // Calculate deposit required based on risk and venue
-    const venue = await prisma.nightlifeVenue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.bookingVenue.findUnique({ where: { id: venueId } });
     const depositAmount = this.calculateDeposit(noShowProbability, venue?.capacity || 100);
 
     return prisma.guestList.create({
@@ -215,7 +215,7 @@ export const nightlifeIntegrationService = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   async getVenueDashboard(venueId: string) {
-    const venue = await prisma.nightlifeVenue.findUnique({
+    const venue = await prisma.bookingVenue.findUnique({
       where: { id: venueId },
       include: {
         guestLists: {
@@ -338,7 +338,7 @@ export const nightlifeIntegrationService = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   async getRealTimeCapacity(venueId: string) {
-    const venue = await prisma.nightlifeVenue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.bookingVenue.findUnique({ where: { id: venueId } });
     if (!venue) return null;
 
     const now = new Date();

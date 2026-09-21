@@ -266,7 +266,7 @@ export class RecommendationService {
     const accountAge = Math.floor((Date.now() - user.createdAt.getTime()) / 86400000);
     const hasStaked = (user.pabStaked ?? 0) > 0;
     const hasPab = (user.pabBalance ?? 0) > 0;
-    const hasMadePayment = await prisma.bookingPabRecord.count({ where: { userId } }) > 0;
+    const hasMadePayment = await prisma.bookingRecord.count({ where: { userId } }) > 0;
 
     const request: JevRequest = {
       model: this.model,

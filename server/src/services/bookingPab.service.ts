@@ -77,7 +77,7 @@ export async function createBookingWithPab(params: {
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = fromKey;
 
-  const bookingPab = await prisma.bookingPabRecord.create({
+  const bookingPab = await prisma.bookingRecord.create({
     data: {
       bookingId,
       userId,
@@ -105,7 +105,7 @@ export async function createBookingWithPab(params: {
 }
 
 export async function checkinBooking(bookingId: string): Promise<any> {
-  const bookingPab = await prisma.bookingPabRecord.findUnique({
+  const bookingPab = await prisma.bookingRecord.findUnique({
     where: { bookingId },
     include: { user: true, business: true },
   });
@@ -149,7 +149,7 @@ export async function checkinBooking(bookingId: string): Promise<any> {
   transaction.sign(platformKey);
 
   // Update booking record
-  await prisma.bookingPabRecord.update({
+  await prisma.bookingRecord.update({
     where: { bookingId },
     data: {
       status: 'CHECKED_IN',
@@ -180,7 +180,7 @@ export async function checkinBooking(bookingId: string): Promise<any> {
 }
 
 export async function handleNoShow(bookingId: string): Promise<any> {
-  const bookingPab = await prisma.bookingPabRecord.findUnique({
+  const bookingPab = await prisma.bookingRecord.findUnique({
     where: { bookingId },
     include: { business: true },
   });
@@ -194,7 +194,7 @@ export async function handleNoShow(bookingId: string): Promise<any> {
   const toBusiness = bookingPab.depositPab * 0.5;
   const burned = bookingPab.depositPab * 0.5;
 
-  await prisma.bookingPabRecord.update({
+  await prisma.bookingRecord.update({
     where: { bookingId },
     data: { status: 'NO_SHOW' },
   });
@@ -223,7 +223,7 @@ export async function handleNoShow(bookingId: string): Promise<any> {
 }
 
 export async function cancelBooking(bookingId: string): Promise<any> {
-  const bookingPab = await prisma.bookingPabRecord.findUnique({
+  const bookingPab = await prisma.bookingRecord.findUnique({
     where: { bookingId },
   });
 
@@ -233,7 +233,7 @@ export async function cancelBooking(bookingId: string): Promise<any> {
   }
 
   // Full refund
-  await prisma.bookingPabRecord.update({
+  await prisma.bookingRecord.update({
     where: { bookingId },
     data: { status: 'CANCELLED', cancelledAt: new Date() },
   });

@@ -12,7 +12,7 @@ router.post('/documents', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { title, fileName, fileUrl, fileSize, mimeType, category, tenantEmail, applicationId, leaseId } = req.body || {};
@@ -44,7 +44,7 @@ router.get('/documents', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
 
     const { tenantEmail, category } = req.query;
@@ -67,7 +67,7 @@ router.delete('/documents/:id', async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const profile = await prisma.propertyManagerProfile.findUnique({ where: { userId } });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
     if (!profile) return res.status(404).json({ error: 'Not enrolled' });
     await prisma.tenantDocument.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: 'Document deleted' });
