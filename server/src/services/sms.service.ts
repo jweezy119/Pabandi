@@ -169,15 +169,10 @@ export class SMSService {
   private async sendViaVonage(to: string, message: string, businessId?: string): Promise<SMSResult> {
     try {
       // Lazy-load vonage to avoid hard dependency
-      const vonageModule = await import('@vonage/server-sdk').catch(() => null);
-      if (!vonageModule) {
+      const vonage = await this.loadVonageClient();
+      if (!vonage) {
         return { success: false, provider: 'VONAGE', error: 'Vonage SDK not installed' };
       }
-
-      const vonage = new vonageModule.Vonage({
-        apiKey: process.env.VONAGE_API_KEY!,
-        apiSecret: process.env.VONAGE_API_SECRET!,
-      });
 
       const result = await vonage.sms.send({ to, from: this.vonageFrom!, text: message });
       const msg = result.messages[0];
@@ -209,6 +204,21 @@ export class SMSService {
         error: error.message,
       });
       return { success: false, provider: 'VONAGE', error: error.message };
+    }
+  }
+
+  private async loadVonageClient(): Promise<any | null> {
+    // Dynamic require to avoid hard dependency on Vonage SDK
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const VonageSdk = require('@vonage/server-sdk');
+      if (!VonageSdk?.Vonage) return null;
+      return new VonageSdk.Vonage({
+        apiKey: process.env.VONAGE_API_KEY!,
+        apiSecret: process.env.VONAGE_API_SECRET!,
+      });
+    } catch {
+      return null;
     }
   }
 
