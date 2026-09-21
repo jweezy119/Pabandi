@@ -6,13 +6,13 @@ export class TrustCoreService {
 
   async getPassport(userId: string) {
     let passport = await prisma.walletPassport.findUnique({
-      where: { userId },
+      where: { holderId: userId },
     });
 
     if (!passport) {
       passport = await prisma.walletPassport.create({
         data: {
-          userId,
+          holderId: userId,
           score: 50,
           level: 'bronze',
           verified: false,
@@ -34,7 +34,7 @@ export class TrustCoreService {
     const level = this.getLevel(newScore);
 
     const updated = await prisma.walletPassport.update({
-      where: { userId },
+      where: { holderId: userId },
       data: {
         score: newScore,
         level,

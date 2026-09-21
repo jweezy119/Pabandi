@@ -6359,7 +6359,7 @@ model UserChannelPreference {
 
 model WalletPassport {
   id            String   @id @default(cuid())
-  userId        String   @unique
+  holderId      String   @unique
   score         Float    @default(50)
   level         String   @default("bronze")
   verified      Boolean  @default(false)
@@ -6367,7 +6367,6 @@ model WalletPassport {
   updatedAt     DateTime @updatedAt
   pipelineLeads PipelineLead[]
 
-  @@unique([userId])
   @@map("wallet_passports")
 }
 

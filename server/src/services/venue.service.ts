@@ -59,7 +59,7 @@ export const venueService = {
       where.daysOpen = { has: String(dayOfWeek) };
     }
 
-    const venues = await prisma.nightlifeVenue.findMany({
+    const venues = await prisma.bookingVenue.findMany({
       where,
       include: {
         bottlePackages: { where: { isActive: true } },
@@ -88,7 +88,7 @@ export const venueService = {
    * Get a single venue by ID with all related data
    */
   async getVenueById(id: string) {
-    const venue = await prisma.nightlifeVenue.findUnique({
+    const venue = await prisma.bookingVenue.findUnique({
       where: { id },
       include: {
         bottlePackages: { where: { isActive: true } },
@@ -168,7 +168,7 @@ export const venueService = {
       where.city = { contains: city, mode: 'insensitive' };
     }
 
-    return prisma.nightlifeVenue.findMany({
+    return prisma.bookingVenue.findMany({
       where,
       include: {
         bottlePackages: { where: { isActive: true }, take: 3 },
@@ -218,14 +218,14 @@ export const venueService = {
    * Create a new venue (admin only)
    */
   async createVenue(data: any) {
-    return prisma.nightlifeVenue.create({ data });
+    return prisma.bookingVenue.create({ data });
   },
 
   /**
    * Update a venue (admin only)
    */
   async updateVenue(id: string, data: any) {
-    return prisma.nightlifeVenue.update({
+    return prisma.bookingVenue.update({
       where: { id },
       data,
     });
