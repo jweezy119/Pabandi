@@ -1,106 +1,131 @@
-import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth.middleware';
+import { Router } from 'express';
 import { prisma } from '../utils/database';
 
 const router = Router();
 
-// Leads
-router.get('/leads', authenticate, async (req: any, res: Response) => {
+// ── LEADS ────────────────────────────────────────────
+
+router.get('/leads', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const leads = await prisma.crmLead.findMany({
-      where: { ownerId: userId },
+    const leads = await prisma.pipelineLead.findMany({
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: leads });
-  } catch (e: any) { res.status(500).json({ error: 'Failed to list leads' }); }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-router.post('/leads', authenticate, async (req: any, res: Response) => {
+router.post('/leads', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const lead = await prisma.crmLead.create({
-      data: { ...req.body, ownerId: userId, status: 'NEW' },
+    const { name, email, phone, source, value, businessId, ownerId, passportId } = req.body;
+    const lead = await prisma.pipelineLead.create({
+      data: {
+        name,
+        email,
+        phone,
+        source,
+        value,
+        businessId: businessId || 'default',
+        ownerId: ownerId || 'system',
+        passportId: passportId || '',
+        stage: 'new',
+      },
     });
-    res.status(201).json({ success: true, data: lead });
-  } catch (e: any) { res.status(500).json({ error: e.message || 'Failed to create lead' }); }
-});
-
-router.get('/leads/:id', authenticate, async (req: any, res: Response) => {
-  try {
-    const lead = await prisma.crmLead.findUnique({ where: { id: req.params.id } });
-    if (!lead) return res.status(404).json({ error: 'Lead not found' });
     res.json({ success: true, data: lead });
-  } catch (e: any) { res.status(500).json({ error: 'Failed to get lead details' }); }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-router.put('/leads/:id/stage', authenticate, async (req: any, res: Response) => {
+router.get('/leads/:id', async (req, res) => {
+  try {
+    const lead = await prisma.pipelineLead.findUnique({
+      where: { id: req.params.id },
+      include: { deals: true, activities: true },
+    });
+    if (!lead) return res.status(404).json({ success: false, error: 'Lead not found' });
+    res.json({ success: true, data: lead });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.put('/leads/:id/stage', async (req, res) => {
   try {
     const { stage } = req.body;
-    const lead = await prisma.crmLead.update({
+    const lead = await prisma.pipelineLead.update({
       where: { id: req.params.id },
       data: { stage },
     });
     res.json({ success: true, data: lead });
-  } catch (e: any) { res.status(500).json({ error: 'Failed to update lead stage' }); }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-// Deals
-router.post('/deals', authenticate, async (req: any, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    const deal = await prisma.crmDeal.create({
-      data: { ...req.body, ownerId: userId, status: 'OPEN' },
-    });
-    res.status(201).json({ success: true, data: deal });
-  } catch (e: any) { res.status(500).json({ error: e.message || 'Failed to create deal' }); }
-});
+// ── DEALS ────────────────────────────────────────────
 
-router.get('/deals', authenticate, async (req: any, res: Response) => {
+router.get('/deals', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const deals = await prisma.crmDeal.findMany({
-      where: { ownerId: userId },
+    const deals = await prisma.pipelineDeal.findMany({
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: deals });
-  } catch (e: any) { res.status(500).json({ error: 'Failed to list deals' }); }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-// Activities
-router.post('/activities', authenticate, async (req: any, res: Response) => {
+router.post('/deals', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const activity = await prisma.crmActivity.create({
-      data: { ...req.body, ownerId: userId },
-    });
-    res.status(201).json({ success: true, data: activity });
-  } catch (e: any) { res.status(500).json({ error: e.message || 'Failed to add activity' }); }
-});
-
-// Stats
-router.get('/stats', authenticate, async (req: any, res: Response) => {
-  try {
-    const userId = req.user?.id;
-    const [totalLeads, totalDeals, openDeals, wonDeals, totalRevenue] = await Promise.all([
-      prisma.crmLead.count({ where: { ownerId: userId } }),
-      prisma.crmDeal.count({ where: { ownerId: userId } }),
-      prisma.crmDeal.count({ where: { ownerId: userId, status: 'OPEN' } }),
-      prisma.crmDeal.count({ where: { ownerId: userId, status: 'WON' } }),
-      prisma.crmDeal.aggregate({ where: { ownerId: userId, status: 'WON' }, _sum: { value: true } }),
-    ]);
-    res.json({
-      success: true,
+    const { leadId, title, amount, stage, closeDate, escrowId } = req.body;
+    const deal = await prisma.pipelineDeal.create({
       data: {
-        totalLeads,
-        totalDeals,
-        openDeals,
-        wonDeals,
-        totalRevenue: totalRevenue._sum.value || 0,
-        conversionRate: totalLeads > 0 ? Math.round((wonDeals / totalLeads) * 100) : 0,
+        leadId,
+        title,
+        amount,
+        stage: stage || 'open',
+        closeDate: closeDate ? new Date(closeDate) : null,
+        escrowId,
       },
     });
-  } catch (e: any) { res.status(500).json({ error: 'Failed to get pipeline stats' }); }
+    res.json({ success: true, data: deal });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── ACTIVITIES ───────────────────────────────────────
+
+router.post('/activities', async (req, res) => {
+  try {
+    const { leadId, type, content, dueAt } = req.body;
+    const activity = await prisma.pipelineActivity.create({
+      data: {
+        leadId,
+        type,
+        content,
+        dueAt: dueAt ? new Date(dueAt) : null,
+      },
+    });
+    res.json({ success: true, data: activity });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── STATS ────────────────────────────────────────────
+
+router.get('/stats', async (req, res) => {
+  try {
+    const leads = await prisma.pipelineLead.count();
+    const deals = await prisma.pipelineDeal.count();
+    const activities = await prisma.pipelineActivity.count();
+    res.json({ success: true, data: { leads, deals, activities } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 export default router;
