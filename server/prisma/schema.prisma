@@ -94,10 +94,10 @@ model User {
   usdcBalance             Float                   @default(0)
   pakistanPayments        PakistanPayment[]
   referredById            String?
-  business                BookingBusiness?
+  business                Business?
   investorMatches         BusinessInvestorMatch[]
   cryptoRewards           CryptoReward[]
-  reservations            BookingReservation[]
+  reservations            Reservation[]
   venueReviews            VenueReview[]
   socialIdentities        SocialIdentity[]
   socialAccounts          SocialAccount[]
@@ -230,7 +230,7 @@ model Business {
   businessHours          BusinessHours[]
   settings               BusinessSettings?
   googleReviews          GoogleReview[]
-  reservations           BookingReservation[]
+  reservations           Reservation[]
   sourcingOrders         SourcingOrder[]
   tables                 Table[]
   trendSuggestions       TrendSuggestion[]
@@ -278,8 +278,8 @@ model SitaraGuestList {
   creatorId   String
   creator     User     @relation("ListCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   businessId  String?
-  business    BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  venueName   String? // free-text venue when no BookingBusiness record exists
+  business    Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  venueName   String? // free-text venue when no Business record exists
   title       String
   date        DateTime
   capacity    Int?
@@ -317,7 +317,7 @@ model SitaraGuestJoin {
 model SquareConnection {
   id           String   @id @default(cuid())
   businessId   String   @unique
-  business     BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   merchantId   String
   accessToken  String   // encrypted at rest when ENCRYPTION_KEY is configured
   refreshToken String?
@@ -340,7 +340,7 @@ model BusinessHours {
   isClosed   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  business   BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, dayOfWeek])
   @@index([businessId])
@@ -355,13 +355,13 @@ model Table {
   metadata     Json?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  reservations BookingReservation[]
-  business     BookingBusiness      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
 
-model BookingReservation {
+model Reservation {
   @@map("Reservation")
   id                  String               @id @default(cuid())
   businessId          String
@@ -400,7 +400,7 @@ model BookingReservation {
   isConcierge         Boolean              @default(false)
   totalAmount         Float?
   cryptoRewards       CryptoReward[]
-  business            BookingBusiness             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer            User                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
   table               Table?               @relation(fields: [tableId], references: [id])
   services            ReservationService[]
@@ -448,7 +448,7 @@ model Property {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
-  business          BookingBusiness               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
   financeConnection OpenFinanceConnection? @relation(fields: [financeConnectionId], references: [id])
   bookings          StayBooking[]
 
@@ -457,7 +457,7 @@ model Property {
   @@index([category])
 }
 
-// A confirmed stay = a BookingReservation (existing model) + a Property + a guest deposit escrow.
+// A confirmed stay = a Reservation (existing model) + a Property + a guest deposit escrow.
 model StayBooking {
   id            String            @id @default(cuid())
   reservationId String            @unique
@@ -475,7 +475,7 @@ model StayBooking {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  reservation BookingReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
@@ -497,7 +497,7 @@ model OpenFinanceConnection {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  business   BookingBusiness   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   properties Property[]
 
   @@index([businessId])
@@ -522,9 +522,9 @@ model Payment {
   platformFeeStatus String?       @default("NONE")
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-  reservation       BookingReservation?  @relation(fields: [reservationId], references: [id])
+  reservation       Reservation?  @relation(fields: [reservationId], references: [id])
   user              User          @relation("userPayments", fields: [userId], references: [id], onDelete: Cascade)
-  business          BookingBusiness?     @relation("businessPayments", fields: [businessId], references: [id])
+  business          Business?     @relation("businessPayments", fields: [businessId], references: [id])
 
   @@index([reservationId])
   @@index([userId])
@@ -560,7 +560,7 @@ model BusinessSettings {
   faqRules                    Json?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
-  business                    BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business                    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -609,7 +609,7 @@ model CryptoReward {
   txHash        String?
   createdAt     DateTime     @default(now())
   metadata      Json?
-  reservation   BookingReservation? @relation(fields: [reservationId], references: [id])
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -624,7 +624,7 @@ model GoogleReview {
   sentimentLabel String?
   processed      Boolean  @default(false)
   createdAt      DateTime @default(now())
-  business       BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -638,7 +638,7 @@ model WebhookEndpoint {
   signingSecret    String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  business         BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -679,7 +679,7 @@ model ApiClient {
   usageLogs         ApiUsageLog[]
   disputes          Dispute[]
 
-  business BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([apiKey])
   @@index([email])
@@ -752,7 +752,7 @@ model LiveSellerIntegration {
   metadata     Json?
   connectedAt  DateTime           @default(now())
   revokedAt    DateTime?
-  business     BookingBusiness           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business     Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, platform])
   @@index([businessId])
@@ -767,7 +767,7 @@ model SourcingOrder {
   accioWorkOrderId String?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
-  business         BookingBusiness            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business         Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -785,7 +785,7 @@ model TrendSuggestion {
   accioWorkUrl          String?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
-  business              BookingBusiness    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business              Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -942,7 +942,7 @@ model StakingPosition {
 model MudarabahPool {
   id                String   @id @default(cuid())
   businessId        String
-  business          BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   title             String
   description       String
   profitShareRatio  String   @default("70/30") // investor/pabandi split
@@ -1151,7 +1151,7 @@ model Dispute {
   hashedIdentity   HashedIdentity? @relation(fields: [hashedIdentityId], references: [hash], onDelete: Cascade)
   reporter         User?           @relation("DisputesFiled", fields: [reportedById], references: [id])
   apiClient        ApiClient?      @relation(fields: [apiClientId], references: [id])
-  reservation      BookingReservation?    @relation(fields: [reservationId], references: [id])
+  reservation      Reservation?    @relation(fields: [reservationId], references: [id])
   votes            JuryVote[]
 
   @@index([userId])
@@ -1287,11 +1287,11 @@ model PabandiReview {
   txHash        String? // Transaction hash of the SBT mint
   starPoints    Int      @default(0) // Points earned from this review (rating * 10 + upvotes)
   upvoteCount   Int      @default(0)
-  ownerReply    String? // BookingBusiness owner's public response (Yelp-style)
+  ownerReply    String? // Business owner's public response (Yelp-style)
   ownerRepliedAt DateTime?
   createdAt     DateTime @default(now())
 
-  business BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   upvotes PabandiReviewUpvote[]
 
@@ -1330,8 +1330,8 @@ model StarPower {
 model StarPromo {
   id            String   @id @default(cuid())
   businessId    String
-  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  senderId      String   // BookingBusiness owner user
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  senderId      String   // Business owner user
   sender        User     @relation(fields: [senderId], references: [id])
   targetTier    String?  // null = all tiers; else filter by tier
   title         String
@@ -1393,7 +1393,7 @@ model BusinessService {
   isActive            Boolean              @default(true)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  business            BookingBusiness             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   reservationServices ReservationService[]
 
   @@index([businessId])
@@ -1404,7 +1404,7 @@ model ReservationService {
   reservationId  String
   serviceId      String
   priceAtBooking Float
-  reservation    BookingReservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation    Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   service        BusinessService @relation(fields: [serviceId], references: [id])
 
   @@unique([reservationId, serviceId])
@@ -1426,7 +1426,7 @@ model CheckoutSession {
   updatedAt    DateTime       @updatedAt
   escrowEvents EscrowEvent[]
 
-  business BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])
@@ -1537,7 +1537,7 @@ model ShopifyStore {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  business BookingBusiness? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
 }
@@ -1671,7 +1671,7 @@ model AccountManagerProfile {
   updatedAt    DateTime      @updatedAt
 
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessesReferred BookingBusiness[]
+  businessesReferred Business[]
   ledgers            ReferralLedger[]
   payouts            ReferralPayout[]
 }
@@ -3661,8 +3661,8 @@ model CourtCheck {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  reservation BookingReservation? @relation(fields: [reservationId], references: [id])
-  business    BookingBusiness?    @relation(fields: [businessId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  business    Business?    @relation(fields: [businessId], references: [id])
   customer    User?        @relation(fields: [customerId], references: [id])
 
   @@index([reservationId])
@@ -4250,7 +4250,7 @@ model MarketplaceListing {
   // Escrow protection.
   escrowEnabled Boolean  @default(true)
   escrowId      String?  // LocalSaleEscrow.id when funded
-  // BookingReservation / booking fields (for rental/service listings).
+  // Reservation / booking fields (for rental/service listings).
   availableFrom DateTime?
   availableTo   DateTime?
   // Engagement.
@@ -4408,7 +4408,7 @@ model PromoReview {
 model PartnerOffer {
   id              String   @id @default(cuid())
   businessId      String
-  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Offer details
   title           String
@@ -4474,7 +4474,7 @@ model UserReward {
 model PartnerEnrollment {
   id              String   @id @default(cuid())
   businessId      String   @unique
-  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Enrollment status
   status          String   // PENDING, ACTIVE, SUSPENDED
@@ -4673,7 +4673,7 @@ model CarrierProfile {
 model VendorPromotion {
   id              String   @id @default(cuid())
   businessId      String
-  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Promotion details
   title           String
@@ -4742,7 +4742,7 @@ model PromotionRedemption {
 model LoyaltyProgram {
   id              String   @id @default(cuid())
   businessId      String   @unique
-  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Program details
   name            String
@@ -4794,7 +4794,7 @@ model CustomerVendorRelation {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId      String
-  business        BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   
   // Relationship metrics
   totalPurchases  Int      @default(0)
@@ -5515,7 +5515,7 @@ model FiatPayment {
   payeeId       String
   payee         User     @relation("fiatPaymentsReceived", fields: [payeeId], references: [id])
   businessId    String?
-  business      BookingBusiness? @relation(fields: [businessId], references: [id])
+  business      Business? @relation(fields: [businessId], references: [id])
   paymentUrl    String?
   instructions  String?
   confirmedAt   DateTime?
@@ -5538,7 +5538,7 @@ model SolanaEscrow {
   sellerId        String
   seller          User     @relation("escrowSeller", fields: [sellerId], references: [id])
   businessId      String?
-  business        BookingBusiness? @relation(fields: [businessId], references: [id])
+  business        Business? @relation(fields: [businessId], references: [id])
   mint            String   // USDC mint address
   amount          Float
   status          String   @default("CREATED") // CREATED, FUNDED, RELEASED, REFUNDED, DISPUTED
@@ -5924,7 +5924,7 @@ model BookingRecord {
   rewardPab       Float    @default(0)
   status          String   @default("PENDING") // PENDING | CHECKED_IN | NO_SHOW | CANCELLED
   businessId      String?
-  business        BookingBusiness? @relation(fields: [businessId], references: [id])
+  business        Business? @relation(fields: [businessId], references: [id])
   checkinAt       DateTime?
   cancelledAt     DateTime?
   description     String?  // For frictionless payments
@@ -6293,7 +6293,7 @@ model TelegramBot {
   settings      Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([isActive])
@@ -6317,7 +6317,7 @@ model ChannelMessage {
   failedAt      DateTime?
   error         String?
   createdAt     DateTime @default(now())
-  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([customerId])
@@ -6339,7 +6339,7 @@ model SMSLog {
   deliveredAt   DateTime?
   error         String?
   createdAt     DateTime @default(now())
-  business      BookingBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([status])

@@ -7,7 +7,7 @@ export class PipelineTrustService {
     if (!lead) return null;
 
     const wallet = await prisma.walletPassport.findUnique({
-      where: { userId: lead.passportId || '' },
+      where: { holderId: lead.passportId || '' },
     });
 
     return {
@@ -23,7 +23,7 @@ export class PipelineTrustService {
     if (!lead) return 'high' as const;
 
     const wallet = await prisma.walletPassport.findUnique({
-      where: { userId: lead.passportId || '' },
+      where: { holderId: lead.passportId || '' },
     });
 
     const score = wallet?.score || 0;
@@ -37,7 +37,7 @@ export class PipelineTrustService {
     if (!lead) return { terms: 'prepayment', deposit: 100 };
 
     const wallet = await prisma.walletPassport.findUnique({
-      where: { userId: lead.passportId || '' },
+      where: { holderId: lead.passportId || '' },
     });
 
     const score = wallet?.score || 0;
