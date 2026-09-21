@@ -161,19 +161,34 @@ import { useEffect } from 'react';
 import StakingInterface from './components/StakingInterface';
 import EscrowInterface from './components/EscrowInterface';
 import AgentInterface from './components/AgentInterface';
-import SafOSPage from './pages/saf/SafOSPage';
-import HaqOSPage from './pages/haq/HaqOSPage';
-import HaqTenantsPage from './pages/haq/HaqTenantsPage';
-import HaqTenantDetailPage from './pages/haq/HaqTenantDetailPage';
-import HaqLeasesPage from './pages/haq/HaqLeasesPage';
-import HaqMaintenancePage from './pages/haq/HaqMaintenancePage';
-import HaqFinancialsPage from './pages/haq/HaqFinancialsPage';
-import SafPostLoadPage from './pages/saf/SafPostLoadPage';
-import SafMyLoadsPage from './pages/saf/SafMyLoadsPage';
-import SafCarriersPage from './pages/saf/SafCarriersPage';
-import SafRateCalculatorPage from './pages/saf/SafRateCalculatorPage';
-import SitaraDiscoveryPage from './pages/sitara/SitaraDiscoveryPage';
-import SitaraBookingPage from './pages/sitara/SitaraBookingPage';
+// AbodeOS
+import AbodeOSPage from './pages/abode/AbodeOSPage';
+import AbodeTenantsPage from './pages/abode/AbodeTenantsPage';
+import AbodeTenantDetailPage from './pages/abode/AbodeTenantDetailPage';
+import AbodeLeasesPage from './pages/abode/AbodeLeasesPage';
+import AbodeMaintenancePage from './pages/abode/AbodeMaintenancePage';
+import AbodeFinancialsPage from './pages/abode/AbodeFinancialsPage';
+// FreightOS
+import FreightOSPage from './pages/freight/FreightOSPage';
+import FreightPostLoadPage from './pages/freight/FreightPostLoadPage';
+import FreightMyLoadsPage from './pages/freight/FreightMyLoadsPage';
+import FreightCarriersPage from './pages/freight/FreightCarriersPage';
+import FreightRateCalculatorPage from './pages/freight/FreightRateCalculatorPage';
+// BookingOS
+import BookingOSPage from './pages/booking/BookingOSPage';
+import BookingFlowPage from './pages/booking/BookingFlowPage';
+// PipelineOS
+import PipelineOSPage from './pages/pipeline/PipelineOSPage';
+import PipelineLeadsPage from './pages/pipeline/PipelineLeadsPage';
+import PipelineLeadDetailPage from './pages/pipeline/PipelineLeadDetailPage';
+import PipelineDealsPage from './pages/pipeline/PipelineDealsPage';
+import PipelineActivitiesPage from './pages/pipeline/PipelineActivitiesPage';
+// LedgerOS
+import LedgerOSPage from './pages/ledger/LedgerOSPage';
+import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
+import LedgerExpensesPage from './pages/ledger/LedgerExpensesPage';
+import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
+import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
 
 function App() {
@@ -197,9 +212,9 @@ function App() {
   const DashboardPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
-    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/haq" replace />;
+    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/abode" replace />;
     if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
-    return <Navigate to="/haq" replace />;
+    return <Navigate to="/abode" replace />;
   };
 
   const AuthRequiredProfilesPage = () => {
@@ -216,26 +231,52 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <Routes>
-          {/* OS Pages with their own DashboardLayout - OUTSIDE main Layout */}
-          <Route path="saf" element={<SafOSPage />} />
-          <Route path="saf/post-load" element={<SafPostLoadPage />} />
-          <Route path="saf/my-loads" element={<SafMyLoadsPage />} />
-          <Route path="saf/carriers" element={<SafCarriersPage />} />
-          <Route path="saf/rates" element={<SafRateCalculatorPage />} />
-          <Route path="haq" element={<HaqOSPage />} />
-          <Route path="haq/tenants" element={<HaqTenantsPage />} />
-          <Route path="haq/tenants/:id" element={<HaqTenantDetailPage />} />
-          <Route path="haq/leases" element={<HaqLeasesPage />} />
-          <Route path="haq/maintenance" element={<HaqMaintenancePage />} />
-          <Route path="haq/financials" element={<HaqFinancialsPage />} />
+          {/* AbodeOS (formerly HaqOS) - Property Management */}
+          <Route path="abode" element={<AbodeOSPage />} />
+          <Route path="abode/tenants" element={<AbodeTenantsPage />} />
+          <Route path="abode/tenants/:id" element={<AbodeTenantDetailPage />} />
+          <Route path="abode/leases" element={<AbodeLeasesPage />} />
+          <Route path="abode/maintenance" element={<AbodeMaintenancePage />} />
+          <Route path="abode/financials" element={<AbodeFinancialsPage />} />
+
+          {/* FreightOS (formerly SafOS) - Freight & Logistics */}
+          <Route path="freight" element={<FreightOSPage />} />
+          <Route path="freight/post-load" element={<FreightPostLoadPage />} />
+          <Route path="freight/my-loads" element={<FreightMyLoadsPage />} />
+          <Route path="freight/carriers" element={<FreightCarriersPage />} />
+          <Route path="freight/rates" element={<FreightRateCalculatorPage />} />
+
+          {/* BookingOS (formerly Sitara) - Booking & Discovery */}
+          <Route path="booking" element={<BookingOSPage />} />
+          <Route path="booking/flow" element={<BookingFlowPage />} />
+
+          {/* PipelineOS - CRM & Sales */}
+          <Route path="pipeline" element={<PipelineOSPage />} />
+          <Route path="pipeline/leads" element={<PipelineLeadsPage />} />
+          <Route path="pipeline/leads/:id" element={<PipelineLeadDetailPage />} />
+          <Route path="pipeline/deals" element={<PipelineDealsPage />} />
+          <Route path="pipeline/activities" element={<PipelineActivitiesPage />} />
+
+          {/* LedgerOS - Finance & Accounting */}
+          <Route path="ledger" element={<LedgerOSPage />} />
+          <Route path="ledger/invoices" element={<LedgerInvoicesPage />} />
+          <Route path="ledger/expenses" element={<LedgerExpensesPage />} />
+          <Route path="ledger/accounts" element={<LedgerAccountsPage />} />
+          <Route path="ledger/reports" element={<LedgerReportsPage />} />
+
+          {/* Redirects from old routes */}
+          <Route path="haq/*" element={<Navigate to="/abode" replace />} />
+          <Route path="saf/*" element={<Navigate to="/freight" replace />} />
+          <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
+          <Route path="discovery" element={<Navigate to="/booking" replace />} />
+
+          {/* Other standalone pages (Builder, Buyer, COD, Protocol) */}
           <Route path="builder" element={<BuilderDashboard />} />
           <Route path="builder/projects/:id" element={<BuilderProjectPage />} />
           <Route path="buyer" element={<BuyerPortal />} />
           <Route path="cod" element={<CODMarketplace />} />
           <Route path="cod/create" element={<CreateEscrow />} />
           <Route path="cod/:id" element={<EscrowDetail />} />
-          <Route path="discovery" element={<SitaraDiscoveryPage />} />
-          <Route path="booking" element={<SitaraBookingPage />} />
           <Route path="protocol" element={<ProtocolDashboardPage />} />
           <Route path="protocol/staking" element={<StakingInterface />} />
           <Route path="protocol/escrow" element={<EscrowInterface />} />
@@ -393,7 +434,6 @@ function App() {
             <Route path="waitlist" element={<WaitlistPage />} />
             <Route path="r/:code" element={<ReferralLandingPage />} />
             <Route path="city/:slug" element={<CityLandingPage />} />
-            <Route path="sitara/*" element={<SitaraApp />} />
             <Route path="admin" element={isAuthenticated && user?.role === 'ADMIN' ? <AdminDashboardPage /> : <Navigate to="/admin/setup" />} />
             <Route path="admin/setup" element={<AdminSetupPage />} />
           </Route>

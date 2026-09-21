@@ -41,12 +41,30 @@ const colorMap: Record<string, { gradientFrom: string; gradientTo: string; iconB
     activeText: 'text-violet-300',
     activeBorder: 'border-violet-500/20',
   },
+  indigo: {
+    gradientFrom: 'from-indigo-500',
+    gradientTo: 'to-blue-600',
+    iconBg: 'bg-gradient-to-br from-indigo-500 to-blue-600',
+    activeBg: 'bg-gradient-to-r from-indigo-500/20 to-blue-500/10',
+    activeText: 'text-indigo-300',
+    activeBorder: 'border-indigo-500/20',
+  },
+  rose: {
+    gradientFrom: 'from-rose-500',
+    gradientTo: 'to-pink-600',
+    iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600',
+    activeBg: 'bg-gradient-to-r from-rose-500/20 to-pink-500/10',
+    activeText: 'text-rose-300',
+    activeBorder: 'border-rose-500/20',
+  },
 };
 
 const OS_DESCRIPTIONS: Record<string, string> = {
-  'SafOS': 'Freight & logistics platform. Post loads, find carriers, track shipments.',
-  'Haq OS': 'Property management platform. Manage tenants, leases, and revenue.',
-  'Sitara': 'Booking & discovery platform. Find restaurants, hotels, and services.',
+  'FreightOS': 'Freight & logistics platform. Post loads, find carriers, track shipments.',
+  'AbodeOS': 'Property management platform. Manage tenants, leases, and revenue.',
+  'BookingOS': 'Booking & discovery platform. Find restaurants, hotels, and services.',
+  'PipelineOS': 'CRM & sales pipeline. Track leads, deals, and activities.',
+  'LedgerOS': 'Finance & accounting. Invoices, expenses, cash flow, and reports.',
 };
 
 export default function DashboardLayout({ osName, osIcon, osColor, navItems, children }: DashboardLayoutProps) {

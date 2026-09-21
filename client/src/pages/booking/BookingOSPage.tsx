@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { path: '/booking', label: 'Discovery', icon: 'explore', end: true },
-  { path: '/booking', label: 'Bookings', icon: 'event' },
-  { path: '/discovery#favorites', label: 'Favorites', icon: 'favorite' },
-  { path: '/discovery#map', label: 'Map', icon: 'map' },
+  { path: '/booking/flow', label: 'Bookings', icon: 'event' },
+  { path: '/booking#favorites', label: 'Favorites', icon: 'favorite' },
+  { path: '/booking#map', label: 'Map', icon: 'map' },
 ];
 
-export default function BookingDiscoveryPage() {
+export default function BookingOSPage() {
   return (
     <DashboardLayout osName="BookingOS" osIcon="★" osColor="emerald" navItems={NAV_ITEMS}>
       <DiscoveryPage />

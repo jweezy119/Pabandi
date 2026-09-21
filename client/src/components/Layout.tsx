@@ -73,14 +73,14 @@ function DropdownItem({ to, children }: { to: string; children: React.ReactNode 
 function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname: string }) {
   const sections = [
     { title: 'Marketplace', items: [
-      { to: '/live-selling', icon: 'videocam', label: 'Live Selling' },
-      { to: '/hospitality', icon: 'hotel', label: 'Hospitality' },
-      { to: '/freelance', icon: 'group', label: 'Freelancers' },
-      { to: '/gigs', icon: 'work', label: 'Gig Board' },
-      { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
-      { to: '/saf', icon: 'local_shipping', label: 'Saf OS' },
-      { to: '/haq', icon: 'apartment', label: 'Haq OS' },
-      { to: '/discovery', icon: 'restaurant_menu', label: 'Sitara' },
+    { to: '/live-selling', icon: 'videocam', label: 'Live Selling' },
+    { to: '/hospitality', icon: 'hotel', label: 'Hospitality' },
+    { to: '/freelance', icon: 'group', label: 'Freelancers' },
+    { to: '/gigs', icon: 'work', label: 'Gig Board' },
+    { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
+    { to: '/booking', icon: 'event', label: 'BookingOS' },
+    { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
+    { to: '/abode', icon: 'apartment', label: 'AbodeOS' },
     ]},
     { title: 'Trust & Safety', items: [
       { to: '/trust', icon: 'verified', label: 'Trust Passports' },
@@ -247,10 +247,10 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
-  // /booking and /sitara/* bring their own chrome (BookingLayout sidebar,
-  // SitaraHeader). Rendering the main header/footer/nav on top stacks two
-  // top bars and two bottom bars — so stand down here.
-  const isStandalone = /^\/(booking|sitara)(\/|$)/.test(location.pathname);
+  // /booking, /freight, /abode, /pipeline, /ledger bring their own chrome
+  // (DashboardLayout sidebar). Rendering the main header/footer/nav on top
+  // stacks two top bars and two bottom bars — so stand down here.
+  const isStandalone = /^\/(booking|freight|abode|pipeline|ledger|sitara)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
@@ -322,7 +322,14 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles', '/saf', '/haq', '/discovery', '/booking'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/abode', '/pipeline', '/ledger'].some((p) => location.pathname.startsWith(p))}>
+              <DropdownItem to="/booking">BookingOS</DropdownItem>
+              <DropdownItem to="/freight">FreightOS</DropdownItem>
+              <DropdownItem to="/abode">AbodeOS</DropdownItem>
+              <DropdownItem to="/pipeline">PipelineOS</DropdownItem>
+              <DropdownItem to="/ledger">LedgerOS</DropdownItem>
+            </Dropdown>
+            <Dropdown label="Marketplace" current={['/live-selling', '/hospitality', '/freelance', '/gigs', '/agent-dashboard', '/profiles'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/live-selling">Live Selling</DropdownItem>
               <DropdownItem to="/hospitality">Hospitality</DropdownItem>
               <DropdownItem to="/freelance">Freelancers</DropdownItem>
@@ -331,9 +338,6 @@ export default function Layout() {
               <DropdownItem to="/promo">Promo Ambassadors</DropdownItem>
               <DropdownItem to="/rewards">Rewards</DropdownItem>
               <DropdownItem to="/promotions">Promotions</DropdownItem>
-              <DropdownItem to="/saf">Saf OS (Freight)</DropdownItem>
-              <DropdownItem to="/haq">Haq OS (Property)</DropdownItem>
-              <DropdownItem to="/discovery">Sitara</DropdownItem>
             </Dropdown>
             <Dropdown label="Trust & Safety" current={['/trust', '/background-check', '/protected-deposit', '/arbitration', '/agent-passport'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/trust">Trust Passports</DropdownItem>
@@ -404,18 +408,11 @@ export default function Layout() {
         <nav className="fixed bottom-0 w-full z-50 bg-surface-bright/80 backdrop-blur-xl border-t border-outline-variant/10 md:hidden safe-area-pb">
           <div className="flex justify-around items-center px-1 py-1.5 max-w-md mx-auto">
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
-            <MobileTab to="/saf" icon="local_shipping" label="Saf" current={location.pathname.startsWith('/saf')} />
-            <MobileTab to="/haq" icon="apartment" label="Haq" current={location.pathname.startsWith('/haq')} />
-            <button onClick={() => setSearchOpen(true)} className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${'text-on-surface-variant hover:text-primary active:scale-95'}`}>
-              <span className="material-symbols-outlined text-[24px]">search</span>
-              <span className="font-body text-[10px] font-semibold tracking-wide">Search</span>
-            </button>
-            <MobileTab
-              to={isOwnerOrAdmin ? '/dashboard' : '/reservations'}
-              icon={isOwnerOrAdmin ? 'dashboard' : 'calendar_month'}
-              label={isOwnerOrAdmin ? 'Dash' : 'Book'}
-              current={location.pathname === '/dashboard' || location.pathname.startsWith('/reservations')}
-            />
+            <MobileTab to="/booking" icon="event" label="Booking" current={location.pathname.startsWith('/booking')} />
+            <MobileTab to="/freight" icon="local_shipping" label="Freight" current={location.pathname.startsWith('/freight')} />
+            <MobileTab to="/abode" icon="apartment" label="Abode" current={location.pathname.startsWith('/abode')} />
+            <MobileTab to="/pipeline" icon="trending_up" label="Pipeline" current={location.pathname.startsWith('/pipeline')} />
+            <MobileTab to="/ledger" icon="account_balance" label="Ledger" current={location.pathname.startsWith('/ledger')} />
             <button
               onClick={() => setMoreOpen(true)}
               className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-2xl transition-all touch-target ${moreOpen ? 'text-primary bg-primary-container/30 scale-[1.05]' : 'text-on-surface-variant hover:text-primary active:scale-95'}`}
@@ -431,11 +428,15 @@ export default function Layout() {
       {!isAuthPage && !isStandalone && (
         <footer className="hidden md:block bg-surface-bright/30 backdrop-blur-xl border-t border-outline-variant/10 mt-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
-            <div className="grid grid-cols-4 gap-8 text-sm">
+            <div className="grid grid-cols-5 gap-8 text-sm">
               <div>
-                <p className="font-headline font-bold text-base text-on-surface mb-3">Pabandi</p>
-                <p className="text-on-surface-variant text-xs">One-stop shop: sell, buy, book, hire — all with trust &amp; $PAB rewards.</p>
-                <p className="text-on-surface-variant text-xs mt-2">© {new Date().getFullYear()} Pabandi. All rights reserved.</p>
+                <p className="font-headline font-bold text-base text-on-surface mb-3">PabandiOS Suite</p>
+                <p className="text-on-surface-variant text-xs mb-3">PabandiOS Suite: BookingOS • FreightOS • AbodeOS • PipelineOS • LedgerOS — Powered by TrustOS</p>
+                <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
+                <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">FreightOS</Link>
+                <Link to="/abode" className="block text-on-surface-variant hover:text-primary py-1">AbodeOS</Link>
+                <Link to="/pipeline" className="block text-on-surface-variant hover:text-primary py-1">PipelineOS</Link>
+                <Link to="/ledger" className="block text-on-surface-variant hover:text-primary py-1">LedgerOS</Link>
               </div>
               <div>
                 <p className="font-headline font-semibold text-sm text-on-surface mb-3">Marketplace</p>
@@ -443,9 +444,8 @@ export default function Layout() {
                 <Link to="/freelance" className="block text-on-surface-variant hover:text-primary py-1">Freelancers</Link>
                 <Link to="/gigs" className="block text-on-surface-variant hover:text-primary py-1">Gig Board</Link>
                 <Link to="/hospitality" className="block text-on-surface-variant hover:text-primary py-1">Hospitality</Link>
-                <Link to="/saf" className="block text-on-surface-variant hover:text-primary py-1">Saf OS</Link>
-                <Link to="/haq" className="block text-on-surface-variant hover:text-primary py-1">Haq OS</Link>
-                <Link to="/discovery" className="block text-on-surface-variant hover:text-primary py-1">Sitara</Link>
+                <Link to="/pipeline" className="block text-on-surface-variant hover:text-primary py-1">PipelineOS</Link>
+                <Link to="/ledger" className="block text-on-surface-variant hover:text-primary py-1">LedgerOS</Link>
                 <Link to="/marketplace" className="block text-on-surface-variant hover:text-primary py-1">Marketplace</Link>
               </div>
               <div>

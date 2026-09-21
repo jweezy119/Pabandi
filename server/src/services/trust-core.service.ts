@@ -1,15 +1,16 @@
 import { prisma } from '../utils/database';
+import { eventBus } from './event-bus.service';
 
 export class TrustCoreService {
   // ── PASSPORT ─────────────────────────────────────────
 
   async getPassport(userId: string) {
-    let passport = await prisma.trustPassport.findUnique({
+    let passport = await prisma.walletPassport.findUnique({
       where: { userId },
     });
 
     if (!passport) {
-      passport = await prisma.trustPassport.create({
+      passport = await prisma.walletPassport.create({
         data: {
           userId,
           score: 50,
@@ -32,7 +33,7 @@ export class TrustCoreService {
     const newScore = Math.max(0, Math.min(100, passport.score + delta));
     const level = this.getLevel(newScore);
 
-    const updated = await prisma.trustPassport.update({
+    const updated = await prisma.walletPassport.update({
       where: { userId },
       data: {
         score: newScore,
@@ -40,9 +41,7 @@ export class TrustCoreService {
       },
     });
 
-    // Emit event for cross-module updates
-    await this.emitEvent('trust.score.changed', { userId, newScore, delta, reason });
-
+    await eventBus.emitEvent('trust.score.changed', { userId, newScore, delta, reason });
     return updated;
   }
 
@@ -58,7 +57,6 @@ export class TrustCoreService {
   // ── REWARDS ─────────────────────────────────────────
 
   async awardPAB(userId: string, amount: number, reason: string) {
-    // In production: mint/transfer PAB tokens on Solana
     console.log(`[TrustCore] Awarding ${amount} PAB to ${userId} for: ${reason}`);
     return { success: true, amount, reason };
   }
@@ -67,26 +65,25 @@ export class TrustCoreService {
 
   async getEscrowAvailable(userId: string): Promise<boolean> {
     const score = await this.calculateScore(userId);
-    return score >= 30; // Minimum score for escrow
+    return score >= 30;
   }
 
   async getDiscountTier(userId: string): Promise<number> {
     const score = await this.calculateScore(userId);
-    if (score >= 90) return 0.15; // 15% discount
-    if (score >= 70) return 0.10; // 10% discount
-    if (score >= 50) return 0.05; // 5% discount
+    if (score >= 90) return 0.15;
+    if (score >= 70) return 0.10;
+    if (score >= 50) return 0.05;
     return 0;
   }
 
   // ── CROSS-MODULE LINKS ──────────────────────────────
 
   async linkToPipeline(passportId: string) {
-    const passport = await prisma.trustPassport.findUnique({
+    const passport = await prisma.walletPassport.findUnique({
       where: { id: passportId },
     });
     if (!passport) return null;
 
-    // In production: enrich lead with trust data
     return {
       passportId: passport.id,
       score: passport.score,
@@ -96,25 +93,17 @@ export class TrustCoreService {
   }
 
   async linkToLedger(passportId: string) {
-    const passport = await prisma.trustPassport.findUnique({
+    const passport = await prisma.walletPassport.findUnique({
       where: { id: passportId },
     });
     if (!passport) return null;
 
-    // In production: suggest credit terms based on trust
     return {
       passportId: passport.id,
       score: passport.score,
       suggestedTerms: passport.score >= 80 ? 'net-30' : passport.score >= 50 ? 'net-15' : 'prepayment',
-      creditLimit: passport.score * 100, // $100 per point
+      creditLimit: passport.score * 100,
     };
-  }
-
-  // ── EVENTS ──────────────────────────────────────────
-
-  private async emitEvent(event: string, data: any) {
-    // In production: publish to event bus (Redis, RabbitMQ, etc.)
-    console.log(`[TrustCore] Event: ${event}`, data);
   }
 
   // ── HELPERS ─────────────────────────────────────────

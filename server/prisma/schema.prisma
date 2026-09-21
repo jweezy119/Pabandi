@@ -6161,7 +6161,6 @@ model AbodeBuilderUnit {
   buyer         AbodeBuyer? @relation(fields: [buyerId], references: [id])
   installments  Installment[]
   createdAt     DateTime @default(now())
-  @@map("BuyerProfile")
 }
 
 model AbodeBuyer {
@@ -6358,7 +6357,7 @@ model UserChannelPreference {
 }
 
 
-model TrustPassport {
+model WalletPassport {
   id            String   @id @default(cuid())
   userId        String   @unique
   score         Float    @default(50)
@@ -6366,14 +6365,16 @@ model TrustPassport {
   verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  pipelineLeads PipelineLead[]
 
-  @@index([userId])
+  @@unique([userId])
+  @@map("wallet_passports")
 }
 
 model PipelineLead {
   id            String   @id @default(cuid())
   passportId    String
-  passport      TrustPassport @relation(fields: [passportId], references: [id])
+  passport      WalletPassport @relation(fields: [passportId], references: [id])
   name          String
   email         String?
   phone         String?

@@ -173,4 +173,130 @@ router.get('/veil/verify/:proofId', async (req, res) => {
   }
 });
 
+// ── CROSS-MODULE INTEGRATION ─────────────────────────
+
+/**
+ * GET /api/v1/trust/passport/:userId
+ * Get trust passport with reliability score
+ */
+router.get('/passport/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (!passport) {
+      passport = await prisma.trustPassport.create({
+        data: { userId, score: 50, level: 'bronze', verified: false },
+      });
+    }
+    res.json({ success: true, data: passport });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * PUT /api/v1/trust/score/:userId
+ * Update trust score (with audit trail)
+ */
+router.put('/score/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { delta, reason } = req.body;
+    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (!passport) {
+      passport = await prisma.trustPassport.create({
+        data: { userId, score: 50, level: 'bronze', verified: false },
+      });
+    }
+    const newScore = Math.max(0, Math.min(100, passport.score + (delta || 0)));
+    const level = newScore >= 90 ? 'platinum' : newScore >= 70 ? 'gold' : newScore >= 50 ? 'silver' : 'bronze';
+    const updated = await prisma.trustPassport.update({
+      where: { userId },
+      data: { score: newScore, level },
+    });
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/risk/:userId
+ * Get risk assessment for a user
+ */
+router.get('/risk/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (!passport) {
+      passport = await prisma.trustPassport.create({
+        data: { userId, score: 50, level: 'bronze', verified: false },
+      });
+    }
+    const risk = passport.score >= 70 ? 'low' : passport.score >= 40 ? 'medium' : 'high';
+    res.json({ success: true, data: { userId, score: passport.score, risk, level: passport.level } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/escrow/:userId
+ * Check if user is eligible for escrow
+ */
+router.get('/escrow/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+    if (!passport) {
+      passport = await prisma.trustPassport.create({
+        data: { userId, score: 50, level: 'bronze', verified: false },
+      });
+    }
+    const eligible = passport.score >= 30;
+    res.json({ success: true, data: { userId, eligible, score: passport.score } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/v1/trust/events
+ * Emit a cross-module event
+ */
+router.post('/events', async (req, res) => {
+  try {
+    const { event, data } = req.body;
+    const { eventBus } = await import('../services/event-bus.service');
+    eventBus.emitEvent(event, data);
+    res.json({ success: true, data: { event, emitted: true } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/v1/trust/report/:businessId
+ * Full trust report across all modules
+ */
+router.get('/report/:businessId', async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const passports = await prisma.trustPassport.findMany({
+      where: { user: { businessId } },
+    });
+    res.json({
+      success: true,
+      data: {
+        businessId,
+        totalPassports: passports.length,
+        averageScore: passports.reduce((sum, p) => sum + p.score, 0) / Math.max(1, passports.length),
+        passports,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
