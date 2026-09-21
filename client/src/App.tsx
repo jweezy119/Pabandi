@@ -147,6 +147,7 @@ import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
 import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
+import ProfitDashboardPage from './pages/ProfitDashboardPage';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
