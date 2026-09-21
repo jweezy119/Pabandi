@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: PabandiOS API
+  version: 1.0.0
+  description: The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow.
+  contact:
+    name: PabandiOS Agents
+    email: agents@pabandi.com
+
+servers:
+  - url: https://api.pabandi.com
+    description: Production
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Server is healthy
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+                fullName: { type: string }
+      responses:
+        '201':
+          description: User created
+        '400':
+          description: Validation error
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and get JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: JWT tokens returned
+
+  /api/v1/businesses:
+    get:
+      tags: [Search]
+      summary: Search businesses
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: latitude
+          in: query
+          schema: { type: number }
+        - name: longitude
+          in: query
+          schema: { type: number }
+      responses:
+        '200':
+          description: Business listings
+
+  /api/v1/businesses/{id}:
+    get:
+      tags: [Search]
+      summary: Get business profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Business profile
+
+  /api/v1/booking/create:
+    post:
+      tags: [Booking]
+      summary: Create a booking with escrow deposit
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [businessId, reservationDate, reservationTime, numberOfGuests]
+              properties:
+                businessId: { type: string }
+                reservationDate: { type: string, format: date }
+                reservationTime: { type: string }
+                numberOfGuests: { type: integer }
+                depositAmount: { type: number }
+                specialRequests: { type: string }
+                paymentMethod: { type: string }
+                intentMandate: { type: object }
+                cartMandate: { type: object }
+                paymentMandate: { type: object }
+      responses:
+        '201':
+          description: Booking created with deposit
+        '401':
+          description: AP2 mandates missing
+        '402':
+          description: Payment required (x402)
+
+  /api/v1/booking/confirm:
+    post:
+      tags: [Booking]
+      summary: Confirm booking payment and create escrow
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bookingReference: { type: string }
+                paylioPaymentId: { type: string }
+      responses:
+        '200':
+          description: Escrow created
+
+  /api/v1/booking/{reference}/status:
+    get:
+      tags: [Booking]
+      summary: Get booking status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Booking status
+
+  /api/v1/escrow:
+    post:
+      tags: [Escrow]
+      summary: Create escrow
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: number }
+                currency: { type: string }
+                conditions: { type: string }
+      responses:
+        '201':
+          description: Escrow created
+
+  /api/v1/solana-escrow:
+    post:
+      tags: [Escrow]
+      summary: Create Solana on-chain escrow
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: number }
+                payer: { type: string }
+                payee: { type: string }
+                conditions: { type: string }
+      responses:
+        '201':
+          description: Solana escrow created
+
+  /api/v1/passport/{id}/trust-score:
+    get:
+      tags: [Trust]
+      summary: Get trust score (requires x402 payment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Trust score
+        '402':
+          description: Payment required (x402)
+
+  /api/v1/pipeline:
+    get:
+      tags: [CRM]
+      summary: Get pipeline stats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pipeline statistics
+
+  /api/v1/ledger/invoice:
+    post:
+      tags: [Ledger]
+      summary: Create invoice with escrow backing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId: { type: string }
+                amount: { type: number }
+                dueDate: { type: string, format: date }
+                description: { type: string }
+      responses:
+        '201':
+          description: Invoice created
+
+  /mcp:
+    post:
+      tags: [MCP]
+      summary: MCP JSON-RPC endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jsonrpc: { type: string }
+                method: { type: string }
+                params: { type: object }
+                id: {}
+      responses:
+        '200':
+          description: JSON-RPC response
+        '402':
+          description: x402 payment required for paid tool
+
+  /.well-known/agents.json:
+    get:
+      tags: [Discovery]
+      summary: Agent discovery document
+      responses:
+        '200':
+          description: Agent capabilities and endpoints
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,52 @@
+{
+  "name": "pabandi-mcp",
+  "description": "PabandiOS MCP Server with x402 payment support for agent-driven bookings, escrow, and trust verification.",
+  "url": "https://pabandi-mcp.workers.dev/mcp",
+  "payment": {
+    "scheme": "x402",
+    "network": "solana",
+    "currency": "USDC",
+    "recipient": "PABANDI_USDC_WALLET"
+  },
+  "tools": [
+    {
+      "name": "pabandi_verify_passport",
+      "price": "free",
+      "description": "Verify a Pabandi PTP attestation."
+    },
+    {
+      "name": "pabandi_discover",
+      "price": "free",
+      "description": "Return the Pabandi Trust Protocol discovery document."
+    },
+    {
+      "name": "pabandi_get_ledger",
+      "price": "free",
+      "description": "Public audit lookup of a passport issuance charge."
+    },
+    {
+      "name": "pabandi_issue_passport",
+      "price": "1.0 USDC",
+      "description": "Issue a scoped Agent Capability Passport."
+    },
+    {
+      "name": "pabandi_verify_property",
+      "price": "free",
+      "description": "Verify property documents and trust scores."
+    },
+    {
+      "name": "pabandi_initiate_escrow",
+      "price": "0.5 USDC",
+      "description": "Initiate a Solana escrow for conditional payment."
+    },
+    {
+      "name": "pabandi_create_booking",
+      "price": "0.25 USDC",
+      "description": "Create a booking with AP2 mandates and escrow."
+    }
+  ],
+  "authorization": {
+    "scheme": "ap2",
+    "mandates": ["intent", "cart", "payment"]
+  }
+}

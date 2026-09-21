@@ -21,7 +21,6 @@ import AgentControlPanel from './pages/AgentControlPanel';
 import AgentMarketplacePage from './pages/AgentMarketplacePage';
 import AgentProfilePage from './pages/AgentProfilePage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
-import ShortLinkBookingPage from './pages/ShortLinkBookingPage';
 import TapPayPage from './pages/TapPayPage';
 import UniversalCheckoutPage from './pages/UniversalCheckoutPage';
 import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
@@ -67,6 +66,9 @@ import TenantPortalDashboard from './pages/TenantPortalDashboard';
 import RentPayment from './pages/RentPayment';
 import MaintenanceRequest from './pages/MaintenanceRequest';
 import LeaseView from './pages/LeaseView';
+import OnboardingWizard from './pages/onboarding/OnboardingWizard';
+import CustomerBookingPage from './pages/booking/CustomerBookingPage';
+import BusinessDashboard from './pages/dashboard/BusinessDashboard';
 import TrustStakingPortal from './components/TrustStaking';
 import PaymentHistory from './pages/PaymentHistory';
 import EnhancedDashboardPage from './pages/EnhancedDashboardPage';
@@ -142,8 +144,8 @@ import DarazScannerPage from './pages/DarazScannerPage';
 import FreelanceStorefrontPage from './pages/FreelanceStorefrontPage';
 import ShariaCompliancePage from './pages/ShariaCompliancePage';
 import { MudarabahPoolsPage } from './pages/MudarabahPoolsPage';
-import { BusinessMudarabahPage } from './pages/BusinessMudarabahPage';
-import ProfitDashboardPage from './pages/ProfitDashboardPage';
+import { BusinessCrmPage } from './pages/BusinessCrmPage';
+import ServiceBusinessDashboard from './pages/crm/ServiceBusinessDashboard';
 import { ShariaTransparencyPage } from './pages/ShariaTransparencyPage';
 import { PublicCustomerProfilePage } from './pages/PublicCustomerProfilePage';
 import { PublicPassportPage } from './pages/PublicPassportPage';
@@ -382,6 +384,7 @@ function App() {
             <Route path="business/:id/book" element={<BookingPage />} />
             <Route path="business/activate/:id" element={<BusinessActivationPage />} />
             <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
+            <Route path="crm" element={isAuthenticated ? <ServiceBusinessDashboard /> : <Navigate to="/login" />} />
             <Route path="business/settings" element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />} />
             <Route path="business/analytics" element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />} />
             <Route path="business/plugins" element={isAuthenticated ? <PluginManagerPage /> : <Navigate to="/login" />} />
@@ -394,7 +397,9 @@ function App() {
             <Route path="demo-checkout" element={<DemoCheckoutPage />} />
             <Route path="s/:sellerId" element={<UniversalCheckoutPage />} />
             <Route path="t/pay/:sellerId" element={<TapPayPage />} />
-            <Route path="b/:slug" element={<ShortLinkBookingPage />} />
+            <Route path="b/:slug" element={<CustomerBookingPage />} />
+            <Route path="onboarding" element={<OnboardingWizard />} />
+            <Route path="dashboard" element={<BusinessDashboard />} />
             <Route path="web3" element={<Web3Page />} />
             <Route path="lp-terminal" element={<LiquidityTerminalPage />} />
             <Route path="usdy" element={<UsdyPage />} />

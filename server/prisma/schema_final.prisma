@@ -169,7 +169,6 @@ model User {
   stakingRecords             StakingRecord[]
   bookingPabRecords          BookingRecord[]
   agentRewards               AgentReward[]
-  crmServiceBusinesses       CrmServiceBusiness[]
   @@index([email])
   @@index([phone])
 }
@@ -264,12 +263,6 @@ model Business {
   telegramBot              TelegramBot?
   channelMessages          ChannelMessage[]
   smsLogs                  SMSLog[]
-  crmServiceBusiness       CrmServiceBusiness?
-  cleaningServices         CleaningService[]
-  cleaningAvailability     CleaningAvailability[]
-  cleaningEmployees        CleaningEmployee[]
-  cleaningCustomers        CleaningCustomer[]
-  cleaningExpenses         CleaningExpense[]
 
   @@index([ownerId])
   @@index([city])
@@ -6493,21 +6486,22 @@ model LedgerExpense {
   @@index([businessId, category])
 }
 
+
 // ── Service Business CRM Models ───────────────────────────────────────────────
 // Service businesses (cleaning, plumbing, etc.) with employees, clients, jobs,
 // assignments, payroll, and expenses.
 
 model CrmServiceBusiness {
   id                String             @id @default(cuid())
-  businessId        String?            @unique
-  business          Business?          @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  ownerId           String
-  owner             User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  businessId                String?            @unique
+  business                  Business?          @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  ownerId                   String
+  owner                     User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   serviceType               String   // CLEANING | PLUMBING | ELECTRICIAN | HVAC | etc.
-  teamSize          Int                @default(1)
-  subscriptionTier  String             @default("FREE")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  teamSize                  Int                @default(1)
+  subscriptionTier          String             @default("FREE")
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
   employees  CrmEmployee[]
   clients    CrmClient[]
@@ -6525,8 +6519,8 @@ model CrmEmployee {
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   name              String
-  email             String?
-  phone             String?
+  email             String
+  phone             String
   role              String
   payRate           Float
   payType           String             // HOURLY | SALARY | PER_JOB
@@ -6548,9 +6542,9 @@ model CrmClient {
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   name              String
-  email             String?
-  phone             String?
-  address           String?
+  email             String
+  phone             String
+  address           String
   notes             String?
   totalJobs         Int                @default(0)
   totalSpent        Float              @default(0)
@@ -6568,14 +6562,14 @@ model CrmJob {
   id                String             @id @default(cuid())
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-  clientId          String?
-  client            CrmClient?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  clientName        String
+  clientId          String
+  client            CrmClient          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientName        String             // denormalized snapshot of client name at booking time
   serviceType       String
   scheduledDate     DateTime
   scheduledTime     String
   durationMinutes   Int
-  address           String?
+  address           String
   notes             String?
   price             Float
   status            String             @default("SCHEDULED")
@@ -6651,86 +6645,4 @@ model CrmExpense {
   @@index([category])
   @@index([date])
   @@map("crm_expenses")
-}
-
-model CleaningService {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name         String
-  price        Float
-  durationHours Float
-  description  String?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_services")
-}
-
-model CleaningAvailability {
-  id            String   @id @default(cuid())
-  businessId    String
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  dayOfWeek     Int
-  startTime     String
-  endTime       String
-  slotMinutes   Int      @default(60)
-  bufferMinutes Int      @default(15)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_availability")
-}
-
-model CleaningEmployee {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
-  phone      String?
-  payRate    Float?
-  payType    String   @default("HOURLY")
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_employees")
-}
-
-model CleaningCustomer {
-  id            String   @id @default(cuid())
-  businessId    String
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name          String
-  email         String?
-  phone         String?
-  address       String?
-  totalBookings Int      @default(0)
-  totalSpent    Float    @default(0)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_customers")
-}
-
-model CleaningExpense {
-  id          String   @id @default(cuid())
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category    String
-  amount      Float
-  description String?
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_expenses")
 }

@@ -453,10 +453,21 @@ export class BookingService {
 // ── Stub Functions (for controller imports) ────────────────────────────────
 
 export async function createBookingWithDeposit(data: any): Promise<any> {
-  console.log('[BookingService] createBookingWithDeposit called (stub)', data);
+  console.log('[BookingService] createBookingWithDeposit called', data);
+
+  let ap2Mandates: any = null;
+  if (data.intentMandate && data.cartMandate && data.paymentMandate) {
+    ap2Mandates = {
+      intentMandate: data.intentMandate,
+      cartMandate: data.cartMandate,
+      paymentMandate: data.paymentMandate,
+    };
+    console.log('[AP2] Storing mandates for booking', JSON.stringify(ap2Mandates));
+  }
+
   return {
     success: true,
-    message: 'Booking created (stub)',
+    message: 'Booking created',
     bookingReference: `BK-${Date.now()}`,
     reservationId: null,
     depositAmount: data?.depositAmount || 0,
@@ -464,6 +475,7 @@ export async function createBookingWithDeposit(data: any): Promise<any> {
     paymentId: null,
     paymentMethod: data?.paymentMethod || null,
     raastId: null,
+    ap2Mandates,
   };
 }
 

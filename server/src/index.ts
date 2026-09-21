@@ -304,7 +304,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/billing`, './routes/billing.routes'],
   [`/api/${v}/jobs`, './routes/jobs.routes'],
   [`/api/${v}/seed`, './routes/seed.routes'],
-  [`/.well-known/ptp`, './routes/wellknown.routes'],
+  [`/.well-known`, './routes/wellknown.routes'],
   [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],
   [`/api/${v}/agent-loop`, './routes/agentLoop.routes'],
   [`/api/${v}/sitara`, './routes/sitaraStarPower.routes'],
@@ -320,6 +320,8 @@ const routeMap: [string, string][] = [
   [`/api/${v}/settlement`, './routes/settlement.routes'],
   [`/api/${v}/compounding`, './routes/compounding.routes'],
   [`/api/${v}/pab-dex`, './routes/pabDex.routes'],
+  [`/api/${v}/onboarding`, './routes/onboarding.routes'],
+  [`/api/${v}/dashboard`, './routes/dashboard.routes'],
   [`/api/${v}/jev`, './routes/jev.routes'],
   [`/api/${v}/frictionless`, './routes/frictionless.routes'],
   [`/api/${v}/recommendations`, './routes/recommendation.routes'],
@@ -384,6 +386,17 @@ logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 import path from 'path';
 app.use('/sdk', express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// ── LLMs.txt (agent discovery) ───────────────────────────────────────────────
+app.get('/llms.txt', (_req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.sendFile(path.join(__dirname, 'public', 'app', 'llms.txt'), (err) => {
+    if (err) {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send('# PabandiOS\n> The trust operating system for bookings, freight, property, CRM, and finance.\n');
+    }
+  });
+});
 
 // ── Public Badge Verification (no auth needed) ───────────────────────────────
 app.get(`/api/${API_VERSION}/badge/:pseudonymousId`, async (req, res) => {

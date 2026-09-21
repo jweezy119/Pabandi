@@ -8,6 +8,46 @@ datasource db {
   // directUrl = env("DIRECT_URL")
 }
 
+
+enum PipelineStage {
+  new
+  contacted
+  qualified
+  proposal
+  won
+  lost
+}
+
+enum DealStage {
+  open
+  negotiation
+  contract_sent
+  won
+  lost
+}
+
+enum ActivityType {
+  call
+  email
+  meeting
+  note
+  task
+}
+
+enum AccountType {
+  asset
+  liability
+  income
+  expense
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+}
+
 model User {
   id                      String                  @id @default(cuid())
   email                   String                  @unique
@@ -48,6 +88,11 @@ model User {
   stripeCustomerId        String?
   bountyPaid              Boolean                 @default(false)
   nonce                   String?
+  pabBalance              Float                   @default(0)
+  pabStaked               Float                   @default(0)
+  pabEarned               Float                   @default(0)
+  usdcBalance             Float                   @default(0)
+  pakistanPayments        PakistanPayment[]
   referredById            String?
   business                Business?
   investorMatches         BusinessInvestorMatch[]
@@ -86,7 +131,7 @@ model User {
   verifiableCredentials   VerifiableCredential[]
   renterEquityWallets     RenterEquityWallet[]
   courtChecks             CourtCheck[]
-  propertyManagerProfile  PropertyManagerProfile?
+  propertyManagerProfile  AbodeManager?
   propertyFavorites       PropertyFavorite[]
   marketplaceListings    MarketplaceListing[]
   teamMembers    TeamMember[]
@@ -116,11 +161,20 @@ model User {
   userPayments            Payment[]               @relation("userPayments")
   escrowBuyer SolanaEscrow[] @relation("escrowBuyer")
   escrowSeller SolanaEscrow[] @relation("escrowSeller")
+  builderProfile AbodeBuilder?
+  buyerProfile AbodeBuyer?
+  sellerEscrows CODEscrow[] @relation("sellerEscrow")
+  buyerEscrows CODEscrow[] @relation("buyerEscrow")
+  whatsAppMessages           WhatsAppMessage[]
+  stakingRecords             StakingRecord[]
+  bookingPabRecords          BookingRecord[]
+  agentRewards               AgentReward[]
   @@index([email])
   @@index([phone])
 }
 
 model Business {
+  @@map("Business")
   id                     String                  @id @default(cuid())
   ownerId                String?                 @unique
   name                   String
@@ -205,6 +259,10 @@ model Business {
   payments                Payment[]               @relation("businessPayments")
   fiatPayments            FiatPayment[]
   solanaEscrows            SolanaEscrow[]
+  bookingPabRecords        BookingRecord[]
+  telegramBot              TelegramBot?
+  channelMessages          ChannelMessage[]
+  smsLogs                  SMSLog[]
 
   @@index([ownerId])
   @@index([city])
@@ -304,6 +362,7 @@ model Table {
 }
 
 model Reservation {
+  @@map("Reservation")
   id                  String               @id @default(cuid())
   businessId          String
   customerId          String
@@ -1634,7 +1693,8 @@ model PartnerProgramConfig {
 // tenant history, screening records, and disputes. White-label lets them offer
 // a branded portal (their domain/slug) so tenants book through their own brand.
 
-model PropertyManagerProfile {
+model AbodeManager {
+  @@map("PropertyManagerProfile")
   id          String   @id @default(cuid())
   userId      String   @unique
   companyName String?
@@ -1690,6 +1750,7 @@ model PropertyManagerProfile {
   insights AIInsight[]
   nextBestActions NextBestAction[]
   anomalyAlerts AnomalyAlert[]
+  crmPabRewards CrmPabReward[]
 
   @@index([userId])
 }
@@ -1712,7 +1773,7 @@ model TeamMember {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   user    User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -1734,7 +1795,7 @@ model Webhook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([isActive])
@@ -1757,7 +1818,7 @@ model DocumentAnalysis {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([documentType])
@@ -1767,8 +1828,9 @@ model DocumentAnalysis {
 // A property under a manager's portfolio (links to existing Property model).
 model PropertyManagerProperty {
   id          String   @id @default(cuid())
-  managerId   String
-  propertyId  String?  // links to Property.id (optional, for discovery-linked)
+  managerId   String?
+  userId      String?  @unique
+  propertyId  String?
   title       String
   address     String?
   city        String?
@@ -1778,14 +1840,22 @@ model PropertyManagerProperty {
   bedrooms    Int      @default(1)
   bathrooms   Float    @default(1)
   rentAmount  Float?
-  rentPeriod  String   @default("MONTH") // MONTH | WEEK | NIGHT
-  status      String   @default("VACANT") // VACANT | OCCUPIED | MAINTENANCE
+  rentPeriod  String   @default("MONTH")
+  status      String   @default("VACANT")
   latitude    Float?
   longitude   Float?
+  companyName String?
+  slug        String?  @unique
+  domain      String?  @unique
+  brandColor  String?
+  logoUrl     String?
+  tagline     String?
+  active      Boolean  @default(true)
+  businessType String  @default("GENERAL")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager          PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager          AbodeManager? @relation(fields: [managerId], references: [id], onDelete: Cascade)
   tenants          PropertyTenant[]
   screeningRecords PropertyScreening[]
   appointments     PropertyAppointment[]
@@ -1844,6 +1914,7 @@ model PropertyUnit {
   @@index([status])
 }
 
+
 // Rent payment tracking for tenants.
 model RentPayment {
   id          String   @id @default(cuid())
@@ -1865,6 +1936,7 @@ model RentPayment {
 
   property PropertyManagerProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   unit      PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  pabPayment PabPayment?
 
   @@index([propertyId])
   @@index([tenantEmail])
@@ -1910,17 +1982,21 @@ model PropertyTenant {
   depositHeld     Float    @default(0)
   totalStays      Int      @default(0)
   totalDisputes   Int      @default(0)
+  balanceUsdc     Float    @default(0)
+  balancePab      Float    @default(0)
   lastStayAt      DateTime?
   notes           String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   tenantApplications TenantApplication[]
   rentSchedules  RentSchedule[]
   ledgers        TenantLedger[]
   inspectionReports InspectionReport[]
+  leases         PropertyLease[]
+  maintenances   PropertyMaintenance[]
 
   @@unique([managerId, email])
   @@index([managerId])
@@ -1942,7 +2018,7 @@ model PropertyScreening {
   notes           String?
   createdAt       DateTime @default(now())
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -1967,7 +2043,7 @@ model PropertyAppointment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -2004,12 +2080,15 @@ model PropertyLease {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId String?
   documents TenantDocument[]
   signingRequests SigningRequest[]
   rentSchedules RentSchedule[]
+  leaseDeposit  LeaseDeposit?
 
   @@index([managerId])
   @@index([tenantEmail])
@@ -2034,7 +2113,7 @@ model SigningRequest {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   lease   PropertyLease?         @relation(fields: [leaseId], references: [id], onDelete: SetNull)
 
   @@index([managerId])
@@ -2066,10 +2145,12 @@ model PropertyMaintenance {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   vendor    Vendor?                @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   unit     PropertyUnit?          @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  tenantId String?
   documents TenantDocument[]
 
   @@index([managerId])
@@ -2116,7 +2197,7 @@ model PropertyWebhook {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
 }
@@ -2149,7 +2230,7 @@ model TenantApplication {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  manager  PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   property PropertyManagerProperty? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   tenant   PropertyTenant?        @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   documents TenantDocument[]
@@ -2180,7 +2261,7 @@ model TenantDocument {
   uploadedBy      String   @default("TENANT") // TENANT | MANAGER
   createdAt       DateTime @default(now())
 
-  manager     PropertyManagerProfile  @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager  @relation(fields: [managerId], references: [id], onDelete: Cascade)
   application TenantApplication?      @relation(fields: [applicationId], references: [id], onDelete: SetNull)
   lease       PropertyLease?          @relation(fields: [leaseId], references: [id], onDelete: SetNull)
   maintenance PropertyMaintenance?    @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
@@ -2203,7 +2284,7 @@ model PropertyActivity {
   actorEmail  String?  // who performed the action (if not the manager)
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([entityType, entityId])
@@ -2428,7 +2509,7 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2453,7 +2534,7 @@ model Communication {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2542,7 +2623,7 @@ model Contact {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   activities  Communication[]
   tasks       Task[]
   deals       Deal[]
@@ -2578,7 +2659,7 @@ model Deal {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   tasks    Task[]
   communications Communication[]
@@ -2614,7 +2695,7 @@ model Campaign {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager     PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager     AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   recipients  CampaignRecipient[]
 
   @@index([managerId])
@@ -2639,7 +2720,7 @@ model CampaignRecipient {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   campaign Campaign              @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contact  Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
@@ -2661,7 +2742,7 @@ model EmailTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([category])
@@ -2680,7 +2761,7 @@ model Sequence {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([status])
@@ -2717,7 +2798,7 @@ model SequenceEnrollment {
   exitReason   String?
   metadata     Json?
 
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   sequence Sequence              @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   contact  Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
@@ -2742,7 +2823,7 @@ model Form {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   formSubmissions FormSubmission[]
 
   @@index([managerId])
@@ -2759,7 +2840,7 @@ model FormSubmission {
   source      String?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   form    Form                   @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -2777,7 +2858,7 @@ model LeadScore {
   modelVersion String?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact               @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -2801,7 +2882,7 @@ model Report {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -2819,7 +2900,7 @@ model ReportExecution {
   error       String?
 
   report   Report                @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  manager  PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager  AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
   @@index([managerId])
@@ -2843,7 +2924,7 @@ model Ticket {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   comments TicketComment[]
 
@@ -2865,7 +2946,7 @@ model TicketComment {
   createdAt   DateTime @default(now())
 
   ticket Ticket                 @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([ticketId])
   @@index([managerId])
@@ -2889,7 +2970,7 @@ model KnowledgeArticle {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([slug])
@@ -2914,7 +2995,7 @@ model CalendarEvent {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?               @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                  @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -2938,7 +3019,7 @@ model Integration {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -2958,7 +3039,7 @@ model ApiKey {
   metadata    Json?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([key])
@@ -2976,7 +3057,7 @@ model LeadScorePrediction {
   explanation String?  // human-readable reason for score
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
@@ -2998,7 +3079,7 @@ model AIInsight {
   isDismissed Boolean @default(false)
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -3021,7 +3102,7 @@ model NextBestAction {
   completedAt DateTime?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
   contact Contact?                @relation(fields: [contactId], references: [id], onDelete: SetNull)
   deal    Deal?                   @relation(fields: [dealId], references: [id], onDelete: SetNull)
 
@@ -3046,7 +3127,7 @@ model AnomalyAlert {
   resolvedAt  DateTime?
   createdAt   DateTime @default(now())
 
-  manager PropertyManagerProfile @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  manager AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
 
   @@index([managerId])
   @@index([type])
@@ -3792,6 +3873,10 @@ model TrustPassport {
   riskScore     Int?
   riskBand      String?
   lastCheckedAt DateTime?
+  userId        String?  @unique
+  score         Float?
+  level         String?
+  verified      Boolean?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -4964,7 +5049,8 @@ model FreightTemplate {
 // ── Nightlife & Club Scene ─────────────────────────────────────────────────
 // Venues, bottle service, cover charges, guest lists, events
 
-model NightlifeVenue {
+model BookingVenue {
+  @@map("NightlifeVenue")
   id              String   @id @default(cuid())
   name            String
   address         String
@@ -5010,7 +5096,7 @@ model NightlifeVenue {
 model BottlePackage {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   description     String
@@ -5030,7 +5116,7 @@ model BottlePackage {
 model TableType {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String   // VIP, Mezzanine, Dance Floor, Patio
   basePrice       Float
@@ -5049,7 +5135,7 @@ model BottleReservation {
   id              String   @id @default(cuid())
   userId          String
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   tableTypeId     String
   tableType       TableType @relation(fields: [tableTypeId], references: [id], onDelete: Cascade)
   bottlePackageId String
@@ -5082,7 +5168,7 @@ model BottleReservation {
 model CoverCharge {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   amount          Float
@@ -5103,7 +5189,7 @@ model GuestList {
   id              String   @id @default(cuid())
   userId          String
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   eventId         String?
   promoterId      String?
   promoter        Promoter? @relation(fields: [promoterId], references: [id], onDelete: Cascade)
@@ -5134,7 +5220,7 @@ model GuestList {
 model NightlifeEvent {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   name            String
   date            DateTime
@@ -5157,7 +5243,7 @@ model NightlifeEvent {
 model VenueAnalytics {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   
   date            DateTime
   totalAttendees  Int
@@ -5211,7 +5297,7 @@ model PromoterReview {
 model VenueReview {
   id              String   @id @default(cuid())
   venueId         String
-  venue           NightlifeVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue           BookingVenue @relation(fields: [venueId], references: [id], onDelete: Cascade)
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   rating          Int      // 1-5
@@ -5638,6 +5724,7 @@ model RewardTransaction {
   referenceType   String?
   status          String   @default("PENDING")
   claimedAt       DateTime?
+  settledAt       DateTime?
   vestingEnd      DateTime?
   createdAt       DateTime @default(now())
   @@index([userId])
@@ -5669,4 +5756,868 @@ model FeeOffsetRecord {
   @@index([userId])
 }
 
-// PABANDI AI AGENT MARKETPLACE — self-healing profitable loop
+
+// PABANDI AI AGENT MARKETPLACE - self-healing profitable loop
+
+model AgentProfile {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  description       String
+  capabilities      String[]
+  walletAddress     String
+  publicKey         String
+  reputation        Float    @default(0)
+  totalEarned       Float    @default(0)
+  totalSpent        Float    @default(0)
+  projectsCompleted Int      @default(0)
+  projectsFailed    Int      @default(0)
+  isActive          Boolean  @default(true)
+  metadata          Json?
+  balanceUsdc       Float    @default(0)
+  balancePab        Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  postedProjects       AgentProject[]           @relation("postedProjects")
+  bids                 AgentProjectBid[]        @relation("AgentProjectBid_bidder")
+  sentTransactions     AgentMarketTransaction[] @relation("sentTransactions")
+  receivedTransactions AgentMarketTransaction[] @relation("receivedTransactions")
+  wallet                AgentWallet?
+  agentPabTaskRewards        AgentPabTaskReward[]
+  @@index([walletAddress])
+  @@index([slug])
+}
+
+model AgentProject {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  requirements  String
+  posterId      String
+  poster        AgentProfile @relation("postedProjects", fields: [posterId], references: [id])
+  budgetUsd     Float
+  budgetPab     Float
+  deadline      DateTime
+  status        String   @default("OPEN")
+  selectedBidId String?
+  escrowId      String?
+  category      String
+  complexity    String   @default("MEDIUM")
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  bids   AgentProjectBid[]
+  escrow AgentEscrow?
+  @@index([status])
+  @@index([category])
+  @@index([posterId])
+}
+
+model AgentProjectBid {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        AgentProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  bidderId       String
+  bidder         AgentProfile @relation("AgentProjectBid_bidder", fields: [bidderId], references: [id])
+  proposedAmount Float
+  proposedPab    Float
+  timelineHours  Int
+  approach       String
+  status         String   @default("PENDING")
+  isWinning      Boolean  @default(false)
+  submittedAt    DateTime @default(now())
+  acceptedAt     DateTime?
+  @@index([projectId])
+  @@index([bidderId])
+}
+
+model AgentEscrow {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  project       AgentProject @relation(fields: [projectId], references: [id])
+  totalAmount   Float
+  releaseAmount Float
+  platformFee   Float
+  status        String   @default("FUNDED")
+  fundedAt      DateTime @default(now())
+  releasedAt    DateTime?
+  refundedAt    DateTime?
+}
+
+model AgentMarketTransaction {
+  id             String   @id @default(cuid())
+  projectId      String
+  fromAgentId    String
+  fromAgent      AgentProfile @relation("sentTransactions", fields: [fromAgentId], references: [id])
+  toAgentId      String
+  toAgent        AgentProfile @relation("receivedTransactions", fields: [toAgentId], references: [id])
+  amount         Float
+  pabReward      Float
+  platformFeeUsd Float
+  platformFeeSol Float
+  type           String
+  status         String   @default("COMPLETED")
+  txHash         String?
+  createdAt      DateTime @default(now())
+  @@index([fromAgentId])
+  @@index([toAgentId])
+}
+
+model AgentWallet {
+  id              String   @id @default(cuid())
+  agentId         String   @unique
+  agent           AgentProfile @relation(fields: [agentId], references: [id])
+  publicKey       String   @unique
+  encryptedSecret String
+  balanceUsdc     Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  transfers       UsdcTransfer[]
+  @@index([publicKey])
+}
+
+model UsdcTransfer {
+  id            String   @id @default(cuid())
+  fromWallet    String
+  toWallet      String
+  amountUsdc    Float
+  txHash        String   @unique
+  type          String   // FUNDING | AGENT_PAYMENT | FEE_COLLECTION | REFUND
+  referenceId   String?
+  status        String   @default("PENDING")
+  blockTime     DateTime?
+  createdAt     DateTime @default(now())
+  agentId       String?
+  agent         AgentWallet? @relation(fields: [agentId], references: [id])
+  @@index([fromWallet])
+  @@index([toWallet])
+  @@index([type])
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAB UTILITY INTEGRATION — Staking, Booking PAB, Agent Rewards
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model StakingRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier            String   // BRONZE | SILVER | GOLD | PLATINUM
+  amountPab       Float
+  trustBoost      Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE | UNSTAKED | LOCKED
+  stakedAt        DateTime @default(now())
+  unlockAt        DateTime
+  unstakedAt      DateTime?
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([tier])
+}
+
+model BookingRecord {
+  @@map("BookingPabRecord")
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingValue    Float
+  depositPab      Float
+  rewardPab       Float    @default(0)
+  status          String   @default("PENDING") // PENDING | CHECKED_IN | NO_SHOW | CANCELLED
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id])
+  checkinAt       DateTime?
+  cancelledAt     DateTime?
+  description     String?  // For frictionless payments
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([businessId])
+}
+
+model PakistanPayment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        String   // RAAST, JAZZCASH, EASYPAISA
+  description   String?
+  status        String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  screenshot    String?
+  verifiedBy    String?
+  verifiedAt    DateTime?
+  rejectReason  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AgentReward {
+  id              String   @id @default(cuid())
+  agentId         String
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType        String
+  taskValue       Float
+  rewardPab       Float
+  txHash          String?
+  status          String   @default("PENDING") // PENDING | DISTRIBUTED | FAILED
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRM PAB INTEGRATION — PAB token wired into CRM, lease deposits, agent rewards
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// CRM PAB Reward — bulk PAB rewards distribution to tenants
+model CrmPabReward {
+  id              String   @id @default(cuid())
+  managerId       String
+  manager         AbodeManager @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  totalAmount     Float
+  recipientCount  Int
+  status          String   @default("DRAFT") // DRAFT | DISTRIBUTED | PARTIAL | FAILED
+  txHash          String?
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  recipients      CrmPabRewardRecipient[]
+
+  @@index([managerId])
+  @@index([status])
+}
+
+model CrmPabRewardRecipient {
+  id              String   @id @default(cuid())
+  rewardId        String
+  reward          CrmPabReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  contactId       String?
+  email           String
+  amount          Float
+  status          String   @default("PENDING") // PENDING | SENT | FAILED
+  txHash          String?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+
+  @@index([rewardId])
+  @@index([status])
+}
+
+// Lease PAB Deposit — PAB held in escrow for lease
+model LeaseDeposit {
+  id              String   @id @default(cuid())
+  leaseId         String   @unique
+  lease           PropertyLease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenantEmail     String
+  depositAmount   Float
+  interestRate    Float    @default(0.02) // 2% APY
+  interestEarned  Float    @default(0)
+  status          String   @default("HELD") // HELD | RETURNED | SLASHED | PARTIAL_RETURN
+  heldAt          DateTime @default(now())
+  releasedAt      DateTime?
+  releaseType     String?  // FULL | PARTIAL | SLASHED
+  txHash          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([leaseId])
+  @@index([tenantEmail])
+  @@index([status])
+}
+
+// PAB Payment Record — tracks PAB vs USDC payments for rent
+model PabPayment {
+  id              String   @id @default(cuid())
+  rentPaymentId   String?  @unique
+  rentPayment     RentPayment? @relation(fields: [rentPaymentId], references: [id], onDelete: SetNull)
+  tenantEmail     String
+  propertyId      String
+  unitId          String?
+  amountUsdc      Float
+  amountPab       Float
+  tokenUsed       String   // USDC | PAB
+  discountApplied Float    @default(0) // 5% discount if PAB
+  stakedAmount    Float    @default(0) // 10% auto-staked for trust
+  txHash          String?
+  status          String   @default("PENDING") // PENDING | CONFIRMED | FAILED
+  confirmedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantEmail])
+  @@index([propertyId])
+  @@index([tokenUsed])
+  @@index([status])
+}
+
+// Agent PAB Task Reward — PAB rewards for property management tasks
+model AgentPabTaskReward {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           AgentProfile @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  taskType        String   // TENANT_SCREENING | LEASE_SIGNING | INSPECTION_COMPLETION | MAINTENANCE_COORDINATION
+  taskDescription String
+  propertyId      String?
+  unitId          String?
+  tenantEmail     String?
+  rewardAmount    Float
+  autoConvert     Boolean  @default(false) // auto-convert to USDC
+  usdcEquivalent  Float?
+  status          String   @default("PENDING") // PENDING | DISTRIBUTED | CONVERTED | FAILED
+  txHash          String?
+  distributedAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([taskType])
+  @@index([status])
+}
+
+// Payment Flow Log — tracks all payment flows for verification
+model PaymentFlowLog {
+  id              String   @id @default(cuid())
+  flowType        String   // BOOKING_PAB | LEASE_DEPOSIT | RENT_PAYMENT | LEASE_END | AGENT_REWARD
+  referenceId     String
+  referenceType   String
+  amount          Float
+  token           String   // USDC | PAB
+  fromAddress     String?
+  toAddress       String?
+  txHash          String?
+  status          String   @default("INITIATED") // INITIATED | PROCESSING | COMPLETED | FAILED
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([flowType])
+  @@index([referenceId])
+  @@index([status])
+}
+
+// ── Pakistan Real Estate Builder Models ──────────────────────────────────────
+
+model AbodeBuilder {
+  @@map("BuilderProfile")
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  companyName   String
+  licenseNumber String?
+  trustScore    Float    @default(50)
+  totalProjects Int      @default(0)
+  totalUnits    Int      @default(0)
+  totalSold     Int      @default(0)
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  projects      AbodeProject[]
+}
+
+model AbodeProject {
+  @@map("BuilderProject")
+  id            String   @id @default(cuid())
+  builderId     String
+  builder       AbodeBuilder @relation(fields: [builderId], references: [id])
+  name          String
+  location      String
+  description   String?
+  totalUnits    Int
+  soldUnits     Int      @default(0)
+  bookedUnits   Int      @default(0)
+  status        String   @default("ACTIVE")
+  startDate     DateTime
+  expectedCompletion DateTime
+  actualCompletion DateTime?
+  trustScore    Float    @default(50)
+  createdAt     DateTime @default(now())
+  units         AbodeBuilderUnit[]
+  milestones    BuilderProjectMilestone[]
+}
+
+model AbodeBuilderUnit {
+  @@map("BuilderUnit")
+  id            String   @id @default(cuid())
+  projectId     String
+  project       AbodeProject @relation(fields: [projectId], references: [id])
+  unitNumber    String
+  type          String
+  size          Int
+  price         Float
+  status        String   @default("AVAILABLE")
+  floor        Int?
+  buyerId       String?
+  buyer         AbodeBuyer? @relation(fields: [buyerId], references: [id])
+  installments  Installment[]
+  createdAt     DateTime @default(now())
+}
+
+model AbodeBuyer {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  cnic          String?  @unique
+  phone         String?
+  address       String?
+  verified      Boolean  @default(false)
+  units         AbodeBuilderUnit[]
+  installments  Installment[]
+  documents     BuyerDocument[]
+  createdAt     DateTime @default(now())
+}
+
+model Installment {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         AbodeBuyer @relation(fields: [buyerId], references: [id])
+  unitId        String
+  unit          AbodeBuilderUnit @relation(fields: [unitId], references: [id])
+  amount        Float
+  dueDate       DateTime
+  paidAt        DateTime?
+  status        String   @default("PENDING")
+  method        String?
+  txHash        String?
+  createdAt     DateTime @default(now())
+}
+
+model BuilderProjectMilestone {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       AbodeProject @relation(fields: [projectId], references: [id])
+  title         String
+  description   String?
+  dueDate       DateTime
+  completedAt   DateTime?
+  status        String   @default("PENDING")
+  photos        String[]
+  createdAt     DateTime @default(now())
+}
+
+model BuyerDocument {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         AbodeBuyer @relation(fields: [buyerId], references: [id])
+  type          String
+  fileUrl       String
+  uploadedAt    DateTime @default(now())
+}
+
+model CODEscrow {
+  id            String   @id @default(cuid())
+  sellerId      String
+  seller        User     @relation("sellerEscrow", fields: [sellerId], references: [id])
+  buyerId      String
+  buyer         User     @relation("buyerEscrow", fields: [buyerId], references: [id])
+  amount        Float
+  description   String
+  status        String   @default("PENDING")
+  shippingAddress String?
+  trackingNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// =============================================
+// WHATSAPP MODELS
+// =============================================
+
+model WhatsAppMessage {
+  id            String         @id @default(cuid())
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  direction     WhatsAppDirection
+  type          WhatsAppType   @default(TEXT)
+  content       String
+  status        WhatsAppStatus @default(PENDING)
+  externalId    String?        // Evolution API message key ID
+  mediaUrl      String?
+  metadata      Json?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  createdAt     DateTime       @default(now())
+  
+  @@index([userId])
+  @@index([direction])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum WhatsAppDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WhatsAppType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+  TEMPLATE
+  INTERACTIVE
+  LOCATION
+  CONTACT
+}
+
+enum WhatsAppStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+// =============================================
+// TELEGRAM MODELS
+// =============================================
+
+model TelegramBot {
+  id            String   @id @default(cuid())
+  businessId    String   @unique
+  botToken      String
+  botUsername   String?
+  isActive      Boolean  @default(true)
+  settings      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([isActive])
+}
+
+// =============================================
+// CHANNEL MESSAGING MODELS (Multi-channel inbox)
+// =============================================
+
+model ChannelMessage {
+  id            String   @id @default(cuid())
+  businessId    String
+  customerId    String
+  channel       String   // WHATSAPP, TELEGRAM, SMS
+  direction     String   // INCOMING, OUTGOING
+  content       String
+  status        String   @default("PENDING") // PENDING, SENT, DELIVERED, FAILED
+  externalId    String?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  failedAt      DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SMSLog {
+  id            String   @id @default(cuid())
+  businessId    String
+  to            String
+  message       String
+  provider      String   // TWILIO, VONAGE
+  status        String   @default("PENDING")
+  externalId    String?
+  cost          Float?
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([status])
+  @@index([provider])
+}
+
+// User channel preference
+model UserChannelPreference {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  channel       String   @default("WHATSAPP") // WHATSAPP, TELEGRAM, SMS
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+model WalletPassport {
+  id            String   @id @default(cuid())
+  holderId      String   @unique
+  userId        String?  @unique
+  score         Float    @default(50)
+  level         String   @default("bronze")
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  pipelineLeads PipelineLead[]
+
+  @@map("wallet_passports")
+}
+
+model PipelineLead {
+  id            String   @id @default(cuid())
+  passportId    String
+  passport      WalletPassport @relation(fields: [passportId], references: [id])
+  name          String
+  email         String?
+  phone         String?
+  source        String?
+  stage         String   @default("new")
+  value         Float?
+  ownerId       String
+  businessId    String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deals         PipelineDeal[]
+  activities    PipelineActivity[]
+  @@index([businessId, stage])
+}
+
+model PipelineDeal {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  title         String
+  amount        Float
+  stage         String   @default("open")
+  closeDate     DateTime?
+  escrowId      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([leadId, stage])
+}
+
+model PipelineActivity {
+  id            String   @id @default(cuid())
+  leadId        String
+  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  type          String
+  content       String?
+  dueAt         DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model LedgerAccount {
+  id            String   @id @default(cuid())
+  businessId    String
+  userId        String?
+  name          String
+  type          String
+  balance       Float    @default(0)
+  currency      String   @default("USD")
+  createdAt     DateTime @default(now())
+  @@index([businessId])
+}
+
+model LedgerInvoice {
+  id            String   @id @default(cuid())
+  businessId    String
+  clientId      String?
+  senderId      String?
+  recipientId   String?
+  number        String   @unique
+  amount        Float
+  currency      String   @default("USD")
+  status        String   @default("draft")
+  dueDate       DateTime
+  paidAt        DateTime?
+  escrowId      String?
+  lineItems     Json
+  createdAt     DateTime @default(now())
+  @@index([businessId, status])
+}
+
+model LedgerExpense {
+  id            String   @id @default(cuid())
+  businessId    String
+  userId        String?
+  category      String
+  amount        Float
+  currency      String   @default("USD")
+  description   String?
+  receiptUrl    String?
+  incurredAt    DateTime
+  paidAt        DateTime?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  @@index([businessId, category])
+}
+
+// ── Service-Business CRM Models ───────────────────────────────────────────────
+// Employees, clients, jobs, payroll, and expenses for service businesses
+// (cleaning companies, contractors, maintenance services, etc.)
+
+model CrmBusiness {
+  id            String   @id @default(cuid())
+  businessName  String
+  ownerEmail    String
+  ownerName     String
+  serviceType   String
+  phone         String?
+  address       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  employees     CrmEmployee[]
+  clients       CrmClient[]
+  jobs          CrmJob[]
+  payrolls      CrmPayroll[]
+  expenses      CrmExpense[]
+
+  @@index([ownerEmail])
+  @@index([serviceType])
+}
+
+model CrmEmployee {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  email       String?
+  phone       String?
+  role        String
+  payRate     Float    @default(0)
+  payType     String   @default("HOURLY") // HOURLY | SALARY | PER_JOB
+  isActive    Boolean  @default(true)
+  hireDate    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jobs        CrmJob[]    @relation("JobAssignments")
+  payrolls    CrmPayroll[]
+
+  @@index([businessId])
+  @@index([isActive])
+}
+
+model CrmClient {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jobs        CrmJob[]
+
+  @@index([businessId])
+  @@index([name])
+}
+
+model CrmJob {
+  id            String   @id @default(cuid())
+  businessId    String
+  clientId      String
+  serviceType   String
+  scheduledDate DateTime
+  scheduledTime String?
+  duration      Int?     // Duration in minutes
+  address       String?
+  notes         String?
+  price         Float    @default(0)
+  status        String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client        CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  employeeId    String?
+  employee      CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([clientId])
+  @@index([employeeId])
+}
+
+model CrmPayroll {
+  id            String   @id @default(cuid())
+  businessId    String
+  employeeId    String
+  periodStart   DateTime
+  periodEnd     DateTime
+  hoursWorked   Float    @default(0)
+  jobsCompleted Int      @default(0)
+  grossPay      Float    @default(0)
+  deductions    Float    @default(0)
+  netPay        Float    @default(0)
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business      CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee      CrmEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([employeeId])
+  @@index([periodStart])
+}
+
+model CrmExpense {
+  id          String   @id @default(cuid())
+  businessId  String
+  category    String
+  amount      Float
+  description String?
+  date        DateTime @default(now())
+  vendor      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([category])
+  @@index([date])
+}

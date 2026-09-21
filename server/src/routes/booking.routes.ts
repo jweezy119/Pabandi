@@ -7,13 +7,14 @@ import {
   releaseBookingEscrow,
 } from '../controllers/booking.controller';
 import { bookingService } from '../services/booking.service';
+import { ap2Middleware } from '../middleware/payment';
 
 const router = Router();
 
 // ── Booking creation/confirmation routes ───────────────────────────────────
 
 // POST /api/v1/booking/create — create booking + deposit payment
-router.post('/create', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/create', authenticate, ap2Middleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     await createBooking(req as any, res, next);
   } catch (error) {

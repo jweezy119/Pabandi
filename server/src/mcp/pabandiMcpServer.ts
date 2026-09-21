@@ -26,6 +26,29 @@ const SERVER_NAME = 'pabandi-trust';
 const SERVER_VERSION = '1.0.0';
 const BACKEND = (process.env.BACKEND_URL || 'https://pabandi.onrender.com').replace(/\/+$/, '');
 
+const X402_PRICE_USDC: Record<string, number> = {
+  pabandi_issue_passport: 1.0,
+  pabandi_initiate_escrow: 0.5,
+  pabandi_create_booking: 0.25,
+};
+
+function requireX402(toolName: string, req?: Request): void {
+  const price = X402_PRICE_USDC[toolName];
+  if (!price) return;
+  const paymentProof = (req as any)?.headers?.['x-payment'];
+  if (!paymentProof) {
+    throw new Error(JSON.stringify({
+      x402: true,
+      scheme: 'x402',
+      price: `${price} USDC`,
+      network: 'solana',
+      recipient: process.env.SOLANA_USDC_ADDRESS || 'PABANDI_USDC_WALLET',
+      tool: toolName,
+      paymentMethods: ['solana-usdc', 'x402'],
+    }));
+  }
+}
+
 // ── Engine tools ──────────────────────────────────────────────────────────────
 const ENGINE_TOOLS = [
   {
@@ -191,13 +214,18 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
     case 'tools/list':
       return jsonRpc(id, { tools: TOOLS });
 
-    case 'tools/call': {
+      case 'tools/call': {
       const name = params?.name;
       const args = params?.arguments || {};
       try {
         const out = await callTool(name, args, req);
         return jsonRpc(id, { content: [{ type: 'text', text: JSON.stringify(out, null, 2) }], isError: false });
       } catch (e: any) {
+        let x402Error: any = null;
+        try { x402Error = JSON.parse(e.message); } catch { /* not x402 */ }
+        if (x402Error?.x402) {
+          return jsonRpc(id, undefined, { code: 402, message: 'Payment required', data: x402Error });
+        }
         return jsonRpc(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
       }
     }
@@ -208,6 +236,8 @@ async function dispatch(method: string, params: any, id: any, req?: Request): Pr
 }
 
 async function callTool(name: string, args: any, req?: Request): Promise<any> {
+  requireX402(name, req);
+
   // Engine-backed tools
   if (ENGINE_TOOLS.some((t) => t.name === name)) {
     switch (name) {

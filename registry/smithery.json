@@ -1,0 +1,62 @@
+{
+  "name": "pabandi-mcp",
+  "version": "1.0.0",
+  "description": "PabandiOS MCP Server — Trust operating system for service businesses. Provides trust scoring, escrow, booking, freight, property, and CRM tools for AI agents.",
+  "mcpServers": {
+    "pabandi": {
+      "command": "npx",
+      "args": ["-y", "@pabandi/mcp"],
+      "env": {
+        "PABANDI_API": "https://api.pabandi.com"
+      }
+    }
+  },
+  "capabilities": {
+    "tools": {
+      "listChanged": false
+    }
+  },
+  "tools": [
+    {
+      "name": "pabandi_verify_passport",
+      "description": "Verify a Pabandi PTP attestation (agent, business, individual, or trust rail)."
+    },
+    {
+      "name": "pabandi_discover",
+      "description": "Return the Pabandi Trust Protocol discovery document."
+    },
+    {
+      "name": "pabandi_get_ledger",
+      "description": "Public audit lookup of a passport issuance charge by idempotency key."
+    },
+    {
+      "name": "pabandi_issue_passport",
+      "description": "Issue a scoped Agent Capability Passport. Metered at 1.0 USDC per issue."
+    },
+    {
+      "name": "pabandi_verify_property",
+      "description": "Verify property documents and landlord/tenant trust scores against PLRA and SBCA databases."
+    },
+    {
+      "name": "pabandi_initiate_escrow",
+      "description": "Initiate a Solana escrow for conditional payment."
+    },
+    {
+      "name": "pabandi_create_booking",
+      "description": "Create a booking with AI trust scoring and escrow protection. Requires AP2 mandates."
+    }
+  ],
+  "payment": {
+    "scheme": "x402",
+    "network": "solana",
+    "currency": "USDC"
+  },
+  "authorization": {
+    "scheme": "ap2",
+    "mandates": ["intent", "cart", "payment"]
+  },
+  "repository": "https://github.com/jweezy119/Pabandi",
+  "homepage": "https://pabandi.com",
+  "license": "MIT",
+  "keywords": ["mcp", "x402", "escrow", "trust", "solana", "agent", "booking", "freight", "property"]
+}

@@ -8,6 +8,23 @@ import {
   getBookingDetails,
 } from '../services/booking.service';
 
+export interface BookingWithAP2 {
+  businessId: string;
+  customerId: string;
+  reservationDate: string;
+  reservationTime: string;
+  numberOfGuests: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  depositAmount: number;
+  specialRequests?: string;
+  paymentMethod?: string;
+  intentMandate?: any;
+  cartMandate?: any;
+  paymentMandate?: any;
+}
+
 /**
  * POST /api/v1/booking/create
  * Create a reservation + deposit payment (PayLio checkout URL returned)
@@ -29,6 +46,9 @@ export const createBooking = async (
       depositAmount,
       specialRequests,
       paymentMethod,
+      intentMandate,
+      cartMandate,
+      paymentMandate,
     } = req.body;
 
     if (!businessId || !reservationDate || !reservationTime || !numberOfGuests) {
@@ -42,7 +62,7 @@ export const createBooking = async (
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    const result = await createBookingWithDeposit({
+    const bookingData: BookingWithAP2 = {
       businessId,
       customerId: req.user!.id,
       customerName: customerName || req.body.fullName || 'Guest',
@@ -54,7 +74,16 @@ export const createBooking = async (
       depositAmount: parseFloat(depositAmount) || 25,
       specialRequests,
       paymentMethod: paymentMethod || 'paylio',
-    });
+      intentMandate,
+      cartMandate,
+      paymentMandate,
+    };
+
+    if (intentMandate && cartMandate && paymentMandate) {
+      logger.info(`[AP2] Mandates attached to booking for user ${req.user.id}`);
+    }
+
+    const result = await createBookingWithDeposit(bookingData);
 
     if (!result.success) {
       return res.status(400).json({

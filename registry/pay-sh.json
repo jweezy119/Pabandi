@@ -1,0 +1,32 @@
+{
+  "name": "pabandi-mcp",
+  "slug": "pabandi-mcp",
+  "description": "PabandiOS MCP Server — Trust operating system for service businesses. x402-payable MCP tools for bookings, escrow, freight, property, and CRM.",
+  "url": "https://pabandi-mcp.workers.dev/mcp",
+  "mcp_url": "https://pabandi-mcp.workers.dev/mcp",
+  "payment": {
+    "scheme": "x402",
+    "network": "solana",
+    "currency": "USDC"
+  },
+  "authorization": {
+    "scheme": "ap2",
+    "mandates": ["intent", "cart", "payment"]
+  },
+  "pricing": {
+    "pabandi_issue_passport": "1.0 USDC",
+    "pabandi_initiate_escrow": "0.5 USDC",
+    "pabandi_create_booking": "0.25 USDC"
+  },
+  "tools": [
+    "pabandi_verify_passport",
+    "pabandi_discover",
+    "pabandi_get_ledger",
+    "pabandi_issue_passport",
+    "pabandi_verify_property",
+    "pabandi_initiate_escrow",
+    "pabandi_create_booking"
+  ],
+  "repository": "https://github.com/jweezy119/Pabandi",
+  "license": "MIT"
+}

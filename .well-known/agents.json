@@ -1,0 +1,36 @@
+{
+  "name": "PabandiOS",
+  "version": "1.0.0",
+  "description": "The trust operating system for service businesses — bookings, freight, property, CRM, and finance with AI-powered reliability scoring and Solana escrow.",
+  "base_url": "https://api.pabandi.com",
+  "mcp_endpoint": "https://api.pabandi.com/mcp",
+  "openapi_spec": "https://api.pabandi.com/openapi.yaml",
+  "capabilities": [
+    "booking.create",
+    "booking.status",
+    "freight.quote",
+    "property.list",
+    "property.verify",
+    "crm.lead",
+    "crm.pipeline",
+    "ledger.invoice",
+    "ledger.cashflow",
+    "escrow.initiate",
+    "escrow.release",
+    "trust.verify",
+    "trust.score",
+    "passport.issue",
+    "passport.verify"
+  ],
+  "payment": {
+    "schemes": ["x402", "solana-usdc"],
+    "network": "solana",
+    "currency": "USDC"
+  },
+  "authorization": {
+    "schemes": ["ap2", "bearer", "ptp"],
+    "mandates": ["intent", "cart", "payment"]
+  },
+  "contact": "agents@pabandi.com",
+  "license": "MIT"
+}

@@ -1,0 +1,11 @@
+name = "pabandi-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+route = { pattern = "pabandi-mcp.workers.dev/*", zone_name = "workers.dev" }
+
+[vars]
+BACKEND_URL = "https://api.pabandi.com"
+NODE_ENV = "production"
