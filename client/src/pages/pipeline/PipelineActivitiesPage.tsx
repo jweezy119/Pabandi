@@ -37,25 +37,36 @@ export default function PipelineActivitiesPage() {
   }, []);
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activities</h1>
         {loading ? (
           <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
         ) : activities.length === 0 ? (
-          <div className="p-8 text-center rounded-xl" style={{ background: 'var(--warm-sand)' }}>
+          <div className="p-8 text-center rounded-[var(--radius-card)]" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             <p style={{ color: 'var(--soft-stone)' }}>No activities yet.</p>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--soft-stone)' }}>
+          <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             {activities.map((act) => (
-              <div key={act.id} className="p-4 flex items-center gap-4 border-b" style={{ borderColor: 'var(--soft-stone)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white" style={{ background: 'var(--clay)' }}>
-                  {act.type === 'job_completed' ? '✓' : '📋'}
+              <div
+                key={act.id}
+                className="p-5 flex items-center gap-4"
+                style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'var(--clay)' }}
+                >
+                  <span className="material-symbols-outlined text-white text-[20px]">
+                    {act.type === 'job_completed' ? 'check_circle' : 'assignment'}
+                  </span>
                 </div>
                 <div>
                   <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{act.title}</p>
-                  <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{act.time ? new Date(act.time).toLocaleDateString() : ''}</p>
+                  <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
+                    {act.time ? new Date(act.time).toLocaleDateString() : ''}
+                  </p>
                 </div>
               </div>
             ))}

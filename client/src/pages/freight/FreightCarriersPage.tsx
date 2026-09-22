@@ -3,11 +3,11 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/freight', label: 'Dashboard', icon: '📦', end: true },
-  { path: '/freight/post-load', label: 'Post Load', icon: '➕' },
-  { path: '/freight/my-loads', label: 'My Loads', icon: '📋' },
-  { path: '/freight/carriers', label: 'Carriers', icon: '🚛' },
-  { path: '/freight/rates', label: 'Rate Calculator', icon: '💰' },
+  { path: '/freight', label: 'Dashboard', icon: 'inventory_2', end: true },
+  { path: '/freight/post-load', label: 'Post Load', icon: 'add_circle' },
+  { path: '/freight/my-loads', label: 'My Loads', icon: 'list_alt' },
+  { path: '/freight/carriers', label: 'Carriers', icon: 'local_shipping' },
+  { path: '/freight/rates', label: 'Rate Calculator', icon: 'calculate' },
 ];
 
 export default function FreightCarriersPage() {
@@ -29,44 +29,93 @@ export default function FreightCarriersPage() {
 
   const getStars = (rating: number) => {
     const stars = Math.round(rating / 20);
-    return '⭐'.repeat(stars) + '☆'.repeat(5 - stars);
+    return (
+      <span className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span
+            key={i}
+            className="material-symbols-outlined text-[16px]"
+            style={{ color: i <= stars ? 'var(--muted-ochre)' : 'var(--soft-stone)' }}
+          >
+            star
+          </span>
+        ))}
+      </span>
+    );
   };
+
+  const inputStyle = { background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' };
 
   return (
     <DashboardLayout osName="FreightOS" osIcon="S" osColor="amber" navItems={navItems}>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">Carrier Directory</h1>
-          <button className="px-3 py-1.5 bg-amber-500 text-white rounded text-sm">Add Carrier</button>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Carrier Directory</h1>
+          <button
+            className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
+            style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
+            Add Carrier
+          </button>
         </div>
         <div className="flex gap-3">
-          <input placeholder="Filter by state" value={filter.state} onChange={(e) => setFilter({ ...filter, state: e.target.value })} className="flex-1 bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-          <select value={filter.verified} onChange={(e) => setFilter({ ...filter, verified: e.target.value })} className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm">
+          <input
+            placeholder="Filter by state"
+            value={filter.state}
+            onChange={(e) => setFilter({ ...filter, state: e.target.value })}
+            className="flex-1 px-4 py-2.5 rounded-xl text-sm"
+            style={inputStyle}
+          />
+          <select
+            value={filter.verified}
+            onChange={(e) => setFilter({ ...filter, verified: e.target.value })}
+            className="px-4 py-2.5 rounded-xl text-sm"
+            style={inputStyle}
+          >
             <option value="">All</option>
             <option value="true">Verified</option>
             <option value="false">Unverified</option>
           </select>
         </div>
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="flex justify-center py-8">
+            <div className="w-8 h-8 border-4 border-[var(--clay)] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {carriers.map((c: any) => (
-              <div key={c.id} className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-                <div className="flex justify-between items-start mb-2">
+              <div
+                key={c.id}
+                className="rounded-[var(--radius-card)] p-5 transition hover:-translate-y-0.5"
+                style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+              >
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="text-white font-medium">{c.companyName}</p>
-                    <p className="text-gray-500 text-xs">{c.user?.firstName} {c.user?.lastName}</p>
+                    <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{c.companyName}</p>
+                    <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>{c.user?.firstName} {c.user?.lastName}</p>
                   </div>
-                  {c.verified && <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400">Verified</span>}
+                  {c.verified && (
+                    <span
+                      className="px-3 py-1 text-xs font-medium rounded-full"
+                      style={{ background: 'var(--sage)', color: 'white' }}
+                    >
+                      Verified
+                    </span>
+                  )}
                 </div>
-                <p className="text-gray-400 text-sm mb-1">{getStars(c.rating)} ({c.rating?.toFixed(1)})</p>
-                <p className="text-gray-500 text-xs">Fleet: {c.fleetSize} • {c.equipmentType?.join(', ')}</p>
-                <p className="text-gray-500 text-xs">Max Load: {c.maxLoadLbs?.toLocaleString()} lbs</p>
-                <p className="text-gray-500 text-xs">Deliveries: {c.totalDeliveries} • On-time: {c.onTimeRate}%</p>
+                <div className="flex items-center gap-2 mb-1">
+                  {getStars(c.rating)}
+                  <span className="text-xs" style={{ color: 'var(--soft-stone)' }}>({c.rating?.toFixed(1)})</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Fleet: {c.fleetSize} • {c.equipmentType?.join(', ')}</p>
+                <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Max Load: {c.maxLoadLbs?.toLocaleString()} lbs</p>
+                <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Deliveries: {c.totalDeliveries} • On-time: {c.onTimeRate}%</p>
               </div>
             ))}
-            {carriers.length === 0 && <p className="text-gray-500 text-center py-8 col-span-3">No carriers found</p>}
+            {carriers.length === 0 && (
+              <p className="text-center py-8 col-span-3" style={{ color: 'var(--soft-stone)' }}>No carriers found</p>
+            )}
           </div>
         )}
       </div>

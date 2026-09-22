@@ -31,19 +31,23 @@ export default function PipelineDealsPage() {
   }, []);
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Deals</h1>
         {loading ? (
           <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
         ) : deals.length === 0 ? (
-          <div className="p-8 text-center rounded-xl" style={{ background: 'var(--warm-sand)' }}>
+          <div className="p-8 text-center rounded-[var(--radius-card)]" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             <p style={{ color: 'var(--soft-stone)' }}>No deals yet. Create a booking to generate deals.</p>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--soft-stone)' }}>
-            {deals.map((deal) => (
-              <div key={deal.id} className="p-4 flex items-center justify-between border-b" style={{ borderColor: 'var(--soft-stone)' }}>
+          <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+            {deals.map((deal, idx, arr) => (
+              <div
+                key={deal.id}
+                className="p-5 flex items-center justify-between"
+                style={{ borderBottom: idx < arr.length - 1 ? '1px solid rgba(191,179,163,0.2)' : 'none' }}
+              >
                 <div>
                   <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{deal.serviceType}</p>
                   <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{deal.clientName} • {deal.status}</p>

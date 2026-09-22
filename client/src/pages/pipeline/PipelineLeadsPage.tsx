@@ -53,44 +53,54 @@ export default function PipelineLeadsPage() {
     }
   }
 
+  const inputStyle = { border: '1px solid rgba(191,179,163,0.3)', background: 'var(--warm-sand)', color: 'var(--warm-ink)' };
+
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Leads</h1>
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 rounded-xl font-medium" style={{ background: 'var(--clay)', color: 'white' }}>
-            + Add Lead
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-5 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
+            style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
+            Add Lead
           </button>
         </div>
 
         {loading ? (
           <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
         ) : leads.length === 0 ? (
-          <div className="p-8 text-center rounded-xl" style={{ background: 'var(--warm-sand)' }}>
+          <div className="p-8 text-center rounded-[var(--radius-card)]" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             <p style={{ color: 'var(--soft-stone)' }}>No leads yet. Add your first lead to get started.</p>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--soft-stone)' }}>
+          <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             <table className="w-full">
               <thead>
                 <tr style={{ background: 'var(--warm-sand)' }}>
-                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Name</th>
-                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Email</th>
-                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Stage</th>
-                  <th className="text-right p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Value</th>
+                  <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Name</th>
+                  <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Email</th>
+                  <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Stage</th>
+                  <th className="text-right p-4 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Value</th>
                 </tr>
               </thead>
               <tbody>
                 {leads.map((lead) => (
-                  <tr key={lead.id} className="border-t" style={{ borderColor: 'var(--soft-stone)' }}>
-                    <td className="p-3" style={{ color: 'var(--warm-ink)' }}>{lead.name}</td>
-                    <td className="p-3" style={{ color: 'var(--soft-stone)' }}>{lead.email || '—'}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}>
+                  <tr key={lead.id} style={{ borderTop: '1px solid rgba(191,179,163,0.2)' }}>
+                    <td className="p-4" style={{ color: 'var(--warm-ink)' }}>{lead.name}</td>
+                    <td className="p-4" style={{ color: 'var(--soft-stone)' }}>{lead.email || '—'}</td>
+                    <td className="p-4">
+                      <span
+                        className="px-3 py-1 rounded-full text-xs font-medium"
+                        style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}
+                      >
                         {lead.stage || 'lead'}
                       </span>
                     </td>
-                    <td className="p-3 text-right" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</td>
+                    <td className="p-4 text-right" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -99,18 +109,75 @@ export default function PipelineLeadsPage() {
         )}
 
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddModal(false)}>
-            <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'white' }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(42,37,32,0.5)' }}
+            onClick={() => setShowAddModal(false)}
+          >
+            <div
+              className="w-full max-w-md rounded-[var(--radius-card)] p-6"
+              style={{ background: 'white', boxShadow: 'var(--shadow-lift)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>New Lead</h3>
               <form onSubmit={handleAddLead} className="space-y-3">
-                <input type="text" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full px-3 py-2 rounded-lg" style={{ border: '1px solid var(--soft-stone)' }} />
-                <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 rounded-lg" style={{ border: '1px solid var(--soft-stone)' }} />
-                <input type="text" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2 rounded-lg" style={{ border: '1px solid var(--soft-stone)' }} />
-                <input type="text" placeholder="Company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} className="w-full px-3 py-2 rounded-lg" style={{ border: '1px solid var(--soft-stone)' }} />
-                <textarea placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full px-3 py-2 rounded-lg" style={{ border: '1px solid var(--soft-stone)' }} rows={3} />
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl text-sm"
+                  style={inputStyle}
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm"
+                  style={inputStyle}
+                />
+                <input
+                  type="text"
+                  placeholder="Phone"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm"
+                  style={inputStyle}
+                />
+                <input
+                  type="text"
+                  placeholder="Company"
+                  value={form.company}
+                  onChange={(e) => setForm({ ...form, company: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm"
+                  style={inputStyle}
+                />
+                <textarea
+                  placeholder="Notes"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm"
+                  style={inputStyle}
+                  rows={3}
+                />
                 <div className="flex gap-2">
-                  <button type="submit" className="flex-1 py-2 rounded-lg font-medium" style={{ background: 'var(--clay)', color: 'white' }}>Add Lead</button>
-                  <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg font-medium" style={{ background: 'var(--warm-sand)' }}>Cancel</button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-full font-medium transition hover:-translate-y-0.5"
+                    style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+                  >
+                    Add Lead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-5 py-2.5 rounded-full font-medium transition"
+                    style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>

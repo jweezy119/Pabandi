@@ -4,11 +4,11 @@ import DashboardLayout from '../components/DashboardLayout';
 import api from '../services/api';
 
 const navItems = [
-  { path: '/haq', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/haq/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/haq/leases', label: 'Leases', icon: '📝' },
-  { path: '/haq/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/haq/financials', label: 'Financials', icon: '💰' },
+  { path: '/haq', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/haq/tenants', label: 'Tenants', icon: 'groups' },
+  { path: '/haq/leases', label: 'Leases', icon: 'description' },
+  { path: '/haq/maintenance', label: 'Maintenance', icon: 'build' },
+  { path: '/haq/financials', label: 'Financials', icon: 'account_balance' },
 ];
 
 export default function HaqOSPage() {
@@ -41,27 +41,32 @@ export default function HaqOSPage() {
 
   if (loading) {
     return (
-      <DashboardLayout osName="HaqOS" osIcon="H" osColor="emerald" navItems={navItems}>
+      <DashboardLayout osName="HaqOS" osIcon="H" osColor="sage" navItems={navItems}>
         <div className="flex items-center justify-center h-64">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-[var(--sage)] border-t-transparent rounded-full animate-spin" />
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout osName="HaqOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="HaqOS" osIcon="H" osColor="sage" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Property Dashboard</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Property Dashboard</h1>
           <div className="flex gap-2">
             {(['week', 'month', 'year'] as const).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-3 py-1 rounded text-sm ${period === p ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400'}`}
+                className="px-4 py-2 rounded-full text-sm font-medium capitalize transition"
+                style={{
+                  background: period === p ? 'var(--clay)' : 'var(--warm-sand)',
+                  color: period === p ? 'white' : 'var(--warm-ink)',
+                  boxShadow: period === p ? 'var(--shadow-soft)' : 'none',
+                }}
               >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
+                {p}
               </button>
             ))}
           </div>
@@ -69,68 +74,90 @@ export default function HaqOSPage() {
 
         {/* Revenue Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-            <p className="text-gray-400 text-sm">Total Revenue</p>
-            <p className="text-2xl font-bold text-white">${summary?.totalRevenue?.toLocaleString() || 0}</p>
+          <div className="rounded-[var(--radius-card)] p-5 transition hover:-translate-y-0.5" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Total Revenue</p>
+            <p className="text-2xl font-bold" style={{ color: 'var(--sage)' }}>${summary?.totalRevenue?.toLocaleString() || 0}</p>
           </div>
-          <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-            <p className="text-gray-400 text-sm">Expenses</p>
-            <p className="text-2xl font-bold text-red-400">${summary?.totalExpenses?.toLocaleString() || 0}</p>
+          <div className="rounded-[var(--radius-card)] p-5 transition hover:-translate-y-0.5" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Expenses</p>
+            <p className="text-2xl font-bold" style={{ color: 'var(--terracotta)' }}>${summary?.totalExpenses?.toLocaleString() || 0}</p>
           </div>
-          <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-            <p className="text-gray-400 text-sm">Net Income</p>
-            <p className="text-2xl font-bold text-emerald-400">${summary?.netIncome?.toLocaleString() || 0}</p>
+          <div className="rounded-[var(--radius-card)] p-5 transition hover:-translate-y-0.5" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Net Income</p>
+            <p className="text-2xl font-bold" style={{ color: 'var(--sage)' }}>${summary?.netIncome?.toLocaleString() || 0}</p>
           </div>
         </div>
 
         {/* Collection Rate */}
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-2">Rent Collection Rate</p>
+        <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <p className="text-sm mb-3" style={{ color: 'var(--soft-stone)' }}>Rent Collection Rate</p>
           <div className="flex items-center gap-4">
-            <div className="flex-1 bg-white/5 rounded-full h-4 overflow-hidden">
+            <div className="flex-1 rounded-full h-4 overflow-hidden" style={{ background: 'var(--warm-sand)' }}>
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all"
-                style={{ width: `${collectionRate?.collectionRate || 0}%` }}
+                className="h-full rounded-full transition-all"
+                style={{ width: `${collectionRate?.collectionRate || 0}%`, background: 'var(--sage)' }}
               />
             </div>
-            <span className="text-white font-bold">{collectionRate?.collectionRate?.toFixed(1) || 0}%</span>
+            <span className="font-bold" style={{ color: 'var(--warm-ink)' }}>{collectionRate?.collectionRate?.toFixed(1) || 0}%</span>
           </div>
         </div>
 
         {/* Top Properties */}
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-3">Top Properties</p>
-          <div className="space-y-2">
+        <div className="rounded-[var(--radius-card)] p-5" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <p className="text-sm mb-4" style={{ color: 'var(--soft-stone)' }}>Top Properties</p>
+          <div className="space-y-1">
             {topProperties.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b border-white/5">
+              <div
+                key={p.id}
+                className="flex items-center justify-between py-3"
+                style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}
+              >
                 <div>
-                  <p className="text-white text-sm">{p.title}</p>
-                  <p className="text-gray-500 text-xs">{p.address}</p>
+                  <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>{p.title}</p>
+                  <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>{p.address}</p>
                 </div>
-                <p className="text-emerald-400 font-medium">${p.rentAmount?.toLocaleString()}/mo</p>
+                <p className="font-medium" style={{ color: 'var(--sage)' }}>${p.rentAmount?.toLocaleString()}/mo</p>
               </div>
             ))}
-            {topProperties.length === 0 && <p className="text-gray-500 text-sm">No properties yet</p>}
+            {topProperties.length === 0 && (
+              <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>No properties yet</p>
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link to="/haq/tenants" className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 text-center hover:border-emerald-500/30">
-            <span className="text-2xl">👥</span>
-            <p className="text-white text-sm mt-1">Add Tenant</p>
+          <Link
+            to="/haq/tenants"
+            className="rounded-[var(--radius-card)] p-5 text-center transition hover:-translate-y-0.5"
+            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[28px]" style={{ color: 'var(--clay)' }}>person_add</span>
+            <p className="text-sm mt-2" style={{ color: 'var(--warm-ink)' }}>Add Tenant</p>
           </Link>
-          <Link to="/haq/leases" className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 text-center hover:border-emerald-500/30">
-            <span className="text-2xl">📝</span>
-            <p className="text-white text-sm mt-1">Create Lease</p>
+          <Link
+            to="/haq/leases"
+            className="rounded-[var(--radius-card)] p-5 text-center transition hover:-translate-y-0.5"
+            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[28px]" style={{ color: 'var(--clay)' }}>description</span>
+            <p className="text-sm mt-2" style={{ color: 'var(--warm-ink)' }}>Create Lease</p>
           </Link>
-          <Link to="/haq/maintenance" className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 text-center hover:border-emerald-500/30">
-            <span className="text-2xl">🔧</span>
-            <p className="text-white text-sm mt-1">Post Maintenance</p>
+          <Link
+            to="/haq/maintenance"
+            className="rounded-[var(--radius-card)] p-5 text-center transition hover:-translate-y-0.5"
+            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[28px]" style={{ color: 'var(--clay)' }}>build</span>
+            <p className="text-sm mt-2" style={{ color: 'var(--warm-ink)' }}>Post Maintenance</p>
           </Link>
-          <Link to="/haq/financials" className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 text-center hover:border-emerald-500/30">
-            <span className="text-2xl">📊</span>
-            <p className="text-white text-sm mt-1">View Reports</p>
+          <Link
+            to="/haq/financials"
+            className="rounded-[var(--radius-card)] p-5 text-center transition hover:-translate-y-0.5"
+            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[28px]" style={{ color: 'var(--clay)' }}>bar_chart</span>
+            <p className="text-sm mt-2" style={{ color: 'var(--warm-ink)' }}>View Reports</p>
           </Link>
         </div>
       </div>

@@ -7,12 +7,12 @@ import DiscoveryMap from '../components/DiscoveryMap';
 import { getFavorites, Favorite } from '../utils/favorites';
 
 const categories = [
-  { id: 'RESTAURANT', label: 'Restaurants', icon: '🍽️' },
-  { id: 'SALON', label: 'Salons', icon: '💇' },
-  { id: 'SPA', label: 'Spas', icon: '🧖' },
-  { id: 'HOTEL', label: 'Hotels', icon: '🏨' },
-  { id: 'FITNESS_CENTER', label: 'Fitness', icon: '💪' },
-  { id: 'EVENT_VENUE', label: 'Venues', icon: '🎪' },
+  { id: 'RESTAURANT', label: 'Restaurants', icon: 'restaurant' },
+  { id: 'SALON', label: 'Salons', icon: 'content_cut' },
+  { id: 'SPA', label: 'Spas', icon: 'spa' },
+  { id: 'HOTEL', label: 'Hotels', icon: 'hotel' },
+  { id: 'FITNESS_CENTER', label: 'Fitness', icon: 'fitness_center' },
+  { id: 'EVENT_VENUE', label: 'Venues', icon: 'celebration' },
 ];
 
 const mockBusinesses = [
@@ -47,9 +47,16 @@ const FALLBACK_CARDS: BizCard[] = mockBusinesses.map((b) => ({ ...b, source: 'os
 
 function Stars({ value }: { value: number }) {
   return (
-    <span className="text-amber-500 tracking-tight" aria-label={`${value} stars`}>
-      {'★'.repeat(Math.round(value))}
-      <span className="text-slate-300">{'★'.repeat(Math.max(0, 5 - Math.round(value)))}</span>
+    <span className="flex gap-0.5" aria-label={`${value} stars`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          className="material-symbols-outlined text-[14px]"
+          style={{ color: i <= Math.round(value) ? 'var(--muted-ochre)' : 'var(--soft-stone)' }}
+        >
+          star
+        </span>
+      ))}
     </span>
   );
 }
@@ -240,43 +247,55 @@ export default function DiscoveryPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Hero + search */}
       <div className="text-center mb-6 sm:mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3" style={{ color: 'var(--warm-ink)' }}>
           Find your next favorite spot
         </h1>
-        <p className="text-slate-600 max-w-2xl mx-auto mb-5 text-sm sm:text-lg">
+        <p className="max-w-2xl mx-auto mb-5 text-sm sm:text-lg" style={{ color: 'var(--soft-stone)' }}>
           Real local businesses with verified stars — every rating traces to a real visit.
         </p>
         <div className="max-w-xl mx-auto relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--soft-stone)' }}>search</span>
           <input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder="Search tacos, haircut, spa day…"
-            className="w-full pl-11 pr-10 py-3 sm:py-3.5 border border-slate-300 rounded-full shadow-sm text-base focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+            className="w-full pl-11 pr-10 py-3 sm:py-3.5 rounded-full text-base outline-none transition"
+            style={{
+              border: '1px solid rgba(191,179,163,0.4)',
+              background: 'white',
+              color: 'var(--warm-ink)',
+              boxShadow: 'var(--shadow-soft)',
+            }}
           />
           {query ? (
             <button
               onClick={() => onQueryChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center"
+              style={{ color: 'var(--soft-stone)' }}
               aria-label="Clear search"
             >
-              ✕
+              <span className="material-symbols-outlined">close</span>
             </button>
           ) : searching ? (
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 inline-block animate-spin rounded-full h-5 w-5 border-2 border-amber-500 border-t-transparent" />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 inline-block animate-spin rounded-full h-5 w-5 border-2 border-[var(--clay)] border-t-transparent" />
           ) : null}
         </div>
         <div className="flex items-center justify-center gap-2 mt-2">
           {userLocation && (
-            <p className="text-xs sm:text-sm text-emerald-600">📍 Showing venues near you</p>
+            <p className="text-xs sm:text-sm flex items-center gap-1" style={{ color: 'var(--sage)' }}>
+              <span className="material-symbols-outlined text-[16px]">location_on</span>
+              Showing venues near you
+            </p>
           )}
           {!userLocation && (
             <button
               onClick={requestNearMe}
               disabled={nearMeLoading}
-              className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-full hover:bg-emerald-700 disabled:opacity-50"
+              className="px-4 py-1.5 text-xs font-medium rounded-full transition hover:-translate-y-0.5"
+              style={{ background: 'var(--sage)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
             >
-              {nearMeLoading ? 'Locating…' : '📡 Near me'}
+              <span className="material-symbols-outlined text-[14px] mr-1 align-[-2px]">my_location</span>
+              {nearMeLoading ? 'Locating…' : 'Near me'}
             </button>
           )}
         </div>
@@ -287,12 +306,18 @@ export default function DiscoveryPage() {
               onChange={(e) => setCityQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void useCity()}
               placeholder="Enter your city instead — e.g. Austin, TX"
-              className="flex-1 min-w-0 px-4 py-2.5 border border-slate-300 rounded-full text-sm outline-none focus:ring-2 focus:ring-amber-500"
+              className="flex-1 min-w-0 px-4 py-2.5 rounded-full text-sm outline-none"
+              style={{
+                border: '1px solid rgba(191,179,163,0.4)',
+                background: 'white',
+                color: 'var(--warm-ink)',
+              }}
             />
             <button
               onClick={() => void useCity()}
               disabled={geocoding}
-              className="shrink-0 px-5 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-full disabled:opacity-50"
+              className="shrink-0 px-5 py-2.5 text-sm font-medium rounded-full transition hover:-translate-y-0.5"
+              style={{ background: 'var(--warm-ink)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
             >
               {geocoding ? '…' : 'Use city'}
             </button>
@@ -304,9 +329,12 @@ export default function DiscoveryPage() {
       <div className="flex overflow-x-auto no-scrollbar mobile-scroll gap-2 sm:gap-3 mb-5 sm:justify-center sm:flex-wrap pb-1">
         <button
           onClick={() => pickCategory(null)}
-          className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            !selectedCategory ? 'bg-amber-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
-          }`}
+          className="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition hover:-translate-y-0.5"
+          style={{
+            background: !selectedCategory ? 'var(--clay)' : 'white',
+            color: !selectedCategory ? 'white' : 'var(--warm-ink)',
+            boxShadow: !selectedCategory ? 'var(--shadow-soft)' : 'none',
+          }}
         >
           All
         </button>
@@ -314,31 +342,37 @@ export default function DiscoveryPage() {
           <button
             key={cat.id}
             onClick={() => pickCategory(cat.id)}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === cat.id ? 'bg-amber-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
-            }`}
+            className="shrink-0 px-4 py-2 rounded-full text-sm font-medium transition hover:-translate-y-0.5"
+            style={{
+              background: selectedCategory === cat.id ? 'var(--clay)' : 'white',
+              color: selectedCategory === cat.id ? 'white' : 'var(--warm-ink)',
+              boxShadow: selectedCategory === cat.id ? 'var(--shadow-soft)' : 'none',
+            }}
           >
-            {cat.icon} {cat.label}
+            <span className="material-symbols-outlined text-[16px] mr-1 align-[-3px]">{cat.icon}</span>
+            {cat.label}
           </button>
         ))}
       </div>
 
       {/* Sort + filters */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar mobile-scroll pb-1">
-        <div className="flex shrink-0 bg-white border border-slate-200 rounded-full p-0.5">
+        <div className="flex shrink-0 rounded-full p-0.5" style={{ background: 'var(--warm-sand)' }}>
           {(['list', 'map'] as const).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                view === v ? 'bg-slate-900 text-white' : 'text-slate-600'
-              }`}
+              className="px-3 py-1.5 rounded-full text-xs font-medium transition"
+              style={{
+                background: view === v ? 'var(--warm-ink)' : 'transparent',
+                color: view === v ? 'white' : 'var(--warm-ink)',
+              }}
             >
-              {v === 'list' ? '☰ List' : '🗺️ Map'}
+              {v === 'list' ? 'List' : 'Map'}
             </button>
           ))}
         </div>
-        <span className="text-xs font-medium text-slate-500 shrink-0">SORT:</span>
+        <span className="text-xs font-medium shrink-0" style={{ color: 'var(--soft-stone)' }}>SORT:</span>
         {(
           [
             { id: 'recommended', label: 'Recommended' },
@@ -349,20 +383,24 @@ export default function DiscoveryPage() {
           <button
             key={s.id}
             onClick={() => setSort(s.id)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              sort === s.id
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-600 border-slate-200 active:bg-slate-100'
-            }`}
+            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition hover:-translate-y-0.5"
+            style={{
+              background: sort === s.id ? 'var(--warm-ink)' : 'white',
+              color: sort === s.id ? 'white' : 'var(--warm-ink)',
+              border: sort === s.id ? '1px solid var(--warm-ink)' : '1px solid rgba(191,179,163,0.3)',
+            }}
           >
             {s.label}
           </button>
         ))}
         <button
           onClick={() => setOpenNow(!openNow)}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-            openNow ? 'bg-green-600 text-white border-green-600' : 'bg-white text-slate-600 border-slate-200'
-          }`}
+          className="shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition hover:-translate-y-0.5"
+          style={{
+            background: openNow ? 'var(--sage)' : 'white',
+            color: openNow ? 'white' : 'var(--warm-ink)',
+            border: openNow ? '1px solid var(--sage)' : '1px solid rgba(191,179,163,0.3)',
+          }}
         >
           {openNow ? '✓ Open now' : 'Open now'}
         </button>
@@ -372,23 +410,27 @@ export default function DiscoveryPage() {
       {favorites.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-slate-900">❤️ Your saved places</h2>
-            <span className="text-xs text-slate-500">{favorites.length} saved</span>
+            <h2 className="font-bold flex items-center gap-2" style={{ color: 'var(--warm-ink)' }}>
+              <span className="material-symbols-outlined text-[20px]">favorite</span>
+              Your saved places
+            </h2>
+            <span className="text-xs" style={{ color: 'var(--soft-stone)' }}>{favorites.length} saved</span>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar mobile-scroll pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             {favorites.map((b) => (
               <Link
                 key={`${b.source}:${b.id}`}
                 to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`}
-                className="tile shrink-0 w-48 bg-white rounded-xl shadow-sm overflow-hidden"
+                className="tile shrink-0 w-48 rounded-[var(--radius-card)] overflow-hidden transition hover:-translate-y-0.5"
+                style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
               >
-                <div className="h-24 bg-slate-200 overflow-hidden tile-img">
+                <div className="h-24 overflow-hidden tile-img">
                   <img src={b.image} alt={b.name} loading="lazy" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-3">
-                  <p className="font-semibold text-slate-900 text-sm truncate">{b.name}</p>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    <span className="text-amber-500">★</span> {Number(b.rating || 0).toFixed(1)}
+                  <p className="font-semibold text-sm truncate" style={{ color: 'var(--warm-ink)' }}>{b.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--soft-stone)' }}>
+                    <span className="material-symbols-outlined text-[12px] text-[var(--muted-ochre)]">star</span> {Number(b.rating || 0).toFixed(1)}
                     {b.price ? ` · ${b.price}` : ''}
                   </p>
                 </div>
@@ -402,25 +444,32 @@ export default function DiscoveryPage() {
       {!query && !selectedCategory && topRated.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-slate-900">⭐ Top rated near you</h2>
-            <span className="text-xs text-slate-500">Stars earn this shelf</span>
+            <h2 className="font-bold flex items-center gap-2" style={{ color: 'var(--warm-ink)' }}>
+              <span className="material-symbols-outlined text-[20px]">star</span>
+              Top rated near you
+            </h2>
+            <span className="text-xs" style={{ color: 'var(--soft-stone)' }}>Stars earn this shelf</span>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar mobile-scroll pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             {topRated.map((b, i) => (
-              <div key={b.id} className="tile shrink-0 w-56 bg-white rounded-xl shadow-sm overflow-hidden relative group">
-                <Link
-                  to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`}
-                  className="block"
-                >
-                  <div className="h-28 bg-slate-200 relative overflow-hidden tile-img">
+              <div
+                key={b.id}
+                className="tile shrink-0 w-56 rounded-[var(--radius-card)] overflow-hidden relative group transition hover:-translate-y-0.5"
+                style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+              >
+                <Link to={`/sitara/place/${b.source}/${encodeURIComponent(b.id)}`} className="block">
+                  <div className="h-28 relative overflow-hidden tile-img">
                     <img src={b.image} alt={b.name} loading="lazy" className="w-full h-full object-cover" />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-slate-900/80 text-white rounded-full text-xs font-bold">
+                    <span
+                      className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                      style={{ background: 'var(--warm-ink)', color: 'white' }}
+                    >
                       #{i + 1}
                     </span>
                   </div>
                   <div className="p-3">
-                    <p className="font-semibold text-slate-900 text-sm truncate">{b.name}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1">
+                    <p className="font-semibold text-sm truncate" style={{ color: 'var(--warm-ink)' }}>{b.name}</p>
+                    <div className="flex items-center gap-1.5 text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
                       <Stars value={b.rating} />
                       <span className="font-medium">{b.rating.toFixed(1)}</span>
                       <span>({b.stars})</span>
@@ -429,7 +478,8 @@ export default function DiscoveryPage() {
                 </Link>
                 <button
                   onClick={(e) => { e.preventDefault(); handleBookNow(b); }}
-                  className="absolute bottom-2 right-2 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full hover:bg-amber-600 transition opacity-0 group-hover:opacity-100"
+                  className="absolute bottom-2 right-2 px-3 py-1 text-xs font-bold rounded-full transition opacity-0 group-hover:opacity-100"
+                  style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
                 >
                   Book Now
                 </button>
@@ -440,29 +490,35 @@ export default function DiscoveryPage() {
       )}
 
       {/* Results */}
-      <h2 className="font-bold text-slate-900 mb-3">
+      <h2 className="font-bold mb-3" style={{ color: 'var(--warm-ink)' }}>
         {query ? `Results for "${query}"` : selectedCategory ? 'Browse' : 'Recommended for you'}
-        <span className="ml-2 text-sm font-normal text-slate-500">{visible.length} places</span>
+        <span className="ml-2 text-sm font-normal" style={{ color: 'var(--soft-stone)' }}>{visible.length} places</span>
       </h2>
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-500 border-t-transparent" />
-          <p className="mt-2 text-slate-500">Discovering venues near you...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[var(--clay)] border-t-transparent" />
+          <p className="mt-2" style={{ color: 'var(--soft-stone)' }}>Discovering venues near you...</p>
         </div>
       ) : visible.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="font-semibold text-slate-900 mb-1">Nothing found</p>
-          <p className="text-sm text-slate-500">Try a different craving, or browse a category above.</p>
+        <div
+          className="rounded-[var(--radius-card)] p-12 text-center"
+          style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+        >
+          <span className="material-symbols-outlined text-[48px]" style={{ color: 'var(--soft-stone)' }}>search_off</span>
+          <p className="font-semibold mt-3 mb-1" style={{ color: 'var(--warm-ink)' }}>Nothing found</p>
+          <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Try a different craving, or browse a category above.</p>
         </div>
       ) : view === 'map' ? (
         userLocation ? (
           <DiscoveryMap pins={visible} center={userLocation} />
         ) : (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-            <p className="text-4xl mb-3">🗺️</p>
-            <p className="font-semibold text-slate-900 mb-1">Map needs your location</p>
-            <p className="text-sm text-slate-500">Allow location access to see places around you.</p>
+          <div
+            className="rounded-[var(--radius-card)] p-12 text-center"
+            style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[48px]" style={{ color: 'var(--soft-stone)' }}>map</span>
+            <p className="font-semibold mt-3 mb-1" style={{ color: 'var(--warm-ink)' }}>Map needs your location</p>
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Allow location access to see places around you.</p>
           </div>
         )
       ) : (
@@ -470,13 +526,14 @@ export default function DiscoveryPage() {
           {visible.map((business) => (
             <div
               key={business.id}
-              className="tile tile-img rise bg-white rounded-xl shadow-sm overflow-hidden group"
+              className="tile tile-img rise rounded-[var(--radius-card)] overflow-hidden group transition hover:-translate-y-0.5"
+              style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}
             >
               <Link
                 to={`/sitara/place/${business.source}/${encodeURIComponent(business.id)}`}
                 className="block"
               >
-                <div className="h-44 sm:h-48 bg-slate-200 overflow-hidden relative">
+                <div className="h-44 sm:h-48 overflow-hidden relative">
                   <img
                     src={business.image}
                     alt={business.name}
@@ -484,22 +541,29 @@ export default function DiscoveryPage() {
                     className="w-full h-full object-cover"
                   />
                   {business.isOpenNow && (
-                    <span className="absolute top-2 right-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-xs font-medium">
+                    <span
+                      className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: 'var(--sage)', color: 'white' }}
+                    >
                       Open now
                     </span>
                   )}
                   {business.real && (
-                    <span className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-600 text-white rounded-full text-xs font-medium">
-                      ✓ Live
+                    <span
+                      className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: 'var(--sage)', color: 'white' }}
+                    >
+                      <span className="material-symbols-outlined text-[10px] mr-0.5 align-[-1px]">check</span>
+                      Live
                     </span>
                   )}
                 </div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-1.5">
-                    <h3 className="font-semibold text-slate-900 truncate mr-2">{business.name}</h3>
-                    <span className="text-sm text-slate-500 shrink-0">{business.price}</span>
+                    <h3 className="font-semibold truncate mr-2" style={{ color: 'var(--warm-ink)' }}>{business.name}</h3>
+                    <span className="text-sm shrink-0" style={{ color: 'var(--soft-stone)' }}>{business.price}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--soft-stone)' }}>
                     <Stars value={business.rating} />
                     <span className="font-medium">{business.rating.toFixed(1)}</span>
                     <span>·</span>
@@ -507,12 +571,15 @@ export default function DiscoveryPage() {
                     {business.distanceKm != null && (
                       <>
                         <span>·</span>
-                        <span>📏 {business.distanceKm} km</span>
+                        <span className="flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[14px]">straighten</span>
+                          {business.distanceKm} km
+                        </span>
                       </>
                     )}
                   </div>
                   {business.address && (
-                    <p className="text-xs text-slate-500 mt-1.5 truncate">{business.address}</p>
+                    <p className="text-xs mt-1.5 truncate" style={{ color: 'var(--soft-stone)' }}>{business.address}</p>
                   )}
                 </div>
               </Link>
@@ -520,9 +587,11 @@ export default function DiscoveryPage() {
               <div className="px-4 pb-4">
                 <button
                   onClick={() => handleBookNow(business)}
-                  className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-amber-500/20"
+                  className="w-full py-2.5 font-bold rounded-full transition hover:-translate-y-0.5"
+                  style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
                 >
-                  Book Now →
+                  <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">calendar_month</span>
+                  Book Now
                 </button>
               </div>
             </div>

@@ -4,11 +4,11 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/freight', label: 'Dashboard', icon: '📦', end: true },
-  { path: '/freight/post-load', label: 'Post Load', icon: '➕' },
-  { path: '/freight/my-loads', label: 'My Loads', icon: '📋' },
-  { path: '/freight/carriers', label: 'Carriers', icon: '🚛' },
-  { path: '/freight/rates', label: 'Rate Calculator', icon: '💰' },
+  { path: '/freight', label: 'Dashboard', icon: 'inventory_2', end: true },
+  { path: '/freight/post-load', label: 'Post Load', icon: 'add_circle' },
+  { path: '/freight/my-loads', label: 'My Loads', icon: 'list_alt' },
+  { path: '/freight/carriers', label: 'Carriers', icon: 'local_shipping' },
+  { path: '/freight/rates', label: 'Rate Calculator', icon: 'calculate' },
 ];
 
 export default function FreightPostLoadPage() {
@@ -48,68 +48,96 @@ export default function FreightPostLoadPage() {
     } catch (e) { console.error(e); } finally { setSubmitting(false); }
   };
 
+  const inputClass = "w-full px-4 py-2.5 rounded-xl text-sm transition";
+  const inputStyle = { background: 'var(--warm-sand)', border: '1px solid rgba(191,179,163,0.3)', color: 'var(--warm-ink)' };
+
   return (
     <DashboardLayout osName="FreightOS" osIcon="S" osColor="amber" navItems={navItems}>
-      <form onSubmit={handleSubmit} className="space-y-4 max-w-3xl">
-        <h1 className="text-xl font-bold text-white">Post New Load</h1>
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Post New Load</h1>
 
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 space-y-3">
-          <h3 className="text-white text-sm font-medium">Cargo Details</h3>
-          <input value={form.title} onChange={(e) => updateField('title', e.target.value)} placeholder="Load Title" required className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-          <textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} placeholder="Description" className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm h-20" />
+        <div className="rounded-[var(--radius-card)] p-5 space-y-4" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <h3 className="font-medium" style={{ color: 'var(--warm-ink)' }}>Cargo Details</h3>
+          <input value={form.title} onChange={(e) => updateField('title', e.target.value)} placeholder="Load Title" required className={inputClass} style={inputStyle} />
+          <textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} placeholder="Description" className={`${inputClass} h-20`} style={inputStyle} />
           <div className="grid grid-cols-2 gap-3">
-            <select value={form.cargoType} onChange={(e) => updateField('cargoType', e.target.value)} className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm">
+            <select value={form.cargoType} onChange={(e) => updateField('cargoType', e.target.value)} className={inputClass} style={inputStyle}>
               <option value="GENERAL">General</option>
               <option value="REFRIGERATED">Refrigerated</option>
               <option value="HAZARDOUS">Hazardous</option>
               <option value="OVERSIZED">Oversized</option>
               <option value="FRAGILE">Fragile</option>
             </select>
-            <input value={form.weightLbs} onChange={(e) => updateField('weightLbs', e.target.value)} placeholder="Weight (lbs)" type="number" required className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+            <input value={form.weightLbs} onChange={(e) => updateField('weightLbs', e.target.value)} placeholder="Weight (lbs)" type="number" required className={inputClass} style={inputStyle} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input value={form.dimensions} onChange={(e) => updateField('dimensions', e.target.value)} placeholder="Dimensions (LxWxH)" className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-            <input value={form.valueUsd} onChange={(e) => updateField('valueUsd', e.target.value)} placeholder="Declared Value ($)" type="number" className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+            <input value={form.dimensions} onChange={(e) => updateField('dimensions', e.target.value)} placeholder="Dimensions (LxWxH)" className={inputClass} style={inputStyle} />
+            <input value={form.valueUsd} onChange={(e) => updateField('valueUsd', e.target.value)} placeholder="Declared Value ($)" type="number" className={inputClass} style={inputStyle} />
           </div>
         </div>
 
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 space-y-3">
-          <h3 className="text-white text-sm font-medium">Origin</h3>
-          <input value={form.originAddress} onChange={(e) => updateField('originAddress', e.target.value)} placeholder="Address" required className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+        <div className="rounded-[var(--radius-card)] p-5 space-y-4" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <h3 className="font-medium" style={{ color: 'var(--warm-ink)' }}>Origin</h3>
+          <input value={form.originAddress} onChange={(e) => updateField('originAddress', e.target.value)} placeholder="Address" required className={inputClass} style={inputStyle} />
           <div className="grid grid-cols-3 gap-3">
-            <input value={form.originCity} onChange={(e) => updateField('originCity', e.target.value)} placeholder="City" required className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-            <input value={form.originState} onChange={(e) => updateField('originState', e.target.value)} placeholder="State" required className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-            <input value={form.originZip} onChange={(e) => updateField('originZip', e.target.value)} placeholder="ZIP" className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+            <input value={form.originCity} onChange={(e) => updateField('originCity', e.target.value)} placeholder="City" required className={inputClass} style={inputStyle} />
+            <input value={form.originState} onChange={(e) => updateField('originState', e.target.value)} placeholder="State" required className={inputClass} style={inputStyle} />
+            <input value={form.originZip} onChange={(e) => updateField('originZip', e.target.value)} placeholder="ZIP" className={inputClass} style={inputStyle} />
           </div>
         </div>
 
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 space-y-3">
-          <h3 className="text-white text-sm font-medium">Destination</h3>
-          <input value={form.destAddress} onChange={(e) => updateField('destAddress', e.target.value)} placeholder="Address" required className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+        <div className="rounded-[var(--radius-card)] p-5 space-y-4" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <h3 className="font-medium" style={{ color: 'var(--warm-ink)' }}>Destination</h3>
+          <input value={form.destAddress} onChange={(e) => updateField('destAddress', e.target.value)} placeholder="Address" required className={inputClass} style={inputStyle} />
           <div className="grid grid-cols-3 gap-3">
-            <input value={form.destCity} onChange={(e) => updateField('destCity', e.target.value)} placeholder="City" required className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-            <input value={form.destState} onChange={(e) => updateField('destState', e.target.value)} placeholder="State" required className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-            <input value={form.destZip} onChange={(e) => updateField('destZip', e.target.value)} placeholder="ZIP" className="bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
+            <input value={form.destCity} onChange={(e) => updateField('destCity', e.target.value)} placeholder="City" required className={inputClass} style={inputStyle} />
+            <input value={form.destState} onChange={(e) => updateField('destState', e.target.value)} placeholder="State" required className={inputClass} style={inputStyle} />
+            <input value={form.destZip} onChange={(e) => updateField('destZip', e.target.value)} placeholder="ZIP" className={inputClass} style={inputStyle} />
           </div>
         </div>
 
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 space-y-3">
-          <h3 className="text-white text-sm font-medium">Timing & Budget</h3>
+        <div className="rounded-[var(--radius-card)] p-5 space-y-4" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
+          <h3 className="font-medium" style={{ color: 'var(--warm-ink)' }}>Timing & Budget</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-gray-400 text-xs">Pickup Date</label><input type="date" value={form.pickupDate} onChange={(e) => updateField('pickupDate', e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" /></div>
-            <div><label className="text-gray-400 text-xs">Delivery Date</label><input type="date" value={form.deliveryDate} onChange={(e) => updateField('deliveryDate', e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" /></div>
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: 'var(--soft-stone)' }}>Pickup Date</label>
+              <input type="date" value={form.pickupDate} onChange={(e) => updateField('pickupDate', e.target.value)} required className={inputClass} style={inputStyle} />
+            </div>
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: 'var(--soft-stone)' }}>Delivery Date</label>
+              <input type="date" value={form.deliveryDate} onChange={(e) => updateField('deliveryDate', e.target.value)} required className={inputClass} style={inputStyle} />
+            </div>
           </div>
-          <input value={form.budgetUsd} onChange={(e) => updateField('budgetUsd', e.target.value)} placeholder="Budget (USD)" type="number" className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
-          <button type="button" onClick={getEstimate} className="px-3 py-1.5 bg-amber-500/20 text-amber-400 rounded text-sm">Get Rate Estimate</button>
+          <input value={form.budgetUsd} onChange={(e) => updateField('budgetUsd', e.target.value)} placeholder="Budget (USD)" type="number" className={inputClass} style={inputStyle} />
+          <button
+            type="button"
+            onClick={getEstimate}
+            className="px-5 py-2.5 rounded-full text-sm font-medium transition hover:-translate-y-0.5"
+            style={{ background: 'var(--muted-ochre)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+          >
+            <span className="material-symbols-outlined text-[16px] mr-1.5 align-[-3px]" aria-hidden="true">insights</span>
+            Get Rate Estimate
+          </button>
           {estimate && (
-            <div className="bg-white/5 rounded p-3">
-              <p className="text-white text-sm">Estimated Cost: <span className="text-amber-400 font-bold">${estimate.total}</span></p>
-              <p className="text-gray-500 text-xs">Base: ${estimate.baseRate?.toFixed(2)} × {estimate.multiplier} multiplier</p>
+            <div className="rounded-xl p-4" style={{ background: 'var(--warm-sand)' }}>
+              <p className="text-sm" style={{ color: 'var(--warm-ink)' }}>
+                Estimated Cost: <span className="font-bold" style={{ color: 'var(--terracotta)' }}>${estimate.total}</span>
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>
+                Base: ${estimate.baseRate?.toFixed(2)} × {estimate.multiplier} multiplier
+              </p>
             </div>
           )}
         </div>
 
-        <button type="submit" disabled={submitting} className="w-full py-3 bg-amber-500 text-white rounded font-medium">{submitting ? 'Posting...' : 'Post Load'}</button>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-3 rounded-full font-medium transition hover:-translate-y-0.5"
+          style={{ background: 'var(--clay)', color: 'white', boxShadow: 'var(--shadow-soft)' }}
+        >
+          {submitting ? 'Posting...' : 'Post Load'}
+        </button>
       </form>
     </DashboardLayout>
   );
