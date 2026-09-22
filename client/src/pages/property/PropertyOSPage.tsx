@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/abode', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/abode/tenants', label: 'Tenants', icon: 'people' },
-  { path: '/abode/leases', label: 'Leases', icon: 'description' },
-  { path: '/abode/maintenance', label: 'Maintenance', icon: 'build' },
-  { path: '/abode/financials', label: 'Financials', icon: 'bar_chart' },
+  { path: '/property', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/property/tenants', label: 'Tenants', icon: 'people' },
+  { path: '/property/leases', label: 'Leases', icon: 'description' },
+  { path: '/property/maintenance', label: 'Maintenance', icon: 'build' },
+  { path: '/property/financials', label: 'Financials', icon: 'bar_chart' },
 ];
 
-export default function AbodeOSPage() {
+export default function PropertyOSPage() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [summary, setSummary] = useState<any>(null);
   const [collectionRate, setCollectionRate] = useState<any>(null);
@@ -23,9 +23,9 @@ export default function AbodeOSPage() {
   const loadData = async () => {
     try {
       const [summaryRes, rateRes, propsRes] = await Promise.all([
-        api.get(`/api/v1/haq/revenue?period=${period}`).catch(() => ({ data: { data: null } })),
-        api.get('/api/v1/haq/revenue/collection-rate').catch(() => ({ data: { data: null } })),
-        api.get('/api/v1/haq/revenue/top-properties').catch(() => ({ data: { data: [] } })),
+        api.get(`/api/v1/property/revenue?period=${period}`).catch(() => ({ data: { data: null } })),
+        api.get('/api/v1/property/revenue/collection-rate').catch(() => ({ data: { data: null } })),
+        api.get('/api/v1/property/revenue/top-properties').catch(() => ({ data: { data: [] } })),
       ]);
       setSummary(summaryRes.data?.data);
       setCollectionRate(rateRes.data?.data);
@@ -35,14 +35,14 @@ export default function AbodeOSPage() {
   };
 
   return (
-    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="violet" navItems={navItems}>
+    <DashboardLayout osName="PropertyOS" osIcon="H" osColor="violet" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Dashboard</h1>
             <p className="text-slate-400">Property management for landlords and builders</p>
           </div>
-          <Link to="/haq/tenants" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium transition">
+          <Link to="/property/tenants" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-medium transition">
             + Add Tenant
           </Link>
         </div>

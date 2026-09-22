@@ -80,7 +80,7 @@ function MobileMoreSheet({ onClose, pathname }: { onClose: () => void; pathname:
     { to: '/agent-dashboard', icon: 'smart_toy', label: 'AI Agent Loop' },
     { to: '/booking', icon: 'event', label: 'BookingOS' },
     { to: '/freight', icon: 'local_shipping', label: 'FreightOS' },
-    { to: '/abode', icon: 'apartment', label: 'AbodeOS' },
+    { to: '/property', icon: 'apartment', label: 'PropertyOS' },
     ]},
     { title: 'Trust & Safety', items: [
       { to: '/trust', icon: 'verified', label: 'Trust Passports' },
@@ -247,10 +247,10 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/'); };
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password' || location.pathname.startsWith('/reset-password');
-  // /booking, /freight, /abode, /pipeline, /ledger bring their own chrome
+  // /booking, /freight, /property, /pipeline, /ledger bring their own chrome
   // (DashboardLayout sidebar). Rendering the main header/footer/nav on top
   // stacks two top bars and two bottom bars — so stand down here.
-  const isStandalone = /^\/(booking|freight|abode|pipeline|ledger|sitara)(\/|$)/.test(location.pathname);
+  const isStandalone = /^\/(booking|freight|property|pipeline|ledger|sitara)(\/|$)/.test(location.pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const initials = user ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : '';
@@ -322,10 +322,10 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
-            <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/abode', '/pipeline', '/ledger'].some((p) => location.pathname.startsWith(p))}>
+            <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/property', '/pipeline', '/ledger'].some((p) => location.pathname.startsWith(p))}>
               <DropdownItem to="/booking">BookingOS</DropdownItem>
               <DropdownItem to="/freight">FreightOS</DropdownItem>
-              <DropdownItem to="/abode">AbodeOS</DropdownItem>
+              <DropdownItem to="/property">PropertyOS</DropdownItem>
               <DropdownItem to="/pipeline">PipelineOS</DropdownItem>
               <DropdownItem to="/ledger">LedgerOS</DropdownItem>
             </Dropdown>
@@ -410,7 +410,7 @@ export default function Layout() {
             <MobileTab to="/" icon="explore" label="Home" current={location.pathname === '/'} />
             <MobileTab to="/booking" icon="event" label="Booking" current={location.pathname.startsWith('/booking')} />
             <MobileTab to="/freight" icon="local_shipping" label="Freight" current={location.pathname.startsWith('/freight')} />
-            <MobileTab to="/abode" icon="apartment" label="Abode" current={location.pathname.startsWith('/abode')} />
+            <MobileTab to="/property" icon="apartment" label="Property" current={location.pathname.startsWith('/property')} />
             <MobileTab to="/pipeline" icon="trending_up" label="Pipeline" current={location.pathname.startsWith('/pipeline')} />
             <MobileTab to="/ledger" icon="account_balance" label="Ledger" current={location.pathname.startsWith('/ledger')} />
             <button
@@ -431,10 +431,10 @@ export default function Layout() {
             <div className="grid grid-cols-5 gap-8 text-sm">
               <div>
                 <p className="font-headline font-bold text-base text-on-surface mb-3">PabandiOS Suite</p>
-                <p className="text-on-surface-variant text-xs mb-3">PabandiOS Suite: BookingOS • FreightOS • AbodeOS • PipelineOS • LedgerOS — Powered by TrustOS</p>
+                <p className="text-on-surface-variant text-xs mb-3">PabandiOS Suite: BookingOS • FreightOS • PropertyOS • PipelineOS • LedgerOS — Powered by TrustOS</p>
                 <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
                 <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">FreightOS</Link>
-                <Link to="/abode" className="block text-on-surface-variant hover:text-primary py-1">AbodeOS</Link>
+                <Link to="/property" className="block text-on-surface-variant hover:text-primary py-1">PropertyOS</Link>
                 <Link to="/pipeline" className="block text-on-surface-variant hover:text-primary py-1">PipelineOS</Link>
                 <Link to="/ledger" className="block text-on-surface-variant hover:text-primary py-1">LedgerOS</Link>
               </div>

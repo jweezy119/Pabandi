@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/abode/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/abode/leases', label: 'Leases', icon: '📝' },
-  { path: '/abode/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/abode/financials', label: 'Financials', icon: '💰' },
+  { path: '/property', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/property/tenants', label: 'Tenants', icon: '👥' },
+  { path: '/property/leases', label: 'Leases', icon: '📝' },
+  { path: '/property/maintenance', label: 'Maintenance', icon: '🔧' },
+  { path: '/property/financials', label: 'Financials', icon: '💰' },
 ];
 
-export default function AbodeTenantDetailPage() {
+export default function PropertyTenantDetailPage() {
   const { id } = useParams();
   const [tenant, setTenant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,15 +20,15 @@ export default function AbodeTenantDetailPage() {
 
   const loadTenant = async () => {
     try {
-      const res = await api.get(`/api/v1/haq/tenants/${id}`);
+      const res = await api.get(`/api/v1/property/tenants/${id}`);
       setTenant(res.data?.data);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  if (loading) return <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}><div className="text-center py-8"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" /></div></DashboardLayout>;
+  if (loading) return <DashboardLayout osName="PropertyOS" osIcon="H" osColor="emerald" navItems={navItems}><div className="text-center py-8"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" /></div></DashboardLayout>;
 
   return (
-    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="PropertyOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <h1 className="text-xl font-bold text-white">{tenant?.firstName} {tenant?.lastName}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

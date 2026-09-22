@@ -3,16 +3,16 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/abode/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/abode/leases', label: 'Leases', icon: '📝' },
-  { path: '/abode/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/haq/financials', label: 'Financials', icon: '💰' },
+  { path: '/property', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/property/tenants', label: 'Tenants', icon: '👥' },
+  { path: '/property/leases', label: 'Leases', icon: '📝' },
+  { path: '/property/maintenance', label: 'Maintenance', icon: '🔧' },
+  { path: '/property/financials', label: 'Financials', icon: '💰' },
 ];
 
 const COLUMNS = ['OPEN', 'IN_PROGRESS', 'COMPLETED'];
 
-export default function AbodeMaintenancePage() {
+export default function PropertyMaintenancePage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ category: '', priority: '', status: '' });
@@ -22,7 +22,7 @@ export default function AbodeMaintenancePage() {
   const loadRequests = async () => {
     try {
       const query = filter.status ? `?status=${filter.status}` : '';
-      const res = await api.get(`/api/v1/haq/maintenance${query}`);
+      const res = await api.get(`/api/v1/property/maintenance${query}`);
       setRequests(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
@@ -40,7 +40,7 @@ export default function AbodeMaintenancePage() {
   const getColumnRequests = (status: string) => requests.filter((r: any) => r.status === status);
 
   return (
-    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="PropertyOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Maintenance</h1>

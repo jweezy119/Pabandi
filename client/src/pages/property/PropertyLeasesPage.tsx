@@ -3,14 +3,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/abode/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/abode/leases', label: 'Leases', icon: '📝' },
-  { path: '/abode/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/abode/financials', label: 'Financials', icon: '💰' },
+  { path: '/property', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/property/tenants', label: 'Tenants', icon: '👥' },
+  { path: '/property/leases', label: 'Leases', icon: '📝' },
+  { path: '/property/maintenance', label: 'Maintenance', icon: '🔧' },
+  { path: '/property/financials', label: 'Financials', icon: '💰' },
 ];
 
-export default function AbodeLeasesPage() {
+export default function PropertyLeasesPage() {
   const [leases, setLeases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -21,7 +21,7 @@ export default function AbodeLeasesPage() {
   const loadLeases = async () => {
     try {
       const query = filter !== 'all' ? `?status=${filter}` : '';
-      const res = await api.get(`/api/v1/haq/leases${query}`);
+      const res = await api.get(`/api/v1/property/leases${query}`);
       setLeases(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
@@ -32,7 +32,7 @@ export default function AbodeLeasesPage() {
   };
 
   return (
-    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="PropertyOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Leases</h1>

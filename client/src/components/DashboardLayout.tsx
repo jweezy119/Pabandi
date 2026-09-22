@@ -61,7 +61,7 @@ const colorMap: Record<string, { gradientFrom: string; gradientTo: string; iconB
 
 const OS_DESCRIPTIONS: Record<string, string> = {
   'FreightOS': 'Freight & logistics platform. Post loads, find carriers, track shipments.',
-  'AbodeOS': 'Property management platform. Manage tenants, leases, and revenue.',
+  'PropertyOS': 'Property management platform. Manage tenants, leases, and revenue.',
   'BookingOS': 'Booking & discovery platform. Find restaurants, hotels, and services.',
   'PipelineOS': 'CRM & sales pipeline. Track leads, deals, and activities.',
   'LedgerOS': 'Finance & accounting. Invoices, expenses, cash flow, and reports.',

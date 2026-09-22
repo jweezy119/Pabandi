@@ -4,14 +4,14 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../services/api';
 
 const navItems = [
-  { path: '/abode', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/abode/tenants', label: 'Tenants', icon: '👥' },
-  { path: '/abode/leases', label: 'Leases', icon: '📝' },
-  { path: '/abode/maintenance', label: 'Maintenance', icon: '🔧' },
-  { path: '/abode/financials', label: 'Financials', icon: '💰' },
+  { path: '/property', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/property/tenants', label: 'Tenants', icon: '👥' },
+  { path: '/property/leases', label: 'Leases', icon: '📝' },
+  { path: '/property/maintenance', label: 'Maintenance', icon: '🔧' },
+  { path: '/property/financials', label: 'Financials', icon: '💰' },
 ];
 
-export default function AbodeTenantsPage() {
+export default function PropertyTenantsPage() {
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -21,7 +21,7 @@ export default function AbodeTenantsPage() {
 
   const loadTenants = async () => {
     try {
-      const res = await api.get('/api/v1/haq/tenants');
+      const res = await api.get('/api/v1/property/tenants');
       setTenants(res.data?.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
@@ -48,11 +48,11 @@ export default function AbodeTenantsPage() {
   });
 
   return (
-    <DashboardLayout osName="AbodeOS" osIcon="H" osColor="emerald" navItems={navItems}>
+    <DashboardLayout osName="PropertyOS" osIcon="H" osColor="emerald" navItems={navItems}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">Tenants</h1>
-          <Link to="/haq/tenants/new" className="px-3 py-1.5 bg-emerald-500 text-white rounded text-sm">Add Tenant</Link>
+          <Link to="/property/tenants/new" className="px-3 py-1.5 bg-emerald-500 text-white rounded text-sm">Add Tenant</Link>
         </div>
         <div className="flex gap-3">
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tenants..." className="flex-1 bg-white/5 border border-white/10 rounded px-3 py-2 text-white text-sm" />
@@ -79,7 +79,7 @@ export default function AbodeTenantsPage() {
               <tbody>
                 {filtered.map((t: any) => (
                   <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-3"><Link to={`/haq/tenants/${t.id}`} className="text-white hover:text-emerald-400">{t.firstName} {t.lastName}</Link></td>
+                    <td className="p-3"><Link to={`/property/tenants/${t.id}`} className="text-white hover:text-emerald-400">{t.firstName} {t.lastName}</Link></td>
                     <td className="p-3 text-gray-400">{t.email}</td>
                     <td className="p-3">{getStatusBadge(t.status)}</td>
                     <td className="p-3">{getRiskBadge(t.riskScore)}</td>

@@ -165,13 +165,13 @@ import { useEffect } from 'react';
 import StakingInterface from './components/StakingInterface';
 import EscrowInterface from './components/EscrowInterface';
 import AgentInterface from './components/AgentInterface';
-// AbodeOS
-import AbodeOSPage from './pages/abode/AbodeOSPage';
-import AbodeTenantsPage from './pages/abode/AbodeTenantsPage';
-import AbodeTenantDetailPage from './pages/abode/AbodeTenantDetailPage';
-import AbodeLeasesPage from './pages/abode/AbodeLeasesPage';
-import AbodeMaintenancePage from './pages/abode/AbodeMaintenancePage';
-import AbodeFinancialsPage from './pages/abode/AbodeFinancialsPage';
+// PropertyOS
+import PropertyOSPage from './pages/property/PropertyOSPage';
+import PropertyTenantsPage from './pages/property/PropertyTenantsPage';
+import PropertyTenantDetailPage from './pages/property/PropertyTenantDetailPage';
+import PropertyLeasesPage from './pages/property/PropertyLeasesPage';
+import PropertyMaintenancePage from './pages/property/PropertyMaintenancePage';
+import PropertyFinancialsPage from './pages/property/PropertyFinancialsPage';
 // FreightOS
 import FreightOSPage from './pages/freight/FreightOSPage';
 import FreightPostLoadPage from './pages/freight/FreightPostLoadPage';
@@ -216,9 +216,9 @@ function App() {
   const DashboardPage = () => {
     if (!isAuthenticated) return <Navigate to="/login" />;
     if (user?.role === 'ADMIN') return <Navigate to="/admin" replace />;
-    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/abode" replace />;
+    if (user?.role === 'BUSINESS_OWNER') return <Navigate to="/property" replace />;
     if (user?.role === 'FREELANCER') return <Navigate to="/freelance" replace />;
-    return <Navigate to="/abode" replace />;
+    return <Navigate to="/property" replace />;
   };
 
   const AuthRequiredProfilesPage = () => {
@@ -235,13 +235,13 @@ function App() {
     <HelmetProvider>
       <LanguageProvider>
         <Routes>
-          {/* AbodeOS (formerly HaqOS) - Property Management */}
-          <Route path="abode" element={<AbodeOSPage />} />
-          <Route path="abode/tenants" element={<AbodeTenantsPage />} />
-          <Route path="abode/tenants/:id" element={<AbodeTenantDetailPage />} />
-          <Route path="abode/leases" element={<AbodeLeasesPage />} />
-          <Route path="abode/maintenance" element={<AbodeMaintenancePage />} />
-          <Route path="abode/financials" element={<AbodeFinancialsPage />} />
+          {/* PropertyOS (formerly AbodeOS) - Property Management */}
+          <Route path="property" element={<PropertyOSPage />} />
+          <Route path="property/tenants" element={<PropertyTenantsPage />} />
+          <Route path="property/tenants/:id" element={<PropertyTenantDetailPage />} />
+          <Route path="property/leases" element={<PropertyLeasesPage />} />
+          <Route path="property/maintenance" element={<PropertyMaintenancePage />} />
+          <Route path="property/financials" element={<PropertyFinancialsPage />} />
 
           {/* FreightOS (formerly SafOS) - Freight & Logistics */}
           <Route path="freight" element={<FreightOSPage />} />
@@ -269,7 +269,8 @@ function App() {
           <Route path="ledger/reports" element={<LedgerReportsPage />} />
 
           {/* Redirects from old routes */}
-          <Route path="haq/*" element={<Navigate to="/abode" replace />} />
+          <Route path="abode/*" element={<Navigate to="/property" replace />} />
+          <Route path="haq/*" element={<Navigate to="/property" replace />} />
           <Route path="saf/*" element={<Navigate to="/freight" replace />} />
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
           <Route path="discovery" element={<Navigate to="/booking" replace />} />
