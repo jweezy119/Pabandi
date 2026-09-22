@@ -132,7 +132,7 @@ export const BusinessMudarabahPage: React.FC = () => {
   const distPreviewCalc = distPreview();
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10" style={{ background: 'var(--cream)", fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 md:pb-10" style={{ background: 'var(--cream)', fontFamily: tokens.font.body }}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[var(--warm-ink)]">Business Mudarabah Dashboard</h1>

@@ -222,7 +222,7 @@ export default function BusinessProfilePage() {
     const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
     return (
-      <div className="flex items-center justify-center p-6 font-body min-h-screen" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+      <div className="flex items-center justify-center p-6 font-body min-h-screen" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="text-center max-w-sm bg-[var(--warm-sand)]-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
             <ShieldCheckIcon className="h-10 w-10 text-primary" />
@@ -394,7 +394,7 @@ export default function BusinessProfilePage() {
   };
 
   return (
-    <div className="font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <LocalBusinessJsonLd business={business || {}} />
 
       {/* Cover Hero Banner */}

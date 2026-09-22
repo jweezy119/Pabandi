@@ -147,12 +147,12 @@ export default function BackgroundCheckPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10 space-y-6">
         <div>
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
           <h1 className="text-3xl md:text-4xl font-bold text-[var(--warm-ink)] font-headline">Background Check</h1>
-          <p style={{ color: 'var(--soft-stone)" }} className="mt-2 max-w-2xl text-sm">
+          <p style={{ color: 'var(--soft-stone)' }} className="mt-2 max-w-2xl text-sm">
             CourtListener court-record screening, comprehensive Pabandi trust scoring, batch tenant screening, and check history. Some checks may include a $PAB fee.
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function BackgroundCheckPage() {
                 </div>
               )}
               {courtError && <div className="text-[var(--terracotta)] text-sm mt-3">{courtError}</div>}
-              <button disabled={courtLoading || !name.trim()} onClick={runCourtCheck} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
+              <button disabled={courtLoading || !name.trim()} onClick={runCourtCheck} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)', color: '#0a0a0a' }}>
                 {courtLoading ? '🔍 Searching Court Records...' : 'Run Background Check'}
               </button>
             </div>
@@ -246,7 +246,7 @@ export default function BackgroundCheckPage() {
                     <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-3">Risk Factors</h3>
                     <div className="space-y-2">
                       {courtResult.riskFactors.map((f: string, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: 'var(--soft-stone)" }}>
+                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: 'var(--soft-stone)' }}>
                           <span className="text-[var(--terracotta)]">•</span> {f}
                         </div>
                       ))}
@@ -264,7 +264,7 @@ export default function BackgroundCheckPage() {
                             <div className="font-semibold text-[var(--warm-ink)]">{c.caseName}</div>
                             <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.courtType === 'CRIMINAL' ? 'bg-[rgba(var(--terracotta),0.15)] text-[var(--terracotta)]' : c.courtType === 'CIVIL' ? 'bg-[rgba(var(--muted-ochre),0.15)] text-[var(--muted-ochre)]' : 'bg-slate-500/20 text-[var(--soft-stone)]'}`}>{c.courtType || 'OTHER'}</span>
                           </div>
-                          <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>
+                          <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>
                             {c.docketNumber} · {c.court} · Filed {c.dateFiled}
                             {c.dateTerminated && <span> · Terminated {c.dateTerminated}</span>}
                             {c.chapter && <span> · Chapter {c.chapter}</span>}
@@ -301,7 +301,7 @@ export default function BackgroundCheckPage() {
           <div className="space-y-4">
             <div className="rounded-3xl p-5 md:p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
               <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-3">Pabandi Trust Screening</h3>
-              <p className="text-xs mb-4" style={{ color: 'var(--soft-stone)" }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--soft-stone)' }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
@@ -338,7 +338,7 @@ export default function BackgroundCheckPage() {
                 Consent to screening for trust scoring
               </label>
               {compError && <div className="text-[var(--terracotta)] text-sm mt-3">{compError}</div>}
-              <button disabled={compLoading || !cForm.subjectName.trim() || !cForm.consent} onClick={runComprehensive} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
+              <button disabled={compLoading || !cForm.subjectName.trim() || !cForm.consent} onClick={runComprehensive} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)', color: '#0a0a0a' }}>
                 {compLoading ? '🛡️ Running Trust Check...' : 'Run Trust Check'}
               </button>
             </div>
@@ -350,7 +350,7 @@ export default function BackgroundCheckPage() {
                     <div>
                       <p className="text-xs uppercase tracking-wide opacity-60">Trust Score</p>
                       <p className="text-4xl font-bold" style={{ color: BAND_COLOR[compResult.riskBand || ''] || '#94a3b8' }}>{compResult.riskScore ?? '—'}</p>
-                      <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>{compResult.recommendation} · {compResult.riskBand}</p>
+                      <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{compResult.recommendation} · {compResult.riskBand}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs uppercase tracking-wide opacity-60">Status</p>
@@ -375,7 +375,7 @@ export default function BackgroundCheckPage() {
         {tab === 'pakistan' && (
           <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
             <h3 className="font-bold text-lg text-[var(--warm-ink)]">🇵🇰 Pakistan Trust Screening</h3>
-            <p className="text-xs" style={{ color: 'var(--soft-stone)" }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
+            <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-wide opacity-60">Party Name</label>
@@ -396,7 +396,7 @@ export default function BackgroundCheckPage() {
               } catch (e: any) {
                 alert(e.response?.data?.error || e.message || 'Pakistan screen failed');
               }
-            }} className="w-full py-3 rounded-xl font-bold border-none hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>Run Pakistan Screen</button>
+            }} className="w-full py-3 rounded-xl font-bold border-none hover:opacity-90" style={{ background: 'var(--clay)', color: '#0a0a0a' }}>Run Pakistan Screen</button>
           </div>
         )}
 
@@ -406,17 +406,17 @@ export default function BackgroundCheckPage() {
               <h3 className="font-bold text-lg text-[var(--warm-ink)]">Check History</h3>
               <button onClick={loadHistory} disabled={historyLoading} className="px-3 py-2 rounded-lg text-sm font-semibold border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] disabled:opacity-50">Refresh</button>
             </div>
-            {history.length === 0 && !historyLoading && <p style={{ color: 'var(--soft-stone)" }} className="text-sm">No checks yet.</p>}
+            {history.length === 0 && !historyLoading && <p style={{ color: 'var(--soft-stone)' }} className="text-sm">No checks yet.</p>}
             <div className="space-y-2">
               {history.map((h) => (
                 <div key={h.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
                     <div className="font-semibold text-[var(--warm-ink)]">{h.subjectName || h.id}</div>
-                    <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
+                    <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold" style={{ color: BAND_COLOR[h.riskBand || ''] || '#94a3b8' }}>{h.riskBand || '—'}</div>
-                    <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{h.riskScore ?? '—'}</div>
+                    <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{h.riskScore ?? '—'}</div>
                   </div>
                 </div>
               ))}
@@ -427,10 +427,10 @@ export default function BackgroundCheckPage() {
         {tab === 'batch' && (
           <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
             <h3 className="font-bold text-lg text-[var(--warm-ink)]">Batch Tenant Screening</h3>
-            <p className="text-xs" style={{ color: 'var(--soft-stone)" }}>One subject per line: Name, Type, Email</p>
+            <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>One subject per line: Name, Type, Email</p>
             <textarea value={batchText} onChange={(e) => setBatchText(e.target.value)} rows={8} placeholder={'John Doe,GUEST,john@example.com\nJane Smith,FREELANCER,jane@example.com'} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" />
             {batchError && <div className="text-[var(--terracotta)] text-sm">{batchError}</div>}
-            <button disabled={batchLoading} onClick={runBatch} className="w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
+            <button disabled={batchLoading} onClick={runBatch} className="w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)', color: '#0a0a0a' }}>
               {batchLoading ? 'Running Batch...' : 'Run Batch Screening'}
             </button>
             {batchResult && (
@@ -471,7 +471,7 @@ function ModuleGrid({ result, moduleColor }: { result: CheckResult; moduleColor:
             <div key={m.source} className="p-3 rounded-xl bg-[var(--warm-sand)]">
               <div className="text-xs uppercase tracking-wide opacity-60">{m.label}</div>
               <div className="text-xl font-bold" style={{ color: moduleColor(score) }}>{score ?? '—'}</div>
-              <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{signals[0] || '—'}</div>
+              <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{signals[0] || '—'}</div>
             </div>
           );
         })}

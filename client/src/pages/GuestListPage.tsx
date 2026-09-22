@@ -120,7 +120,7 @@ export const GuestListPage: React.FC = () => {
                   <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/30">
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                       <div className="w-32 h-32 bg-white rounded-xl flex items-center justify-center p-2">
-                        <span className="material-symbols-outlined text-6xl text-slate-800">qr_code_2</span>
+                        <span className="material-symbols-outlined text-6xl gov--warm-ink]">qr_code_2</span>
                       </div>
                       <div className="text-center sm:text-left">
                         <p className="text-sm font-medium text-[var(--warm-ink)] mb-1">Check-in QR Code</p>
@@ -140,7 +140,7 @@ export const GuestListPage: React.FC = () => {
           </div>
         ) : (
           <Surface className="p-12 text-center">
-            <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">list_alt</span>
+            <span className="material-symbols-outlined text-6xl gov--soft-stone] mb-4 block">list_alt</span>
             <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-2">No guest list entries</h3>
             <p className="mb-6" style={{ color: tokens.color.textDim }}>Join a guest list to skip the line at your favorite venues</p>
             <Button onClick={() => navigate('/booking/venues/search')}>

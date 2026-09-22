@@ -43,7 +43,7 @@ export const AIRentOptimizerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">📈 AI Rent Optimizer</Badge>
@@ -72,11 +72,11 @@ export const AIRentOptimizerPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-[var(--warm-ink)]">Recommended rent</h3>
-                  <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
+                  <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-[var(--warm-ink)]">${result.recommendedRent.toLocaleString()}</div>
-                  <div className="text-sm" style={{ color: result.changePct >= 0 ? 'var(--sage)" : 'var(--terracotta)" }}}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
+                  <div className="text-sm" style={{ color: result.changePct >= 0 ? 'var(--sage)' : 'var(--terracotta)' }}}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
                 </div>
               </div>
               <p className="text-sm mt-3 text-[var(--soft-stone)]">{result.explanation}</p>

@@ -36,7 +36,7 @@ export const EnhancedDashboardPage: React.FC = () => {
     FREELANCE: 0,
     GENERAL: 0,
   });
-  const [crmPipeline, setCrmPipeline] = useState<any[]>([]);
+  const [crmContact, setCrmContact] = useState<any[]>([]);
   const [crmDeals, setCrmDeals] = useState<any[]>([]);
   const [crmTasks, setCrmTasks] = useState<any[]>([]);
 
@@ -58,11 +58,11 @@ export const EnhancedDashboardPage: React.FC = () => {
       setBusinessCounts(counts);
 
       const [pipelineRes, dealsRes, tasksRes] = await Promise.all([
-        crmService.pipeline().catch(() => ({ data: { data: { pipeline: [] } } })),
+        crmService.contact().catch(() => ({ data: { data: { pipeline: [] } } })),
         crmService.deals().catch(() => ({ data: { data: [] } })),
         crmService.tasks().catch(() => ({ data: { data: [] } })),
       ]);
-      setCrmPipeline(pipelineRes.data?.data?.pipeline || []);
+      setCrmContact(pipelineRes.data?.data?.pipeline || []);
       setCrmDeals(dealsRes.data?.data || []);
       setCrmTasks(tasksRes.data?.data || []);
 
@@ -301,7 +301,7 @@ export const EnhancedDashboardPage: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span style={{ color: tokens.color.textDim }}>Pipeline</span>
-                    <span className="text-[var(--terracotta)] font-bold">${crmPipeline.reduce((sum, p) => sum + p.value, 0).toLocaleString()}</span>
+                    <span className="text-[var(--terracotta)] font-bold">${crmContact.reduce((sum, p) => sum + p.value, 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span style={{ color: tokens.color.textDim }}>Deals</span>

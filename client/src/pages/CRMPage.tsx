@@ -35,18 +35,18 @@ export const CRMPage: React.FC = () => {
   const [maintForm, setMaintForm] = useState({ title: '', description: '', priority: 'MEDIUM', tenantEmail: '' });
   const [bizType, setBizType] = useState<BusinessType>('GENERAL');
   const [crmDeals, setCrmDeals] = useState<any[]>([]);
-  const [crmPipeline, setCrmPipeline] = useState<any[]>([]);
+  const [crmContact, setCrmContact] = useState<any[]>([]);
   const [crmTasks, setCrmTasks] = useState<any[]>([]);
 
   const loadCrm = async () => {
     try {
       const [dealsRes, pipelineRes, tasksRes] = await Promise.all([
         crmService.deals().catch(() => ({ data: { data: [] } })),
-        crmService.pipeline().catch(() => ({ data: { data: { pipeline: [] } } })),
+        crmService.contact().catch(() => ({ data: { data: { pipeline: [] } } })),
         crmService.tasks().catch(() => ({ data: { data: [] } })),
       ]);
       setCrmDeals(dealsRes.data?.data || []);
-      setCrmPipeline(pipelineRes.data?.data?.pipeline || []);
+      setCrmContact(pipelineRes.data?.data?.pipeline || []);
       setCrmTasks(tasksRes.data?.data || []);
     } catch (e) {
       console.error('Failed to load CRM data', e);
@@ -174,7 +174,7 @@ export const CRMPage: React.FC = () => {
                   <div className="text-2xl mb-2">📈</div>
                   <div className="text-lg font-bold text-[var(--warm-ink)]">Sales CRM</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Pipeline · Deals · Tasks · Campaigns</div>
-                  <div className="text-xs mt-2 text-[var(--terracotta)]">{crmDeals.length} deals · ${crmPipeline.reduce((sum: number, p: any) => sum + p.value, 0).toLocaleString()} pipeline</div>
+                  <div className="text-xs mt-2 text-[var(--terracotta)]">{crmDeals.length} deals · ${crmContact.reduce((sum: number, p: any) => sum + p.value, 0).toLocaleString()} pipeline</div>
                 </Surface>
               </Link>
               <Link to="/dashboard">
@@ -531,7 +531,7 @@ export const CRMPage: React.FC = () => {
               <Link to="/sales-crm" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">Open full CRM →</Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {crmPipeline.map((p: any) => (
+              {crmContact.map((p: any) => (
                 <Surface key={p.stage} className="text-center p-4">
                   <div className="text-2xl font-bold text-[var(--warm-ink)]">{p.count}</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>{p.stage}</div>

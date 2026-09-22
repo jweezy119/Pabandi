@@ -35,7 +35,7 @@ export const AITenantRiskPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🤖 AI Tenant Risk Predictor</Badge>
@@ -62,7 +62,7 @@ export const AITenantRiskPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-[var(--warm-ink)]">{form.tenantName}</h3>
-                <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>AI predicted risk based on screening signals</p>
+                <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>AI predicted risk based on screening signals</p>
               </div>
               <Badge tone={result.riskBand === 'LOW' ? 'success' : result.riskBand === 'MEDIUM' ? 'warning' : 'danger'}>{result.riskBand}</Badge>
             </div>

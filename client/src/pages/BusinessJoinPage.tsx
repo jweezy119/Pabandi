@@ -123,7 +123,7 @@ export default function BusinessJoinPage() {
     return (
       <div 
         className="flex items-center justify-center p-6 min-h-screen"
-        style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}
+        style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}
       >
         <div className="text-center max-w-md">
           <div className="text-5xl sm:text-6xl mb-6">🎉</div>
@@ -153,7 +153,7 @@ export default function BusinessJoinPage() {
   }
 
   return (
-    <div className="font-body min-h-screen" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="font-body min-h-screen" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] backdrop-blur-xl">

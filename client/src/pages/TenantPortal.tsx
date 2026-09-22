@@ -129,9 +129,9 @@ export default function TenantPortal() {
 
       {/* Staking Card */}
       <div className={`bg-gradient-to-br ${TIER_COLORS[data.staking.tier] || 'from-slate-700 to-slate-800'} rounded-xl p-6`}>
-        <h3 className="text-sm font-medium text-white/80 mb-1">Trust Tier</h3>
+        <h3 className="text-sm font-medium gov--soft-stone] mb-1">Trust Tier</h3>
         <p className="text-2xl font-bold text-[var(--warm-ink)]">{TIER_LABELS[data.staking.tier] || 'Bronze'}</p>
-        <div className="flex gap-4 mt-2 text-xs text-white/70">
+        <div className="flex gap-4 mt-2 text-xs gov--soft-stone]">
           <span>Trust Boost: +{data.staking.trustBoost}</span>
           <span>APY: {data.staking.apy}%</span>
           {data.staking.lockedUntil && <span>Locked until: {new Date(data.staking.lockedUntil).toLocaleDateString()}</span>}

@@ -227,7 +227,7 @@ export default function FiatPaymentPage() {
       case 'CONFIRMED': return 'text-green-700 bg-green-50 border-green-200';
       case 'REJECTED': return 'text-red-700 bg-red-50 border-red-200';
       case 'CANCELLED': return 'text-gray-700 bg-gray-50 border-gray-200';
-      default: return 'text-slate-700 bg-slate-50 border-slate-200';
+      default: return 'gov--warm-ink] gov--warm-sand] border-[var(--soft-stone)]';
     }
   };
 
@@ -247,13 +247,13 @@ export default function FiatPaymentPage() {
   if (step === 'business') {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Fiat Payment Confirmations</h1>
-        <p className="text-slate-600 mb-6">Review and confirm incoming fiat payments from customers.</p>
+        <h1 className="text-3xl font-bold gov--warm-ink] mb-2">Fiat Payment Confirmations</h1>
+        <p className="gov--soft-stone] mb-6">Review and confirm incoming fiat payments from customers.</p>
 
         {businessPending.length === 0 ? (
-          <div className="text-center py-12 bg-slate-50 rounded-lg">
+          <div className="text-center py-12 gov--warm-sand] rounded-lg">
             <span className="text-4xl">📭</span>
-            <p className="mt-4 text-slate-600">No pending fiat payments to confirm</p>
+            <p className="mt-4 gov--soft-stone]">No pending fiat payments to confirm</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -316,7 +316,7 @@ export default function FiatPaymentPage() {
 
         <button
           onClick={() => setStep('select')}
-          className="mt-6 px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300"
+          className="mt-6 px-4 py-2 gov--warm-sand] gov--warm-ink] rounded hover:bg-slate-300"
         >
           ← Back
         </button>
@@ -332,8 +332,8 @@ export default function FiatPaymentPage() {
 
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Fiat Payment</h1>
-        <p className="text-slate-600 mb-6">Your payment request has been created.</p>
+        <h1 className="text-3xl font-bold gov--warm-ink] mb-2">Fiat Payment</h1>
+        <p className="gov--soft-stone] mb-6">Your payment request has been created.</p>
 
         {/* Status Banner */}
         <div className={`border rounded-lg p-4 mb-6 ${getStatusColor(status)}`}>
@@ -353,12 +353,12 @@ export default function FiatPaymentPage() {
         </div>
 
         {/* Method Card */}
-        <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
+        <div className="bg-white border border-[var(--soft-stone)] rounded-lg p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-4xl">{method?.icon}</span>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{method?.label}</h2>
-              <p className="text-slate-600">{method?.description}</p>
+              <h2 className="text-xl font-bold gov--warm-ink]">{method?.label}</h2>
+              <p className="gov--soft-stone]">{method?.description}</p>
             </div>
           </div>
 
@@ -373,7 +373,7 @@ export default function FiatPaymentPage() {
                 <p className="font-mono text-sm">{paymentRequest.reference}</p>
                 <button
                   onClick={() => copyToClipboard(paymentRequest.reference || '', 'ref')}
-                  className="text-xs px-2 py-1 bg-slate-100 rounded hover:bg-slate-200"
+                  className="text-xs px-2 py-1 gov--warm-sand] rounded hover:gov--warm-sand]"
                 >
                   {copiedField === 'ref' ? '✓' : 'Copy'}
                 </button>
@@ -382,7 +382,7 @@ export default function FiatPaymentPage() {
           </div>
 
           {paymentRequest.creationFee !== undefined && (
-            <div className="text-sm text-[var(--soft-stone)] border-t border-slate-100 pt-3 mb-3">
+            <div className="text-sm text-[var(--soft-stone)] border-t border-[var(--soft-stone)] pt-3 mb-3">
               <div className="flex justify-between">
                 <span>Creation fee (1%)</span>
                 <span>${paymentRequest.creationFee.toFixed(2)}</span>
@@ -396,8 +396,8 @@ export default function FiatPaymentPage() {
 
           {/* QR Code for mobile payments */}
           {paymentRequest.qrData && (
-            <div className="mt-4 p-4 bg-slate-50 rounded-lg text-center">
-              <p className="text-sm font-medium text-slate-700 mb-3">Scan to Pay</p>
+            <div className="mt-4 p-4 gov--warm-sand] rounded-lg text-center">
+              <p className="text-sm font-medium gov--warm-ink] mb-3">Scan to Pay</p>
               <QRCodeDisplay value={paymentRequest.qrData} size={180} />
               <p className="text-xs text-[var(--soft-stone)] mt-2 break-all font-mono">{paymentRequest.qrData}</p>
             </div>
@@ -419,8 +419,8 @@ export default function FiatPaymentPage() {
           {paymentRequest.instructions && (
             <div className="mt-4">
               <details>
-                <summary className="text-sm font-medium text-slate-700 cursor-pointer">View full instructions</summary>
-                <pre className="mt-2 text-xs text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded">
+                <summary className="text-sm font-medium gov--warm-ink] cursor-pointer">View full instructions</summary>
+                <pre className="mt-2 text-xs gov--soft-stone] whitespace-pre-wrap gov--warm-sand] p-3 rounded">
                   {paymentRequest.instructions}
                 </pre>
               </details>
@@ -449,13 +449,13 @@ export default function FiatPaymentPage() {
         <div className="mt-6 flex gap-3">
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300"
+            className="px-4 py-2 gov--warm-sand] gov--warm-ink] rounded hover:bg-slate-300"
           >
             Back Home
           </button>
           <button
             onClick={loadBusinessView}
-            className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300"
+            className="px-4 py-2 gov--warm-sand] gov--warm-ink] rounded hover:bg-slate-300"
           >
             Business View
           </button>
@@ -469,12 +469,12 @@ export default function FiatPaymentPage() {
   if (step === 'create') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Create Fiat Payment</h1>
-        <p className="text-slate-600 mb-6">Choose a payment method and enter amount.</p>
+        <h1 className="text-3xl font-bold gov--warm-ink] mb-2">Create Fiat Payment</h1>
+        <p className="gov--soft-stone] mb-6">Choose a payment method and enter amount.</p>
 
-        <div className="bg-white border border-slate-200 rounded-lg p-6">
+        <div className="bg-white border border-[var(--soft-stone)] rounded-lg p-6">
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Amount (USD)</label>
+            <label className="block text-sm font-medium gov--warm-ink] mb-2">Amount (USD)</label>
             <div className="flex items-center gap-2">
               <span className="text-2xl text-[var(--soft-stone)]">$</span>
               <input
@@ -490,7 +490,7 @@ export default function FiatPaymentPage() {
           </div>
 
           {amount && parseFloat(amount) > 0 && (
-            <div className="mb-4 p-3 bg-slate-50 rounded text-sm text-slate-600">
+            <div className="mb-4 p-3 gov--warm-sand] rounded text-sm gov--soft-stone]">
               <div className="flex justify-between">
                 <span>Creation fee (1%)</span>
                 <span>${(parseFloat(amount) * 0.01).toFixed(2)}</span>
@@ -519,7 +519,7 @@ export default function FiatPaymentPage() {
 
         <button
           onClick={() => setStep('select')}
-          className="mt-6 px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300"
+          className="mt-6 px-4 py-2 gov--warm-sand] gov--warm-ink] rounded hover:bg-slate-300"
         >
           ← Back
         </button>
@@ -531,8 +531,8 @@ export default function FiatPaymentPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">Pay with Fiat</h1>
-      <p className="text-slate-600 mb-6">
+      <h1 className="text-3xl font-bold gov--warm-ink] mb-2">Pay with Fiat</h1>
+      <p className="gov--soft-stone] mb-6">
         Choose your preferred payment method. No business verification required.
       </p>
 
@@ -550,13 +550,13 @@ export default function FiatPaymentPage() {
               setStep('create');
             }}
             className={`p-4 border rounded-lg text-left transition hover:border-amber-400 hover:shadow-md ${
-              selectedMethod === method.id ? 'border-amber-500 bg-amber-50' : 'border-slate-200'
+              selectedMethod === method.id ? 'border-amber-500 bg-amber-50' : 'border-[var(--soft-stone)]'
             }`}
           >
             <div className="flex items-center gap-3">
               <span className="text-3xl">{method.icon}</span>
               <div>
-                <p className="font-medium text-slate-900">{method.label}</p>
+                <p className="font-medium gov--warm-ink]">{method.label}</p>
                 <p className="text-sm text-[var(--soft-stone)]">{method.description}</p>
                 {method.requiresBusinessConfirmation && (
                   <p className="text-xs text-amber-600 mt-1">⏳ Requires business confirmation</p>
@@ -570,7 +570,7 @@ export default function FiatPaymentPage() {
       <div className="flex gap-4">
         <button
           onClick={loadBusinessView}
-          className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300"
+          className="px-4 py-2 gov--warm-sand] gov--warm-ink] rounded hover:bg-slate-300"
         >
           🔒 Business: View Pending
         </button>

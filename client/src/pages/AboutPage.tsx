@@ -9,7 +9,7 @@ export default function AboutPage() {
   const socialsRef = useScrollReveal() as any;
 
   return (
-    <div className="w-full min-h-screen font-body pb-16 sm:pb-20" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="w-full min-h-screen font-body pb-16 sm:pb-20" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       
       {/* ── HERO SECTION ──────────────────────────────────────────────────────── */}
       <section 

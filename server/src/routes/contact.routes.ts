@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/leads', async (req, res) => {
   try {
-    const leads = await prisma.pipelineLead.findMany({
+    const leads = await prisma.contactLead.findMany({
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: leads });
@@ -19,7 +19,7 @@ router.get('/leads', async (req, res) => {
 router.post('/leads', async (req, res) => {
   try {
     const { name, email, phone, source, value, businessId, ownerId, passportId } = req.body;
-    const lead = await prisma.pipelineLead.create({
+    const lead = await prisma.contactLead.create({
       data: {
         name,
         email,
@@ -40,7 +40,7 @@ router.post('/leads', async (req, res) => {
 
 router.get('/leads/:id', async (req, res) => {
   try {
-    const lead = await prisma.pipelineLead.findUnique({
+    const lead = await prisma.contactLead.findUnique({
       where: { id: req.params.id },
       include: { deals: true, activities: true },
     });
@@ -54,7 +54,7 @@ router.get('/leads/:id', async (req, res) => {
 router.put('/leads/:id/stage', async (req, res) => {
   try {
     const { stage } = req.body;
-    const lead = await prisma.pipelineLead.update({
+    const lead = await prisma.contactLead.update({
       where: { id: req.params.id },
       data: { stage },
     });
@@ -68,7 +68,7 @@ router.put('/leads/:id/stage', async (req, res) => {
 
 router.get('/deals', async (req, res) => {
   try {
-    const deals = await prisma.pipelineDeal.findMany({
+    const deals = await prisma.contactDeal.findMany({
       orderBy: { createdAt: 'desc' },
     });
     res.json({ success: true, data: deals });
@@ -80,7 +80,7 @@ router.get('/deals', async (req, res) => {
 router.post('/deals', async (req, res) => {
   try {
     const { leadId, title, amount, stage, closeDate, escrowId } = req.body;
-    const deal = await prisma.pipelineDeal.create({
+    const deal = await prisma.contactDeal.create({
       data: {
         leadId,
         title,
@@ -101,7 +101,7 @@ router.post('/deals', async (req, res) => {
 router.post('/activities', async (req, res) => {
   try {
     const { leadId, type, content, dueAt } = req.body;
-    const activity = await prisma.pipelineActivity.create({
+    const activity = await prisma.contactActivity.create({
       data: {
         leadId,
         type,
@@ -119,9 +119,9 @@ router.post('/activities', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const leads = await prisma.pipelineLead.count();
-    const deals = await prisma.pipelineDeal.count();
-    const activities = await prisma.pipelineActivity.count();
+    const leads = await prisma.contactLead.count();
+    const deals = await prisma.contactDeal.count();
+    const activities = await prisma.contactActivity.count();
     res.json({ success: true, data: { leads, deals, activities } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

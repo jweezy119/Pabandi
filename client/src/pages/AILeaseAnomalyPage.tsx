@@ -31,7 +31,7 @@ export const AILeaseAnomalyPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🔍 AI Lease Analysis</Badge>

@@ -32,14 +32,14 @@ export default function CheckoutCancelPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <p className="text-[var(--warm-ink)]/70">Checking checkout status...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[#121212] p-8 text-center">
         <div className="mx-auto w-14 h-14 rounded-full bg-[rgba(var(--terracotta),0.1)] flex items-center justify-center mb-4">
           <XCircleIcon className="h-7 w-7 text-[var(--terracotta)]" />

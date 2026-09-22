@@ -36,7 +36,7 @@ export default function BusinessModelPage() {
   const premiumPrice = billingInterval === 'yearly' ? Math.round(premiumBasePrice * 0.8) : premiumBasePrice;
 
   return (
-    <div style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }} className="min-h-screen pb-20 sm:pb-24 md:pb-16 font-body">
+    <div style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }} className="min-h-screen pb-20 sm:pb-24 md:pb-16 font-body">
       {/* Hero Banner */}
       <section 
         className="relative overflow-hidden py-20 px-4 text-center border-b border-[rgba(191,179,163,0.3)]"

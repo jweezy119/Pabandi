@@ -249,7 +249,7 @@ export const VenueSearchPage: React.FC = () => {
                           {venue.featured && <Badge tone="warning" className="absolute top-3 left-3">Featured</Badge>}
                           <Badge tone="info" className="absolute top-3 right-3">{venue.type}</Badge>
                           <div className="absolute bottom-3 left-3">
-                            <p className="text-white/80 text-xs flex items-center gap-1">
+                            <p className="gov--soft-stone] text-xs flex items-center gap-1">
                               <span className="material-symbols-outlined text-xs">location_on</span>
                               {venue.city}
                             </p>

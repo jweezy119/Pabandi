@@ -88,7 +88,7 @@ export const AIAssistantPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'radial-gradient(circle at top left, 'var(--cream)", #020617)" }}>
+    <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'radial-gradient(circle at top left, 'var(--cream)', #020617)" }}>
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-[var(--warm-ink)]">AI Assistant</h1>

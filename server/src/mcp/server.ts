@@ -133,7 +133,7 @@ server.tool(
   }
 );
 
-// ── PIPELINE TOOLS ───────────────────────────────────
+// ── CONTACT TOOLS ───────────────────────────────────
 
 server.tool(
   'create_lead',
@@ -147,7 +147,7 @@ server.tool(
   },
   async (params) => {
     try {
-      const lead = await prisma.pipelineLead.create({
+      const lead = await prisma.contactLead.create({
         data: {
           name: params.name,
           email: params.email,
@@ -173,14 +173,14 @@ server.tool(
 );
 
 server.tool(
-  'get_pipeline_stats',
-  'Get pipeline statistics and conversion rates',
+  'get_contact_stats',
+  'Get contact statistics and conversion rates',
   {
     businessId: z.string().describe('Business ID'),
   },
   async (params) => {
     try {
-      const stats = await prisma.pipelineLead.groupBy({
+      const stats = await prisma.contactLead.groupBy({
         by: ['stage'],
         where: { businessId: params.businessId },
         _count: { stage: true },

@@ -89,7 +89,7 @@ export const AirdropPage: React.FC = () => {
   const pctOfMax = Math.round((earnedPab / MAX_PAB) * 100);
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       {/* Orbs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-[var(--sage)] rounded-full blur-[200px] opacity-[0.07] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-[var(--dusty-rose)] rounded-full blur-[150px] opacity-[0.05] pointer-events-none" />

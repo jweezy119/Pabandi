@@ -35,7 +35,7 @@ export const AiPropertyAnalyzerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🤖 AI Property Analyzer</Badge>
@@ -77,19 +77,19 @@ export const AiPropertyAnalyzerPage: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
                   <div className="text-xl font-bold text-[var(--sage)]">${result.estimatedValue?.toLocaleString()}</div>
-                  <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Est. Value</div>
+                  <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Est. Value</div>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
                   <div className="text-xl font-bold text-[var(--clay)]">${result.rentalEstimate}</div>
-                  <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Monthly Rent</div>
+                  <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Monthly Rent</div>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
                   <div className="text-xl font-bold text-[var(--muted-ochre)]">{result.capRate}%</div>
-                  <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Cap Rate</div>
+                  <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Cap Rate</div>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
                   <div className="text-xl font-bold text-[var(--dusty-rose)]">{result.roi5Year}%</div>
-                  <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>5-Year ROI</div>
+                  <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>5-Year ROI</div>
                 </div>
               </div>
             </Surface>

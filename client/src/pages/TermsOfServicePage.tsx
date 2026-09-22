@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
         </div>
         <div>
           <h2 className="font-headline mb-2 text-2xl font-bold text-[var(--warm-ink)]">2. Communications & Messaging</h2>
-          <p className="font-body mb-4 text-white/70">
+          <p className="font-body mb-4" style={{ color: 'var(--soft-stone)' }}>
             To provide reliable booking services, Pabandi utilizes WhatsApp and SMS for transactional notifications (e.g., booking confirmations and reminders).
           </p>
           <div className="rounded-xl border-l-4 border-primary bg-surface p-4">

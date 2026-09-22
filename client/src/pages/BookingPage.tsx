@@ -249,7 +249,7 @@ export default function BookingPage() {
   // Success state
   if (bookingResult) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--cream)" }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--cream)' }}>
         <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, "rgba(99,102,241,0.1)" 0%, transparent 60%)" }} />
         <Surface className="p-8 max-w-md w-full text-center relative z-10">
           <div className="w-16 h-16 rounded-full bg-[rgba(var(--sage),0.15)] flex items-center justify-center mx-auto mb-4">
@@ -289,7 +289,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen text-[var(--warm-ink)]" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen text-[var(--warm-ink)]" style={{ background: 'var(--cream)' }}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, "rgba(99,102,241,0.06)" 0%, transparent 60%)" }} />
 
       <main className="relative z-10 mx-auto max-w-7xl mt-4 px-4 md:mt-8 sm:px-6 lg:px-8 pb-32 md:pb-8">

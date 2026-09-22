@@ -3,7 +3,7 @@ import { eventBus } from './event-bus.service';
 
 export class PipelineTrustService {
   async enrichLeadWithTrust(leadId: string) {
-    const lead = await prisma.pipelineLead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.contactLead.findUnique({ where: { id: leadId } });
     if (!lead) return null;
 
     const wallet = await prisma.walletPassport.findUnique({
@@ -19,7 +19,7 @@ export class PipelineTrustService {
   }
 
   async getLeadRiskScore(leadId: string) {
-    const lead = await prisma.pipelineLead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.contactLead.findUnique({ where: { id: leadId } });
     if (!lead) return 'high' as const;
 
     const wallet = await prisma.walletPassport.findUnique({
@@ -33,7 +33,7 @@ export class PipelineTrustService {
   }
 
   async suggestTerms(leadId: string) {
-    const lead = await prisma.pipelineLead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.contactLead.findUnique({ where: { id: leadId } });
     if (!lead) return { terms: 'prepayment', deposit: 100 };
 
     const wallet = await prisma.walletPassport.findUnique({
@@ -47,7 +47,7 @@ export class PipelineTrustService {
   }
 
   async flagHighRiskLeads(businessId: string) {
-    const leads = await prisma.pipelineLead.findMany({ where: { businessId } });
+    const leads = await prisma.contactLead.findMany({ where: { businessId } });
     const highRisk = [];
 
     for (const lead of leads) {
@@ -59,7 +59,7 @@ export class PipelineTrustService {
   }
 
   async updateScoreFromDeal(dealId: string) {
-    const deal = await prisma.pipelineDeal.findUnique({ where: { id: dealId } });
+    const deal = await prisma.contactDeal.findUnique({ where: { id: dealId } });
     if (!deal) return null;
 
     eventBus.emitEvent('pipeline.deal.closed', { dealId, leadId: deal.leadId });

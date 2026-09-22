@@ -7,7 +7,7 @@ distribution for service businesses. Five modules, one trust engine:
 - BookingOS: Book services with trust protection
 - FreightOS: Move goods with escrow-protected logistics
 - AbodeOS: Manage property with tenant trust scoring
-- PipelineOS: CRM and sales pipeline management
+- ContactOS: CRM and sales pipeline management
 - LedgerOS: Finance, invoicing, and expense tracking
 
 ## API
@@ -25,7 +25,7 @@ Endpoint: GET /api/v1/passport/{id}/trust-score
 
 ## Agent Discovery
 - agents.json: https://pabandi.com/.well-known/agents.json
-- Capabilities: booking.create, freight.quote, property.list, pipeline.ledger, escrow.initiate
+- Capabilities: booking.create, freight.quote, property.list, contact.ledger, escrow.initiate
 
 ## MCP Tools
 - pabandi_verify_passport — verify PTP attestation

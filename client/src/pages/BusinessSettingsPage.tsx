@@ -792,7 +792,7 @@ export default function BusinessSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-24 font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)", fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)', fontFamily: tokens.font.body }}>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="font-headline text-3xl font-black text-[var(--warm-ink)]">Settings</h1>

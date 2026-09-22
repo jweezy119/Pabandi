@@ -41,7 +41,7 @@ export const BrowseHotelsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20" />
@@ -128,7 +128,7 @@ export const BrowseHotelsPage: React.FC = () => {
               >
                 <div className="text-2xl mb-1">{c.emoji}</div>
                 <div className="font-semibold text-[var(--warm-ink)]">{c.name}</div>
-                <div className="text-xs mt-1" style={{ color: 'var(--soft-stone)" }}>{c.desc}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--soft-stone)' }}>{c.desc}</div>
               </button>
             ))}
           </div>
@@ -141,24 +141,24 @@ export const BrowseHotelsPage: React.FC = () => {
             <Surface className="text-center">
               <div className="text-3xl mb-2">🔍</div>
               <h4 className="font-bold text-[var(--warm-ink)]">Search</h4>
-              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Enter your destination and dates</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Enter your destination and dates</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">🏨</div>
               <h4 className="font-bold text-[var(--warm-ink)]">Compare</h4>
-              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Browse hotels with real prices & reviews</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Browse hotels with real prices & reviews</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">✅</div>
               <h4 className="font-bold text-[var(--warm-ink)]">Book</h4>
-              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Secure your stay on Booking.com</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Secure your stay on Booking.com</p>
             </Surface>
           </div>
         </div>
 
         {/* Trust note */}
         <div className="mt-8 p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-center">
-          <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>
+          <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>
             🔒 You'll be redirected to Booking.com to complete your booking securely.
             Pabandi verifies every booking made through our platform.
           </p>

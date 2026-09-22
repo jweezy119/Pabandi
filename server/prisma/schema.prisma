@@ -9,13 +9,14 @@ datasource db {
 }
 
 
-enum PipelineStage {
+enum ContactStage {
   new
   contacted
   qualified
   proposal
   won
   lost
+  @@map("pipeline_stages")
 }
 
 enum DealStage {
@@ -169,7 +170,6 @@ model User {
   stakingRecords             StakingRecord[]
   bookingPabRecords          BookingRecord[]
   agentRewards               AgentReward[]
-  crmServiceBusinesses       CrmServiceBusiness[]
   @@index([email])
   @@index([phone])
 }
@@ -264,12 +264,6 @@ model Business {
   telegramBot              TelegramBot?
   channelMessages          ChannelMessage[]
   smsLogs                  SMSLog[]
-  crmServiceBusiness       CrmServiceBusiness?
-  cleaningServices         CleaningService[]
-  cleaningAvailability     CleaningAvailability[]
-  cleaningEmployees        CleaningEmployee[]
-  cleaningCustomers        CleaningCustomer[]
-  cleaningExpenses         CleaningExpense[]
 
   @@index([ownerId])
   @@index([city])
@@ -3867,25 +3861,61 @@ model CommunityGrant {
 
 // ── Trust Passport (public, portable provider trust identity) ───────────────
 model TrustPassport {
-  id            String    @id @default(cuid())
-  handle        String    @unique // shareable slug, e.g. "apex-builders"
-  agentId       String? // Web3Agent.id if linked
-  providerRef   String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
-  category      String    @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
-  displayName   String
-  bio           String?
-  walletAddress String?
-  visibility    String    @default("PUBLIC") // PUBLIC | PRIVATE
-  claimsCount   Int       @default(0) // times requested/verified
-  riskScore     Int?
-  riskBand      String?
-  lastCheckedAt DateTime?
-  userId        String?  @unique
-  score         Float?
-  level         String?
-  verified      Boolean?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  handle                String    @unique // shareable slug, e.g. "apex-builders"
+  agentId               String? // Web3Agent.id if linked
+  providerRef           String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category              String    @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName           String
+  bio                   String?
+  walletAddress         String?
+  visibility            String    @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount           Int       @default(0) // times requested/verified
+  riskScore             Int?
+  riskBand              String?
+  lastCheckedAt         DateTime?
+  userId                String?  @unique
+  
+  // Scoped scores — each 0-1000, each earned within its own context
+  showUpScore           Int       @default(500)
+  paymentScore          Int       @default(500)
+  deliveryScore         Int       @default(500)
+  tenancyScore          Int       @default(500)
+  freightScore          Int       @default(500)
+  
+  // Character-level flags — the only things that transfer globally
+  verifiedIdentity      Boolean   @default(false)
+  verifiedAt            DateTime?
+  fraudFlag             Boolean   @default(false)  // court judgment only
+  fraudFlaggedAt        DateTime?
+  escrowTheftFlag       Boolean   @default(false)
+  chargebackFraudCount  Int       @default(0)
+  
+  // Contextual metadata
+  showUpSampleSize      Int       @default(0)  // confidence indicator
+  paymentSampleSize     Int       @default(0)
+  deliverySampleSize    Int       @default(0)
+  tenancySampleSize     Int       @default(0)
+  freightSampleSize     Int       @default(0)
+  
+  level                 String?
+  verified              Boolean?  // Deprecated: use verifiedIdentity instead
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  gigHistory            PassportGigHistory[]
+  endorsements          SkillEndorsement[]
+  vector                PassportVector?
+  
+  @@index([handle])
+  @@index([agentId])
+  @@index([providerRef])
+  @@index([userId])
+}
+  
+  level                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   gigHistory   PassportGigHistory[]
   endorsements SkillEndorsement[]
@@ -6398,12 +6428,12 @@ model WalletPassport {
   verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  pipelineLeads PipelineLead[]
+  contactLeads ContactLead[]
 
   @@map("wallet_passports")
 }
 
-model PipelineLead {
+model ContactLead {
   id            String   @id @default(cuid())
   passportId    String
   passport      WalletPassport @relation(fields: [passportId], references: [id])
@@ -6417,15 +6447,16 @@ model PipelineLead {
   businessId    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  deals         PipelineDeal[]
-  activities    PipelineActivity[]
+  deals         ContactDeal[]
+  activities    ContactActivity[]
   @@index([businessId, stage])
+  @@map("pipeline_leads")
 }
 
-model PipelineDeal {
+model ContactDeal {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   title         String
   amount        Float
   stage         String   @default("open")
@@ -6434,17 +6465,19 @@ model PipelineDeal {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@index([leadId, stage])
+  @@map("pipeline_deals")
 }
 
-model PipelineActivity {
+model ContactActivity {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   type          String
   content       String?
   dueAt         DateTime?
   completedAt   DateTime?
   createdAt     DateTime @default(now())
+  @@map("pipeline_activities")
 }
 
 model LedgerAccount {
@@ -6493,28 +6526,28 @@ model LedgerExpense {
   @@index([businessId, category])
 }
 
+
 // ── Service Business CRM Models ───────────────────────────────────────────────
 // Service businesses (cleaning, plumbing, etc.) with employees, clients, jobs,
 // assignments, payroll, and expenses.
 
 model CrmServiceBusiness {
   id                String             @id @default(cuid())
-  businessId        String?            @unique
-  business          Business?          @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  ownerId           String
-  owner             User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  businessId                String?            @unique
+  business                  Business?          @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  ownerId                   String
+  owner                     User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   serviceType               String   // CLEANING | PLUMBING | ELECTRICIAN | HVAC | etc.
-  teamSize          Int                @default(1)
-  subscriptionTier  String             @default("FREE")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  teamSize                  Int                @default(1)
+  subscriptionTier          String             @default("FREE")
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
   employees  CrmEmployee[]
   clients    CrmClient[]
   jobs       CrmJob[]
   payrolls   CrmPayroll[]
   expenses   CrmExpense[]
-  alerts     CrmAlert[]
 
   @@index([businessId])
   @@index([ownerId])
@@ -6526,15 +6559,14 @@ model CrmEmployee {
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   name              String
-  email             String?
-  phone             String?
+  email             String
+  phone             String
   role              String
   payRate           Float
   payType           String             // HOURLY | SALARY | PER_JOB
   isActive          Boolean            @default(true)
   rating            Float              @default(5.0)
   jobsCompleted     Int                @default(0)
-  lastBookingAt     DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -6550,16 +6582,13 @@ model CrmClient {
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
   name              String
-  email             String?
-  phone             String?
-  address           String?
+  email             String
+  phone             String
+  address           String
   notes             String?
   totalJobs         Int                @default(0)
   totalSpent        Float              @default(0)
   lastJobAt         DateTime?
-  reliabilityScore  Float?
-  stage             String?
-  phoneVerified     Boolean            @default(false)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -6573,18 +6602,17 @@ model CrmJob {
   id                String             @id @default(cuid())
   serviceBusinessId String
   serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-  clientId          String?
-  client            CrmClient?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  clientName        String
+  clientId          String
+  client            CrmClient          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientName        String             // denormalized snapshot of client name at booking time
   serviceType       String
   scheduledDate     DateTime
   scheduledTime     String
   durationMinutes   Int
-  address           String?
+  address           String
   notes             String?
   price             Float
   status            String             @default("SCHEDULED")
-  escrowStatus      String?            // HELD | RELEASED | REFUNDED | DISPUTED
   completedAt       DateTime?
   rating            Int?
   feedback          String?
@@ -6657,109 +6685,4 @@ model CrmExpense {
   @@index([category])
   @@index([date])
   @@map("crm_expenses")
-}
-
-model CleaningService {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name         String
-  price        Float
-  durationHours Float
-  description  String?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_services")
-}
-
-model CleaningAvailability {
-  id            String   @id @default(cuid())
-  businessId    String
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  dayOfWeek     Int
-  startTime     String
-  endTime       String
-  slotMinutes   Int      @default(60)
-  bufferMinutes Int      @default(15)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_availability")
-}
-
-model CleaningEmployee {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
-  phone      String?
-  payRate    Float?
-  payType    String   @default("HOURLY")
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_employees")
-}
-
-model CleaningCustomer {
-  id            String   @id @default(cuid())
-  businessId    String
-  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name          String
-  email         String?
-  phone         String?
-  address       String?
-  totalBookings Int      @default(0)
-  totalSpent    Float    @default(0)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_customers")
-}
-
-model CleaningExpense {
-  id          String   @id @default(cuid())
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category    String
-  amount      Float
-  description String?
-  date        DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([businessId])
-  @@map("cleaning_expenses")
-}
-
-// ── CRM Alerts ───────────────────────────────────────────────────────────────────
-// Trust-aware revenue engine alerts: triggered by client reliability scores,
-// escrow hold durations, VIP status, and cross-module trust signals.
-
-model CrmAlert {
-  id                String             @id @default(cuid())
-  serviceBusinessId String
-  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
-  type              String             // info | warning | critical | opportunity
-  title             String
-  message           String
-  entityType        String             // client | job | payment | provider
-  entityId          String
-  dismissed         Boolean            @default(false)
-  dismissedAt       DateTime?
-  createdAt         DateTime           @default(now())
-
-  @@index([serviceBusinessId, dismissed])
-  @@index([serviceBusinessId, type])
-  @@index([entityId])
-  @@map("crm_alerts")
 }

@@ -337,7 +337,7 @@ export default function AuthPage() {
   ] as const;
 
   return (
-    <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: 'var(--cream)" }}>
+    <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: 'var(--cream)' }}>
       {/* Background shapes */}
       <div className="pointer-events-none absolute -top-[15%] -left-[10%] h-[500px] w-[500px] rounded-full bg-[var(--clay)]/5 blur-3xl mix-blend-multiply" />
       <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(var(--clay),0.1)] blur-3xl mix-blend-multiply" />

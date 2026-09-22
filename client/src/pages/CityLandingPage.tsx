@@ -48,7 +48,7 @@ export const CityLandingPage: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="text-center">
           <h1 className="text-4xl font-black mb-4">City Not Found</h1>
           <Link to="/" className="text-[var(--sage)] hover:underline">← Back to Home</Link>
@@ -72,7 +72,7 @@ export const CityLandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       {/* Orbs */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[180px] opacity-[0.08] pointer-events-none" style={{ background: data.heroColor }} />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[var(--sage)] rounded-full blur-[140px] opacity-[0.06] pointer-events-none" />
@@ -102,7 +102,7 @@ export const CityLandingPage: React.FC = () => {
             </div>
             <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
               Stop Losing Money<br />to COD Rejections &<br />No-Shows in<br />
-              <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)")` }}>
+              <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)')` }}>
                 {data.name}
               </span>
             </h1>
@@ -169,7 +169,7 @@ export const CityLandingPage: React.FC = () => {
                   </select>
                   <button type="submit" disabled={submitting}
                     className="w-full py-4 rounded-xl font-black text-sm text-black transition-all hover:opacity-90 shadow-lg disabled:opacity-60"
-                    style={{ background: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)")`, boxShadow: `0 0 30px ${data.heroColor}30` }}>
+                    style={{ background: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)')`, boxShadow: `0 0 30px ${data.heroColor}30` }}>
                     {submitting ? 'Registering...' : `Join as Genesis Partner in ${data.name} →`}
                   </button>
                 </form>

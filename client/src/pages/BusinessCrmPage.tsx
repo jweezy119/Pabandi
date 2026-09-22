@@ -62,7 +62,7 @@ export default function BusinessCrmPage() {
 
   if (isBizLoading || (!businessId && isFetching)) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'var(--cream)" }}>
+      <div className="min-h-screen flex items-center justify-center p-8" style={{ background: 'var(--cream)' }}>
         <p className="text-[var(--soft-stone)] font-medium">Loading CRM data...</p>
       </div>
     );
@@ -70,7 +70,7 @@ export default function BusinessCrmPage() {
 
   if (!businessId && !isFetching) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-8" style={{ background: 'var(--cream)" }}>
+      <div className="flex min-h-screen items-center justify-center p-8" style={{ background: 'var(--cream)' }}>
         <div className="max-w-sm text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(var(--clay),0.1)] text-[var(--clay)]">💬</div>
           <h2 className="mb-3 text-2xl font-bold text-[var(--warm-ink)]">No Business Registered</h2>
@@ -82,7 +82,7 @@ export default function BusinessCrmPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24 text-[var(--warm-ink)] md:pb-12" style={{ background: 'var(--cream)", fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 text-[var(--warm-ink)] md:pb-12" style={{ background: 'var(--cream)', fontFamily: tokens.font.body }}>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {businessId && (
           <Surface className="mb-10">

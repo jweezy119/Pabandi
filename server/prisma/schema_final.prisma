@@ -9,13 +9,14 @@ datasource db {
 }
 
 
-enum PipelineStage {
+enum ContactStage {
   new
   contacted
   qualified
   proposal
   won
   lost
+  @@map("pipeline_stages")
 }
 
 enum DealStage {
@@ -6391,12 +6392,12 @@ model WalletPassport {
   verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  pipelineLeads PipelineLead[]
+  contactLeads ContactLead[]
 
   @@map("wallet_passports")
 }
 
-model PipelineLead {
+model ContactLead {
   id            String   @id @default(cuid())
   passportId    String
   passport      WalletPassport @relation(fields: [passportId], references: [id])
@@ -6410,15 +6411,16 @@ model PipelineLead {
   businessId    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  deals         PipelineDeal[]
-  activities    PipelineActivity[]
+  deals         ContactDeal[]
+  activities    ContactActivity[]
   @@index([businessId, stage])
+  @@map("pipeline_leads")
 }
 
-model PipelineDeal {
+model ContactDeal {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   title         String
   amount        Float
   stage         String   @default("open")
@@ -6427,17 +6429,19 @@ model PipelineDeal {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@index([leadId, stage])
+  @@map("pipeline_deals")
 }
 
-model PipelineActivity {
+model ContactActivity {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   type          String
   content       String?
   dueAt         DateTime?
   completedAt   DateTime?
   createdAt     DateTime @default(now())
+  @@map("pipeline_activities")
 }
 
 model LedgerAccount {

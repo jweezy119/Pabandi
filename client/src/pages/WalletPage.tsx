@@ -72,7 +72,7 @@ export const WalletPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-[var(--clay)] border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-white/60">Loading wallet...</p>
+          <p className="gov--soft-stone]">Loading wallet...</p>
         </div>
       </div>
     );
@@ -87,7 +87,7 @@ export const WalletPage: React.FC = () => {
               <span className="material-symbols-outlined text-[32px] text-[var(--clay)]">account_balance_wallet</span>
             </div>
             <h1 className="text-2xl font-black text-[var(--warm-ink)] mb-2">Create Your Wallet</h1>
-            <p className="text-sm text-white/60 mb-6">
+            <p className="text-sm gov--soft-stone] mb-6">
               Get a Solana wallet to interact with the Pabandi ecosystem — earn $PAB rewards, make bookings, and more.
             </p>
             {error && (
@@ -100,7 +100,7 @@ export const WalletPage: React.FC = () => {
             </Button>
             <button
               onClick={() => navigate('/')}
-              className="mt-4 text-sm text-white/50 hover:text-[var(--warm-ink)]"
+              className="mt-4 text-sm gov--soft-stone] hover:text-[var(--warm-ink)]"
             >
               Skip for now
             </button>
@@ -116,7 +116,7 @@ export const WalletPage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black text-[var(--warm-ink)]">My Wallet</h1>
-            <p className="text-sm text-white/60">Manage your $PAB and Solana assets</p>
+            <p className="text-sm gov--soft-stone]">Manage your $PAB and Solana assets</p>
           </div>
           <Button variant="ghost" onClick={() => navigate('/profile')}>
             Back to Profile
@@ -126,7 +126,7 @@ export const WalletPage: React.FC = () => {
         <Surface className="p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-sm text-white/60">Total Balance</p>
+              <p className="text-sm gov--soft-stone]">Total Balance</p>
               <p className="text-3xl font-black text-[var(--warm-ink)]">{wallet.balance || 0} <span className="text-lg text-[var(--clay)]">$PAB</span></p>
             </div>
             <div className="w-12 h-12 rounded-full bg-[var(--clay)]/20 flex items-center justify-center">
@@ -141,7 +141,7 @@ export const WalletPage: React.FC = () => {
               Receive
             </Button>
           </div>
-          <p className="mt-3 text-xs text-white/40 font-mono truncate">{wallet.address}</p>
+          <p className="mt-3 text-xs gov--warm-ink]/40 font-mono truncate">{wallet.address}</p>
         </Surface>
 
         {!wallet.airdropClaimed && (
@@ -149,7 +149,7 @@ export const WalletPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-green-300">🎉 Welcome Airdrop Available</p>
-                <p className="text-xs text-white/60">Claim your free $PAB to get started</p>
+                <p className="text-xs gov--soft-stone]">Claim your free $PAB to get started</p>
               </div>
               <Button onClick={handleClaimAirdrop} disabled={loading}>
                 Claim {wallet.airdropAmount || 100} $PAB
@@ -161,15 +161,15 @@ export const WalletPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Surface className="p-4 text-center">
             <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.totalStaked || 0}</p>
-            <p className="text-xs text-white/60">Staked</p>
+            <p className="text-xs gov--soft-stone]">Staked</p>
           </Surface>
           <Surface className="p-4 text-center">
             <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.lockedPab || 0}</p>
-            <p className="text-xs text-white/60">Locked</p>
+            <p className="text-xs gov--soft-stone]">Locked</p>
           </Surface>
           <Surface className="p-4 text-center">
             <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.usdcBalance || 0}</p>
-            <p className="text-xs text-white/60">USDC</p>
+            <p className="text-xs gov--soft-stone]">USDC</p>
           </Surface>
           <Surface className="p-4 text-center">
             <Badge tone={wallet.airdropClaimed ? 'success' : 'warning'}>

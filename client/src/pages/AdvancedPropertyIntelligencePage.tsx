@@ -21,7 +21,7 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🧠 Advanced Intelligence</Badge>
@@ -58,10 +58,10 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">💰 Valuation</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--sage)]">${result.valuation?.estimatedValue?.toLocaleString()}</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Est. Value</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--clay)]">${result.valuation?.rentalEstimate}</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Monthly Rent</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--muted-ochre)]">{result.valuation?.rentalYield}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Rental Yield</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--dusty-rose)]">{result.investmentScore}/100</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Investment Score</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--sage)]">${result.valuation?.estimatedValue?.toLocaleString()}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Est. Value</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--clay)]">${result.valuation?.rentalEstimate}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Monthly Rent</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--muted-ochre)]">{result.valuation?.rentalYield}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Rental Yield</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--dusty-rose)]">{result.investmentScore}/100</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Investment Score</div></div>
               </div>
               <div className="mt-3 p-3 rounded-xl bg-[var(--warm-sand)]">
                 <div className="text-xs text-[var(--soft-stone)]">Confidence Range</div>
@@ -80,7 +80,7 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
                 {result.neighborhood && Object.entries(result.neighborhood).filter(([k]) => ['schools', 'safety', 'walkability', 'transit', 'amenities'].includes(k)).map(([key, val]) => (
                   <div key={key} className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
                     <div className="text-lg font-bold text-[var(--warm-ink)]">{val as number}</div>
-                    <div className="text-xs capitalize" style={{ color: 'var(--soft-stone)" }}>{key}</div>
+                    <div className="text-xs capitalize" style={{ color: 'var(--soft-stone)' }}>{key}</div>
                   </div>
                 ))}
               </div>
@@ -93,10 +93,10 @@ export const AdvancedPropertyIntelligencePage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">📈 Price Velocity</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--sage)]">{result.priceVelocity?.yearlyChange}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Yearly Change</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{result.priceVelocity?.daysOnMarket}</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Days on Market</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{result.priceVelocity?.inventoryMonths}</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Months Inventory</div></div>
-                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--clay)]">{result.priceVelocity?.momentum}</div><div className="text-xs" style={{ color: 'var(--soft-stone)" }}>Momentum</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--sage)]">{result.priceVelocity?.yearlyChange}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Yearly Change</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{result.priceVelocity?.daysOnMarket}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Days on Market</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{result.priceVelocity?.inventoryMonths}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Months Inventory</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--clay)]">{result.priceVelocity?.momentum}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Momentum</div></div>
               </div>
             </Surface>
 

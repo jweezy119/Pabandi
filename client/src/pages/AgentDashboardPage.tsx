@@ -30,7 +30,7 @@ export default function AgentDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen pb-24 font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="min-h-screen pb-24 font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       {/* Hero */}
       <section className="relative pt-28 pb-12 px-4 sm:px-6 overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
@@ -138,7 +138,7 @@ function HealthPill({ label, ok }: { label: string; ok: boolean }) {
   return (
     <div className={`rounded-xl p-3 text-center border ${ok ? 'bg-[rgba(var(--sage),0.1)] border-[rgba(var(--sage),0.2)]' : 'bg-[rgba(var(--terracotta),0.1)] border-[rgba(var(--terracotta),0.2)]'}`}>
       <p className="text-lg mb-0.5">{ok ? '✅' : '❌'}</p>
-      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ok ? '#34d399' : 'var(--terracotta)" }}>{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: ok ? '#34d399' : 'var(--terracotta)' }}>{label}</p>
     </div>
   );
 }

@@ -125,9 +125,9 @@ export default function BookingExperience() {
   // ── Search View ──────────────────────────────────────────────────────────
   if (step === 'search') {
     return (
-      <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+      <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
         {/* Hero Search */}
-        <div className="relative px-4 py-16 text-center" style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #020617 100%)" }}>
+        <div className="relative px-4 py-16 text-center" style={{ background: 'linear-gradient(180deg, var(--warm-sand) 0%, var(--cream) 100%)' }}>
           <h1 className="text-4xl md:text-5xl font-bold text-[var(--warm-ink)] mb-4">Find your table</h1>
           <p className="text-[var(--soft-stone)] mb-8">Discover and book the best restaurants, bars, and venues</p>
           
@@ -198,7 +198,7 @@ export default function BookingExperience() {
   // ── Booking Complete View ────────────────────────────────────────────────
   if (bookingComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)" }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)' }}>
         <Surface className="max-w-md w-full p-8 text-center">
           <div className="w-20 h-20 rounded-full bg-[rgba(var(--sage),0.15)] flex items-center justify-center mx-auto mb-6">
             <span className="text-4xl">✅</span>
@@ -221,7 +221,7 @@ export default function BookingExperience() {
 
   // ── Detail + Booking View ────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       {/* Header (Layout header handles main nav; this is booking-specific context) */}
       <header className="sticky top-16 z-40 backdrop-blur-xl bg-[var(--warm-sand)]/80 border-b border-[rgba(191,179,163,0.2)] px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">

@@ -51,7 +51,7 @@ export default function CheckoutSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="flex items-center gap-2 text-[var(--warm-ink)]/70">
           <ArrowPathIcon className="h-5 w-5 animate-spin" />
           Verifying payment...
@@ -62,7 +62,7 @@ export default function CheckoutSuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[#121212] p-8 text-center">
           <h1 className="font-headline text-2xl font-bold text-[var(--warm-ink)]">We could not verify this payment</h1>
           <p className="mt-2 text-sm text-zinc-400">{error}</p>
@@ -87,7 +87,7 @@ export default function CheckoutSuccessPage() {
       : 'We could not confirm completion for this checkout.';
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <div className="w-full max-w-md">
         <div id="receipt-card" className="bg-[#121212] rounded-3xl border border-zinc-800 p-8 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--sage)]/20 blur-[60px] rounded-full pointer-events-none" />

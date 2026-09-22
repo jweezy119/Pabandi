@@ -180,19 +180,178 @@ router.get('/veil/verify/:proofId', async (req, res) => {
  * Get trust passport with reliability score
  */
 router.get('/passport/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
-      });
-    }
-    res.json({ success: true, data: passport });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+   try {
+     const { userId } = req.params;
+     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       passport = await prisma.trustPassport.create({
+         data: { 
+           userId, 
+           handle: `user-${userId}`, 
+           displayName: `User ${userId}`, 
+           showUpScore: 500, 
+           paymentScore: 500, 
+           deliveryScore: 500, 
+           tenancyScore: 500, 
+           freightScore: 500,
+           level: 'bronze', 
+           verified: false 
+         },
+       });
+     }
+res.json({ success: true, data: passport });
+   } catch (err: any) {
+     res.status(500).json({ success: false, error: err.message });
+   }
+ });
+
+ /**
+  * GET /api/v1/trust/passport/:userId/scores
+  * Returns all context-scoped trust scores with confidence indicators
+  */
+ router.get('/passport/:userId/scores', async (req, res) => {
+   try {
+     const { userId } = req.params;
+     const passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       return res.status(404).json({ success: false, message: 'Passport not found' });
+     }
+
+     res.json({
+       success: true,
+       data: {
+         passport_id: passport.id,
+         scores: {
+           show_up: {
+             value: passport.showUpScore,
+             sample_size: passport.showUpSampleSize,
+             confidence: passport.showUpSampleSize >= 21 ? 'high' : 
+                       passport.showUpSampleSize >= 6 ? 'medium' :
+                       passport.showUpSampleSize >= 1 ? 'low' : 'none'
+           },
+           payment: {
+             value: passport.paymentScore,
+             sample_size: passport.paymentSampleSize,
+             confidence: passport.paymentSampleSize >= 21 ? 'high' : 
+                        passport.paymentSampleSize >= 6 ? 'medium' :
+                        passport.paymentSampleSize >= 1 ? 'low' : 'none'
+           },
+           delivery: {
+             value: passport.deliveryScore,
+             sample_size: passport.deliverySampleSize,
+             confidence: passport.deliverySampleSize >= 21 ? 'high' : 
+                        passport.deliverySampleSize >= 6 ? 'medium' :
+                        passport.deliverySampleSize >= 1 ? 'low' : 'none'
+           },
+           tenancy: {
+             value: passport.tenancyScore,
+             sample_size: passport.tenancySampleSize,
+             confidence: passport.tenancySampleSize >= 21 ? 'high' : 
+                        passport.tenancySampleSize >= 6 ? 'medium' :
+                        passport.tenancySampleSize >= 1 ? 'low' : 'none'
+           },
+           freight: {
+             value: passport.freightScore,
+             sample_size: passport.freightSampleSize,
+             confidence: passport.freightSampleSize >= 21 ? 'high' : 
+                        passport.freightSampleSize >= 6 ? 'medium' :
+                        passport.freightSampleSize >= 1 ? 'low' : 'none'
+           }
+         },
+         flags: {
+           verified_identity: passport.verifiedIdentity,
+           fraud: passport.fraudFlag,
+           escrow_theft: passport.escrowTheftFlag,
+           chargeback_fraud_count: passport.chargebackFraudCount
+         }
+       }
+     });
+   } catch (err: any) {
+     res.status(500).json({ success: false, error: err.message });
+   }
+ });
+
+ /**
+  * GET /api/v1/trust/passport/:userId/score?context=X
+  * Returns score for a specific context
+  */
+ router.get('/passport/:userId/score', async (req, res) => {
+   try {
+     const { userId } = req.params;
+     const { context } = req.query;
+     
+     if (!context) {
+       return res.status(400).json({ success: false, message: 'Context parameter is required' });
+     }
+
+     const passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       return res.status(404).json({ success: false, message: 'Passport not found' });
+     }
+
+     let scoreValue: number;
+     let scoreType: string;
+     let sampleSize: number;
+     
+     switch (context.toLowerCase()) {
+       case 'booking':
+       case 'show_up':
+         scoreValue = passport.showUpScore;
+         scoreType = 'show_up';
+         sampleSize = passport.showUpSampleSize;
+         break;
+       case 'payment':
+       case 'invoice':
+         scoreValue = passport.paymentScore;
+         scoreType = 'payment';
+         sampleSize = passport.paymentSampleSize;
+         break;
+       case 'delivery':
+       case 'freight':
+         scoreValue = passport.deliveryScore;
+         scoreType = 'delivery';
+         sampleSize = passport.deliverySampleSize;
+         break;
+       case 'tenancy':
+       case 'lease':
+       case 'property':
+         scoreValue = passport.tenancyScore;
+         scoreType = 'tenancy';
+         sampleSize = passport.tenancySampleSize;
+         break;
+       case 'freight_only':
+         scoreValue = passport.freightScore;
+         scoreType = 'freight';
+         sampleSize = passport.freightSampleSize;
+         break;
+       default:
+         return res.status(400).json({ success: false, message: 'Invalid context. Valid contexts: booking, payment, delivery, tenancy, freight' });
+     }
+
+     const confidence = sampleSize >= 21 ? 'high' : 
+                       sampleSize >= 6 ? 'medium' :
+                       sampleSize >= 1 ? 'low' : 'none';
+
+     res.json({
+       success: true,
+       data: {
+         context,
+         score: scoreValue,
+         score_type: scoreType,
+         sample_size: sampleSize,
+         confidence,
+         flags: {
+           verified_identity: passport.verifiedIdentity,
+           fraud: passport.fraudFlag,
+           escrow_theft: passport.escrowTheftFlag,
+           chargeback_fraud_count: passport.chargebackFraudCount
+         }
+       }
+     });
+   } catch (err: any) {
+     res.status(500).json({ success: false, error: err.message });
+   }
+ });
 
 /**
  * PUT /api/v1/trust/score/:userId
@@ -201,19 +360,30 @@ router.get('/passport/:userId', async (req, res) => {
 router.put('/score/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { delta, reason } = req.body;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
-      });
-    }
-    const newScore = Math.max(0, Math.min(100, (passport.score || 0) + (delta || 0)));
-    const level = newScore >= 90 ? 'platinum' : newScore >= 70 ? 'gold' : newScore >= 50 ? 'silver' : 'bronze';
-    const updated = await prisma.trustPassport.update({
-      where: { userId },
-      data: { score: newScore, level },
-    });
+const { delta, reason } = req.body;
+     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       passport = await prisma.trustPassport.create({
+         data: { 
+           userId, 
+           handle: `user-${userId}`, 
+           displayName: `User ${userId}`, 
+           showUpScore: 500, 
+           paymentScore: 500, 
+           deliveryScore: 500, 
+           tenancyScore: 500, 
+           freightScore: 500,
+           level: 'bronze', 
+           verified: false 
+         },
+       });
+     }
+const newScore = Math.max(0, Math.min(1000, (passport.showUpScore || 0) + ((delta || 0) * 10)));
+     const level = newScore >= 900 ? 'platinum' : newScore >= 700 ? 'gold' : newScore >= 500 ? 'silver' : 'bronze';
+     const updated = await prisma.trustPassport.update({
+       where: { userId },
+       data: { showUpScore: newScore, level },
+     });
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -225,40 +395,73 @@ router.put('/score/:userId', async (req, res) => {
  * Get risk assessment for a user
  */
 router.get('/risk/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
-      });
-    }
-    const risk = (passport.score ?? 0) >= 70 ? 'low' : (passport.score ?? 0) >= 40 ? 'medium' : 'high';
-    res.json({ success: true, data: { userId, score: passport.score, risk, level: passport.level } });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+   try {
+     const { userId } = req.params;
+     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       passport = await prisma.trustPassport.create({
+         data: { 
+           userId, 
+           handle: `user-${userId}`, 
+           displayName: `User ${userId}`, 
+           showUpScore: 500, 
+           paymentScore: 500, 
+           deliveryScore: 500, 
+           tenancyScore: 500, 
+           freightScore: 500,
+           level: 'bronze', 
+           verified: false 
+         },
+       });
+     }
+     // Use showUpScore for risk assessment (backward compatibility)
+     const riskScore = passport.showUpScore ?? 0;
+     const risk = riskScore >= 700 ? 'low' : riskScore >= 400 ? 'medium' : 'high';
+     res.json({ 
+       success: true, 
+       data: { 
+         userId, 
+         score: riskScore, 
+         risk, 
+         level: passport.level 
+       } 
+     });
+   } catch (err: any) {
+     res.status(500).json({ success: false, error: err.message });
+   }
+ });
 
 /**
  * GET /api/v1/trust/escrow/:userId
  * Check if user is eligible for escrow
  */
 router.get('/escrow/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    let passport = await prisma.trustPassport.findUnique({ where: { userId } });
-    if (!passport) {
-      passport = await prisma.trustPassport.create({
-        data: { userId, handle: `user-${userId}`, displayName: `User ${userId}`, score: 50, level: 'bronze', verified: false },
-      });
-    }
-    const eligible = (passport.score || 0) >= 30;
-    res.json({ success: true, data: { userId, eligible, score: passport.score || 0 } });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+   try {
+     const { userId } = req.params;
+     let passport = await prisma.trustPassport.findUnique({ where: { userId } });
+     if (!passport) {
+       passport = await prisma.trustPassport.create({
+         data: { 
+           userId, 
+           handle: `user-${userId}`, 
+           displayName: `User ${userId}`, 
+           showUpScore: 500, 
+           paymentScore: 500, 
+           deliveryScore: 500, 
+           tenancyScore: 500, 
+           freightScore: 500,
+           level: 'bronze', 
+           verified: false 
+         },
+       });
+     }
+     // Use showUpScore for escrow eligibility (backward compatibility)
+     const eligible = (passport.showUpScore || 0) >= 300; // 30 old scale = 300 new scale
+     res.json({ success: true, data: { userId, eligible, score: passport.showUpScore || 0 } });
+   } catch (err: any) {
+     res.status(500).json({ success: false, error: err.message });
+   }
+ });
 
 /**
  * POST /api/v1/trust/events

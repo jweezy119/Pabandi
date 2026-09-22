@@ -24,7 +24,7 @@ tags:
     description: Freight and logistics management
   - name: AbodeOS
     description: Property management
-  - name: PipelineOS
+  - name: ContactOS
     description: CRM and sales pipeline
   - name: LedgerOS
     description: Finance, invoicing, and expenses
@@ -104,9 +104,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PropertyListings'
 
-  /api/v1/pipeline/leads:
+  /api/v1/contact/leads:
     post:
-      tags: [PipelineOS]
+      tags: [ContactOS]
       summary: Create lead
       description: Create a CRM lead with trust-enriched data
       requestBody:
@@ -123,7 +123,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeadResponse'
     get:
-      tags: [PipelineOS]
+      tags: [ContactOS]
       summary: List leads
       description: List all CRM leads
       responses:
