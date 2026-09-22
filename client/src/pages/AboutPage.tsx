@@ -9,7 +9,7 @@ export default function AboutPage() {
   const socialsRef = useScrollReveal() as any;
 
   return (
-    <div className="w-full min-h-screen font-body pb-16 sm:pb-20" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="w-full min-h-screen font-body pb-16 sm:pb-20" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
       
       {/* ── HERO SECTION ──────────────────────────────────────────────────────── */}
       <section 
@@ -17,14 +17,14 @@ export default function AboutPage() {
         className="relative w-full pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 md:px-10 flex flex-col items-center justify-center text-center overflow-hidden"
       >
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-1/4 w-[40rem] h-[40rem] bg-indigo-600 rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob" />
-          <div className="absolute bottom-[-10%] right-1/4 w-[40rem] h-[40rem] bg-emerald-500 rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob animation-delay-2000" />
+          <div className="absolute top-[-10%] left-1/4 w-[40rem] h-[40rem] bg-[var(--clay)] rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob" />
+          <div className="absolute bottom-[-10%] right-1/4 w-[40rem] h-[40rem] bg-[var(--sage)] rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-blob animation-delay-2000" />
         </div>
         
         <h1 className="relative z-10 text-4xl sm:text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 mb-6 drop-shadow-sm">
           The Story Behind Pabandi
         </h1>
-        <p className="relative z-10 text-base sm:text-lg sm:text-xl md:text-2xl text-slate-300 max-w-3xl font-light leading-relaxed">
+        <p className="relative z-10 text-base sm:text-lg sm:text-xl md:text-2xl text-[var(--soft-stone)] max-w-3xl font-light leading-relaxed">
           One desk, one ticket, one frustrated user at a time. This is how we are building the universal trust layer for the service economy.
         </p>
       </section>
@@ -34,19 +34,19 @@ export default function AboutPage() {
         
         {/* Question 1 */}
         <div ref={storyRef1} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 group hover:from-indigo-500 hover:to-purple-500 transition-all duration-500 shadow-xl hover:shadow-indigo-500/20">
-          <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
-            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
-              <span className="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl border border-indigo-500/30">
+          <div className="rounded-[23px] bg-[var(--warm-sand)] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
+            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-[var(--warm-ink)] mb-6 flex items-center gap-4">
+              <span className="w-12 h-12 rounded-full bg-[rgba(var(--clay),0.15)] text-[var(--clay)] flex items-center justify-center text-2xl border border-[rgba(var(--clay),0.3)]">
                 👋
               </span>
               Who is behind Pabandi?
             </h2>
-            <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light">
+            <div className="space-y-6 text-[var(--soft-stone)] text-base sm:text-lg leading-relaxed font-light">
               <p>
                 Hi, I'm Syed. I'm not a Silicon Valley insider or a serial entrepreneur. For the last 8 years, I've been the IT guy. The person you call when things break, when systems fail, and when you're just incredibly frustrated.
               </p>
               <p>
-                My entire career has been built on a very simple premise: <strong className="text-white font-medium">listening to people's problems and fixing them.</strong> Whether I was untangling messy networks or automating workflows, my favorite part of the job was always that moment of relief on someone's face when their problem finally went away.
+                My entire career has been built on a very simple premise: <strong className="text-[var(--warm-ink)] font-medium">listening to people's problems and fixing them.</strong> Whether I was untangling messy networks or automating workflows, my favorite part of the job was always that moment of relief on someone's face when their problem finally went away.
               </p>
               <p>
                 But a few years ago, I started noticing a problem I couldn't just fix with a simple IT ticket. I saw incredibly hardworking people—freelancers hustling to make rent, local salon owners, small clinic managers—quietly losing their livelihoods. They were losing money to scammers, to no-shows, and to massive platforms taking 20% of their paychecks. 
@@ -54,7 +54,7 @@ export default function AboutPage() {
               <p>
                 It broke my heart to watch honest people get taken advantage of just because the internet doesn't inherently have a "trust" layer.
               </p>
-              <p className="text-xl font-medium text-white italic border-l-4 border-indigo-500 pl-4 py-2 my-8">
+              <p className="text-xl font-medium text-[var(--warm-ink)] italic border-l-4 border-[var(--clay)] pl-4 py-2 my-8">
                 "I realized that being the 'IT guy' wasn't enough anymore. Some systems are so fundamentally broken, you can't just troubleshoot them—you have to rebuild them."
               </p>
               <p>
@@ -66,14 +66,14 @@ export default function AboutPage() {
 
         {/* Question 2 */}
         <div ref={storyRef2} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 group hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 shadow-xl hover:shadow-emerald-500/20">
-          <div className="rounded-[23px] bg-surface p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
-            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-4">
-              <span className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl border border-emerald-500/30">
+          <div className="rounded-[23px] bg-[var(--warm-sand)] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-sm">
+            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-[var(--warm-ink)] mb-6 flex items-center gap-4">
+              <span className="w-12 h-12 rounded-full bg-[rgba(var(--sage),0.15)] text-[var(--sage)] flex items-center justify-center text-2xl border border-[rgba(var(--sage),0.3)]">
                 ❤️
               </span>
               Why does this matter so much?
             </h2>
-            <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light">
+            <div className="space-y-6 text-[var(--soft-stone)] text-base sm:text-lg leading-relaxed font-light">
               <p>
                 Because trust is the most expensive thing in the world, especially for people who don't have a lot of money to spare.
               </p>
@@ -83,7 +83,7 @@ export default function AboutPage() {
               <p>
                 Pabandi is my love letter to the builders, the creators, and the service providers of the world. It's an ecosystem designed to protect you. By using smart escrows, the money is guaranteed. By using our AI Trust Oracle, you finally get rewarded for being a reliable human being. And by integrating zero-fee off-ramps, you get to keep the money you actually earned.
               </p>
-              <p className="text-xl font-medium text-white italic border-l-4 border-emerald-500 pl-4 py-2 my-8">
+              <p className="text-xl font-medium text-[var(--warm-ink)] italic border-l-4 border-[var(--sage)] pl-4 py-2 my-8">
                 "We aren't just building an app. We are trying to restore humanity and accountability to the digital economy."
               </p>
               <p>
@@ -97,56 +97,56 @@ export default function AboutPage() {
         <div ref={featuresRef} className="relative p-[1px] rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 shadow-2xl shadow-orange-500/20 transform transition-transform duration-500 hover:scale-[1.02]">
           <div className="rounded-[23px] p-5 sm:p-8 md:p-6 sm:p-12 h-full backdrop-blur-xl" style={{ background: "rgba(15,23,42,0.9)" }}>
             <div className="absolute top-0 right-0 p-6 opacity-20">
-              <svg className="w-24 h-24 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-24 h-24 text-[var(--muted-ochre)]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
               </svg>
             </div>
             
-            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 mb-6 flex items-center gap-4">
-              <span className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl border border-amber-500/30">
+            <h2 className="text-2xl sm:text-3xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-[var(--muted-ochre)] mb-6 flex items-center gap-4">
+              <span className="w-12 h-12 rounded-full bg-[rgba(var(--muted-ochre),0.15)] text-[var(--muted-ochre)] flex items-center justify-center text-2xl border border-[rgba(var(--muted-ochre),0.3)]">
                 🌍
               </span>
               The Pabandi Ecosystem: Three OS, One Trust Layer
             </h2>
-            <div className="space-y-6 text-slate-300 text-base sm:text-lg leading-relaxed font-light relative z-10">
+            <div className="space-y-6 text-[var(--soft-stone)] text-base sm:text-lg leading-relaxed font-light relative z-10">
               <p>
                 Pabandi has evolved into a comprehensive trust and payments protocol, operating through three specialized OS layers:
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
-                  <h3 className="text-xl font-bold text-emerald-400 mb-3">🟢 Sitara</h3>
-                  <p className="text-sm text-slate-300">Booking & discovery for restaurants, hotels, and services. Earn $PAB rewards for every check-in and review.</p>
+                <div className="p-6 rounded-2xl bg-[rgba(138,154,123,0.1)] border border-[rgba(var(--sage),0.2)]">
+                  <h3 className="text-xl font-bold text-[var(--sage)] mb-3">🟢 Sitara</h3>
+                  <p className="text-sm text-[var(--soft-stone)]">Booking & discovery for restaurants, hotels, and services. Earn $PAB rewards for every check-in and review.</p>
                 </div>
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <h3 className="text-xl font-bold text-amber-400 mb-3">🟡 Saf OS</h3>
-                  <p className="text-sm text-slate-300">Freight & logistics management. Post loads, find carriers, track shipments — all with trust scoring.</p>
+                <div className="p-6 rounded-2xl bg-[rgba(217,168,84,0.1)] border border-[rgba(var(--muted-ochre),0.2)]">
+                  <h3 className="text-xl font-bold text-[var(--muted-ochre)] mb-3">🟡 Saf OS</h3>
+                  <p className="text-sm text-[var(--soft-stone)]">Freight & logistics management. Post loads, find carriers, track shipments — all with trust scoring.</p>
                 </div>
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-indigo-500/10 border border-violet-500/20">
-                  <h3 className="text-xl font-bold text-violet-400 mb-3">🟣 Haq OS</h3>
-                  <p className="text-sm text-slate-300">Property management for landlords. Manage tenants, leases, maintenance, and revenue in one dashboard.</p>
+                <div className="p-6 rounded-2xl bg-[rgba(212,165,165,0.1)] border border-[rgba(var(--dusty-rose),0.2)]">
+                  <h3 className="text-xl font-bold text-[var(--dusty-rose)] mb-3">🟣 Haq OS</h3>
+                  <p className="text-sm text-[var(--soft-stone)]">Property management for landlords. Manage tenants, leases, maintenance, and revenue in one dashboard.</p>
                 </div>
               </div>
 
               <p>
-                Underneath all three is the <strong className="text-white font-medium">Pabandi Protocol</strong> — powered by Jev AI for fraud detection, $PAB token for rewards, and Solana escrow for trustless settlements.
+                Underneath all three is the <strong className="text-[var(--warm-ink)] font-medium">Pabandi Protocol</strong> — powered by Jev AI for fraud detection, $PAB token for rewards, and Solana escrow for trustless settlements.
               </p>
               
               <p>
-                For users in Pakistan, we've integrated <strong className="text-white font-medium">Raast, JazzCash, and EasyPaisa</strong> for seamless PKR payments. No crypto knowledge needed — just scan, pay, and earn.
+                For users in Pakistan, we've integrated <strong className="text-[var(--warm-ink)] font-medium">Raast, JazzCash, and EasyPaisa</strong> for seamless PKR payments. No crypto knowledge needed — just scan, pay, and earn.
               </p>
             </div>
           </div>
         </div>
 
         {/* ── SOCIALS ─────────────────────────────────────────────────────────── */}
-        <div ref={socialsRef} className="pt-16 pb-8 border-t border-slate-800 text-center">
-          <h3 className="text-2xl font-semibold text-white mb-8">Connect with Pabandi</h3>
+        <div ref={socialsRef} className="pt-16 pb-8 border-t border-[var(--soft-stone)] text-center">
+          <h3 className="text-2xl font-semibold text-[var(--warm-ink)] mb-8">Connect with Pabandi</h3>
           
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             <a 
               href="mailto:jay@pabandi.com" 
-              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-full text-indigo-400 hover:text-white transition-all duration-300"
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[rgba(var(--clay),0.1)] hover:bg-[rgba(var(--clay),0.15)] border border-[rgba(var(--clay),0.3)] rounded-full text-[var(--clay)] hover:text-[var(--warm-ink)] transition-all duration-300"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               <span className="font-medium">jay@pabandi.com</span>
@@ -156,7 +156,7 @@ export default function AboutPage() {
               href="https://www.linkedin.com/company/pabandi/" 
               target="_blank" 
               rel="noreferrer"
-              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[#0a66c2]/10 hover:bg-[#0a66c2]/20 border border-[#0a66c2]/30 rounded-full text-[#0a66c2] hover:text-white transition-all duration-300"
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[#0a66c2]/10 hover:bg-[#0a66c2]/20 border border-[#0a66c2]/30 rounded-full text-[#0a66c2] hover:text-[var(--warm-ink)] transition-all duration-300"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
               <span className="font-medium">LinkedIn</span>
@@ -166,7 +166,7 @@ export default function AboutPage() {
               href="https://x.com/pabandiglobal" 
               target="_blank" 
               rel="noreferrer"
-              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-300 hover:text-white transition-all duration-300"
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-full text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-all duration-300"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               <span className="font-medium">@pabandiglobal</span>
@@ -176,7 +176,7 @@ export default function AboutPage() {
               href="https://instagram.com/pabandiglobal" 
               target="_blank" 
               rel="noreferrer"
-              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/30 rounded-full text-pink-400 hover:text-white transition-all duration-300"
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[rgba(var(--dusty-rose),0.1)] hover:bg-[rgba(var(--dusty-rose),0.15)] border border-[rgba(var(--dusty-rose),0.3)] rounded-full text-[var(--dusty-rose)] hover:text-[var(--warm-ink)] transition-all duration-300"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
               <span className="font-medium">pabandiglobal</span>
@@ -186,7 +186,7 @@ export default function AboutPage() {
               href="https://wa.me/13124896967" 
               target="_blank" 
               rel="noreferrer"
-              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 rounded-full text-[#25D366] hover:text-white transition-all duration-300"
+              className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 rounded-full text-[#25D366] hover:text-[var(--warm-ink)] transition-all duration-300"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
               <span className="font-medium">+1 (312) 489-6967</span>

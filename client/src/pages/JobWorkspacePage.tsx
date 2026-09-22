@@ -79,29 +79,29 @@ const JobWorkspacePage: React.FC = () => {
   if (!job) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-gray-950 text-[var(--warm-ink)] selection:bg-[var(--clay)]/30">
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         
         <button 
           onClick={() => navigate('/dashboard/jobs')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 text-sm"
+          className="flex items-center gap-2 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-colors mb-8 text-sm"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Workspace List
         </button>
 
         {/* Job Header */}
-        <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 mb-8 relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 mb-8 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-[var(--clay)]/10 rounded-full blur-3xl" />
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{job.business?.name || 'Client Project'}</h1>
+              <h1 className="text-3xl font-bold text-[var(--warm-ink)] mb-2">{job.business?.name || 'Client Project'}</h1>
               <div className="flex items-center gap-3">
-                <span className="text-sm px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">
+                <span className="text-sm px-3 py-1 bg-[var(--sage)]/10 text-[var(--sage)] border border-[var(--sage)]/20 rounded-full">
                   Escrow Locked: ${job.depositAmount?.toFixed(2)}
                 </span>
-                <span className={`text-sm px-3 py-1 rounded-full border ${job.status === 'CHECKED_IN' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                <span className={`text-sm px-3 py-1 rounded-full border ${job.status === 'CHECKED_IN' ? 'bg-[var(--muted-ochre)]/10 text-[var(--muted-ochre)] border-[var(--muted-ochre)]/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
                   {job.status === 'CHECKED_IN' ? 'Pending Approval' : 'In Progress'}
                 </span>
               </div>
@@ -111,7 +111,7 @@ const JobWorkspacePage: React.FC = () => {
 
         {/* Message Banner */}
         {message && (
-          <div className={`mb-8 p-4 rounded-xl border flex items-center gap-3 ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+          <div className={`mb-8 p-4 rounded-xl border flex items-center gap-3 ${message.type === 'success' ? 'bg-[var(--sage)]/10 border-[var(--sage)]/20 text-[var(--sage)]' : 'bg-[var(--terracotta)]/10 border-red-500/20 text-[var(--terracotta)]'}`}>
             {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
             {message.text}
           </div>
@@ -122,10 +122,10 @@ const JobWorkspacePage: React.FC = () => {
           {/* Main Action Area */}
           <div className="md:col-span-2 space-y-8">
             <div className="bg-gray-900/30 border border-gray-800 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <UploadCloud className="w-5 h-5 text-indigo-400" /> Submit Deliverables
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
+                <UploadCloud className="w-5 h-5 text-[var(--clay)]" /> Submit Deliverables
               </h2>
-              <p className="text-sm text-gray-400 mb-4">
+              <p className="text-sm text-[var(--soft-stone)] mb-4">
                 Paste the links to your completed work (e.g., GitHub repo, Figma file, Google Drive) or type your delivery notes here.
               </p>
               
@@ -134,14 +134,14 @@ const JobWorkspacePage: React.FC = () => {
                 onChange={(e) => setDeliverables(e.target.value)}
                 placeholder="https://github.com/my-repo..."
                 rows={6}
-                className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-600 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all mb-4"
+                className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-4 text-[var(--warm-ink)] placeholder-gray-600 focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all mb-4"
                 disabled={job.status === 'CHECKED_IN'}
               />
               
               <button
                 onClick={handleSubmitWork}
                 disabled={submitting || !deliverables.trim() || job.status === 'CHECKED_IN'}
-                className={`px-6 py-3 rounded-xl font-bold transition-all ${submitting || !deliverables.trim() || job.status === 'CHECKED_IN' ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-indigo-500 text-white hover:bg-indigo-400'}`}
+                className={`px-6 py-3 rounded-xl font-bold transition-all ${submitting || !deliverables.trim() || job.status === 'CHECKED_IN' ? 'bg-gray-800 text-[var(--soft-stone)] cursor-not-allowed' : 'bg-[var(--clay)] text-[var(--warm-ink)] hover:bg-indigo-400'}`}
               >
                 {submitting ? 'Submitting...' : job.status === 'CHECKED_IN' ? 'Already Submitted' : 'Submit for Approval'}
               </button>
@@ -151,26 +151,26 @@ const JobWorkspacePage: React.FC = () => {
           {/* Sidebar / Arbitration */}
           <div className="space-y-6">
             <div className="bg-red-950/20 border border-red-900/50 rounded-2xl p-6">
-              <h3 className="text-lg font-bold text-red-400 mb-2 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-[var(--terracotta)] mb-2 flex items-center gap-2">
                 <Scale className="w-5 h-5" /> AI Arbitrator
               </h3>
-              <p className="text-xs text-red-300/70 mb-6">
+              <p className="text-xs text-[var(--terracotta)]/70 mb-6">
                 If you have submitted your work and the client is ghosting you or refusing to release the escrow funds without cause, summon the AI Arbitrator. It will review the deliverables and release funds automatically.
               </p>
               <button
                 onClick={handleArbitration}
                 disabled={arbitrating || job.status !== 'CHECKED_IN'}
-                className={`w-full py-3 rounded-xl font-bold transition-all border ${arbitrating || job.status !== 'CHECKED_IN' ? 'bg-gray-900/50 text-gray-600 border-gray-800 cursor-not-allowed' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'}`}
+                className={`w-full py-3 rounded-xl font-bold transition-all border ${arbitrating || job.status !== 'CHECKED_IN' ? 'bg-gray-900/50 text-gray-600 border-gray-800 cursor-not-allowed' : 'bg-[var(--terracotta)]/10 text-[var(--terracotta)] border-red-500/30 hover:bg-[var(--terracotta)]/20'}`}
               >
                 {arbitrating ? 'Summoning...' : job.status !== 'CHECKED_IN' ? 'Submit Work First' : 'Summon Arbitrator'}
               </button>
             </div>
 
             <div className="bg-gray-900/30 border border-gray-800 rounded-2xl p-6">
-              <h3 className="text-sm font-bold text-gray-300 mb-4 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-gray-400" /> Recent Notes
+              <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[var(--soft-stone)]" /> Recent Notes
               </h3>
-              <div className="text-xs text-gray-500 whitespace-pre-wrap font-mono bg-gray-950 p-4 rounded-lg overflow-y-auto max-h-40">
+              <div className="text-xs text-[var(--soft-stone)] whitespace-pre-wrap font-mono bg-gray-950 p-4 rounded-lg overflow-y-auto max-h-40">
                 {job.notes || 'No notes available.'}
               </div>
             </div>

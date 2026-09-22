@@ -35,19 +35,19 @@ export const AITenantRiskPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🤖 AI Tenant Risk Predictor</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Tenant Risk Score</h1>
-          <p className="mt-3 text-slate-400">CourtListener + AI risk banding for safer leasing.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Tenant Risk Score</h1>
+          <p className="mt-3 text-[var(--soft-stone)]">CourtListener + AI risk banding for safer leasing.</p>
         </div>
 
         <Surface className="p-4 md:p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input value={form.tenantName} onChange={e => setForm({ ...form, tenantName: e.target.value })} placeholder="Tenant name" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-            <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} placeholder="State" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-            <select value={form.propertyType} onChange={e => setForm({ ...form, propertyType: e.target.value })} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none">
+            <input value={form.tenantName} onChange={e => setForm({ ...form, tenantName: e.target.value })} placeholder="Tenant name" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+            <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} placeholder="State" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+            <select value={form.propertyType} onChange={e => setForm({ ...form, propertyType: e.target.value })} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none">
               <option value="single_family">Single Family</option>
               <option value="condo">Condo</option>
               <option value="townhouse">Townhouse</option>
@@ -61,17 +61,17 @@ export const AITenantRiskPage: React.FC = () => {
           <Surface className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-100">{form.tenantName}</h3>
-                <p className="text-sm" style={{ color: tokens.color.textDim }}>AI predicted risk based on screening signals</p>
+                <h3 className="text-xl font-bold text-[var(--warm-ink)]">{form.tenantName}</h3>
+                <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>AI predicted risk based on screening signals</p>
               </div>
               <Badge tone={result.riskBand === 'LOW' ? 'success' : result.riskBand === 'MEDIUM' ? 'warning' : 'danger'}>{result.riskBand}</Badge>
             </div>
-            <div className="mt-4 p-3 rounded-xl bg-white/5 text-sm text-slate-300">
-              Recommended deposit adjustment: <span className="font-bold text-slate-100">{result.depositAdjPct > 0 ? `+${result.depositAdjPct}%` : `${result.depositAdjPct}%`}</span>
+            <div className="mt-4 p-3 rounded-xl bg-[var(--warm-sand)] text-sm text-[var(--soft-stone)]">
+              Recommended deposit adjustment: <span className="font-bold text-[var(--warm-ink)]">{result.depositAdjPct > 0 ? `+${result.depositAdjPct}%` : `${result.depositAdjPct}%`}</span>
             </div>
-            <div className="mt-3 space-y-1 text-sm text-slate-300">
+            <div className="mt-3 space-y-1 text-sm text-[var(--soft-stone)]">
               {(result.explanations || []).map((ex, i) => (
-                <div key={i} className="p-2 rounded-lg bg-white/5">• {ex}</div>
+                <div key={i} className="p-2 rounded-lg bg-[var(--warm-sand)]">• {ex}</div>
               ))}
             </div>
           </Surface>

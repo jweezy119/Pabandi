@@ -547,6 +547,7 @@ img {
 }
 
 .module-icon-property { background: var(--dusty-rose); }
+.module-icon-contact { background: var(--muted-ochre); }
 .module-icon-pipeline { background: var(--muted-ochre); }
 .module-icon-ledger { background: var(--sky-wash); }
 

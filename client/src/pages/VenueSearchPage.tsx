@@ -62,7 +62,7 @@ export const VenueSearchPage: React.FC = () => {
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <span key={i} className={`material-symbols-outlined text-sm ${i < Math.floor(rating) ? 'text-amber-400' : 'text-slate-600'}`}>star</span>
+      <span key={i} className={`material-symbols-outlined text-sm ${i < Math.floor(rating) ? 'text-[var(--muted-ochre)]' : 'text-[var(--soft-stone)]'}`}>star</span>
     ));
   };
 
@@ -75,47 +75,47 @@ export const VenueSearchPage: React.FC = () => {
         {/* Hero Section */}
         <div className="px-4 pt-8 pb-6 md:pt-12 md:pb-8">
           <div className="max-w-6xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-slate-100 mb-3 tracking-tight">Find Your Night</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-[var(--warm-ink)] mb-3 tracking-tight">Find Your Night</h1>
             <p className="text-base md:text-lg mb-8" style={{ color: tokens.color.textDim }}>Discover clubs, bars, lounges & rooftop experiences</p>
 
             {/* Search Bar */}
             <GlassCard className="max-w-4xl mx-auto p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">location_on</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]">location_on</span>
                   <input
                     value={searchCity}
                     onChange={(e) => setSearchCity(e.target.value)}
                     placeholder="City"
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 text-sm"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                   />
                 </div>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">calendar_today</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]">calendar_today</span>
                   <input
                     type="date"
                     value={searchDate}
                     onChange={(e) => setSearchDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500/50 text-sm"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                   />
                 </div>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">group</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]">group</span>
                   <select
                     value={partySize}
                     onChange={(e) => setPartySize(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500/50 text-sm appearance-none"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] focus:outline-none focus:border-[var(--clay)]/50 text-sm appearance-none"
                   >
-                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n} className="bg-slate-800">{n} {n === 1 ? 'Guest' : 'Guests'}</option>)}
+                    {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n} className="bg-[var(--cream)]">{n} {n === 1 ? 'Guest' : 'Guests'}</option>)}
                   </select>
                 </div>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">music_note</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]">music_note</span>
                   <input
                     value={searchGenre}
                     onChange={(e) => setSearchGenre(e.target.value)}
                     placeholder="Genre"
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 text-sm"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                   />
                 </div>
               </div>
@@ -126,8 +126,8 @@ export const VenueSearchPage: React.FC = () => {
         {/* Featured Carousel */}
         <div className="px-4 pb-8">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-400">auto_awesome</span>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[var(--muted-ochre)]">auto_awesome</span>
               Featured Venues
             </h2>
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
@@ -143,8 +143,8 @@ export const VenueSearchPage: React.FC = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                       <Badge tone="warning" className="absolute top-3 left-3">Featured</Badge>
                       <div className="absolute bottom-3 left-3 right-3">
-                        <h3 className="text-white font-bold text-lg">{venue.name}</h3>
-                        <p className="text-slate-300 text-xs">{venue.city} · {venue.type}</p>
+                        <h3 className="text-[var(--warm-ink)] font-bold text-lg">{venue.name}</h3>
+                        <p className="text-[var(--warm-ink)] text-xs">{venue.city} · {venue.type}</p>
                       </div>
                     </div>
                   </GlassCard>
@@ -158,7 +158,7 @@ export const VenueSearchPage: React.FC = () => {
         <div className="px-4 pb-12">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-100">
+              <h2 className="text-xl font-bold text-[var(--warm-ink)]">
                 All Venues <span className="text-sm font-normal ml-2" style={{ color: tokens.color.textDim }}>({filteredVenues.length})</span>
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)} className="lg:hidden">
@@ -172,13 +172,13 @@ export const VenueSearchPage: React.FC = () => {
               <aside className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-64 flex-shrink-0 space-y-6`}>
                 {/* Type Filter */}
                 <Surface className="p-4">
-                  <h3 className="text-sm font-semibold text-slate-100 mb-3">Venue Type</h3>
+                  <h3 className="text-sm font-semibold text-[var(--warm-ink)] mb-3">Venue Type</h3>
                   <div className="flex flex-wrap gap-2">
                     {VENUE_TYPES.map(type => (
                       <button
                         key={type}
                         onClick={() => setSelectedType(type)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedType === type ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedType === type ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]'}`}
                       >
                         {type === 'All' ? 'All' : type.charAt(0) + type.slice(1).toLowerCase()}
                       </button>
@@ -188,13 +188,13 @@ export const VenueSearchPage: React.FC = () => {
 
                 {/* Genre Filter */}
                 <Surface className="p-4">
-                  <h3 className="text-sm font-semibold text-slate-100 mb-3">Music Genre</h3>
+                  <h3 className="text-sm font-semibold text-[var(--warm-ink)] mb-3">Music Genre</h3>
                   <div className="flex flex-wrap gap-2">
                     {GENRES.map(genre => (
                       <button
                         key={genre}
                         onClick={() => toggleGenre(genre)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedGenres.includes(genre) ? 'bg-purple-500/20 text-purple-300 border border-purple-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedGenres.includes(genre) ? 'bg-[var(--dusty-rose)]/20 text-[var(--dusty-rose)] border border-[var(--dusty-rose)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]'}`}
                       >
                         {genre}
                       </button>
@@ -204,7 +204,7 @@ export const VenueSearchPage: React.FC = () => {
 
                 {/* Amenities Filter */}
                 <Surface className="p-4">
-                  <h3 className="text-sm font-semibold text-slate-100 mb-3">Amenities</h3>
+                  <h3 className="text-sm font-semibold text-[var(--warm-ink)] mb-3">Amenities</h3>
                   <div className="space-y-2">
                     {AMENITIES.map(amenity => (
                       <label key={amenity} className="flex items-center gap-2 cursor-pointer">
@@ -212,9 +212,9 @@ export const VenueSearchPage: React.FC = () => {
                           type="checkbox"
                           checked={selectedAmenities.includes(amenity)}
                           onChange={() => toggleAmenity(amenity)}
-                          className="w-4 h-4 rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500/30"
+                          className="w-4 h-4 rounded border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] text-[var(--clay)] focus:ring-[var(--clay)]/30"
                         />
-                        <span className="text-xs text-slate-300">{amenity}</span>
+                        <span className="text-xs text-[var(--warm-ink)]">{amenity}</span>
                       </label>
                     ))}
                   </div>
@@ -222,13 +222,13 @@ export const VenueSearchPage: React.FC = () => {
 
                 {/* Price Filter */}
                 <Surface className="p-4">
-                  <h3 className="text-sm font-semibold text-slate-100 mb-3">Price Range</h3>
+                  <h3 className="text-sm font-semibold text-[var(--warm-ink)] mb-3">Price Range</h3>
                   <div className="flex gap-2">
                     {PRICE_RANGES.map(price => (
                       <button
                         key={price}
                         onClick={() => togglePrice(price)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPrice.includes(price) ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPrice.includes(price) ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]'}`}
                       >
                         {price}
                       </button>
@@ -256,18 +256,18 @@ export const VenueSearchPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="text-slate-100 font-bold text-base mb-1">{venue.name}</h3>
+                          <h3 className="text-[var(--warm-ink)] font-bold text-base mb-1">{venue.name}</h3>
                           <div className="flex items-center gap-1 mb-2">
                             {renderStars(venue.rating)}
                             <span className="text-xs ml-1" style={{ color: tokens.color.textDim }}>{venue.rating}</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
                             {venue.musicGenres.map(g => (
-                              <span key={g} className="px-2 py-0.5 rounded-full bg-white/5 text-slate-400 text-[10px] border border-white/5">{g}</span>
+                              <span key={g} className="px-2 py-0.5 rounded-full bg-[var(--warm-sand)] text-[var(--soft-stone)] text-[10px] border border-[rgba(191,179,163,0.15)]">{g}</span>
                             ))}
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-emerald-300">${venue.coverCharge} cover</span>
+                            <span className="text-sm font-semibold text-[var(--sage)]">${venue.coverCharge} cover</span>
                             <span className="text-xs" style={{ color: tokens.color.textDim }}>{venue.priceRange}</span>
                           </div>
                         </div>
@@ -278,8 +278,8 @@ export const VenueSearchPage: React.FC = () => {
 
                 {filteredVenues.length === 0 && (
                   <Surface className="p-12 text-center">
-                    <span className="material-symbols-outlined text-5xl text-slate-600 mb-4 block">search_off</span>
-                    <h3 className="text-slate-100 font-bold text-lg mb-2">No venues found</h3>
+                    <span className="material-symbols-outlined text-5xl text-[var(--soft-stone)] mb-4 block">search_off</span>
+                    <h3 className="text-[var(--warm-ink)] font-bold text-lg mb-2">No venues found</h3>
                     <p style={{ color: tokens.color.textDim }} className="text-sm">Try adjusting your filters or search criteria</p>
                   </Surface>
                 )}

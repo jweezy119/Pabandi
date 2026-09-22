@@ -54,12 +54,12 @@ export const CalculatorPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🧮 Smart Calculator</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Real Estate Math</h1>
-          <p className="mt-3 text-slate-400">Mortgage, investment, and affordability — all in one place.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Real Estate Math</h1>
+          <p className="mt-3 text-[var(--soft-stone)]">Mortgage, investment, and affordability — all in one place.</p>
         </div>
 
         {/* Mode Tabs */}
@@ -68,7 +68,7 @@ export const CalculatorPage: React.FC = () => {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 px-4 py-3 rounded-xl text-center transition-all ${mode === m ? 'bg-indigo-500/20 border border-indigo-400/30' : 'bg-white/5 border border-white/10'}`}
+              className={`flex-1 px-4 py-3 rounded-xl text-center transition-all ${mode === m ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'}`}
             >
               <div className="text-lg">{m === 'investment' ? '💰' : m === 'mortgage' ? '🏠' : '📊'}</div>
               <div className="text-xs font-semibold capitalize">{m}</div>
@@ -79,24 +79,24 @@ export const CalculatorPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input */}
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">Property Details</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Property Details</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Purchase Price</label>
+                <label className="text-xs text-[var(--soft-stone)] mb-1 block">Purchase Price</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">$</span>
-                  <input value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} type="number" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                  <span className="text-[var(--soft-stone)]">$</span>
+                  <input value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} type="number" className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Down Payment</label>
+                <label className="text-xs text-[var(--soft-stone)] mb-1 block">Down Payment</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">$</span>
-                  <input value={downPayment} onChange={(e) => setDownPayment(e.target.value)} type="number" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                  <span className="text-[var(--soft-stone)]">$</span>
+                  <input value={downPayment} onChange={(e) => setDownPayment(e.target.value)} type="number" className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                 </div>
                 <div className="flex gap-2 mt-1">
                   {[10, 20, 25].map((pct) => (
-                    <button key={pct} onClick={() => setPurchasePrice((prev) => (parseFloat(prev) * pct / 100).toString())} className="text-xs px-2 py-1 rounded bg-white/5 text-slate-400 hover:bg-white/10">
+                    <button key={pct} onClick={() => setPurchasePrice((prev) => (parseFloat(prev) * pct / 100).toString())} className="text-xs px-2 py-1 rounded bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]">
                       {pct}%
                     </button>
                   ))}
@@ -104,15 +104,15 @@ export const CalculatorPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Interest Rate</label>
+                  <label className="text-xs text-[var(--soft-stone)] mb-1 block">Interest Rate</label>
                   <div className="flex items-center gap-2">
-                    <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} type="number" step="0.1" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-                    <span className="text-slate-400">%</span>
+                    <input value={interestRate} onChange={(e) => setInterestRate(e.target.value)} type="number" step="0.1" className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+                    <span className="text-[var(--soft-stone)]">%</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Loan Term</label>
-                  <select value={loanTerm} onChange={(e) => setLoanTerm(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none">
+                  <label className="text-xs text-[var(--soft-stone)] mb-1 block">Loan Term</label>
+                  <select value={loanTerm} onChange={(e) => setLoanTerm(e.target.value)} className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none">
                     <option value="15">15 years</option>
                     <option value="20">20 years</option>
                     <option value="30">30 years</option>
@@ -122,17 +122,17 @@ export const CalculatorPage: React.FC = () => {
               {mode === 'investment' && (
                 <>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1 block">Expected Monthly Rent</label>
+                    <label className="text-xs text-[var(--soft-stone)] mb-1 block">Expected Monthly Rent</label>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400">$</span>
-                      <input value={monthlyRent} onChange={(e) => setMonthlyRent(e.target.value)} type="number" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                      <span className="text-[var(--soft-stone)]">$</span>
+                      <input value={monthlyRent} onChange={(e) => setMonthlyRent(e.target.value)} type="number" className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1 block">Monthly Expenses (tax, insurance, maintenance)</label>
+                    <label className="text-xs text-[var(--soft-stone)] mb-1 block">Monthly Expenses (tax, insurance, maintenance)</label>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400">$</span>
-                      <input value={monthlyExpenses} onChange={(e) => setMonthlyExpenses(e.target.value)} type="number" className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                      <span className="text-[var(--soft-stone)]">$</span>
+                      <input value={monthlyExpenses} onChange={(e) => setMonthlyExpenses(e.target.value)} type="number" className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                     </div>
                   </div>
                 </>
@@ -143,56 +143,56 @@ export const CalculatorPage: React.FC = () => {
 
           {/* Results */}
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">Results</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Results</h3>
             {!result ? (
-              <div className="text-center py-8 text-slate-400">
+              <div className="text-center py-8 text-[var(--soft-stone)]">
                 <div className="text-3xl mb-2">📊</div>
                 <p>Enter details and click Calculate</p>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-white/5">
-                  <div className="text-xs text-slate-400">Monthly Mortgage</div>
-                  <div className="text-xl font-bold text-slate-100">${result.monthlyPayment.toLocaleString()}</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="text-xs text-[var(--soft-stone)]">Monthly Mortgage</div>
+                  <div className="text-xl font-bold text-[var(--warm-ink)]">${result.monthlyPayment.toLocaleString()}</div>
                 </div>
                 {mode === 'investment' && (
                   <>
-                    <div className="p-3 rounded-xl bg-white/5">
-                      <div className="text-xs text-slate-400">Monthly Cash Flow</div>
-                      <div className={`text-xl font-bold ${result.monthlyCashFlow >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                      <div className="text-xs text-[var(--soft-stone)]">Monthly Cash Flow</div>
+                      <div className={`text-xl font-bold ${result.monthlyCashFlow >= 0 ? 'text-[var(--sage)]' : 'text-[var(--dusty-rose)]'}`}>
                         {result.monthlyCashFlow >= 0 ? '+' : ''}${result.monthlyCashFlow.toLocaleString()}
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/5">
-                      <div className="text-xs text-slate-400">Annual Cash Flow</div>
-                      <div className={`text-xl font-bold ${result.annualCashFlow >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                      <div className="text-xs text-[var(--soft-stone)]">Annual Cash Flow</div>
+                      <div className={`text-xl font-bold ${result.annualCashFlow >= 0 ? 'text-[var(--sage)]' : 'text-[var(--dusty-rose)]'}`}>
                         {result.annualCashFlow >= 0 ? '+' : ''}${result.annualCashFlow.toLocaleString()}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-xl bg-white/5 text-center">
-                        <div className="text-xs text-slate-400">Cash-on-Cash</div>
-                        <div className="text-lg font-bold text-indigo-300">{result.cashOnCashReturn}%</div>
+                      <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                        <div className="text-xs text-[var(--soft-stone)]">Cash-on-Cash</div>
+                        <div className="text-lg font-bold text-[var(--clay)]">{result.cashOnCashReturn}%</div>
                       </div>
-                      <div className="p-3 rounded-xl bg-white/5 text-center">
-                        <div className="text-xs text-slate-400">Cap Rate</div>
-                        <div className="text-lg font-bold text-amber-300">{result.capRate}%</div>
+                      <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                        <div className="text-xs text-[var(--soft-stone)]">Cap Rate</div>
+                        <div className="text-lg font-bold text-[var(--muted-ochre)]">{result.capRate}%</div>
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/5">
-                      <div className="text-xs text-slate-400">Total Interest (life of loan)</div>
-                      <div className="text-lg font-bold text-rose-300">${result.totalInterest.toLocaleString()}</div>
+                    <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                      <div className="text-xs text-[var(--soft-stone)]">Total Interest (life of loan)</div>
+                      <div className="text-lg font-bold text-[var(--dusty-rose)]">${result.totalInterest.toLocaleString()}</div>
                     </div>
-                    <div className="p-3 rounded-xl bg-white/5">
-                      <div className="text-xs text-slate-400">Total Cost (down + all payments)</div>
-                      <div className="text-lg font-bold text-slate-100">${result.totalCost.toLocaleString()}</div>
+                    <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                      <div className="text-xs text-[var(--soft-stone)]">Total Cost (down + all payments)</div>
+                      <div className="text-lg font-bold text-[var(--warm-ink)]">${result.totalCost.toLocaleString()}</div>
                     </div>
                   </>
                 )}
                 {mode === 'mortgage' && (
-                  <div className="p-3 rounded-xl bg-white/5">
-                    <div className="text-xs text-slate-400">Total Interest</div>
-                    <div className="text-lg font-bold text-rose-300">${result.totalInterest.toLocaleString()}</div>
+                  <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                    <div className="text-xs text-[var(--soft-stone)]">Total Interest</div>
+                    <div className="text-lg font-bold text-[var(--dusty-rose)]">${result.totalInterest.toLocaleString()}</div>
                   </div>
                 )}
               </div>

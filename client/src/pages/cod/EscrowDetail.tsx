@@ -58,7 +58,7 @@ export default function EscrowDetail() {
   if (!escrow) {
     return (
       <DashboardLayout osName="Pabandi Pay" osIcon="🛡️" osColor="violet" navItems={navItems}>
-        <div className="text-center text-gray-400 py-12">Escrow not found</div>
+        <div className="text-center text-[var(--soft-stone)] py-12">Escrow not found</div>
       </DashboardLayout>
     );
   }
@@ -68,80 +68,80 @@ export default function EscrowDetail() {
   return (
     <DashboardLayout osName="Pabandi Pay" osIcon="🛡️" osColor="violet" navItems={navItems}>
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-white">Transaction #{escrow.id?.slice(0, 8)}</h1>
+        <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Transaction #{escrow.id?.slice(0, 8)}</h1>
         
         {/* Stepper */}
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-6">
+        <div className="bg-[#0a0f1a] border border-[var(--soft-stone)]/30 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             {STEPS.map((step, idx) => (
               <div key={step.key} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   idx <= currentStepIndex
-                    ? 'bg-violet-500 text-white'
-                    : 'bg-white/10 text-gray-500'
+                    ? 'bg-[var(--clay)] text-[var(--warm-ink)]'
+                    : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'
                 }`}>
                   {idx < currentStepIndex ? '✓' : idx + 1}
                 </div>
                 {idx < STEPS.length - 1 && (
                   <div className={`w-8 md:w-16 h-0.5 mx-1 ${
-                    idx < currentStepIndex ? 'bg-violet-500' : 'bg-white/10'
+                    idx < currentStepIndex ? 'bg-[var(--clay)]' : 'bg-[var(--warm-sand)]'
                   }`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-400">
+          <div className="flex justify-between text-xs text-[var(--soft-stone)]">
             {STEPS.map((step) => (
               <span key={step.key} className="hidden md:block">{step.label}</span>
             ))}
           </div>
-          <p className="text-violet-300 text-sm mt-4 text-center font-medium">
+          <p className="text-[var(--terracotta)] text-sm mt-4 text-center font-medium">
             Current Status: {STEPS[currentStepIndex]?.label}
           </p>
         </div>
 
         {/* Transaction Info */}
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-6">
+        <div className="bg-[#0a0f1a] border border-[var(--soft-stone)]/30 rounded-xl p-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-gray-400 text-sm">Buyer</p>
-              <p className="text-white">{escrow.buyer?.firstName} {escrow.buyer?.lastName}</p>
+              <p className="text-[var(--soft-stone)] text-sm">Buyer</p>
+              <p className="text-[var(--warm-ink)]">{escrow.buyer?.firstName} {escrow.buyer?.lastName}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Seller</p>
-              <p className="text-white">{escrow.seller?.firstName} {escrow.seller?.lastName}</p>
+              <p className="text-[var(--soft-stone)] text-sm">Seller</p>
+              <p className="text-[var(--warm-ink)]">{escrow.seller?.firstName} {escrow.seller?.lastName}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Amount</p>
-              <p className="text-emerald-400 font-bold">Rs {escrow.amount?.toLocaleString()}</p>
+              <p className="text-[var(--soft-stone)] text-sm">Amount</p>
+              <p className="text-[var(--sage)] font-bold">Rs {escrow.amount?.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Status</p>
-              <p className="text-white">{escrow.status}</p>
+              <p className="text-[var(--soft-stone)] text-sm">Status</p>
+              <p className="text-[var(--warm-ink)]">{escrow.status}</p>
             </div>
           </div>
           {escrow.shippingAddress && (
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <p className="text-gray-400 text-sm">Shipping Address</p>
-              <p className="text-white">{escrow.shippingAddress}</p>
+            <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/30">
+              <p className="text-[var(--soft-stone)] text-sm">Shipping Address</p>
+              <p className="text-[var(--warm-ink)]">{escrow.shippingAddress}</p>
             </div>
           )}
           {escrow.trackingNumber && (
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <p className="text-gray-400 text-sm">Tracking Number</p>
-              <p className="text-white">{escrow.trackingNumber}</p>
+            <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/30">
+              <p className="text-[var(--soft-stone)] text-sm">Tracking Number</p>
+              <p className="text-[var(--warm-ink)]">{escrow.trackingNumber}</p>
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="bg-[#0a0f1a] border border-white/5 rounded-xl p-6">
-          <h3 className="text-white font-bold mb-4">Actions</h3>
+        <div className="bg-[#0a0f1a] border border-[var(--soft-stone)]/30 rounded-xl p-6">
+          <h3 className="text-[var(--warm-ink)] font-bold mb-4">Actions</h3>
           <div className="flex flex-wrap gap-3">
             {escrow.status === 'PENDING' && (
               <button
                 onClick={() => handleAction('pay')}
-                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600"
+                className="px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] rounded-lg text-sm hover:bg-emerald-600"
               >
                 Pay into Escrow
               </button>
@@ -149,7 +149,7 @@ export default function EscrowDetail() {
             {escrow.status === 'PAID' && (
               <button
                 onClick={() => handleAction('ship', { trackingNumber: prompt('Enter tracking number:') || 'TRK-' + Date.now() })}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600"
+                className="px-4 py-2 bg-[var(--muted-ochre)] text-[var(--warm-ink)] rounded-lg text-sm hover:bg-[var(--muted-ochre)]"
               >
                 Confirm Shipment
               </button>
@@ -157,7 +157,7 @@ export default function EscrowDetail() {
             {escrow.status === 'SHIPPED' && (
               <button
                 onClick={() => handleAction('deliver')}
-                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600"
+                className="px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] rounded-lg text-sm hover:bg-emerald-600"
               >
                 Confirm Delivery
               </button>
@@ -165,7 +165,7 @@ export default function EscrowDetail() {
             {escrow.status === 'DELIVERED' && (
               <button
                 onClick={() => handleAction('release')}
-                className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600"
+                className="px-4 py-2 bg-[var(--sage)] text-[var(--warm-ink)] rounded-lg text-sm hover:bg-emerald-600"
               >
                 Release Funds
               </button>
@@ -173,7 +173,7 @@ export default function EscrowDetail() {
             {['PAID', 'SHIPPED', 'DELIVERED'].includes(escrow.status) && (
               <button
                 onClick={() => setShowDisputeForm(true)}
-                className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg text-sm hover:bg-red-500/30"
+                className="px-4 py-2 bg-[var(--terracotta)]/20 text-[var(--terracotta)] rounded-lg text-sm hover:bg-[var(--terracotta)]/30"
               >
                 Raise Dispute
               </button>
@@ -184,22 +184,22 @@ export default function EscrowDetail() {
         {/* Dispute Form */}
         {showDisputeForm && (
           <div className="bg-[#0a0f1a] border border-red-500/30 rounded-xl p-6">
-            <h3 className="text-red-300 font-bold mb-4">Raise Dispute</h3>
+            <h3 className="text-[var(--terracotta)] font-bold mb-4">Raise Dispute</h3>
             <textarea
               value={disputeReason}
               onChange={(e) => setDisputeReason(e.target.value)}
               placeholder="Describe the issue..."
               rows={3}
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white mb-3"
+              className="w-full px-4 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] mb-3"
             />
             <div className="flex gap-3">
               <button
                 onClick={() => { handleAction('dispute', { reason: disputeReason }); setShowDisputeForm(false); }}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm"
+                className="px-4 py-2 bg-[var(--terracotta)] text-[var(--warm-ink)] rounded-lg text-sm"
               >
                 Submit Dispute
               </button>
-              <button onClick={() => setShowDisputeForm(false)} className="px-4 py-2 bg-white/10 text-white rounded-lg text-sm">
+              <button onClick={() => setShowDisputeForm(false)} className="px-4 py-2 bg-[var(--warm-sand)] text-[var(--warm-ink)] rounded-lg text-sm">
                 Cancel
               </button>
             </div>

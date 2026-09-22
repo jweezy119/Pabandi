@@ -35,22 +35,22 @@ export const VerifierSandboxPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">3rd-Party Verifier Sandbox</h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <h1 className="text-3xl font-bold text-[var(--warm-ink)]">3rd-Party Verifier Sandbox</h1>
+        <p className="mt-2 text-sm text-[var(--warm-ink)]">
           Simulate being an external platform (like Upwork or Shopify). Paste a Pabandi Open Badges v3 Verifiable Credential (JWT) to cryptographically verify its authenticity and check its revocation status.
         </p>
       </div>
 
       <div className="bg-white border rounded-lg shadow-sm p-6 space-y-4">
         <div>
-          <label htmlFor="jwt" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="jwt" className="block text-sm font-medium text-[var(--warm-ink)]">
             Paste JWT Proof or Verifiable Presentation
           </label>
           <div className="mt-1">
             <textarea
               id="jwt"
               rows={5}
-              className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+              className="shadow-sm focus:ring-[var(--clay)] focus:border-[var(--clay)] block w-full sm:text-sm border-[rgba(191,179,163,0.3)] rounded-md p-2 border"
               placeholder="eyJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDp3ZWI..."
               value={jwt}
               onChange={(e) => setJwt(e.target.value)}
@@ -61,15 +61,15 @@ export const VerifierSandboxPage: React.FC = () => {
         <button
           onClick={handleVerify}
           disabled={loading || !jwt}
-          className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50"
+          className="w-full bg-[var(--terracotta)] text-[var(--warm-ink)] px-4 py-2 rounded-md font-medium hover:bg-[var(--terracotta)] disabled:opacity-50"
         >
           {loading ? 'Verifying...' : 'Verify Cryptographic Signature'}
         </button>
 
         {error && (
-          <div className="mt-4 p-4 rounded-md bg-red-50 border border-red-200">
-            <h3 className="text-sm font-medium text-red-800">Verification Failed</h3>
-            <div className="mt-2 text-sm text-red-700">
+          <div className="mt-4 p-4 rounded-md bg-[var(--terracotta)] border border-red-200">
+            <h3 className="text-sm font-medium text-[var(--terracotta)]">Verification Failed</h3>
+            <div className="mt-2 text-sm text-[var(--terracotta)]">
               <p>{error}</p>
             </div>
           </div>
@@ -96,8 +96,8 @@ export const VerifierSandboxPage: React.FC = () => {
 
         {result && result.payload && (
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Decoded Payload:</h4>
-            <pre className="bg-gray-800 text-green-400 p-4 rounded-md overflow-x-auto text-xs">
+            <h4 className="text-sm font-medium text-[var(--warm-ink)] mb-2">Decoded Payload:</h4>
+            <pre className="bg-[var(--cream)] text-green-400 p-4 rounded-md overflow-x-auto text-xs">
               {JSON.stringify(result.payload, null, 2)}
             </pre>
           </div>

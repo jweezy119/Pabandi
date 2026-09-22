@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: 'linear-gradient(135deg,#0ea5e9, #14b8a6)' }}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-[var(--warm-ink)]" style={{ background: 'linear-gradient(135deg,var(--sky-wash), #14b8a6)' }}>
               P
             </div>
             <span className="font-headline text-xl font-black tracking-tight" style={{ color: tokens.color.primary }}>Pabandi</span>
@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
 
           {success ? (
             <div className="text-center">
-              <div className="mb-4 rounded-xl border px-4 py-3 text-sm font-medium" style={{ background: 'rgba(16,185,129,0.12)', borderColor: 'rgba(16,185,129,0.25)', color: '#10b981' }}>
+              <div className="mb-4 rounded-xl border px-4 py-3 text-sm font-medium" style={{ background: 'rgba(16,185,129,0.12)', borderColor: 'rgba(16,185,129,0.25)', color: 'var(--sage)' }}>
                 Password reset successfully! Redirecting to login...
               </div>
               <Link to="/login" className="block w-full">

@@ -244,28 +244,28 @@ const OutreachCRMPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <div className="max-w-7xl mx-auto p-4 md:p-8">
 
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-black tracking-tight">Outreach CRM</h1>
-            <p className="text-white/40 text-sm mt-1">Advanced lead management, automation, and WhatsApp smart actions.</p>
+            <p className="text-[var(--warm-ink)]/40 text-sm mt-1">Advanced lead management, automation, and WhatsApp smart actions.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => isPro ? setAiCampaignOpen(true) : setShowUpgradeModal(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors">
+            <button onClick={() => isPro ? setAiCampaignOpen(true) : setShowUpgradeModal(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[var(--sage)]/30 bg-[var(--sage)]/10 text-[var(--sage)] hover:bg-[var(--sage)]/20 transition-colors">
               <BoltIcon className="w-4 h-4" /> AI Campaign
             </button>
-            <button onClick={() => setAdvancedOpen(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+            <button onClick={() => setAdvancedOpen(true)} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)] hover:border-white/25 text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">
               <BoltIcon className="w-4 h-4" /> Advanced
             </button>
-            <button onClick={() => { setAutomationOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+            <button onClick={() => { setAutomationOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)] hover:border-white/25 text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">
               <Cog6ToothIcon className="w-4 h-4" /> Automation
             </button>
-            <button onClick={() => { setPluginsOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 hover:border-white/25 text-white/70 hover:text-white">
+            <button onClick={() => { setPluginsOpen(true); loadPlugins(); }} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)] hover:border-white/25 text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">
               <ClipboardDocumentCheckIcon className="w-4 h-4" /> Plugins
             </button>
-            <button onClick={fetchData} className="flex items-center gap-2 text-xs text-white/50 hover:text-white transition-colors px-3 py-2 rounded-xl border border-white/10">
+            <button onClick={fetchData} className="flex items-center gap-2 text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)] transition-colors px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)]">
               <ArrowPathIcon className="w-4 h-4" /> Refresh
             </button>
           </div>
@@ -274,9 +274,9 @@ const OutreachCRMPage: React.FC = () => {
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             {STATUSES.map(s => (
-              <div key={s.value} className="rounded-2xl p-4 border" style={{ background: s.bg, borderColor: `${s.color}30` }}>
+              <div key={s.value} className="rounded-[var(--radius-card)] p-4 border" style={{ background: s.bg, borderColor: `${s.color}30` }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: s.color }}>{s.label}</p>
-                <p className="text-3xl font-black text-white">{summary.byStatus[s.value] || 0}</p>
+                <p className="text-3xl font-black text-[var(--warm-ink)]">{summary.byStatus[s.value] || 0}</p>
               </div>
             ))}
           </div>
@@ -284,56 +284,56 @@ const OutreachCRMPage: React.FC = () => {
 
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-              <p className="text-xs text-white/50 mb-1">Total Leads</p>
-              <p className="text-4xl font-black text-white">{summary.total}</p>
+            <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4">
+              <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Total Leads</p>
+              <p className="text-4xl font-black text-[var(--warm-ink)]">{summary.total}</p>
             </div>
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-              <p className="text-xs text-white/50 mb-1">Business Leads</p>
-              <p className="text-4xl font-black text-emerald-400">{summary.businessLeads}</p>
+            <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4">
+              <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Business Leads</p>
+              <p className="text-4xl font-black text-[var(--sage)]">{summary.businessLeads}</p>
             </div>
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-              <p className="text-xs text-white/50 mb-1">Conversion</p>
-              <p className="text-4xl font-black text-amber-400">{summary.conversionRate}%</p>
+            <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4">
+              <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Conversion</p>
+              <p className="text-4xl font-black text-[var(--muted-ochre)]">{summary.conversionRate}%</p>
             </div>
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-              <p className="text-xs text-white/50 mb-1">Avg Lead Score</p>
-              <p className="text-4xl font-black text-indigo-400">{summary.avgScore || '0.0'}</p>
+            <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4">
+              <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Avg Lead Score</p>
+              <p className="text-4xl font-black text-[var(--terracotta)]">{summary.avgScore || '0.0'}</p>
             </div>
           </div>
         )}
 
         {isPro && (
-          <div className="mb-8 p-6 bg-gradient-to-r from-emerald-900/20 to-black border border-emerald-500/20 rounded-3xl">
+          <div className="mb-8 p-6 bg-gradient-to-r from-emerald-900/20 to-black border border-[var(--sage)]/20 rounded-[var(--radius-card)]">
             <div className="flex items-center gap-2 mb-4">
-              <BoltIcon className="w-5 h-5 text-emerald-400" />
-              <h3 className="font-black text-white text-lg">AI Campaign Analytics</h3>
-              <span className="text-[10px] font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded uppercase tracking-wider ml-2">Pro</span>
+              <BoltIcon className="w-5 h-5 text-[var(--sage)]" />
+              <h3 className="font-black text-[var(--warm-ink)] text-lg">AI Campaign Analytics</h3>
+              <span className="text-[10px] font-bold bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)] px-2 py-0.5 rounded uppercase tracking-wider ml-2">Pro</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Sent</p>
-                <p className="text-2xl font-black text-white">1,204</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Sent</p>
+                <p className="text-2xl font-black text-[var(--warm-ink)]">1,204</p>
               </div>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Delivered</p>
-                <p className="text-2xl font-black text-emerald-400">98%</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Delivered</p>
+                <p className="text-2xl font-black text-[var(--sage)]">98%</p>
               </div>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Read</p>
-                <p className="text-2xl font-black text-blue-400">82%</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Read</p>
+                <p className="text-2xl font-black text-[var(--sky-wash)]">82%</p>
               </div>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Clicked</p>
-                <p className="text-2xl font-black text-purple-400">45%</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Clicked</p>
+                <p className="text-2xl font-black text-[var(--dusty-rose)]">45%</p>
               </div>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Reactivated</p>
-                <p className="text-2xl font-black text-amber-400">12%</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Reactivated</p>
+                <p className="text-2xl font-black text-[var(--muted-ochre)]">12%</p>
               </div>
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-3">
-                <p className="text-xs text-white/50 mb-1">Opt-out</p>
-                <p className="text-2xl font-black text-red-400">1.2%</p>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                <p className="text-xs text-[var(--warm-ink)]/50 mb-1">Opt-out</p>
+                <p className="text-2xl font-black text-[var(--terracotta)]">1.2%</p>
               </div>
             </div>
           </div>
@@ -341,56 +341,56 @@ const OutreachCRMPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="relative">
-            <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, business, phone" className="bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30" />
+            <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--warm-ink)]/40" />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, business, phone" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl pl-9 pr-3 py-2 text-sm text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-white/30" />
           </div>
-          <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+          <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] focus:outline-none">
             <option value="">All Cities</option>
             {cities.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] focus:outline-none">
             <option value="">All Statuses</option>
             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-          <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-sm text-[var(--warm-ink)]/60 cursor-pointer select-none">
             <input type="checkbox" checked={businessOnly} onChange={e => setBusinessOnly(e.target.checked)} className="rounded" />
             Business leads only
           </label>
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-white">
+            <button onClick={exportCsv} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">
               <ArrowDownTrayIcon className="w-4 h-4" /> Export CSV
             </button>
-            <span className="text-xs text-white/40">{selectedCount}/{leads.length} selected</span>
+            <span className="text-xs text-[var(--warm-ink)]/40">{selectedCount}/{leads.length} selected</span>
           </div>
         </div>
 
         {selectedCount > 0 && (
-          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-3">
-            <span className="text-xs text-white/60 font-bold">{selectedCount} selected</span>
-            <select value={templateId} onChange={e => setTemplateId(e.target.value)} className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+          <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4 mb-6 flex flex-wrap items-center gap-3">
+            <span className="text-xs text-[var(--warm-ink)]/60 font-bold">{selectedCount} selected</span>
+            <select value={templateId} onChange={e => setTemplateId(e.target.value)} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] focus:outline-none">
               <option value="">Select template</option>
               {SAMPLE_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
             </select>
-            <button onClick={bulkSend} disabled={!templateId} className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-40">
+            <button onClick={bulkSend} disabled={!templateId} className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-[var(--sage)] hover:bg-[var(--sage)] text-black disabled:opacity-40">
               <ChatBubbleLeftRightIcon className="w-4 h-4" /> Send Bulk
             </button>
-            <div className="text-xs text-white/40">or open details for smart actions.</div>
+            <div className="text-xs text-[var(--warm-ink)]/40">or open details for smart actions.</div>
           </div>
         )}
 
-        <div className="bg-white/[0.03] border border-white/10 rounded-3xl overflow-hidden">
+        <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-24 text-white/30">Loading leads…</div>
+            <div className="flex items-center justify-center py-24 text-[var(--warm-ink)]/30">Loading leads…</div>
           ) : visibleLeads.length === 0 ? (
-            <div className="text-center py-24 text-white/30">
+            <div className="text-center py-24 text-[var(--warm-ink)]/30">
               <p className="mb-1">No leads found</p>
-              <p className="text-xs text-white/40">Share landing pages or adjust filters to start outreach.</p>
+              <p className="text-xs text-[var(--warm-ink)]/40">Share landing pages or adjust filters to start outreach.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/10 text-left text-xs text-white/40 uppercase tracking-widest">
+                  <tr className="border-b border-[rgba(191,179,163,0.3)] text-left text-xs text-[var(--warm-ink)]/40 uppercase tracking-widest">
                     <th className="px-5 py-4 font-semibold w-10">
                       <input type="checkbox" checked={visibleLeads.length > 0 && visibleLeads.every(l => selected[l.id])} onChange={e => {
                         const next: Record<string, boolean> = {};
@@ -407,7 +407,7 @@ const OutreachCRMPage: React.FC = () => {
                     <th className="px-5 py-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[rgba(191,179,163,0.2)]">
                   {visibleLeads.map(lead => {
                     const si = statusInfo(lead.outreachStatus);
                     return (
@@ -416,20 +416,20 @@ const OutreachCRMPage: React.FC = () => {
                           <input type="checkbox" checked={!!selected[lead.id]} onChange={e => setSelected({ ...selected, [lead.id]: e.target.checked })} />
                         </td>
                         <td className="px-5 py-4">
-                          <p className="font-semibold text-white text-sm">{lead.businessName || lead.name}</p>
-                          <p className="text-xs text-white/40">{lead.businessType || lead.role}</p>
+                          <p className="font-semibold text-[var(--warm-ink)] text-sm">{lead.businessName || lead.name}</p>
+                          <p className="text-xs text-[var(--warm-ink)]/40">{lead.businessType || lead.role}</p>
                         </td>
-                        <td className="px-5 py-4 text-sm text-white/70">{lead.city || '—'}</td>
-                        <td className="px-5 py-4 text-sm font-mono text-white/60">{lead.phone || '—'}</td>
+                        <td className="px-5 py-4 text-sm text-[var(--warm-ink)]/70">{lead.city || '—'}</td>
+                        <td className="px-5 py-4 text-sm font-mono text-[var(--warm-ink)]/60">{lead.phone || '—'}</td>
                         <td className="px-5 py-4">
                           <select value={lead.outreachStatus} onChange={e => updateLead(lead.id, { outreachStatus: e.target.value })} className="text-xs font-bold px-2 py-1 rounded-full border cursor-pointer focus:outline-none" style={{ background: si.bg, color: si.color, borderColor: `${si.color}40` }}>
                             {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                           </select>
                         </td>
-                        <td className="px-5 py-4 text-center text-white/50 text-sm">{lead.outreachAttempts || 0}</td>
+                        <td className="px-5 py-4 text-center text-[var(--warm-ink)]/50 text-sm">{lead.outreachAttempts || 0}</td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <button onClick={() => { setActiveLead(lead); setNotes(lead.notes || ''); }} className="text-xs px-3 py-1.5 rounded-lg bg-white/5 text-white/50 border border-white/10 hover:border-white/20 transition-colors">Details</button>
+                            <button onClick={() => { setActiveLead(lead); setNotes(lead.notes || ''); }} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--warm-sand)] text-[var(--warm-ink)]/50 border border-[rgba(191,179,163,0.3)] hover:border-[rgba(191,179,163,0.4)] transition-colors">Details</button>
                             <button onClick={() => sendTo(lead.phone || '', lead.id)} disabled={!lead.phone} title="Send WhatsApp via OpenWA" className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366]/20 transition-colors disabled:opacity-40">
                               <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" /> WhatsApp
                             </button>
@@ -450,28 +450,28 @@ const OutreachCRMPage: React.FC = () => {
         </div>
 
         {activeLead && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-black text-white">{activeLead.businessName || activeLead.name}</h3>
-                  <p className="text-white/40 text-xs">{activeLead.city} · {activeLead.phone}</p>
+                  <h3 className="font-black text-[var(--warm-ink)]">{activeLead.businessName || activeLead.name}</h3>
+                  <p className="text-[var(--warm-ink)]/40 text-xs">{activeLead.city} · {activeLead.phone}</p>
                 </div>
-                <button onClick={() => setActiveLead(null)} className="text-xs text-white/50 hover:text-white">Close</button>
+                <button onClick={() => setActiveLead(null)} className="text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)]">Close</button>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-3">
-                  <p className="text-xs text-white/40 mb-1">Status</p>
-                  <select value={activeLead.outreachStatus} onChange={e => updateLead(activeLead.id, { outreachStatus: e.target.value })} className="w-full bg-transparent text-sm font-bold text-white focus:outline-none">
+                <div className="bg-white/[0.04] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                  <p className="text-xs text-[var(--warm-ink)]/40 mb-1">Status</p>
+                  <select value={activeLead.outreachStatus} onChange={e => updateLead(activeLead.id, { outreachStatus: e.target.value })} className="w-full bg-transparent text-sm font-bold text-[var(--warm-ink)] focus:outline-none">
                     {STATUSES.map(s => <option key={s.value} value={s.value} style={{ background: '#111', color: '#fff' }}>{s.label}</option>)}
                   </select>
                 </div>
-                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-3">
-                  <p className="text-xs text-white/40 mb-1">Attempts</p>
-                  <p className="text-sm font-bold text-white">{activeLead.outreachAttempts || 0}</p>
+                <div className="bg-white/[0.04] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
+                  <p className="text-xs text-[var(--warm-ink)]/40 mb-1">Attempts</p>
+                  <p className="text-sm font-bold text-[var(--warm-ink)]">{activeLead.outreachAttempts || 0}</p>
                 </div>
               </div>
-              <label className="text-xs text-white/50 mb-1 block">Smart action</label>
+              <label className="text-xs text-[var(--warm-ink)]/50 mb-1 block">Smart action</label>
               <div className="flex flex-wrap gap-2 mb-4">
                 {QUICK_ACTIONS.map(action => (
                   <button key={action.id} onClick={() => { smartAction(activeLead.id, action.id).then(() => setActiveLead(null)); }} className="text-xs font-bold px-3 py-2 rounded-xl border hover:brightness-110" style={{ background: `${action.color}15`, color: action.color, borderColor: `${action.color}35` }}>
@@ -479,50 +479,50 @@ const OutreachCRMPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <label className="text-xs text-white/50 mb-1 block">Notes</label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5} placeholder="Notes, call outcomes, follow-up reminders…" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 resize-none mb-4" />
+              <label className="text-xs text-[var(--warm-ink)]/50 mb-1 block">Notes</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5} placeholder="Notes, call outcomes, follow-up reminders…" className="w-full bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-sm text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-white/30 resize-none mb-4" />
               <div className="flex gap-3">
-                <button onClick={async () => { await updateLead(activeLead.id, { notes }); setActiveLead(null); }} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
-                <button onClick={() => setActiveLead(null)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">Close</button>
+                <button onClick={async () => { await updateLead(activeLead.id, { notes }); setActiveLead(null); }} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-[var(--sage)] hover:bg-[var(--sage)] text-black font-bold text-sm transition-colors disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+                <button onClick={() => setActiveLead(null)} className="px-4 py-2.5 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)] text-sm transition-colors">Close</button>
               </div>
             </div>
           </div>
         )}
         
         {aiCampaignOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <BoltIcon className="w-5 h-5 text-emerald-400" />
-                  <h3 className="font-black text-white">AI Re-engagement Campaign</h3>
-                  <span className="text-[10px] font-bold bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded uppercase tracking-wider">Pro Tier</span>
+                  <BoltIcon className="w-5 h-5 text-[var(--sage)]" />
+                  <h3 className="font-black text-[var(--warm-ink)]">AI Re-engagement Campaign</h3>
+                  <span className="text-[10px] font-bold bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)] px-2 py-0.5 rounded uppercase tracking-wider">Pro Tier</span>
                 </div>
-                <button onClick={() => setAiCampaignOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
+                <button onClick={() => setAiCampaignOpen(false)} className="text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)]">Close</button>
               </div>
               
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-4">
-                <p className="text-sm text-white/70 mb-3">
+              <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-4 mb-4">
+                <p className="text-sm text-[var(--warm-ink)]/70 mb-3">
                   Instantly generate personalized follow-up copy tailored to your selected segment and business type.
                 </p>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs text-white/50 block">Target Audience</label>
-                  <select className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30">
+                  <label className="text-xs text-[var(--warm-ink)]/50 block">Target Audience</label>
+                  <select className="w-full bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] focus:outline-none focus:border-white/30">
                     <option>Cold Leads (No response {'>'} 7 days)</option>
                     <option>Warm Leads (Demo Scheduled but no-show)</option>
                     <option>Previous Customers (Re-book incentive)</option>
                   </select>
                   
-                  <label className="text-xs text-white/50 block mt-2">Campaign Goal</label>
-                  <input placeholder="e.g. Offer 10% off next booking" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30" />
+                  <label className="text-xs text-[var(--warm-ink)]/50 block mt-2">Campaign Goal</label>
+                  <input placeholder="e.g. Offer 10% off next booking" className="w-full bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-white/30" />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <button className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-[#06b6d4] text-white font-bold text-sm transition-opacity hover:opacity-90">
+                <button className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-[#06b6d4] text-[var(--warm-ink)] font-bold text-sm transition-opacity hover:opacity-90">
                   Generate Copy ✨
                 </button>
-                <button onClick={() => setAiCampaignOpen(false)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">
+                <button onClick={() => setAiCampaignOpen(false)} className="px-4 py-2.5 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)] text-sm transition-colors">
                   Close
                 </button>
               </div>
@@ -531,25 +531,25 @@ const OutreachCRMPage: React.FC = () => {
         )}
 
         {advancedOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <BoltIcon className="w-5 h-5 text-white/70" />
-                  <h3 className="font-black text-white">Advanced</h3>
+                  <BoltIcon className="w-5 h-5 text-[var(--warm-ink)]/70" />
+                  <h3 className="font-black text-[var(--warm-ink)]">Advanced</h3>
                 </div>
-                <button onClick={() => { setAdvancedOpen(false); setSmartResult(null); }} className="text-xs text-white/50 hover:text-white">Close</button>
+                <button onClick={() => { setAdvancedOpen(false); setSmartResult(null); }} className="text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)]">Close</button>
               </div>
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 mb-3">
-                <p className="text-xs text-white/40 mb-2">WhatsApp smart capabilities</p>
-                <p className="text-xs text-white/70 whitespace-pre-wrap">{JSON.stringify({ menu: true, book: true, cancel: true, reschedule: true, update: true, status: true, pay: true, human: true, faq: true, pluginAware: true }, null, 2)}</p>
+              <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3 mb-3">
+                <p className="text-xs text-[var(--warm-ink)]/40 mb-2">WhatsApp smart capabilities</p>
+                <p className="text-xs text-[var(--warm-ink)]/70 whitespace-pre-wrap">{JSON.stringify({ menu: true, book: true, cancel: true, reschedule: true, update: true, status: true, pay: true, human: true, faq: true, pluginAware: true }, null, 2)}</p>
               </div>
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 mb-3">
-                <p className="text-xs text-white/40 mb-2">Live smart action</p>
-                <label className="text-xs text-white/60 block mb-1">Lead ID</label>
-                <input id="smartLeadId" placeholder="Paste lead ID" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-white/30 mb-2" />
-                <label className="text-xs text-white/60 block mb-1">Intent</label>
-                <select id="smartIntent" className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white">
+              <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3 mb-3">
+                <p className="text-xs text-[var(--warm-ink)]/40 mb-2">Live smart action</p>
+                <label className="text-xs text-[var(--warm-ink)]/60 block mb-1">Lead ID</label>
+                <input id="smartLeadId" placeholder="Paste lead ID" className="w-full bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-white/30 mb-2" />
+                <label className="text-xs text-[var(--warm-ink)]/60 block mb-1">Intent</label>
+                <select id="smartIntent" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-2 text-sm text-[var(--warm-ink)]">
                   {QUICK_ACTIONS.map(a => <option key={a.id} value={a.id}>{a.label}</option>)}
                 </select>
                 <button onClick={async () => {
@@ -557,39 +557,39 @@ const OutreachCRMPage: React.FC = () => {
                   const intent = (document.getElementById('smartIntent') as HTMLSelectElement).value;
                   if (!leadId) return;
                   await smartAction(leadId, intent);
-                }} disabled={smartTesting} className="mt-2 flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-50">
+                }} disabled={smartTesting} className="mt-2 flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl bg-[var(--sage)] hover:bg-[var(--sage)] text-black disabled:opacity-50">
                   <PlayIcon className="w-4 h-4" /> Run smart action
                 </button>
-                {smartResult && <p className="text-xs text-white/70 mt-2">Result: {smartResult}</p>}
+                {smartResult && <p className="text-xs text-[var(--warm-ink)]/70 mt-2">Result: {smartResult}</p>}
               </div>
-              <p className="text-xs text-white/40">Advanced actions help move leads through automation, plugin-aware messaging, and fast manual overrides.</p>
+              <p className="text-xs text-[var(--warm-ink)]/40">Advanced actions help move leads through automation, plugin-aware messaging, and fast manual overrides.</p>
             </div>
           </div>
         )}
 
         {pluginsOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-white/70" />
-                  <h3 className="font-black text-white">Plugin Catalog</h3>
+                  <ClipboardDocumentCheckIcon className="w-5 h-5 text-[var(--warm-ink)]/70" />
+                  <h3 className="font-black text-[var(--warm-ink)]">Plugin Catalog</h3>
                 </div>
-                <button onClick={() => setPluginsOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
+                <button onClick={() => setPluginsOpen(false)} className="text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)]">Close</button>
               </div>
-              {plugins.length === 0 && <p className="text-xs text-white/50">No plugins listed yet.</p>}
+              {plugins.length === 0 && <p className="text-xs text-[var(--warm-ink)]/50">No plugins listed yet.</p>}
               <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
                 {plugins.map(plugin => (
-                  <div key={plugin.id} className="bg-white/[0.03] border border-white/10 rounded-2xl p-3">
+                  <div key={plugin.id} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-bold text-white">{plugin.name}</p>
-                        <p className="text-xs text-white/40">{plugin.id} · {plugin.version}</p>
+                        <p className="text-sm font-bold text-[var(--warm-ink)]">{plugin.name}</p>
+                        <p className="text-xs text-[var(--warm-ink)]/40">{plugin.id} · {plugin.version}</p>
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-white/10 text-white/60">{plugin.status}</span>
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/60">{plugin.status}</span>
                     </div>
-                    {plugin.description && <p className="text-xs text-white/60 mt-2">{plugin.description}</p>}
-                    {plugin.keywords?.length > 0 && <p className="text-[11px] text-white/35 mt-1">keywords: {(plugin.keywords as string[]).join(', ')}</p>}
+                    {plugin.description && <p className="text-xs text-[var(--warm-ink)]/60 mt-2">{plugin.description}</p>}
+                    {plugin.keywords?.length > 0 && <p className="text-[11px] text-[var(--warm-ink)]/35 mt-1">keywords: {(plugin.keywords as string[]).join(', ')}</p>}
                   </div>
                 ))}
               </div>
@@ -598,67 +598,67 @@ const OutreachCRMPage: React.FC = () => {
         )}
 
         {automationOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Cog6ToothIcon className="w-5 h-5 text-white/70" />
-                  <h3 className="font-black text-white">Automation</h3>
+                  <Cog6ToothIcon className="w-5 h-5 text-[var(--warm-ink)]/70" />
+                  <h3 className="font-black text-[var(--warm-ink)]">Automation</h3>
                 </div>
-                <button onClick={() => setAutomationOpen(false)} className="text-xs text-white/50 hover:text-white">Close</button>
+                <button onClick={() => setAutomationOpen(false)} className="text-xs text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)]">Close</button>
               </div>
-              <p className="text-xs text-white/50 mb-4">Start with a preset, then edit timing and templates.</p>
+              <p className="text-xs text-[var(--warm-ink)]/50 mb-4">Start with a preset, then edit timing and templates.</p>
               <div className="grid grid-cols-1 gap-2 mb-4">
                 {PRESET_AUTOMATIONS.map(preset => (
-                  <button key={preset.id} onClick={() => setAutomations([...automations, { triggerStatus: preset.triggerStatus, templateId: preset.templateId, delayMinutes: preset.delayMinutes }])} className="text-left bg-white/[0.03] border border-white/10 rounded-2xl p-3 hover:border-white/20 transition-colors">
-                    <p className="text-sm font-bold text-white">{preset.title}</p>
-                    <p className="text-xs text-white/50">{preset.description}</p>
+                  <button key={preset.id} onClick={() => setAutomations([...automations, { triggerStatus: preset.triggerStatus, templateId: preset.templateId, delayMinutes: preset.delayMinutes }])} className="text-left bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3 hover:border-[rgba(191,179,163,0.4)] transition-colors">
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">{preset.title}</p>
+                    <p className="text-xs text-[var(--warm-ink)]/50">{preset.description}</p>
                   </button>
                 ))}
               </div>
               <div className="space-y-3 mb-4">
                 {automations.map((a, idx) => (
-                  <div key={idx} className="bg-white/[0.03] border border-white/10 rounded-2xl p-3 flex flex-wrap items-center gap-3">
-                    <span className="text-xs text-white/50">When →</span>
-                    <select value={a.triggerStatus} onChange={e => { const next = [...automations]; next[idx] = { ...next[idx], triggerStatus: e.target.value }; setAutomations(next); }} className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white">
+                  <div key={idx} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-3 flex flex-wrap items-center gap-3">
+                    <span className="text-xs text-[var(--warm-ink)]/50">When →</span>
+                    <select value={a.triggerStatus} onChange={e => { const next = [...automations]; next[idx] = { ...next[idx], triggerStatus: e.target.value }; setAutomations(next); }} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-1.5 text-sm text-[var(--warm-ink)]">
                       {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
-                    <span className="text-xs text-white/50">send</span>
-                    <select value={a.templateId} onChange={e => { const next = [...automations]; next[idx] = { ...next[idx], templateId: e.target.value }; setAutomations(next); }} className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-sm text-white">
+                    <span className="text-xs text-[var(--warm-ink)]/50">send</span>
+                    <select value={a.templateId} onChange={e => { const next = [...automations]; next[idx] = { ...next[idx], templateId: e.target.value }; setAutomations(next); }} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-3 py-1.5 text-sm text-[var(--warm-ink)]">
                       <option value="">template</option>
                       {SAMPLE_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                     </select>
-                    <button onClick={() => setAutomations(automations.filter((_, i) => i !== idx))} className="text-xs text-red-300/80 hover:text-red-200">Remove</button>
+                    <button onClick={() => setAutomations(automations.filter((_, i) => i !== idx))} className="text-xs text-[var(--terracotta)]/80 hover:text-red-200">Remove</button>
                   </div>
                 ))}
               </div>
               <div className="flex items-center gap-3 mb-4">
-                <button onClick={() => setAutomations([...automations, { triggerStatus: 'NEW', templateId: '', delayMinutes: 60 }])} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-white">
+                <button onClick={() => setAutomations([...automations, { triggerStatus: 'NEW', templateId: '', delayMinutes: 60 }])} className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]">
                   <UserPlusIcon className="w-4 h-4" /> Add rule
                 </button>
-                <span className="text-xs text-white/40">Rules are saved per workspace.</span>
+                <span className="text-xs text-[var(--warm-ink)]/40">Rules are saved per workspace.</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={saveAutomations} disabled={savingAutomation} className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm transition-colors disabled:opacity-50">{savingAutomation ? 'Saving…' : 'Save Automation'}</button>
-                <button onClick={() => setAutomationOpen(false)} className="px-4 py-2.5 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">Close</button>
+                <button onClick={saveAutomations} disabled={savingAutomation} className="flex-1 py-2.5 rounded-xl bg-[var(--sage)] hover:bg-[var(--sage)] text-black font-bold text-sm transition-colors disabled:opacity-50">{savingAutomation ? 'Saving…' : 'Save Automation'}</button>
+                <button onClick={() => setAutomationOpen(false)} className="px-4 py-2.5 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)] text-sm transition-colors">Close</button>
               </div>
             </div>
           </div>
         )}
 
         {showUpgradeModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-sm text-center">
-              <BoltIcon className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-              <h3 className="text-xl font-black text-white mb-2">Upgrade to Pro</h3>
-              <p className="text-sm text-white/70 mb-6">
+          <div className="fixed inset-0 bg-[var(--cream)]/70 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+            <div className="bg-[#111] border border-[rgba(191,179,163,0.3)] rounded-[var(--radius-card)] p-6 w-full max-w-sm text-center">
+              <BoltIcon className="w-12 h-12 text-[var(--muted-ochre)] mx-auto mb-4" />
+              <h3 className="text-xl font-black text-[var(--warm-ink)] mb-2">Upgrade to Pro</h3>
+              <p className="text-sm text-[var(--warm-ink)]/70 mb-6">
                 Unlock AI copy generation, unlimited bulk sends, and advanced campaign analytics with Pabandi Pro.
               </p>
               <div className="flex gap-3 flex-col">
                 <button onClick={() => { setShowUpgradeModal(false); window.location.href = '/pricing'; }} className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold text-sm hover:opacity-90 transition-opacity">
                   View Plans
                 </button>
-                <button onClick={() => setShowUpgradeModal(false)} className="w-full py-3 rounded-xl border border-white/10 text-white/50 hover:text-white text-sm transition-colors">
+                <button onClick={() => setShowUpgradeModal(false)} className="w-full py-3 rounded-xl border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/50 hover:text-[var(--warm-ink)] text-sm transition-colors">
                   Cancel
                 </button>
               </div>

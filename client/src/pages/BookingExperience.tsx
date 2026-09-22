@@ -125,11 +125,11 @@ export default function BookingExperience() {
   // ── Search View ──────────────────────────────────────────────────────────
   if (step === 'search') {
     return (
-      <div className="min-h-screen" style={{ background: tokens.color.background }}>
+      <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
         {/* Hero Search */}
-        <div className="relative px-4 py-16 text-center" style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #020617 100%)' }}>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Find your table</h1>
-          <p className="text-slate-400 mb-8">Discover and book the best restaurants, bars, and venues</p>
+        <div className="relative px-4 py-16 text-center" style={{ background: 'linear-gradient(180deg, #1e1b4b 0%, #020617 100%)" }}>
+          <h1 className="text-4xl md:text-5xl font-bold text-[var(--warm-ink)] mb-4">Find your table</h1>
+          <p className="text-[var(--soft-stone)] mb-8">Discover and book the best restaurants, bars, and venues</p>
           
           <div className="max-w-2xl mx-auto">
             <div className="flex gap-2">
@@ -139,7 +139,7 @@ export default function BookingExperience() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchBusinesses()}
                 placeholder="Search restaurants, cuisine, or location..."
-                className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 outline-none focus:border-indigo-400"
+                className="flex-1 px-4 py-3 rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
               />
               <Button onClick={searchBusinesses} disabled={loading}>
                 {loading ? 'Searching...' : 'Search'}
@@ -155,7 +155,7 @@ export default function BookingExperience() {
               {searchResults.map((biz) => (
                 <Surface
                   key={biz.id}
-                  className="overflow-hidden cursor-pointer hover:border-indigo-400/50 transition-all"
+                  className="overflow-hidden cursor-pointer hover:border-[var(--clay)]/50 transition-all"
                   onClick={() => {
                     setSelectedBusiness(biz);
                     setStep('detail');
@@ -170,14 +170,14 @@ export default function BookingExperience() {
                   </div>
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-white">{biz.name}</h3>
+                      <h3 className="font-bold text-[var(--warm-ink)]">{biz.name}</h3>
                       {biz.rating && (
                         <Badge tone="success">⭐ {biz.rating}</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-slate-400">{biz.address}</p>
+                    <p className="text-sm text-[var(--soft-stone)]">{biz.address}</p>
                     {biz.cuisine && (
-                      <p className="text-xs text-slate-500 mt-1">{biz.cuisine}</p>
+                      <p className="text-xs text-[var(--soft-stone)] mt-1">{biz.cuisine}</p>
                     )}
                   </div>
                 </Surface>
@@ -186,8 +186,8 @@ export default function BookingExperience() {
           ) : (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🍽️</div>
-              <h2 className="text-xl font-bold text-white mb-2">Start your search</h2>
-              <p className="text-slate-400">Find the perfect spot for your next meal</p>
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Start your search</h2>
+              <p className="text-[var(--soft-stone)]">Find the perfect spot for your next meal</p>
             </div>
           )}
         </div>
@@ -198,13 +198,13 @@ export default function BookingExperience() {
   // ── Booking Complete View ────────────────────────────────────────────────
   if (bookingComplete) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: tokens.color.background }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--cream)" }}>
         <Surface className="max-w-md w-full p-8 text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 rounded-full bg-[rgba(var(--sage),0.15)] flex items-center justify-center mx-auto mb-6">
             <span className="text-4xl">✅</span>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Reservation Confirmed!</h2>
-          <p className="text-slate-400 mb-6">
+          <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Reservation Confirmed!</h2>
+          <p className="text-[var(--soft-stone)] mb-6">
             {business?.name} · {format(selectedDate, 'MMM d')} at {selectedTime} · {guests} guests
           </p>
           <div className="flex gap-3 justify-center">
@@ -221,14 +221,14 @@ export default function BookingExperience() {
 
   // ── Detail + Booking View ────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       {/* Header (Layout header handles main nav; this is booking-specific context) */}
-      <header className="sticky top-16 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3">
+      <header className="sticky top-16 z-40 backdrop-blur-xl bg-[var(--warm-sand)]/80 border-b border-[rgba(191,179,163,0.2)] px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <button onClick={() => setStep('search')} className="text-slate-400 hover:text-white">
+          <button onClick={() => setStep('search')} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">
             ← Back
           </button>
-          <h1 className="font-bold text-white">Pabandi</h1>
+          <h1 className="font-bold text-[var(--warm-ink)]">Pabandi</h1>
           <div className="w-16" />
         </div>
       </header>
@@ -250,8 +250,8 @@ export default function BookingExperience() {
                 {business.rating && <Badge tone="success">⭐ {business.rating}</Badge>}
                 {business.trustScore && <Badge tone="info">Trust: {business.trustScore}</Badge>}
               </div>
-              <h1 className="text-3xl font-bold text-white">{business.name}</h1>
-              <p className="text-slate-300">{business.address}</p>
+              <h1 className="text-3xl font-bold text-[var(--warm-ink)]">{business.name}</h1>
+              <p className="text-[var(--soft-stone)]">{business.address}</p>
             </div>
           </div>
         )}
@@ -262,7 +262,7 @@ export default function BookingExperience() {
           <div className="lg:col-span-2 space-y-6">
             {/* Date Selection */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Select Date</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Select Date</h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {Array.from({ length: 7 }, (_, i) => addDays(new Date(), i)).map((date) => (
                   <button
@@ -270,8 +270,8 @@ export default function BookingExperience() {
                     onClick={() => setSelectedDate(date)}
                     className={`flex-shrink-0 px-4 py-3 rounded-lg text-center transition-all ${
                       isSameDay(date, selectedDate)
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                        ? 'bg-[var(--clay)] text-[var(--warm-ink)]'
+                        : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]'
                     }`}
                   >
                     <div className="text-xs">{format(date, 'EEE')}</div>
@@ -283,7 +283,7 @@ export default function BookingExperience() {
 
             {/* Time Selection */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Select Time</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Select Time</h3>
               <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                 {timeSlots.map((slot) => (
                   <button
@@ -292,10 +292,10 @@ export default function BookingExperience() {
                     disabled={!slot.available}
                     className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                       selectedTime === slot.time
-                        ? 'bg-indigo-500 text-white'
+                        ? 'bg-[var(--clay)] text-[var(--warm-ink)]'
                         : slot.available
-                        ? 'bg-white/5 text-slate-300 hover:bg-white/10'
-                        : 'bg-white/5 text-slate-600 cursor-not-allowed line-through'
+                        ? 'bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:bg-[var(--warm-sand)]'
+                        : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] cursor-not-allowed line-through'
                     }`}
                   >
                     {slot.time}
@@ -306,18 +306,18 @@ export default function BookingExperience() {
 
             {/* Guests */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Number of Guests</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Number of Guests</h3>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setGuests(Math.max(1, guests - 1))}
-                  className="w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20"
+                  className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
                 >
                   -
                 </button>
-                <span className="text-2xl font-bold text-white">{guests}</span>
+                <span className="text-2xl font-bold text-[var(--warm-ink)]">{guests}</span>
                 <button
                   onClick={() => setGuests(Math.min(10, guests + 1))}
-                  className="w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20"
+                  className="w-10 h-10 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
                 >
                   +
                 </button>
@@ -326,13 +326,13 @@ export default function BookingExperience() {
 
             {/* Special Requests */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Special Requests</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Special Requests</h3>
               <textarea
                 value={specialRequests}
                 onChange={(e) => setSpecialRequests(e.target.value)}
                 placeholder="Allergies, celebrations, seating preferences..."
                 rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-400"
+                className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-4 py-3 text-[var(--warm-ink)] placeholder-[var(--soft-stone)] outline-none focus:border-[var(--clay)]"
               />
             </Surface>
           </div>
@@ -341,48 +341,48 @@ export default function BookingExperience() {
           <div className="space-y-6">
             {/* Summary */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Reservation Summary</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Reservation Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Restaurant</span>
-                  <span className="text-white">{business?.name}</span>
+                  <span className="text-[var(--soft-stone)]">Restaurant</span>
+                  <span className="text-[var(--warm-ink)]">{business?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Date</span>
-                  <span className="text-white">{format(selectedDate, 'MMM d, yyyy')}</span>
+                  <span className="text-[var(--soft-stone)]">Date</span>
+                  <span className="text-[var(--warm-ink)]">{format(selectedDate, 'MMM d, yyyy')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Time</span>
-                  <span className="text-white">{selectedTime || 'Select time'}</span>
+                  <span className="text-[var(--soft-stone)]">Time</span>
+                  <span className="text-[var(--warm-ink)]">{selectedTime || 'Select time'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Guests</span>
-                  <span className="text-white">{guests}</span>
+                  <span className="text-[var(--soft-stone)]">Guests</span>
+                  <span className="text-[var(--warm-ink)]">{guests}</span>
                 </div>
               </div>
             </Surface>
 
             {/* Payment Method */}
             <Surface className="p-6">
-              <h3 className="font-bold text-white mb-4">Payment Method</h3>
+              <h3 className="font-bold text-[var(--warm-ink)] mb-4">Payment Method</h3>
               <div className="space-y-2">
                 <button
                   onClick={() => setPaymentMethod('safepay')}
                   className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'safepay' ? 'bg-indigo-500/20 border border-indigo-400' : 'bg-white/5 border border-white/10'
+                    paymentMethod === 'safepay' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
                   }`}
                 >
-                  <div className="font-medium text-white">💳 SafePay</div>
-                  <div className="text-xs text-slate-400">Pay with card or bank</div>
+                  <div className="font-medium text-[var(--warm-ink)]">💳 SafePay</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Pay with card or bank</div>
                 </button>
                 <button
                   onClick={() => setPaymentMethod('solana')}
                   className={`w-full p-3 rounded-lg text-left transition-all ${
-                    paymentMethod === 'solana' ? 'bg-indigo-500/20 border border-indigo-400' : 'bg-white/5 border border-white/10'
+                    paymentMethod === 'solana' ? 'bg-[rgba(var(--clay),0.15)] border border-[var(--clay)]' : 'bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]'
                   }`}
                 >
-                  <div className="font-medium text-white">◎ Solana</div>
-                  <div className="text-xs text-slate-400">Pay with SOL or $PAB</div>
+                  <div className="font-medium text-[var(--warm-ink)]">◎ Solana</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Pay with SOL or $PAB</div>
                 </button>
               </div>
             </Surface>
@@ -396,7 +396,7 @@ export default function BookingExperience() {
               {bookingMutation.isLoading ? 'Booking...' : 'Confirm Reservation'}
             </Button>
 
-            <p className="text-xs text-slate-500 text-center">
+            <p className="text-xs text-[var(--soft-stone)] text-center">
               Free cancellation up to 2 hours before
             </p>
           </div>

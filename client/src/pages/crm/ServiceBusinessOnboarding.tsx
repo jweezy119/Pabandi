@@ -92,43 +92,43 @@ export default function ServiceBusinessOnboarding() {
             <React.Fragment key={s.num}>
               <div className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
                 step === s.num
-                  ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/25'
+                  ? 'bg-gradient-to-r from-[var(--clay)] to-[var(--clay)] text-[var(--warm-ink)] shadow-lg shadow-violet-500/25'
                   : step > s.num
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-white/5 text-slate-400 border border-white/10'
+                  ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30'
+                  : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'
               }`}>
                 <s.icon size={16} />
                 <span className="text-sm font-medium hidden sm:inline">{s.label}</span>
               </div>
               {i < steps.length - 1 && (
-                <div className={`w-8 h-0.5 rounded-full transition-all ${step > s.num ? 'bg-emerald-500' : 'bg-white/10'}`} />
+                <div className={`w-8 h-0.5 rounded-full transition-all ${step > s.num ? 'bg-[var(--sage)]' : 'bg-[var(--warm-sand)]'}`} />
               )}
             </React.Fragment>
           ))}
         </div>
 
         {/* Card */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8">
+        <div className="backdrop-blur-sm bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-2xl shadow-[var(--shadow-lift)] p-6 sm:p-8">
           {/* Step 1: Business Info */}
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Tell us about your business</h2>
-                <p className="text-slate-400 text-sm">We'll use this to set up your service profile.</p>
+                <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-1">Tell us about your business</h2>
+                <p className="text-[var(--soft-stone)] text-sm">We'll use this to set up your service profile.</p>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Business Name</label>
+                  <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1.5">Business Name</label>
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
+                    className="w-full px-4 py-3 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
                     placeholder="e.g. Sparkle Clean Co."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Service Type</label>
+                  <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1.5">Service Type</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {SERVICE_TYPES.map((type) => (
                       <button
@@ -136,8 +136,8 @@ export default function ServiceBusinessOnboarding() {
                         onClick={() => setServiceType(type)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                           serviceType === type
-                            ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg'
-                            : 'bg-white/5 text-slate-300 border border-white/10 hover:border-violet-500/30'
+                            ? 'bg-gradient-to-r from-[var(--clay)] to-[var(--clay)] text-[var(--warm-ink)] shadow-lg'
+                            : 'bg-[var(--cream)] text-[var(--warm-ink)] border border-[var(--soft-stone)]/30 hover:border-[var(--clay)]/30'
                         }`}
                       >
                         {type}
@@ -147,26 +147,26 @@ export default function ServiceBusinessOnboarding() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                    <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1.5">
                       <Fiphone className="inline mr-1" size={14} /> Phone
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
+                      className="w-full px-4 py-3 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                    <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1.5">
                       <FiMapPin className="inline mr-1" size={14} /> Address
                     </label>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
+                      className="w-full px-4 py-3 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/25 transition"
                       placeholder="123 Main St, City"
                     />
                   </div>
@@ -179,26 +179,26 @@ export default function ServiceBusinessOnboarding() {
           {step === 2 && (
             <div className="space-y-6 animate-in fade-in">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Configure your services</h2>
-                <p className="text-slate-400 text-sm">Add the services you offer with pricing and duration.</p>
+                <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-1">Configure your services</h2>
+                <p className="text-[var(--soft-stone)] text-sm">Add the services you offer with pricing and duration.</p>
               </div>
               <div className="space-y-3">
                 {services.map((svc, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl">
+                  <div key={i} className="flex items-center gap-3 p-3 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl">
                     <input
                       type="text"
                       value={svc.name}
                       onChange={(e) => updateService(i, 'name', e.target.value)}
-                      className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                      className="flex-1 px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                       placeholder="Service name"
                     />
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)] text-sm">$</span>
                       <input
                         type="number"
                         value={svc.price}
                         onChange={(e) => updateService(i, 'price', e.target.value)}
-                        className="w-24 pl-7 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                        className="w-24 pl-7 pr-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                         placeholder="0"
                       />
                     </div>
@@ -207,19 +207,19 @@ export default function ServiceBusinessOnboarding() {
                         type="number"
                         value={svc.duration}
                         onChange={(e) => updateService(i, 'duration', e.target.value)}
-                        className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                        className="w-20 px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                         placeholder="60"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">min</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)] text-xs">min</span>
                     </div>
                     {services.length > 1 && (
-                      <button onClick={() => removeService(i)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
+                      <button onClick={() => removeService(i)} className="p-2 text-[var(--terracotta)] hover:bg-[var(--terracotta)]/10 rounded-lg transition">
                         <FiTrash2 size={16} />
                       </button>
                     )}
                   </div>
                 ))}
-                <button onClick={addService} className="flex items-center gap-2 px-4 py-2.5 text-sm text-violet-400 hover:bg-violet-500/10 rounded-xl border border-dashed border-violet-500/30 transition w-full justify-center">
+                <button onClick={addService} className="flex items-center gap-2 px-4 py-2.5 text-sm text-violet-400 hover:bg-[var(--clay)]/10 rounded-xl border border-dashed border-[var(--clay)]/30 transition w-full justify-center">
                   <FiPlus size={16} /> Add Service
                 </button>
               </div>
@@ -230,48 +230,48 @@ export default function ServiceBusinessOnboarding() {
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Set up your team</h2>
-                <p className="text-slate-400 text-sm">Add employees and their pay structure.</p>
+                <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-1">Set up your team</h2>
+                <p className="text-[var(--soft-stone)] text-sm">Add employees and their pay structure.</p>
               </div>
               {/* Add employee form */}
-              <div className="p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+              <div className="p-4 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
                     value={newEmployee.name}
                     onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                    className="px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                     placeholder="Employee name"
                   />
                   <input
                     type="text"
                     value={newEmployee.role}
                     onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
-                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                    className="px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                     placeholder="Role"
                   />
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)] text-sm">$</span>
                     <input
                       type="number"
                       value={newEmployee.payRate}
                       onChange={(e) => setNewEmployee({ ...newEmployee, payRate: e.target.value })}
-                      className="w-full pl-7 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
+                      className="w-full pl-7 pr-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition text-sm"
                       placeholder="Pay rate"
                     />
                   </div>
                   <select
                     value={newEmployee.payType}
                     onChange={(e) => setNewEmployee({ ...newEmployee, payType: e.target.value as EmployeeData['payType'] })}
-                    className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-violet-500/50 transition text-sm"
+                    className="px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] focus:outline-none focus:border-violet-500/50 transition text-sm"
                   >
                     {PAY_TYPES.map(pt => (
                       <option key={pt.value} value={pt.value} className="bg-gray-800">{pt.label}</option>
                     ))}
                   </select>
-                  <button onClick={addEmployee} className="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-violet-500/25 transition">
+                  <button onClick={addEmployee} className="px-4 py-2 bg-gradient-to-r from-[var(--clay)] to-[var(--clay)] text-[var(--warm-ink)] rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-violet-500/25 transition">
                     <FiPlus size={16} />
                   </button>
                 </div>
@@ -280,17 +280,17 @@ export default function ServiceBusinessOnboarding() {
               {employees.length > 0 && (
                 <div className="space-y-2">
                   {employees.map((emp, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl">
+                    <div key={i} className="flex items-center justify-between p-3 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--clay)] to-[var(--clay)] flex items-center justify-center text-[var(--warm-ink)] text-sm font-bold">
                           {emp.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="text-white text-sm font-medium">{emp.name}</div>
-                          <div className="text-slate-400 text-xs">{emp.role} · {emp.payRate}{emp.payType === 'hourly' ? '/hr' : emp.payType === 'per_job' ? '/job' : '/mo'}</div>
+                          <div className="text-[var(--warm-ink)] text-sm font-medium">{emp.name}</div>
+                          <div className="text-[var(--soft-stone)] text-xs">{emp.role} · {emp.payRate}{emp.payType === 'hourly' ? '/hr' : emp.payType === 'per_job' ? '/job' : '/mo'}</div>
                         </div>
                       </div>
-                      <button onClick={() => removeEmployee(i)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition">
+                      <button onClick={() => removeEmployee(i)} className="p-2 text-[var(--terracotta)] hover:bg-[var(--terracotta)]/10 rounded-lg transition">
                         <FiTrash2 size={14} />
                       </button>
                     </div>
@@ -298,7 +298,7 @@ export default function ServiceBusinessOnboarding() {
                 </div>
               )}
               {employees.length === 0 && (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-[var(--soft-stone)]">
                   <FiUsers size={32} className="mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No employees added yet. You can skip this step.</p>
                 </div>
@@ -310,62 +310,62 @@ export default function ServiceBusinessOnboarding() {
           {step === 4 && (
             <div className="space-y-6 animate-in fade-in">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Review & confirm</h2>
-                <p className="text-slate-400 text-sm">Make sure everything looks good before submitting.</p>
+                <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-1">Review & confirm</h2>
+                <p className="text-[var(--soft-stone)] text-sm">Make sure everything looks good before submitting.</p>
               </div>
               <div className="space-y-4">
-                <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className="p-4 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl">
                   <h3 className="text-sm font-medium text-violet-400 mb-2">Business Info</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-slate-400">Name:</span> <span className="text-white">{businessName || '—'}</span></div>
-                    <div><span className="text-slate-400">Type:</span> <span className="text-white">{serviceType || '—'}</span></div>
-                    <div><span className="text-slate-400">Phone:</span> <span className="text-white">{phone || '—'}</span></div>
-                    <div><span className="text-slate-400">Address:</span> <span className="text-white">{address || '—'}</span></div>
+                    <div><span className="text-[var(--soft-stone)]">Name:</span> <span className="text-[var(--warm-ink)]">{businessName || '—'}</span></div>
+                    <div><span className="text-[var(--soft-stone)]">Type:</span> <span className="text-[var(--warm-ink)]">{serviceType || '—'}</span></div>
+                    <div><span className="text-[var(--soft-stone)]">Phone:</span> <span className="text-[var(--warm-ink)]">{phone || '—'}</span></div>
+                    <div><span className="text-[var(--soft-stone)]">Address:</span> <span className="text-[var(--warm-ink)]">{address || '—'}</span></div>
                   </div>
                 </div>
-                <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className="p-4 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl">
                   <h3 className="text-sm font-medium text-violet-400 mb-2">Services ({services.filter(s => s.name).length})</h3>
                   {services.filter(s => s.name).length > 0 ? (
                     <div className="space-y-1">
                       {services.filter(s => s.name).map((s, i) => (
                         <div key={i} className="flex justify-between text-sm">
-                          <span className="text-white">{s.name}</span>
-                          <span className="text-slate-400">${s.price} · {s.duration}min</span>
+                          <span className="text-[var(--warm-ink)]">{s.name}</span>
+                          <span className="text-[var(--soft-stone)]">${s.price} · {s.duration}min</span>
                         </div>
                       ))}
                     </div>
-                  ) : <p className="text-slate-500 text-sm">No services added</p>}
+                  ) : <p className="text-[var(--soft-stone)] text-sm">No services added</p>}
                 </div>
-                <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className="p-4 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl">
                   <h3 className="text-sm font-medium text-violet-400 mb-2">Team ({employees.length})</h3>
                   {employees.length > 0 ? (
                     <div className="space-y-1">
                       {employees.map((e, i) => (
                         <div key={i} className="flex justify-between text-sm">
-                          <span className="text-white">{e.name} <span className="text-slate-400">({e.role})</span></span>
-                          <span className="text-slate-400">${e.payRate}/{e.payType === 'hourly' ? 'hr' : e.payType === 'per_job' ? 'job' : 'mo'}</span>
+                          <span className="text-[var(--warm-ink)]">{e.name} <span className="text-[var(--soft-stone)]">({e.role})</span></span>
+                          <span className="text-[var(--soft-stone)]">${e.payRate}/{e.payType === 'hourly' ? 'hr' : e.payType === 'per_job' ? 'job' : 'mo'}</span>
                         </div>
                       ))}
                     </div>
-                  ) : <p className="text-slate-500 text-sm">No employees added</p>}
+                  ) : <p className="text-[var(--soft-stone)] text-sm">No employees added</p>}
                 </div>
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--soft-stone)]/30">
             <button
               onClick={() => setStep(Math.max(1, step - 1))}
               disabled={step === 1}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--warm-ink)] disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               <FiChevronLeft size={16} /> Back
             </button>
             {step < 4 ? (
               <button
                 onClick={() => setStep(step + 1)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-violet-500/25 transition"
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[var(--clay)] to-[var(--clay)] text-[var(--warm-ink)] rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-violet-500/25 transition"
               >
                 Next <FiChevronRight size={16} />
               </button>
@@ -373,7 +373,7 @@ export default function ServiceBusinessOnboarding() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[var(--sage)] to-[var(--sky-wash)] text-[var(--warm-ink)] rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-emerald-500/25 transition disabled:opacity-50"
               >
                 {submitting ? 'Submitting...' : <><FiCheck size={16} /> Confirm & Launch</>}
               </button>

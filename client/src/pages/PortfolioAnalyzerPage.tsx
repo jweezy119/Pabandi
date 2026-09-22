@@ -28,26 +28,26 @@ export const PortfolioAnalyzerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">📊 Portfolio Analyzer</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Portfolio Intelligence</h1>
-          <p className="mt-3 text-slate-400">Diversification scoring, aggregate metrics, and benchmarking.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Portfolio Intelligence</h1>
+          <p className="mt-3 text-[var(--soft-stone)]">Diversification scoring, aggregate metrics, and benchmarking.</p>
         </div>
 
         <Surface className="p-4 md:p-6 mb-6">
-          <h3 className="text-base font-bold text-slate-100 mb-4">Properties ({properties.length})</h3>
+          <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Properties ({properties.length})</h3>
           <div className="space-y-3">
             {properties.map((p) => (
-              <div key={p.id} className="p-3 rounded-xl bg-white/5 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                <input value={p.address} onChange={e => updateProperty(p.id, 'address', e.target.value)} placeholder="Address" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.city} onChange={e => updateProperty(p.id, 'city', e.target.value)} placeholder="City" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.state} onChange={e => updateProperty(p.id, 'state', e.target.value)} placeholder="State" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.purchasePrice} onChange={e => updateProperty(p.id, 'purchasePrice', parseFloat(e.target.value) || 0)} placeholder="Purchase" type="number" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.currentValue} onChange={e => updateProperty(p.id, 'currentValue', parseFloat(e.target.value) || 0)} placeholder="Value" type="number" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.monthlyRent} onChange={e => updateProperty(p.id, 'monthlyRent', parseFloat(e.target.value) || 0)} placeholder="Rent" type="number" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
-                <input value={p.mortgage} onChange={e => updateProperty(p.id, 'mortgage', parseFloat(e.target.value) || 0)} placeholder="Mortgage" type="number" className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-slate-100 outline-none" />
+              <div key={p.id} className="p-3 rounded-xl bg-[var(--warm-sand)] grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                <input value={p.address} onChange={e => updateProperty(p.id, 'address', e.target.value)} placeholder="Address" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.city} onChange={e => updateProperty(p.id, 'city', e.target.value)} placeholder="City" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.state} onChange={e => updateProperty(p.id, 'state', e.target.value)} placeholder="State" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.purchasePrice} onChange={e => updateProperty(p.id, 'purchasePrice', parseFloat(e.target.value) || 0)} placeholder="Purchase" type="number" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.currentValue} onChange={e => updateProperty(p.id, 'currentValue', parseFloat(e.target.value) || 0)} placeholder="Value" type="number" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.monthlyRent} onChange={e => updateProperty(p.id, 'monthlyRent', parseFloat(e.target.value) || 0)} placeholder="Rent" type="number" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
+                <input value={p.mortgage} onChange={e => updateProperty(p.id, 'mortgage', parseFloat(e.target.value) || 0)} placeholder="Mortgage" type="number" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded px-2 py-1 text-xs text-[var(--warm-ink)] outline-none" />
               </div>
             ))}
           </div>
@@ -60,36 +60,36 @@ export const PortfolioAnalyzerPage: React.FC = () => {
         {result && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">Summary</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Summary</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(result.summary?.totalValue / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Total Value</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">{result.summary?.cashOnCashReturn}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Cash-on-Cash</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{result.summary?.capRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Cap Rate</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-purple-300">{result.summary?.weightedDscr}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>DSCR</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--sage)]">${(result.summary?.totalValue / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Total Value</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--clay)]">{result.summary?.cashOnCashReturn}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Cash-on-Cash</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--muted-ochre)]">{result.summary?.capRate}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Cap Rate</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--dusty-rose)]">{result.summary?.weightedDscr}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>DSCR</div></div>
               </div>
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">Diversification Score: {result.diversification?.score}/100</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Diversification Score: {result.diversification?.score}/100</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {result.diversification?.byType && Object.entries(result.diversification.byType).map(([k, v]) => (
-                  <div key={k} className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{v as number}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{k}</div></div>
+                  <div key={k} className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{v as number}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{k}</div></div>
                 ))}
               </div>
               {result.diversification?.recommendations?.length > 0 && (
                 <div className="mt-4 space-y-1">
-                  {result.diversification.recommendations.map((r: string, i: number) => (<div key={i} className="text-sm text-amber-300">• {r}</div>))}
+                  {result.diversification.recommendations.map((r: string, i: number) => (<div key={i} className="text-sm text-[var(--muted-ochre)]">• {r}</div>))}
                 </div>
               )}
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">Risk Assessment</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Risk Assessment</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.concentrationRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Concentration</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{result.risk?.leverageRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Leverage</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-slate-100">{result.risk?.vacancyRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Vacancy</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-rose-300">{result.risk?.overallRisk}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Overall</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--terracotta)]">{result.risk?.concentrationRisk}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Concentration</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--muted-ochre)]">{result.risk?.leverageRisk}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Leverage</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--warm-ink)]">{result.risk?.vacancyRisk}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Vacancy</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--terracotta)]">{result.risk?.overallRisk}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Overall</div></div>
               </div>
             </Surface>
           </div>

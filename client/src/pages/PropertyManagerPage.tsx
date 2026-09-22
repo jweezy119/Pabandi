@@ -135,10 +135,10 @@ export const PropertyManagerPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cream)' }}>
         <div className="text-center">
           <div className="text-3xl mb-3 animate-pulse">🏢</div>
-          <p className="text-slate-400">Loading your property manager...</p>
+          <p className="text-[var(--soft-stone)]">Loading your property manager...</p>
         </div>
       </div>
     );
@@ -146,11 +146,11 @@ export const PropertyManagerPage: React.FC = () => {
 
   if (dash === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cream)' }}>
         <Surface className="p-8 text-center max-w-md">
           <div className="text-4xl mb-4">🏢</div>
-          <h2 className="text-xl font-bold text-slate-100 mb-2">Property Manager CRM</h2>
-          <p className="text-slate-400 mb-4">Manage your properties, tenants, leases, and maintenance — all in one place.</p>
+          <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Property Manager CRM</h2>
+          <p className="text-[var(--soft-stone)] mb-4">Manage your properties, tenants, leases, and maintenance — all in one place.</p>
           <Button onClick={async () => { await propertyManagerService.enroll({ companyName: 'My Properties' }); loadDashboard(); }} className="w-full">
             Get Started
           </Button>
@@ -160,12 +160,12 @@ export const PropertyManagerPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-slate-100 font-headline">Property Manager</h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
+            <h1 className="text-2xl font-black text-[var(--warm-ink)] font-headline">Property Manager</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>
               {dash?.profile?.companyName || 'Your Properties'} · {dash?.properties?.length || 0} properties
             </p>
           </div>
@@ -176,12 +176,12 @@ export const PropertyManagerPage: React.FC = () => {
         </div>
 
         {insights.filter(i => i.priority === 'high').length > 0 && (
-          <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+          <div className="mb-6 p-4 rounded-xl border border-[var(--muted-ochre)]/30 bg-[var(--muted-ochre)]/10">
             <div className="flex items-center gap-3">
               <span className="text-2xl">⚡</span>
               <div className="flex-1">
                 <div className="font-bold text-amber-200">{insights.find(i => i.priority === 'high')?.title}</div>
-                <div className="text-sm text-amber-300/80">{insights.find(i => i.priority === 'high')?.description}</div>
+                <div className="text-sm text-[var(--muted-ochre)]/80">{insights.find(i => i.priority === 'high')?.description}</div>
               </div>
               <Link to={insights.find(i => i.priority === 'high')?.actionLink || '#'}>
                 <Button size="sm">Take Action</Button>
@@ -193,7 +193,7 @@ export const PropertyManagerPage: React.FC = () => {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {(['overview', 'properties', 'tenants', 'financials', 'maintenance', 'ai'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)]'}`}>
               {t === 'ai' ? '🤖 AI' : t}
             </button>
           ))}
@@ -203,48 +203,48 @@ export const PropertyManagerPage: React.FC = () => {
           <div className="space-y-6">
             {financials && (
               <Surface className="p-4 md:p-6">
-                <h3 className="text-base font-bold text-slate-100 mb-4">💰 Financial Summary</h3>
+                <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">💰 Financial Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-emerald-300">${(financials.totalIncome / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Annual Income</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-rose-300">${(financials.totalExpenses / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Annual Expenses</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-indigo-300">${(financials.noi / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: tokens.color.textDim }}>NOI</div></div>
-                  <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-xl font-bold text-amber-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Occupancy</div></div>
+                  <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--sage)]">${(financials.totalIncome / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Annual Income</div></div>
+                  <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--terracotta)]">${(financials.totalExpenses / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Annual Expenses</div></div>
+                  <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--clay)]">${(financials.noi / 1000).toFixed(0)}K</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>NOI</div></div>
+                  <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-xl font-bold text-[var(--muted-ochre)]">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Occupancy</div></div>
                 </div>
               </Surface>
             )}
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">👥 Tenant Pipeline</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">👥 Tenant Pipeline</h3>
               <div className="flex items-center gap-2 overflow-x-auto pb-2">
                 {pipeline.map((stage, i) => (
                   <React.Fragment key={stage.stage}>
-                    <div className="flex-shrink-0 p-3 rounded-xl bg-white/5 text-center min-w-[80px]">
+                    <div className="flex-shrink-0 p-3 rounded-xl bg-[var(--warm-sand)] text-center min-w-[80px]">
                       <div className="text-lg font-bold" style={{ color: stage.color }}>{stage.count}</div>
-                      <div className="text-xs" style={{ color: tokens.color.textDim }}>{stage.stage}</div>
+                      <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{stage.stage}</div>
                     </div>
-                    {i < pipeline.length - 1 && <div className="text-slate-500">→</div>}
+                    {i < pipeline.length - 1 && <div className="text-[var(--soft-stone)]">→</div>}
                   </React.Fragment>
                 ))}
               </div>
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">🤖 AI Insights</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🤖 AI Insights</h3>
               <div className="space-y-3">
                 {insights.map(insight => (
                   <div key={insight.id} className={`p-3 rounded-xl border ${
-                    insight.type === 'opportunity' ? 'bg-emerald-500/10 border-emerald-500/20' :
-                    insight.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20' :
-                    insight.type === 'success' ? 'bg-indigo-500/10 border-indigo-500/20' :
-                    'bg-white/5 border-white/10'
+                    insight.type === 'opportunity' ? 'bg-[var(--sage)]/10 border-[var(--sage)]/20' :
+                    insight.type === 'warning' ? 'bg-[var(--muted-ochre)]/10 border-amber-500/20' :
+                    insight.type === 'success' ? 'bg-[var(--clay)]/10 border-[var(--clay)]/20' :
+                    'bg-[var(--warm-sand)] border-[rgba(191,179,163,0.3)]'
                   }`}>
                     <div className="flex items-center justify-between mb-1">
-                      <div className="font-semibold text-slate-100 text-sm">{insight.title}</div>
+                      <div className="font-semibold text-[var(--warm-ink)] text-sm">{insight.title}</div>
                       <Badge tone={insight.priority === 'high' ? 'danger' : insight.priority === 'medium' ? 'warning' : 'info'}>{insight.priority}</Badge>
                     </div>
-                    <div className="text-xs text-slate-300">{insight.description}</div>
+                    <div className="text-xs text-[var(--warm-ink)]">{insight.description}</div>
                     {insight.action && (
-                      <Link to={insight.actionLink || '#'} className="text-xs text-indigo-300 hover:text-indigo-200 mt-1 inline-block">{insight.action} →</Link>
+                      <Link to={insight.actionLink || '#'} className="text-xs text-[var(--clay)] hover:text-[var(--clay)] mt-1 inline-block">{insight.action} →</Link>
                     )}
                   </div>
                 ))}
@@ -255,16 +255,16 @@ export const PropertyManagerPage: React.FC = () => {
 
         {tab === 'properties' && (
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">Properties ({dash?.properties?.length || 0})</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Properties ({dash?.properties?.length || 0})</h3>
             <div className="space-y-2">
               {dash?.properties?.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
-                    <div className="font-semibold text-slate-100 text-sm">{p.title}</div>
-                    <div className="text-xs text-slate-400">{p.address}{p.city ? `, ${p.city}` : ''}</div>
+                    <div className="font-semibold text-[var(--warm-ink)] text-sm">{p.title}</div>
+                    <div className="text-xs text-[var(--soft-stone)]">{p.address}{p.city ? `, ${p.city}` : ''}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-emerald-300">${p.rentAmount}/mo</div>
+                    <div className="text-sm font-bold text-[var(--sage)]">${p.rentAmount}/mo</div>
                     <Badge tone={p.status === 'OCCUPIED' ? 'success' : p.status === 'VACANT' ? 'info' : 'warning'}>{p.status}</Badge>
                   </div>
                 </div>
@@ -275,17 +275,17 @@ export const PropertyManagerPage: React.FC = () => {
 
         {tab === 'tenants' && (
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">Tenants ({dash?.tenants?.length || 0})</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">Tenants ({dash?.tenants?.length || 0})</h3>
             <div className="space-y-2">
               {dash?.tenants?.map((t: any) => (
-                <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
-                    <div className="font-semibold text-slate-100 text-sm">{t.firstName} {t.lastName}</div>
-                    <div className="text-xs text-slate-400">{t.email}</div>
+                    <div className="font-semibold text-[var(--warm-ink)] text-sm">{t.firstName} {t.lastName}</div>
+                    <div className="text-xs text-[var(--soft-stone)]">{t.email}</div>
                   </div>
                   <div className="text-right">
                     <Badge tone={t.riskBand === 'LOW' ? 'success' : t.riskBand === 'MEDIUM' ? 'warning' : 'danger'}>{t.riskBand}</Badge>
-                    <div className="text-xs text-slate-400 mt-1">{t.status}</div>
+                    <div className="text-xs text-[var(--soft-stone)] mt-1">{t.status}</div>
                   </div>
                 </div>
               ))}
@@ -296,11 +296,11 @@ export const PropertyManagerPage: React.FC = () => {
         {tab === 'financials' && financials && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">📊 Financial Overview</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">📊 Financial Overview</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-emerald-300">${financials.avgRent}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Avg Rent</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-indigo-300">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Occupancy</div></div>
-                <div className="p-3 rounded-xl bg-white/5 text-center"><div className="text-lg font-bold text-amber-300">{financials.latePayments}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Active Tenants</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--sage)]">${financials.avgRent}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Avg Rent</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--clay)]">{financials.occupancyRate}%</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Occupancy</div></div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center"><div className="text-lg font-bold text-[var(--muted-ochre)]">{financials.latePayments}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Active Tenants</div></div>
               </div>
             </Surface>
             <Link to="/rent-roll"><Button className="w-full">View Detailed Rent Roll →</Button></Link>
@@ -309,13 +309,13 @@ export const PropertyManagerPage: React.FC = () => {
 
         {tab === 'maintenance' && (
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">🔧 Maintenance ({dash?.maintenance?.length || 0})</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🔧 Maintenance ({dash?.maintenance?.length || 0})</h3>
             <div className="space-y-2">
               {dash?.maintenance?.map((m: any) => (
-                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
-                    <div className="font-semibold text-slate-100 text-sm">{m.title}</div>
-                    <div className="text-xs text-slate-400">{m.description?.slice(0, 50)}...</div>
+                    <div className="font-semibold text-[var(--warm-ink)] text-sm">{m.title}</div>
+                    <div className="text-xs text-[var(--soft-stone)]">{m.description?.slice(0, 50)}...</div>
                   </div>
                   <Badge tone={m.priority === 'HIGH' ? 'danger' : m.priority === 'MEDIUM' ? 'warning' : 'info'}>{m.priority}</Badge>
                 </div>
@@ -327,27 +327,27 @@ export const PropertyManagerPage: React.FC = () => {
         {tab === 'ai' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">🤖 AI-Powered Tools</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🤖 AI-Powered Tools</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Link to="/ai/intelligence" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                <Link to="/ai/intelligence" className="p-4 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all">
                   <div className="text-xl mb-2">🏠</div>
-                  <div className="font-semibold text-slate-100 text-sm">Property Intelligence</div>
-                  <div className="text-xs text-slate-400">Deep analysis with predictions</div>
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm">Property Intelligence</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Deep analysis with predictions</div>
                 </Link>
-                <Link to="/ai/analyze" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                <Link to="/ai/analyze" className="p-4 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all">
                   <div className="text-xl mb-2">💰</div>
-                  <div className="font-semibold text-slate-100 text-sm">Investment Analyzer</div>
-                  <div className="text-xs text-slate-400">ROI, cash flow, projections</div>
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm">Investment Analyzer</div>
+                  <div className="text-xs text-[var(--soft-stone)]">ROI, cash flow, projections</div>
                 </Link>
-                <Link to="/business/ai" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                <Link to="/business/ai" className="p-4 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all">
                   <div className="text-xl mb-2">📊</div>
-                  <div className="font-semibold text-slate-100 text-sm">Business AI Dashboard</div>
-                  <div className="text-xs text-slate-400">Full portfolio intelligence</div>
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm">Business AI Dashboard</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Full portfolio intelligence</div>
                 </Link>
-                <Link to="/calculator" className="p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
+                <Link to="/calculator" className="p-4 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all">
                   <div className="text-xl mb-2">🧮</div>
-                  <div className="font-semibold text-slate-100 text-sm">Smart Calculator</div>
-                  <div className="text-xs text-slate-400">Mortgage, investment, affordability</div>
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm">Smart Calculator</div>
+                  <div className="text-xs text-[var(--soft-stone)]">Mortgage, investment, affordability</div>
                 </Link>
               </div>
             </Surface>

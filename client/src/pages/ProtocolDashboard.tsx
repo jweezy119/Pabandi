@@ -42,7 +42,7 @@ export const ProtocolDashboard: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+          <div className="w-12 h-12 rounded-full border-2 border-[var(--clay)]/30 border-t-indigo-500 animate-spin" />
           <span className="text-sm" style={{ color: tokens.color.textDim }}>Loading protocol data...</span>
         </div>
       </div>
@@ -55,10 +55,10 @@ export const ProtocolDashboard: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">Protocol Overview</Badge>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-100">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[var(--warm-ink)]">
             Pabandi Protocol
           </h1>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
+          <p className="mt-3 text-[var(--soft-stone)] max-w-2xl mx-auto">
             Real-time metrics for staking, escrow, agents, and security.
           </p>
         </div>
@@ -67,40 +67,40 @@ export const ProtocolDashboard: React.FC = () => {
         <div
           className="rounded-2xl p-6 md:p-8 text-center"
           style={{
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.15) 100%)',
+            background: 'linear-gradient(135deg, var(--warm-sand) 0%, var(--cream) 100%)',
             border: '1px solid rgba(99,102,241,0.2)',
           }}
         >
-          <div className="text-xs font-bold uppercase tracking-widest text-indigo-300 mb-2">Total Value Locked</div>
-          <div className="text-4xl md:text-6xl font-black bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
+          <div className="text-xs font-bold uppercase tracking-widest text-[var(--clay)] mb-2">Total Value Locked</div>
+          <div className="text-4xl md:text-6xl font-black bg-gradient-to-r from-[var(--clay)] to-[var(--dusty-rose)] bg-clip-text text-transparent">
             {Number(tvl).toLocaleString()} PAB
           </div>
-          <div className="mt-2 text-sm text-slate-400">Secured by Jev AI</div>
+          <div className="mt-2 text-sm text-[var(--soft-stone)]">Secured by Jev AI</div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <StatCard label="Total Staked" value={Number(totalStaked).toLocaleString()} accent="#22c55e" icon="🔒" />
-          <StatCard label="Active Escrows" value={escrowActive} accent="#f59e0b" icon="📦" />
-          <StatCard label="Total Agents" value={agentsTotal} accent="#818cf8" icon="🤖" />
-          <StatCard label="Fraud Blocked" value={fraudBlocked} accent="#ef4444" icon="🛡️" />
+          <StatCard label="Total Staked" value={Number(totalStaked).toLocaleString()} accent="var(--sage)" icon="🔒" />
+          <StatCard label="Active Escrows" value={escrowActive} accent="var(--muted-ochre)" icon="📦" />
+          <StatCard label="Total Agents" value={agentsTotal} accent="var(--clay)" icon="🤖" />
+          <StatCard label="Fraud Blocked" value={fraudBlocked} accent="var(--terracotta)" icon="🛡️" />
         </div>
 
         {/* Tier Distribution */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Surface className="p-5">
-            <h3 className="text-sm font-bold text-slate-100 mb-4">🏆 Staking Tiers</h3>
+            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4">🏆 Staking Tiers</h3>
             <div className="space-y-3">
               {[
-                { name: 'Bronze', min: 0, color: '#cd7f32' },
-                { name: 'Silver', min: 100, color: '#c0c0c0' },
-                { name: 'Gold', min: 500, color: '#ffd700' },
-                { name: 'Platinum', min: 2000, color: '#e5e4e2' },
+                { name: 'Bronze', min: 0, color: 'var(--terracotta)' },
+                { name: 'Silver', min: 100, color: 'var(--soft-stone)' },
+                { name: 'Gold', min: 500, color: 'var(--muted-ochre)' },
+                { name: 'Platinum', min: 2000, color: 'var(--soft-stone)' },
               ].map((tier) => (
                 <div key={tier.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ background: tier.color }} />
-                    <span className="text-sm text-slate-200">{tier.name}</span>
+                    <span className="text-sm text-[var(--warm-ink)]">{tier.name}</span>
                   </div>
                   <span className="text-xs font-mono" style={{ color: tokens.color.textDim }}>
                     {tier.min}+ PAB
@@ -111,23 +111,23 @@ export const ProtocolDashboard: React.FC = () => {
           </Surface>
 
           <Surface className="p-5">
-            <h3 className="text-sm font-bold text-slate-100 mb-4">📊 Escrow Status</h3>
+            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4">📊 Escrow Status</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-200">Total Escrows</span>
-                <span className="font-mono font-bold text-slate-100">{escrowTotal}</span>
+                <span className="text-sm text-[var(--warm-ink)]">Total Escrows</span>
+                <span className="font-mono font-bold text-[var(--warm-ink)]">{escrowTotal}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-200">Active</span>
-                <span className="font-mono font-bold text-emerald-300">{escrowActive}</span>
+                <span className="text-sm text-[var(--warm-ink)]">Active</span>
+                <span className="font-mono font-bold text-[var(--sage)]">{escrowActive}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-200">Completed</span>
-                <span className="font-mono font-bold text-indigo-300">{escrowTotal - escrowActive}</span>
+                <span className="text-sm text-[var(--warm-ink)]">Completed</span>
+                <span className="font-mono font-bold text-[var(--clay)]">{escrowTotal - escrowActive}</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-white/10 mt-2">
+              <div className="w-full h-2 rounded-full bg-[var(--warm-sand)] mt-2">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-indigo-500"
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--sage)] to-[var(--dusty-rose)]"
                   style={{ width: `${escrowTotal > 0 ? (escrowActive / escrowTotal) * 100 : 0}%` }}
                 />
               </div>
@@ -137,18 +137,18 @@ export const ProtocolDashboard: React.FC = () => {
 
         {/* Agent Stats */}
         <Surface className="p-5">
-          <h3 className="text-sm font-bold text-slate-100 mb-4">🤖 Agent Network</h3>
+          <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4">🤖 Agent Network</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-black text-indigo-300">{agentsTotal}</div>
+              <div className="text-2xl font-black text-[var(--clay)]">{agentsTotal}</div>
               <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Total Agents</div>
             </div>
             <div>
-              <div className="text-2xl font-black text-emerald-300">{agentsActive}</div>
+              <div className="text-2xl font-black text-[var(--sage)]">{agentsActive}</div>
               <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div>
             </div>
             <div>
-              <div className="text-2xl font-black text-purple-300">
+              <div className="text-2xl font-black text-[var(--dusty-rose)]">
                 {agentsTotal > 0 ? Math.round((agentsActive / agentsTotal) * 100) : 0}%
               </div>
               <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Activity Rate</div>
@@ -158,22 +158,22 @@ export const ProtocolDashboard: React.FC = () => {
 
         {/* Security Engine */}
         <Surface className="p-5">
-          <h3 className="text-sm font-bold text-slate-100 mb-4">🛡️ Security Engine (Jev)</h3>
+          <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-4">🛡️ Security Engine (Jev)</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-white/5 text-center">
-              <div className="text-lg font-bold text-emerald-300">Active</div>
+            <div className="p-3 rounded-lg bg-[var(--warm-sand)] text-center">
+              <div className="text-lg font-bold text-[var(--sage)]">Active</div>
               <div className="text-xs" style={{ color: tokens.color.textDim }}>Status</div>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 text-center">
-              <div className="text-lg font-bold text-indigo-300">400x</div>
+            <div className="p-3 rounded-lg bg-[var(--warm-sand)] text-center">
+              <div className="text-lg font-bold text-[var(--clay)]">400x</div>
               <div className="text-xs" style={{ color: tokens.color.textDim }}>Cheaper than LLM</div>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 text-center">
-              <div className="text-lg font-bold text-amber-300">&lt;50ms</div>
+            <div className="p-3 rounded-lg bg-[var(--warm-sand)] text-center">
+              <div className="text-lg font-bold text-[var(--muted-ochre)]">&lt;50ms</div>
               <div className="text-xs" style={{ color: tokens.color.textDim }}>Latency</div>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 text-center">
-              <div className="text-lg font-bold text-purple-300">3</div>
+            <div className="p-3 rounded-lg bg-[var(--warm-sand)] text-center">
+              <div className="text-lg font-bold text-[var(--dusty-rose)]">3</div>
               <div className="text-xs" style={{ color: tokens.color.textDim }}>Check Types</div>
             </div>
           </div>

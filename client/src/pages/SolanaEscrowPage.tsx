@@ -114,11 +114,11 @@ const SolanaEscrowPage: React.FC = () => {
 
   if (view === 'detail' && id) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-[var(--cream)] py-8">
         <div className="max-w-4xl mx-auto px-4">
           <button
             onClick={() => setView('list')}
-            className="mb-4 text-sm text-purple-600 hover:text-purple-800"
+            className="mb-4 text-sm text-[var(--dusty-rose)] hover:text-[var(--dusty-rose)]"
           >
             ← Back to escrows
           </button>
@@ -130,24 +130,24 @@ const SolanaEscrowPage: React.FC = () => {
 
   if (view === 'create') {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-[var(--cream)] py-8">
         <div className="max-w-2xl mx-auto px-4">
           <button
             onClick={() => setView('list')}
-            className="mb-4 text-sm text-purple-600 hover:text-purple-800"
+            className="mb-4 text-sm text-[var(--dusty-rose)] hover:text-[var(--dusty-rose)]"
           >
             ← Cancel
           </button>
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Solana Escrow</h2>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-6">Create Solana Escrow</h2>
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="mb-4 p-3 bg-[var(--terracotta)] border border-red-200 rounded-md">
+                <p className="text-sm text-[var(--terracotta)]">{error}</p>
               </div>
             )}
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1">
                   Seller ID *
                 </label>
                 <input
@@ -155,12 +155,12 @@ const SolanaEscrowPage: React.FC = () => {
                   value={createForm.sellerId}
                   onChange={(e) => setCreateForm({ ...createForm, sellerId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[rgba(191,179,163,0.3)] rounded-md focus:ring-2 focus:ring-[var(--dusty-rose)] focus:border-transparent"
                   placeholder="User ID of the seller"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1">
                   Amount (USDC) *
                 </label>
                 <input
@@ -170,12 +170,12 @@ const SolanaEscrowPage: React.FC = () => {
                   value={createForm.amount}
                   onChange={(e) => setCreateForm({ ...createForm, amount: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[rgba(191,179,163,0.3)] rounded-md focus:ring-2 focus:ring-[var(--dusty-rose)] focus:border-transparent"
                   placeholder="100.00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1">
                   Reference (Order ID) *
                 </label>
                 <input
@@ -184,26 +184,26 @@ const SolanaEscrowPage: React.FC = () => {
                   onChange={(e) => setCreateForm({ ...createForm, reference: e.target.value })}
                   required
                   maxLength={64}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[rgba(191,179,163,0.3)] rounded-md focus:ring-2 focus:ring-[var(--dusty-rose)] focus:border-transparent"
                   placeholder="order-12345"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--warm-ink)] mb-1">
                   Business ID (optional)
                 </label>
                 <input
                   type="text"
                   value={createForm.businessId}
                   onChange={(e) => setCreateForm({ ...createForm, businessId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[rgba(191,179,163,0.3)] rounded-md focus:ring-2 focus:ring-[var(--dusty-rose)] focus:border-transparent"
                   placeholder="Link to a business"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+                className="w-full py-2 bg-[var(--dusty-rose)] text-[var(--warm-ink)] rounded-md hover:bg-[var(--dusty-rose)] disabled:opacity-50"
               >
                 {loading ? 'Creating...' : 'Create Escrow'}
               </button>
@@ -217,32 +217,32 @@ const SolanaEscrowPage: React.FC = () => {
   // ── List View ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[var(--cream)] py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Solana Escrows</h1>
+          <h1 className="text-3xl font-bold text-[var(--warm-ink)]">Solana Escrows</h1>
           <button
             onClick={() => setView('create')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            className="px-4 py-2 bg-[var(--dusty-rose)] text-[var(--warm-ink)] rounded-md hover:bg-[var(--dusty-rose)]"
           >
             + New Escrow
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mb-4 p-3 bg-[var(--terracotta)] border border-red-200 rounded-md">
+            <p className="text-sm text-[var(--terracotta)]">{error}</p>
           </div>
         )}
 
         {loading && escrows.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">Loading escrows...</div>
+          <div className="text-center py-12 text-[var(--soft-stone)]">Loading escrows...</div>
         ) : escrows.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500 mb-4">No escrows yet</p>
+            <p className="text-[var(--soft-stone)] mb-4">No escrows yet</p>
             <button
               onClick={() => setView('create')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              className="px-4 py-2 bg-[var(--dusty-rose)] text-[var(--warm-ink)] rounded-md hover:bg-[var(--dusty-rose)]"
             >
               Create your first escrow
             </button>
@@ -257,25 +257,25 @@ const SolanaEscrowPage: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">{escrow.reference}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-[var(--warm-ink)]">{escrow.reference}</p>
+                    <p className="text-sm text-[var(--soft-stone)]">
                       {escrow.buyer.firstName} → {escrow.seller.firstName}
                       {escrow.business && ` · ${escrow.business.name}`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">${escrow.amount.toFixed(2)}</p>
+                    <p className="font-semibold text-[var(--warm-ink)]">${escrow.amount.toFixed(2)}</p>
                     <span
                       className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
                         escrow.status === 'CREATED'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-[var(--sky-wash)] text-[var(--sky-wash)]'
                           : escrow.status === 'FUNDED'
                           ? 'bg-yellow-100 text-yellow-800'
                           : escrow.status === 'RELEASED'
                           ? 'bg-green-100 text-green-800'
                           : escrow.status === 'REFUNDED'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-[var(--cream)] text-[var(--warm-ink)]'
+                          : 'bg-[var(--terracotta)] text-[var(--terracotta)]'
                       }`}
                     >
                       {escrow.status}

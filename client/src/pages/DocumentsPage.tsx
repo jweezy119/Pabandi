@@ -75,21 +75,21 @@ export const DocumentsPage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">📁 Documents</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">📁 Documents</h1>
             <p className="text-sm" style={{ color: tokens.color.textDim }}>Upload and manage tenant documents</p>
           </div>
-          <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
+          <Link to="/property-manager" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">← Back to CRM</Link>
         </div>
 
         {err && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: tokens.color.danger + '15', color: tokens.color.danger }}>{err}</div>}
 
         {/* Filter */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          <button onClick={() => setFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === 'ALL' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+          <button onClick={() => setFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === 'ALL' ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'}`}>
             All ({documents.length})
           </button>
           {DOC_TYPES.map(t => (
-            <button key={t.value} onClick={() => setFilter(t.value)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === t.value ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+            <button key={t.value} onClick={() => setFilter(t.value)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === t.value ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'}`}>
               {t.label} ({documents.filter(d => d.type === t.value).length})
             </button>
           ))}
@@ -99,28 +99,28 @@ export const DocumentsPage: React.FC = () => {
 
         {showUpload && (
           <Surface className="mb-6">
-            <h3 className="text-lg font-bold text-slate-100 mb-4">Upload Document</h3>
+            <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Upload Document</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Document Name *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Document Name *</label>
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. John Doe Driver License" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Type *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Type *</label>
                 <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
                   {DOC_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Tenant Email</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Tenant Email</label>
                 <input value={form.tenantEmail} onChange={(e) => setForm({ ...form, tenantEmail: e.target.value })} placeholder="tenant@email.com" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">File URL *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">File URL *</label>
                 <input value={form.fileUrl} onChange={(e) => setForm({ ...form, fileUrl: e.target.value })} placeholder="https://..." className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-white/5 mt-4">
+            <div className="p-4 rounded-xl bg-[var(--cream)] mt-4">
               <p className="text-xs" style={{ color: tokens.color.textDim }}>
                 💡 <strong>Tip:</strong> Upload files to Google Drive, Dropbox, or any file sharing service and paste the share link above. Make sure the link is publicly accessible.
               </p>
@@ -141,7 +141,7 @@ export const DocumentsPage: React.FC = () => {
               <Surface key={doc.id}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-semibold text-slate-100">{doc.title || doc.name}</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">{doc.title || doc.name}</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>
                       {getTypeLabel(doc.type)} {doc.tenantEmail && `· ${doc.tenantEmail}`}
                     </div>
@@ -150,8 +150,8 @@ export const DocumentsPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-indigo-300 hover:text-indigo-200">View →</a>
-                    <button onClick={() => deleteDocument(doc.id)} className="text-xs text-red-300 hover:text-red-200">Delete</button>
+                    <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-[var(--terracotta)] hover:text-[var(--terracotta)]">View →</a>
+                    <button onClick={() => deleteDocument(doc.id)} className="text-xs text-[var(--terracotta)] hover:text-red-200">Delete</button>
                   </div>
                 </div>
               </Surface>

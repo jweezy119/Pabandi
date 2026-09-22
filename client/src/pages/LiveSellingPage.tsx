@@ -17,7 +17,7 @@ const PLATFORMS = [
   { id: 'ebay-live', label: 'eBay', brand: 'bg-[#0064d2]/10 text-[#0064d2] border-[#0064d2]/30' },
   { id: 'amazon-live', label: 'Amazon Live', brand: 'bg-[#ff9900]/10 text-[#ff9900] border-[#ff9900]/30' },
   { id: 'instagram-live', label: 'Instagram Live', brand: 'bg-[#e1306c]/10 text-[#e1306c] border-[#e1306c]/30' },
-  { id: 'custom-web', label: 'Custom Website', brand: 'bg-slate-400/10 text-slate-400 border-slate-500/30' },
+  { id: 'custom-web', label: 'Custom Website', brand: 'bg-slate-400/10 text-[var(--soft-stone)] border-slate-500/30' },
 ];
 
 const FAQ = [
@@ -212,7 +212,7 @@ function LiveNowList() {
           <div className="relative h-40 bg-surface-variant/30 rounded-t-2xl flex items-center justify-center">
             <PlayCircleIcon className="h-10 w-10 text-primary" />
             <span className="absolute top-3 left-3 bg-[#14F195]/20 border border-[#14F195]/30 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Live</span>
-            <span className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
+            <span className="absolute top-3 right-3 bg-[var(--cream)] backdrop-blur-sm text-[var(--warm-ink)] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
           </div>
           <div className="p-4">
             <p className="font-headline font-bold text-base leading-snug">{show.businessName || 'Seller'}</p>

@@ -76,8 +76,8 @@ export const PublicCustomerProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[var(--clay)]/20 border-t-indigo-500 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -96,16 +96,16 @@ export const PublicCustomerProfilePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900 pb-24 font-body" style={{ color: tokens.color.text }}>
+    <div className="min-h-screen bg-[var(--cream)] pb-24 font-body" style={{ color: tokens.color.text }}>
       
       {/* STOREFRONT HEADER */}
-      <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-indigo-900 via-slate-800 to-indigo-950 overflow-hidden group mt-16">
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000')] bg-cover bg-center mix-blend-overlay"></div>
+      <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-[var(--clay)] via-slate-800 to-[var(--clay)] overflow-hidden group mt-16">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000')] bg-cover bg-center mix-blend-multiply"></div>
         
         {/* Owner Edit Ability */}
         {isOwner && (
           <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="bg-black/50 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/70">
+            <button className="bg-[var(--warm-ink)]/50 backdrop-blur-md border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[var(--warm-ink)]/70">
               <span>✏️</span> Edit Storefront Banner
             </button>
           </div>
@@ -115,71 +115,71 @@ export const PublicCustomerProfilePage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative -mt-24">
         
         {/* Profile Card */}
-        <div className="bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center shadow-2xl relative">
+        <div className="bg-[var(--cream)]/90 backdrop-blur-xl border border-[rgba(191,179,163,0.2)] rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center shadow-2xl relative">
           
           {isOwner && (
-             <button className="absolute top-4 right-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white p-2 rounded-lg text-xs font-bold transition-colors">
+             <button className="absolute top-4 right-4 bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] text-[var(--warm-ink)] p-2 rounded-lg text-xs font-bold transition-colors">
                Edit Profile
              </button>
           )}
 
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-slate-900 shadow-xl bg-indigo-500/20 flex items-center justify-center text-4xl font-bold overflow-hidden shrink-0">
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-slate-900 shadow-xl bg-[var(--clay)]/20 flex items-center justify-center text-4xl font-bold overflow-hidden shrink-0">
              {userProfile.firstName?.charAt(0)}{userProfile.lastName?.charAt(0)}
           </div>
           
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-3xl font-black font-headline text-white">{userProfile.firstName} {userProfile.lastName}</h1>
-              <span className="flex items-center gap-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+              <h1 className="text-3xl font-black font-headline text-[var(--warm-ink)]">{userProfile.firstName} {userProfile.lastName}</h1>
+              <span className="flex items-center gap-1 bg-[var(--sage)]/20 border border-[var(--sage)]/30 text-[var(--sage)] text-xs font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
+                <span className="w-1.5 h-1.5 bg-[var(--sage)] rounded-full animate-pulse"></span>
                 {isFreelancer ? 'Available for Work' : 'Active Member'}
               </span>
             </div>
-            <p className="text-lg text-indigo-300 font-medium mb-3">
+            <p className="text-lg text-[var(--clay)] font-medium mb-3">
                {freelanceBusiness?.name || (isFreelancer ? 'Freelance Professional' : 'Pabandi Community Member')}
             </p>
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
+            <p className="text-[var(--warm-ink)] text-sm max-w-2xl leading-relaxed">
                {freelanceBusiness?.description || `Pabandi verified user since ${new Date(userProfile.createdAt).getFullYear()}.`}
             </p>
           </div>
 
-          <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex gap-6 md:min-w-[250px] shrink-0">
+          <div className="bg-[var(--warm-ink)]/40 border border-[rgba(191,179,163,0.15)] rounded-2xl p-4 flex gap-6 md:min-w-[250px] shrink-0">
              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Trust Passport</p>
+                <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-1">Trust Passport</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black text-emerald-400">{userProfile.reliabilityScore}</span>
-                  <span className="text-sm text-emerald-400/70 font-bold mb-1">{userProfile.verificationTier}</span>
+                  <span className="text-3xl font-black text-[var(--sage)]">{userProfile.reliabilityScore}</span>
+                  <span className="text-sm text-[var(--sage)]/70 font-bold mb-1">{userProfile.verificationTier}</span>
                 </div>
              </div>
-             <div className="w-px bg-white/10"></div>
+             <div className="w-px bg-[var(--warm-sand)]"></div>
              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Escrow Deals</p>
+                <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-1">Escrow Deals</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black text-white">{userProfile.businesses?.length * 12 || 4}</span>
+                  <span className="text-3xl font-black text-[var(--warm-ink)]">{userProfile.businesses?.length * 12 || 4}</span>
                 </div>
              </div>
           </div>
         </div>
 
         {/* Modular "Apps" Navigation */}
-        <div className="flex items-center gap-2 mt-8 mb-6 overflow-x-auto no-scrollbar border-b border-white/5 pb-2">
+        <div className="flex items-center gap-2 mt-8 mb-6 overflow-x-auto no-scrollbar border-b border-[rgba(191,179,163,0.15)] pb-2">
            <button 
              onClick={() => setActiveApp('checkout')}
-             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'checkout' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'checkout' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-lg shadow-[var(--clay)]/20' : 'bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
            >
              🛍️ {isFreelancer ? 'Escrow Services' : 'Public Activity'}
            </button>
            {isFreelancer && (
              <button 
                onClick={() => setActiveApp('portfolio')}
-               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'portfolio' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'portfolio' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-lg shadow-[var(--clay)]/20' : 'bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
              >
                📁 Verified Portfolio
              </button>
            )}
            <button 
              onClick={() => setActiveApp('chat')}
-             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'chat' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'chat' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-lg shadow-[var(--clay)]/20' : 'bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
            >
              🤖 AI Concierge
            </button>
@@ -193,19 +193,19 @@ export const PublicCustomerProfilePage: React.FC = () => {
             {activeApp === 'checkout' && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold font-headline mb-4 flex items-center gap-2">
-                  <span className="text-indigo-400">⚡</span> {isFreelancer ? 'Available Services' : 'Activity'}
+                  <span className="text-[var(--clay)]">⚡</span> {isFreelancer ? 'Available Services' : 'Activity'}
                 </h2>
                 {isFreelancer ? services.map(service => (
-                  <div key={service.id} className="bg-slate-800/40 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors group flex flex-col sm:flex-row justify-between gap-4">
+                  <div key={service.id} className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.2)] rounded-2xl p-6 hover:border-[var(--clay)]/50 transition-colors group flex flex-col sm:flex-row justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">{service.name}</h3>
-                      <p className="text-sm text-slate-400 mb-4">{service.description}</p>
-                      <span className="inline-flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-300">
+                      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2 group-hover:text-[var(--clay)] transition-colors">{service.name}</h3>
+                      <p className="text-sm text-[var(--soft-stone)] mb-4">{service.description}</p>
+                      <span className="inline-flex items-center gap-1.5 bg-[var(--warm-sand)] px-2.5 py-1 rounded-md text-xs font-medium text-[var(--warm-ink)]">
                         ⏱️ Delivery: {service.delivery}
                       </span>
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between shrink-0">
-                      <p className="text-2xl font-black text-white">${service.price}</p>
+                      <p className="text-2xl font-black text-[var(--warm-ink)]">${service.price}</p>
                       <button
                         onClick={async () => {
                           try {
@@ -215,20 +215,20 @@ export const PublicCustomerProfilePage: React.FC = () => {
                             else navigate('/demo-checkout');
                           } catch { navigate('/demo-checkout'); }
                         }}
-                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-white transition-colors w-full sm:w-auto text-center"
+                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-[var(--terracotta)] hover:text-[var(--warm-ink)] transition-colors w-full sm:w-auto text-center"
                       >
                         Fund Escrow
                       </button>
                     </div>
                   </div>
                 )) : (
-                  <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-6">
-                    <p className="text-slate-400">No active services. This is a standard consumer profile.</p>
+                  <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.2)] rounded-2xl p-6">
+                    <p className="text-[var(--soft-stone)]">No active services. This is a standard consumer profile.</p>
                   </div>
                 )}
                 
                 {isOwner && (
-                   <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white border-dashed py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors mt-4">
+                   <button className="w-full bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] text-[var(--warm-ink)] border-dashed py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors mt-4">
                      <span>+</span> Add New Service
                    </button>
                 )}
@@ -236,12 +236,12 @@ export const PublicCustomerProfilePage: React.FC = () => {
             )}
 
             {activeApp === 'portfolio' && (
-              <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.2)] rounded-2xl p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
                  <span className="text-4xl mb-4 grayscale">🖼️</span>
                  <h3 className="text-xl font-bold mb-2">Verified Deliverables</h3>
-                 <p className="text-slate-400 max-w-sm mb-6">Past work completed through Pabandi Escrow is automatically verified and showcased here.</p>
+                 <p className="text-[var(--soft-stone)] max-w-sm mb-6">Past work completed through Pabandi Escrow is automatically verified and showcased here.</p>
                  {isOwner && (
-                    <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold transition-colors">
+                    <button className="bg-[var(--clay)] hover:bg-[var(--terracotta)] text-[var(--warm-ink)] px-6 py-2 rounded-xl text-sm font-bold transition-colors">
                       Upload Deliverable
                     </button>
                  )}
@@ -249,53 +249,53 @@ export const PublicCustomerProfilePage: React.FC = () => {
             )}
 
             {activeApp === 'chat' && (
-              <div className="bg-slate-800/40 border border-white/10 rounded-2xl h-[500px] flex flex-col overflow-hidden">
-                <div className="bg-black/30 p-4 border-b border-white/5 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-400 text-xl">🤖</div>
+              <div className="bg-[var(--cream)]/40 border border-[rgba(191,179,163,0.2)] rounded-2xl h-[500px] flex flex-col overflow-hidden">
+                <div className="bg-[var(--warm-ink)]/30 p-4 border-b border-[rgba(191,179,163,0.15)] flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[var(--clay)]/20 rounded-full flex items-center justify-center text-[var(--clay)] text-xl">🤖</div>
                   <div>
-                    <h3 className="font-bold text-white text-sm">{userProfile.firstName}'s AI Concierge</h3>
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Online</p>
+                    <h3 className="font-bold text-[var(--warm-ink)] text-sm">{userProfile.firstName}'s AI Concierge</h3>
+                    <p className="text-[10px] text-[var(--sage)] font-bold uppercase tracking-widest">Online</p>
                   </div>
                 </div>
                 
                 <div className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'user' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'user' ? 'bg-[var(--sage)]/20 text-[var(--sage)]' : 'bg-[var(--clay)]/20 text-[var(--clay)]'}`}>
                         {msg.role === 'user' ? '👤' : '🤖'}
                       </div>
-                      <div className={`text-sm p-3 rounded-2xl ${msg.role === 'user' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-tr-none' : 'bg-indigo-500/10 border border-indigo-500/20 text-slate-300 rounded-tl-none'}`}>
+                      <div className={`text-sm p-3 rounded-2xl ${msg.role === 'user' ? 'bg-[var(--sage)]/10 border border-[var(--sage)]/20 text-[var(--sage)] rounded-tr-none' : 'bg-[var(--clay)]/10 border border-[var(--clay)]/20 text-[var(--warm-ink)] rounded-tl-none'}`}>
                         {msg.content}
                       </div>
                     </div>
                   ))}
                   {isTyping && (
                     <div className="flex gap-3 max-w-[80%]">
-                      <div className="w-8 h-8 bg-indigo-500/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
-                      <div className="bg-indigo-500/10 border border-indigo-500/20 text-slate-300 text-sm p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      <div className="w-8 h-8 bg-[var(--clay)]/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
+                      <div className="bg-[var(--clay)]/10 border border-[var(--clay)]/20 text-[var(--warm-ink)] text-sm p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-[var(--clay)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-[var(--clay)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-[var(--clay)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                       </div>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
 
-                <form onSubmit={handleChatSubmit} className="p-4 bg-black/20 border-t border-white/5">
-                  <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-2 focus-within:border-indigo-500/50 transition-colors">
+                <form onSubmit={handleChatSubmit} className="p-4 bg-[var(--warm-ink)]/20 border-t border-[rgba(191,179,163,0.15)]">
+                  <div className="flex items-center gap-2 bg-[var(--warm-ink)]/40 border border-[rgba(191,179,163,0.2)] rounded-xl p-2 focus-within:border-[var(--clay)]/50 transition-colors">
                     <input 
                       type="text" 
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder="Type a message..." 
-                      className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-white placeholder-slate-500" 
+                      className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-[var(--warm-ink)] placeholder-slate-500" 
                       disabled={isTyping}
                     />
                     <button 
                       type="submit"
                       disabled={isTyping || !chatInput.trim()}
-                      className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-[var(--clay)] text-[var(--warm-ink)] p-2 rounded-lg hover:bg-[var(--terracotta)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     </button>
@@ -309,46 +309,46 @@ export const PublicCustomerProfilePage: React.FC = () => {
           <div className="space-y-6">
             
             {/* Guarantee Box */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[rgba(191,179,163,0.2)] rounded-2xl p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <span className="text-6xl">🛡️</span>
               </div>
               <h3 className="font-bold text-lg mb-2 relative z-10">Zero Risk Guarantee</h3>
-              <p className="text-sm text-slate-400 mb-4 relative z-10">
+              <p className="text-sm text-[var(--soft-stone)] mb-4 relative z-10">
                 All services are powered by Pabandi Smart Escrow. Your funds are locked securely on-chain and only released when you approve the final deliverables.
               </p>
-              <ul className="text-xs space-y-2 text-slate-300 font-medium relative z-10">
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> No Ghosting</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Instant AI Arbitration</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Zero-Fee Off-Ramps</li>
+              <ul className="text-xs space-y-2 text-[var(--warm-ink)] font-medium relative z-10">
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> No Ghosting</li>
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> Instant AI Arbitration</li>
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> Zero-Fee Off-Ramps</li>
               </ul>
             </div>
 
             {/* Verification Widget */}
-            <div className="bg-black/30 border border-white/5 rounded-2xl p-6 relative">
+            <div className="bg-[var(--warm-ink)]/30 border border-[rgba(191,179,163,0.15)] rounded-2xl p-6 relative">
                {isOwner && (
-                 <button className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                 <button className="absolute top-4 right-4 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-colors">
                    <span className="text-xs">⚙️</span>
                  </button>
                )}
-               <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-4">Trust Oracle Verification</p>
+               <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-4">Trust Oracle Verification</p>
                <div className="space-y-3">
                  <div className="flex items-center justify-between">
-                   <span className="text-sm text-slate-300">Identity / Liveness</span>
-                   <span className="text-sm font-bold text-emerald-400">99%</span>
+                   <span className="text-sm text-[var(--warm-ink)]">Identity / Liveness</span>
+                   <span className="text-sm font-bold text-[var(--sage)]">99%</span>
                  </div>
                  {isFreelancer && (
                    <div className="flex items-center justify-between">
-                     <span className="text-sm text-slate-300">Competence (Gig Hist.)</span>
-                     <span className="text-sm font-bold text-emerald-400">95%</span>
+                     <span className="text-sm text-[var(--warm-ink)]">Competence (Gig Hist.)</span>
+                     <span className="text-sm font-bold text-[var(--sage)]">95%</span>
                    </div>
                  )}
                  <div className="flex items-center justify-between">
-                   <span className="text-sm text-slate-300">Wallet Temporal Age</span>
-                   <span className="text-sm font-bold text-emerald-400">Verified</span>
+                   <span className="text-sm text-[var(--warm-ink)]">Wallet Temporal Age</span>
+                   <span className="text-sm font-bold text-[var(--sage)]">Verified</span>
                  </div>
                </div>
-               <button className="w-full mt-6 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-bold py-2 rounded-lg transition-colors">
+               <button className="w-full mt-6 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] text-[var(--warm-ink)] text-xs font-bold py-2 rounded-lg transition-colors">
                  View Full AI Audit Report
                </button>
             </div>

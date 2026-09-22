@@ -14,9 +14,9 @@ const ALL_PAYMENTS = [
 ];
 
 const STATUS_STYLES: Record<string, string> = {
-  completed: 'bg-emerald-500/20 text-emerald-300',
-  pending: 'bg-amber-500/20 text-amber-300',
-  failed: 'bg-red-500/20 text-red-300',
+  completed: 'bg-[var(--sage)]/20 text-[var(--sage)]',
+  pending: 'bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)]',
+  failed: 'bg-[var(--terracotta)]/20 text-[var(--terracotta)]',
 };
 
 export default function PaymentHistory() {
@@ -29,27 +29,27 @@ export default function PaymentHistory() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Payment History</h1>
-        <p className="text-slate-400 text-sm mt-1">All your rent payments in one place</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">Payment History</h1>
+        <p className="text-[var(--soft-stone)] text-sm mt-1">All your rent payments in one place</p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Total Paid</div>
-          <div className="text-2xl font-bold text-white">
+        <div className="rounded-[var(--radius-card)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] p-5">
+          <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider mb-1">Total Paid</div>
+          <div className="text-2xl font-bold text-[var(--warm-ink)]">
             ${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-5">
-          <div className="text-xs text-emerald-400 uppercase tracking-wider mb-1">Saved with PAB</div>
-          <div className="text-2xl font-bold text-emerald-300">
+        <div className="rounded-[var(--radius-card)] bg-[var(--sage)]/10 border border-[var(--sage)]/20 p-5">
+          <div className="text-xs text-[var(--sage)] uppercase tracking-wider mb-1">Saved with PAB</div>
+          <div className="text-2xl font-bold text-[var(--sage)]">
             ${totalSaved.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
         </div>
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Payments</div>
-          <div className="text-2xl font-bold text-white">{filtered.length}</div>
+        <div className="rounded-[var(--radius-card)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] p-5">
+          <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider mb-1">Payments</div>
+          <div className="text-2xl font-bold text-[var(--warm-ink)]">{filtered.length}</div>
         </div>
       </div>
 
@@ -61,8 +61,8 @@ export default function PaymentHistory() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               filter === f
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                : 'bg-white/5 text-slate-400 border border-white/10 hover:border-white/20'
+                ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30'
+                : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)] hover:border-[rgba(191,179,163,0.4)]'
             }`}
           >
             {f === 'all' ? 'All' : f}
@@ -71,31 +71,31 @@ export default function PaymentHistory() {
       </div>
 
       {/* Payment List */}
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
+      <div className="rounded-[var(--radius-card)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] p-6">
         <div className="space-y-3">
           {filtered.map((payment) => (
-            <div key={payment.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
+            <div key={payment.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] hover:border-[rgba(191,179,163,0.3)] transition-all">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  payment.token === 'PAB' ? 'bg-purple-500/20' : 'bg-blue-500/20'
+                  payment.token === 'PAB' ? 'bg-[var(--dusty-rose)]/20' : 'bg-[var(--sky-wash)]/20'
                 }`}>
                   <span className={`material-symbols-outlined text-xl ${
-                    payment.token === 'PAB' ? 'text-purple-400' : 'text-blue-400'
+                    payment.token === 'PAB' ? 'text-[var(--dusty-rose)]' : 'text-[var(--sky-wash)]'
                   }`}>
                     {payment.token === 'PAB' ? 'account_balance_wallet' : 'attach_money'}
                   </span>
                 </div>
                 <div>
-                  <div className="text-white text-sm font-medium">{payment.description}</div>
-                  <div className="text-slate-500 text-xs">
+                  <div className="text-[var(--warm-ink)] text-sm font-medium">{payment.description}</div>
+                  <div className="text-[var(--soft-stone)] text-xs">
                     {new Date(payment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-white font-bold">${payment.amount.toLocaleString()}</div>
+                <div className="text-[var(--warm-ink)] font-bold">${payment.amount.toLocaleString()}</div>
                 <div className="flex items-center gap-2 justify-end">
-                  <span className="text-slate-500 text-xs">{payment.token}</span>
+                  <span className="text-[var(--soft-stone)] text-xs">{payment.token}</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${STATUS_STYLES[payment.status]}`}>
                     {payment.status}
                   </span>

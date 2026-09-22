@@ -7,14 +7,14 @@ type Tab = 'court' | 'comprehensive' | 'pakistan' | 'history' | 'batch';
 type CheckResult = any;
 
 const BAND_COLOR: Record<string, string> = {
-  A: '#16a34a',
-  B: '#22c55e',
+  A: 'var(--sage)',
+  B: 'var(--sage)',
   C: '#ca8a04',
   D: '#f97316',
-  E: '#dc2626',
-  LOW: '#16a34a',
+  E: 'var(--terracotta)',
+  LOW: 'var(--sage)',
   MEDIUM: '#ca8a04',
-  HIGH: '#dc2626',
+  HIGH: 'var(--terracotta)',
 };
 
 export default function BackgroundCheckPage() {
@@ -141,18 +141,18 @@ export default function BackgroundCheckPage() {
 
   const moduleColor = (score?: number) => {
     if (typeof score !== 'number') return '#94a3b8';
-    if (score >= 70) return '#dc2626';
+    if (score >= 70) return 'var(--terracotta)';
     if (score >= 40) return '#f97316';
-    return '#16a34a';
+    return 'var(--sage)';
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-10 space-y-6">
         <div>
           <p className="text-xs uppercase tracking-widest opacity-60 mb-2">Trust & Safety</p>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-100 font-headline">Background Check</h1>
-          <p style={{ color: tokens.color.textDim }} className="mt-2 max-w-2xl text-sm">
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--warm-ink)] font-headline">Background Check</h1>
+          <p style={{ color: 'var(--soft-stone)" }} className="mt-2 max-w-2xl text-sm">
             CourtListener court-record screening, comprehensive Pabandi trust scoring, batch tenant screening, and check history. Some checks may include a $PAB fee.
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function BackgroundCheckPage() {
             <button
               key={s.id}
               onClick={() => { setTab(s.id); if (s.id === 'history') loadHistory(); }}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap border transition-all ${tab === s.id ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/30' : 'bg-white/5 text-slate-400 border-white/10'}`}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap border transition-all ${tab === s.id ? 'bg-[rgba(var(--clay),0.15)] text-[var(--warm-ink)] border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border-[rgba(191,179,163,0.3)]'}`}
             >
               {s.icon} {s.label}
             </button>
@@ -177,16 +177,16 @@ export default function BackgroundCheckPage() {
 
         {tab === 'court' && (
           <div className="space-y-4">
-            <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="font-bold text-lg text-slate-100 mb-3">Court Record Screening</h3>
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+              <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-3">Court Record Screening</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} placeholder="Full legal name" value={name} onChange={(e) => setName(e.target.value)} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} placeholder="Full legal name" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">State</label>
-                  <select className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={state} onChange={(e) => setState(e.target.value)}>
+                  <select className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={state} onChange={(e) => setState(e.target.value)}>
                     <option value="">All States</option>
                     <option value="IL">Illinois</option>
                     <option value="NY">New York</option>
@@ -196,38 +196,38 @@ export default function BackgroundCheckPage() {
                   </select>
                 </div>
               </div>
-              <button onClick={() => setShowAdvanced(!showAdvanced)} className="mt-4 text-sm font-semibold text-indigo-300 hover:text-indigo-200">
+              <button onClick={() => setShowAdvanced(!showAdvanced)} className="mt-4 text-sm font-semibold text-[var(--clay)] hover:text-[var(--warm-ink)]">
                 {showAdvanced ? '▼ Hide Advanced Search' : '▶ Show Advanced Search'}
               </button>
               {showAdvanced && (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.02)", border: '1px solid "rgba(255,255,255,0.06)"' }}>
                   <div>
                     <label className="text-xs uppercase tracking-wide opacity-60">Court ID</label>
-                    <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} placeholder="Court ID" value={advanced.court} onChange={(e) => setAdvanced({ ...advanced, court: e.target.value })} />
+                    <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} placeholder="Court ID" value={advanced.court} onChange={(e) => setAdvanced({ ...advanced, court: e.target.value })} />
                   </div>
                   <div>
                     <label className="text-xs uppercase tracking-wide opacity-60">Docket Number</label>
-                    <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} placeholder="Docket #" value={advanced.docketNumber} onChange={(e) => setAdvanced({ ...advanced, docketNumber: e.target.value })} />
+                    <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} placeholder="Docket #" value={advanced.docketNumber} onChange={(e) => setAdvanced({ ...advanced, docketNumber: e.target.value })} />
                   </div>
                   <div>
                     <label className="text-xs uppercase tracking-wide opacity-60">Date Filed After</label>
-                    <input type="date" className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={advanced.dateFiledAfter} onChange={(e) => setAdvanced({ ...advanced, dateFiledAfter: e.target.value })} />
+                    <input type="date" className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={advanced.dateFiledAfter} onChange={(e) => setAdvanced({ ...advanced, dateFiledAfter: e.target.value })} />
                   </div>
                   <div>
                     <label className="text-xs uppercase tracking-wide opacity-60">Date Filed Before</label>
-                    <input type="date" className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={advanced.dateFiledBefore} onChange={(e) => setAdvanced({ ...advanced, dateFiledBefore: e.target.value })} />
+                    <input type="date" className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={advanced.dateFiledBefore} onChange={(e) => setAdvanced({ ...advanced, dateFiledBefore: e.target.value })} />
                   </div>
                 </div>
               )}
-              {courtError && <div className="text-red-400 text-sm mt-3">{courtError}</div>}
-              <button disabled={courtLoading || !name.trim()} onClick={runCourtCheck} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>
+              {courtError && <div className="text-[var(--terracotta)] text-sm mt-3">{courtError}</div>}
+              <button disabled={courtLoading || !name.trim()} onClick={runCourtCheck} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
                 {courtLoading ? '🔍 Searching Court Records...' : 'Run Background Check'}
               </button>
             </div>
 
             {courtResult && (
               <div className="space-y-4">
-                <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${BAND_COLOR[courtResult.riskBand || ''] || '#888'}40` }}>
+                <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BAND_COLOR[courtResult.riskBand || ''] || '#888'}40` }}>
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-wide opacity-60">Verdict</p>
@@ -242,12 +242,12 @@ export default function BackgroundCheckPage() {
                 </div>
 
                 {courtResult.riskFactors && courtResult.riskFactors.length > 0 && (
-                  <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <h3 className="font-bold text-lg text-slate-100 mb-3">Risk Factors</h3>
+                  <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+                    <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-3">Risk Factors</h3>
                     <div className="space-y-2">
                       {courtResult.riskFactors.map((f: string, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: tokens.color.textDim }}>
-                          <span className="text-red-400">•</span> {f}
+                        <div key={i} className="flex items-center gap-2 text-sm" style={{ color: 'var(--soft-stone)" }}>
+                          <span className="text-[var(--terracotta)]">•</span> {f}
                         </div>
                       ))}
                     </div>
@@ -255,21 +255,21 @@ export default function BackgroundCheckPage() {
                 )}
 
                 {courtResult.cases && courtResult.cases.length > 0 && (
-                  <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <h3 className="font-bold text-lg text-slate-100 mb-4">Case Details</h3>
+                  <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+                    <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-4">Case Details</h3>
                     <div className="space-y-3">
                       {courtResult.cases.map((c: any, i: number) => (
-                        <div key={i} className="p-4 rounded-xl bg-white/5">
+                        <div key={i} className="p-4 rounded-xl bg-[var(--warm-sand)]">
                           <div className="flex items-center justify-between mb-1">
-                            <div className="font-semibold text-slate-100">{c.caseName}</div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.courtType === 'CRIMINAL' ? 'bg-red-500/20 text-red-300' : c.courtType === 'CIVIL' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-500/20 text-slate-300'}`}>{c.courtType || 'OTHER'}</span>
+                            <div className="font-semibold text-[var(--warm-ink)]">{c.caseName}</div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${c.courtType === 'CRIMINAL' ? 'bg-[rgba(var(--terracotta),0.15)] text-[var(--terracotta)]' : c.courtType === 'CIVIL' ? 'bg-[rgba(var(--muted-ochre),0.15)] text-[var(--muted-ochre)]' : 'bg-slate-500/20 text-[var(--soft-stone)]'}`}>{c.courtType || 'OTHER'}</span>
                           </div>
-                          <div className="text-xs" style={{ color: tokens.color.textDim }}>
+                          <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>
                             {c.docketNumber} · {c.court} · Filed {c.dateFiled}
                             {c.dateTerminated && <span> · Terminated {c.dateTerminated}</span>}
                             {c.chapter && <span> · Chapter {c.chapter}</span>}
                           </div>
-                          {c.party?.length > 0 && <div className="text-xs mt-1 text-slate-400">Parties: {c.party.slice(0, 4).join(', ')}{c.party.length > 4 ? '...' : ''}</div>}
+                          {c.party?.length > 0 && <div className="text-xs mt-1 text-[var(--soft-stone)]">Parties: {c.party.slice(0, 4).join(', ')}{c.party.length > 4 ? '...' : ''}</div>}
                         </div>
                       ))}
                     </div>
@@ -277,19 +277,19 @@ export default function BackgroundCheckPage() {
                 )}
 
                 {courtResult.simulated && (
-                  <div className="rounded-3xl p-4 text-sm" style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.2)' }}>
-                    <p className="text-amber-300">⚠️ Demo mode — COURTLISTENER_API_KEY is not set. Results are simulated.</p>
+                  <div className="rounded-3xl p-4 text-sm" style={{ background: "rgba(255,193,7,0.05)", border: '1px solid "rgba(255,193,7,0.2)"' }}>
+                    <p className="text-[var(--muted-ochre)]">⚠️ Demo mode — COURTLISTENER_API_KEY is not set. Results are simulated.</p>
                   </div>
                 )}
                 {!courtResult.simulated && courtResult.totalCases === 0 && (
-                  <div className="rounded-3xl p-4 text-sm text-center" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <p className="text-emerald-300">✅ Live mode — no records found for this name.</p>
+                  <div className="rounded-3xl p-4 text-sm text-center" style={{ background: "rgba(16,185,129,0.05)", border: '1px solid "rgba(16,185,129,0.2)"' }}>
+                    <p className="text-[var(--sage)]">✅ Live mode — no records found for this name.</p>
                   </div>
                 )}
-                <div className="rounded-3xl p-4 text-xs" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <button onClick={() => setShowRawCourt(!showRawCourt)} className="text-slate-300 hover:text-white">{showRawCourt ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
+                <div className="rounded-3xl p-4 text-xs" style={{ background: "rgba(255,255,255,0.02)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+                  <button onClick={() => setShowRawCourt(!showRawCourt)} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">{showRawCourt ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
                   {showRawCourt && (
-                    <pre className="mt-3 whitespace-pre-wrap text-slate-300">{JSON.stringify(courtResult, null, 2)}</pre>
+                    <pre className="mt-3 whitespace-pre-wrap text-[var(--soft-stone)]">{JSON.stringify(courtResult, null, 2)}</pre>
                   )}
                 </div>
               </div>
@@ -299,17 +299,17 @@ export default function BackgroundCheckPage() {
 
         {tab === 'comprehensive' && (
           <div className="space-y-4">
-            <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="font-bold text-lg text-slate-100 mb-3">Pabandi Trust Screening</h3>
-              <p className="text-xs mb-4" style={{ color: tokens.color.textDim }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
+            <div className="rounded-3xl p-5 md:p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+              <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-3">Pabandi Trust Screening</h3>
+              <p className="text-xs mb-4" style={{ color: 'var(--soft-stone)" }}>Composite score from Pabandi history, sanctions, GitHub, domain age, breach data, registry, and wallet analytics.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Full Name *</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectName} onChange={(e) => setCForm({ ...cForm, subjectName: e.target.value })} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectName} onChange={(e) => setCForm({ ...cForm, subjectName: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Subject Type</label>
-                  <select className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectType} onChange={(e) => setCForm({ ...cForm, subjectType: e.target.value })}>
+                  <select className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectType} onChange={(e) => setCForm({ ...cForm, subjectType: e.target.value })}>
                     <option value="GUEST">Guest</option>
                     <option value="FREELANCER">Freelancer</option>
                     <option value="PROPERTY_MANAGER">Property Manager</option>
@@ -318,53 +318,53 @@ export default function BackgroundCheckPage() {
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Email</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectEmail} onChange={(e) => setCForm({ ...cForm, subjectEmail: e.target.value })} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectEmail} onChange={(e) => setCForm({ ...cForm, subjectEmail: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Website</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectWebsite} onChange={(e) => setCForm({ ...cForm, subjectWebsite: e.target.value })} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectWebsite} onChange={(e) => setCForm({ ...cForm, subjectWebsite: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">GitHub</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectGithub} onChange={(e) => setCForm({ ...cForm, subjectGithub: e.target.value })} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectGithub} onChange={(e) => setCForm({ ...cForm, subjectGithub: e.target.value })} />
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-wide opacity-60">Company</label>
-                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} value={cForm.subjectCompany} onChange={(e) => setCForm({ ...cForm, subjectCompany: e.target.value })} />
+                  <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} value={cForm.subjectCompany} onChange={(e) => setCForm({ ...cForm, subjectCompany: e.target.value })} />
                 </div>
               </div>
-              <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
+              <label className="mt-3 flex items-center gap-2 text-sm text-[var(--soft-stone)]">
                 <input type="checkbox" checked={cForm.consent} onChange={(e) => setCForm({ ...cForm, consent: e.target.checked })} />
                 Consent to screening for trust scoring
               </label>
-              {compError && <div className="text-red-400 text-sm mt-3">{compError}</div>}
-              <button disabled={compLoading || !cForm.subjectName.trim() || !cForm.consent} onClick={runComprehensive} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>
+              {compError && <div className="text-[var(--terracotta)] text-sm mt-3">{compError}</div>}
+              <button disabled={compLoading || !cForm.subjectName.trim() || !cForm.consent} onClick={runComprehensive} className="mt-5 w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
                 {compLoading ? '🛡️ Running Trust Check...' : 'Run Trust Check'}
               </button>
             </div>
 
             {compResult && (
               <div className="space-y-4">
-                <div className="rounded-3xl p-6" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${BAND_COLOR[compResult.riskBand || ''] || '#888'}40` }}>
+                <div className="rounded-3xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BAND_COLOR[compResult.riskBand || ''] || '#888'}40` }}>
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                       <p className="text-xs uppercase tracking-wide opacity-60">Trust Score</p>
                       <p className="text-4xl font-bold" style={{ color: BAND_COLOR[compResult.riskBand || ''] || '#94a3b8' }}>{compResult.riskScore ?? '—'}</p>
-                      <p className="text-sm" style={{ color: tokens.color.textDim }}>{compResult.recommendation} · {compResult.riskBand}</p>
+                      <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>{compResult.recommendation} · {compResult.riskBand}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs uppercase tracking-wide opacity-60">Status</p>
-                      <p className="text-xl font-bold text-slate-100">{compResult.status}</p>
+                      <p className="text-xl font-bold text-[var(--warm-ink)]">{compResult.status}</p>
                     </div>
                   </div>
-                  {compResult.summary && <p className="mt-3 text-sm text-slate-300">{compResult.summary}</p>}
+                  {compResult.summary && <p className="mt-3 text-sm text-[var(--soft-stone)]">{compResult.summary}</p>}
                 </div>
 
                 <ModuleGrid result={compResult} moduleColor={moduleColor} />
-                <div className="rounded-3xl p-4 text-xs" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <button onClick={() => setShowRawComp(!showRawComp)} className="text-slate-300 hover:text-white">{showRawComp ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
+                <div className="rounded-3xl p-4 text-xs" style={{ background: "rgba(255,255,255,0.02)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+                  <button onClick={() => setShowRawComp(!showRawComp)} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">{showRawComp ? 'Hide Raw JSON' : 'Show Raw JSON'}</button>
                   {showRawComp && (
-                    <pre className="mt-3 whitespace-pre-wrap text-slate-300">{JSON.stringify(compResult, null, 2)}</pre>
+                    <pre className="mt-3 whitespace-pre-wrap text-[var(--soft-stone)]">{JSON.stringify(compResult, null, 2)}</pre>
                   )}
                 </div>
               </div>
@@ -373,17 +373,17 @@ export default function BackgroundCheckPage() {
         )}
 
         {tab === 'pakistan' && (
-          <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <h3 className="font-bold text-lg text-slate-100">🇵🇰 Pakistan Trust Screening</h3>
-            <p className="text-xs" style={{ color: tokens.color.textDim }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
+          <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+            <h3 className="font-bold text-lg text-[var(--warm-ink)]">🇵🇰 Pakistan Trust Screening</h3>
+            <p className="text-xs" style={{ color: 'var(--soft-stone)" }}>Use this for Pakistan-side trust signals where CourtListener/US records do not apply. Intended for landlord/tenant screening outside the US.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-wide opacity-60">Party Name</label>
-                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} id="pak-name" placeholder="Full name" />
+                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} id="pak-name" placeholder="Full name" />
               </div>
               <div>
                 <label className="text-xs uppercase tracking-wide opacity-60">NTN / ID</label>
-                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} id="pak-ntn" placeholder="Optional" />
+                <input className="mt-1 w-full rounded-xl px-4 py-3 outline-none" style={{ background: "rgba(255,255,255,0.04)", border: '1px solid "rgba(255,255,255,0.12)"' }} id="pak-ntn" placeholder="Optional" />
               </div>
             </div>
             <button onClick={async () => {
@@ -396,27 +396,27 @@ export default function BackgroundCheckPage() {
               } catch (e: any) {
                 alert(e.response?.data?.error || e.message || 'Pakistan screen failed');
               }
-            }} className="w-full py-3 rounded-xl font-bold border-none hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>Run Pakistan Screen</button>
+            }} className="w-full py-3 rounded-xl font-bold border-none hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>Run Pakistan Screen</button>
           </div>
         )}
 
         {tab === 'history' && (
-          <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="rounded-3xl p-5 md:p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg text-slate-100">Check History</h3>
-              <button onClick={loadHistory} disabled={historyLoading} className="px-3 py-2 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50">Refresh</button>
+              <h3 className="font-bold text-lg text-[var(--warm-ink)]">Check History</h3>
+              <button onClick={loadHistory} disabled={historyLoading} className="px-3 py-2 rounded-lg text-sm font-semibold border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] disabled:opacity-50">Refresh</button>
             </div>
-            {history.length === 0 && !historyLoading && <p style={{ color: tokens.color.textDim }} className="text-sm">No checks yet.</p>}
+            {history.length === 0 && !historyLoading && <p style={{ color: 'var(--soft-stone)" }} className="text-sm">No checks yet.</p>}
             <div className="space-y-2">
               {history.map((h) => (
-                <div key={h.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={h.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
-                    <div className="font-semibold text-slate-100">{h.subjectName || h.id}</div>
-                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">{h.subjectName || h.id}</div>
+                    <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{new Date(h.createdAt || Date.now()).toLocaleString()} · {h.status}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold" style={{ color: BAND_COLOR[h.riskBand || ''] || '#94a3b8' }}>{h.riskBand || '—'}</div>
-                    <div className="text-xs" style={{ color: tokens.color.textDim }}>{h.riskScore ?? '—'}</div>
+                    <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{h.riskScore ?? '—'}</div>
                   </div>
                 </div>
               ))}
@@ -425,17 +425,17 @@ export default function BackgroundCheckPage() {
         )}
 
         {tab === 'batch' && (
-          <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <h3 className="font-bold text-lg text-slate-100">Batch Tenant Screening</h3>
-            <p className="text-xs" style={{ color: tokens.color.textDim }}>One subject per line: Name, Type, Email</p>
-            <textarea value={batchText} onChange={(e) => setBatchText(e.target.value)} rows={8} placeholder={'John Doe,GUEST,john@example.com\nJane Smith,FREELANCER,jane@example.com'} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" />
-            {batchError && <div className="text-red-400 text-sm">{batchError}</div>}
-            <button disabled={batchLoading} onClick={runBatch} className="w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: tokens.color.primary, color: '#0a0a0a' }}>
+          <div className="rounded-3xl p-5 md:p-6 space-y-4" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+            <h3 className="font-bold text-lg text-[var(--warm-ink)]">Batch Tenant Screening</h3>
+            <p className="text-xs" style={{ color: 'var(--soft-stone)" }}>One subject per line: Name, Type, Email</p>
+            <textarea value={batchText} onChange={(e) => setBatchText(e.target.value)} rows={8} placeholder={'John Doe,GUEST,john@example.com\nJane Smith,FREELANCER,jane@example.com'} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" />
+            {batchError && <div className="text-[var(--terracotta)] text-sm">{batchError}</div>}
+            <button disabled={batchLoading} onClick={runBatch} className="w-full py-3 rounded-xl font-bold border-none disabled:opacity-50 hover:opacity-90" style={{ background: 'var(--clay)", color: '#0a0a0a' }}>
               {batchLoading ? 'Running Batch...' : 'Run Batch Screening'}
             </button>
             {batchResult && (
-              <div className="p-4 rounded-xl bg-white/5 text-sm text-slate-300">
-                <div className="font-semibold text-slate-100 mb-2">Batch Result</div>
+              <div className="p-4 rounded-xl bg-[var(--warm-sand)] text-sm text-[var(--soft-stone)]">
+                <div className="font-semibold text-[var(--warm-ink)] mb-2">Batch Result</div>
                 <div>Queued: {batchResult.queued || batchResult.checkIds?.length || 0}</div>
                 {batchResult.feeCharged !== undefined && <div>Fee charged: {batchResult.feeCharged} $PAB</div>}
               </div>
@@ -460,18 +460,18 @@ function ModuleGrid({ result, moduleColor }: { result: CheckResult; moduleColor:
   ];
 
   return (
-    <div className="rounded-3xl p-5 md:p-6" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-      <h3 className="font-bold text-lg text-slate-100 mb-4">Module Breakdown</h3>
+    <div className="rounded-3xl p-5 md:p-6" style={{ background: "rgba(255,255,255,0.03)", border: '1px solid "rgba(255,255,255,0.08)"' }}>
+      <h3 className="font-bold text-lg text-[var(--warm-ink)] mb-4">Module Breakdown</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {mods.map((m) => {
           const raw = (result as any)?.[m.source];
           const score = typeof raw?.riskScore === 'number' ? raw.riskScore : undefined;
           const signals = Array.isArray(raw?.signals) ? raw.signals.slice(0, 2) : [];
           return (
-            <div key={m.source} className="p-3 rounded-xl bg-white/5">
+            <div key={m.source} className="p-3 rounded-xl bg-[var(--warm-sand)]">
               <div className="text-xs uppercase tracking-wide opacity-60">{m.label}</div>
               <div className="text-xl font-bold" style={{ color: moduleColor(score) }}>{score ?? '—'}</div>
-              <div className="text-xs" style={{ color: tokens.color.textDim }}>{signals[0] || '—'}</div>
+              <div className="text-xs" style={{ color: 'var(--soft-stone)" }}>{signals[0] || '—'}</div>
             </div>
           );
         })}

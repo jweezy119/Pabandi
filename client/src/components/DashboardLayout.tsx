@@ -58,7 +58,7 @@ const OS_DESCRIPTIONS: Record<string, string> = {
   'FreightOS': 'Freight & logistics platform',
   'PropertyOS': 'Property management platform',
   'BookingOS': 'Booking & discovery platform',
-  'PipelineOS': 'CRM & sales pipeline',
+  'ContactOS': 'CRM & sales pipeline',
   'LedgerOS': 'Finance & accounting',
 };
 

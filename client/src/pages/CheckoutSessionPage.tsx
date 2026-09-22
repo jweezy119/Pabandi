@@ -298,7 +298,7 @@ export const CheckoutSessionPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--warm-sand)] flex items-center justify-center">
         <ArrowPathIcon className="w-8 h-8 text-[#95BF47] animate-spin" />
       </div>
     );
@@ -306,9 +306,9 @@ export const CheckoutSessionPage = () => {
 
   if (!session || session.status !== 'PENDING') {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-        <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold text-white mb-2">Invalid or Expired Session</h1>
+      <div className="min-h-screen bg-[var(--warm-sand)] flex flex-col items-center justify-center p-4">
+        <ExclamationTriangleIcon className="w-16 h-16 text-[var(--terracotta)] mb-4" />
+        <h1 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Invalid or Expired Session</h1>
         <p className="text-zinc-400 text-center max-w-md">
           This checkout session is no longer active. Please contact the seller for a new link.
         </p>
@@ -317,7 +317,7 @@ export const CheckoutSessionPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--warm-sand)] text-[var(--warm-ink)] p-4 md:p-8 flex items-center justify-center">
       <div className="w-full max-w-lg bg-[#121212] rounded-3xl border border-zinc-800 p-6 md:p-8 relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-[#95BF47]/10 blur-[100px] rounded-full pointer-events-none" />
@@ -333,7 +333,7 @@ export const CheckoutSessionPage = () => {
           </div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             {session.business.name}
-            {session.business.isVerified && <CheckCircleIcon className="w-5 h-5 text-blue-500" />}
+            {session.business.isVerified && <CheckCircleIcon className="w-5 h-5 text-[var(--sky-wash)]" />}
           </h1>
           <p className="text-zinc-400">
             {(session as any).metadata?.source === 'freelance_escrow' 
@@ -344,7 +344,7 @@ export const CheckoutSessionPage = () => {
 
         {/* Amount */}
         <div className="text-center mb-8">
-          <div className="text-5xl font-extrabold text-white">
+          <div className="text-5xl font-extrabold text-[var(--warm-ink)]">
             ${session.amount.toFixed(2)}
           </div>
           <p className="text-zinc-500 uppercase mt-1 tracking-wider text-sm font-semibold">{session.currency}</p>
@@ -363,17 +363,17 @@ export const CheckoutSessionPage = () => {
                   <ShieldCheckIcon className="w-5 h-5 text-[#95BF47]" />
                 </div>
                 <div>
-                  <p className="font-semibold text-white text-sm">Passport Verified</p>
+                  <p className="font-semibold text-[var(--warm-ink)] text-sm">Passport Verified</p>
                   <p className="text-xs text-zinc-400 mt-1">Your trust score allows for deferred escrow. The seller is protected by our guarantee network.</p>
                 </div>
               </>
             ) : (
               <>
-                <div className="p-2 bg-orange-500/10 rounded-full shrink-0">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-orange-500" />
+                <div className="p-2 bg-[rgba(var(--muted-ochre),0.1)] rounded-full shrink-0">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-[var(--muted-ochre)]" />
                 </div>
                 <div>
-                  <p className="font-semibold text-white text-sm">Guest Checkout</p>
+                  <p className="font-semibold text-[var(--warm-ink)] text-sm">Guest Checkout</p>
                   <p className="text-xs text-zinc-400 mt-1">Funds will be held in a smart escrow until both parties confirm fulfillment.</p>
                 </div>
               </>
@@ -382,9 +382,9 @@ export const CheckoutSessionPage = () => {
           
           <div className="mt-4 pt-4 border-t border-zinc-800">
             {phantomWallet ? (
-              <div className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-purple-500/30">
+              <div className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-[rgba(var(--dusty-rose),0.3)]">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-[rgba(var(--dusty-rose),0.15)] flex items-center justify-center">
                     <span className="text-xs">👻</span>
                   </div>
                   <span className="text-sm font-mono text-zinc-300">
@@ -407,7 +407,7 @@ export const CheckoutSessionPage = () => {
         {/* Gasless / Network Fee Abstraction Toggle */}
         <div className="bg-[#181818] rounded-2xl p-4 border border-zinc-800 mb-6 flex items-center justify-between cursor-pointer" onClick={() => setIsGasless(!isGasless)}>
           <div>
-            <h3 className="text-sm font-bold text-white">Gasless Checkout</h3>
+            <h3 className="text-sm font-bold text-[var(--warm-ink)]">Gasless Checkout</h3>
             <p className="text-xs text-zinc-400 mt-1">Pabandi treasury covers Solana network fees</p>
           </div>
           <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isGasless ? 'bg-[#95BF47]' : 'bg-zinc-700'}`}>
@@ -418,7 +418,7 @@ export const CheckoutSessionPage = () => {
         {/* Auto-fill Notice */}
         {user && (
           <div className="flex items-center gap-2 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 mb-8">
-            <FingerPrintIcon className="w-4 h-4 text-blue-400" />
+            <FingerPrintIcon className="w-4 h-4 text-[var(--sky-wash)]" />
             <p className="text-xs text-zinc-300">Using Passport to autofill shipping & secure payment details.</p>
           </div>
         )}
@@ -446,7 +446,7 @@ export const CheckoutSessionPage = () => {
             <button
               onClick={handleTapPayment}
               disabled={paying}
-              className="w-full py-4 rounded-xl bg-[#14F195] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 rounded-xl bg-[var(--sage)] text-black font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {paying ? (
                 <ArrowPathIcon className="w-6 h-6 animate-spin" />
@@ -463,7 +463,7 @@ export const CheckoutSessionPage = () => {
             <button
               onClick={handleEscrowPayment}
               disabled={paying || !session?.providerUrl}
-              className="w-full py-4 rounded-xl bg-[#1F2937] text-white font-bold text-lg border border-indigo-500/40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 rounded-xl bg-[#1F2937] text-[var(--warm-ink)] font-bold text-lg border border-[var(--clay)]/40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {paying ? (
                 <ArrowPathIcon className="w-6 h-6 animate-spin" />
@@ -481,7 +481,7 @@ export const CheckoutSessionPage = () => {
               <button
                 onClick={handleStripePayment}
                 disabled={paying}
-                className="w-full py-4 rounded-xl bg-indigo-500 text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
+                className="w-full py-4 rounded-xl bg-[var(--clay)] text-[var(--warm-ink)] font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg"
               >
                 {paying ? (
                   <ArrowPathIcon className="w-6 h-6 animate-spin" />
@@ -502,7 +502,7 @@ export const CheckoutSessionPage = () => {
               <button
                 onClick={handlePayLioPayment}
                 disabled={paying}
-                className="w-full py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-4 rounded-xl bg-green-600 text-[var(--warm-ink)] font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {paying ? (
                   <ArrowPathIcon className="w-6 h-6 animate-spin" />
@@ -535,7 +535,7 @@ export const CheckoutSessionPage = () => {
         <div className="mt-3">
           <button
             onClick={shareOnWhatsApp}
-            className="w-full py-3 rounded-xl bg-zinc-900 text-white font-bold text-sm border border-zinc-800 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-zinc-900 text-[var(--warm-ink)] font-bold text-sm border border-zinc-800 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
           >
             <ShareIcon className="w-4 h-4" />
             Share checkout on WhatsApp

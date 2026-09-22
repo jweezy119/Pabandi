@@ -100,8 +100,8 @@ export const SmartSearchPage: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🔍 Smart Search</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Find Anything</h1>
-          <p className="mt-3 text-slate-400">Search across properties, listings, tenants, documents, and more.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Find Anything</h1>
+          <p className="mt-3 text-[var(--soft-stone)]">Search across properties, listings, tenants, documents, and more.</p>
         </div>
 
         {/* Search Input */}
@@ -113,11 +113,11 @@ export const SmartSearchPage: React.FC = () => {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && saveSearch(query)}
               placeholder="Search properties, tenants, documents..."
-              className="flex-1 bg-transparent text-slate-100 outline-none text-lg placeholder:text-slate-500"
+              className="flex-1 bg-transparent text-[var(--warm-ink)] outline-none text-lg placeholder:text-[var(--soft-stone)]"
               autoFocus
             />
             {query && (
-              <button onClick={() => setQuery('')} className="text-slate-500 hover:text-white">
+              <button onClick={() => setQuery('')} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">
                 ✕
               </button>
             )}
@@ -127,16 +127,16 @@ export const SmartSearchPage: React.FC = () => {
         {/* AI Suggestions */}
         {suggestions.length > 0 && (
           <Surface className="p-4 mb-6">
-            <h3 className="text-sm font-bold text-slate-100 mb-3">✨ AI Suggestions</h3>
+            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-3">✨ AI Suggestions</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {suggestions.map((s) => (
                 <button
                   key={s.id}
                   onClick={s.action}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-left"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all text-left"
                 >
                   <span className="text-xl">{s.icon}</span>
-                  <span className="text-sm text-slate-300">{s.text}</span>
+                  <span className="text-sm text-[var(--warm-ink)]">{s.text}</span>
                 </button>
               ))}
             </div>
@@ -148,24 +148,24 @@ export const SmartSearchPage: React.FC = () => {
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
               <Surface key={i} className="p-4 animate-pulse">
-                <div className="h-4 bg-white/10 rounded w-1/3 mb-2" />
-                <div className="h-3 bg-white/10 rounded w-1/2" />
+                <div className="h-4 bg-[var(--warm-sand)] rounded w-1/3 mb-2" />
+                <div className="h-3 bg-[var(--warm-sand)] rounded w-1/2" />
               </Surface>
             ))}
           </div>
         ) : results.length > 0 ? (
           <Surface className="p-4">
-            <h3 className="text-sm font-bold text-slate-100 mb-3">Results ({results.length})</h3>
+            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-3">Results ({results.length})</h3>
             <div className="space-y-2">
               {results.map((result) => (
                 <button
                   key={result.id}
                   onClick={() => navigate(result.link)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-left"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-all text-left"
                 >
                   <div className="text-xl">{result.icon}</div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-slate-100">{result.title}</div>
+                    <div className="text-sm font-semibold text-[var(--warm-ink)]">{result.title}</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>{result.subtitle}</div>
                   </div>
                   <Badge tone="info">{result.type}</Badge>
@@ -176,7 +176,7 @@ export const SmartSearchPage: React.FC = () => {
         ) : query.length >= 2 ? (
           <Surface className="p-8 text-center">
             <div className="text-3xl mb-2">🔍</div>
-            <p className="text-slate-400">No results found for "{query}"</p>
+            <p className="text-[var(--soft-stone)]">No results found for "{query}"</p>
           </Surface>
         ) : null}
 
@@ -184,8 +184,8 @@ export const SmartSearchPage: React.FC = () => {
         {recentSearches.length > 0 && query.length < 2 && (
           <Surface className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-100">Recent Searches</h3>
-              <button onClick={clearRecent} className="text-xs text-slate-500 hover:text-white">
+              <h3 className="text-sm font-bold text-[var(--warm-ink)]">Recent Searches</h3>
+              <button onClick={clearRecent} className="text-xs text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">
                 Clear
               </button>
             </div>
@@ -194,7 +194,7 @@ export const SmartSearchPage: React.FC = () => {
                 <button
                   key={search}
                   onClick={() => setQuery(search)}
-                  className="px-3 py-1.5 rounded-lg bg-white/5 text-sm text-slate-300 hover:bg-white/10"
+                  className="px-3 py-1.5 rounded-lg bg-[var(--warm-sand)] text-sm text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
                 >
                   {search}
                 </button>

@@ -36,7 +36,7 @@ export default function ShortLinkBookingPage() {
         {error || 'Please wait while we redirect you to the booking page.'}
       </p>
       {error && (
-        <button onClick={() => navigate('/')} className="mt-6 rounded-xl px-6 py-2 text-sm font-bold text-white" style={{ background: tokens.color.primary }}>
+        <button onClick={() => navigate('/')} className="mt-6 rounded-xl px-6 py-2 text-sm font-bold text-[var(--warm-ink)]" style={{ background: tokens.color.primary }}>
           Return Home
         </button>
       )}

@@ -67,16 +67,16 @@ export default function AgentMarketplacePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white">
+    <div className="min-h-screen bg-[var(--warm-sand)] text-[var(--warm-ink)]">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-purple-600/20 to-orange-600/20 blur-3xl" />
+        <div className="absolute inset-0 bg-[var(--warm-sand)] blur-3xl" />
         <div className="relative max-w-7xl mx-auto px-4 py-12 sm:py-16">
           <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-emerald-400 via-purple-400 to-orange-400 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold bg-[var(--clay)] bg-clip-text text-transparent mb-4">
               AI Agent Marketplace
             </h1>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            <p className="text-lg text-[var(--soft-stone)] max-w-2xl mx-auto">
               Self-healing economy where AI agents transact, compete, and earn. Every trade generates platform fees.
             </p>
           </div>
@@ -88,13 +88,13 @@ export default function AgentMarketplacePage() {
           <div className="flex flex-wrap justify-center gap-4 mt-8">
             <Link
               to="/agent-marketplace/post-project"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-[var(--warm-ink)] shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
             >
               Post Project
             </Link>
             <Link
               to="/agent-marketplace/register-agent"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:scale-105"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 font-semibold text-[var(--warm-ink)] shadow-lg shadow-purple-500/25 transition-all hover:scale-105"
             >
               Register Agent
             </Link>
@@ -107,11 +107,11 @@ export default function AgentMarketplacePage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Filters */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
-              <h3 className="text-sm font-semibold text-slate-300 mb-3">Filter Projects</h3>
+            <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] backdrop-blur-xl p-4">
+              <h3 className="text-sm font-semibold text-[var(--soft-stone)] mb-3">Filter Projects</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <select
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  className="rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)]"
                   value={filter.category}
                   onChange={e => setFilter(f => ({ ...f, category: e.target.value }))}
                 >
@@ -123,7 +123,7 @@ export default function AgentMarketplacePage() {
                   <option value="analysis">Analysis</option>
                 </select>
                 <select
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+                  className="rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)]"
                   value={filter.complexity}
                   onChange={e => setFilter(f => ({ ...f, complexity: e.target.value }))}
                 >
@@ -135,14 +135,14 @@ export default function AgentMarketplacePage() {
                 <input
                   type="number"
                   placeholder="Min Budget ($)"
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500"
+                  className="rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)]"
                   value={filter.minBudget}
                   onChange={e => setFilter(f => ({ ...f, minBudget: e.target.value }))}
                 />
                 <input
                   type="number"
                   placeholder="Max Budget ($)"
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500"
+                  className="rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] placeholder-[var(--soft-stone)]"
                   value={filter.maxBudget}
                   onChange={e => setFilter(f => ({ ...f, maxBudget: e.target.value }))}
                 />
@@ -155,11 +155,11 @@ export default function AgentMarketplacePage() {
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse h-48" />
+                    <div key={i} className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 animate-pulse h-48" />
                   ))}
                 </div>
               ) : filteredProjects.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-slate-400">
+                <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-8 text-center text-[var(--soft-stone)]">
                   No open projects match your filters.
                 </div>
               ) : (
@@ -175,13 +175,13 @@ export default function AgentMarketplacePage() {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Leaderboard */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+            <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] backdrop-blur-xl p-4">
               <h2 className="text-lg font-bold mb-4">Leaderboard</h2>
               <LeaderboardTable entries={leaderboard} />
             </div>
 
             {/* Top Agents */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+            <div className="rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] backdrop-blur-xl p-4">
               <h2 className="text-lg font-bold mb-4">Top Agents</h2>
               <div className="space-y-3">
                 {leaderboard.slice(0, 5).map(entry => (

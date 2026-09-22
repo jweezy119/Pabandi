@@ -51,14 +51,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-3xl border border-white/10 bg-white/5 p-4">
-      <div className="h-36 rounded-t-2xl bg-white/10 sm:h-40" />
+    <div className="animate-pulse rounded-3xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-4">
+      <div className="h-36 rounded-t-2xl bg-[var(--warm-sand)] sm:h-40" />
       <div className="mt-3 space-y-2">
-        <div className="h-4 w-3/4 rounded bg-white/10" />
-        <div className="h-3 w-1/2 rounded bg-white/10" />
-        <div className="h-3 w-1/3 rounded bg-white/10" />
+        <div className="h-4 w-3/4 rounded bg-[var(--warm-sand)]" />
+        <div className="h-3 w-1/2 rounded bg-[var(--warm-sand)]" />
+        <div className="h-3 w-1/3 rounded bg-[var(--warm-sand)]" />
       </div>
-      <div className="mt-4 h-10 rounded-xl bg-white/10" />
+      <div className="mt-4 h-10 rounded-xl bg-[var(--warm-sand)]" />
     </div>
   );
 }
@@ -83,7 +83,7 @@ const QUICK_PROMPTS = [
     href: '/live-sell',
     sub: 'TikTok · YouTube · Shopify',
     icon: '🎥',
-    accent: 'from-emerald-500/20 to-green-500/20',
+    accent: 'from-[var(--sage)]/20 to-[var(--sage)]/20',
   },
   {
     key: 'stays',
@@ -91,7 +91,7 @@ const QUICK_PROMPTS = [
     href: '/hospitality',
     sub: 'Short-term rentals with escrow',
     icon: '📅',
-    accent: 'from-blue-500/20 to-violet-500/20',
+    accent: 'from-[var(--sky-wash)]/20 to-[var(--dusty-rose)]/20',
   },
   {
     key: 'freelance',
@@ -99,7 +99,7 @@ const QUICK_PROMPTS = [
     href: '/search?category=FREELANCE',
     sub: 'Designers · Coders · Creators',
     icon: '⭐',
-    accent: 'from-orange-500/20 to-amber-500/20',
+    accent: 'from-[var(--muted-ochre)]/20 to-[var(--muted-ochre)]/20',
   },
 ];
 
@@ -322,12 +322,12 @@ export default function SearchPage() {
             <Link
               key={prompt.key}
               to={prompt.href}
-              className={`flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-br ${prompt.accent} p-3 active:scale-[0.99] transition-all sm:p-4`}
+              className={`flex items-center gap-3 rounded-2xl border border-[rgba(191,179,163,0.2)] bg-gradient-to-br ${prompt.accent} p-3 active:scale-[0.99] transition-all sm:p-4`}
             >
               <span className="shrink-0 text-lg sm:text-xl">{prompt.icon}</span>
               <span className="min-w-0">
                 <span className="block text-sm font-bold sm:text-base">{prompt.label}</span>
-                <span className="block truncate text-[10px] text-slate-300 sm:text-xs">{prompt.sub}</span>
+                <span className="block truncate text-[10px] text-[var(--warm-ink)] sm:text-xs">{prompt.sub}</span>
               </span>
             </Link>
           ))}
@@ -352,10 +352,10 @@ export default function SearchPage() {
               }
             }}
             placeholder="Search services, businesses..."
-            className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white outline-none focus:border-indigo-400 sm:p-4"
+            className="w-full rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:p-4"
           />
           {showDropdown && currentSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/90 shadow-xl">
+            <div className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--cream)]/90 shadow-xl">
               {currentSuggestions.map((suggestion, idx) => (
                 <button
                   key={`${suggestion}-${idx}`}
@@ -365,9 +365,9 @@ export default function SearchPage() {
                     const match = recommendations.find((r) => r.label === suggestion);
                     applyQuery(match?.value === 'ALL' ? '' : match?.label || suggestion);
                   }}
-                  className="w-full text-left px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/10"
+                  className="w-full text-left px-4 py-3 text-left text-sm font-bold text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]"
                 >
-                  <span className="mr-2 text-indigo-300">🔎</span>
+                  <span className="mr-2 text-[var(--clay)]">🔎</span>
                   {suggestion}
                 </button>
               ))}
@@ -383,7 +383,7 @@ export default function SearchPage() {
                 type="button"
                 onClick={() => applyCategory(c)}
                 className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors touch-target ${
-                  category === c ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'
+                  category === c ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-lg shadow-[var(--clay)]/20' : 'bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'
                 }`}
               >
                 {CATEGORY_LABELS[c] || c}
@@ -400,21 +400,21 @@ export default function SearchPage() {
                 );
               }
             }}
-            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold hover:bg-white/10 touch-target"
+            className="rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] px-4 py-2 text-xs font-bold hover:bg-[var(--warm-sand)] touch-target"
           >
             Near Me
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-300 sm:text-sm">
+          <span className="text-xs text-[var(--warm-ink)] sm:text-sm">
             {isLoading ? 'Searching…' : results.length ? `${results.length} result${results.length === 1 ? '' : 's'}` : 'Showing fallback results.'}
           </span>
           {q.trim() && (
             <button
               type="button"
               onClick={() => applyQuery('')}
-              className="text-xs font-bold text-indigo-300"
+              className="text-xs font-bold text-[var(--clay)]"
             >
               Clear search
             </button>
@@ -422,18 +422,18 @@ export default function SearchPage() {
         </div>
 
         {results.length === 0 && !isLoading && (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
+          <div className="rounded-3xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-8 text-center">
             <div className="mx-auto mb-2 text-3xl">🔍</div>
-            <p className="text-sm font-medium text-slate-300">
+            <p className="text-sm font-medium text-[var(--warm-ink)]">
               No exact hits for “{q.trim() || CATEGORY_LABELS[category]}” yet — but great businesses are joining daily.
             </p>
             <div className="mt-3 flex flex-col justify-center gap-2 sm:flex-row">
-              <Link to="/search?category=ALL" className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white">Browse all businesses</Link>
-              <Link to="/business/join" className="rounded-xl border border-white/15 px-5 py-2.5 text-center text-sm font-bold text-white">List a business</Link>
+              <Link to="/search?category=ALL" className="rounded-xl bg-[var(--clay)] px-5 py-2.5 text-sm font-bold text-[var(--warm-ink)]">Browse all businesses</Link>
+              <Link to="/business/join" className="rounded-xl border border-[rgba(191,179,163,0.25)] px-5 py-2.5 text-center text-sm font-bold text-[var(--warm-ink)]">List a business</Link>
             </div>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {['RESTAURANT','SALON','CLINIC','FITNESS_CENTER','PROPERTY_RENTAL','FREELANCE'].map((c) => (
-                <button key={c} onClick={() => applyCategory(c)} className="rounded-full bg-white/5 px-3 py-1.5 text-[11px] font-bold text-slate-300 hover:bg-white/10">
+                <button key={c} onClick={() => applyCategory(c)} className="rounded-full bg-[var(--warm-sand)] px-3 py-1.5 text-[11px] font-bold text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">
                   {CATEGORY_LABELS[c] || c}
                 </button>
               ))}
@@ -448,7 +448,7 @@ export default function SearchPage() {
             const trust = Math.max(0, Math.min(100, Math.round(trustRaw / 10)));
             const deposit = trust >= 80 ? 0 : trust >= 50 ? 5 : 15;
             const isVerified = biz.isVerified || trust >= 80;
-            const trustColor = isVerified ? '#14F195' : trust >= 50 ? '#fbbf24' : '#f87171';
+            const trustColor = isVerified ? 'var(--sage)' : trust >= 50 ? 'var(--muted-ochre)' : '#f87171';
             return (
             <GlassCard key={biz.id || `${biz.name}-${biz.address}`} className="flex flex-col overflow-hidden">
               <Link to={`/business/${biz.id}`} className="block">
@@ -460,16 +460,16 @@ export default function SearchPage() {
                   }}
                 >
                   {!biz.coverImageUrl && (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-500/20 via-slate-800 to-emerald-500/10 text-4xl">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--clay)]/20 via-slate-800 to-[var(--sage)]/10 text-4xl">
                       {CATEGORY_LABELS[biz.category]?.[0] || '🏢'}
                     </div>
                   )}
                   <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white backdrop-blur">
+                    <span className="rounded-full bg-[var(--warm-ink)]/55 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--warm-ink)] backdrop-blur">
                       {CATEGORY_LABELS[biz.category] || biz.category}
                     </span>
                     {isVerified && (
-                      <span className="rounded-full bg-[#14F195]/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#14F195] backdrop-blur border border-[#14F195]/40">
+                      <span className="rounded-full bg-[var(--sage)]/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--sage)] backdrop-blur border border-[var(--sage)]/40">
                         ✓ Verified
                       </span>
                     )}
@@ -487,15 +487,15 @@ export default function SearchPage() {
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-bold leading-snug text-white">{biz.name}</p>
-                      <p className="mt-0.5 truncate text-xs text-slate-300">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
+                      <p className="font-bold leading-snug text-[var(--warm-ink)]">{biz.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-[var(--warm-ink)]">{biz.city || ''}{biz.address ? ` · ${biz.address}` : ''}</p>
                     </div>
                     {typeof biz.rating === 'number' && (
-                      <p className="shrink-0 text-[11px] font-bold text-amber-300">★ {biz.rating.toFixed(1)}{biz.reviewCount ? ` (${biz.reviewCount})` : ''}</p>
+                      <p className="shrink-0 text-[11px] font-bold text-[var(--muted-ochre)]">★ {biz.rating.toFixed(1)}{biz.reviewCount ? ` (${biz.reviewCount})` : ''}</p>
                     )}
                   </div>
-                  {biz.description && <p className="mt-2 line-clamp-2 text-xs text-slate-300">{biz.description}</p>}
-                  <p className="mt-2 text-[11px] font-medium text-slate-400">
+                  {biz.description && <p className="mt-2 line-clamp-2 text-xs text-[var(--warm-ink)]">{biz.description}</p>}
+                  <p className="mt-2 text-[11px] font-medium text-[var(--soft-stone)]">
                     {isVerified ? 'Trust-verified · ' : `$${deposit} deposit protects you · `}escrow-backed booking
                   </p>
                 </div>

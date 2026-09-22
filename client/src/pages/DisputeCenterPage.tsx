@@ -27,20 +27,20 @@ export const DisputeCenterPage: React.FC = () => {
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Dispute Resolution</h1>
-          <p className="mt-2 text-slate-400">File and track disputes for your transactions.</p>
+          <h1 className="text-3xl font-bold text-[var(--warm-ink)]">Dispute Resolution</h1>
+          <p className="mt-2 text-[var(--soft-stone)]">File and track disputes for your transactions.</p>
         </div>
 
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setTab('file')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'file' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'file' ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'}`}
           >
             File Dispute
           </button>
           <button
             onClick={() => setTab('my')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'my' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'my' ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'}`}
           >
             My Disputes
           </button>
@@ -50,20 +50,20 @@ export const DisputeCenterPage: React.FC = () => {
         {tab === 'my' && (
           <div className="space-y-4">
             {loading ? (
-              <p className="text-slate-400">Loading...</p>
+              <p className="text-[var(--soft-stone)]">Loading...</p>
             ) : disputes.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">✅</div>
-                <p className="text-slate-400">No disputes filed. Clean record.</p>
+                <p className="text-[var(--soft-stone)]">No disputes filed. Clean record.</p>
               </Surface>
             ) : (
               disputes.map((d) => (
                 <Surface key={d.id}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-semibold text-white">{d.type}</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">{d.type}</div>
                     <Badge tone={d.status === 'UPHELD' ? 'success' : d.status === 'VOTING' ? 'warning' : 'info'}>{d.status}</Badge>
                   </div>
-                  <div className="text-sm text-slate-400">{d.description}</div>
+                  <div className="text-sm text-[var(--soft-stone)]">{d.description}</div>
                 </Surface>
               ))
             )}
@@ -102,31 +102,31 @@ const FileDisputeForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
     return (
       <Surface className="text-center p-8">
         <div className="text-5xl mb-4">⚖️</div>
-        <h3 className="text-xl font-bold text-white mb-2">Dispute Filed</h3>
-        <p className="text-slate-400">Your dispute has been submitted for review.</p>
+        <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Dispute Filed</h3>
+        <p className="text-[var(--soft-stone)]">Your dispute has been submitted for review.</p>
       </Surface>
     );
   }
 
   return (
     <Surface className="p-6">
-      <h3 className="text-lg font-bold text-white mb-4">File a New Dispute</h3>
+      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">File a New Dispute</h3>
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-semibold text-slate-300 mb-2 block">Transaction ID *</label>
+          <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Transaction ID *</label>
           <input
             value={form.transactionId}
             onChange={(e) => setForm({ ...form, transactionId: e.target.value })}
             placeholder="esc-abc123"
-            className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+            className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)]"
           />
         </div>
         <div>
-          <label className="text-sm font-semibold text-slate-300 mb-2 block">Dispute Type *</label>
+          <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Dispute Type *</label>
           <select
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value })}
-            className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+            className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)]"
           >
             <option value="ITEM_NOT_AS_DESCRIBED">Item not as described</option>
             <option value="ITEM_NOT_RECEIVED">Item not received</option>
@@ -136,13 +136,13 @@ const FileDisputeForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => 
           </select>
         </div>
         <div>
-          <label className="text-sm font-semibold text-slate-300 mb-2 block">Description *</label>
+          <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Description *</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Describe what happened..."
             rows={4}
-            className="w-full rounded-lg px-4 py-3 outline-none resize-none bg-white/5 border border-white/10 text-white"
+            className="w-full rounded-lg px-4 py-3 outline-none resize-none bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)]"
           />
         </div>
         <Button

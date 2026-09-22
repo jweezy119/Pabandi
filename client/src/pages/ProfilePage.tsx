@@ -157,7 +157,7 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg border text-sm font-bold animate-in slide-in-from-right-4 fade-in duration-300 ${
+          className={`flex items-center gap-2.5 px-4 py-3 rounded-[var(--radius-card)] shadow-[var(--shadow-soft)] border text-sm font-bold animate-in slide-in-from-right-4 fade-in duration-300 ${
             t.type === 'success' ? 'bg-tertiary-fixed text-on-tertiary-fixed border-tertiary/20' :
             t.type === 'error'   ? 'bg-error-container text-on-error-container border-error/20' :
                                    'bg-primary-container text-on-primary-container border-primary/20'
@@ -192,7 +192,7 @@ function ArcGauge({ value, max = 100, color, label }: { value: number; max?: num
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-[1.3rem] font-black leading-none" style={{ color }}>{value}</span>
-        <span className="text-[9px] font-semibold text-on-surface-variant uppercase tracking-wider mt-1">{label}</span>
+        <span className="text-[9px] font-semibold text-[var(--soft-stone)] uppercase tracking-wider mt-1">{label}</span>
       </div>
     </div>
   );
@@ -205,13 +205,13 @@ function AchievementBadge({ icon, label, description, earned, colorClass, bgClas
   icon: React.ReactNode; label: string; description: string; earned: boolean; colorClass: string; bgClass: string;
 }) {
   return (
-    <div className={`flex flex-col items-center gap-2 p-4 rounded-2xl text-center transition-all ${earned ? `${bgClass} border border-outline-variant/30` : 'bg-surface-container-lowest border border-outline-variant/10 opacity-50 cursor-not-allowed'}`}>
-      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${earned ? `${colorClass} ${bgClass} border border-outline-variant/10 shadow-sm` : 'bg-surface-container-low text-outline'}`}>
+    <div className={`flex flex-col items-center gap-2 p-4 rounded-[var(--radius-card)] text-center transition-all ${earned ? `${bgClass} border border-outline-variant/30` : 'bg-[var(--warm-sand)]est border border-outline-variant/10 opacity-50 cursor-not-allowed'}`}>
+      <div className={`w-11 h-11 rounded-[var(--radius-card)] flex items-center justify-center ${earned ? `${colorClass} ${bgClass} border border-outline-variant/10 shadow-[var(--shadow-soft)]` : 'bg-[var(--warm-sand)] text-outline'}`}>
         {icon}
       </div>
       <div>
-        <p className={`text-[11px] font-bold tracking-wide ${earned ? colorClass : 'text-on-surface-variant'}`}>{label}</p>
-        <p className="text-[9px] text-on-surface-variant mt-0.5 leading-relaxed">{description}</p>
+        <p className={`text-[11px] font-bold tracking-wide ${earned ? colorClass : 'text-[var(--soft-stone)]'}`}>{label}</p>
+        <p className="text-[9px] text-[var(--soft-stone)] mt-0.5 leading-relaxed">{description}</p>
       </div>
       {earned && (
         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest mt-1 ${bgClass} ${colorClass}`}>
@@ -229,7 +229,7 @@ function BookingItem({ reservation, index }: { reservation: any; index: number }
   const statusColors: Record<string, { colorClass: string; bgClass: string; label: string }> = {
     CONFIRMED: { colorClass: 'text-tertiary', bgClass: 'bg-tertiary-fixed', label: 'Confirmed' },
     COMPLETED: { colorClass: 'text-primary', bgClass: 'bg-primary-container', label: 'Completed' },
-    CANCELLED: { colorClass: 'text-on-surface-variant', bgClass: 'bg-surface-variant', label: 'Cancelled' },
+    CANCELLED: { colorClass: 'text-[var(--soft-stone)]', bgClass: 'bg-surface-variant', label: 'Cancelled' },
     NO_SHOW:   { colorClass: 'text-error', bgClass: 'bg-error-container', label: 'No-Show' },
     PENDING:   { colorClass: 'text-secondary', bgClass: 'bg-secondary-container', label: 'Pending' },
   };
@@ -239,8 +239,8 @@ function BookingItem({ reservation, index }: { reservation: any; index: number }
   const day = date.getDate();
 
   return (
-    <div className="flex items-start gap-4 py-4 border-b border-outline-variant/20 animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${index * 60}ms` }}>
-      <div className="w-11 shrink-0 text-center bg-surface-container-lowest border border-outline-variant/30 rounded-lg py-1.5 shadow-sm">
+    <div className="flex items-start gap-4 py-4 border-b border-[rgba(191,179,163,0.2)] animate-in fade-in slide-in-from-bottom-2" style={{ animationDelay: `${index * 60}ms` }}>
+      <div className="w-11 shrink-0 text-center bg-[var(--warm-sand)]est border border-outline-variant/30 rounded-lg py-1.5 shadow-[var(--shadow-soft)]">
         <div className={`text-[9px] font-bold tracking-wider ${sc.colorClass}`}>{month}</div>
         <div className="text-[1.1rem] font-black text-on-surface leading-none mt-0.5 font-headline">{day}</div>
       </div>
@@ -248,11 +248,11 @@ function BookingItem({ reservation, index }: { reservation: any; index: number }
         <p className="text-sm font-bold text-on-surface mb-0.5 truncate font-headline">
           {reservation.business?.name || 'Booking'}
         </p>
-        <p className="text-[11px] text-on-surface-variant font-body">
+        <p className="text-[11px] text-[var(--soft-stone)] font-body">
           {reservation.reservationTime} · {reservation.numberOfGuests} guest{reservation.numberOfGuests !== 1 ? 's' : ''}
         </p>
       </div>
-      <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${sc.bgClass} ${sc.colorClass} border border-outline-variant/10 shadow-sm whitespace-nowrap`}>
+      <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${sc.bgClass} ${sc.colorClass} border border-outline-variant/10 shadow-[var(--shadow-soft)] whitespace-nowrap`}>
         {sc.label}
       </span>
     </div>
@@ -276,7 +276,7 @@ function LoyaltyTab({
   const { current, next, progressToNext } = computeLoyaltyTier(totalBookings, showRate);
 
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] shadow-[var(--shadow-soft)] overflow-hidden">
       {/* Header */}
       <div
         className="relative p-6 overflow-hidden"
@@ -290,7 +290,7 @@ function LoyaltyTab({
 
         <div className="relative flex items-center gap-4 flex-wrap">
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-md shrink-0"
+            className="w-16 h-16 rounded-[var(--radius-card)] flex items-center justify-center text-3xl shadow-md shrink-0"
             style={{
               background: `linear-gradient(135deg, ${current.color}30, ${current.color}10)`,
               border: `1.5px solid ${current.color}40`,
@@ -310,19 +310,19 @@ function LoyaltyTab({
               </span>
             </div>
             <div className="flex items-center gap-4 mt-1.5 flex-wrap">
-              <span className="text-[11px] text-on-surface-variant font-medium">
+              <span className="text-[11px] text-[var(--soft-stone)] font-medium">
                 🔥 {streak} booking streak
               </span>
-              <span className="text-[11px] text-on-surface-variant font-medium">
+              <span className="text-[11px] text-[var(--soft-stone)] font-medium">
                 ⚡ {pabBalance.toLocaleString()} PAB earned
               </span>
             </div>
           </div>
           {current.pabBonus > 0 && (
-            <div className="text-center bg-surface-container-lowest rounded-2xl px-4 py-2.5 border border-outline-variant/20 shadow-sm">
-              <p className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider">Bonus per booking</p>
+            <div className="text-center bg-[var(--warm-sand)]est rounded-[var(--radius-card)] px-4 py-2.5 border border-[rgba(191,179,163,0.2)] shadow-[var(--shadow-soft)]">
+              <p className="text-[10px] text-[var(--soft-stone)] font-semibold uppercase tracking-wider">Bonus per booking</p>
               <p className="text-xl font-black font-headline" style={{ color: current.color }}>+{current.pabBonus}</p>
-              <p className="text-[9px] text-on-surface-variant">PAB tokens</p>
+              <p className="text-[9px] text-[var(--soft-stone)]">PAB tokens</p>
             </div>
           )}
         </div>
@@ -336,7 +336,7 @@ function LoyaltyTab({
               <p className="text-sm font-bold text-on-surface">
                 Progress to {next.emoji} <span style={{ color: next.color }}>{next.name}</span>
               </p>
-              <p className="text-[10px] text-on-surface-variant mt-0.5">
+              <p className="text-[10px] text-[var(--soft-stone)] mt-0.5">
                 {next.minBookings > totalBookings && `${next.minBookings - totalBookings} more bookings`}
                 {next.minBookings > totalBookings && next.minShowRate > showRate && ' · '}
                 {next.minShowRate > showRate && `${next.minShowRate - showRate}% show rate gap`}
@@ -357,8 +357,8 @@ function LoyaltyTab({
             />
           </div>
           <div className="flex justify-between mt-2">
-            <span className="text-[9px] text-on-surface-variant">{totalBookings} bookings</span>
-            <span className="text-[9px] text-on-surface-variant">{next.minBookings} needed</span>
+            <span className="text-[9px] text-[var(--soft-stone)]">{totalBookings} bookings</span>
+            <span className="text-[9px] text-[var(--soft-stone)]">{next.minBookings} needed</span>
           </div>
         </div>
       )}
@@ -374,7 +374,7 @@ function LoyaltyTab({
             return (
               <div
                 key={tier.id}
-                className="rounded-2xl border transition-all duration-200"
+                className="rounded-[var(--radius-card)] border transition-all duration-200"
                 style={{
                   background: isCurrent ? `${tier.color}10` : isEarned ? `${tier.color}06` : undefined,
                   borderColor: isCurrent ? `${tier.color}40` : isEarned ? `${tier.color}25` : undefined,
@@ -398,7 +398,7 @@ function LoyaltyTab({
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-on-surface-variant">
+                    <p className="text-[10px] text-[var(--soft-stone)]">
                       {tier.minBookings} bookings · {tier.minShowRate}% show rate
                     </p>
                   </div>
@@ -419,7 +419,7 @@ function LoyaltyTab({
                       {tier.perks.map((perk, i) => (
                         <div key={i} className="flex items-start gap-2">
                           <span className="text-[10px] mt-0.5" style={{ color: tier.color }}>✓</span>
-                          <span className="text-[11px] text-on-surface-variant leading-relaxed">{perk}</span>
+                          <span className="text-[11px] text-[var(--soft-stone)] leading-relaxed">{perk}</span>
                         </div>
                       ))}
                     </div>
@@ -431,7 +431,7 @@ function LoyaltyTab({
         </div>
 
         {/* How to earn */}
-        <div className="mt-6 p-4 rounded-2xl border border-outline-variant/15 bg-surface-container-low">
+        <div className="mt-6 p-4 rounded-[var(--radius-card)] border border-outline-variant/15 bg-[var(--warm-sand)]">
           <div className="flex items-center gap-2 mb-3">
             <SparklesIcon className="h-4 w-4 text-secondary" />
             <p className="text-sm font-black text-on-surface font-headline">How to Earn PAB</p>
@@ -443,8 +443,8 @@ function LoyaltyTab({
               { action: '👥 Referral', amount: '+100 PAB' },
               { action: '🔥 5-booking streak', amount: '+25 PAB' },
             ].map(item => (
-              <div key={item.action} className="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2 border border-outline-variant/10">
-                <span className="text-[11px] text-on-surface-variant">{item.action}</span>
+              <div key={item.action} className="flex items-center justify-between bg-[var(--warm-sand)]est rounded-lg px-3 py-2 border border-outline-variant/10">
+                <span className="text-[11px] text-[var(--soft-stone)]">{item.action}</span>
                 <span className="text-[11px] font-black text-secondary ml-2 shrink-0">{item.amount}</span>
               </div>
             ))}
@@ -691,11 +691,11 @@ export default function ProfilePage() {
 
   if (reservationsLoading || walletLoading) {
     return (
-      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
+      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 sm:p-5">
+              <div key={i} className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-4 sm:p-5">
                 <div className="h-4 w-16 bg-outline/20 rounded mb-2 animate-pulse" />
                 <div className="h-8 w-10 bg-outline/15 rounded animate-pulse" />
               </div>
@@ -703,7 +703,7 @@ export default function ProfilePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 animate-pulse" />
+              <div key={i} className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 animate-pulse" />
             ))}
           </div>
         </div>
@@ -714,11 +714,11 @@ export default function ProfilePage() {
   if (reservationsError || walletError) {
     const msg = (reservationsError as any)?.message || (walletError as any)?.message || 'Something timed out while loading your profile.';
     return (
-      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
+      <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-          <div className="bg-surface-container-lowest border border-error/25 rounded-2xl p-6">
+          <div className="bg-[var(--warm-sand)]est border border-error/25 rounded-[var(--radius-card)] p-6">
             <p className="text-sm font-bold text-error mb-2">Profile data couldn’t load</p>
-            <p className="text-xs text-on-surface-variant mb-4">{msg}</p>
+            <p className="text-xs text-[var(--soft-stone)] mb-4">{msg}</p>
             <button onClick={() => { window.location.reload(); }} className="px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Retry</button>
           </div>
         </div>
@@ -760,7 +760,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-surface">
         <div className="text-center">
-          <p className="text-on-surface-variant mb-4 font-body">{t("Please sign in to view your profile.", "Please sign in to view your profile.")}</p>
+          <p className="text-[var(--soft-stone)] mb-4 font-body">{t("Please sign in to view your profile.", "Please sign in to view your profile.")}</p>
           <Link to="/login" className="bg-primary text-on-primary px-6 py-2.5 rounded-md font-body text-sm font-medium hover:opacity-90 transition-opacity">{t("Sign In", "Log In")}</Link>
         </div>
       </div>
@@ -768,7 +768,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="min-h-screen bg-surface text-on-surface font-body pb-24 md:pb-8" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <ToastContainer toasts={toasts} />
 
       {hasPendingRequest && (
@@ -790,13 +790,13 @@ export default function ProfilePage() {
           <div className="flex items-end gap-5 -mt-10 md:-mt-12 pb-6">
             <div className="relative shrink-0">
               {user.profilePictureUrl ? (
-                <img src={user.profilePictureUrl} alt={`${user.firstName}'s avatar`} className="w-24 h-24 rounded-full border-4 border-surface shadow-lg object-cover" />
+                <img src={user.profilePictureUrl} alt={`${user.firstName}'s avatar`} className="w-24 h-24 rounded-full border-4 border-surface shadow-[var(--shadow-soft)] object-cover" />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center text-3xl font-black text-on-primary font-headline shadow-lg">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container border-4 border-surface flex items-center justify-center text-3xl font-black text-on-primary font-headline shadow-[var(--shadow-soft)]">
                   {initials}
                 </div>
               )}
-              <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-tertiary-fixed border-2 border-surface shadow-sm" />
+              <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-tertiary-fixed border-2 border-surface shadow-[var(--shadow-soft)]" />
             </div>
             <div className="flex-1 pb-1">
               {!editing ? (
@@ -807,7 +807,7 @@ export default function ProfilePage() {
                     </h1>
                     {effectiveScore >= 90 && (
                       <div className="text-tertiary flex items-center" title="Verified Reliable Customer">
-                        <CheckBadgeIcon className="h-6 w-6 drop-shadow-sm" />
+                        <CheckBadgeIcon className="h-6 w-6 drop-shadow-[var(--shadow-soft)]" />
                       </div>
                     )}
                     {/* Loyalty tier badge */}
@@ -822,7 +822,7 @@ export default function ProfilePage() {
                       {loyaltyTier.emoji} {loyaltyTier.name}
                     </span>
                   </div>
-                  <p className="text-sm text-on-surface-variant mt-0.5">
+                  <p className="text-sm text-[var(--soft-stone)] mt-0.5">
                     @{user.email.split('@')[0]} · {user.role === 'BUSINESS_OWNER' ? 'Business Owner' : 'Customer'}
                   </p>
                 </>
@@ -830,15 +830,15 @@ export default function ProfilePage() {
                 <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center w-full mt-2 sm:mt-0">
                   <div className="flex gap-2 w-full sm:w-auto">
                     <input value={editName.firstName} onChange={e => setEditName(n => ({ ...n, firstName: e.target.value }))}
-                      className="flex-1 sm:w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="First name" disabled={isSaving} />
+                      className="flex-1 sm:w-32 bg-[var(--warm-sand)]est border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="First name" disabled={isSaving} />
                     <input value={editName.lastName} onChange={e => setEditName(n => ({ ...n, lastName: e.target.value }))}
-                      className="flex-1 sm:w-32 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="Last name" disabled={isSaving} />
+                      className="flex-1 sm:w-32 bg-[var(--warm-sand)]est border border-outline-variant/30 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 sm:py-1.5 outline-none font-body text-sm touch-target" placeholder="Last name" disabled={isSaving} />
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                     <button onClick={handleSaveProfile} disabled={isSaving} className="flex-1 sm:flex-none bg-primary text-on-primary px-4 py-2 sm:py-1.5 rounded-md font-body text-sm sm:text-xs font-bold hover:opacity-90 disabled:opacity-50 touch-target">
                       {isSaving ? 'Saving...' : 'Save'}
                     </button>
-                    <button onClick={() => setEditing(false)} disabled={isSaving} className="flex-1 sm:flex-none text-sm sm:text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-bold disabled:opacity-50 touch-target bg-surface-container-low sm:bg-transparent rounded-md">Cancel</button>
+                    <button onClick={() => setEditing(false)} disabled={isSaving} className="flex-1 sm:flex-none text-sm sm:text-xs text-[var(--soft-stone)] hover:text-on-surface cursor-pointer font-bold disabled:opacity-50 touch-target bg-[var(--warm-sand)] sm:bg-transparent rounded-md">Cancel</button>
                   </div>
                 </div>
               )}
@@ -848,7 +848,7 @@ export default function ProfilePage() {
                 setEditName({ firstName: user.firstName || '', lastName: user.lastName || '' });
                 setEditing(true);
               }}
-                className="flex items-center justify-center gap-1.5 text-xs font-semibold px-4 py-2.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-surface-container-high border border-outline-variant/20 text-on-surface-variant hover:text-on-surface mb-1 shadow-sm touch-target"
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold px-4 py-2.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-lg cursor-pointer transition-all bg-surface-container hover:bg-white border border-[rgba(191,179,163,0.2)] text-[var(--soft-stone)] hover:text-on-surface mb-1 shadow-[var(--shadow-soft)] touch-target"
               >
                 <PencilIcon className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{t("Edit Profile", "Profile Edit Karein")}</span><span className="sm:hidden">Edit</span>
               </button>
@@ -868,10 +868,10 @@ export default function ProfilePage() {
             { label: t('PAB Tokens', 'PAB Tokens'), value: pabBalance.toLocaleString(), colorClass: 'text-secondary' },
             { label: t('Loyalty Tier', 'Loyalty Tier'), value: loyaltyTier.emoji, colorClass: 'text-on-surface', sub: loyaltyTier.name },
           ].map(s => (
-            <div key={s.label} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 sm:p-5 text-center shadow-sm hover:shadow-md transition-shadow">
+            <div key={s.label} className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-4 sm:p-5 text-center shadow-[var(--shadow-soft)] hover:shadow-md transition-shadow">
               <p className={`text-3xl md:text-3xl font-black font-headline ${s.colorClass}`}>{s.value}</p>
               {s.sub && <p className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: loyaltyTier.color }}>{s.sub}</p>}
-              <p className="text-[11px] sm:text-[10px] text-on-surface-variant mt-1 uppercase tracking-widest font-semibold">{s.label}</p>
+              <p className="text-[11px] sm:text-[10px] text-[var(--soft-stone)] mt-1 uppercase tracking-widest font-semibold">{s.label}</p>
             </div>
           ))}
         </div>
@@ -879,8 +879,8 @@ export default function ProfilePage() {
         {/* ── Gauges Row ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Trust Score — uses server-computed effective score */}
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">{t('Reliability Score', 'Pabandi Score')}</p>
+          <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 text-center shadow-[var(--shadow-soft)]">
+            <p className="text-[11px] font-bold text-[var(--soft-stone)] mb-4 uppercase tracking-widest">{t('Reliability Score', 'Pabandi Score')}</p>
             <div className="flex justify-center">
               <ArcGauge
                 value={effectiveScore}
@@ -888,7 +888,7 @@ export default function ProfilePage() {
                 label="Score"
               />
             </div>
-            <p className="text-[11px] font-medium text-on-surface-variant mt-3">
+            <p className="text-[11px] font-medium text-[var(--soft-stone)] mt-3">
               {effectiveScore >= 90 ? '🌟 Elite Reliability' : effectiveScore >= 70 ? '⚡ Good Standing' : '⚠️ Needs Improvement'}
             </p>
             {socialTrustBoost > 0 && (
@@ -899,31 +899,31 @@ export default function ProfilePage() {
           </div>
 
           {/* PAB Balance */}
-          <div className="bg-gradient-to-br from-primary to-primary-container border border-outline-variant/20 rounded-2xl p-6 text-center shadow-md relative overflow-hidden">
+          <div className="bg-gradient-to-br from-primary to-primary-container border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 text-center shadow-md relative overflow-hidden">
             <div className="absolute w-[120px] h-[120px] -top-8 -right-8 rounded-full bg-secondary-container/20 blur-xl pointer-events-none" />
             <div className="text-3xl mb-1 text-secondary-fixed">⚡</div>
             <p className="text-[11px] font-bold text-secondary-fixed mb-2 uppercase tracking-widest">{t('PAB Balance', 'PAB Balance')}</p>
-            <p className="text-4xl font-black font-headline text-white drop-shadow-sm">
+            <p className="text-4xl font-black font-headline text-[var(--warm-ink)] drop-shadow-[var(--shadow-soft)]">
               {pabBalance.toLocaleString()}
             </p>
             <p className="text-[10px] text-secondary-fixed-dim mt-1.5 font-medium">Pabandi Reliability Tokens</p>
             <div className="flex items-center gap-2 justify-center mt-3">
-              <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-white/10 text-white border border-white/20">
+              <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.4)]">
                 {loyaltyTier.emoji} {loyaltyTier.name}
               </span>
             </div>
-            <Link to="/wallet" className="inline-flex items-center gap-1 mt-3 text-[11px] font-bold px-3.5 py-1.5 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-colors">
+            <Link to="/wallet" className="inline-flex items-center gap-1 mt-3 text-[11px] font-bold px-3.5 py-1.5 rounded-lg bg-[var(--warm-sand)] text-[var(--warm-ink)] border border-[rgba(191,179,163,0.4)] hover:bg-white/20 transition-colors">
               {pabBalance > 0 ? '↗ Withdraw to Solana' : 'View Wallet →'}
             </Link>
           </div>
 
           {/* Show rate gauge */}
-          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center shadow-sm">
-            <p className="text-[11px] font-bold text-on-surface-variant mb-4 uppercase tracking-widest">{t('Show Rate', 'Show Rate')}</p>
+          <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 text-center shadow-[var(--shadow-soft)]">
+            <p className="text-[11px] font-bold text-[var(--soft-stone)] mb-4 uppercase tracking-widest">{t('Show Rate', 'Show Rate')}</p>
             <div className="flex justify-center">
               <ArcGauge value={showRate} color="#031f38" label="Show %" />
             </div>
-            <p className="text-[11px] font-medium text-on-surface-variant mt-3">
+            <p className="text-[11px] font-medium text-[var(--soft-stone)] mt-3">
               {attended} of {reservations.length} bookings honored
             </p>
             {streak > 0 && (
@@ -939,10 +939,10 @@ export default function ProfilePage() {
           <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide snap-x relative -mx-4 px-4 sm:mx-0 sm:px-0">
             {(['history', 'loyalty', 'badges', 'connections', 'security'] as const).map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`snap-start whitespace-nowrap px-5 py-2.5 rounded-2xl text-sm font-bold transition-all border shrink-0 touch-target ${
+                className={`snap-start whitespace-nowrap px-5 py-2.5 rounded-[var(--radius-card)] text-sm font-bold transition-all border shrink-0 touch-target ${
                   activeTab === tab
-                    ? 'bg-surface-container-lowest text-primary border-primary/30 shadow-sm'
-                    : 'bg-transparent text-on-surface-variant border-transparent hover:bg-surface-container-low hover:text-on-surface'
+                    ? 'bg-[var(--warm-sand)]est text-primary border-primary/30 shadow-[var(--shadow-soft)]'
+                    : 'bg-transparent text-[var(--soft-stone)] border-transparent hover:bg-[var(--warm-sand)] hover:text-on-surface'
                 }`}>
                 {tab === 'history'     ? '📅 Booking History' :
                  tab === 'loyalty'     ? '🏆 Loyalty Program' :
@@ -956,7 +956,7 @@ export default function ProfilePage() {
           {/* ── History & Receipts Tab ── */}
           {activeTab === 'history' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg font-black text-on-surface font-headline">Recent Bookings</h2>
                   <Link to="/reservations" className="text-xs font-bold text-primary hover:underline">View All →</Link>
@@ -971,13 +971,13 @@ export default function ProfilePage() {
                   <div className="text-center py-10 sm:py-12">
                     <CalendarIcon className="h-10 w-10 mx-auto mb-3 text-outline" />
                     <p className="text-sm font-semibold mb-1 text-on-surface">No bookings yet</p>
-                    <p className="text-xs text-on-surface-variant mb-5">Your booking history will appear here</p>
+                    <p className="text-xs text-[var(--soft-stone)] mb-5">Your booking history will appear here</p>
                     <Link to="/" className="bg-primary text-on-primary px-5 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity">Find a Business</Link>
                   </div>
                 )}
               </div>
               
-              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-soft)]">
                 <h2 className="text-lg font-black text-on-surface font-headline mb-4">Score Receipts</h2>
                 <ScoreReceipts />
               </div>
@@ -996,10 +996,10 @@ export default function ProfilePage() {
 
           {/* ── Achievements Tab ── */}
           {activeTab === 'badges' && (
-            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+            <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-soft)]">
               <div className="mb-4">
                 <h2 className="text-lg font-black text-on-surface font-headline">Achievements</h2>
-                <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">
+                <p className="text-[11px] text-[var(--soft-stone)] mt-0.5 font-medium">
                   {achievements.filter(a => a.earned).length} / {achievements.length} unlocked
                 </p>
               </div>
@@ -1008,11 +1008,11 @@ export default function ProfilePage() {
                   <AchievementBadge key={a.label} {...a} />
                 ))}
               </div>
-              <div className="mt-6 p-4 bg-secondary/5 rounded-2xl border border-secondary/10 flex items-start gap-3">
+              <div className="mt-6 p-4 bg-secondary/5 rounded-[var(--radius-card)] border border-secondary/10 flex items-start gap-3">
                 <GiftIcon className="h-5 w-5 text-secondary shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-on-surface mb-0.5">Mint as Soulbound NFTs</p>
-                  <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">
                     Your reliability badges can be minted as non-transferable NFTs on BSC or Solana.
                     Connect a wallet and visit your <Link to="/wallet" className="text-primary font-bold hover:underline">Wallet Dashboard</Link>.
                   </p>
@@ -1023,33 +1023,33 @@ export default function ProfilePage() {
 
           {/* ── Connected Accounts Tab ── */}
           {activeTab === 'connections' && (
-            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+            <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-soft)]">
               <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
                 <div>
                   <h2 className="text-lg font-black text-on-surface font-headline">Connected Accounts</h2>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium">
+                  <p className="text-[11px] text-[var(--soft-stone)] mt-0.5 font-medium">
                     Each connection enriches your reliability score with cross-platform trust signals.
                   </p>
-                  <p className="text-[10px] text-on-surface-variant mt-1 italic">
+                  <p className="text-[10px] text-[var(--soft-stone)] mt-1 italic">
                     Connected accounts add cross-platform trust signals to your Pabandi profile.
                   </p>
                 </div>
                 {connectedCount > 0 && (
                   <div className="flex items-center gap-2 bg-tertiary-fixed/20 text-on-tertiary-fixed-variant px-3 py-1.5 rounded-lg border border-tertiary-fixed/30">
                     <span className="text-sm font-black text-tertiary">+{totalSocialBoost} pts</span>
-                    <span className="text-[10px] font-semibold text-on-surface-variant">from {connectedCount} platform{connectedCount > 1 ? 's' : ''}</span>
+                    <span className="text-[10px] font-semibold text-[var(--soft-stone)]">from {connectedCount} platform{connectedCount > 1 ? 's' : ''}</span>
                   </div>
                 )}
               </div>
 
               {/* Meta ecosystem */}
-              <div className={`rounded-2xl p-5 border-2 transition-all mb-5 ${metaConnected ? 'border-[#0081FB]/30 bg-[#0081FB]/5' : 'border-outline-variant/20 bg-surface-container-low/50'}`}>
+              <div className={`rounded-[var(--radius-card)] p-5 border-2 transition-all mb-5 ${metaConnected ? 'border-[#0081FB]/30 bg-[#0081FB]/5' : 'border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)]/50'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0081FB] to-[#00C6FF] flex items-center justify-center text-white text-lg font-black shadow-sm">M</div>
+                    <div className="w-10 h-10 rounded-[var(--radius-card)] bg-gradient-to-br from-[#0081FB] to-[#00C6FF] flex items-center justify-center text-[var(--warm-ink)] text-lg font-black shadow-[var(--shadow-soft)]">M</div>
                     <div>
                       <p className="font-bold text-sm text-on-surface">Meta Platforms</p>
-                      <p className="text-[10px] text-on-surface-variant">
+                      <p className="text-[10px] text-[var(--soft-stone)]">
                         {metaConnected ? 'WhatsApp + Instagram + Facebook connected' : 'Connect WhatsApp, Instagram & Facebook together'}
                       </p>
                     </div>
@@ -1066,7 +1066,7 @@ export default function ProfilePage() {
                     <div key={mp.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
                       connected[mp.id]
                         ? 'border-tertiary-fixed/30 bg-tertiary-fixed/10 text-on-tertiary-fixed-variant'
-                        : 'border-outline-variant/20 bg-surface-container-lowest text-on-surface-variant'
+                        : 'border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)]est text-[var(--soft-stone)]'
                     }`}>
                       <span>{mp.emoji}</span> {mp.name}
                       {connected[mp.id] && <span className="text-tertiary">✓</span>}
@@ -1074,7 +1074,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
 
-                <p className="text-[10px] text-on-surface-variant mb-3">Up to +{META_PLATFORMS.reduce((s, p) => s + p.boost, 0)} pts combined</p>
+                <p className="text-[10px] text-[var(--soft-stone)] mb-3">Up to +{META_PLATFORMS.reduce((s, p) => s + p.boost, 0)} pts combined</p>
 
                 {socialErrors.META && (
                   <p className="text-[11px] text-error mb-2 font-medium">{socialErrors.META}</p>
@@ -1093,7 +1093,7 @@ export default function ProfilePage() {
                   <button
                     onClick={handleConnectMeta}
                     disabled={connectingPlatform === 'META'}
-                    className="w-full py-2.5 rounded-lg text-[11px] font-bold text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full py-2.5 rounded-lg text-[11px] font-bold text-[var(--warm-ink)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-[var(--shadow-soft)]"
                     style={{ background: 'linear-gradient(135deg, #0081FB 0%, #00C6FF 100%)' }}
                   >
                     {connectingPlatform === 'META' ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
@@ -1107,7 +1107,7 @@ export default function ProfilePage() {
                 {SOCIAL_PLATFORMS.map(platform => (
                   <div
                     key={platform.id}
-                    className="rounded-2xl p-4 border transition-all"
+                    className="rounded-[var(--radius-card)] p-4 border transition-all"
                     style={{
                       background: connected[platform.id] ? `${platform.color}08` : undefined,
                       borderColor: connected[platform.id] ? `${platform.color}30` : undefined,
@@ -1118,7 +1118,7 @@ export default function ProfilePage() {
                         <span className="text-2xl">{platform.emoji}</span>
                         <div>
                           <p className="font-bold text-sm text-on-surface">{platform.name}</p>
-                          <p className="text-[10px] text-on-surface-variant">
+                          <p className="text-[10px] text-[var(--soft-stone)]">
                             {connected[platform.id] ? `+${platform.boost} pts active` : `Up to +${platform.boost} pts`}
                           </p>
                         </div>
@@ -1160,11 +1160,11 @@ export default function ProfilePage() {
                 ))}
               </div>
 
-              <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-3">
+              <div className="mt-6 p-4 bg-primary/5 rounded-[var(--radius-card)] border border-primary/10 flex items-start gap-3">
                 <span className="text-lg mt-0.5">🔒</span>
                 <div>
                   <p className="text-sm font-bold text-on-surface mb-0.5">Privacy First</p>
-                  <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">
                     We only access public metadata. No posts, messages, or private data. Disconnect any time — no penalty.
                   </p>
                   <Link to="/trust" className="text-[11px] text-primary font-bold hover:underline mt-1 inline-block">Learn more about how this works →</Link>
@@ -1176,7 +1176,7 @@ export default function ProfilePage() {
           {/* ── Security Tab ── */}
           {activeTab === 'security' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-lg">
-              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+              <div className="bg-[var(--warm-sand)]est border border-[rgba(191,179,163,0.2)] rounded-[var(--radius-card)] p-6 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 mb-6">
                   <ShieldCheckIcon className="h-5 w-5 text-primary" />
                   <h2 className="text-xl font-black text-on-surface font-headline tracking-tight">Security Settings</h2>
@@ -1184,7 +1184,7 @@ export default function ProfilePage() {
                 
                 <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant">Current Password</label>
+                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[var(--soft-stone)]">Current Password</label>
                     <input 
                       type="password" 
                       required 
@@ -1195,7 +1195,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-on-surface-variant">New Password</label>
+                    <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide text-[var(--soft-stone)]">New Password</label>
                     <input 
                       type="password" 
                       required 

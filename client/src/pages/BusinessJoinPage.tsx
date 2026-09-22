@@ -123,7 +123,7 @@ export default function BusinessJoinPage() {
     return (
       <div 
         className="flex items-center justify-center p-6 min-h-screen"
-        style={{ background: tokens.color.background, color: tokens.color.text }}
+        style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}
       >
         <div className="text-center max-w-md">
           <div className="text-5xl sm:text-6xl mb-6">🎉</div>
@@ -135,7 +135,7 @@ export default function BusinessJoinPage() {
             Our onboarding team will contact you at <strong className="text-[#616161]">{form.phone}</strong> within 24 hours to help set up your business profile.
           </p>
           <div className="rounded-2xl p-5 mb-8 text-left space-y-3"
-            style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
+            style={{ background: "rgba(52,211,153,0.06)", border: '1px solid "rgba(52,211,153,0.15)"' }}>
             {[
               '6 months Starter tier — activated', 
               'Founding Business badge — reserved', 
@@ -153,126 +153,126 @@ export default function BusinessJoinPage() {
   }
 
   return (
-    <div className="font-body min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="font-body min-h-screen" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
       
       {/* ── Nav ─────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-white/5 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 text-sm font-bold hover:opacity-80 transition-opacity">
-            <span className="text-slate-400">← Back</span>
+            <span className="text-[var(--soft-stone)]">← Back</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Login</Link>
-            <a href="#join-form" className="bg-white text-black text-sm font-bold py-2 px-5 rounded-full hover:bg-slate-200 transition-colors">Register</a>
+            <Link to="/login" className="text-sm font-medium text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-colors">Login</Link>
+            <a href="#join-form" className="bg-white text-black text-sm font-bold py-2 px-5 rounded-full hover:bg-[var(--warm-sand)] transition-colors">Register</a>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-20 pb-20 sm:pb-24 px-4 sm:px-6">
-        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-[var(--sky-wash)]/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[rgba(var(--sage),0.1)] rounded-full blur-[120px] pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold tracking-widest uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold tracking-widest uppercase bg-[rgba(var(--sky-wash),0.1)] border border-[rgba(var(--sky-wash),0.2)] text-[var(--sky-wash)]">
               🏢 For Businesses
             </div>
 
-            <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-white font-headline tracking-tight">
+            <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] mb-8 text-[var(--warm-ink)] font-headline tracking-tight">
               Pabandi is the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">WhatsApp-native commerce escrow layer</span><br />for your business.
             </h1>
 
-            <p className="text-base sm:text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-xl">
+            <p className="text-base sm:text-lg md:text-xl text-[var(--soft-stone)] mb-10 leading-relaxed max-w-xl">
               AI-backed booking support on WhatsApp. Escrow-backed checkout from conversation to deposit. Zero training for you or your customers.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
-              <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-base sm:text-lg px-8 py-4 rounded-xl font-bold hover:bg-slate-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+              <a href="#join-form" className="w-full sm:w-auto text-center bg-white text-black text-base sm:text-lg px-8 py-4 rounded-xl font-bold hover:bg-[var(--warm-sand)] transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
                 Register Your Business →
               </a>
-              <a href="#how-it-works" className="w-full sm:w-auto text-center text-base sm:text-lg px-8 py-4 rounded-xl font-bold text-white border border-white/10 hover:bg-white/5 transition-all">
+              <a href="#how-it-works" className="w-full sm:w-auto text-center text-base sm:text-lg px-8 py-4 rounded-xl font-bold text-[var(--warm-ink)] border border-[rgba(191,179,163,0.3)] hover:bg-[var(--warm-sand)] transition-all">
                 See How It Works
               </a>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-10 inline-block w-full">
-              <p className="text-sm text-slate-400 font-medium mb-3">Looking for specific solutions?</p>
+            <div className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-2xl p-5 mb-10 inline-block w-full">
+              <p className="text-sm text-[var(--soft-stone)] font-medium mb-3">Looking for specific solutions?</p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/live-selling" className="flex items-center gap-2 text-sm font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-4 py-2.5 rounded-xl border border-amber-500/20 transition-colors w-full justify-center sm:justify-start">
+                <Link to="/live-selling" className="flex items-center gap-2 text-sm font-bold text-[var(--muted-ochre)] hover:text-[var(--muted-ochre)] bg-[rgba(var(--muted-ochre),0.1)] px-4 py-2.5 rounded-xl border border-[rgba(var(--muted-ochre),0.2)] transition-colors w-full justify-center sm:justify-start">
                   <span>🎥</span> Live Sellers & Drops
                 </Link>
-                <Link to="/freelance" className="flex items-center gap-2 text-sm font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 px-4 py-2.5 rounded-xl border border-blue-500/20 transition-colors w-full justify-center sm:justify-start">
+                <Link to="/freelance" className="flex items-center gap-2 text-sm font-bold text-[var(--sky-wash)] hover:text-[var(--sky-wash)] bg-[rgba(var(--sky-wash),0.1)] px-4 py-2.5 rounded-xl border border-[rgba(var(--sky-wash),0.2)] transition-colors w-full justify-center sm:justify-start">
                   <span>💻</span> Freelancers & Gig Work
                 </Link>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-semibold text-slate-300">
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Built for Global SMEs</span>
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Agentic Business</span>
-              <span className="flex items-center gap-2"><span className="text-emerald-400 text-base sm:text-lg">✓</span> Solana Web3</span>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-semibold text-[var(--soft-stone)]">
+              <span className="flex items-center gap-2"><span className="text-[var(--sage)] text-base sm:text-lg">✓</span> Built for Global SMEs</span>
+              <span className="flex items-center gap-2"><span className="text-[var(--sage)] text-base sm:text-lg">✓</span> Agentic Business</span>
+              <span className="flex items-center gap-2"><span className="text-[var(--sage)] text-base sm:text-lg">✓</span> Solana Web3</span>
             </div>
           </div>
 
           {/* ── Business Dashboard Preview ──────────────────────────── */}
-          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-5 sm:p-8 shadow-2xl relative">
+          <div className="bg-[var(--cream)] rounded-3xl border border-[rgba(191,179,163,0.3)] p-6 sm:p-5 sm:p-8 shadow-2xl relative">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-base sm:text-lg text-white">Pabandi Business Dashboard</h3>
-              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+              <h3 className="font-bold text-base sm:text-lg text-[var(--warm-ink)]">Pabandi Business Dashboard</h3>
+              <div className="w-8 h-8 rounded-full bg-[rgba(var(--sky-wash),0.15)] flex items-center justify-center text-[var(--sky-wash)]">
                 <span className="material-symbols-outlined text-sm">notifications</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="bg-white/5 rounded-2xl p-4">
-                <div className="text-slate-400 text-xs mb-1">Today's Bookings</div>
-                <div className="text-2xl sm:text-3xl font-black text-white">24</div>
+              <div className="bg-[var(--warm-sand)] rounded-2xl p-4">
+                <div className="text-[var(--soft-stone)] text-xs mb-1">Today's Bookings</div>
+                <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)]">24</div>
               </div>
-              <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20">
-                <div className="text-emerald-400 text-xs mb-1">Revenue Protected</div>
-                <div className="text-2xl sm:text-3xl font-black text-emerald-400">$48K</div>
+              <div className="bg-[rgba(var(--sage),0.1)] rounded-2xl p-4 border border-[rgba(var(--sage),0.2)]">
+                <div className="text-[var(--sage)] text-xs mb-1">Revenue Protected</div>
+                <div className="text-2xl sm:text-3xl font-black text-[var(--sage)]">$48K</div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="bg-white/5 p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-[var(--warm-sand)] p-4 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center font-bold text-blue-400">AK</div>
+                  <div className="w-10 h-10 rounded-full bg-[rgba(var(--sky-wash),0.15)] flex items-center justify-center font-bold text-[var(--sky-wash)]">AK</div>
                   <div>
-                    <div className="font-bold text-white text-sm">Ayesha Khan</div>
-                    <div className="text-xs text-slate-400">2:00 PM · Table for 4</div>
+                    <div className="font-bold text-[var(--warm-ink)] text-sm">Ayesha Khan</div>
+                    <div className="text-xs text-[var(--soft-stone)]">2:00 PM · Table for 4</div>
                   </div>
                 </div>
-                <div className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-bold">Low Risk</div>
+                <div className="text-xs px-2 py-1 rounded bg-[rgba(var(--sky-wash),0.15)] text-[var(--sky-wash)] font-bold">Low Risk</div>
               </div>
 
-              <div className="bg-white/5 p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-[var(--warm-sand)] p-4 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center font-bold text-amber-400">MR</div>
+                  <div className="w-10 h-10 rounded-full bg-[rgba(var(--muted-ochre),0.15)] flex items-center justify-center font-bold text-[var(--muted-ochre)]">MR</div>
                   <div>
-                    <div className="font-bold text-white text-sm">M. Rehman</div>
-                    <div className="text-xs text-slate-400">3:30 PM · Table for 2</div>
+                    <div className="font-bold text-[var(--warm-ink)] text-sm">M. Rehman</div>
+                    <div className="text-xs text-[var(--soft-stone)]">3:30 PM · Table for 2</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400 font-bold inline-block mb-1">Med Risk</div>
-                  <div className="text-[10px] text-slate-400">$5 dep.</div>
+                  <div className="text-xs px-2 py-1 rounded bg-[rgba(var(--muted-ochre),0.15)] text-[var(--muted-ochre)] font-bold inline-block mb-1">Med Risk</div>
+                  <div className="text-[10px] text-[var(--soft-stone)]">$5 dep.</div>
                 </div>
               </div>
 
-              <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-2xl flex items-center justify-between relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+              <div className="bg-[var(--sage)]/5 border border-[rgba(var(--sage),0.2)] p-4 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                <div className="absolute right-0 top-0 w-32 h-32 bg-[rgba(var(--sage),0.1)] rounded-full blur-2xl"></div>
                 <div className="flex items-center gap-3 relative z-10">
-                  <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center font-bold text-rose-400">SZ</div>
+                  <div className="w-10 h-10 rounded-full bg-[rgba(var(--dusty-rose),0.15)] flex items-center justify-center font-bold text-[var(--dusty-rose)]">SZ</div>
                   <div>
-                    <div className="font-bold text-white text-sm">Sara Zaidi</div>
-                    <div className="text-xs text-slate-400">5:00 PM · Table for 6</div>
+                    <div className="font-bold text-[var(--warm-ink)] text-sm">Sara Zaidi</div>
+                    <div className="text-xs text-[var(--soft-stone)]">5:00 PM · Table for 6</div>
                   </div>
                 </div>
                 <div className="text-right relative z-10">
-                  <div className="text-xs px-2 py-1 rounded bg-rose-500/20 text-rose-400 font-bold inline-block mb-1">High Risk</div>
-                  <div className="text-[10px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded">$15 dep.</div>
+                  <div className="text-xs px-2 py-1 rounded bg-[rgba(var(--dusty-rose),0.15)] text-[var(--dusty-rose)] font-bold inline-block mb-1">High Risk</div>
+                  <div className="text-[10px] text-[var(--sage)] font-bold bg-[rgba(var(--sage),0.15)] px-1.5 py-0.5 rounded">$15 dep.</div>
                 </div>
               </div>
             </div>
@@ -282,23 +282,23 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Mini Stats Bar ──────────────────────────────────────── */}
-      <section className="border-y border-white/5 bg-white/[0.02]">
+      <section className="border-y border-[rgba(191,179,163,0.2)] bg-white/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-5 sm:p-8 divide-x divide-white/5">
           <div className="text-center px-4">
-            <div className="text-4xl font-black text-white mb-2">82%</div>
-            <div className="text-sm text-slate-400">Reduction in no-shows</div>
+            <div className="text-4xl font-black text-[var(--warm-ink)] mb-2">82%</div>
+            <div className="text-sm text-[var(--soft-stone)]">Reduction in no-shows</div>
           </div>
           <div className="text-center px-4">
-            <div className="text-4xl font-black text-white mb-2">40+</div>
-            <div className="text-sm text-slate-400">AI risk data points</div>
+            <div className="text-4xl font-black text-[var(--warm-ink)] mb-2">40+</div>
+            <div className="text-sm text-[var(--soft-stone)]">AI risk data points</div>
           </div>
           <div className="text-center px-4">
-            <div className="text-4xl font-black text-white mb-2">$0</div>
-            <div className="text-sm text-slate-400">Setup cost</div>
+            <div className="text-4xl font-black text-[var(--warm-ink)] mb-2">$0</div>
+            <div className="text-sm text-[var(--soft-stone)]">Setup cost</div>
           </div>
           <div className="text-center px-4">
-            <div className="text-4xl font-black text-white mb-2">5 min</div>
-            <div className="text-sm text-slate-400">To go live</div>
+            <div className="text-4xl font-black text-[var(--warm-ink)] mb-2">5 min</div>
+            <div className="text-sm text-[var(--soft-stone)]">To go live</div>
           </div>
         </div>
       </section>
@@ -307,76 +307,76 @@ export default function BusinessJoinPage() {
       <section className="py-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20">
-            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Features</div>
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Everything your business<br />needs to win.</h2>
-            <p className="text-xl text-slate-400 max-w-2xl">From automated deposits to webhook integrations with your existing CRM — Pabandi slots in, not over.</p>
+            <div className="text-[var(--sky-wash)] font-bold tracking-widest uppercase text-sm mb-4">✦ Features</div>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-6">Everything your business<br />needs to win.</h2>
+            <p className="text-xl text-[var(--soft-stone)] max-w-2xl">From automated deposits to webhook integrations with your existing CRM — Pabandi slots in, not over.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 sm:p-8">
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">🤖</div>
-              <h3 className="text-xl font-bold text-white mb-3">Agentic Risk Scoring</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Your AI agent scores each booking autonomously using customer history, weather, and time-of-day patterns. Strategy updates as conditions change.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Agentic Risk Scoring</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">Your AI agent scores each booking autonomously using customer history, weather, and time-of-day patterns. Strategy updates as conditions change.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">💳</div>
-              <h3 className="text-xl font-bold text-white mb-3">Dynamic Deposit Capture</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">High-risk bookings trigger automatic deposit requests. Accepts PayPal, Alibaba Pay, Binance Pay, and Solana (USDC). Funds settle directly to your account in USD.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Dynamic Deposit Capture</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">High-risk bookings trigger automatic deposit requests. Accepts PayPal, Alibaba Pay, Binance Pay, and Solana (USDC). Funds settle directly to your account in USD.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">📊</div>
-              <h3 className="text-xl font-bold text-white mb-3">Real-Time Analytics</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Track booking patterns, no-show rates, revenue protected, and table turnover in a clean dashboard. Export to CSV or connect via webhook.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Real-Time Analytics</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">Track booking patterns, no-show rates, revenue protected, and table turnover in a clean dashboard. Export to CSV or connect via webhook.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">🔔</div>
-              <h3 className="text-xl font-bold text-white mb-3">Automated Reminders</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">SMS via Twilio and email via SendGrid reminders go out automatically at 24h, 2h, and 30 minutes before every reservation.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Automated Reminders</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">SMS via Twilio and email via SendGrid reminders go out automatically at 24h, 2h, and 30 minutes before every reservation.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">🔗</div>
-              <h3 className="text-xl font-bold text-white mb-3">Webhooks & CRM Integration</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Push booking events to your POS, CRM, or any system via outbound webhooks. Full REST API available for custom integrations.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Webhooks & CRM Integration</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">Push booking events to your POS, CRM, or any system via outbound webhooks. Full REST API available for custom integrations.</p>
             </div>
-            <div className="bg-[#0f172a] border border-white/5 p-5 sm:p-8 rounded-3xl hover:border-white/10 transition-colors">
+            <div className="bg-[var(--cream)] border border-[rgba(191,179,163,0.2)] p-5 sm:p-8 rounded-3xl hover:border-[rgba(191,179,163,0.3)] transition-colors">
               <div className="text-4xl mb-6">🌐</div>
-              <h3 className="text-xl font-bold text-white mb-3">Global Compliance</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">PCI-DSS compliant data handling. Accepts PayPal, Alibaba Pay, Binance Pay & Solana globally. Multi-lingual support built for international scale.</p>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3">Global Compliance</h3>
+              <p className="text-[var(--soft-stone)] text-sm leading-relaxed">PCI-DSS compliant data handling. Accepts PayPal, Alibaba Pay, Binance Pay & Solana globally. Multi-lingual support built for international scale.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── How It Works ────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-32 px-4 sm:px-6 bg-white/[0.02] border-y border-white/5">
+      <section id="how-it-works" className="py-32 px-4 sm:px-6 bg-white/[0.02] border-y border-[rgba(191,179,163,0.2)]">
         <div className="max-w-7xl mx-auto">
           <div className="mb-20 text-center">
-            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ How It Works</div>
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6">Up and running in minutes.</h2>
+            <div className="text-[var(--sky-wash)] font-bold tracking-widest uppercase text-sm mb-4">✦ How It Works</div>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-6">Up and running in minutes.</h2>
           </div>
 
           <div className="grid md:grid-cols-4 gap-4 sm:gap-6 sm:p-12 relative">
-            <div className="hidden md:block absolute top-5 sm:p-8 left-12 right-12 h-[2px] bg-white/10"></div>
+            <div className="hidden md:block absolute top-5 sm:p-8 left-12 right-12 h-[2px] bg-[var(--warm-sand)]"></div>
             
             <div className="relative">
-              <div className="w-16 h-16 bg-[#0f172a] border-2 border-blue-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">01</div>
-              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Register Your Business</h3>
-              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Add your venue, set business hours, table capacity, and your deposit preference threshold.</p>
+              <div className="w-16 h-16 bg-[var(--cream)] border-2 border-[var(--sky-wash)] rounded-full flex items-center justify-center text-xl font-bold text-[var(--warm-ink)] mb-6 relative z-10 mx-auto md:mx-0">01</div>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3 text-center md:text-left">Register Your Business</h3>
+              <p className="text-[var(--soft-stone)] text-sm text-center md:text-left leading-relaxed">Add your venue, set business hours, table capacity, and your deposit preference threshold.</p>
             </div>
             <div className="relative">
-              <div className="w-16 h-16 bg-[#0f172a] border-2 border-white/20 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">02</div>
-              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Share Your Booking Link</h3>
-              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">A branded link your customers use to book. Embed it on your site, WhatsApp, or Instagram bio.</p>
+              <div className="w-16 h-16 bg-[var(--cream)] border-2 border-[rgba(191,179,163,0.4)] rounded-full flex items-center justify-center text-xl font-bold text-[var(--warm-ink)] mb-6 relative z-10 mx-auto md:mx-0">02</div>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3 text-center md:text-left">Share Your Booking Link</h3>
+              <p className="text-[var(--soft-stone)] text-sm text-center md:text-left leading-relaxed">A branded link your customers use to book. Embed it on your site, WhatsApp, or Instagram bio.</p>
             </div>
             <div className="relative">
-              <div className="w-16 h-16 bg-[#0f172a] border-2 border-emerald-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">03</div>
-              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Your Agent Takes Over</h3>
-              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Our Agentic AI runs instantly. Low risk? Auto-confirmed. High risk? The agent negotiates a deposit automatically.</p>
+              <div className="w-16 h-16 bg-[var(--cream)] border-2 border-[var(--sage)] rounded-full flex items-center justify-center text-xl font-bold text-[var(--warm-ink)] mb-6 relative z-10 mx-auto md:mx-0">03</div>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3 text-center md:text-left">Your Agent Takes Over</h3>
+              <p className="text-[var(--soft-stone)] text-sm text-center md:text-left leading-relaxed">Our Agentic AI runs instantly. Low risk? Auto-confirmed. High risk? The agent negotiates a deposit automatically.</p>
             </div>
             <div className="relative">
-              <div className="w-16 h-16 bg-[#0f172a] border-2 border-purple-500 rounded-full flex items-center justify-center text-xl font-bold text-white mb-6 relative z-10 mx-auto md:mx-0">04</div>
-              <h3 className="text-xl font-bold text-white mb-3 text-center md:text-left">Get Paid, Stay Protected</h3>
-              <p className="text-slate-400 text-sm text-center md:text-left leading-relaxed">Deposits settle to your account. No-shows? Keep the deposit. Shows up? It's credited to their bill.</p>
+              <div className="w-16 h-16 bg-[var(--cream)] border-2 border-[var(--dusty-rose)] rounded-full flex items-center justify-center text-xl font-bold text-[var(--warm-ink)] mb-6 relative z-10 mx-auto md:mx-0">04</div>
+              <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-3 text-center md:text-left">Get Paid, Stay Protected</h3>
+              <p className="text-[var(--soft-stone)] text-sm text-center md:text-left leading-relaxed">Deposits settle to your account. No-shows? Keep the deposit. Shows up? It's credited to their bill.</p>
             </div>
           </div>
         </div>
@@ -386,82 +386,82 @@ export default function BusinessJoinPage() {
       <section className="py-32 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
           <div>
-            <div className="text-[#14F195] font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+            <div className="text-[var(--sage)] font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">token</span> $PAB for Business
             </div>
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-6 leading-tight">Get paid in tokens,<br />not just dollars.</h2>
-            <p className="text-xl text-slate-400 mb-10 leading-relaxed">
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-6 leading-tight">Get paid in tokens,<br />not just dollars.</h2>
+            <p className="text-xl text-[var(--soft-stone)] mb-10 leading-relaxed">
               Pabandi rewards venues that honor bookings and fight no-shows — automatically credited to your business wallet, cashable on Solana.
             </p>
 
             <div className="space-y-6">
               <div className="flex gap-4">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">✓</div>
+                <div className="w-12 h-12 shrink-0 rounded-full bg-[var(--warm-sand)] flex items-center justify-center text-xl">✓</div>
                 <div>
-                  <div className="font-bold text-white flex items-center gap-3">Honored booking <span className="text-[#14F195] text-sm">+25 $PAB</span></div>
-                  <div className="text-sm text-slate-400 mt-1">Every reservation you mark completed earns your business instant $PAB.</div>
+                  <div className="font-bold text-[var(--warm-ink)] flex items-center gap-3">Honored booking <span className="text-[var(--sage)] text-sm">+25 $PAB</span></div>
+                  <div className="text-sm text-[var(--soft-stone)] mt-1">Every reservation you mark completed earns your business instant $PAB.</div>
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">🛡️</div>
+                <div className="w-12 h-12 shrink-0 rounded-full bg-[var(--warm-sand)] flex items-center justify-center text-xl">🛡️</div>
                 <div>
-                  <div className="font-bold text-white flex items-center gap-3">No-show protected <span className="text-[#14F195] text-sm">+40 $PAB</span></div>
-                  <div className="text-sm text-slate-400 mt-1">When a deposit is kept after a no-show, you earn bonus $PAB on top of protected revenue.</div>
+                  <div className="font-bold text-[var(--warm-ink)] flex items-center gap-3">No-show protected <span className="text-[var(--sage)] text-sm">+40 $PAB</span></div>
+                  <div className="text-sm text-[var(--soft-stone)] mt-1">When a deposit is kept after a no-show, you earn bonus $PAB on top of protected revenue.</div>
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">📉</div>
+                <div className="w-12 h-12 shrink-0 rounded-full bg-[var(--warm-sand)] flex items-center justify-center text-xl">📉</div>
                 <div>
-                  <div className="font-bold text-white flex items-center gap-3">Low no-show month <span className="text-[#14F195] text-sm">+75 $PAB</span></div>
-                  <div className="text-sm text-slate-400 mt-1">Hit reliability targets and unlock monthly $PAB bonuses for your venue.</div>
+                  <div className="font-bold text-[var(--warm-ink)] flex items-center gap-3">Low no-show month <span className="text-[var(--sage)] text-sm">+75 $PAB</span></div>
+                  <div className="text-sm text-[var(--soft-stone)] mt-1">Hit reliability targets and unlock monthly $PAB bonuses for your venue.</div>
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="w-12 h-12 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-xl">🤝</div>
+                <div className="w-12 h-12 shrink-0 rounded-full bg-[var(--warm-sand)] flex items-center justify-center text-xl">🤝</div>
                 <div>
-                  <div className="font-bold text-white flex items-center gap-3">Refer a business <span className="text-[#14F195] text-sm">+150 $PAB</span></div>
-                  <div className="text-sm text-slate-400 mt-1">Bring another venue to Pabandi and earn a one-time $PAB referral reward.</div>
+                  <div className="font-bold text-[var(--warm-ink)] flex items-center gap-3">Refer a business <span className="text-[var(--sage)] text-sm">+150 $PAB</span></div>
+                  <div className="text-sm text-[var(--soft-stone)] mt-1">Bring another venue to Pabandi and earn a one-time $PAB referral reward.</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#14F195]/5 border border-[#14F195]/20 rounded-3xl p-5 sm:p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#14F195]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="bg-[var(--sage)]/5 border border-[var(--sage)]/20 rounded-3xl p-5 sm:p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--sage)]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             
-            <h3 className="text-2xl font-bold text-white mb-2 relative z-10">Payout to Phantom on Solana</h3>
-            <p className="text-slate-400 text-sm mb-8 relative z-10">Register your business, connect Phantom in settings, and transfer earned $PAB to your Solana address anytime.</p>
+            <h3 className="text-2xl font-bold text-[var(--warm-ink)] mb-2 relative z-10">Payout to Phantom on Solana</h3>
+            <p className="text-[var(--soft-stone)] text-sm mb-8 relative z-10">Register your business, connect Phantom in settings, and transfer earned $PAB to your Solana address anytime.</p>
 
-            <div className="bg-[#0f172a] rounded-2xl p-6 border border-white/10 relative z-10 mb-6 shadow-2xl">
+            <div className="bg-[var(--cream)] rounded-2xl p-6 border border-[rgba(191,179,163,0.3)] relative z-10 mb-6 shadow-2xl">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#14F195]/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#14F195] text-sm">account_balance_wallet</span>
+                  <div className="w-8 h-8 rounded-full bg-[var(--sage)]/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[var(--sage)] text-sm">account_balance_wallet</span>
                   </div>
-                  <span className="font-bold text-white">Business $PAB Wallet</span>
+                  <span className="font-bold text-[var(--warm-ink)]">Business $PAB Wallet</span>
                 </div>
-                <div className="text-xs font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">Not connected</div>
+                <div className="text-xs font-bold text-[var(--soft-stone)] bg-[var(--warm-sand)] px-2 py-1 rounded">Not connected</div>
               </div>
-              <div className="text-4xl sm:text-5xl font-black text-white mb-2 flex items-center gap-3">
-                840 <span className="text-xl text-[#14F195]">$PAB</span>
+              <div className="text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-2 flex items-center gap-3">
+                840 <span className="text-xl text-[var(--sage)]">$PAB</span>
               </div>
-              <div className="text-xs text-slate-400 mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#14F195] animate-pulse"></span> Live Business earnings (example)
+              <div className="text-xs text-[var(--soft-stone)] mb-6 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[var(--sage)] animate-pulse"></span> Live Business earnings (example)
               </div>
-              <button className="w-full bg-[#9945FF] text-white py-3 rounded-xl font-bold hover:bg-[#9945FF]/90 transition-colors flex items-center justify-center gap-2">
+              <button className="w-full bg-[#9945FF] text-[var(--warm-ink)] py-3 rounded-xl font-bold hover:bg-[#9945FF]/90 transition-colors flex items-center justify-center gap-2">
                 ◎ Connect Phantom
               </button>
             </div>
 
             <ul className="space-y-3 relative z-10">
-              <li className="flex items-center gap-3 text-sm text-slate-300">
-                <span className="text-[#14F195]">✓</span> Complete bookings → $PAB credited automatically
+              <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
+                <span className="text-[var(--sage)]">✓</span> Complete bookings → $PAB credited automatically
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-300">
-                <span className="text-[#14F195]">✓</span> Connect Phantom wallet in your dashboard
+              <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
+                <span className="text-[var(--sage)]">✓</span> Connect Phantom wallet in your dashboard
               </li>
-              <li className="flex items-center gap-3 text-sm text-slate-300">
-                <span className="text-[#14F195]">✓</span> Transfer $PAB on Solana when you're ready
+              <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
+                <span className="text-[var(--sage)]">✓</span> Transfer $PAB on Solana when you're ready
               </li>
             </ul>
           </div>
@@ -469,79 +469,79 @@ export default function BusinessJoinPage() {
       </section>
 
       {/* ── Pricing ─────────────────────────────────────────────── */}
-      <section className="py-32 px-4 sm:px-6 bg-[#0f172a] border-y border-white/5">
+      <section className="py-32 px-4 sm:px-6 bg-[var(--cream)] border-y border-[rgba(191,179,163,0.2)]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Pricing</div>
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-4">Simple, transparent pricing.</h2>
-            <p className="text-xl text-slate-400">No setup fees. No contracts. Cancel any time.</p>
+            <div className="text-[var(--sky-wash)] font-bold tracking-widest uppercase text-sm mb-4">✦ Pricing</div>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-4">Simple, transparent pricing.</h2>
+            <p className="text-xl text-[var(--soft-stone)]">No setup fees. No contracts. Cancel any time.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5 sm:p-8">
             {/* Starter */}
-            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col">
-              <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
-              <div className="text-2xl sm:text-3xl font-black text-white mb-4">Free <span className="text-base sm:text-lg text-slate-500 font-normal">/ forever</span></div>
-              <p className="text-sm text-slate-400 mb-8 h-10">Perfect for single-location businesses just getting started.</p>
+            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-[rgba(191,179,163,0.3)] flex flex-col">
+              <h3 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Starter</h3>
+              <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] mb-4">Free <span className="text-base sm:text-lg text-[var(--soft-stone)] font-normal">/ forever</span></div>
+              <p className="text-sm text-[var(--soft-stone)] mb-8 h-10">Perfect for single-location businesses just getting started.</p>
               <ul className="space-y-4 mb-10 flex-1">
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Up to 50 bookings / month</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> AI risk scoring</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> SMS & email reminders</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Basic analytics dashboard</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Up to 50 bookings / month</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> AI risk scoring</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> SMS & email reminders</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Basic analytics dashboard</li>
               </ul>
-              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Start Free →</a>
+              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] transition-colors">Start Free →</a>
             </div>
 
             {/* Growth */}
-            <div className="bg-gradient-to-b from-[#0f172a] to-[#080e17] rounded-3xl p-5 sm:p-8 border border-blue-500 flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Most Popular</div>
-              <h3 className="text-2xl font-bold text-white mb-2">Growth</h3>
-              <div className="text-2xl sm:text-3xl font-black text-white mb-4">$29 <span className="text-base sm:text-lg text-slate-500 font-normal">/ month</span></div>
-              <p className="text-sm text-slate-400 mb-8 h-10">For active venues that need full protection and automation.</p>
+            <div className="bg-gradient-to-b from-[var(--cream)] to-[#080e17] rounded-3xl p-5 sm:p-8 border border-[var(--sky-wash)] flex flex-col relative shadow-[0_0_50px_rgba(59,130,246,0.1)] scale-105 z-10">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--sky-wash)] text-[var(--warm-ink)] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Most Popular</div>
+              <h3 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Growth</h3>
+              <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] mb-4">$29 <span className="text-base sm:text-lg text-[var(--soft-stone)] font-normal">/ month</span></div>
+              <p className="text-sm text-[var(--soft-stone)] mb-8 h-10">For active venues that need full protection and automation.</p>
               <ul className="space-y-4 mb-10 flex-1">
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Unlimited bookings</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Dynamic deposit capture</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Webhook & CRM integration</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Advanced analytics + exports</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Priority support (WhatsApp)</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Unlimited bookings</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Dynamic deposit capture</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Webhook & CRM integration</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Advanced analytics + exports</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Priority support (WhatsApp)</li>
               </ul>
-              <button onClick={() => handlePlanCheckout('Growth', 29)} disabled={isProcessingCheckout} className="w-full text-center py-4 rounded-xl font-bold bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
+              <button onClick={() => handlePlanCheckout('Growth', 29)} disabled={isProcessingCheckout} className="w-full text-center py-4 rounded-xl font-bold bg-[var(--sky-wash)] text-[var(--warm-ink)] hover:bg-[var(--sky-wash)] transition-colors shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
                 {isProcessingCheckout ? 'Processing...' : 'Pay with Safepay →'}
               </button>
             </div>
 
             {/* Enterprise */}
-            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-white/10 flex flex-col">
-              <h3 className="text-2xl font-bold text-white mb-2">Enterprise</h3>
-              <div className="text-2xl sm:text-3xl font-black text-white mb-4">Custom</div>
-              <p className="text-sm text-slate-400 mb-8 h-10">For chains and multi-location operators.</p>
+            <div className="bg-[#080e17] rounded-3xl p-5 sm:p-8 border border-[rgba(191,179,163,0.3)] flex flex-col">
+              <h3 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">Enterprise</h3>
+              <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] mb-4">Custom</div>
+              <p className="text-sm text-[var(--soft-stone)] mb-8 h-10">For chains and multi-location operators.</p>
               <ul className="space-y-4 mb-10 flex-1">
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Unlimited locations & seats</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Dedicated account manager</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> Custom integrations</li>
-                <li className="flex items-center gap-3 text-sm text-slate-300"><span className="text-blue-400">✓</span> IP whitelisting & SSO</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Unlimited locations & seats</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Dedicated account manager</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> Custom integrations</li>
+                <li className="flex items-center gap-3 text-sm text-[var(--soft-stone)]"><span className="text-[var(--sky-wash)]">✓</span> IP whitelisting & SSO</li>
               </ul>
-              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-white/20 text-white hover:bg-white/5 transition-colors">Contact Sales →</a>
+              <a href="#join-form" className="w-full text-center py-4 rounded-xl font-bold border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] transition-colors">Contact Sales →</a>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── Join Form ───────────────────────────────────────────── */}
-      <section id="join-form" className="py-32 px-4 sm:px-6 border-t border-white/5">
+      <section id="join-form" className="py-32 px-4 sm:px-6 border-t border-[rgba(191,179,163,0.2)]">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <div className="text-blue-400 font-bold tracking-widest uppercase text-sm mb-4">✦ Join</div>
-            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-white mb-4">Register your business</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">Start with free tier access. Upgrade anytime.</p>
+            <div className="text-[var(--sky-wash)] font-bold tracking-widest uppercase text-sm mb-4">✦ Join</div>
+            <h2 className="text-4xl sm:text-3xl md:text-4xl sm:text-5xl font-black text-[var(--warm-ink)] mb-4">Register your business</h2>
+            <p className="text-[var(--soft-stone)] max-w-2xl mx-auto">Start with free tier access. Upgrade anytime.</p>
             {fromClaim ? (
-              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold">
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(var(--muted-ochre),0.1)] border border-[rgba(var(--muted-ochre),0.2)] text-[var(--muted-ochre)] text-xs font-bold">
                 <span className="material-symbols-outlined text-sm">verified</span> Claim-oriented onboarding
               </div>
             ) : null}
           </div>
 
-          <div className="bg-[#0f172a] rounded-3xl border border-white/10 p-6 sm:p-10 shadow-2xl">
+          <div className="bg-[var(--cream)] rounded-3xl border border-[rgba(191,179,163,0.3)] p-6 sm:p-10 shadow-2xl">
             {error && (
               <div className="bg-error-container text-on-error-container border border-error/20 px-4 py-3 rounded-lg mb-6 text-sm font-medium">
                 {error}
@@ -662,16 +662,16 @@ export default function BusinessJoinPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-slate-300">
+                <label className="flex items-center gap-2 text-sm text-[var(--soft-stone)]">
                   <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
                   Show password
                 </label>
-                <button type="button" onClick={() => navigate('/login')} className="text-sm text-slate-400 hover:text-white transition-colors">
+                <button type="button" onClick={() => navigate('/login')} className="text-sm text-[var(--soft-stone)] hover:text-[var(--warm-ink)] transition-colors">
                   Already have an account?
                 </button>
               </div>
 
-              <button type="submit" disabled={loading} className="w-full bg-white text-black font-headline text-sm font-bold py-3.5 rounded-xl hover:bg-slate-200 transition-colors shadow-sm disabled:opacity-60">
+              <button type="submit" disabled={loading} className="w-full bg-white text-black font-headline text-sm font-bold py-3.5 rounded-xl hover:bg-[var(--warm-sand)] transition-colors shadow-sm disabled:opacity-60">
                 {loading ? 'Creating account...' : 'Create Account'}
               </button>
             </form>

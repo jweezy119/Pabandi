@@ -132,11 +132,11 @@ export const BusinessMudarabahPage: React.FC = () => {
   const distPreviewCalc = distPreview();
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10" style={{ background: tokens.color.background, fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 md:pb-10" style={{ background: 'var(--cream)", fontFamily: tokens.font.body }}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Business Mudarabah Dashboard</h1>
-          <p className="mt-2 text-slate-400">Create and manage profit-sharing pools for your business.</p>
+          <h1 className="text-3xl font-bold text-[var(--warm-ink)]">Business Mudarabah Dashboard</h1>
+          <p className="mt-2 text-[var(--soft-stone)]">Create and manage profit-sharing pools for your business.</p>
         </div>
 
         {/* Tab Navigation */}
@@ -150,7 +150,7 @@ export const BusinessMudarabahPage: React.FC = () => {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${
-                tab === t.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+                tab === t.id ? 'bg-[rgba(var(--clay),0.15)] text-[var(--warm-ink)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)] hover:bg-[var(--warm-sand)]'
               }`}
             >
               {t.label}
@@ -160,9 +160,9 @@ export const BusinessMudarabahPage: React.FC = () => {
 
         {/* Error State */}
         {error && !loading && (
-          <Surface className="p-6 mb-6 text-center border border-rose-500/20">
+          <Surface className="p-6 mb-6 text-center border border-[rgba(var(--dusty-rose),0.2)]">
             <div className="text-3xl mb-2">⚠️</div>
-            <p className="text-rose-300 mb-3">{error}</p>
+            <p className="text-[var(--dusty-rose)] mb-3">{error}</p>
             <Button size="sm" onClick={loadPools}>Retry</Button>
           </Surface>
         )}
@@ -174,46 +174,46 @@ export const BusinessMudarabahPage: React.FC = () => {
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <Surface key={i} className="p-4 animate-pulse">
-                    <div className="h-4 bg-white/10 rounded w-1/3 mb-2" />
-                    <div className="h-3 bg-white/10 rounded w-1/4" />
+                    <div className="h-4 bg-[var(--warm-sand)] rounded w-1/3 mb-2" />
+                    <div className="h-3 bg-[var(--warm-sand)] rounded w-1/4" />
                   </Surface>
                 ))}
               </div>
             ) : pools.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">🏦</div>
-                <p className="text-slate-400 mb-2">You haven't created any pools yet.</p>
-                <p className="text-sm text-slate-500 mb-4">Create your first Mudarabah pool to start raising capital.</p>
+                <p className="text-[var(--soft-stone)] mb-2">You haven't created any pools yet.</p>
+                <p className="text-sm text-[var(--soft-stone)] mb-4">Create your first Mudarabah pool to start raising capital.</p>
                 <Button onClick={() => setTab('create')}>Create Your First Pool</Button>
               </Surface>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="pb-3 text-sm font-semibold text-slate-400">Pool</th>
-                      <th className="pb-3 text-sm font-semibold text-slate-400">Status</th>
-                      <th className="pb-3 text-sm font-semibold text-slate-400">Raised</th>
-                      <th className="pb-3 text-sm font-semibold text-slate-400">Investors</th>
-                      <th className="pb-3 text-sm font-semibold text-slate-400">Actions</th>
+                    <tr className="border-b border-[rgba(191,179,163,0.3)]">
+                      <th className="pb-3 text-sm font-semibold text-[var(--soft-stone)]">Pool</th>
+                      <th className="pb-3 text-sm font-semibold text-[var(--soft-stone)]">Status</th>
+                      <th className="pb-3 text-sm font-semibold text-[var(--soft-stone)]">Raised</th>
+                      <th className="pb-3 text-sm font-semibold text-[var(--soft-stone)]">Investors</th>
+                      <th className="pb-3 text-sm font-semibold text-[var(--soft-stone)]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pools.map((pool) => (
-                      <tr key={pool.id} className="border-b border-white/5">
+                      <tr key={pool.id} className="border-b border-[rgba(191,179,163,0.2)]">
                         <td className="py-3">
-                          <div className="text-sm text-slate-100 font-semibold">{pool.title}</div>
-                          <div className="text-xs text-slate-500">{pool.profitShareRatio} · {pool.riskBand}</div>
+                          <div className="text-sm text-[var(--warm-ink)] font-semibold">{pool.title}</div>
+                          <div className="text-xs text-[var(--soft-stone)]">{pool.profitShareRatio} · {pool.riskBand}</div>
                         </td>
                         <td className="py-3">
                           <Badge tone={pool.status === 'OPEN' || pool.status === 'ACTIVE' ? 'success' : pool.status === 'CLOSED' ? 'danger' : 'warning'}>
                             {pool.status}
                           </Badge>
                         </td>
-                        <td className="py-3 text-sm text-slate-200">
+                        <td className="py-3 text-sm text-[var(--warm-ink)]">
                           ${pool.currentAmount?.toLocaleString() || 0} / ${pool.targetAmount?.toLocaleString() || 0}
                         </td>
-                        <td className="py-3 text-sm text-slate-200">{pool.investorCount || 0}</td>
+                        <td className="py-3 text-sm text-[var(--warm-ink)]">{pool.investorCount || 0}</td>
                         <td className="py-3">
                           <div className="flex gap-2 flex-wrap">
                             {(pool.status === 'OPEN' || pool.status === 'ACTIVE') && (
@@ -245,7 +245,7 @@ export const BusinessMudarabahPage: React.FC = () => {
                               </>
                             )}
                             {pool.status !== 'OPEN' && pool.status !== 'ACTIVE' && (
-                              <span className="text-xs text-slate-500">Closed</span>
+                              <span className="text-xs text-[var(--soft-stone)]">Closed</span>
                             )}
                           </div>
                         </td>
@@ -307,8 +307,8 @@ export const BusinessMudarabahPage: React.FC = () => {
             {pools.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">📊</div>
-                <p className="text-slate-400 mb-2">No pools yet.</p>
-                <p className="text-sm text-slate-500 mb-4">Create a pool first to manage distributions.</p>
+                <p className="text-[var(--soft-stone)] mb-2">No pools yet.</p>
+                <p className="text-sm text-[var(--soft-stone)] mb-4">Create a pool first to manage distributions.</p>
                 <Button onClick={() => setTab('create')}>Create Pool</Button>
               </Surface>
             ) : (
@@ -316,8 +316,8 @@ export const BusinessMudarabahPage: React.FC = () => {
                 <Surface key={pool.id} className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-white">{pool.title}</h3>
-                      <p className="text-xs text-slate-500">{pool.profitShareRatio} · {pool.distributionFreq}</p>
+                      <h3 className="font-bold text-[var(--warm-ink)]">{pool.title}</h3>
+                      <p className="text-xs text-[var(--soft-stone)]">{pool.profitShareRatio} · {pool.distributionFreq}</p>
                     </div>
                     <div className="flex gap-2">
                       <Badge tone={pool.status === 'OPEN' || pool.status === 'ACTIVE' ? 'success' : 'danger'}>{pool.status}</Badge>
@@ -338,37 +338,37 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Recommended Investors Modal */}
         {selectedPoolForInvestors && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPoolForInvestors(null)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setSelectedPoolForInvestors(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
-              <h2 className="text-xl font-bold text-white mb-2">🤖 Recommended Investors</h2>
-              <p className="text-sm text-slate-400 mb-4">AI-matched to: {selectedPoolForInvestors.title}</p>
+            <div className="absolute inset-0 bg-[var(--warm-sand)]/70 backdrop-blur-sm" />
+            <div className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--cream)] p-6" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setSelectedPoolForInvestors(null)} className="absolute top-4 right-4 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] text-xl">✕</button>
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">🤖 Recommended Investors</h2>
+              <p className="text-sm text-[var(--soft-stone)] mb-4">AI-matched to: {selectedPoolForInvestors.title}</p>
               {loadingInvestors ? (
                 <div className="text-center py-10">
-                  <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-slate-400 text-sm">Finding the best investors...</p>
+                  <div className="w-8 h-8 border-2 border-[var(--clay)] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-[var(--soft-stone)] text-sm">Finding the best investors...</p>
                 </div>
               ) : recommendedInvestors.length === 0 ? (
                 <Surface className="p-6 text-center">
                   <div className="text-3xl mb-3">📊</div>
-                  <p className="text-slate-400">No recommendations yet. The AI learns as more investors join the platform.</p>
+                  <p className="text-[var(--soft-stone)]">No recommendations yet. The AI learns as more investors join the platform.</p>
                 </Surface>
               ) : (
                 <div className="space-y-3">
                   {recommendedInvestors.map((inv: any, idx: number) => (
                     <Surface key={inv.investorId} className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold">
+                        <div className="w-10 h-10 rounded-full bg-[rgba(var(--clay),0.15)] flex items-center justify-center text-[var(--clay)] font-bold">
                           #{idx + 1}
                         </div>
                         <div>
-                          <div className="font-semibold text-white text-sm">{inv.investor?.name || inv.investor?.email || 'Investor'}</div>
-                          <div className="text-xs text-slate-500">{inv.matchReasons?.slice(0, 2).join(' · ')}</div>
+                          <div className="font-semibold text-[var(--warm-ink)] text-sm">{inv.investor?.name || inv.investor?.email || 'Investor'}</div>
+                          <div className="text-xs text-[var(--soft-stone)]">{inv.matchReasons?.slice(0, 2).join(' · ')}</div>
                         </div>
                       </div>
                       <div className="text-right">
                         <Badge tone="success">{inv.matchScore}% Match</Badge>
-                        <div className="text-xs text-slate-500 mt-1">{inv.matchFactors?.category > 0.7 ? 'Category fit' : 'Diversified'}</div>
+                        <div className="text-xs text-[var(--soft-stone)] mt-1">{inv.matchFactors?.category > 0.7 ? 'Category fit' : 'Diversified'}</div>
                       </div>
                     </Surface>
                   ))}
@@ -381,41 +381,41 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Edit Pool Modal */}
         {editingPool && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setEditingPool(null)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <div className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setEditingPool(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
-              <h2 className="text-xl font-bold text-white mb-4">Edit Pool</h2>
+            <div className="absolute inset-0 bg-[var(--warm-sand)]/70 backdrop-blur-sm" />
+            <div className="relative max-w-lg w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--cream)] p-6" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setEditingPool(null)} className="absolute top-4 right-4 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] text-xl">✕</button>
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Edit Pool</h2>
               {editError && (
-                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                  <p className="text-sm text-rose-300">{editError}</p>
+                <div className="mb-4 p-3 bg-[rgba(var(--dusty-rose),0.1)] border border-[rgba(var(--dusty-rose),0.2)] rounded-lg">
+                  <p className="text-sm text-[var(--dusty-rose)]">{editError}</p>
                 </div>
               )}
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-semibold text-slate-300 mb-2 block">Title</label>
+                  <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Title</label>
                   <input value={editForm.title || ''} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50" />
+                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50" />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-slate-300 mb-2 block">Description</label>
+                  <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Description</label>
                   <textarea value={editForm.description || ''} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50 resize-none" />
+                    rows={3} className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50 resize-none" />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-slate-300 mb-2 block">Revenue Source</label>
+                  <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Revenue Source</label>
                   <textarea value={editForm.revenueSource || ''} onChange={(e) => setEditForm({ ...editForm, revenueSource: e.target.value })}
-                    rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50 resize-none" />
+                    rows={2} className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50 resize-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">APY (%)</label>
+                    <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">APY (%)</label>
                     <input type="number" value={editForm.expectedApy || ''} onChange={(e) => setEditForm({ ...editForm, expectedApy: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50" />
+                      className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50" />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Min Investment</label>
+                    <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Min Investment</label>
                     <input type="number" value={editForm.minInvestment || ''} onChange={(e) => setEditForm({ ...editForm, minInvestment: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50" />
+                      className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50" />
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -430,57 +430,57 @@ export const BusinessMudarabahPage: React.FC = () => {
         {/* Distribute Profits Modal */}
         {selectedPoolForDist && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPoolForDist(null)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-            <div className="relative max-w-lg w-full rounded-2xl border border-white/10 bg-[#0f172a] p-6" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setSelectedPoolForDist(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
-              <h2 className="text-xl font-bold text-white mb-2">Distribute Profits</h2>
-              <p className="text-sm text-slate-400 mb-4">{selectedPoolForDist.title}</p>
+            <div className="absolute inset-0 bg-[var(--warm-sand)]/70 backdrop-blur-sm" />
+            <div className="relative max-w-lg w-full rounded-2xl border border-[rgba(191,179,163,0.3)] bg-[var(--cream)] p-6" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setSelectedPoolForDist(null)} className="absolute top-4 right-4 text-[var(--soft-stone)] hover:text-[var(--warm-ink)] text-xl">✕</button>
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Distribute Profits</h2>
+              <p className="text-sm text-[var(--soft-stone)] mb-4">{selectedPoolForDist.title}</p>
               {distError && (
-                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                  <p className="text-sm text-rose-300">{distError}</p>
+                <div className="mb-4 p-3 bg-[rgba(var(--dusty-rose),0.1)] border border-[rgba(var(--dusty-rose),0.2)] rounded-lg">
+                  <p className="text-sm text-[var(--dusty-rose)]">{distError}</p>
                 </div>
               )}
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-semibold text-slate-300 mb-2 block">Total Revenue for Period ($)</label>
+                  <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Total Revenue for Period ($)</label>
                   <input
                     type="number"
                     value={distRevenue}
                     onChange={(e) => { setDistRevenue(e.target.value); setDistError(''); }}
                     placeholder="e.g. 50000"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50"
+                    className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Period Start</label>
+                    <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Period Start</label>
                     <input type="date" value={distStart} onChange={(e) => setDistStart(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50" />
+                      className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50" />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-slate-300 mb-2 block">Period End</label>
+                    <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Period End</label>
                     <input type="date" value={distEnd} onChange={(e) => setDistEnd(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-100 outline-none focus:border-indigo-500/50" />
+                      className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]/50" />
                   </div>
                 </div>
                 {distPreviewCalc && (
-                  <div className="bg-white/5 rounded-xl p-4 space-y-2">
-                    <h4 className="text-sm font-semibold text-slate-300">Distribution Preview (assuming 50% margin)</h4>
+                  <div className="bg-[var(--warm-sand)] rounded-xl p-4 space-y-2">
+                    <h4 className="text-sm font-semibold text-[var(--soft-stone)]">Distribution Preview (assuming 50% margin)</h4>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Total Revenue</span>
-                      <span className="text-slate-200">${parseFloat(distRevenue).toLocaleString()}</span>
+                      <span className="text-[var(--soft-stone)]">Total Revenue</span>
+                      <span className="text-[var(--warm-ink)]">${parseFloat(distRevenue).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Profit (50%)</span>
-                      <span className="text-slate-200">${distPreviewCalc.profit.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Profit (50%)</span>
+                      <span className="text-[var(--warm-ink)]">${distPreviewCalc.profit.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Investor Share ({selectedPoolForDist.profitShareRatio.split('/')[0]}%)</span>
-                      <span className="text-emerald-300 font-bold">${distPreviewCalc.investorShare.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Investor Share ({selectedPoolForDist.profitShareRatio.split('/')[0]}%)</span>
+                      <span className="text-[var(--sage)] font-bold">${distPreviewCalc.investorShare.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Business Share ({selectedPoolForDist.profitShareRatio.split('/')[1]}%)</span>
-                      <span className="text-indigo-300 font-bold">${distPreviewCalc.pabandiShare.toFixed(2)}</span>
+                      <span className="text-[var(--soft-stone)]">Business Share ({selectedPoolForDist.profitShareRatio.split('/')[1]}%)</span>
+                      <span className="text-[var(--clay)] font-bold">${distPreviewCalc.pabandiShare.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
@@ -516,32 +516,32 @@ const PoolDistributions: React.FC<{ poolId: string }> = ({ poolId }) => {
       .finally(() => setLoading(false));
   }, [poolId]);
 
-  if (loading) return <p className="text-sm text-slate-500">Loading distributions...</p>;
-  if (error) return <p className="text-sm text-rose-400">{error}</p>;
-  if (dists.length === 0) return <p className="text-sm text-slate-500">No distributions yet.</p>;
+  if (loading) return <p className="text-sm text-[var(--soft-stone)]">Loading distributions...</p>;
+  if (error) return <p className="text-sm text-[var(--dusty-rose)]">{error}</p>;
+  if (dists.length === 0) return <p className="text-sm text-[var(--soft-stone)]">No distributions yet.</p>;
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-white/10">
-            <th className="pb-2 text-xs font-semibold text-slate-500">Period</th>
-            <th className="pb-2 text-xs font-semibold text-slate-500">Revenue</th>
-            <th className="pb-2 text-xs font-semibold text-slate-500">Profit</th>
-            <th className="pb-2 text-xs font-semibold text-slate-500">Investor Share</th>
-            <th className="pb-2 text-xs font-semibold text-slate-500">Business Share</th>
+          <tr className="border-b border-[rgba(191,179,163,0.3)]">
+            <th className="pb-2 text-xs font-semibold text-[var(--soft-stone)]">Period</th>
+            <th className="pb-2 text-xs font-semibold text-[var(--soft-stone)]">Revenue</th>
+            <th className="pb-2 text-xs font-semibold text-[var(--soft-stone)]">Profit</th>
+            <th className="pb-2 text-xs font-semibold text-[var(--soft-stone)]">Investor Share</th>
+            <th className="pb-2 text-xs font-semibold text-[var(--soft-stone)]">Business Share</th>
           </tr>
         </thead>
         <tbody>
           {dists.map((d) => (
-            <tr key={d.id} className="border-b border-white/5">
-              <td className="py-2 text-xs text-slate-400">
+            <tr key={d.id} className="border-b border-[rgba(191,179,163,0.2)]">
+              <td className="py-2 text-xs text-[var(--soft-stone)]">
                 {new Date(d.periodStart).toLocaleDateString()} – {new Date(d.periodEnd).toLocaleDateString()}
               </td>
-              <td className="py-2 text-slate-200">${d.totalRevenue?.toLocaleString()}</td>
-              <td className="py-2 text-slate-200">${d.totalProfit?.toLocaleString()}</td>
-              <td className="py-2 text-emerald-300">${d.investorShare?.toLocaleString()}</td>
-              <td className="py-2 text-indigo-300">${d.pabandiShare?.toLocaleString()}</td>
+              <td className="py-2 text-[var(--warm-ink)]">${d.totalRevenue?.toLocaleString()}</td>
+              <td className="py-2 text-[var(--warm-ink)]">${d.totalProfit?.toLocaleString()}</td>
+              <td className="py-2 text-[var(--sage)]">${d.investorShare?.toLocaleString()}</td>
+              <td className="py-2 text-[var(--clay)]">${d.pabandiShare?.toLocaleString()}</td>
             </tr>
           ))}
         </tbody>

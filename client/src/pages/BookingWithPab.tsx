@@ -101,10 +101,10 @@ export const BookingWithPab: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-white mb-6">PAB Utility Dashboard</h2>
+      <h2 className="text-3xl font-bold text-[var(--warm-ink)] mb-6">PAB Utility Dashboard</h2>
 
       {message && (
-        <div className="mb-4 p-3 rounded-lg bg-blue-900/50 border border-blue-500 text-blue-200">
+        <div className="mb-4 p-3 rounded-lg bg-[var(--sky-wash)]/50 border border-[var(--sky-wash)] text-[var(--warm-ink)]">
           {message}
         </div>
       )}
@@ -113,13 +113,13 @@ export const BookingWithPab: React.FC = () => {
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setActiveTab('bookings')}
-          className={`px-4 py-2 rounded-lg ${activeTab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+          className={`px-4 py-2 rounded-lg ${activeTab === 'bookings' ? 'bg-[var(--sky-wash)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)] text-gray-400'}`}
         >
           Bookings
         </button>
         <button
           onClick={() => setActiveTab('rewards')}
-          className={`px-4 py-2 rounded-lg ${activeTab === 'rewards' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}
+          className={`px-4 py-2 rounded-lg ${activeTab === 'rewards' ? 'bg-[var(--sky-wash)] text-[var(--warm-ink)]' : 'bg-[var(--warm-sand)] text-gray-400'}`}
         >
           Agent Rewards
         </button>
@@ -128,8 +128,8 @@ export const BookingWithPab: React.FC = () => {
       {activeTab === 'bookings' && (
         <div>
           {/* Create Booking */}
-          <div className="bg-gray-800 rounded-xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Create Booking with PAB</h3>
+          <div className="bg-[var(--warm-sand)] rounded-xl p-6 mb-6">
+            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Create Booking with PAB</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-gray-400 text-sm">Booking ID</label>
@@ -137,7 +137,7 @@ export const BookingWithPab: React.FC = () => {
                   type="text"
                   value={bookingId}
                   onChange={(e) => setBookingId(e.target.value)}
-                  className="w-full mt-1 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                  className="w-full mt-1 p-3 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-lg text-[var(--warm-ink)]"
                   placeholder="e.g., booking_abc123"
                 />
               </div>
@@ -147,12 +147,12 @@ export const BookingWithPab: React.FC = () => {
                   type="number"
                   value={bookingValue}
                   onChange={(e) => setBookingValue(e.target.value)}
-                  className="w-full mt-1 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                  className="w-full mt-1 p-3 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-lg text-[var(--warm-ink)]"
                   placeholder="100"
                 />
                 {bookingValue && (
                   <div className="mt-2 text-sm">
-                    <span className="text-yellow-400">PAB Deposit (10%): {(parseFloat(bookingValue) * 0.1).toFixed(2)} PAB</span>
+                    <span className="text-[var(--muted-ochre)]">PAB Deposit (10%): {(parseFloat(bookingValue) * 0.1).toFixed(2)} PAB</span>
                     <span className="ml-4 text-green-400">Reward on check-in (1%): {(parseFloat(bookingValue) * 0.01).toFixed(2)} PAB</span>
                   </div>
                 )}
@@ -160,7 +160,7 @@ export const BookingWithPab: React.FC = () => {
               <button
                 onClick={createBooking}
                 disabled={loading || !bookingId || !bookingValue}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-white font-bold"
+                className="w-full py-3 bg-[var(--sky-wash)] hover:bg-[var(--sky-wash)] disabled:bg-gray-600 rounded-lg text-[var(--warm-ink)] font-bold"
               >
                 {loading ? 'Processing...' : 'Create Booking'}
               </button>
@@ -168,8 +168,8 @@ export const BookingWithPab: React.FC = () => {
           </div>
 
           {/* Booking Policies */}
-          <div className="bg-gray-800 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-white mb-3">Policies</h3>
+          <div className="bg-[var(--warm-sand)] rounded-xl p-6">
+            <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-3">Policies</h3>
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>✅ <strong>Check-in:</strong> Deposit returned + 1% reward</li>
               <li>❌ <strong>No-show:</strong> 50% to business, 50% burned</li>
@@ -182,8 +182,8 @@ export const BookingWithPab: React.FC = () => {
       {activeTab === 'rewards' && (
         <div>
           {/* Distribute Reward */}
-          <div className="bg-gray-800 rounded-xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Distribute Agent Reward</h3>
+          <div className="bg-[var(--warm-sand)] rounded-xl p-6 mb-6">
+            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Distribute Agent Reward</h3>
             <div className="space-y-4">
               <div>
                 <label className="text-gray-400 text-sm">Agent ID</label>
@@ -191,7 +191,7 @@ export const BookingWithPab: React.FC = () => {
                   type="text"
                   value={agentId}
                   onChange={(e) => setAgentId(e.target.value)}
-                  className="w-full mt-1 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                  className="w-full mt-1 p-3 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-lg text-[var(--warm-ink)]"
                   placeholder="agent_xxx"
                 />
               </div>
@@ -201,7 +201,7 @@ export const BookingWithPab: React.FC = () => {
                   type="text"
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value)}
-                  className="w-full mt-1 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                  className="w-full mt-1 p-3 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-lg text-[var(--warm-ink)]"
                   placeholder="e.g., data_labeling, content_creation"
                 />
               </div>
@@ -211,7 +211,7 @@ export const BookingWithPab: React.FC = () => {
                   type="number"
                   value={taskValue}
                   onChange={(e) => setTaskValue(e.target.value)}
-                  className="w-full mt-1 p-3 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                  className="w-full mt-1 p-3 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-lg text-[var(--warm-ink)]"
                   placeholder="50"
                 />
                 {taskValue && (
@@ -223,7 +223,7 @@ export const BookingWithPab: React.FC = () => {
               <button
                 onClick={distributeReward}
                 disabled={loading || !agentId || !taskType || !taskValue}
-                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg text-white font-bold"
+                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg text-[var(--warm-ink)] font-bold"
               >
                 {loading ? 'Processing...' : 'Distribute Reward'}
               </button>

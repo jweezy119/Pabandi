@@ -36,33 +36,33 @@ export const EscrowDetailPage: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading...</div>;
-  if (!escrow) return <div className="min-h-screen flex items-center justify-center text-slate-400">Escrow not found</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-[var(--soft-stone)]">Loading...</div>;
+  if (!escrow) return <div className="min-h-screen flex items-center justify-center text-[var(--soft-stone)]">Escrow not found</div>;
 
   const statusColor = (s: string) => s === 'COMPLETED' ? 'success' : s === 'FUNDED' ? 'info' : s === 'DISPUTED' ? 'danger' : 'warning';
 
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <button onClick={() => navigate(-1)} className="text-sm text-slate-400 hover:text-white mb-4">← Back</button>
+        <button onClick={() => navigate(-1)} className="text-sm text-[var(--soft-stone)] hover:text-[var(--warm-ink)] mb-4">← Back</button>
 
         <Surface className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-slate-100">Secured Sale</h1>
+            <h1 className="text-xl font-bold text-[var(--warm-ink)]">Secured Sale</h1>
             <Badge tone={statusColor(escrow.status)}>{escrow.status}</Badge>
           </div>
 
           <div className="space-y-3 mb-6">
-            <div className="flex justify-between"><span className="text-slate-400 text-sm">Item</span><span className="text-slate-100 text-sm">{escrow.itemTitle}</span></div>
-            <div className="flex justify-between"><span className="text-slate-400 text-sm">Amount</span><span className="text-emerald-300 font-bold">${escrow.amount}</span></div>
-            <div className="flex justify-between"><span className="text-slate-400 text-sm">Seller</span><span className="text-slate-100 text-sm">{escrow.sellerEmail}</span></div>
-            <div className="flex justify-between"><span className="text-slate-400 text-sm">Buyer</span><span className="text-slate-100 text-sm">{escrow.buyerEmail || '—'}</span></div>
-            {escrow.meetupLocation && <div className="flex justify-between"><span className="text-slate-400 text-sm">Meetup</span><span className="text-slate-100 text-sm">{escrow.meetupLocation}</span></div>}
+            <div className="flex justify-between"><span className="text-[var(--soft-stone)] text-sm">Item</span><span className="text-[var(--warm-ink)] text-sm">{escrow.itemTitle}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--soft-stone)] text-sm">Amount</span><span className="text-[var(--sage)] font-bold">${escrow.amount}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--soft-stone)] text-sm">Seller</span><span className="text-[var(--warm-ink)] text-sm">{escrow.sellerEmail}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--soft-stone)] text-sm">Buyer</span><span className="text-[var(--warm-ink)] text-sm">{escrow.buyerEmail || '—'}</span></div>
+            {escrow.meetupLocation && <div className="flex justify-between"><span className="text-[var(--soft-stone)] text-sm">Meetup</span><span className="text-[var(--warm-ink)] text-sm">{escrow.meetupLocation}</span></div>}
           </div>
 
           {/* State Machine */}
-          <div className="p-3 rounded-xl bg-white/5 mb-4">
-            <div className="text-xs text-slate-400 mb-2">Progress</div>
+          <div className="p-3 rounded-xl bg-[var(--cream)] mb-4">
+            <div className="text-xs text-[var(--soft-stone)] mb-2">Progress</div>
             <div className="flex items-center gap-2">
               {['PENDING', 'FUNDED', 'COMPLETED'].map((step, i) => (
                 <React.Fragment key={step}>
@@ -71,7 +71,7 @@ export const EscrowDetailPage: React.FC = () => {
                 </React.Fragment>
               ))}
             </div>
-            <div className="flex justify-between text-xs mt-1 text-slate-500">
+            <div className="flex justify-between text-xs mt-1 text-[var(--soft-stone)]">
               <span>Created</span><span>Funded</span><span>Released</span>
             </div>
           </div>
@@ -90,7 +90,7 @@ export const EscrowDetailPage: React.FC = () => {
             </div>
           )}
           {escrow.status === 'DISPUTED' && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-200">
+            <div className="p-3 rounded-xl bg-[var(--muted-ochre)]/10 border border-[var(--muted-ochre)]/20 text-sm text-amber-200">
               This escrow is under dispute. A jury will review the case.
             </div>
           )}

@@ -47,7 +47,7 @@ export const GuestListPage: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">My Guest List</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">My Guest List</h1>
             <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Your guest list entries and check-in status</p>
           </div>
           <Button variant="ghost" onClick={() => navigate('/booking/venues/search')}>
@@ -65,8 +65,8 @@ export const GuestListPage: React.FC = () => {
             { label: 'Checked In', value: MOCK_ENTRIES.filter(e => e.status === 'CHECKED_IN').length, icon: 'login' },
           ].map(stat => (
             <Surface key={stat.label} className="p-4 text-center">
-              <span className={`material-symbols-outlined ${stat.label === 'Confirmed' ? 'text-emerald-300' : stat.label === 'Pending' ? 'text-amber-300' : 'text-indigo-300'}`}>{stat.icon}</span>
-              <p className="text-xl font-bold text-slate-100 mt-1">{stat.value}</p>
+              <span className={`material-symbols-outlined ${stat.label === 'Confirmed' ? 'text-[var(--sage)]' : stat.label === 'Pending' ? 'text-[var(--muted-ochre)]' : 'text-[var(--terracotta)]'}`}>{stat.icon}</span>
+              <p className="text-xl font-bold text-[var(--warm-ink)] mt-1">{stat.value}</p>
               <p className="text-xs" style={{ color: tokens.color.textDim }}>{stat.label}</p>
             </Surface>
           ))}
@@ -80,7 +80,7 @@ export const GuestListPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-slate-100 font-bold">{entry.venueName}</h3>
+                      <h3 className="text-[var(--warm-ink)] font-bold">{entry.venueName}</h3>
                       <Badge tone={getStatusTone(entry.status)}>{entry.status.replace('_', ' ')}</Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: tokens.color.textDim }}>
@@ -117,16 +117,16 @@ export const GuestListPage: React.FC = () => {
 
                 {/* QR Code Section */}
                 {showQR === entry.id && entry.status === 'CONFIRMED' && (
-                  <div className="mt-4 pt-4 border-t border-white/5">
+                  <div className="mt-4 pt-4 border-t border-[var(--soft-stone)]/30">
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                       <div className="w-32 h-32 bg-white rounded-xl flex items-center justify-center p-2">
                         <span className="material-symbols-outlined text-6xl text-slate-800">qr_code_2</span>
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-sm font-medium text-slate-100 mb-1">Check-in QR Code</p>
+                        <p className="text-sm font-medium text-[var(--warm-ink)] mb-1">Check-in QR Code</p>
                         <p className="text-xs mb-2" style={{ color: tokens.color.textDim }}>Show this at the venue entrance to check in</p>
-                        <div className="px-3 py-1.5 bg-white/5 rounded-lg inline-block">
-                          <span className="text-xs font-mono text-indigo-300">GL-{entry.id.padStart(6, '0')}</span>
+                        <div className="px-3 py-1.5 bg-[var(--cream)] rounded-lg inline-block">
+                          <span className="text-xs font-mono text-[var(--terracotta)]">GL-{entry.id.padStart(6, '0')}</span>
                         </div>
                         <p className="text-xs mt-2" style={{ color: tokens.color.textDim }}>
                           Valid for {entry.date} · {entry.partySize} guests
@@ -141,7 +141,7 @@ export const GuestListPage: React.FC = () => {
         ) : (
           <Surface className="p-12 text-center">
             <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">list_alt</span>
-            <h3 className="text-xl font-bold text-slate-100 mb-2">No guest list entries</h3>
+            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-2">No guest list entries</h3>
             <p className="mb-6" style={{ color: tokens.color.textDim }}>Join a guest list to skip the line at your favorite venues</p>
             <Button onClick={() => navigate('/booking/venues/search')}>
               <span className="material-symbols-outlined text-sm">search</span>

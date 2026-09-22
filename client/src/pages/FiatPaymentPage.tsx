@@ -96,7 +96,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           method: selectedMethod,
@@ -146,7 +146,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: Bearer ${token}` } : {}),
         },
       });
       loadPaymentStatus();
@@ -162,7 +162,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: Bearer ${token}` } : {}),
         },
       });
       const json = await res.json();
@@ -184,7 +184,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ reason: rejectReason }),
       });
@@ -204,7 +204,7 @@ export default function FiatPaymentPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/v1/fiat/pending', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token ? { Authorization: Bearer ${token}` } : {},
       });
       const json = await res.json();
       if (json.success) {
@@ -297,13 +297,13 @@ export default function FiatPaymentPage() {
                     />
                     <button
                       onClick={() => handleRejectPayment(payment.reference)}
-                      className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                      className="px-3 py-1 bg-[var(--terracotta)] text-[var(--warm-ink)] text-sm rounded hover:bg-red-600"
                     >
                       Reject
                     </button>
                     <button
                       onClick={() => handleConfirmPayment(payment.reference)}
-                      className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                      className="px-3 py-1 bg-green-500 text-[var(--warm-ink)] text-sm rounded hover:bg-green-600"
                     >
                       Confirm Receipt
                     </button>
@@ -364,11 +364,11 @@ export default function FiatPaymentPage() {
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-sm text-slate-500">Amount</p>
+              <p className="text-sm text-[var(--soft-stone)]">Amount</p>
               <p className="text-2xl font-bold">${paymentRequest.amount?.toFixed(2)}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Reference</p>
+              <p className="text-sm text-[var(--soft-stone)]">Reference</p>
               <div className="flex items-center gap-2">
                 <p className="font-mono text-sm">{paymentRequest.reference}</p>
                 <button
@@ -382,7 +382,7 @@ export default function FiatPaymentPage() {
           </div>
 
           {paymentRequest.creationFee !== undefined && (
-            <div className="text-sm text-slate-500 border-t border-slate-100 pt-3 mb-3">
+            <div className="text-sm text-[var(--soft-stone)] border-t border-slate-100 pt-3 mb-3">
               <div className="flex justify-between">
                 <span>Creation fee (1%)</span>
                 <span>${paymentRequest.creationFee.toFixed(2)}</span>
@@ -399,7 +399,7 @@ export default function FiatPaymentPage() {
             <div className="mt-4 p-4 bg-slate-50 rounded-lg text-center">
               <p className="text-sm font-medium text-slate-700 mb-3">Scan to Pay</p>
               <QRCodeDisplay value={paymentRequest.qrData} size={180} />
-              <p className="text-xs text-slate-500 mt-2 break-all font-mono">{paymentRequest.qrData}</p>
+              <p className="text-xs text-[var(--soft-stone)] mt-2 break-all font-mono">{paymentRequest.qrData}</p>
             </div>
           )}
 
@@ -409,7 +409,7 @@ export default function FiatPaymentPage() {
               href={paymentRequest.paymentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="inline-block mt-4 px-4 py-2 bg-blue-500 text-[var(--warm-ink)] rounded hover:bg-blue-600"
             >
               Open Payment Link →
             </a>
@@ -433,7 +433,7 @@ export default function FiatPaymentPage() {
           <div className="flex gap-3">
             <button
               onClick={handleMarkSent}
-              className="flex-1 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600"
+              className="flex-1 py-3 bg-blue-500 text-[var(--warm-ink)] font-medium rounded-lg hover:bg-blue-600"
             >
               📤 I've Sent the Payment
             </button>
@@ -476,7 +476,7 @@ export default function FiatPaymentPage() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-2">Amount (USD)</label>
             <div className="flex items-center gap-2">
-              <span className="text-2xl text-slate-500">$</span>
+              <span className="text-2xl text-[var(--soft-stone)]">$</span>
               <input
                 type="number"
                 min="0.01"
@@ -511,7 +511,7 @@ export default function FiatPaymentPage() {
           <button
             onClick={handleCreatePayment}
             disabled={loading || !amount || parseFloat(amount) <= 0}
-            className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50"
+            className="w-full py-3 bg-[var(--muted-ochre)] text-[var(--warm-ink)] font-medium rounded-lg hover:bg-[var(--muted-ochre)] disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Payment Request'}
           </button>
@@ -557,7 +557,7 @@ export default function FiatPaymentPage() {
               <span className="text-3xl">{method.icon}</span>
               <div>
                 <p className="font-medium text-slate-900">{method.label}</p>
-                <p className="text-sm text-slate-500">{method.description}</p>
+                <p className="text-sm text-[var(--soft-stone)]">{method.description}</p>
                 {method.requiresBusinessConfirmation && (
                   <p className="text-xs text-amber-600 mt-1">⏳ Requires business confirmation</p>
                 )}

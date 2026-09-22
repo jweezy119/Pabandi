@@ -41,18 +41,18 @@ const TapLinkGenerator = ({ sellerId }: TapLinkGeneratorProps) => {
   return (
     <Surface className="space-y-4">
       <div>
-        <h4 className="font-headline text-base font-bold text-white">Merchant Tap Link</h4>
-        <p className="mt-1 text-xs text-white/70">Generate a shareable checkout link customers can use to pay directly on Pabandi through this business.</p>
+        <h4 className="font-headline text-base font-bold text-[var(--warm-ink)]">Merchant Tap Link</h4>
+        <p className="mt-1 text-xs text-[var(--warm-ink)]/70">Generate a shareable checkout link customers can use to pay directly on Pabandi through this business.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Amount</label>
-          <input type="number" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" min="0" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Amount</label>
+          <input type="number" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" min="0" step="0.001" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Currency</label>
-          <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={currency} onChange={e => setCurrency(e.target.value)} />
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Currency</label>
+          <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={currency} onChange={e => setCurrency(e.target.value)} />
         </div>
         <div className="flex items-end">
           <Button onClick={copyLink} disabled={!sellerId} variant="outline" className="w-full">Copy Public Link</Button>
@@ -60,12 +60,12 @@ const TapLinkGenerator = ({ sellerId }: TapLinkGeneratorProps) => {
       </div>
 
       {publicLink ? (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-1">
-          <p className="text-xs font-bold text-white/70">Public checkout link</p>
-          <p className="break-all text-xs font-mono text-white">{publicLink}</p>
+        <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 space-y-1">
+          <p className="text-xs font-bold text-[var(--warm-ink)]/70">Public checkout link</p>
+          <p className="break-all text-xs font-mono text-[var(--warm-ink)]">{publicLink}</p>
         </div>
       ) : (
-        <p className="text-xs text-white/70">Add and save a business record to enable your merchant Tap link.</p>
+        <p className="text-xs text-[var(--warm-ink)]/70">Add and save a business record to enable your merchant Tap link.</p>
       )}
     </Surface>
   );
@@ -300,7 +300,7 @@ export default function BusinessSettingsPage() {
 
   const SaveButton = ({ onClick, label }: { onClick: () => void; label: string }) => (
     <Button onClick={onClick} disabled={saveStatus === 'saving'} variant="default" className="w-full items-center gap-2">
-      {saveStatus === 'saving' && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+      {saveStatus === 'saving' && <div className="h-4 w-4 animate-spin rounded-full border-2 border-[rgba(191,179,163,0.5)] border-t-white" />}
       {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Error — Try Again' : label}
     </Button>
   );
@@ -317,38 +317,38 @@ export default function BusinessSettingsPage() {
         return (
           <Surface>
             <form onSubmit={handleSaveProfile} className="space-y-6">
-              <h3 className="text-lg font-bold text-white">Business Profile</h3>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">Business Profile</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Business Name</label>
-                  <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.name} onChange={e => setBusinessData({ ...businessData, name: e.target.value })} />
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Business Name</label>
+                  <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.name} onChange={e => setBusinessData({ ...businessData, name: e.target.value })} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Phone Number</label>
-                  <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.phone} onChange={e => setBusinessData({ ...businessData, phone: e.target.value })} />
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Phone Number</label>
+                  <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.phone} onChange={e => setBusinessData({ ...businessData, phone: e.target.value })} />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Address</label>
-                  <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.address} onChange={e => setBusinessData({ ...businessData, address: e.target.value })} />
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Address</label>
+                  <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.address} onChange={e => setBusinessData({ ...businessData, address: e.target.value })} />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Business Category</label>
-                  <select className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.category} onChange={e => setBusinessData({ ...businessData, category: e.target.value })}>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Business Category</label>
+                  <select className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.category} onChange={e => setBusinessData({ ...businessData, category: e.target.value })}>
                     {CATEGORIES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
-                  <p className="mt-1.5 text-xs text-white/70">Category affects how the AI calculates risk and deposit amounts.</p>
+                  <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">Category affects how the AI calculates risk and deposit amounts.</p>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Google Place ID</label>
-                  <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.googlePlaceId} onChange={e => setBusinessData({ ...businessData, googlePlaceId: e.target.value })} />
-                  <p className="mt-1.5 text-xs text-white/70">Used to fetch your Google Reviews for the dashboard.</p>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Google Place ID</label>
+                  <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.googlePlaceId} onChange={e => setBusinessData({ ...businessData, googlePlaceId: e.target.value })} />
+                  <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">Used to fetch your Google Reviews for the dashboard.</p>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Reliability Score (Self-Market)</label>
-                  <input type="number" min="0" max="100" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={businessData.reliabilityScore} onChange={e => setBusinessData({ ...businessData, reliabilityScore: Number(e.target.value) })} />
-                  <p className="mt-1.5 text-xs text-white/70">Set your public reliability score (0-100) to market yourself better.</p>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Reliability Score (Self-Market)</label>
+                  <input type="number" min="0" max="100" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={businessData.reliabilityScore} onChange={e => setBusinessData({ ...businessData, reliabilityScore: Number(e.target.value) })} />
+                  <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">Set your public reliability score (0-100) to market yourself better.</p>
                 </div>
               </div>
               <SaveButton onClick={() => {}} label="Save Profile" />
@@ -361,52 +361,52 @@ export default function BusinessSettingsPage() {
           <Surface>
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-white">WhatsApp Automations</h3>
-                <p className="text-sm text-white/70">Configure automated WhatsApp messages for your customers and yourself.</p>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)]">WhatsApp Automations</h3>
+                <p className="text-sm text-[var(--warm-ink)]/70">Configure automated WhatsApp messages for your customers and yourself.</p>
               </div>
 
               <div className="space-y-4">
-                <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 cursor-pointer">
+                <label className="flex items-center gap-3 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 cursor-pointer">
                   <input type="checkbox" checked={notificationSettings.sendWhatsAppReminders}
                     onChange={e => setNotificationSettings({ ...notificationSettings, sendWhatsAppReminders: e.target.checked })}
-                    className="h-4 w-4 rounded border-white/25 text-indigo-500 focus:ring-indigo-500" />
+                    className="h-4 w-4 rounded border-white/25 text-[var(--clay)] focus:ring-indigo-500" />
                   <div>
-                    <p className="text-sm font-bold text-white">Customer Reminders & Confirmations</p>
-                    <p className="text-xs text-white/70">Send WhatsApp messages to customers when they book, and 24 hours before their reservation.</p>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">Customer Reminders & Confirmations</p>
+                    <p className="text-xs text-[var(--warm-ink)]/70">Send WhatsApp messages to customers when they book, and 24 hours before their reservation.</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 cursor-pointer">
+                <label className="flex items-center gap-3 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 cursor-pointer">
                   <input type="checkbox" checked={notificationSettings.requestFeedbackAfterBooking}
                     onChange={e => setNotificationSettings({ ...notificationSettings, requestFeedbackAfterBooking: e.target.checked })}
-                    className="h-4 w-4 rounded border-white/25 text-indigo-500 focus:ring-indigo-500" />
+                    className="h-4 w-4 rounded border-white/25 text-[var(--clay)] focus:ring-indigo-500" />
                   <div>
-                    <p className="text-sm font-bold text-white">Post-Booking Review Requests</p>
-                    <p className="text-xs text-white/70">Automatically ask customers for feedback on WhatsApp after their reservation is marked complete.</p>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">Post-Booking Review Requests</p>
+                    <p className="text-xs text-[var(--warm-ink)]/70">Automatically ask customers for feedback on WhatsApp after their reservation is marked complete.</p>
                   </div>
                 </label>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <h4 className="mb-4 font-bold text-white">Business Owner Notifications</h4>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
+                <h4 className="mb-4 font-bold text-[var(--warm-ink)]">Business Owner Notifications</h4>
                 
-                <label className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 cursor-pointer">
+                <label className="mb-4 flex items-center gap-3 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 cursor-pointer">
                   <input type="checkbox" checked={notificationSettings.notifyOwnerOnNewBooking}
                     onChange={e => setNotificationSettings({ ...notificationSettings, notifyOwnerOnNewBooking: e.target.checked })}
-                    className="h-4 w-4 rounded border-white/25 text-indigo-500 focus:ring-indigo-500" />
+                    className="h-4 w-4 rounded border-white/25 text-[var(--clay)] focus:ring-indigo-500" />
                   <div>
-                    <p className="text-sm font-bold text-white">Notify me on new bookings</p>
-                    <p className="text-xs text-white/70">Get a WhatsApp ping immediately whenever a new reservation is created.</p>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">Notify me on new bookings</p>
+                    <p className="text-xs text-[var(--warm-ink)]/70">Get a WhatsApp ping immediately whenever a new reservation is created.</p>
                   </div>
                 </label>
 
                 {notificationSettings.notifyOwnerOnNewBooking && (
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Your WhatsApp Number</label>
-                    <input type="text" className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" placeholder="+923****4567"
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Your WhatsApp Number</label>
+                    <input type="text" className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="+923****4567"
                       value={notificationSettings.whatsappNumber}
                       onChange={e => setNotificationSettings({ ...notificationSettings, whatsappNumber: e.target.value })} />
-                    <p className="mt-1.5 text-xs text-white/70">Include country code (e.g., +92).</p>
+                    <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">Include country code (e.g., +92).</p>
                   </div>
                 )}
               </div>
@@ -422,31 +422,31 @@ export default function BusinessSettingsPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-bold text-white">CRM Webhook Integration</h3>
-                  <p className="text-sm text-white/70">Send Pabandi reservation events to your external tools (like HubSpot or Zapier).</p>
+                  <h3 className="text-lg font-bold text-[var(--warm-ink)]">CRM Webhook Integration</h3>
+                  <p className="text-sm text-[var(--warm-ink)]/70">Send Pabandi reservation events to your external tools (like HubSpot or Zapier).</p>
                 </div>
                 <Badge tone="success" className="shrink-0"><span className="flex items-center gap-1"><CheckCircleIcon className="h-4 w-4" /> Active</span></Badge>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Target Webhook URL</label>
-                <input type="url" className="mb-4 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={webhook.targetUrl} onChange={e => setWebhook({ ...webhook, targetUrl: e.target.value })} placeholder="https://hooks.zapier.com/hooks/catch/..." />
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Signing Secret</label>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Target Webhook URL</label>
+                <input type="url" className="mb-4 w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={webhook.targetUrl} onChange={e => setWebhook({ ...webhook, targetUrl: e.target.value })} placeholder="https://hooks.zapier.com/hooks/catch/..." />
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Signing Secret</label>
                 <div className="mb-4 flex gap-2">
-                  <input type={webhook.showSecret ? 'text' : 'password'} readOnly className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white opacity-70" value={webhook.secret} />
+                  <input type={webhook.showSecret ? 'text' : 'password'} readOnly className="flex-1 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] opacity-70" value={webhook.secret} />
                   <Button variant="outline" onClick={() => setWebhook({ ...webhook, showSecret: !webhook.showSecret })}>{webhook.showSecret ? 'Hide' : 'Reveal'}</Button>
                   <Button variant="outline" onClick={() => {}}>Rotate</Button>
                 </div>
-                <p className="mb-6 text-xs text-white/70">Use this secret to verify the HMAC-SHA256 signature in the `x-pabandi-signature` header of incoming requests.</p>
+                <p className="mb-6 text-xs text-[var(--warm-ink)]/70">Use this secret to verify the HMAC-SHA256 signature in the `x-pabandi-signature` header of incoming requests.</p>
 
-                <label className="mb-3 block text-xs font-bold uppercase tracking-wide text-white/70">Subscribed Events</label>
+                <label className="mb-3 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Subscribed Events</label>
                 <div className="space-y-3">
                   {Object.keys(webhook.events).map(event => (
                     <label key={event} className="flex items-center gap-3">
                       <input type="checkbox" checked={(webhook.events as any)[event]}
                         onChange={e => setWebhook({ ...webhook, events: { ...webhook.events, [event]: e.target.checked } })}
-                        className="h-4 w-4 rounded border-white/25 text-indigo-500 focus:ring-indigo-500" />
-                      <span className="font-mono text-sm text-white">{event}</span>
+                        className="h-4 w-4 rounded border-white/25 text-[var(--clay)] focus:ring-indigo-500" />
+                      <span className="font-mono text-sm text-[var(--warm-ink)]">{event}</span>
                     </label>
                   ))}
                 </div>
@@ -462,20 +462,20 @@ export default function BusinessSettingsPage() {
           <Surface>
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-white">Payments & Escrow</h3>
-                <p className="text-sm text-white/70">Configure how you receive deposits and payments. All deposits are credited toward the customer's total bill.</p>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)]">Payments & Escrow</h3>
+                <p className="text-sm text-[var(--warm-ink)]/70">Configure how you receive deposits and payments. All deposits are credited toward the customer's total bill.</p>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+              <div className="rounded-xl border border-[rgba(var(--sage),0.2)] bg-[rgba(var(--sage),0.1)] p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="font-bold text-white">Stripe Checkout & Connect</h4>
+                  <h4 className="font-bold text-[var(--warm-ink)]">Stripe Checkout & Connect</h4>
                   {bizRes?.stripeAccountId ? (
                      <Badge tone="success">Connected</Badge>
                   ) : (
                      <Button variant="default" onClick={handleConnectStripe}>Connect Stripe</Button>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-white/70">Connect your Stripe account to automatically route customer payments to your bank account (minus the Pabandi fee).</p>
+                <p className="mt-2 text-sm text-[var(--warm-ink)]/70">Connect your Stripe account to automatically route customer payments to your bank account (minus the Pabandi fee).</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge tone="success">💳 Cards</Badge>
                   <Badge tone="success">🍎 Apple Pay</Badge>
@@ -483,39 +483,39 @@ export default function BusinessSettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-emerald-500/10 p-5">
+              <div className="rounded-xl border border-[rgba(var(--clay),0.2)] bg-gradient-to-br from-indigo-500/10 to-emerald-500/10 p-5">
                 <div className="flex items-center justify-between gap-4">
-                  <h4 className="font-bold text-white">◎ Solana · $PAB Payouts</h4>
+                  <h4 className="font-bold text-[var(--warm-ink)]">◎ Solana · $PAB Payouts</h4>
                   <Badge tone="info">Phantom</Badge>
                 </div>
-                <p className="mt-2 text-sm text-white/70">Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.</p>
-                <a href="/wallet" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-emerald-500 px-4 py-2 text-sm font-bold text-white hover:opacity-90 transition-opacity shadow-sm">Connect Phantom Wallet →</a>
+                <p className="mt-2 text-sm text-[var(--warm-ink)]/70">Connect Phantom to receive business $PAB rewards on Solana. You earn tokens for honored bookings and no-show protection.</p>
+                <a href="/wallet" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-emerald-500 px-4 py-2 text-sm font-bold text-[var(--warm-ink)] hover:opacity-90 transition-opacity shadow-sm">Connect Phantom Wallet →</a>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5">
+              <div className="rounded-xl border border-[rgba(var(--sage),0.2)] bg-[rgba(var(--sage),0.1)] p-5">
                 <div className="flex items-center justify-between gap-4 mb-2">
-                  <h4 className="font-bold text-white">Withdraw Funds (Raast / Bank Transfer)</h4>
+                  <h4 className="font-bold text-[var(--warm-ink)]">Withdraw Funds (Raast / Bank Transfer)</h4>
                   <Badge tone="success">Pakistan</Badge>
                 </div>
-                <p className="text-sm text-white/70 mb-4">Instantly withdraw your escrowed funds directly to your local PKR bank account via our P2P Liquidity Engine.</p>
+                <p className="text-sm text-[var(--warm-ink)]/70 mb-4">Instantly withdraw your escrowed funds directly to your local PKR bank account via our P2P Liquidity Engine.</p>
                 
                 <form onSubmit={handleWithdraw} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Amount (USDC)</label>
-                      <input type="number" required className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" min="1" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="0.00" />
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Amount (USDC)</label>
+                      <input type="number" required className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" min="1" step="0.01" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} placeholder="0.00" />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Raast ID / IBAN</label>
-                      <input type="text" required className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" value={raastId} onChange={e => setRaastId(e.target.value)} placeholder="03XXXXXXXXX" />
+                      <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Raast ID / IBAN</label>
+                      <input type="text" required className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" value={raastId} onChange={e => setRaastId(e.target.value)} placeholder="03XXXXXXXXX" />
                     </div>
                   </div>
-                  <Button type="submit" disabled={withdrawStatus === 'processing'} variant="default" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white">
+                  <Button type="submit" disabled={withdrawStatus === 'processing'} variant="default" className="w-full bg-[var(--sage)] hover:bg-[var(--sage)] text-[var(--warm-ink)]">
                     {withdrawStatus === 'processing' ? 'Processing...' : withdrawStatus === 'success' ? 'Settlement Initiated!' : 'Withdraw to Raast'}
                   </Button>
                   {lastPayoutReference && (
-                    <p className="mt-2 text-xs text-white/70">
-                      Payout reference: <span className="font-mono text-white">{lastPayoutReference}</span>
+                    <p className="mt-2 text-xs text-[var(--warm-ink)]/70">
+                      Payout reference: <span className="font-mono text-[var(--warm-ink)]">{lastPayoutReference}</span>
                       {lastPayoutStatus ? <span> · Status: {lastPayoutStatus}</span> : null}
                     </p>
                   )}
@@ -524,9 +524,9 @@ export default function BusinessSettingsPage() {
 
               <TapLinkGenerator sellerId={bizRes?.id} />
 
-              <div className="flex gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                <ShieldCheckIcon className="h-5 w-5 shrink-0 mt-0.5 text-emerald-400" />
-                <p className="text-sm text-white/90">
+              <div className="flex gap-3 rounded-xl border border-[rgba(var(--sage),0.2)] bg-[rgba(var(--sage),0.1)] p-4">
+                <ShieldCheckIcon className="h-5 w-5 shrink-0 mt-0.5 text-[var(--sage)]" />
+                <p className="text-sm text-[var(--warm-ink)]/90">
                   <strong>Deposits go toward the total purchase.</strong> When a customer pays a deposit, it's automatically deducted from their final bill. No extra charge — just protection.
                 </p>
               </div>
@@ -540,34 +540,34 @@ export default function BusinessSettingsPage() {
             <div className="space-y-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-white">AI No-Show Protection</h3>
-                  <p className="text-sm text-white/70">Configure how the AI protects your business from missed appointments.</p>
+                  <h3 className="text-lg font-bold text-[var(--warm-ink)]">AI No-Show Protection</h3>
+                  <p className="text-sm text-[var(--warm-ink)]/70">Configure how the AI protects your business from missed appointments.</p>
                 </div>
-                <CpuChipIcon className="h-8 w-8 text-indigo-400" />
+                <CpuChipIcon className="h-8 w-8 text-[var(--clay)]" />
               </div>
 
-              <div className="flex gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-4">
-                <InformationCircleIcon className="h-5 w-5 shrink-0 mt-0.5 text-indigo-300" />
-                <p className="text-sm text-white/80">
+              <div className="flex gap-3 rounded-xl border border-[rgba(var(--clay),0.2)] bg-[rgba(var(--clay),0.1)] p-4">
+                <InformationCircleIcon className="h-5 w-5 shrink-0 mt-0.5 text-[var(--clay)]" />
+                <p className="text-sm text-[var(--warm-ink)]/80">
                   Your business is categorized as <strong>{CATEGORIES.find(c => c.value === businessData.category)?.label || businessData.category}</strong>.
                   The AI uses industry-specific risk models — e-commerce weighs COD rejections, restaurants weigh group size,
                   salons focus on service duration and value, event venues track capacity and VIP bookings.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-bold text-white">Risk Threshold Strictness</label>
-                  <span className="text-sm font-bold text-indigo-400">{aiSettings.aiStrictness}%</span>
+                  <label className="text-sm font-bold text-[var(--warm-ink)]">Risk Threshold Strictness</label>
+                  <span className="text-sm font-bold text-[var(--clay)]">{aiSettings.aiStrictness}%</span>
                 </div>
                 <input type="range" min="0" max="100" value={aiSettings.aiStrictness}
                   onChange={e => setAiSettings({ ...aiSettings, aiStrictness: parseInt(e.target.value) })}
                   className="h-2 w-full rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                <div className="mt-2 flex justify-between text-xs text-white/50">
+                <div className="mt-2 flex justify-between text-xs text-[var(--warm-ink)]/50">
                   <span>Lenient (More Bookings)</span>
                   <span>Strict (More Deposits)</span>
                 </div>
-                <div className="mt-4 flex gap-3 rounded-xl bg-indigo-500/10 p-4 text-indigo-300">
+                <div className="mt-4 flex gap-3 rounded-xl bg-[rgba(var(--clay),0.1)] p-4 text-[var(--clay)]">
                   <InformationCircleIcon className="h-5 w-5 shrink-0 mt-0.5" />
                   <p className="text-sm">
                     At <strong>{aiSettings.aiStrictness}%</strong> strictness, the AI will require a deposit for any booking whose risk score exceeds <strong>{100 - aiSettings.aiStrictness}%</strong>.
@@ -575,8 +575,8 @@ export default function BusinessSettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <label className="mb-3 block text-sm font-bold text-white">Deposit Strategy</label>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
+                <label className="mb-3 block text-sm font-bold text-[var(--warm-ink)]">Deposit Strategy</label>
                 <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {([
                     { id: 'AI_DYNAMIC', label: 'AI Dynamic', desc: 'AI decides per booking' },
@@ -587,19 +587,19 @@ export default function BusinessSettingsPage() {
                       onClick={() => setAiSettings({ ...aiSettings, depositStrategy: s.id })}
                       className={`rounded-xl border p-3 text-left transition-all ${
                         aiSettings.depositStrategy === s.id
-                          ? 'border-indigo-500/60 bg-indigo-500/15 ring-1 ring-indigo-500'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                          ? 'border-[var(--clay)]/60 bg-[var(--clay)]/15 ring-1 ring-indigo-500'
+                          : 'border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)]'
                       }`}>
-                      <p className="text-sm font-bold text-white">{s.label}</p>
-                      <p className="mt-0.5 text-[10px] text-white/70">{s.desc}</p>
+                      <p className="text-sm font-bold text-[var(--warm-ink)]">{s.label}</p>
+                      <p className="mt-0.5 text-[10px] text-[var(--warm-ink)]/70">{s.desc}</p>
                     </button>
                   ))}
                 </div>
 
                 {aiSettings.depositStrategy === 'FLAT' && (
                   <div className="mt-3">
-                    <label className="mb-1 block text-xs font-bold text-white/70">Flat Deposit Amount ($)</label>
-                    <input type="number" className="w-48 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" min="500" step="50"
+                    <label className="mb-1 block text-xs font-bold text-[var(--warm-ink)]/70">Flat Deposit Amount ($)</label>
+                    <input type="number" className="w-48 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" min="500" step="50"
                       value={aiSettings.flatDeposit$}
                       onChange={e => setAiSettings({ ...aiSettings, flatDeposit$: parseInt(e.target.value) || 500 })} />
                   </div>
@@ -607,42 +607,42 @@ export default function BusinessSettingsPage() {
 
                 {aiSettings.depositStrategy === 'PERCENTAGE' && (
                   <div className="mt-3">
-                    <label className="mb-1 block text-xs font-bold text-white/70">Deposit Percentage (%)</label>
-                    <input type="number" className="w-48 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" min="10" max="50" step="5"
+                    <label className="mb-1 block text-xs font-bold text-[var(--warm-ink)]/70">Deposit Percentage (%)</label>
+                    <input type="number" className="w-48 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" min="10" max="50" step="5"
                       value={aiSettings.depositPercentage}
                       onChange={e => setAiSettings({ ...aiSettings, depositPercentage: parseInt(e.target.value) || 20 })} />
                   </div>
                 )}
 
-                <p className="mt-3 text-xs text-white/70">
-                  Preview: <strong className="text-white">{depositPreview()}</strong>. Deposits are applied toward the customer's total bill.
+                <p className="mt-3 text-xs text-[var(--warm-ink)]/70">
+                  Preview: <strong className="text-[var(--warm-ink)]">{depositPreview()}</strong>. Deposits are applied toward the customer's total bill.
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-sm font-bold text-white">Trusted Customer Threshold</label>
-                  <span className="text-sm font-bold text-emerald-400">{aiSettings.trustedCustomerThreshold}+</span>
+                  <label className="text-sm font-bold text-[var(--warm-ink)]">Trusted Customer Threshold</label>
+                  <span className="text-sm font-bold text-[var(--sage)]">{aiSettings.trustedCustomerThreshold}+</span>
                 </div>
                 <input type="range" min="50" max="100" value={aiSettings.trustedCustomerThreshold}
                   onChange={e => setAiSettings({ ...aiSettings, trustedCustomerThreshold: parseInt(e.target.value) })}
                   className="h-2 w-full rounded-lg appearance-none cursor-pointer accent-emerald-500" />
-                <div className="mt-2 flex justify-between text-xs text-white/50">
+                <div className="mt-2 flex justify-between text-xs text-[var(--warm-ink)]/50">
                   <span>50 (Lenient)</span>
                   <span>100 (Very Strict)</span>
                 </div>
-                <p className="mt-3 text-xs text-white/70">
+                <p className="mt-3 text-xs text-[var(--warm-ink)]/70">
                   Customers with a Pabandi reliability score above <strong>{aiSettings.trustedCustomerThreshold}</strong> will have their deposit waived automatically — rewarding loyal, reliable customers.
                 </p>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4">
                 <input type="checkbox" checked={aiSettings.autoRequireDeposit}
                   onChange={e => setAiSettings({ ...aiSettings, autoRequireDeposit: e.target.checked })}
-                  className="h-4 w-4 rounded border-white/25 text-indigo-500 focus:ring-indigo-500" />
+                  className="h-4 w-4 rounded border-white/25 text-[var(--clay)] focus:ring-indigo-500" />
                 <div>
-                  <p className="text-sm font-bold text-white">Auto-Require Deposits</p>
-                  <p className="text-xs text-white/70">Let the AI automatically enforce deposits on risky bookings via Card, PayPal, Apple Pay, or escrow.</p>
+                  <p className="text-sm font-bold text-[var(--warm-ink)]">Auto-Require Deposits</p>
+                  <p className="text-xs text-[var(--warm-ink)]/70">Let the AI automatically enforce deposits on risky bookings via Card, PayPal, Apple Pay, or escrow.</p>
                 </div>
               </label>
 
@@ -657,57 +657,57 @@ export default function BusinessSettingsPage() {
             <div className="space-y-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Live Selling</h3>
-                  <p className="text-sm text-white/70">Connect your show platform, publish a schedule, and share your universal seller link.</p>
+                  <h3 className="text-lg font-bold text-[var(--warm-ink)]">Live Selling</h3>
+                  <p className="text-sm text-[var(--warm-ink)]/70">Connect your show platform, publish a schedule, and share your universal seller link.</p>
                 </div>
-                <VideoCameraIcon className="h-7 w-7 text-indigo-400" />
+                <VideoCameraIcon className="h-7 w-7 text-[var(--clay)]" />
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-3">
-                <p className="text-xs text-white/70">Category check</p>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5 space-y-3">
+                <p className="text-xs text-[var(--warm-ink)]/70">Category check</p>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-white">
+                  <p className="text-sm font-bold text-[var(--warm-ink)]">
                     Business category: {CATEGORIES.find(c => c.value === businessData.category)?.label || businessData.category}
                   </p>
                   {businessData.category !== 'LIVE_SELLER' ? (
-                    <button type="button" onClick={() => setActiveTab('profile')} className="text-xs font-semibold text-indigo-400">Update in Profile</button>
+                    <button type="button" onClick={() => setActiveTab('profile')} className="text-xs font-semibold text-[var(--clay)]">Update in Profile</button>
                   ) : (
-                    <span className="text-xs font-semibold text-emerald-400">Live-seller ready</span>
+                    <span className="text-xs font-semibold text-[var(--sage)]">Live-seller ready</span>
                   )}
                 </div>
-                <p className="text-xs text-white/70">Set category to <span className="font-mono text-white">LIVE_SELLER</span> in Business Profile so buyers find you from the live-selling vertical.</p>
+                <p className="text-xs text-[var(--warm-ink)]/70">Set category to <span className="font-mono text-[var(--warm-ink)]">LIVE_SELLER</span> in Business Profile so buyers find you from the live-selling vertical.</p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <h4 className="mb-3 font-bold text-white">Connect platforms</h4>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
+                <h4 className="mb-3 font-bold text-[var(--warm-ink)]">Connect platforms</h4>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { label: 'Connect TikTok', href: '/integrations/livesell/connect/tiktok-live', bg: 'bg-[#ff0050] text-white' },
-                    { label: 'Connect YouTube', href: '/integrations/livesell/connect/youtube-shopping', bg: 'bg-red-600 text-white' },
+                    { label: 'Connect TikTok', href: '/integrations/livesell/connect/tiktok-live', bg: 'bg-[#ff0050] text-[var(--warm-ink)]' },
+                    { label: 'Connect YouTube', href: '/integrations/livesell/connect/youtube-shopping', bg: 'bg-[var(--terracotta)] text-[var(--warm-ink)]' },
                     { label: 'Connect Shopify', href: '/integrations/livesell/connect/shopify-live', bg: 'bg-[#95BF47] text-black' },
-                    { label: 'Connect Whatnot', href: '/integrations/livesell/connect/whatnot-live', bg: 'bg-yellow-400 text-black' },
-                    { label: 'Connect Instagram', href: '/integrations/livesell/connect/instagram-live', bg: 'bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white' },
+                    { label: 'Connect Whatnot', href: '/integrations/livesell/connect/whatnot-live', bg: 'bg-[var(--muted-ochre)] text-black' },
+                    { label: 'Connect Instagram', href: '/integrations/livesell/connect/instagram-live', bg: 'bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-[var(--warm-ink)]' },
                     { label: 'Connect Amazon', href: '/integrations/livesell/connect/amazon-live', bg: 'bg-[#ff9900] text-black' },
-                    { label: 'Custom Web', href: '/integrations/livesell/connect/custom-web', bg: 'bg-slate-700 text-white' },
+                    { label: 'Custom Web', href: '/integrations/livesell/connect/custom-web', bg: 'bg-[var(--warm-sand)] text-[var(--warm-ink)]' },
                   ].map(p => (
                     <a key={p.label} href={p.href} className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-opacity hover:opacity-90 ${p.bg}`}>{p.label}</a>
                   ))}
                 </div>
 
                 <div className="mt-4 rounded-xl border border-[#0064d2]/20 bg-[#0064d2]/10 p-4">
-                  <h5 className="mb-1 flex items-center gap-2 font-bold text-white"><span className="text-indigo-400">eBay</span> Integration</h5>
-                  <p className="mb-3 text-xs leading-relaxed text-white/80">
+                  <h5 className="mb-1 flex items-center gap-2 font-bold text-[var(--warm-ink)]"><span className="text-[var(--clay)]">eBay</span> Integration</h5>
+                  <p className="mb-3 text-xs leading-relaxed text-[var(--warm-ink)]/80">
                     eBay restricts off-platform checkout in buyer-seller messaging. Treat eBay as a traffic source. Add this to your listings: <strong>"Escrow-backed checkout available — message 'PABANDI' for link"</strong>. When buyers DM you, send your Pabandi checkout link.
                   </p>
-                  <button type="button" onClick={() => {}} className="rounded-lg bg-[#0064d2] px-4 py-2 text-sm font-bold text-white hover:opacity-90 transition-opacity">Enable eBay Mode</button>
+                  <button type="button" onClick={() => {}} className="rounded-lg bg-[#0064d2] px-4 py-2 text-sm font-bold text-[var(--warm-ink)] hover:opacity-90 transition-opacity">Enable eBay Mode</button>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <h4 className="mb-1 font-bold text-white">Your seller link</h4>
-                <p className="mb-3 text-xs text-white/70">Share this universal booking link anywhere: TikTok bio, YouTube description, WhatsApp, or SMS.</p>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5">
+                <h4 className="mb-1 font-bold text-[var(--warm-ink)]">Your seller link</h4>
+                <p className="mb-3 text-xs text-[var(--warm-ink)]/70">Share this universal booking link anywhere: TikTok bio, YouTube description, WhatsApp, or SMS.</p>
                 <div className="flex gap-2">
-                  <input readOnly className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-white opacity-90" value={`${window.location.origin}/s/${bizRes?.id || ''}`} />
+                  <input readOnly className="flex-1 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs font-mono text-[var(--warm-ink)] opacity-90" value={`${window.location.origin}/s/${bizRes?.id || ''}`} />
                   <Button variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/s/${bizRes?.id || ''}`)}>Copy</Button>
                 </div>
               </div>
@@ -722,38 +722,38 @@ export default function BusinessSettingsPage() {
           <Surface>
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-white">Developer API Keys</h3>
-                <p className="mt-1 text-sm text-white/70">Generate API keys to interact with the Pabandi Trust & Escrow infrastructure programmatically.</p>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)]">Developer API Keys</h3>
+                <p className="mt-1 text-sm text-[var(--warm-ink)]/70">Generate API keys to interact with the Pabandi Trust & Escrow infrastructure programmatically.</p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-4">
-                <h4 className="font-semibold text-white">Create New Key</h4>
+              <div className="rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-5 space-y-4">
+                <h4 className="font-semibold text-[var(--warm-ink)]">Create New Key</h4>
                 <form onSubmit={handleGenerateKey} className="flex flex-col gap-4 sm:flex-row sm:items-end">
                   <div className="flex-1">
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/70">Key Name</label>
-                    <input type="text" required className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-indigo-400" placeholder="e.g. Production Live Seller Backend" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} />
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Key Name</label>
+                    <input type="text" required className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="e.g. Production Live Seller Backend" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} />
                   </div>
                   <Button type="submit" disabled={!newKeyName.trim()} variant="default">Generate</Button>
                 </form>
 
                 {keyError && (
-                  <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                  <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--terracotta),0.3)] bg-[rgba(var(--terracotta),0.1)] p-3 text-sm text-[var(--terracotta)]">
                     <ExclamationTriangleIcon className="h-5 w-5 shrink-0" />
                     {keyError}
                   </div>
                 )}
 
                 {generatedKey && (
-                  <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                    <div className="flex gap-2 text-emerald-400">
+                  <div className="space-y-3 rounded-xl border border-[rgba(var(--sage),0.3)] bg-[rgba(var(--sage),0.1)] p-4">
+                    <div className="flex gap-2 text-[var(--sage)]">
                       <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0" />
                       <div>
                         <h5 className="text-sm font-semibold">Key Generated Successfully</h5>
-                        <p className="mt-1 text-xs text-emerald-300">Please copy this key now. You will not be able to see it again.</p>
+                        <p className="mt-1 text-xs text-[var(--sage)]">Please copy this key now. You will not be able to see it again.</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-black/30 p-3">
-                      <code className="flex-1 overflow-hidden text-ellipsis text-sm font-mono text-emerald-300">{generatedKey}</code>
+                    <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--sage),0.2)] bg-[var(--warm-sand)]/30 p-3">
+                      <code className="flex-1 overflow-hidden text-ellipsis text-sm font-mono text-[var(--sage)]">{generatedKey}</code>
                       <Button variant="outline" onClick={() => navigator.clipboard.writeText(generatedKey)}>Copy</Button>
                     </div>
                   </div>
@@ -761,19 +761,19 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-semibold text-white">Active Keys</h4>
+                <h4 className="font-semibold text-[var(--warm-ink)]">Active Keys</h4>
                 {apiKeys.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-white/70">No API keys generated yet.</div>
+                  <div className="rounded-xl border border-dashed border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-6 text-center text-[var(--warm-ink)]/70">No API keys generated yet.</div>
                 ) : (
                   <div className="grid gap-3">
                     {apiKeys.map((k) => (
-                      <div key={k.id} className="flex flex-col gap-1 rounded-xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div key={k.id} className="flex flex-col gap-1 rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <div className="flex items-center gap-2 font-semibold text-white">
+                          <div className="flex items-center gap-2 font-semibold text-[var(--warm-ink)]">
                             {k.name}
                             {!k.isActive && <Badge tone="danger" className="text-[10px] uppercase">Revoked</Badge>}
                           </div>
-                          <div className="mt-1 text-xs text-white/70 font-mono">
+                          <div className="mt-1 text-xs text-[var(--warm-ink)]/70 font-mono">
                             Tier: {k.tier} • Usage: {k.callsUsed}/{k.callsLimit} • Created: {new Date(k.createdAt).toLocaleDateString()}
                           </div>
                         </div>
@@ -792,11 +792,11 @@ export default function BusinessSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-24 font-body" style={{ background: tokens.color.background, color: tokens.color.text, fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)", fontFamily: tokens.font.body }}>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="font-headline text-3xl font-black text-white">Settings</h1>
-          <p className="mt-1 text-sm text-white/70">Manage your business profile, integrations, and preferences.</p>
+          <h1 className="font-headline text-3xl font-black text-[var(--warm-ink)]">Settings</h1>
+          <p className="mt-1 text-sm text-[var(--warm-ink)]/70">Manage your business profile, integrations, and preferences.</p>
         </div>
 
         <div className="flex flex-col gap-8 md:flex-row">
@@ -811,7 +811,7 @@ export default function BusinessSettingsPage() {
               { id: 'api-keys', label: 'Developer API Keys', icon: CommandLineIcon },
             ] as const).map(item => (
               <button key={item.id} onClick={() => setActiveTab(item.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${activeTab === item.id ? 'bg-white/10 text-indigo-300 shadow-sm' : 'text-white/70 hover:bg-white/10'}`}>
+                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${activeTab === item.id ? 'bg-[var(--warm-sand)] text-[var(--clay)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:bg-[var(--warm-sand)]'}`}>
                 <item.icon className="h-5 w-5" />
                 {item.label}
               </button>
@@ -819,7 +819,7 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="flex-1">
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 shadow-sm backdrop-blur-xl">
+            <div className="rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-6 shadow-sm backdrop-blur-xl">
               {renderTabContent()}
             </div>
           </div>

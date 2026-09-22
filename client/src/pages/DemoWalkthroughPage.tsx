@@ -161,18 +161,18 @@ export const DemoWalkthroughPage: React.FC = () => {
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       {/* Sticky Header */}
-      <div className="sticky top-0 z-50 backdrop-blur-xl bg-surface/80 border-b border-white/5">
+      <div className="sticky top-0 z-50 backdrop-blur-sm bg-surface/80 border-b border-[var(--soft-stone)]/30">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">🛡️</span>
-            <span className="text-base font-bold text-slate-100">Pabandi</span>
+            <span className="text-base font-bold text-[var(--warm-ink)]">Pabandi</span>
             <Badge tone="info">Demo</Badge>
           </div>
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
-              <Link to="/property-manager" className="text-sm text-slate-300 hover:text-white">Dashboard →</Link>
+              <Link to="/property-manager" className="text-sm text-[var(--warm-ink)] hover:text-[var(--warm-ink)]">Dashboard →</Link>
             ) : (
-              <Link to="/login" className="text-sm text-slate-300 hover:text-white">Log in</Link>
+              <Link to="/login" className="text-sm text-[var(--warm-ink)] hover:text-[var(--warm-ink)]">Log in</Link>
             )}
             <Button onClick={() => setTab('convert')} size="sm">Get started</Button>
           </div>
@@ -180,11 +180,11 @@ export const DemoWalkthroughPage: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="sticky top-[57px] z-40 bg-surface/60 backdrop-blur-lg border-b border-white/5 overflow-x-auto no-scrollbar">
+      <div className="sticky top-[57px] z-40 bg-surface/60 backdrop-blur-lg border-b border-[var(--soft-stone)]/30 overflow-x-auto no-scrollbar">
         <div className="max-w-6xl mx-auto px-4 py-2 flex gap-1" ref={scrollRef}>
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id as DemoTab)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === t.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === t.id ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 hover:bg-[var(--warm-sand)]'}`}>
               <span className="text-base">{t.icon}</span>
               <span className="hidden sm:inline">{t.label}</span>
             </button>
@@ -200,30 +200,30 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Surface className="text-center p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-slate-100">{demoData.properties.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-[var(--warm-ink)]">{demoData.properties.length}</div>
                 <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Properties</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-emerald-300">{demoData.properties.filter((p) => p.status === 'OCCUPIED').length}</div>
+                <div className="text-xl md:text-2xl font-bold text-[var(--sage)]">{demoData.properties.filter((p) => p.status === 'OCCUPIED').length}</div>
                 <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Occupied</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-indigo-300">{demoData.tenants.length}</div>
+                <div className="text-xl md:text-2xl font-bold text-[var(--terracotta)]">{demoData.tenants.length}</div>
                 <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Tenants</div>
               </Surface>
               <Surface className="text-center p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-amber-300">{demoData.pabEarned}</div>
+                <div className="text-xl md:text-2xl font-bold text-[var(--muted-ochre)]">{demoData.pabEarned}</div>
                 <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>$PAB earned</div>
               </Surface>
             </div>
 
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base md:text-lg font-bold text-slate-100">Properties</h3>
+                <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)]">Properties</h3>
                 <Button onClick={() => setShowPropForm(!showPropForm)} size="sm">+ Add</Button>
               </div>
               {showPropForm && (
-                <div className="mb-4 p-3 md:p-4 rounded-xl bg-white/5 space-y-3">
+                <div className="mb-4 p-3 md:p-4 rounded-xl bg-[var(--cream)] space-y-3">
                   <input value={propForm.title} onChange={(e) => setPropForm({ ...propForm, title: e.target.value })} placeholder="Property name *" className={inputClass} />
                   <input value={propForm.address} onChange={(e) => setPropForm({ ...propForm, address: e.target.value })} placeholder="Address" className={inputClass} />
                   <input value={propForm.rent} onChange={(e) => setPropForm({ ...propForm, rent: e.target.value })} placeholder="Monthly rent" type="number" className={inputClass} />
@@ -235,9 +235,9 @@ export const DemoWalkthroughPage: React.FC = () => {
               )}
               <div className="space-y-2">
                 {demoData.properties.map((p, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--cream)]">
                     <div>
-                      <div className="font-semibold text-slate-100">{p.title}</div>
+                      <div className="font-semibold text-[var(--warm-ink)]">{p.title}</div>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>{p.address}{p.rent ? ` · $${p.rent}/mo` : ''}</div>
                     </div>
                     <Badge tone={p.status === 'VACANT' ? 'info' : 'success'}>{p.status}</Badge>
@@ -248,11 +248,11 @@ export const DemoWalkthroughPage: React.FC = () => {
 
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base md:text-lg font-bold text-slate-100">Tenants</h3>
+                <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)]">Tenants</h3>
                 <Button onClick={() => setShowTenantForm(!showTenantForm)} size="sm">+ Add</Button>
               </div>
               {showTenantForm && (
-                <div className="mb-4 p-3 rounded-xl bg-white/5 space-y-3">
+                <div className="mb-4 p-3 rounded-xl bg-[var(--cream)] space-y-3">
                   <input value={tenantForm.name} onChange={(e) => setTenantForm({ ...tenantForm, name: e.target.value })} placeholder="Tenant name" className={inputClass} />
                   <input value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} placeholder="Email *" type="email" className={inputClass} />
                   <div className="flex gap-2">
@@ -263,9 +263,9 @@ export const DemoWalkthroughPage: React.FC = () => {
               )}
               <div className="space-y-2">
                 {demoData.tenants.map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--cream)]">
                     <div>
-                      <div className="font-semibold text-slate-100">{t.name || t.email}</div>
+                      <div className="font-semibold text-[var(--warm-ink)]">{t.name || t.email}</div>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}</div>
                     </div>
                     <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
@@ -280,7 +280,7 @@ export const DemoWalkthroughPage: React.FC = () => {
         {tab === 'sale' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-4">How Secured Sales Work</h3>
+              <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-4">How Secured Sales Work</h3>
               <div className="space-y-3">
                 {[
                   { icon: '🛡️', title: 'Seller opens a secured sale', desc: 'Drop the Pabandi widget on any listing. The seller opens a secured sale and gets a shareable buyer link.' },
@@ -289,26 +289,26 @@ export const DemoWalkthroughPage: React.FC = () => {
                   { icon: '🤝', title: 'Meet & exchange', desc: 'Meet at the safe spot, inspect the item, hand it over. No cash, no risk of robbery.' },
                   { icon: '✅', title: 'Release funds', desc: 'Buyer confirms the exchange — funds release to the seller. If something goes wrong, file a dispute to lock the escrow for arbitration.' },
                 ].map((step, i) => (
-                  <div key={i} className="flex gap-3 p-3 rounded-xl bg-white/5">
+                  <div key={i} className="flex gap-3 p-3 rounded-xl bg-[var(--cream)]">
                     <div className="text-2xl">{step.icon}</div>
-                    <div><div className="font-bold text-slate-100 text-sm">{step.title}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{step.desc}</div></div>
+                    <div><div className="font-bold text-[var(--warm-ink)] text-sm">{step.title}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{step.desc}</div></div>
                   </div>
                 ))}
               </div>
             </Surface>
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-4">Escrow simulation</h3>
+              <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-4">Escrow simulation</h3>
               <div className="grid grid-cols-3 gap-2 md:gap-3 text-center">
-                <div className="p-3 md:p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="text-lg md:text-2xl font-bold text-emerald-300">$250</div>
+                <div className="p-3 md:p-4 rounded-xl bg-[var(--sage)]/10 border border-[var(--sage)]/20">
+                  <div className="text-lg md:text-2xl font-bold text-[var(--sage)]">$250</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>In escrow</div>
                 </div>
-                <div className="p-3 md:p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                  <div className="text-lg md:text-2xl font-bold text-indigo-300">📍 Library</div>
+                <div className="p-3 md:p-4 rounded-xl bg-[var(--clay)]/10 border border-indigo-500/20">
+                  <div className="text-lg md:text-2xl font-bold text-[var(--terracotta)]">📍 Library</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>SafeMeet spot</div>
                 </div>
-                <div className="p-3 md:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <div className="text-lg md:text-2xl font-bold text-amber-300">25 $PAB</div>
+                <div className="p-3 md:p-4 rounded-xl bg-[var(--muted-ochre)]/10 border border-[var(--muted-ochre)]/20">
+                  <div className="text-lg md:text-2xl font-bold text-[var(--muted-ochre)]">25 $PAB</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Seller reward</div>
                 </div>
               </div>
@@ -320,7 +320,7 @@ export const DemoWalkthroughPage: React.FC = () => {
         {tab === 'screening' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-2">Run a background check</h3>
+              <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-2">Run a background check</h3>
               <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Searches US CourtListener for eviction and housing litigation records.</p>
               <div className="space-y-3">
                 <input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="Full name *" className={inputClass} />
@@ -335,33 +335,33 @@ export const DemoWalkthroughPage: React.FC = () => {
               {screenResult && (
                 <div className="mt-4 space-y-3">
                   {screenResult.simulated && (
-                    <div className="p-3 rounded-xl border border-amber-400/30 bg-amber-500/10 text-sm">
+                    <div className="p-3 rounded-xl border border-[var(--muted-ochre)]/30 bg-[var(--muted-ochre)]/10 text-sm">
                       <p className="font-bold text-amber-200">⚠️ Demo mode</p>
-                      <p className="text-amber-300/80 text-xs">COURTLISTENER_API_KEY not set. Results are simulated.</p>
+                      <p className="text-[var(--muted-ochre)]/80 text-xs">COURTLISTENER_API_KEY not set. Results are simulated.</p>
                     </div>
                   )}
-                  <div className="p-3 rounded-xl bg-white/5">
+                  <div className="p-3 rounded-xl bg-[var(--cream)]">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="font-bold text-slate-100">{screenResult.name}</div>
+                        <div className="font-bold text-[var(--warm-ink)]">{screenResult.name}</div>
                         <div className="text-xs" style={{ color: tokens.color.textDim }}>{screenResult.state} · {screenResult.source}</div>
                       </div>
                       <Badge tone={screenResult.band === 'HIGH' ? 'danger' : screenResult.band === 'MEDIUM' ? 'warning' : 'success'}>{screenResult.band}</Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div><div className="font-bold text-slate-100">{screenResult.count}</div><div style={{ color: tokens.color.textDim }}>Cases</div></div>
+                      <div><div className="font-bold text-[var(--warm-ink)]">{screenResult.count}</div><div style={{ color: tokens.color.textDim }}>Cases</div></div>
                       <div><div className="font-bold" style={{ color: screenResult.band === 'HIGH' ? tokens.color.danger : '#10b981' }}>{screenResult.depositAdj > 0 ? `+${screenResult.depositAdj}%` : '0%'}</div><div style={{ color: tokens.color.textDim }}>Deposit</div></div>
                       <div><div className="font-bold" style={{ color: screenResult.results?.some((r: any) => r.status === 'Active') ? tokens.color.danger : '#10b981' }}>{screenResult.results?.some((r: any) => r.status === 'Active') ? 'Active' : 'Clear'}</div><div style={{ color: tokens.color.textDim }}>Status</div></div>
                     </div>
                   </div>
                   {screenResult.results?.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-bold text-slate-100 mb-2">Cases found</h4>
+                      <h4 className="text-sm font-bold text-[var(--warm-ink)] mb-2">Cases found</h4>
                       <div className="space-y-2">
                         {screenResult.results.slice(0, 3).map((c: any, i: number) => (
-                          <div key={i} className="p-3 rounded-lg bg-white/5 text-sm">
+                          <div key={i} className="p-3 rounded-lg bg-[var(--cream)] text-sm">
                             <div className="flex items-center justify-between">
-                              <div className="font-semibold text-slate-100 text-xs">{c.caseName}</div>
+                              <div className="font-semibold text-[var(--warm-ink)] text-xs">{c.caseName}</div>
                               <Badge tone={c.status === 'Active' ? 'danger' : 'info'}>{c.status}</Badge>
                             </div>
                             <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{c.docketNumber} · {c.court}</div>
@@ -370,11 +370,11 @@ export const DemoWalkthroughPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <button onClick={() => setShowRawJson(!showRawJson)} className="text-xs font-semibold text-indigo-300">
+                  <button onClick={() => setShowRawJson(!showRawJson)} className="text-xs font-semibold text-[var(--terracotta)]">
                     {showRawJson ? '▼ Hide JSON' : '▶ Show raw API response'}
                   </button>
                   {showRawJson && (
-                    <pre className="p-3 rounded-lg bg-black/40 text-xs text-green-300 overflow-x-auto max-h-60">
+                    <pre className="p-3 rounded-lg bg-[var(--cream)] text-xs text-green-300 overflow-x-auto max-h-60">
                       {JSON.stringify(screenResult, null, 2)}
                     </pre>
                   )}
@@ -389,11 +389,11 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base md:text-lg font-bold text-slate-100">Schedule viewings</h3>
+                <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)]">Schedule viewings</h3>
                 <Button onClick={() => setShowApptForm(!showApptForm)} size="sm">+ New</Button>
               </div>
               {showApptForm && (
-                <div className="mb-4 p-3 rounded-xl bg-white/5 space-y-3">
+                <div className="mb-4 p-3 rounded-xl bg-[var(--cream)] space-y-3">
                   <input value={apptForm.tenantName} onChange={(e) => setApptForm({ ...apptForm, tenantName: e.target.value })} placeholder="Tenant name *" className={inputClass} />
                   <input value={apptForm.tenantEmail} onChange={(e) => setApptForm({ ...apptForm, tenantEmail: e.target.value })} placeholder="Email" className={inputClass} />
                   <input value={apptForm.property} onChange={(e) => setApptForm({ ...apptForm, property: e.target.value })} placeholder="Property" className={inputClass} />
@@ -406,9 +406,9 @@ export const DemoWalkthroughPage: React.FC = () => {
               )}
               <div className="space-y-2">
                 {demoData.appointments.map((a) => (
-                  <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--cream)]">
                     <div>
-                      <div className="font-semibold text-slate-100">{a.tenantName}</div>
+                      <div className="font-semibold text-[var(--warm-ink)]">{a.tenantName}</div>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.property || 'No property'} · {new Date(a.date).toLocaleString()}</div>
                     </div>
                     <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'info' : 'warning'}>{a.status}</Badge>
@@ -423,22 +423,22 @@ export const DemoWalkthroughPage: React.FC = () => {
         {tab === 'history' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-2">Tenant history timeline</h3>
+              <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-2">Tenant history timeline</h3>
               <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Track every tenant's stays, disputes, payments, and risk bands.</p>
               <div className="space-y-3">
                 {demoData.tenants.map((t, i) => (
-                  <div key={i} className="p-3 rounded-xl bg-white/5">
+                  <div key={i} className="p-3 rounded-xl bg-[var(--cream)]">
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="font-bold text-slate-100">{t.name || t.email}</div>
+                        <div className="font-bold text-[var(--warm-ink)]">{t.name || t.email}</div>
                         <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}</div>
                       </div>
                       <Badge tone={t.band === 'HIGH' ? 'danger' : t.band === 'MEDIUM' ? 'warning' : 'success'}>{t.band}</Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                      <div><div className="font-bold text-slate-100">{t.stays || 0}</div><div style={{ color: tokens.color.textDim }}>Stays</div></div>
-                      <div><div className="font-bold text-rose-300">{t.disputes || 0}</div><div style={{ color: tokens.color.textDim }}>Disputes</div></div>
-                      <div><div className="font-bold text-emerald-300">${t.deposited || 0}</div><div style={{ color: tokens.color.textDim }}>Deposits</div></div>
+                      <div><div className="font-bold text-[var(--warm-ink)]">{t.stays || 0}</div><div style={{ color: tokens.color.textDim }}>Stays</div></div>
+                      <div><div className="font-bold text-[var(--dusty-rose)]">{t.disputes || 0}</div><div style={{ color: tokens.color.textDim }}>Disputes</div></div>
+                      <div><div className="font-bold text-[var(--sage)]">${t.deposited || 0}</div><div style={{ color: tokens.color.textDim }}>Deposits</div></div>
                     </div>
                   </div>
                 ))}
@@ -452,7 +452,7 @@ export const DemoWalkthroughPage: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Surface className="p-4 md:p-6">
-                <h3 className="text-base md:text-lg font-bold text-slate-100 mb-3">Earn $PAB</h3>
+                <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-3">Earn $PAB</h3>
                 <div className="space-y-2">
                   {[
                     { action: 'Complete a verified sale', reward: '+15 $PAB' },
@@ -462,15 +462,15 @@ export const DemoWalkthroughPage: React.FC = () => {
                     { action: 'Refer a new user', reward: '+25 $PAB' },
                     { action: 'Connect wallet', reward: '+15 $PAB' },
                   ].map((e, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                      <span className="text-sm text-slate-300">{e.action}</span>
-                      <span className="text-sm font-bold text-emerald-300">{e.reward}</span>
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-[var(--cream)]">
+                      <span className="text-sm text-[var(--warm-ink)]">{e.action}</span>
+                      <span className="text-sm font-bold text-[var(--sage)]">{e.reward}</span>
                     </div>
                   ))}
                 </div>
               </Surface>
               <Surface className="p-4 md:p-6">
-                <h3 className="text-base md:text-lg font-bold text-slate-100 mb-3">Stake $PAB</h3>
+                <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-3">Stake $PAB</h3>
                 <div className="space-y-2">
                   {[
                     { tier: 'Bronze', stake: '100 $PAB', benefit: 'Basic trust badge' },
@@ -478,19 +478,19 @@ export const DemoWalkthroughPage: React.FC = () => {
                     { tier: 'Gold', stake: '2,000 $PAB', benefit: 'Reduced fees' },
                     { tier: 'Platinum', stake: '10,000 $PAB', benefit: 'Arbitration voting' },
                   ].map((t, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                      <div><span className="text-sm font-semibold text-slate-100">{t.tier}</span><span className="text-xs ml-2" style={{ color: tokens.color.textDim }}>{t.benefit}</span></div>
-                      <span className="text-sm font-bold text-amber-300">{t.stake}</span>
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-[var(--cream)]">
+                      <div><span className="text-sm font-semibold text-[var(--warm-ink)]">{t.tier}</span><span className="text-xs ml-2" style={{ color: tokens.color.textDim }}>{t.benefit}</span></div>
+                      <span className="text-sm font-bold text-[var(--muted-ochre)]">{t.stake}</span>
                     </div>
                   ))}
                 </div>
               </Surface>
             </div>
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-bold text-slate-100 mb-3">Connect wallet (demo)</h3>
+              <h3 className="text-base md:text-lg font-bold text-[var(--warm-ink)] mb-3">Connect wallet (demo)</h3>
               {demoData.walletConnected ? (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <div className="font-semibold text-emerald-300">✅ Wallet connected</div>
+                <div className="p-3 rounded-xl bg-[var(--sage)]/10 border border-[var(--sage)]/20">
+                  <div className="font-semibold text-[var(--sage)]">✅ Wallet connected</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{walletAddr.slice(0, 8)}…{walletAddr.slice(-4)}</div>
                 </div>
               ) : (
@@ -507,7 +507,7 @@ export const DemoWalkthroughPage: React.FC = () => {
         {tab === 'convert' && (
           <div className="space-y-4">
             <div className="text-center mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-100">Ready to get started?</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">Ready to get started?</h2>
               <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>Choose how you want to set up your account.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -519,7 +519,7 @@ export const DemoWalkthroughPage: React.FC = () => {
               ].map((opt) => (
                 <Surface key={opt.id} className={`cursor-pointer p-4 transition-all ${convertChoice === opt.id ? 'ring-2 ring-indigo-400' : ''}`} onClick={() => setConvertChoice(opt.id as any)}>
                   <div className="text-2xl mb-2">{opt.icon}</div>
-                  <h3 className="font-bold text-slate-100">{opt.title}</h3>
+                  <h3 className="font-bold text-[var(--warm-ink)]">{opt.title}</h3>
                   <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{opt.desc}</p>
                 </Surface>
               ))}
@@ -527,20 +527,20 @@ export const DemoWalkthroughPage: React.FC = () => {
 
             {convertChoice === 'import' && (
               <Surface className="p-4">
-                <h3 className="text-base font-bold text-slate-100 mb-3">Import options</h3>
+                <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Import options</h3>
                 <div className="flex gap-3 mb-3">
-                  <button onClick={() => setImportMethod('csv')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${importMethod === 'csv' ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>📄 CSV</button>
-                  <button onClick={() => setImportMethod('api')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${importMethod === 'api' ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>🔌 API</button>
+                  <button onClick={() => setImportMethod('csv')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${importMethod === 'csv' ? 'bg-[var(--clay)]/20 text-[var(--terracotta)]' : 'bg-[var(--cream)] text-[var(--soft-stone)]'}`}>📄 CSV</button>
+                  <button onClick={() => setImportMethod('api')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold ${importMethod === 'api' ? 'bg-[var(--clay)]/20 text-[var(--terracotta)]' : 'bg-[var(--cream)] text-[var(--soft-stone)]'}`}>🔌 API</button>
                 </div>
                 {importMethod === 'csv' ? (
-                  <div className="p-6 rounded-xl border-2 border-dashed border-white/10 text-center">
+                  <div className="p-6 rounded-xl border-2 border-dashed border-[var(--soft-stone)]/30 text-center">
                     <div className="text-2xl mb-2">📄</div>
                     <p className="text-sm" style={{ color: tokens.color.textDim }}>Drop CSV here or click to browse</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {['Buildium', 'AppFolio', 'Rent Manager', 'Yardi'].map((crm) => (
-                      <div key={crm} className="p-2 rounded-lg bg-white/5 text-center text-xs text-slate-300">{crm}</div>
+                      <div key={crm} className="p-2 rounded-lg bg-[var(--cream)] text-center text-xs text-[var(--warm-ink)]">{crm}</div>
                     ))}
                   </div>
                 )}
@@ -560,11 +560,11 @@ export const DemoWalkthroughPage: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-surface/90 border-t border-white/5 safe-area-pb">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-sm bg-surface/90 border-t border-[var(--soft-stone)]/30 safe-area-pb">
         <div className="flex justify-around items-center px-1 py-1">
           {TABS.slice(0, 5).map((n) => (
             <button key={n.id} onClick={() => setTab(n.id as DemoTab)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all ${tab === n.id ? 'text-indigo-300' : 'text-slate-500'}`}>
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all ${tab === n.id ? 'text-[var(--terracotta)]' : 'text-[var(--soft-stone)]'}`}>
               <span className="text-lg">{n.icon}</span>
               <span className="text-[9px] font-medium">{n.label}</span>
             </button>

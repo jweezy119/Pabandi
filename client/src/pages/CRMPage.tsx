@@ -79,16 +79,16 @@ export const CRMPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center p-4 md:p-6" style={{ background: tokens.color.background }}>
         <Surface className="text-center max-w-md w-full p-8 md:p-10">
           <div className="text-5xl md:text-6xl mb-4">📋</div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100 font-headline">Universal CRM</h1>
-          <p className="mt-3 text-slate-400 leading-relaxed text-sm md:text-base">One CRM for any business — property management, sales, services, freelance, or general.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--warm-ink)] font-headline">Universal CRM</h1>
+          <p className="mt-3 text-[var(--soft-stone)] leading-relaxed text-sm md:text-base">One CRM for any business — property management, sales, services, freelance, or general.</p>
           <div className="mt-6 text-left">
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">What kind of business?</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">What kind of business?</label>
             <div className="grid gap-2">
               {BUSINESS_TYPES.map((bt) => (
                 <button key={bt.value} onClick={() => setBizType(bt.value)}
-                  className={`text-left p-3 rounded-xl border transition-all active:scale-[0.98] ${bizType === bt.value ? 'border-indigo-400/60 bg-indigo-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
-                  <div className="font-semibold text-slate-100 text-sm">{bt.label}</div>
-                  <div className="text-xs text-slate-400">{bt.description}</div>
+                  className={`text-left p-3 rounded-xl border transition-all active:scale-[0.98] ${bizType === bt.value ? 'border-indigo-400/60 bg-[var(--clay)]/10' : 'border-[var(--soft-stone)]/30 bg-[var(--cream)] hover:bg-[var(--warm-sand)]'}`}>
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm">{bt.label}</div>
+                  <div className="text-xs text-[var(--soft-stone)]">{bt.description}</div>
                 </button>
               ))}
             </div>
@@ -123,16 +123,16 @@ export const CRMPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-20 md:pb-0" style={{ background: tokens.color.background }}>
       {/* Secondary CRM Header (Layout header handles top-level nav) */}
-      <div className="sticky top-16 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3 md:px-8">
+      <div className="sticky top-16 z-40 backdrop-blur-sm bg-surface/80 border-b border-[var(--soft-stone)]/30 px-4 py-3 md:px-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">{dash!.profile.companyName || 'My Business'}</h1>
+            <h1 className="text-lg md:text-2xl font-bold tracking-tight text-[var(--warm-ink)] font-headline">{dash!.profile.companyName || 'My Business'}</h1>
             <p className="text-xs md:text-sm" style={{ color: tokens.color.textDim }}>{config.label}</p>
           </div>
           <div className="md:hidden flex gap-1">
             {navItems.slice(0, 4).map((n) => (
               <button key={n.id} onClick={() => setTab(n.id)}
-                className={`p-2 rounded-lg text-lg transition-all ${tab === n.id ? 'bg-indigo-500/20' : ''}`}>
+                className={`p-2 rounded-lg text-lg transition-all ${tab === n.id ? 'bg-[var(--clay)]/20' : ''}`}>
                 {n.icon}
               </button>
             ))}
@@ -144,7 +144,7 @@ export const CRMPage: React.FC = () => {
       <div className="hidden md:flex gap-2 px-8 py-3 max-w-5xl mx-auto flex-wrap">
         {navItems.map((n) => (
           <button key={n.id} onClick={() => setTab(n.id)}
-            className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${tab === n.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+            className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${tab === n.id ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30 hover:bg-[var(--warm-sand)]'}`}>
             {n.icon} {n.label}
           </button>
         ))}
@@ -158,36 +158,36 @@ export const CRMPage: React.FC = () => {
         {tab === 'overview' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-slate-100">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.properties.label}</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-emerald-300">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-indigo-300">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Available</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-slate-100">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.tenants.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('properties')}><div className="text-2xl font-bold text-[var(--warm-ink)]">{s.totalProperties}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.properties.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-[var(--sage)]">{s.occupied}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Active</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-[var(--terracotta)]">{s.vacant}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Available</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('tenants')}><div className="text-2xl font-bold text-[var(--warm-ink)]">{s.totalTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.tenants.label}</div></Surface>
               <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('screen')}><div className="text-2xl font-bold" style={{ color: s.highRiskTenants > 0 ? tokens.color.danger : tokens.color.text }}>{s.highRiskTenants}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>High-risk</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-slate-100">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.appointments.label}</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-slate-100">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.leases.label}</div></Surface>
-              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-slate-100">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.maintenance.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('appointments')}><div className="text-2xl font-bold text-[var(--warm-ink)]">{s.upcomingAppointments}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.appointments.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('leases')}><div className="text-2xl font-bold text-[var(--warm-ink)]">{s.activeLeases}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.leases.label}</div></Surface>
+              <Surface className="text-center active:scale-[0.97] transition-transform cursor-pointer" onClick={() => setTab('maintenance')}><div className="text-2xl font-bold text-[var(--warm-ink)]">{s.openMaintenance || 0}</div><div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{config.entities.maintenance.label}</div></Surface>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Link to="/sales-crm">
-                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                <Surface className="p-6 hover:bg-[var(--warm-sand)] transition-colors cursor-pointer">
                   <div className="text-2xl mb-2">📈</div>
-                  <div className="text-lg font-bold text-slate-100">Sales CRM</div>
+                  <div className="text-lg font-bold text-[var(--warm-ink)]">Sales CRM</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Pipeline · Deals · Tasks · Campaigns</div>
-                  <div className="text-xs mt-2 text-indigo-300">{crmDeals.length} deals · ${crmPipeline.reduce((sum: number, p: any) => sum + p.value, 0).toLocaleString()} pipeline</div>
+                  <div className="text-xs mt-2 text-[var(--terracotta)]">{crmDeals.length} deals · ${crmPipeline.reduce((sum: number, p: any) => sum + p.value, 0).toLocaleString()} pipeline</div>
                 </Surface>
               </Link>
               <Link to="/dashboard">
-                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                <Surface className="p-6 hover:bg-[var(--warm-sand)] transition-colors cursor-pointer">
                   <div className="text-2xl mb-2">📊</div>
-                  <div className="text-lg font-bold text-slate-100">Dashboard</div>
+                  <div className="text-lg font-bold text-[var(--warm-ink)]">Dashboard</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Business overview · Multi-type</div>
                 </Surface>
               </Link>
               <Link to="/tenant-workflow">
-                <Surface className="p-6 hover:bg-white/10 transition-colors cursor-pointer">
+                <Surface className="p-6 hover:bg-[var(--warm-sand)] transition-colors cursor-pointer">
                   <div className="text-2xl mb-2">🔄</div>
-                  <div className="text-lg font-bold text-slate-100">Workflows</div>
+                  <div className="text-lg font-bold text-[var(--warm-ink)]">Workflows</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>Tenant lifecycle automation</div>
                 </Surface>
               </Link>
@@ -201,7 +201,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Add {config.entities.properties.singular}</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.properties.icon} Add {config.entities.properties.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.properties.icon} Add {config.entities.properties.singular}</h3>
                 <div className="space-y-3">
                   <input value={propForm.title} onChange={(e) => setPropForm({ ...propForm, title: e.target.value })} placeholder={`${config.entities.properties.singular} name *`} className={inputClass} />
                   <input value={propForm.address} onChange={(e) => setPropForm({ ...propForm, address: e.target.value })} placeholder="Address" className={inputClass} />
@@ -223,9 +223,9 @@ export const CRMPage: React.FC = () => {
             {dash!.properties.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.properties.label.toLowerCase()} yet.</p>}
             {dash!.properties.map((p) => (
               <Surface key={p.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{p.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{p.address}{p.city ? `, ${p.city}` : ''}</div></div>
+                <div><div className="font-semibold text-[var(--warm-ink)]">{p.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{p.address}{p.city ? `, ${p.city}` : ''}</div></div>
                 <div className="text-right">
-                  {p.rentAmount && <div className="font-bold text-slate-100">${p.rentAmount}</div>}
+                  {p.rentAmount && <div className="font-bold text-[var(--warm-ink)]">${p.rentAmount}</div>}
                   <Badge tone={p.status === 'VACANT' ? 'info' : p.status === 'OCCUPIED' ? 'success' : 'warning'}>{p.status}</Badge>
                 </div>
               </Surface>
@@ -239,7 +239,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Add {config.entities.tenants.singular}</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.tenants.icon} Add {config.entities.tenants.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.tenants.icon} Add {config.entities.tenants.singular}</h3>
                 <div className="space-y-3">
                   <input value={tenantForm.email} onChange={(e) => setTenantForm({ ...tenantForm, email: e.target.value })} placeholder="Email *" type="email" className={inputClass} />
                   <div className="grid grid-cols-2 gap-3">
@@ -258,7 +258,7 @@ export const CRMPage: React.FC = () => {
             {dash!.tenants.map((t) => (
               <button key={t.id} onClick={() => setSelectedTenant(t)} className="w-full text-left active:scale-[0.98] transition-transform">
                 <Surface className="flex items-center justify-between">
-                  <div><div className="font-semibold text-slate-100">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}{t.property ? ` · ${t.property.title || ''}` : ''}</div></div>
+                  <div><div className="font-semibold text-[var(--warm-ink)]">{t.firstName || ''} {t.lastName || ''}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{t.email}{t.property ? ` · ${t.property.title || ''}` : ''}</div></div>
                   <div className="text-right">
                     {t.riskBand && <Badge tone={riskTone[t.riskBand] || 'info'}>{t.riskBand}</Badge>}
                     <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{t.status}</div>
@@ -274,77 +274,77 @@ export const CRMPage: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setSelectedTenant(null)}>
             <div className="max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-slate-100 font-headline">Tenant Profile</h2>
-                <button onClick={() => setSelectedTenant(null)} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+                <h2 className="text-xl font-bold text-[var(--warm-ink)] font-headline">Tenant Profile</h2>
+                <button onClick={() => setSelectedTenant(null)} className="text-[var(--soft-stone)] hover:text-[var(--warm-ink)] text-xl leading-none">&times;</button>
               </div>
               {/* Profile Header */}
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-xl font-bold">
+                <div className="w-14 h-14 rounded-full bg-[var(--clay)]/20 flex items-center justify-center text-[var(--terracotta)] text-xl font-bold">
                   {(selectedTenant.firstName || '?')[0]}{(selectedTenant.lastName || '?')[0]}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-100 text-lg">{selectedTenant.firstName || ''} {selectedTenant.lastName || ''}</div>
-                  <div className="text-sm text-slate-400">{selectedTenant.email}</div>
-                  {selectedTenant.phone && <div className="text-sm text-slate-400">{selectedTenant.phone}</div>}
+                  <div className="font-semibold text-[var(--warm-ink)] text-lg">{selectedTenant.firstName || ''} {selectedTenant.lastName || ''}</div>
+                  <div className="text-sm text-[var(--soft-stone)]">{selectedTenant.email}</div>
+                  {selectedTenant.phone && <div className="text-sm text-[var(--soft-stone)]">{selectedTenant.phone}</div>}
                 </div>
               </div>
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Surface className="p-3">
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Status</div>
-                  <div className="font-semibold text-slate-100 capitalize">{selectedTenant.status}</div>
+                  <div className="font-semibold text-[var(--warm-ink)] capitalize">{selectedTenant.status}</div>
                 </Surface>
                 <Surface className="p-3">
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Risk Band</div>
-                  <div className="font-semibold text-slate-100">{selectedTenant.riskBand || 'N/A'}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{selectedTenant.riskBand || 'N/A'}</div>
                 </Surface>
                 {selectedTenant.depositHeld > 0 && (
                   <Surface className="p-3">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Deposit Held</div>
-                    <div className="font-semibold text-slate-100">${selectedTenant.depositHeld.toLocaleString()}</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">${selectedTenant.depositHeld.toLocaleString()}</div>
                   </Surface>
                 )}
                 <Surface className="p-3">
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Total Stays</div>
-                  <div className="font-semibold text-slate-100">{selectedTenant.totalStays}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{selectedTenant.totalStays}</div>
                 </Surface>
                 {selectedTenant.screenedAt && (
                   <Surface className="p-3">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Screened</div>
-                    <div className="font-semibold text-slate-100 text-sm">{new Date(selectedTenant.screenedAt).toLocaleDateString()}</div>
+                    <div className="font-semibold text-[var(--warm-ink)] text-sm">{new Date(selectedTenant.screenedAt).toLocaleDateString()}</div>
                   </Surface>
                 )}
                 {selectedTenant.screeningBand && (
                   <Surface className="p-3">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Screening</div>
-                    <div className="font-semibold text-slate-100">{selectedTenant.screeningBand}</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">{selectedTenant.screeningBand}</div>
                   </Surface>
                 )}
               </div>
               {/* Property */}
               {selectedTenant.property && (
                 <Surface className="p-4 mb-4">
-                  <div className="text-sm font-semibold text-slate-100 mb-1">Property</div>
-                  <div className="text-slate-300">{selectedTenant.property.title || ''}</div>
-                  <div className="text-slate-400 text-sm">{[selectedTenant.property.address, selectedTenant.property.city, selectedTenant.property.state].filter(Boolean).join(', ')}</div>
+                  <div className="text-sm font-semibold text-[var(--warm-ink)] mb-1">Property</div>
+                  <div className="text-[var(--warm-ink)]">{selectedTenant.property.title || ''}</div>
+                  <div className="text-[var(--soft-stone)] text-sm">{[selectedTenant.property.address, selectedTenant.property.city, selectedTenant.property.state].filter(Boolean).join(', ')}</div>
                 </Surface>
               )}
               {/* Lease */}
               {selectedTenant.lease && (
                 <Surface className="p-4 mb-4">
-                  <div className="text-sm font-semibold text-slate-100 mb-1">Current Lease</div>
-                  <div className="text-slate-300 text-sm">{selectedTenant.lease.unit?.unitNumber ? `Unit ${selectedTenant.lease.unit.unitNumber}` : ''} {selectedTenant.lease.unit?.title ? `(${selectedTenant.lease.unit.title})` : ''}</div>
-                  <div className="text-slate-300 text-sm">{selectedTenant.lease.startDate ? new Date(selectedTenant.lease.startDate).toLocaleDateString() : ''} — {selectedTenant.lease.endDate ? new Date(selectedTenant.lease.endDate).toLocaleDateString() : ''}</div>
-                  <div className="text-slate-400 text-sm">{selectedTenant.lease.rentAmount ? `$${selectedTenant.lease.rentAmount}/mo` : ''}{selectedTenant.lease.petFee ? ` · Pet fee: $${selectedTenant.lease.petFee}` : ''}{selectedTenant.lease.petMonthly ? ` · Pet rent: $${selectedTenant.lease.petMonthly}/mo` : ''}{selectedTenant.lease.lateFee ? ` · Late fee: $${selectedTenant.lease.lateFee}` : ''}</div>
-                  {selectedTenant.lease.utilities?.length ? <div className="text-slate-400 text-sm">Utilities: {selectedTenant.lease.utilities.join(', ')}</div> : null}
+                  <div className="text-sm font-semibold text-[var(--warm-ink)] mb-1">Current Lease</div>
+                  <div className="text-[var(--warm-ink)] text-sm">{selectedTenant.lease.unit?.unitNumber ? `Unit ${selectedTenant.lease.unit.unitNumber}` : ''} {selectedTenant.lease.unit?.title ? `(${selectedTenant.lease.unit.title})` : ''}</div>
+                  <div className="text-[var(--warm-ink)] text-sm">{selectedTenant.lease.startDate ? new Date(selectedTenant.lease.startDate).toLocaleDateString() : ''} — {selectedTenant.lease.endDate ? new Date(selectedTenant.lease.endDate).toLocaleDateString() : ''}</div>
+                  <div className="text-[var(--soft-stone)] text-sm">{selectedTenant.lease.rentAmount ? `$${selectedTenant.lease.rentAmount}/mo` : ''}{selectedTenant.lease.petFee ? ` · Pet fee: $${selectedTenant.lease.petFee}` : ''}{selectedTenant.lease.petMonthly ? ` · Pet rent: $${selectedTenant.lease.petMonthly}/mo` : ''}{selectedTenant.lease.lateFee ? ` · Late fee: $${selectedTenant.lease.lateFee}` : ''}</div>
+                  {selectedTenant.lease.utilities?.length ? <div className="text-[var(--soft-stone)] text-sm">Utilities: {selectedTenant.lease.utilities.join(', ')}</div> : null}
                   <Badge tone={selectedTenant.lease.status === 'ACTIVE' ? 'success' : 'info'} className="mt-1">{selectedTenant.lease.status}</Badge>
                 </Surface>
               )}
               {/* Notes */}
               {selectedTenant.notes && (
                 <Surface className="p-4 mb-6">
-                  <div className="text-sm font-semibold text-slate-100 mb-1">Notes</div>
-                  <div className="text-slate-300 text-sm">{selectedTenant.notes}</div>
+                  <div className="text-sm font-semibold text-[var(--warm-ink)] mb-1">Notes</div>
+                  <div className="text-[var(--warm-ink)] text-sm">{selectedTenant.notes}</div>
                 </Surface>
               )}
               <div className="flex gap-2">
@@ -360,7 +360,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Run {config.entities.screen.singular}</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.screen.icon} {config.entities.screen.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.screen.icon} {config.entities.screen.singular}</h3>
                 <div className="space-y-3">
                   <input value={screenForm.tenantEmail} onChange={(e) => setScreenForm({ ...screenForm, tenantEmail: e.target.value })} placeholder={`${config.entities.tenants.singular} email *`} type="email" className={inputClass} />
                   <input value={screenForm.tenantName} onChange={(e) => setScreenForm({ ...screenForm, tenantName: e.target.value })} placeholder={`${config.entities.tenants.singular} name`} className={inputClass} />
@@ -380,7 +380,7 @@ export const CRMPage: React.FC = () => {
             {dash!.screenings.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.screen.label.toLowerCase()} yet.</p>}
             {dash!.screenings.map((sc) => (
               <Surface key={sc.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{sc.tenantName || sc.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}</div></div>
+                <div><div className="font-semibold text-[var(--warm-ink)]">{sc.tenantName || sc.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{sc.source} · {new Date(sc.screenedAt).toLocaleDateString()}</div></div>
                 <div className="text-right">
                   <Badge tone={riskTone[sc.band] || 'info'}>{sc.band}</Badge>
                   {sc.depositAdjPct > 0 && <div className="text-xs mt-1 font-semibold" style={{ color: tokens.color.danger }}>+{sc.depositAdjPct}%</div>}
@@ -396,7 +396,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Schedule</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.appointments.icon} Schedule {config.entities.appointments.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.appointments.icon} Schedule {config.entities.appointments.singular}</h3>
                 <div className="space-y-3">
                   <input value={apptForm.tenantEmail} onChange={(e) => setApptForm({ ...apptForm, tenantEmail: e.target.value })} placeholder={`${config.entities.tenants.singular} email *`} type="email" className={inputClass} />
                   <input value={apptForm.tenantName} onChange={(e) => setApptForm({ ...apptForm, tenantName: e.target.value })} placeholder={`${config.entities.tenants.singular} name`} className={inputClass} />
@@ -412,7 +412,7 @@ export const CRMPage: React.FC = () => {
             {dash!.appointments.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.appointments.label.toLowerCase()} yet.</p>}
             {dash!.appointments.map((a) => (
               <Surface key={a.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{a.tenantName || a.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(a.startsAt).toLocaleString()}</div></div>
+                <div><div className="font-semibold text-[var(--warm-ink)]">{a.tenantName || a.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(a.startsAt).toLocaleString()}</div></div>
                 <Badge tone={a.status === 'CONFIRMED' ? 'success' : a.status === 'COMPLETED' ? 'success' : 'info'}>{a.status}</Badge>
               </Surface>
             ))}
@@ -425,7 +425,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Add {config.entities.leases.singular}</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.leases.icon} Add {config.entities.leases.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.leases.icon} Add {config.entities.leases.singular}</h3>
                 <div className="space-y-3">
                   <input value={leaseForm.tenantEmail} onChange={(e) => setLeaseForm({ ...leaseForm, tenantEmail: e.target.value })} placeholder={`${config.entities.tenants.singular} email *`} type="email" className={inputClass} />
                   <input value={leaseForm.tenantName} onChange={(e) => setLeaseForm({ ...leaseForm, tenantName: e.target.value })} placeholder={`${config.entities.tenants.singular} name`} className={inputClass} />
@@ -447,7 +447,7 @@ export const CRMPage: React.FC = () => {
             {dash!.leases.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.leases.label.toLowerCase()} yet.</p>}
             {dash!.leases.map((l) => (
               <Surface key={l.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{l.tenantName || l.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}</div></div>
+                <div><div className="font-semibold text-[var(--warm-ink)]">{l.tenantName || l.tenantEmail}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()} · ${l.rentAmount}</div></div>
                 <Badge tone={l.status === 'ACTIVE' ? 'success' : 'info'}>{l.status}</Badge>
               </Surface>
             ))}
@@ -460,7 +460,7 @@ export const CRMPage: React.FC = () => {
             {!showForm && <Button onClick={() => setShowForm(true)} className="w-full md:w-auto">+ Report</Button>}
             {showForm && (
               <Surface>
-                <h3 className="text-lg font-bold text-slate-100 mb-4">{config.entities.maintenance.icon} Report {config.entities.maintenance.singular}</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">{config.entities.maintenance.icon} Report {config.entities.maintenance.singular}</h3>
                 <div className="space-y-3">
                   <input value={maintForm.title} onChange={(e) => setMaintForm({ ...maintForm, title: e.target.value })} placeholder="Title *" className={inputClass} />
                   <input value={maintForm.tenantEmail} onChange={(e) => setMaintForm({ ...maintForm, tenantEmail: e.target.value })} placeholder={`${config.entities.tenants.singular} email`} className={inputClass} />
@@ -478,7 +478,7 @@ export const CRMPage: React.FC = () => {
             {dash!.maintenance.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No {config.entities.maintenance.label.toLowerCase()} yet.</p>}
             {dash!.maintenance.map((m) => (
               <Surface key={m.id} className="flex items-center justify-between">
-                <div><div className="font-semibold text-slate-100">{m.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{m.description}{m.cost ? ` · $${m.cost}` : ''}</div></div>
+                <div><div className="font-semibold text-[var(--warm-ink)]">{m.title}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{m.description}{m.cost ? ` · $${m.cost}` : ''}</div></div>
                 <Badge tone={m.priority === 'URGENT' || m.priority === 'HIGH' ? 'danger' : 'warning'}>{m.priority}</Badge>
               </Surface>
             ))}
@@ -492,7 +492,7 @@ export const CRMPage: React.FC = () => {
             {dash!.applications.map((a) => (
               <Surface key={a.id} className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-slate-100">{a.firstName || ''} {a.lastName || a.email}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{a.firstName || ''} {a.lastName || a.email}</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Applied {new Date(a.createdAt).toLocaleDateString()}{a.message ? ` — ${a.message}` : ''}</div>
                 </div>
                 <div className="text-right">
@@ -511,7 +511,7 @@ export const CRMPage: React.FC = () => {
             {dash!.applications.map((a) => (
               <Surface key={a.id} className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-slate-100">{a.firstName || ''} {a.lastName || a.email}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{a.firstName || ''} {a.lastName || a.email}</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Applied {new Date(a.createdAt).toLocaleDateString()}{a.message ? ` — ${a.message}` : ''}</div>
                 </div>
                 <div className="text-right">
@@ -527,25 +527,25 @@ export const CRMPage: React.FC = () => {
         {tab === 'pipeline' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-100">📈 Sales Pipeline</h3>
-              <Link to="/sales-crm" className="text-sm text-indigo-300 hover:text-indigo-200">Open full CRM →</Link>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">📈 Sales Pipeline</h3>
+              <Link to="/sales-crm" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">Open full CRM →</Link>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {crmPipeline.map((p: any) => (
                 <Surface key={p.stage} className="text-center p-4">
-                  <div className="text-2xl font-bold text-slate-100">{p.count}</div>
+                  <div className="text-2xl font-bold text-[var(--warm-ink)]">{p.count}</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>{p.stage}</div>
-                  <div className="text-sm font-semibold text-indigo-300 mt-1">${p.value.toLocaleString()}</div>
+                  <div className="text-sm font-semibold text-[var(--terracotta)] mt-1">${p.value.toLocaleString()}</div>
                 </Surface>
               ))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {crmDeals.map((d: any) => (
                 <Surface key={d.id} className="p-4">
-                  <div className="font-semibold text-slate-100">{d.title}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{d.title}</div>
                   <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{d.description}</div>
                   <div className="flex items-center justify-between mt-2">
-                    <div className="text-lg font-bold text-indigo-300">${d.value.toLocaleString()}</div>
+                    <div className="text-lg font-bold text-[var(--terracotta)]">${d.value.toLocaleString()}</div>
                     <Badge tone={d.stage === 'WON' ? 'success' : d.stage === 'LOST' ? 'danger' : 'info'}>{d.stage}</Badge>
                   </div>
                   {d.contact && <div className="text-xs mt-2" style={{ color: tokens.color.textDim }}>Contact: {d.contact.firstName} {d.contact.lastName}</div>}
@@ -559,14 +559,14 @@ export const CRMPage: React.FC = () => {
         {tab === 'tasks' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-100">✅ Tasks</h3>
-              <Link to="/sales-crm" className="text-sm text-indigo-300 hover:text-indigo-200">Manage in Sales CRM →</Link>
+              <h3 className="text-lg font-bold text-[var(--warm-ink)]">✅ Tasks</h3>
+              <Link to="/sales-crm" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">Manage in Sales CRM →</Link>
             </div>
             {crmTasks.length === 0 && <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No tasks yet.</p>}
             {crmTasks.map((t: any) => (
               <Surface key={t.id} className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-slate-100">{t.title}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{t.title}</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>{t.description} {t.dueDate && `· Due: ${new Date(t.dueDate).toLocaleDateString()}`}</div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -581,7 +581,7 @@ export const CRMPage: React.FC = () => {
         {/* Portal */}
         {tab === 'portal' && (
           <Surface>
-            <h3 className="text-lg font-bold text-slate-100 mb-2">🎨 Your client portal</h3>
+            <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2">🎨 Your client portal</h3>
             <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Clients visit this link to see your offerings and apply.</p>
             <div className="flex gap-2">
               <input readOnly value={portalUrl} className={inputClass} />
@@ -613,11 +613,11 @@ export const CRMPage: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-surface/90 border-t border-white/5 safe-area-pb">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-sm bg-surface/90 border-t border-[var(--soft-stone)]/30 safe-area-pb">
         <div className="flex justify-around items-center px-2 py-2">
           {navItems.slice(0, 5).map((n) => (
             <button key={n.id} onClick={() => setTab(n.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ${tab === n.id ? 'text-indigo-300' : 'text-slate-500'}`}>
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ${tab === n.id ? 'text-[var(--terracotta)]' : 'text-[var(--soft-stone)]'}`}>
               <span className="text-lg">{n.icon}</span>
               <span className="text-[10px] font-medium">{n.label}</span>
             </button>
@@ -637,7 +637,7 @@ const WebhooksTab: React.FC = () => {
   return (
     <div className="space-y-3">
       <Surface>
-        <h3 className="text-lg font-bold text-slate-100 mb-4">🔗 Webhooks</h3>
+        <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">🔗 Webhooks</h3>
         <p className="text-sm mb-4" style={{ color: tokens.color.textDim }}>Connect your own CRM/external system. Events are signed with HMAC-SHA256.</p>
         <div className="flex gap-2">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://your-crm.com/webhook" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3.5 outline-none font-body text-base" />
@@ -647,7 +647,7 @@ const WebhooksTab: React.FC = () => {
       {wh.length === 0 && <p style={{ color: tokens.color.textDim }}>No webhooks yet.</p>}
       {wh.map((w) => (
         <Surface key={w.id} className="flex items-center justify-between">
-          <div><div className="font-semibold text-slate-100">{w.url}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{w.events?.join(', ')} · {w.lastStatus || 'never sent'}</div></div>
+          <div><div className="font-semibold text-[var(--warm-ink)]">{w.url}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{w.events?.join(', ')} · {w.lastStatus || 'never sent'}</div></div>
           <Button onClick={() => remove(w.id)} variant="ghost">Delete</Button>
         </Surface>
       ))}
@@ -660,12 +660,12 @@ const ActivityTab: React.FC = () => {
   useEffect(() => { propertyManagerService.activity().then((r) => setActs(r.data?.data || [])).catch(() => {}); }, []);
   return (
     <div className="space-y-2">
-      <h3 className="text-lg font-bold text-slate-100 mb-4">📜 Activity Log</h3>
+      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">📜 Activity Log</h3>
       {acts.length === 0 && <p style={{ color: tokens.color.textDim }}>No activity yet.</p>}
       {acts.map((a) => (
         <Surface key={a.id}>
           <div className="flex items-center justify-between">
-            <div><div className="font-semibold text-slate-100">{a.description}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{a.action} · {a.entityType}</div></div>
+            <div><div className="font-semibold text-[var(--warm-ink)]">{a.description}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>{a.action} · {a.entityType}</div></div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(a.createdAt).toLocaleString()}</div>
           </div>
         </Surface>
@@ -694,7 +694,7 @@ const TeamTab: React.FC = () => {
   return (
     <div className="space-y-4">
       <Surface className="p-6">
-        <h3 className="text-lg font-bold text-slate-100 mb-4">Invite Team Member</h3>
+        <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Invite Team Member</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
           <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
@@ -715,9 +715,9 @@ const TeamTab: React.FC = () => {
         {members.map(m => (
           <Surface key={m.id} className="p-4 flex items-center justify-between">
             <div>
-              <div className="font-semibold text-slate-100">{m.firstName} {m.lastName}</div>
+              <div className="font-semibold text-[var(--warm-ink)]">{m.firstName} {m.lastName}</div>
               <div className="text-xs" style={{ color: tokens.color.textDim }}>{m.email}</div>
-              <div className="text-xs mt-1"><span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-200">{m.role}</span></div>
+              <div className="text-xs mt-1"><span className="px-2 py-0.5 rounded bg-[var(--clay)]/20 text-[var(--terracotta)]">{m.role}</span></div>
             </div>
           </Surface>
         ))}
@@ -744,7 +744,7 @@ const DocumentsTab: React.FC = () => {
   return (
     <div className="space-y-4">
       <Surface className="p-6">
-        <h3 className="text-lg font-bold text-slate-100 mb-4">AI Document Analysis</h3>
+        <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">AI Document Analysis</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input value={fileName} onChange={e => setFileName(e.target.value)} placeholder="File name" className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base" />
           <select value={documentType} onChange={e => setDocumentType(e.target.value)} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
@@ -762,7 +762,7 @@ const DocumentsTab: React.FC = () => {
       <div className="space-y-3">
         {analyses.map(a => (
           <Surface key={a.id} className="p-4">
-            <div className="font-semibold text-slate-100">{a.fileName}</div>
+            <div className="font-semibold text-[var(--warm-ink)]">{a.fileName}</div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.documentType} · {new Date(a.createdAt).toLocaleString()}</div>
             {a.analysis && (
               <div className="mt-2 text-sm" style={{ color: tokens.color.text }}>

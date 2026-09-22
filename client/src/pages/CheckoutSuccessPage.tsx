@@ -51,8 +51,8 @@ export default function CheckoutSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
-        <div className="flex items-center gap-2 text-white/70">
+      <div className="min-h-screen flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+        <div className="flex items-center gap-2 text-[var(--warm-ink)]/70">
           <ArrowPathIcon className="h-5 w-5 animate-spin" />
           Verifying payment...
         </div>
@@ -62,11 +62,11 @@ export default function CheckoutSuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
+      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
         <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[#121212] p-8 text-center">
-          <h1 className="font-headline text-2xl font-bold text-white">We could not verify this payment</h1>
+          <h1 className="font-headline text-2xl font-bold text-[var(--warm-ink)]">We could not verify this payment</h1>
           <p className="mt-2 text-sm text-zinc-400">{error}</p>
-          <Link to="/" className="mt-6 inline-block rounded-xl bg-zinc-900 px-5 py-3 font-bold text-white hover:bg-zinc-800">Back to Home</Link>
+          <Link to="/" className="mt-6 inline-block rounded-xl bg-zinc-900 px-5 py-3 font-bold text-[var(--warm-ink)] hover:bg-zinc-800">Back to Home</Link>
         </div>
       </div>
     );
@@ -77,8 +77,8 @@ export default function CheckoutSuccessPage() {
   const isCancelled = terminalStatus === 'CANCELLED' || terminalStatus === 'EXPIRED' || terminalStatus === 'FAILED';
 
   const icon = isPaid
-    ? <CheckCircleIcon className="w-10 h-10 text-[#14F195]" />
-    : <XCircleIcon className="w-10 h-10 text-red-400" />;
+    ? <CheckCircleIcon className="w-10 h-10 text-[var(--sage)]" />
+    : <XCircleIcon className="w-10 h-10 text-[var(--terracotta)]" />;
   const title = isPaid ? 'Payment confirmed' : isCancelled ? 'Payment not completed' : 'Payment status';
   const subtitle = isPaid
     ? 'Funds are secured in Pabandi escrow.'
@@ -87,17 +87,17 @@ export default function CheckoutSuccessPage() {
       : 'We could not confirm completion for this checkout.';
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="min-h-screen p-4 md:p-8 flex items-center justify-center font-body" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
       <div className="w-full max-w-md">
         <div id="receipt-card" className="bg-[#121212] rounded-3xl border border-zinc-800 p-8 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#14F195]/20 blur-[60px] rounded-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--sage)]/20 blur-[60px] rounded-full pointer-events-none" />
 
           <div className="flex flex-col items-center relative z-10 text-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 ${isPaid ? 'bg-[#14F195]/10' : 'bg-red-500/10'}`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 ${isPaid ? 'bg-[var(--sage)]/10' : 'bg-[rgba(var(--terracotta),0.1)]'}`}>
               {icon}
             </div>
 
-            <h1 className="font-headline text-3xl font-bold mb-2 text-white">{title}</h1>
+            <h1 className="font-headline text-3xl font-bold mb-2 text-[var(--warm-ink)]">{title}</h1>
             <p className="text-zinc-400 mb-8">{subtitle}</p>
 
             <div className="w-full border-t border-dashed border-zinc-700 py-6">
@@ -111,17 +111,17 @@ export default function CheckoutSuccessPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-zinc-400">Status</span>
-                <span className={`font-bold ${isPaid ? 'text-[#14F195]' : isCancelled ? 'text-red-400' : 'text-zinc-300'}`}>{status || 'UNKNOWN'}
+                <span className={`font-bold ${isPaid ? 'text-[var(--sage)]' : isCancelled ? 'text-[var(--terracotta)]' : 'text-zinc-300'}`}>{status || 'UNKNOWN'}
                 </span>
               </div>
             </div>
 
             {isPaid && (
-              <div className="mt-4 p-4 bg-[#14F195]/5 border border-[#14F195]/20 rounded-xl">
+              <div className="mt-4 p-4 bg-[var(--sage)]/5 border border-[var(--sage)]/20 rounded-xl">
                 <div className="flex items-start gap-3">
-                  <ShieldCheckIcon className="h-5 w-5 text-[#14F195] mt-0.5 flex-shrink-0" />
+                  <ShieldCheckIcon className="h-5 w-5 text-[var(--sage)] mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-[#14F195] text-sm">Protected by Pabandi Escrow</p>
+                    <p className="font-semibold text-[var(--sage)] text-sm">Protected by Pabandi Escrow</p>
                     <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
                       Your payment of ${amount} is held securely in escrow until you confirm receipt of service from {business}.
                       If you don't receive what you paid for, your funds are automatically refunded.
@@ -143,14 +143,14 @@ export default function CheckoutSuccessPage() {
             <>
               <button
                 onClick={handleShare}
-                className="w-full py-4 rounded-xl bg-[#25D366] text-white font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-xl bg-[#25D366] text-[var(--warm-ink)] font-bold text-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 <ShareIcon className="w-5 h-5" />
                 Share receipt via WhatsApp
               </button>
               <a
                 href={`/passport/verify?ref=${searchParams.get('sessionId') || ''}`}
-                className="w-full py-3 rounded-xl bg-zinc-900 text-center text-zinc-300 font-body text-xs hover:text-white transition-colors border border-zinc-800"
+                className="w-full py-3 rounded-xl bg-zinc-900 text-center text-zinc-300 font-body text-xs hover:text-[var(--warm-ink)] transition-colors border border-zinc-800"
               >
                 Verify this transaction on the Pabandi Passport
               </a>
@@ -158,7 +158,7 @@ export default function CheckoutSuccessPage() {
           )}
           <Link
             to="/"
-            className="w-full py-4 rounded-xl bg-zinc-900 text-white font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center"
+            className="w-full py-4 rounded-xl bg-zinc-900 text-[var(--warm-ink)] font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center"
           >
             Back to Home
           </Link>

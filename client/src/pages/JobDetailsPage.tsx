@@ -79,7 +79,7 @@ export default function JobDetailsPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-3xl shadow-xl text-center max-w-md w-full">
           <h2 className="text-2xl font-semibold text-slate-800 mb-2">Unavailable</h2>
-          <p className="text-slate-500">{error}</p>
+          <p className="text-[var(--soft-stone)]">{error}</p>
           <button onClick={() => navigate('/')} className="mt-6 text-indigo-600 hover:text-indigo-700 font-medium">
             Return Home
           </button>
@@ -93,7 +93,7 @@ export default function JobDetailsPage() {
       <div className="max-w-3xl mx-auto space-y-8">
         
         {/* Header Glass Card */}
-        <div className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 relative overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-sm rounded-[2rem] p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 relative overflow-hidden">
           {/* Trust Badge Top Right */}
           <div className="absolute top-0 right-0 bg-gradient-to-bl from-green-100 to-emerald-50 text-emerald-700 px-6 py-3 rounded-bl-3xl flex items-center space-x-2 shadow-sm">
             <ShieldCheck className="w-5 h-5" />
@@ -130,7 +130,7 @@ export default function JobDetailsPage() {
             <p className="text-slate-600 mb-8 max-w-md mx-auto">
               The client has received your profile. Stand out by completing your Pabandi Trust Passport while you wait.
             </p>
-            <button onClick={() => navigate('/dashboard')} className="bg-emerald-600 text-white px-8 py-3.5 rounded-full font-semibold hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-200">
+            <button onClick={() => navigate('/dashboard')} className="bg-emerald-600 text-[var(--warm-ink)] px-8 py-3.5 rounded-full font-semibold hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-200">
               Go to Dashboard
             </button>
           </div>
@@ -144,7 +144,7 @@ export default function JobDetailsPage() {
             </div>
 
             <div className="md:col-span-1">
-              <div className="sticky top-8 bg-indigo-600 rounded-[2rem] p-8 text-white shadow-xl shadow-indigo-200">
+              <div className="sticky top-8 bg-indigo-600 rounded-[2rem] p-8 text-[var(--warm-ink)] shadow-xl shadow-indigo-200">
                 <h3 className="text-xl font-bold mb-2">Ready to apply?</h3>
                 <p className="text-indigo-100 text-sm mb-6">
                   {isAuthenticated ? "Complete your application below." : "Sign in to securely submit your profile."}
@@ -159,7 +159,7 @@ export default function JobDetailsPage() {
                         required
                         value={resumeUrl}
                         onChange={e => setResumeUrl(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-indigo-700 border border-indigo-500 text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-white"
+                        className="w-full px-4 py-3 rounded-xl bg-indigo-700 border border-indigo-500 text-[var(--warm-ink)] placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-white"
                         placeholder="https://"
                       />
                     </div>
@@ -188,8 +188,8 @@ export default function JobDetailsPage() {
 
       {/* Trust Login Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">
-          <div className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl transform transition-all relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--warm-sand)]/40 backdrop-blur-sm transition-opacity">
+          <div className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-[var(--shadow-lift)] transform transition-all relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-2xl"></div>
             
             <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6 relative z-10">
@@ -203,7 +203,7 @@ export default function JobDetailsPage() {
 
             <button 
               onClick={handleAuthRedirect}
-              className="w-full bg-slate-900 text-white font-semibold py-4 rounded-xl hover:bg-slate-800 transition-colors flex items-center justify-center gap-3 relative z-10"
+              className="w-full bg-[var(--warm-sand)] text-[var(--warm-ink)] font-semibold py-4 rounded-xl hover:bg-[var(--warm-sand)] transition-colors flex items-center justify-center gap-3 relative z-10"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               Continue with Google
@@ -211,7 +211,7 @@ export default function JobDetailsPage() {
             
             <button 
               onClick={() => setShowModal(false)}
-              className="w-full mt-4 text-slate-500 font-medium hover:text-slate-700 py-2 relative z-10"
+              className="w-full mt-4 text-[var(--soft-stone)] font-medium hover:text-slate-700 py-2 relative z-10"
             >
               Cancel
             </button>

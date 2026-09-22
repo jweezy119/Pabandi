@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 const navItems = [
-  { path: '/pipeline', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/pipeline/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/pipeline/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/pipeline/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 
 const FUNNEL_STAGES = [
@@ -39,14 +39,14 @@ function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: strin
           <p className="text-2xl font-bold" style={{ color: `var(--${valueColor})` }}>{value}</p>
         </div>
         <div className="w-11 h-11 rounded-xl bg-[var(--clay)] flex items-center justify-center">
-          <span className="material-symbols-outlined text-white text-[20px]">{icon}</span>
+          <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">{icon}</span>
         </div>
       </div>
     </ClayCard>
   );
 }
 
-export default function PipelineOSPage() {
+export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,18 +74,18 @@ export default function PipelineOSPage() {
   const atRiskCount = leads.filter(l => (l.reliabilityScore || 50) < 30).length;
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="ochre" navItems={navItems}>
+    <DashboardLayout osName="ContactOS" osIcon="C" osColor="ochre" navItems={navItems}>
       <div className="space-y-6 max-w-6xl mx-auto">
 
         {/* Page header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--warm-ink)' }}>Pipeline Dashboard</h1>
+            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--warm-ink)' }}>Contact Dashboard</h1>
             <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Trust-aware CRM & revenue engine</p>
           </div>
           <Link
-            to="/pipeline/leads"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95"
+            to="/contact/leads"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Add Lead
@@ -95,7 +95,7 @@ export default function PipelineOSPage() {
         {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard icon="groups" value={`${leads.length}`} label="Total Leads" />
-          <StatCard icon="attach_money" value={`$${totalValue.toLocaleString()}`} label="Pipeline Value" />
+          <StatCard icon="attach_money" value={`$${totalValue.toLocaleString()}`} label="Contact Value" />
           <StatCard
             icon="verified"
             value={`${avgScore}/100`}
@@ -140,8 +140,8 @@ export default function PipelineOSPage() {
               <span className="material-symbols-outlined text-[32px] mb-2 block">inbox</span>
               <p>No leads yet. Add your first lead to get started.</p>
               <Link
-                to="/pipeline/leads"
-                className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-sm font-semibold border-2 bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] transition-all"
+                to="/contact/leads"
+                className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-sm font-semibold border-2 bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] transition-all"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Add Lead

@@ -12,10 +12,10 @@ import { Surface, Button, tokens } from '../design-system';
 function StatChip({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
   return (
     <Surface className="flex items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-500/10 text-indigo-300">{icon}</div>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--clay)]/20 bg-[var(--clay)]/10 text-[var(--clay)]">{icon}</div>
       <div>
-        <p className="font-label text-[10px] font-bold uppercase tracking-widest text-white/70">{label}</p>
-        <p className="font-headline text-2xl font-bold leading-none text-white">{value}</p>
+        <p className="font-label text-[10px] font-bold uppercase tracking-widest text-[var(--warm-ink)]/70">{label}</p>
+        <p className="font-headline text-2xl font-bold leading-none text-[var(--warm-ink)]">{value}</p>
       </div>
     </Surface>
   );
@@ -33,23 +33,23 @@ export default function PartnerDashboardPage() {
   if (!user || !isPartner) {
     return (
       <div className="flex min-h-[80vh] flex-col items-center justify-center p-6">
-        <div className="max-w-sm rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-8 text-center shadow-sm">
-          <h3 className="mb-2 font-bold text-lg text-white">Partner access required</h3>
-          <p className="mb-6 text-xs leading-relaxed text-white/70">
+        <div className="max-w-sm rounded-[var(--radius-card)] border border-dashed border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] p-8 text-center shadow-[var(--shadow-soft)]">
+          <h3 className="mb-2 font-bold text-lg text-[var(--warm-ink)]">Partner access required</h3>
+          <p className="mb-6 text-xs leading-relaxed text-[var(--warm-ink)]/70">
             This dashboard is for approved Growth Partners. Request access to start tracking referrals and commissions.
           </p>
-          <Link to="/business/join" className="block w-full rounded-xl bg-indigo-500 py-2.5 text-center font-bold text-white hover:opacity-90 transition-opacity">Apply for Partner Program</Link>
+          <Link to="/business/join" className="block w-full rounded-xl bg-[var(--clay)] py-2.5 text-center font-bold text-[var(--warm-ink)] hover:opacity-90 transition-opacity">Apply for Partner Program</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="flex min-h-screen flex-col" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8 md:mb-8 flex flex-col gap-6 sm:gap-8">
         <div className="flex flex-col gap-2">
-          <h1 className="font-headline text-[2rem] font-bold tracking-tight text-indigo-300">Growth Partner Hub</h1>
-          <p className="font-body text-sm text-white/70">Track referrals, verified sign-ups, and commission estimates.</p>
+          <h1 className="font-headline text-[2rem] font-bold tracking-tight text-[var(--clay)]">Growth Partner Hub</h1>
+          <p className="font-body text-sm text-[var(--warm-ink)]/70">Track referrals, verified sign-ups, and commission estimates.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -60,20 +60,20 @@ export default function PartnerDashboardPage() {
         </div>
 
         <Surface>
-          <h2 className="font-headline mb-3 text-lg font-bold text-white">Your invite link</h2>
-          <p className="mb-3 text-xs text-white/70">Share this link merchants can use to sign up.</p>
+          <h2 className="font-headline mb-3 text-lg font-bold text-[var(--warm-ink)]">Your invite link</h2>
+          <p className="mb-3 text-xs text-[var(--warm-ink)]/70">Share this link merchants can use to sign up.</p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <input readOnly value={inviteLink} className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80" />
+            <input readOnly value={inviteLink} className="flex-1 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs text-[var(--warm-ink)]/80" />
             <Button onClick={() => navigator.clipboard.writeText(inviteLink)} variant="outline" className="w-full sm:w-auto" type="button">
               Copy
             </Button>
           </div>
-          <p className="mt-2 text-[11px] text-white/70">Commission applies to verified cleared bookings only.</p>
+          <p className="mt-2 text-[11px] text-[var(--warm-ink)]/70">Commission applies to verified cleared bookings only.</p>
         </Surface>
 
         <Surface>
-          <h2 className="font-headline mb-3 text-lg font-bold text-white">Program terms</h2>
-          <ul className="space-y-1 text-sm text-white/70">
+          <h2 className="font-headline mb-3 text-lg font-bold text-[var(--warm-ink)]">Program terms</h2>
+          <ul className="space-y-1 text-sm text-[var(--warm-ink)]/70">
             <li>• Bounty: $5 per verified account sign-up</li>
             <li>• Commission: 3% of verified completed booking escrow value</li>
             <li>• Limits: $250 monthly per-merchant payout, $5,000 global monthly cap</li>

@@ -76,13 +76,13 @@ export const AiChatPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
+      <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col" style={{ height: 'calc(100vh - 80px)" }}>
         {/* Header */}
         <div className="text-center mb-4">
           <Badge tone="info" className="mb-2">🤖 AI Assistant</Badge>
-          <h1 className="text-2xl font-black text-slate-100 font-headline">How can I help?</h1>
-          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
+          <h1 className="text-2xl font-black text-[var(--warm-ink)] font-headline">How can I help?</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>
             Ask about properties, leases, maintenance, tenants, investments, market trends
           </p>
         </div>
@@ -94,8 +94,8 @@ export const AiChatPage: React.FC = () => {
               <div
                 className={`max-w-[80%] p-3 rounded-xl text-sm ${
                   msg.role === 'user'
-                    ? 'bg-indigo-500/20 text-indigo-100'
-                    : 'bg-white/5 text-slate-300'
+                    ? 'bg-[rgba(var(--clay),0.15)] text-[var(--warm-ink)]'
+                    : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'
                 }`}
               >
                 <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -107,7 +107,7 @@ export const AiChatPage: React.FC = () => {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-white/5 p-3 rounded-xl text-sm text-slate-400">
+              <div className="bg-[var(--warm-sand)] p-3 rounded-xl text-sm text-[var(--soft-stone)]">
                 <span className="animate-pulse">Thinking...</span>
               </div>
             </div>
@@ -121,7 +121,7 @@ export const AiChatPage: React.FC = () => {
             <button
               key={prompt}
               onClick={() => setInput(prompt)}
-              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-slate-300 whitespace-nowrap hover:bg-white/10"
+              className="px-3 py-1.5 rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-xs text-[var(--soft-stone)] whitespace-nowrap hover:bg-[var(--warm-sand)]"
             >
               {prompt}
             </button>
@@ -135,7 +135,7 @@ export const AiChatPage: React.FC = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Ask me anything about real estate..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 outline-none"
+            className="flex-1 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-sm text-[var(--warm-ink)] outline-none"
           />
           <Button onClick={sendMessage} disabled={!input.trim() || loading}>
             Send

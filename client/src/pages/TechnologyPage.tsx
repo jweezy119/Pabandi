@@ -43,7 +43,7 @@ const web3Cards = [
 export default function TechnologyPage() {
   return (
     <div
-      className="min-h-screen text-slate-100 antialiased"
+      className="min-h-screen text-[var(--warm-ink)] antialiased"
       style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
     >
       {/* Hero */}
@@ -53,14 +53,14 @@ export default function TechnologyPage() {
           <h1
             className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
             style={{
-              background: 'linear-gradient(135deg, #ffffff 0%, #818cf8 50%, #c084fc 100%)',
+              background: 'linear-gradient(135deg, white 0%, var(--clay) 50%, var(--dusty-rose) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
             WhatsApp-native commerce escrow layer.
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-300">
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-ink)]">
             Zero training for merchants and buyers. AI-backed booking support, contactless escrow checkout, and verified commitment for the informal economy.
           </p>
         </div>
@@ -72,17 +72,17 @@ export default function TechnologyPage() {
         description="Predict no-show probability in real time, then apply safeguards only where the risk is real."
       >
         <Surface className="flex flex-col gap-3">
-          <p className="text-sm leading-relaxed text-slate-300">
+          <p className="text-sm leading-relaxed text-[var(--warm-ink)]">
             Machine learning models analyze booking behavior, time patterns, and trust signals to assign precise deposit logic.
           </p>
           <Stack>
             <div className="flex items-start gap-3">
               <Badge tone="success">Predictive</Badge>
-              <p className="text-sm text-slate-300">Identifies high-risk bookings from historical patterns before confirmation.</p>
+              <p className="text-sm text-[var(--warm-ink)]">Identifies high-risk bookings from historical patterns before confirmation.</p>
             </div>
             <div className="flex items-start gap-3">
               <Badge tone="info">Dynamic</Badge>
-              <p className="text-sm text-slate-300">Requires deposits only when risk thresholds are exceeded.</p>
+              <p className="text-sm text-[var(--warm-ink)]">Requires deposits only when risk thresholds are exceeded.</p>
             </div>
           </Stack>
         </Surface>
@@ -92,15 +92,15 @@ export default function TechnologyPage() {
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <Chip tone="info">The 4 Data Layers</Chip>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-100">The Trust Matrix Engine</h2>
-          <p className="mt-3 text-slate-300">Fuses four verifiable signals into a single cryptographic trust standard.</p>
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">The Trust Matrix Engine</h2>
+          <p className="mt-3 text-[var(--warm-ink)]">Fuses four verifiable signals into a single cryptographic trust standard.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {trustLayers.map((item) => (
             <Surface key={item.title} className="flex flex-col gap-3">
-              <h3 className="text-base font-semibold text-slate-100">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-300">{item.body}</p>
+              <h3 className="text-base font-semibold text-[var(--warm-ink)]">{item.title}</h3>
+              <p className="text-sm leading-relaxed text-[var(--warm-ink)]">{item.body}</p>
             </Surface>
           ))}
         </div>
@@ -108,11 +108,11 @@ export default function TechnologyPage() {
 
       {/* Enterprise API */}
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 sm:p-8 backdrop-blur-xl">
+        <div className="rounded-2xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-sand)] p-6 sm:p-8 backdrop-blur-xl">
           <div className="text-center max-w-3xl mx-auto mb-10">
             <Chip tone="success">Developer First</Chip>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-100">Enterprise-Grade API & SDKs</h2>
-            <p className="mt-3 text-slate-300">
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">Enterprise-Grade API & SDKs</h2>
+            <p className="mt-3 text-[var(--warm-ink)]">
               Integrate trust scoring and Solana escrow directly into your stack.
             </p>
           </div>
@@ -120,8 +120,8 @@ export default function TechnologyPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {enterpriseCards.map((item) => (
               <Surface key={item.title} className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold text-slate-100">{item.title}</h3>
-                <p className="text-xs leading-relaxed text-slate-300">{item.body}</p>
+                <h3 className="text-sm font-semibold text-[var(--warm-ink)]">{item.title}</h3>
+                <p className="text-xs leading-relaxed text-[var(--warm-ink)]">{item.body}</p>
               </Surface>
             ))}
           </div>
@@ -133,36 +133,36 @@ export default function TechnologyPage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 md:items-center">
           <Stack>
             <Chip tone="warning">Alibaba Cloud & AI</Chip>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--warm-ink)] sm:text-3xl">
               Global scale, sub-millisecond risk inference.
             </h2>
-            <p className="text-slate-300">
+            <p className="text-[var(--warm-ink)]">
               Qwen models negotiate deposits and run multilingual WhatsApp confirmations across availability zones.
             </p>
             <Stack>
               <div className="flex items-start gap-3">
                 <Badge tone="info">Global Scaling</Badge>
-                <p className="text-sm text-slate-300">Cross-zone deployment keeps real-time booking flows online.</p>
+                <p className="text-sm text-[var(--warm-ink)]">Cross-zone deployment keeps real-time booking flows online.</p>
               </div>
               <div className="flex items-start gap-3">
                 <Badge tone="warning">Qwen AI</Badge>
-                <p className="text-sm text-slate-300">Autonomous multilingual outreach and deposit negotiation.</p>
+                <p className="text-sm text-[var(--warm-ink)]">Autonomous multilingual outreach and deposit negotiation.</p>
               </div>
             </Stack>
           </Stack>
 
           <Surface className="flex flex-col gap-3">
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/20 p-4">
-              <span className="text-sm text-slate-300">Alibaba Cloud CDN</span>
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-ink)]/20 p-4">
+              <span className="text-sm text-[var(--warm-ink)]">Alibaba Cloud CDN</span>
               <Badge tone="success">Active globally</Badge>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/20 p-4">
-              <span className="text-sm text-slate-300">Qwen AI Agent Engine</span>
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-ink)]/20 p-4">
+              <span className="text-sm text-[var(--warm-ink)]">Qwen AI Agent Engine</span>
               <Badge tone="success">Processing requests</Badge>
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-black/20 p-4">
-              <span className="text-sm text-slate-300">Real-time Data Sync</span>
-              <span className="text-sm font-bold text-[#ff6a00]">&lt; 12ms</span>
+            <div className="flex items-center justify-between rounded-xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-ink)]/20 p-4">
+              <span className="text-sm text-[var(--warm-ink)]">Real-time Data Sync</span>
+              <span className="text-sm font-bold text-[var(--terracotta)]">&lt; 12ms</span>
             </div>
           </Surface>
         </div>
@@ -175,17 +175,17 @@ export default function TechnologyPage() {
             {web3Cards.map((item) => (
               <div key={item.title} className="flex items-start gap-3">
                 <Badge tone="success">{item.title}</Badge>
-                <p className="text-sm text-slate-300">{item.body}</p>
+                <p className="text-sm text-[var(--warm-ink)]">{item.body}</p>
               </div>
             ))}
           </Surface>
 
           <Stack className="order-1 md:order-2">
             <Chip tone="info">Solana Web3</Chip>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--warm-ink)] sm:text-3xl">
               Speed, low cost, irrevocable commitment.
             </h2>
-            <p className="text-slate-300">
+            <p className="text-[var(--warm-ink)]">
               The $PAB token rewards reliability, while smart contracts keep deposits protected until verified booking outcomes occur.
             </p>
           </Stack>
@@ -194,27 +194,27 @@ export default function TechnologyPage() {
 
       {/* Pabandi Score */}
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-8 text-center backdrop-blur-xl sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#f59e0b] to-[#fcd34d] shadow-lg shadow-amber-500/20">
+        <div className="rounded-2xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-sand)] p-8 text-center backdrop-blur-xl sm:p-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[var(--muted-ochre)] to-[var(--muted-ochre)] shadow-lg shadow-[var(--muted-ochre)]/20">
             <span className="text-3xl">🏆</span>
           </div>
 
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-slate-100">The Pabandi Score</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-300">
+          <h2 className="mt-6 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">The Pabandi Score</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-[var(--warm-ink)]">
             A real-time reputation metric derived from reservations, deposits, on-chain behavior, and social verification.
           </p>
 
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-slate-100">900+</div>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">900+</div>
               <Chip tone="success">Elite</Chip>
             </Surface>
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-slate-100">700-899</div>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">700-899</div>
               <Chip tone="info">Reliable</Chip>
             </Surface>
             <Surface className="flex flex-col items-center gap-2">
-              <div className="text-2xl font-bold text-slate-100">&lt; 700</div>
+              <div className="text-2xl font-bold text-[var(--warm-ink)]">&lt; 700</div>
               <Badge tone="danger">Higher Risk</Badge>
             </Surface>
           </div>
@@ -223,7 +223,7 @@ export default function TechnologyPage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-3xl px-4 pb-20 text-center sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-slate-100 sm:text-3xl">Ready to experience the future of booking?</h2>
+        <h2 className="text-2xl font-bold text-[var(--warm-ink)] sm:text-3xl">Ready to experience the future of booking?</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <Link to="/"><Button>Explore Venues</Button></Link>
           <Link to="/join"><Button variant="outline">For Businesses</Button></Link>

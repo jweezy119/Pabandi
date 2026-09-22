@@ -59,29 +59,29 @@ export const PromotionsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 md:pb-10" style={{ background: tokens.color.background, fontFamily: tokens.font.body }}>
+    <div className="min-h-screen pb-24 md:pb-10" style={{ background: 'var(--cream)', fontFamily: tokens.font.body }}>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Promotions & Loyalty</h1>
-          <p className="mt-2 text-slate-400">Exclusive deals from vendors you shop at. Earn loyalty rewards.</p>
+          <h1 className="text-3xl font-bold text-[var(--warm-ink)]">Promotions & Loyalty</h1>
+          <p className="mt-2 text-[var(--soft-stone)]">Exclusive deals from vendors you shop at. Earn loyalty rewards.</p>
         </div>
 
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setTab('browse')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'browse' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'browse' ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)]'}`}
           >
             Browse Promotions
           </button>
           <button
             onClick={() => setTab('create')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'create' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'create' ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)]'}`}
           >
             Create Promotion
           </button>
           <button
             onClick={() => setTab('my-promotions')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'my-promotions' ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === 'my-promotions' ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)]'}`}
           >
             My Promotions
           </button>
@@ -90,11 +90,11 @@ export const PromotionsPage: React.FC = () => {
         {tab === 'browse' && (
           <div className="space-y-4">
             {loading ? (
-              <p className="text-slate-400">Loading...</p>
+              <p className="text-[var(--soft-stone)]">Loading...</p>
             ) : promotions.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">🏷️</div>
-                <p className="text-slate-400">No promotions available. Check back soon!</p>
+                <p className="text-[var(--soft-stone)]">No promotions available. Check back soon!</p>
               </Surface>
             ) : (
               promotions.map((promo) => (
@@ -102,21 +102,21 @@ export const PromotionsPage: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-white">{promo.title}</h3>
+                        <h3 className="font-bold text-[var(--warm-ink)]">{promo.title}</h3>
                         <Badge tone="success">
                           {PROMO_TYPES.find(t => t.value === promo.promotionType)?.label}
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-400">{promo.description}</p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-sm text-[var(--soft-stone)]">{promo.description}</p>
+                      <p className="text-xs text-[var(--soft-stone)] mt-1">
                         {promo.business?.name} · {promo.business?.address}
                       </p>
                       {promo.minPurchase && (
-                        <p className="text-xs text-slate-500">Min. purchase: ${promo.minPurchase}</p>
+                        <p className="text-xs text-[var(--soft-stone)]">Min. purchase: ${promo.minPurchase}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-emerald-300 text-lg">
+                      <div className="font-bold text-[var(--sage)] text-lg">
                         {promo.promotionType === 'DISCOUNT_PERCENT' && `${promo.value}%`}
                         {promo.promotionType === 'DISCOUNT_FIXED' && `$${promo.value}`}
                         {promo.promotionType === 'FREE_SHIPPING' && 'FREE'}
@@ -143,20 +143,20 @@ export const PromotionsPage: React.FC = () => {
         {tab === 'my-promotions' && (
           <div className="space-y-4">
             {loading ? (
-              <p className="text-slate-400">Loading...</p>
+              <p className="text-[var(--soft-stone)]">Loading...</p>
             ) : myPromotions.length === 0 ? (
               <Surface className="p-8 text-center">
                 <div className="text-4xl mb-4">📋</div>
-                <p className="text-slate-400">You haven't created any promotions yet.</p>
+                <p className="text-[var(--soft-stone)]">You haven't created any promotions yet.</p>
               </Surface>
             ) : (
               myPromotions.map((promo) => (
                 <Surface key={promo.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-white">{promo.title}</h3>
-                      <p className="text-sm text-slate-400">{promo.description}</p>
-                      <p className="text-xs text-slate-500">
+                      <h3 className="font-bold text-[var(--warm-ink)]">{promo.title}</h3>
+                      <p className="text-sm text-[var(--soft-stone)]">{promo.description}</p>
+                      <p className="text-xs text-[var(--soft-stone)]">
                         {promo.totalRedeemed} redemptions · ${promo.totalSavings.toFixed(2)} total savings
                       </p>
                     </div>
@@ -224,7 +224,7 @@ const CreatePromotionForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess })
     return (
       <Surface className="p-8 text-center">
         <div className="text-4xl mb-4">🔐</div>
-        <p className="text-white font-semibold">Sign in to create a promotion</p>
+        <p className="text-[var(--warm-ink)] font-semibold">Sign in to create a promotion</p>
         <Button className="mt-4" onClick={() => window.location.href = '/login'}>Sign In</Button>
       </Surface>
     );
@@ -232,25 +232,25 @@ const CreatePromotionForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess })
 
   return (
     <Surface className="p-6">
-      <h3 className="text-lg font-bold text-white mb-4">Create New Promotion</h3>
+      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Create New Promotion</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Title *</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Title *</label>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Summer Sale - 20% Off"
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Promotion Type</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Promotion Type</label>
             <select
               value={form.promotionType}
               onChange={(e) => setForm({ ...form, promotionType: e.target.value })}
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
             >
               {PROMO_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -260,68 +260,68 @@ const CreatePromotionForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess })
         </div>
 
         <div>
-          <label className="text-sm font-semibold text-slate-300 mb-2 block">Description</label>
+          <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Description</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Describe the promotion..."
             rows={3}
-            className="w-full rounded-lg px-4 py-3 outline-none resize-none bg-white/5 border border-white/10 text-white"
+            className="w-full rounded-lg px-4 py-3 outline-none resize-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Value *</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Value *</label>
             <input
               type="number"
               value={form.value}
               onChange={(e) => setForm({ ...form, value: e.target.value })}
               placeholder="20"
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Min. Purchase ($)</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Min. Purchase ($)</label>
             <input
               type="number"
               value={form.minPurchase}
               onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
               placeholder="50"
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Max Discount ($)</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Max Discount ($)</label>
             <input
               type="number"
               value={form.maxDiscount}
               onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })}
               placeholder="100"
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">Start Date *</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">Start Date *</label>
             <input
               type="date"
               value={form.startsAt}
               onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-slate-300 mb-2 block">End Date *</label>
+            <label className="text-sm font-semibold text-[var(--warm-ink)] mb-2 block">End Date *</label>
             <input
               type="date"
               value={form.endsAt}
               onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-              className="w-full rounded-lg px-4 py-3 outline-none bg-white/5 border border-white/10 text-white"
+              className="w-full rounded-lg px-4 py-3 outline-none bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]"
               required
             />
           </div>

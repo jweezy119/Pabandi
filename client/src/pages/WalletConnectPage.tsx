@@ -121,10 +121,10 @@ export const WalletConnectPage: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">🔗 Wallet Connect</Badge>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-100 font-headline">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[var(--warm-ink)] font-headline">
             Connect Your Wallet
           </h1>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
+          <p className="mt-3 text-[var(--soft-stone)] max-w-2xl mx-auto">
             Connect your Solana wallet to earn $PAB, stake for trust, and access all Pabandi features.
           </p>
         </div>
@@ -138,13 +138,13 @@ export const WalletConnectPage: React.FC = () => {
         {connected ? (
           <Surface className="p-6 text-center">
             <div className="text-4xl mb-3">✅</div>
-            <h2 className="text-xl font-bold text-slate-100 mb-2">Wallet Connected</h2>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Wallet Connected</h2>
             <div className="flex items-center justify-center gap-2 mb-4">
               <Badge tone="success">{walletType === 'phantom' ? 'Phantom' : walletType === 'solflare' ? 'Solflare' : 'Wallet'}</Badge>
-              <span className="text-sm text-slate-400 font-mono">{truncate(address)}</span>
+              <span className="text-sm text-[var(--soft-stone)] font-mono">{truncate(address)}</span>
             </div>
             {balance !== null && (
-              <div className="text-2xl font-bold text-emerald-300 mb-4">{balance.toFixed(4)} SOL</div>
+              <div className="text-2xl font-bold text-[var(--sage)] mb-4">{balance.toFixed(4)} SOL</div>
             )}
             <div className="flex gap-2 justify-center">
               <Button onClick={() => navigator.clipboard.writeText(address)} variant="ghost">Copy Address</Button>
@@ -154,29 +154,29 @@ export const WalletConnectPage: React.FC = () => {
         ) : (
           <div className="space-y-3">
             <Surface className="p-4">
-              <h3 className="text-base font-bold text-slate-100 mb-3">Choose Wallet</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Choose Wallet</h3>
               <div className="space-y-2">
-                <button onClick={connectPhantom} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-xl">👻</div>
+                <button onClick={connectPhantom} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--dusty-rose)]/20 flex items-center justify-center text-xl">👻</div>
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-100">Phantom</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">Phantom</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Most popular Solana wallet</div>
                   </div>
                   <Badge tone="success">Recommended</Badge>
                 </button>
 
-                <button onClick={connectSolflare} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left">
+                <button onClick={connectSolflare} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
                   <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-xl">🔥</div>
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-100">Solflare</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">Solflare</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Feature-rich Solana wallet</div>
                   </div>
                 </button>
 
-                <button onClick={connectWalletConnect} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-xl">🔗</div>
+                <button onClick={connectWalletConnect} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--sky-wash)]/20 flex items-center justify-center text-xl">🔗</div>
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-100">WalletConnect</div>
+                    <div className="font-semibold text-[var(--warm-ink)]">WalletConnect</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Mobile wallets (Trust, SafePal, etc.)</div>
                   </div>
                   <Badge tone="info">Coming Soon</Badge>
@@ -185,7 +185,7 @@ export const WalletConnectPage: React.FC = () => {
             </Surface>
 
             <Surface className="p-4">
-              <h3 className="text-sm font-bold text-slate-100 mb-2">Don't have a wallet?</h3>
+              <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-2">Don't have a wallet?</h3>
               <p className="text-xs mb-3" style={{ color: tokens.color.textDim }}>Download Phantom or Solflare to get started. Both work on mobile and desktop.</p>
               <div className="flex gap-2">
                 <Button onClick={() => window.open('https://phantom.app', '_blank')} size="sm" className="flex-1">Get Phantom</Button>
@@ -197,7 +197,7 @@ export const WalletConnectPage: React.FC = () => {
 
         {/* What you can do */}
         <Surface className="p-4 mt-6">
-          <h3 className="text-base font-bold text-slate-100 mb-3">What you can do with a connected wallet</h3>
+          <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">What you can do with a connected wallet</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
               { icon: '💰', text: 'Earn $PAB rewards' },
@@ -207,9 +207,9 @@ export const WalletConnectPage: React.FC = () => {
               { icon: '📈', text: 'Earn yield' },
               { icon: '🤝', text: 'Refer and earn' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--warm-sand)]">
                 <span className="text-lg">{item.icon}</span>
-                <span className="text-xs text-slate-300">{item.text}</span>
+                <span className="text-xs text-[var(--warm-ink)]">{item.text}</span>
               </div>
             ))}
           </div>

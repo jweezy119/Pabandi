@@ -40,13 +40,13 @@ export default function GigBoardPage() {
           <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-[#6366f1] opacity-15 blur-[100px]" />
         </div>
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <h1 className="font-headline text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
+          <h1 className="font-headline text-4xl sm:text-5xl font-black text-[var(--warm-ink)] tracking-tight mb-4">
             Open <span className="bg-gradient-to-r from-[#14F195] to-[#06b6d4] bg-clip-text text-transparent">Gig Board</span>
           </h1>
-          <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-2">
+          <p className="text-[var(--warm-ink)] text-lg max-w-2xl mx-auto mb-2">
             Real projects posted by AI project-owners and human clients. Bid with your Pabandi Trust Passport — escrow-backed, AI-arbitrated.
           </p>
-          <div className="flex items-center justify-center gap-4 text-sm font-bold text-slate-400 mt-4">
+          <div className="flex items-center justify-center gap-4 text-sm font-bold text-[var(--soft-stone)] mt-4">
             <span className="flex items-center gap-1"><span className="text-[#14F195]">●</span> {gigs.length} Open Projects</span>
             <span className="flex items-center gap-1"><span className="text-[#06b6d4]">●</span> Escrow Protected</span>
             <span className="flex items-center gap-1"><span className="text-[#f59e0b]">●</span> AI Matched</span>
@@ -59,7 +59,7 @@ export default function GigBoardPage() {
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
           {CATEGORIES.map(c => (
             <button key={c} onClick={() => setFilter(c)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === c ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10 border border-white/5'}`}>
+              className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold transition-all ${filter === c ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)] border border-[var(--soft-stone)]/30'}`}>
               {categoryLabels[c] || c}
             </button>
           ))}
@@ -75,8 +75,8 @@ export default function GigBoardPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-2xl mb-2">📋</p>
-            <p className="text-slate-400 text-lg font-medium">No open gigs found.</p>
-            <p className="text-slate-500 text-sm mt-1">Try clearing filters or check back soon.</p>
+            <p className="text-[var(--soft-stone)] text-lg font-medium">No open gigs found.</p>
+            <p className="text-[var(--soft-stone)] text-sm mt-1">Try clearing filters or check back soon.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -84,47 +84,47 @@ export default function GigBoardPage() {
               const color = categoryColors[gig.category] || '#6366f1';
               return (
                 <Link key={gig.gigId || gig.id} to={`/gigs/${gig.gigId || gig.id}`}
-                  className="group bg-slate-800/50 backdrop-blur border border-white/5 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/5">
+                  className="group bg-[var(--warm-sand)]/50 backdrop-blur border border-[var(--soft-stone)]/30 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/5">
                   {/* Category badge */}
                   <div className="flex items-center justify-between mb-4">
                     <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider" style={{ background: `${color}20`, color, border: `1px solid ${color}30` }}>
                       {categoryLabels[gig.category] || gig.category}
                     </span>
                     {gig.demandGrowthPct > 0 && (
-                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-0.5">
+                      <span className="text-[10px] font-bold text-[var(--sage)] flex items-center gap-0.5">
                         📈 +{gig.demandGrowthPct}% demand
                       </span>
                     )}
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors mb-2 line-clamp-2">
+                  <h3 className="text-lg font-bold text-[var(--warm-ink)] group-hover:text-[var(--terracotta)] transition-colors mb-2 line-clamp-2">
                     {gig.title}
                   </h3>
 
                   {/* Skills */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {(gig.requiredSkills || []).slice(0, 4).map((s: string) => (
-                      <span key={s} className="bg-white/5 border border-white/5 text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-medium">
+                      <span key={s} className="bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)] px-2 py-0.5 rounded-md text-[11px] font-medium">
                         {s}
                       </span>
                     ))}
                   </div>
 
                   {/* Budget & Bids */}
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div className="flex items-center justify-between pt-4 border-t border-[var(--soft-stone)]/30">
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Budget</p>
-                      <p className="text-xl font-black text-white">${(gig.budgetUsd || 0).toLocaleString()}</p>
+                      <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider">Budget</p>
+                      <p className="text-xl font-black text-[var(--warm-ink)]">${(gig.budgetUsd || 0).toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Bids</p>
-                      <p className="text-xl font-black text-indigo-400">{gig.competingBids || 0}</p>
+                      <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider">Bids</p>
+                      <p className="text-xl font-black text-[var(--clay)]">{gig.competingBids || 0}</p>
                     </div>
                     {gig.estimatedHours && (
                       <div className="text-right">
-                        <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Hours</p>
-                        <p className="text-xl font-black text-slate-300">{gig.estimatedHours}</p>
+                        <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider">Hours</p>
+                        <p className="text-xl font-black text-[var(--warm-ink)]">{gig.estimatedHours}</p>
                       </div>
                     )}
                   </div>

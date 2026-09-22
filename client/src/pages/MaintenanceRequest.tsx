@@ -18,9 +18,9 @@ const PRIORITIES = [
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: 'border-slate-500/30 bg-slate-500/10 text-slate-300',
-  medium: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  high: 'border-red-500/30 bg-red-500/10 text-red-300',
+  low: 'border-slate-500/30 bg-slate-500/10 text-[var(--warm-ink)]',
+  medium: 'border-[var(--muted-ochre)]/30 bg-[var(--muted-ochre)]/10 text-[var(--muted-ochre)]',
+  high: 'border-[var(--terracotta)]/30 bg-[var(--terracotta)]/10 text-[var(--terracotta)]',
 };
 
 interface Request {
@@ -62,25 +62,25 @@ export default function MaintenanceRequest() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Maintenance Request</h1>
-        <p className="text-slate-400 text-sm mt-1">Report an issue in your unit</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">Maintenance Request</h1>
+        <p className="text-[var(--soft-stone)] text-sm mt-1">Report an issue in your unit</p>
       </div>
 
       {submitted && (
-        <div className="rounded-xl bg-emerald-500/15 border border-emerald-500/30 p-4 flex items-center gap-3">
-          <span className="material-symbols-outlined text-emerald-400">check_circle</span>
-          <span className="text-emerald-300 text-sm font-medium">Request submitted successfully!</span>
+        <div className="rounded-xl bg-[var(--sage)]/15 border border-[var(--sage)]/30 p-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-[var(--sage)]">check_circle</span>
+          <span className="text-[var(--sage)] text-sm font-medium">Request submitted successfully!</span>
         </div>
       )}
 
       {/* New Request Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
-          <h2 className="text-lg font-bold text-white mb-4">New Request</h2>
+        <div className="rounded-[var(--radius-card)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] p-6">
+          <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">New Request</h2>
 
           {/* Category */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Category</label>
+            <label className="block text-sm font-medium text-[var(--warm-ink)] mb-2">Category</label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {CATEGORIES.map((cat) => (
                 <button
@@ -89,8 +89,8 @@ export default function MaintenanceRequest() {
                   onClick={() => setCategory(cat.id)}
                   className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-medium transition-all ${
                     category === cat.id
-                      ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
-                      : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
+                      ? 'border-[var(--sage)]/50 bg-[var(--sage)]/10 text-[var(--sage)]'
+                      : 'border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:border-[rgba(191,179,163,0.4)]'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">{cat.icon}</span>
@@ -102,41 +102,41 @@ export default function MaintenanceRequest() {
 
           {/* Title */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Title</label>
+            <label className="block text-sm font-medium text-[var(--warm-ink)] mb-2">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Brief description of the issue"
-              className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--cream)]/30 border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-[var(--sage)]/50"
             />
           </div>
 
           {/* Description */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Description</label>
+            <label className="block text-sm font-medium text-[var(--warm-ink)] mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="Provide details about the issue..."
-              className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--cream)]/30 border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-[var(--sage)]/50 resize-none"
             />
           </div>
 
           {/* Photos */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Photos</label>
+            <label className="block text-sm font-medium text-[var(--warm-ink)] mb-2">Photos</label>
             <div className="flex gap-3">
               {photos.map((_photo, i) => (
-                <div key={i} className="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center text-xs text-slate-500">
+                <div key={i} className="w-16 h-16 rounded-lg bg-[var(--warm-sand)] flex items-center justify-center text-xs text-[var(--soft-stone)]">
                   📷 {i + 1}
                 </div>
               ))}
               <button
                 type="button"
                 onClick={handlePhotoUpload}
-                className="w-16 h-16 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center text-slate-500 hover:border-emerald-500/50 hover:text-emerald-400 transition-all"
+                className="w-16 h-16 rounded-lg border-2 border-dashed border-[rgba(191,179,163,0.4)] flex items-center justify-center text-[var(--soft-stone)] hover:border-[var(--sage)]/50 hover:text-[var(--sage)] transition-all"
               >
                 <span className="material-symbols-outlined">add_photo_alternate</span>
               </button>
@@ -145,7 +145,7 @@ export default function MaintenanceRequest() {
 
           {/* Priority */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Priority</label>
+            <label className="block text-sm font-medium text-[var(--warm-ink)] mb-2">Priority</label>
             <div className="grid grid-cols-3 gap-3">
               {PRIORITIES.map((p) => (
                 <button
@@ -153,7 +153,7 @@ export default function MaintenanceRequest() {
                   type="button"
                   onClick={() => setPriority(p.id)}
                   className={`p-3 rounded-xl border text-center transition-all ${
-                    priority === p.id ? PRIORITY_COLORS[p.id] : 'border-white/10 bg-white/5 text-slate-500'
+                    priority === p.id ? PRIORITY_COLORS[p.id] : 'border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] text-[var(--soft-stone)]'
                   }`}
                 >
                   <div className="font-semibold text-sm">{p.label}</div>
@@ -164,17 +164,17 @@ export default function MaintenanceRequest() {
           </div>
 
           {/* Stake for Priority */}
-          <div className="rounded-xl bg-purple-500/10 border border-purple-500/20 p-4">
+          <div className="rounded-xl bg-[var(--dusty-rose)]/10 border border-[var(--dusty-rose)]/20 p-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={stakeForPriority}
                 onChange={(e) => setStakeForPriority(e.target.checked)}
-                className="w-5 h-5 rounded bg-black/30 border-white/20 text-purple-500 focus:ring-purple-500"
+                className="w-5 h-5 rounded bg-[var(--cream)]/30 border-[rgba(191,179,163,0.4)] text-purple-500 focus:ring-purple-500"
               />
               <div>
-                <div className="text-white text-sm font-medium">Stake PAB for priority processing</div>
-                <div className="text-slate-400 text-xs">Get faster response by staking PAB tokens. Returned after completion.</div>
+                <div className="text-[var(--warm-ink)] text-sm font-medium">Stake PAB for priority processing</div>
+                <div className="text-[var(--soft-stone)] text-xs">Get faster response by staking PAB tokens. Returned after completion.</div>
               </div>
             </label>
           </div>
@@ -183,42 +183,42 @@ export default function MaintenanceRequest() {
         <button
           type="submit"
           disabled={!category || !title}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold text-lg shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--sage)] to-[var(--sky-wash)] text-[var(--warm-ink)] font-bold text-lg shadow-[var(--shadow-soft)] shadow-[rgba(138,154,123,0.2)] hover:shadow-[rgba(138,154,123,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Submit Request
         </button>
       </form>
 
       {/* Existing Requests */}
-      <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
-        <h2 className="text-lg font-bold text-white mb-4">Your Requests</h2>
+      <div className="rounded-[var(--radius-card)] bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] p-6">
+        <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Your Requests</h2>
         <div className="space-y-3">
           {existingRequests.map((req) => (
-            <div key={req.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+            <div key={req.id} className="flex items-center justify-between p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${
-                  req.status === 'completed' ? 'bg-emerald-400' :
-                  req.status === 'in_progress' ? 'bg-amber-400' : 'bg-blue-400'
+                  req.status === 'completed' ? 'bg-[var(--sage)]' :
+                  req.status === 'in_progress' ? 'bg-amber-400' : 'bg-[var(--sky-wash)]'
                 }`} />
                 <div>
-                  <div className="text-white text-sm font-medium">{req.title}</div>
-                  <div className="text-slate-500 text-xs flex items-center gap-2">
+                  <div className="text-[var(--warm-ink)] text-sm font-medium">{req.title}</div>
+                  <div className="text-[var(--soft-stone)] text-xs flex items-center gap-2">
                     <span className="capitalize">{req.category}</span>
                     <span>•</span>
                     <span>{new Date(req.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                     {req.hasStake && (
                       <>
                         <span>•</span>
-                        <span className="text-purple-400">Priority Staked</span>
+                        <span className="text-[var(--dusty-rose)]">Priority Staked</span>
                       </>
                     )}
                   </div>
                 </div>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                req.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300' :
-                req.status === 'in_progress' ? 'bg-amber-500/20 text-amber-300' :
-                'bg-blue-500/20 text-blue-300'
+                req.status === 'completed' ? 'bg-[var(--sage)]/20 text-[var(--sage)]' :
+                req.status === 'in_progress' ? 'bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)]' :
+                'bg-[var(--sky-wash)]/20 text-[var(--sky-wash)]'
               }`}>
                 {req.status === 'in_progress' ? 'In Progress' : req.status === 'completed' ? 'Completed' : 'Submitted'}
               </div>

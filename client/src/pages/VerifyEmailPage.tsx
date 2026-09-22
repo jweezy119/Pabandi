@@ -62,20 +62,20 @@ export default function VerifyEmailPage() {
         <div className="rounded-3xl p-8" style={{ background: tokens.color.surface, border: `1px solid ${tokens.color.border}` }}>
           <div className="text-center mb-6">
             <div className="text-5xl mb-4">📧</div>
-            <h1 className="text-2xl font-bold text-slate-100">Verify Your Email</h1>
+            <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Verify Your Email</h1>
             <p className="mt-2 text-sm" style={{ color: tokens.color.textDim }}>
-              We've sent a 6-digit code to <strong className="text-slate-100">{user?.email}</strong>. Enter it below to verify your account.
+              We've sent a 6-digit code to <strong className="text-[var(--warm-ink)]">{user?.email}</strong>. Enter it below to verify your account.
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div className="mb-4 rounded-lg border border-red-500/20 bg-[var(--terracotta)]/10 px-4 py-3 text-sm text-[var(--terracotta)]">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            <div className="mb-4 rounded-lg border border-[var(--sage)]/20 bg-[var(--sage)]/10 px-4 py-3 text-sm text-[var(--sage)]">
               {message}
             </div>
           )}
@@ -93,7 +93,7 @@ export default function VerifyEmailPage() {
             onClick={verify}
             disabled={loading || !code.trim()}
             className="w-full mt-4 rounded-xl py-3 font-bold cursor-pointer border-none transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ background: tokens.color.primary, color: '#0a0a0a' }}
+            style={{ background: tokens.color.primary, color: 'var(--warm-ink)' }}
           >
             {loading ? 'Verifying...' : 'Verify Email'}
           </button>
@@ -102,7 +102,7 @@ export default function VerifyEmailPage() {
             <button
               onClick={sendCode}
               disabled={sending}
-              className="text-sm font-semibold text-indigo-300 hover:text-indigo-200 disabled:opacity-50"
+              className="text-sm font-semibold text-[var(--clay)] hover:text-[var(--clay)] disabled:opacity-50"
             >
               {sending ? 'Sending...' : "Didn't receive a code? Resend"}
             </button>

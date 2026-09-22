@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/pipeline/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/pipeline/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/pipeline/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 
-export default function PipelineActivitiesPage() {
+export default function ContactActivitiesPage() {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +37,7 @@ export default function PipelineActivitiesPage() {
   }, []);
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activities</h1>
         {loading ? (
@@ -58,7 +58,7 @@ export default function PipelineActivitiesPage() {
                   className="w-10 h-10 rounded-xl flex items-center justify-center"
                   style={{ background: 'var(--clay)' }}
                 >
-                  <span className="material-symbols-outlined text-white text-[20px]">
+                  <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">
                     {act.type === 'job_completed' ? 'check_circle' : 'assignment'}
                   </span>
                 </div>

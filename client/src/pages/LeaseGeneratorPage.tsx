@@ -71,10 +71,10 @@ export const LeaseGeneratorPage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">📝 Lease Agreements</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">📝 Lease Agreements</h1>
             <p className="text-sm" style={{ color: tokens.color.textDim }}>Create and manage lease agreements</p>
           </div>
-          <Link to="/property-manager" className="text-sm text-indigo-300 hover:text-indigo-200">← Back to CRM</Link>
+          <Link to="/property-manager" className="text-sm text-[var(--terracotta)] hover:text-[var(--terracotta)]">← Back to CRM</Link>
         </div>
 
         {err && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: tokens.color.danger + '15', color: tokens.color.danger }}>{err}</div>}
@@ -84,73 +84,73 @@ export const LeaseGeneratorPage: React.FC = () => {
 
         {showForm && (
           <Surface className="mb-6">
-            <h3 className="text-lg font-bold text-slate-100 mb-4">New Lease Agreement</h3>
+            <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">New Lease Agreement</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Property *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Property *</label>
                 <select value={form.propertyId} onChange={(e) => setForm({ ...form, propertyId: e.target.value })} className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
                   <option value="">Select property</option>
                   {properties.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Tenant Email *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Tenant Email *</label>
                 <input value={form.tenantEmail} onChange={(e) => setForm({ ...form, tenantEmail: e.target.value })} placeholder="tenant@email.com" type="email" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Tenant Name</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Tenant Name</label>
                 <input value={form.tenantName} onChange={(e) => setForm({ ...form, tenantName: e.target.value })} placeholder="Full name" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 mb-1 block">Start Date *</label>
+                  <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Start Date *</label>
                   <input value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} type="date" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 mb-1 block">End Date *</label>
+                  <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">End Date *</label>
                   <input value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} type="date" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Monthly Rent *</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Monthly Rent *</label>
                 <input value={form.rentAmount} onChange={(e) => setForm({ ...form, rentAmount: e.target.value })} placeholder="1500" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Security Deposit</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Security Deposit</label>
                 <input value={form.depositAmount} onChange={(e) => setForm({ ...form, depositAmount: e.target.value })} placeholder="1500" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Pet Fee (one-time)</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Pet Fee (one-time)</label>
                 <input value={form.petFee} onChange={(e) => setForm({ ...form, petFee: e.target.value })} placeholder="300" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Pet Monthly</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Pet Monthly</label>
                 <input value={form.petMonthly} onChange={(e) => setForm({ ...form, petMonthly: e.target.value })} placeholder="25" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Late Fee</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Late Fee</label>
                 <input value={form.lateFee} onChange={(e) => setForm({ ...form, lateFee: e.target.value })} placeholder="75" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Late Grace Days</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Late Grace Days</label>
                 <input value={form.lateGraceDays} onChange={(e) => setForm({ ...form, lateGraceDays: e.target.value })} placeholder="5" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Termination Notice (days)</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Termination Notice (days)</label>
                 <input value={form.terminationNoticeDays} onChange={(e) => setForm({ ...form, terminationNoticeDays: e.target.value })} placeholder="30" type="number" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Included Utilities</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Included Utilities</label>
                 <div className="flex flex-wrap gap-2">
                   {['WATER', 'ELECTRIC', 'GAS', 'INTERNET', 'TRASH'].map(u => (
-                    <button key={u} onClick={() => toggleUtility(u)} className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${form.utilities.includes(u) ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                    <button key={u} onClick={() => toggleUtility(u)} className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${form.utilities.includes(u) ? 'bg-[var(--clay)]/20 text-[var(--terracotta)] border border-[var(--clay)]/30' : 'bg-[var(--cream)] text-[var(--soft-stone)] border border-[var(--soft-stone)]/30'}`}>
                       {u}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-1 block">Renewal Terms</label>
+                <label className="text-xs font-semibold text-[var(--warm-ink)] mb-1 block">Renewal Terms</label>
                 <input value={form.renewalTerms} onChange={(e) => setForm({ ...form, renewalTerms: e.target.value })} placeholder="e.g. Month-to-month after initial term" className="w-full rounded-xl px-4 py-3 outline-none" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
               </div>
             </div>
@@ -162,7 +162,7 @@ export const LeaseGeneratorPage: React.FC = () => {
         )}
 
         {/* Lease List */}
-        <h2 className="text-lg font-bold text-slate-100 mb-3">Lease Agreements ({leases.length})</h2>
+        <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-3">Lease Agreements ({leases.length})</h2>
         {leases.length === 0 ? (
           <p className="text-center py-8" style={{ color: tokens.color.textDim }}>No lease agreements yet.</p>
         ) : (
@@ -171,27 +171,27 @@ export const LeaseGeneratorPage: React.FC = () => {
               <Surface key={l.id}>
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <div className="font-bold text-slate-100">{l.tenantName || l.tenantEmail}</div>
+                    <div className="font-bold text-[var(--warm-ink)]">{l.tenantName || l.tenantEmail}</div>
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Lease #{l.id.slice(-6)}</div>
                   </div>
                   <Badge tone={l.status === 'ACTIVE' ? 'success' : l.status === 'DRAFT' ? 'info' : l.status === 'EXPIRED' ? 'danger' : 'warning'}>{l.status}</Badge>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
-                  <div className="p-2 rounded-lg bg-white/5">
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Rent</div>
-                    <div className="font-bold text-emerald-300">${l.rentAmount}/mo</div>
+                    <div className="font-bold text-[var(--sage)]">${l.rentAmount}/mo</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/5">
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Deposit</div>
-                    <div className="font-bold text-slate-100">${l.depositAmount}</div>
+                    <div className="font-bold text-[var(--warm-ink)]">${l.depositAmount}</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/5">
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>Start</div>
-                    <div className="font-bold text-slate-100">{new Date(l.startDate).toLocaleDateString()}</div>
+                    <div className="font-bold text-[var(--warm-ink)]">{new Date(l.startDate).toLocaleDateString()}</div>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/5">
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
                     <div className="text-xs" style={{ color: tokens.color.textDim }}>End</div>
-                    <div className="font-bold text-slate-100">{new Date(l.endDate).toLocaleDateString()}</div>
+                    <div className="font-bold text-[var(--warm-ink)]">{new Date(l.endDate).toLocaleDateString()}</div>
                   </div>
                 </div>
               </Surface>

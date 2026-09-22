@@ -50,55 +50,55 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'radial-gradient(circle at top left, #0f172a, #020617)' }}>
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'radial-gradient(circle at top left, var(--warm-ink), #020617)' }}>
+      <div className="w-full max-w-md rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-6 md:p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold font-headline text-slate-100">Create your account</h1>
-          <p className="mt-2 text-sm" style={{ color: '#94a3b8' }}>{step === 'details' ? 'Start with your email, then verify with a code.' : 'Enter the 6-digit code we just emailed you.'}</p>
+          <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Create your account</h1>
+          <p className="mt-2 text-sm" style={{ color: 'var(--soft-stone)' }}>{step === 'details' ? 'Start with your email, then verify with a code.' : 'Enter the 6-digit code we just emailed you.'}</p>
         </div>
 
-        {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#dc26261a', color: '#fca5a5', border: '1px solid #dc262633' }}>{error}</div>}
+        {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'var(--terracotta)1a', color: '#fca5a5', border: '1px solid var(--terracotta)33' }}>{error}</div>}
 
         {step === 'details' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">First name</label>
-              <input value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" placeholder="Jane" />
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">First name</label>
+              <input value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="Jane" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Last name</label>
-              <input value={lastName} onChange={e => setLastName(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" placeholder="Doe" />
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Last name</label>
+              <input value={lastName} onChange={e => setLastName(e.target.value)} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="Doe" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Email</label>
-              <input value={email} onChange={e => setEmail(e.target.value)} type="email" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" placeholder="you@example.com" />
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Email</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} type="email" className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="you@example.com" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Phone (optional)</label>
-              <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" placeholder="+1 555 0123" />
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Phone (optional)</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="+1 555 0123" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
-              <input value={password} onChange={e => setPassword(e.target.value)} type="password" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" placeholder="Min 8 characters" />
-              <p className="mt-1 text-xs" style={{ color: '#64748b' }}>Use 8+ characters with upper, lower, number, and symbol.</p>
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Password</label>
+              <input value={password} onChange={e => setPassword(e.target.value)} type="password" className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" placeholder="Min 8 characters" />
+              <p className="mt-1 text-xs" style={{ color: 'var(--soft-stone)' }}>Use 8+ characters with upper, lower, number, and symbol.</p>
             </div>
-            <button disabled={loading || !email || !firstName || !lastName || password.length < 8} onClick={requestCode} className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-50">
+            <button disabled={loading || !email || !firstName || !lastName || password.length < 8} onClick={requestCode} className="w-full rounded-xl bg-[var(--clay)] px-4 py-3 text-sm font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--terracotta)] disabled:opacity-50">
               {loading ? 'Sending code…' : 'Send verification code'}
             </button>
-            <p className="text-center text-xs" style={{ color: '#64748b' }}>Already have an account? <Link to="/login" className="text-indigo-300">Log in</Link></p>
+            <p className="text-center text-xs" style={{ color: 'var(--soft-stone)' }}>Already have an account? <Link to="/login" className="text-[var(--clay)]">Log in</Link></p>
           </div>
         )}
 
         {step === 'verify' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Verification code</label>
-              <input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 text-center tracking-widest" placeholder="123456" maxLength={8} />
+              <label className="block text-xs font-semibold text-[var(--warm-ink)] mb-1">Verification code</label>
+              <input value={code} onChange={e => setCode(e.target.value)} inputMode="numeric" className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] text-center tracking-widest" placeholder="123456" maxLength={8} />
             </div>
-            <button disabled={loading || code.length < 4} onClick={complete} className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-50">
+            <button disabled={loading || code.length < 4} onClick={complete} className="w-full rounded-xl bg-[var(--sage)] px-4 py-3 text-sm font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--sage)] disabled:opacity-50">
               {loading ? 'Creating account…' : 'Verify & Create Account'}
             </button>
-            <button onClick={requestCode} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10">Resend code</button>
+            <button onClick={requestCode} className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] transition hover:bg-[var(--warm-sand)]">Resend code</button>
           </div>
         )}
       </div>

@@ -46,7 +46,7 @@ const TIME_SLOTS = [
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-on-surface-variant">
+    <label className="block text-xs font-semibold uppercase tracking-widest mb-2 text-[var(--soft-stone)]">
       {children}
     </label>
   );
@@ -54,7 +54,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 function InputIcon({ icon }: { icon: React.ReactNode }) {
   return (
-    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant/60">
+    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--soft-stone)]/60">
       {icon}
     </div>
   );
@@ -296,20 +296,20 @@ export default function NewReservationPage() {
 
   if (success) {
     return (
-      <div className="flex items-center justify-center p-6 min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
-        <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
+      <div className="flex items-center justify-center p-6 min-h-screen" style={{ background: 'var(--cream)', color: 'var(--warm-ink)' }}>
+        <div className="text-center max-w-sm bg-[var(--warm-sand)]est p-8 rounded-xl shadow-[var(--shadow-soft)] border border-[rgba(191,179,163,0.2)]">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
             <CheckCircleIcon className="h-10 w-10" />
           </div>
           <h2 className="text-2xl font-headline font-bold mb-3 text-primary">
             Reservation Submitted!
           </h2>
-          <p className="text-sm mb-2 text-on-surface-variant">
+          <p className="text-sm mb-2 text-[var(--soft-stone)]">
             <span className="font-semibold text-on-surface">
               {selectedPlace?.name}
             </span>
           </p>
-          <p className="text-sm mb-6 text-on-surface-variant">
+          <p className="text-sm mb-6 text-[var(--soft-stone)]">
             {new Date(form.date + "T00:00:00").toLocaleDateString("en-US", {
               weekday: "long",
               month: "long",
@@ -324,7 +324,7 @@ export default function NewReservationPage() {
             <div className="mb-4">
               <a
                 href={`tel:${selectedPlace.phone}`}
-                className="w-full bg-primary text-on-primary font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center shadow-sm"
+                className="w-full bg-primary text-on-primary font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all text-center shadow-[var(--shadow-soft)]"
               >
                 📞 Call to Verify: {selectedPlace.phone}
               </a>
@@ -332,8 +332,8 @@ export default function NewReservationPage() {
           )}
 
           {!selectedPlace?.isClaimed && user?.role === 'BUSINESS_OWNER' && (
-            <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left space-y-3 font-body">
-              <p className="text-xs text-on-surface-variant leading-relaxed">
+            <div className="mb-6 p-4 sm:p-5 rounded-[var(--radius-card)] bg-[var(--muted-ochre)]/10 border border-amber-500/20 text-left space-y-3 font-body">
+              <p className="text-xs text-[var(--soft-stone)] leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your
                 booking is processed immediately, please invite the owner to
                 join:
@@ -342,7 +342,7 @@ export default function NewReservationPage() {
                 href={getWhatsAppInviteUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-[#25D366] text-white font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-sm"
+                className="w-full bg-[#25D366] text-[var(--warm-ink)] font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-[var(--shadow-soft)]"
               >
                 💬 Send WhatsApp Invitation
               </a>
@@ -362,13 +362,13 @@ export default function NewReservationPage() {
                 });
                 setSelectedPlace(null);
               }}
-              className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface"
+              className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-white text-on-surface"
             >
               Add Another
             </button>
             <Link
               to="/reservations"
-              className="bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-medium px-5 py-2.5 rounded-md shadow-sm hover:opacity-90"
+              className="bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-medium px-5 py-2.5 rounded-md shadow-[var(--shadow-soft)] hover:opacity-90"
             >
               View Bookings
             </Link>
@@ -383,7 +383,7 @@ export default function NewReservationPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-on-surface-variant hover:text-primary"
+          className="inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors text-[var(--soft-stone)] hover:text-primary"
         >
           <ArrowLeftIcon className="h-4 w-4" /> Back to Dashboard
         </Link>
@@ -392,30 +392,30 @@ export default function NewReservationPage() {
           <h1 className="text-3xl font-headline font-bold text-primary tracking-tight">
             New Booking
           </h1>
-          <p className="mt-1.5 text-sm text-on-surface-variant font-body">
+          <p className="mt-1.5 text-sm text-[var(--soft-stone)] font-body">
             Search for a venue and book instantly.
           </p>
         </div>
 
         {/* Venue Selection */}
-        <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 mb-8">
+        <div className="bg-[var(--warm-sand)]est rounded-xl p-6 shadow-[var(--shadow-soft)] border border-[rgba(191,179,163,0.2)] mb-8">
           <FieldLabel>Select Venue</FieldLabel>
           {selectedPlace ? (
-            <div className="flex items-center justify-between rounded-lg border border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20 px-4 py-3">
+            <div className="flex items-center justify-between rounded-lg border border-primary bg-primary/5 shadow-[var(--shadow-soft)] ring-1 ring-primary/20 px-4 py-3">
               <div>
                 <div className="text-sm font-bold text-primary">{selectedPlace.name}</div>
-                <div className="text-xs text-on-surface-variant">{selectedPlace.address}</div>
+                <div className="text-xs text-[var(--soft-stone)]">{selectedPlace.address}</div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedPlace(null)}
-                className="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors"
+                className="text-xs font-semibold text-[var(--soft-stone)] hover:text-primary transition-colors"
               >
                 Change
               </button>
             </div>
           ) : (
-            <p className="text-xs text-on-surface-variant">Use the search above or the home search to find a venue, then continue.</p>
+            <p className="text-xs text-[var(--soft-stone)]">Use the search above or the home search to find a venue, then continue.</p>
           )}
         </div>
 
@@ -423,7 +423,7 @@ export default function NewReservationPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-300">
             {/* Left Column - Form */}
             <div className="space-y-6">
-              <div className="rounded-2xl p-5 sm:p-8 bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+              <div className="rounded-[var(--radius-card)] p-5 sm:p-8 bg-[var(--warm-sand)]est shadow-[var(--shadow-soft)] border border-[rgba(191,179,163,0.2)]">
                 <h3 className="font-headline text-lg font-bold text-primary mb-4">
                   Reservation Details
                 </h3>
@@ -442,7 +442,7 @@ export default function NewReservationPage() {
                       <FieldLabel>Select Services</FieldLabel>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                         {businessServices.map(s => (
-                          <label key={s.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedServiceIds.includes(s.id) ? 'border-primary bg-primary/5 shadow-sm' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
+                          <label key={s.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selectedServiceIds.includes(s.id) ? 'border-primary bg-primary/5 shadow-[var(--shadow-soft)]' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
                             <input type="checkbox" className="mt-1 shrink-0 accent-primary" checked={selectedServiceIds.includes(s.id)} onChange={(e) => {
                               if (e.target.checked) setSelectedServiceIds([...selectedServiceIds, s.id]);
                               else setSelectedServiceIds(selectedServiceIds.filter(id => id !== s.id));
@@ -453,14 +453,14 @@ export default function NewReservationPage() {
                             </div>
                           </label>
                         ))}
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isOtherService ? 'border-primary bg-primary/5 shadow-sm' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isOtherService ? 'border-primary bg-primary/5 shadow-[var(--shadow-soft)]' : 'border-outline-variant/30 hover:bg-surface-container'}`}>
                            <input type="checkbox" className="shrink-0 accent-primary" checked={isOtherService} onChange={e => setIsOtherService(e.target.checked)} />
                            <div className="text-sm font-bold text-on-surface">Other / Not Listed</div>
                         </label>
                       </div>
                       {isOtherService && (
                         <div className="mt-3">
-                           <input type="text" placeholder="Describe the service you need..." value={customServiceName} onChange={e => setCustomServiceName(e.target.value)} className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
+                           <input type="text" placeholder="Describe the service you need..." value={customServiceName} onChange={e => setCustomServiceName(e.target.value)} className="w-full bg-[var(--warm-sand)] border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm" />
                         </div>
                       )}
                     </div>
@@ -481,7 +481,7 @@ export default function NewReservationPage() {
                           min={today}
                           value={form.date}
                           onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm"
+                          className="w-full bg-[var(--warm-sand)] border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm"
                         />
                       </div>
                     </div>
@@ -494,7 +494,7 @@ export default function NewReservationPage() {
                           required
                           value={form.time}
                           onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm appearance-none font-medium"
+                          className="w-full bg-[var(--warm-sand)] border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm appearance-none font-medium"
                         >
                           <option value="" disabled>
                             Time
@@ -536,7 +536,7 @@ export default function NewReservationPage() {
                           max="50"
                           value={form.guests}
                           onChange={handleChange}
-                          className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm text-center"
+                          className="w-full bg-[var(--warm-sand)] border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 pl-10 outline-none font-body text-sm text-center"
                         />
                       </div>
                       <button
@@ -585,8 +585,8 @@ export default function NewReservationPage() {
                           }
                           className={`relative flex flex-col items-center justify-center py-4 rounded-lg border transition-all overflow-hidden ${
                             form.paymentMethod === m.id
-                              ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                              : "border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low"
+                              ? "border-primary bg-primary/5 shadow-[var(--shadow-soft)] ring-1 ring-primary/20"
+                              : "border-outline-variant/30 bg-[var(--warm-sand)]est hover:bg-[var(--warm-sand)]"
                           }`}
                         >
                           {m.id !== "safepay" && (
@@ -606,11 +606,11 @@ export default function NewReservationPage() {
                   {/* Notes */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-[var(--soft-stone)]">
                         Special Requests
                       </label>
                       {selectedPlace?.isE2eeEnabled && (
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded uppercase tracking-wider">
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-[var(--sage)] bg-[var(--sage)]/10 px-2 py-0.5 rounded uppercase tracking-wider">
                           <ShieldCheckIcon className="w-3 h-3" /> E2E Encrypted
                         </div>
                       )}
@@ -620,7 +620,7 @@ export default function NewReservationPage() {
                       value={form.notes}
                       onChange={handleChange}
                       rows={3}
-                      className="w-full bg-surface-container-low border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm"
+                      className="w-full bg-[var(--warm-sand)] border-0 text-on-surface rounded-md focus:ring-1 focus:ring-primary px-3 py-2 outline-none font-body text-sm"
                       placeholder={selectedPlace?.isE2eeEnabled ? "Notes will be encrypted using RSA cryptography before leaving your browser." : "Allergies, seating preferences, etc."}
                     />
                   </div>
@@ -638,24 +638,24 @@ export default function NewReservationPage() {
 
             {/* Right Column - Summary */}
             <div className="space-y-6">
-              <div className="rounded-xl p-6 bg-surface-container-low border border-outline-variant/20">
+              <div className="rounded-xl p-6 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)]">
                 <h3 className="font-headline text-lg font-bold text-primary mb-4">
                   Booking Summary
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <div className="text-xs text-on-surface-variant uppercase tracking-wider">
+                    <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider">
                       Venue
                     </div>
                     <div className="font-bold text-on-surface">
                       {selectedPlace.name}
                     </div>
-                    <div className="text-xs text-on-surface-variant">
+                    <div className="text-xs text-[var(--soft-stone)]">
                       {selectedPlace.address}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-on-surface-variant uppercase tracking-wider">
+                    <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider">
                       Date & Time
                     </div>
                     <div className="font-bold text-on-surface">
@@ -673,7 +673,7 @@ export default function NewReservationPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-on-surface-variant uppercase tracking-wider">
+                    <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider">
                       Guests
                     </div>
                     <div className="font-bold text-on-surface">
@@ -681,7 +681,7 @@ export default function NewReservationPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-on-surface-variant uppercase tracking-wider">
+                    <div className="text-xs text-[var(--soft-stone)] uppercase tracking-wider">
                       Payment
                     </div>
                     <div className="font-bold text-on-surface capitalize">
@@ -691,15 +691,15 @@ export default function NewReservationPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl p-6 bg-surface-container-low border border-outline-variant/20">
+              <div className="rounded-xl p-6 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)]">
                 <h3 className="font-headline text-lg font-bold text-primary mb-4 flex items-center gap-2">
                   <LockClosedIcon className="h-5 w-5" /> Escrow Protection
                 </h3>
-                <div className="text-sm text-on-surface-variant space-y-3">
+                <div className="text-sm text-[var(--soft-stone)] space-y-3">
                   <p>
                     To protect our venue partners from no-shows, an upfront deposit is locked safely in the Pabandi Smart Contract.
                   </p>
-                  <div className="flex justify-between items-center py-3 border-t border-b border-outline-variant/20 font-bold text-on-surface">
+                  <div className="flex justify-between items-center py-3 border-t border-b border-[rgba(191,179,163,0.2)] font-bold text-on-surface">
                     <span>Required Deposit:</span>
                     <span className="text-primary text-base">
                       {form.paymentMethod !== 'safepay' 
@@ -722,9 +722,9 @@ export default function NewReservationPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl p-8 bg-surface-container-low border border-outline-variant/20 text-center">
+          <div className="rounded-xl p-8 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] text-center">
             <MapPinIcon className="h-8 w-8 mx-auto mb-3 text-primary" />
-            <p className="text-sm text-on-surface-variant">
+            <p className="text-sm text-[var(--soft-stone)]">
               Select a venue above to start your reservation.
             </p>
           </div>

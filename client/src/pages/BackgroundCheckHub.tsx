@@ -96,13 +96,13 @@ export const BackgroundCheckHub: React.FC = () => {
   const SectionHeader: React.FC<{ id: string; icon: string; title: string; count?: number; color?: string }> = ({ id, icon, title, count, color = 'blue' }) => (
     <button
       onClick={() => toggleSection(id)}
-      className={`w-full flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800 transition-all ${expandedSections.includes(id) ? `border-${color}-500/30 bg-${color}-500/5` : ''}`}
+      className={`w-full flex items-center justify-between p-4 rounded-lg bg-[var(--warm-sand)]/50 border border-[var(--soft-stone)]/50 hover:bg-[var(--warm-sand)] transition-all ${expandedSections.includes(id) ? `border-${color}-500/30 bg-${color}-500/5` : ''}`}
     >
       <div className="flex items-center gap-3">
         <span className="text-2xl">{icon}</span>
         <span className="font-semibold">{title}</span>
         {count !== undefined && count > 0 && (
-          <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-500/20 text-blue-300">{count}</span>
+          <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[rgba(var(--sky-wash),0.15)] text-[var(--sky-wash)]">{count}</span>
         )}
       </div>
       <span className={`transform transition-transform ${expandedSections.includes(id) ? 'rotate-180' : ''}`}>▼</span>
@@ -110,15 +110,15 @@ export const BackgroundCheckHub: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[#0a0a0f] text-[var(--warm-ink)]">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--sky-wash)]/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[var(--dusty-rose)]/5 rounded-full blur-3xl"></div>
       </div>
 
       {/* Header */}
-      <header className="relative bg-[#0f0f1a]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50">
+      <header className="relative bg-[#0f0f1a]/80 backdrop-blur-xl border-b border-[rgba(191,179,163,0.2)] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20">BC</div>
@@ -127,7 +127,7 @@ export const BackgroundCheckHub: React.FC = () => {
               <span className="text-[10px] text-gray-500 block">Powered by Pabandi</span>
             </div>
           </div>
-          <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-white transition-colors">← Back</button>
+          <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-[var(--warm-ink)] transition-colors">← Back</button>
         </div>
       </header>
 
@@ -143,7 +143,7 @@ export const BackgroundCheckHub: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/50">
+          <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)] shadow-2xl shadow-black/50">
             <div className="grid md:grid-cols-12 gap-4">
               <div className="md:col-span-4">
                 <label className="text-xs text-gray-500 mb-1.5 block font-medium uppercase tracking-wider">First Name</label>
@@ -151,7 +151,7 @@ export const BackgroundCheckHub: React.FC = () => {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="John"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 focus:bg-white/10 focus:outline-none transition-all"
+                  className="w-full px-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl text-[var(--warm-ink)] placeholder-gray-600 focus:border-[var(--sky-wash)]/50 focus:bg-[var(--warm-sand)] focus:outline-none transition-all"
                 />
               </div>
               <div className="md:col-span-4">
@@ -160,7 +160,7 @@ export const BackgroundCheckHub: React.FC = () => {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Doe"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 focus:bg-white/10 focus:outline-none transition-all"
+                  className="w-full px-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl text-[var(--warm-ink)] placeholder-gray-600 focus:border-[var(--sky-wash)]/50 focus:bg-[var(--warm-sand)] focus:outline-none transition-all"
                 />
               </div>
               <div className="md:col-span-2">
@@ -168,11 +168,11 @@ export const BackgroundCheckHub: React.FC = () => {
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:border-blue-500/50 focus:bg-white/10 focus:outline-none transition-all appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-xl text-[var(--warm-ink)] focus:border-[var(--sky-wash)]/50 focus:bg-[var(--warm-sand)] focus:outline-none transition-all appearance-none cursor-pointer"
                 >
                   <option value="">All</option>
                   {US_STATES.map(s => (
-                    <option key={s.code} value={s.code} className="bg-gray-900">{s.code}</option>
+                    <option key={s.code} value={s.code} className="bg-[var(--warm-sand)]">{s.code}</option>
                   ))}
                 </select>
               </div>
@@ -180,18 +180,18 @@ export const BackgroundCheckHub: React.FC = () => {
                 <button
                   onClick={runCheck}
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all"
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-[var(--warm-ink)] font-semibold rounded-xl hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span className="w-4 h-4 border-2 border-[rgba(191,179,163,0.5)] border-t-white rounded-full animate-spin"></span>
                       Searching...
                     </span>
                   ) : 'Run Check'}
                 </button>
               </div>
             </div>
-            {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+            {error && <p className="mt-3 text-sm text-[var(--terracotta)]">{error}</p>}
           </div>
 
           {/* Search History */}
@@ -205,7 +205,7 @@ export const BackgroundCheckHub: React.FC = () => {
                     setFirstName(parts[0] || '');
                     setLastName(parts[1] || '');
                   }}
-                  className="px-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all"
+                  className="px-3 py-1.5 text-xs bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg hover:bg-[var(--warm-sand)] transition-all"
                 >
                   {item.name}
                 </button>
@@ -217,26 +217,26 @@ export const BackgroundCheckHub: React.FC = () => {
         {/* Loading State */}
         {loading && (
           <div className="space-y-6 animate-pulse">
-            <div className="bg-[#0f0f1a] rounded-2xl p-8 border border-white/5">
+            <div className="bg-[#0f0f1a] rounded-2xl p-8 border border-[rgba(191,179,163,0.2)]">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-white/10 rounded-full"></div>
+                <div className="w-16 h-16 bg-[var(--warm-sand)] rounded-full"></div>
                 <div className="space-y-2 flex-1">
-                  <div className="h-6 bg-white/10 rounded w-48"></div>
-                  <div className="h-4 bg-white/10 rounded w-32"></div>
+                  <div className="h-6 bg-[var(--warm-sand)] rounded w-48"></div>
+                  <div className="h-4 bg-[var(--warm-sand)] rounded w-32"></div>
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-4">
                 {[1,2,3,4].map(i => (
-                  <div key={i} className="h-20 bg-white/5 rounded-xl"></div>
+                  <div key={i} className="h-20 bg-[var(--warm-sand)] rounded-xl"></div>
                 ))}
               </div>
             </div>
             {[1,2,3].map(i => (
-              <div key={i} className="bg-[#0f0f1a] rounded-xl p-6 border border-white/5">
-                <div className="h-5 bg-white/10 rounded w-40 mb-4"></div>
+              <div key={i} className="bg-[#0f0f1a] rounded-xl p-6 border border-[rgba(191,179,163,0.2)]">
+                <div className="h-5 bg-[var(--warm-sand)] rounded w-40 mb-4"></div>
                 <div className="space-y-3">
-                  <div className="h-16 bg-white/5 rounded-lg"></div>
-                  <div className="h-16 bg-white/5 rounded-lg"></div>
+                  <div className="h-16 bg-[var(--warm-sand)] rounded-lg"></div>
+                  <div className="h-16 bg-[var(--warm-sand)] rounded-lg"></div>
                 </div>
               </div>
             ))}
@@ -247,7 +247,7 @@ export const BackgroundCheckHub: React.FC = () => {
         {result && !loading && (
           <div className="space-y-6">
             {/* Subject Header */}
-            <section className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/50">
+            <section className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)] shadow-2xl shadow-black/50">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-lg shadow-blue-500/20">
@@ -277,7 +277,7 @@ export const BackgroundCheckHub: React.FC = () => {
             </section>
 
             {/* Risk Score Card */}
-            <section className="bg-[#0f0f1a] rounded-2xl overflow-hidden border border-white/5 shadow-2xl shadow-black/50">
+            <section className="bg-[#0f0f1a] rounded-2xl overflow-hidden border border-[rgba(191,179,163,0.2)] shadow-2xl shadow-black/50">
               <div className={`p-6 bg-gradient-to-r ${getRiskGradient(result.riskAssessment?.score || 50)} bg-opacity-10`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div>
@@ -287,21 +287,21 @@ export const BackgroundCheckHub: React.FC = () => {
                   <div className="flex items-center gap-6">
                     <div className="relative">
                       <svg className="w-24 h-24 transform -rotate-90">
-                        <circle cx="48" cy="48" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-white/10" />
+                        <circle cx="48" cy="48" r="40" fill="none" stroke="currentColor" strokeWidth="6" className="text-[var(--warm-ink)]/10" />
                         <circle
                           cx="48" cy="48" r="40" fill="none" stroke="currentColor" strokeWidth="6"
                           strokeDasharray={`${(result.riskAssessment?.score || 50) * 2.51} 251`}
-                          className={result.riskAssessment?.score >= 70 ? 'text-red-400' : result.riskAssessment?.score >= 40 ? 'text-yellow-400' : 'text-emerald-400'}
+                          className={result.riskAssessment?.score >= 70 ? 'text-[var(--terracotta)]' : result.riskAssessment?.score >= 40 ? 'text-[var(--muted-ochre)]' : 'text-[var(--sage)]'}
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className={`text-2xl font-bold ${result.riskAssessment?.score >= 70 ? 'text-red-400' : result.riskAssessment?.score >= 40 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                        <span className={`text-2xl font-bold ${result.riskAssessment?.score >= 70 ? 'text-[var(--terracotta)]' : result.riskAssessment?.score >= 40 ? 'text-[var(--muted-ochre)]' : 'text-[var(--sage)]'}`}>
                           {result.riskAssessment?.score}
                         </span>
                       </div>
                     </div>
                     <div>
-                      <div className={`text-2xl font-bold ${result.riskAssessment?.score >= 70 ? 'text-red-400' : result.riskAssessment?.score >= 40 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                      <div className={`text-2xl font-bold ${result.riskAssessment?.score >= 70 ? 'text-[var(--terracotta)]' : result.riskAssessment?.score >= 40 ? 'text-[var(--muted-ochre)]' : 'text-[var(--sage)]'}`}>
                         {getRiskLabel(result.riskAssessment?.score || 50)}
                       </div>
                       <p className="text-sm text-gray-400 mt-1">out of 100</p>
@@ -312,15 +312,15 @@ export const BackgroundCheckHub: React.FC = () => {
               <div className="p-6">
                 <div className="flex flex-wrap gap-2 mb-4">
                   {result.riskAssessment?.factors?.map((factor: string) => (
-                    <span key={factor} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-gray-300">
+                    <span key={factor} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-gray-300">
                       {factor}
                     </span>
                   ))}
                 </div>
-                <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                <div className="p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)]">
                   <p className="text-sm">
-                    <span className="font-semibold text-white">Recommendation:</span>{' '}
-                    <span className={result.riskAssessment?.score >= 70 ? 'text-red-300' : result.riskAssessment?.score >= 40 ? 'text-yellow-300' : 'text-emerald-300'}>
+                    <span className="font-semibold text-[var(--warm-ink)]">Recommendation:</span>{' '}
+                    <span className={result.riskAssessment?.score >= 70 ? 'text-[var(--terracotta)]' : result.riskAssessment?.score >= 40 ? 'text-[var(--muted-ochre)]' : 'text-[var(--sage)]'}>
                       {result.riskAssessment?.recommendation}
                     </span>
                   </p>
@@ -338,7 +338,7 @@ export const BackgroundCheckHub: React.FC = () => {
                 { label: 'Mugshots', value: result.mugshots ? 1 : 0, icon: '📸', color: 'purple' },
                 { label: 'Data Sources', value: 6, icon: '📊', color: 'cyan' },
               ].map((stat) => (
-                <div key={stat.label} className="bg-[#0f0f1a] rounded-xl p-4 border border-white/5 text-center">
+                <div key={stat.label} className="bg-[#0f0f1a] rounded-xl p-4 border border-[rgba(191,179,163,0.2)] text-center">
                   <div className="text-2xl mb-1">{stat.icon}</div>
                   <div className={`text-2xl font-bold ${stat.value > 0 ? `text-${stat.color}-400` : 'text-gray-500'}`}>{stat.value}</div>
                   <div className="text-xs text-gray-500">{stat.label}</div>
@@ -351,16 +351,16 @@ export const BackgroundCheckHub: React.FC = () => {
               {/* Court Records */}
               <SectionHeader id="court" icon="⚖️" title="Court Records" count={result.courtRecords?.records?.length} color="blue" />
               {expandedSections.includes('court') && (
-                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5 space-y-3">
+                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)] space-y-3">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-xs text-gray-500">Source: CourtListener API</span>
                     <span className="text-xs text-gray-500">{result.courtRecords?.totalResults} total results</span>
                   </div>
                   {result.courtRecords?.records?.length > 0 ? result.courtRecords.records.map((record: any, i: number) => (
-                    <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-blue-500/20 transition-all">
+                    <div key={i} className="p-4 bg-[var(--warm-sand)] rounded-xl border border-[rgba(191,179,163,0.2)] hover:border-[rgba(var(--sky-wash),0.2)] transition-all">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-blue-300">{record.caseName}</h4>
+                          <h4 className="font-semibold text-[var(--sky-wash)]">{record.caseName}</h4>
                           <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
                             <span className="flex items-center gap-1">📁 {record.caseNumber}</span>
                             {record.court && <span className="flex items-center gap-1">🏛️ {record.court}</span>}
@@ -369,7 +369,7 @@ export const BackgroundCheckHub: React.FC = () => {
                           {record.snippet && <p className="text-xs text-gray-500 mt-2 line-clamp-2">{record.snippet}</p>}
                         </div>
                         {record.status && (
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-blue-500/10 text-blue-300">{record.status}</span>
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-[rgba(var(--sky-wash),0.1)] text-[var(--sky-wash)]">{record.status}</span>
                         )}
                       </div>
                     </div>
@@ -385,18 +385,18 @@ export const BackgroundCheckHub: React.FC = () => {
               {/* FBI */}
               <SectionHeader id="fbi" icon="🔴" title="FBI Most Wanted" count={result.fbi?.records?.length} color="red" />
               {expandedSections.includes('fbi') && (
-                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5 space-y-3">
+                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)] space-y-3">
                   {result.fbi?.records?.length > 0 ? result.fbi.records.map((record: any, i: number) => (
-                    <div key={i} className="p-4 bg-red-500/5 rounded-xl border border-red-500/20">
+                    <div key={i} className="p-4 bg-[var(--terracotta)]/5 rounded-xl border border-[rgba(var(--terracotta),0.2)]">
                       <div className="flex items-start gap-4">
                         {record.images?.[0] && (
                           <img src={record.images[0]} alt="" className="w-20 h-20 rounded-lg object-cover" />
                         )}
                         <div className="flex-1">
-                          <h4 className="font-semibold text-red-300">{record.title}</h4>
+                          <h4 className="font-semibold text-[var(--terracotta)]">{record.title}</h4>
                           {record.aliases && <p className="text-xs text-gray-400 mt-1">Aliases: {record.aliases.join(', ')}</p>}
                           {record.description && <p className="text-xs text-gray-400 mt-2">{record.description}</p>}
-                          {record.caution && <p className="text-xs text-red-400 mt-2 font-medium">⚠️ {record.caution}</p>}
+                          {record.caution && <p className="text-xs text-[var(--terracotta)] mt-2 font-medium">⚠️ {record.caution}</p>}
                           {record.field_offices && <p className="text-xs text-gray-500 mt-1">Field Offices: {record.field_offices.join(', ')}</p>}
                         </div>
                       </div>
@@ -413,16 +413,16 @@ export const BackgroundCheckHub: React.FC = () => {
               {/* Interpol */}
               <SectionHeader id="interpol" icon="🌍" title="Interpol Red Notices" count={result.interpol?.records?.length} color="orange" />
               {expandedSections.includes('interpol') && (
-                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5 space-y-3">
+                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)] space-y-3">
                   {result.interpol?.records?.length > 0 ? result.interpol.records.map((record: any, i: number) => (
-                    <div key={i} className="p-4 bg-orange-500/5 rounded-xl border border-orange-500/20">
-                      <h4 className="font-semibold text-orange-300">{record.forename} {record.name}</h4>
+                    <div key={i} className="p-4 bg-[var(--muted-ochre)]/5 rounded-xl border border-[rgba(var(--muted-ochre),0.2)]">
+                      <h4 className="font-semibold text-[var(--muted-ochre)]">{record.forename} {record.name}</h4>
                       <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
                         {record.date_of_birth && <span>DOB: {record.date_of_birth}</span>}
                         {record.nationalities && <span>Nationality: {record.nationalities.join(', ')}</span>}
                         {record.issuing_country && <span>Country: {record.issuing_country}</span>}
                       </div>
-                      {record.charge && <p className="text-xs text-orange-400 mt-2">Charge: {record.charge}</p>}
+                      {record.charge && <p className="text-xs text-[var(--muted-ochre)] mt-2">Charge: {record.charge}</p>}
                     </div>
                   )) : (
                     <div className="text-center py-8 text-gray-500">
@@ -436,12 +436,12 @@ export const BackgroundCheckHub: React.FC = () => {
               {/* Sex Offender */}
               <SectionHeader id="sexoffender" icon="⚠️" title="Sex Offender Registry" count={result.sexOffender?.found ? 1 : 0} color="pink" />
               {expandedSections.includes('sexoffender') && (
-                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5">
+                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)]">
                   {result.sexOffender?.found ? (
-                    <div className="p-4 bg-pink-500/5 rounded-xl border border-pink-500/20">
-                      <h4 className="font-semibold text-pink-300">⚠️ Registry Match Found</h4>
+                    <div className="p-4 bg-[var(--dusty-rose)]/5 rounded-xl border border-[rgba(var(--dusty-rose),0.2)]">
+                      <h4 className="font-semibold text-[var(--dusty-rose)]">⚠️ Registry Match Found</h4>
                       <p className="text-xs text-gray-400 mt-2">Individual found in NSOPW database</p>
-                      <a href={result.sexOffender.searchUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline mt-2 block">View on NSOPW.gov →</a>
+                      <a href={result.sexOffender.searchUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--sky-wash)] hover:underline mt-2 block">View on NSOPW.gov →</a>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
@@ -455,7 +455,7 @@ export const BackgroundCheckHub: React.FC = () => {
               {/* Mugshots */}
               <SectionHeader id="mugshots" icon="📸" title="Mugshot Databases" color="purple" />
               {expandedSections.includes('mugshots') && (
-                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5">
+                <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)]">
                   <p className="text-xs text-gray-500 mb-4">Search across public mugshot databases for booking photos and arrest records.</p>
                   <div className="grid md:grid-cols-3 gap-4">
                     {result.mugshots?.searchUrls && Object.entries(result.mugshots.searchUrls).map(([key, url]) => {
@@ -466,10 +466,10 @@ export const BackgroundCheckHub: React.FC = () => {
                       };
                       const info = labels[key] || { name: key, desc: 'Search' };
                       return (
-                        <a key={key} href={url as string} target="_blank" rel="noopener noreferrer" className="p-4 bg-white/5 rounded-xl border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all">
+                        <a key={key} href={url as string} target="_blank" rel="noopener noreferrer" className="p-4 bg-[var(--warm-sand)] rounded-xl border border-[rgba(191,179,163,0.2)] hover:border-[rgba(var(--dusty-rose),0.3)] hover:bg-[var(--dusty-rose)]/5 transition-all">
                           <h4 className="font-semibold text-sm">{info.name}</h4>
                           <p className="text-xs text-gray-500 mt-1">{info.desc}</p>
-                          <span className="text-xs text-blue-400 mt-2 block">Search →</span>
+                          <span className="text-xs text-[var(--sky-wash)] mt-2 block">Search →</span>
                         </a>
                       );
                     })}
@@ -481,17 +481,17 @@ export const BackgroundCheckHub: React.FC = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <SectionHeader id="civil" icon="📋" title="Civil Records" color="cyan" />
                 {expandedSections.includes('civil') && (
-                  <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5">
+                  <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)]">
                     <p className="text-xs text-gray-500 mb-4">Civil court records including evictions, bankruptcies, liens, and judgments.</p>
                     <div className="flex flex-wrap gap-2">
                       {result.civilRecords?.categories?.map((cat: string) => (
-                        <span key={cat} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">{cat}</span>
+                        <span key={cat} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[rgba(var(--sky-wash),0.1)] text-[var(--sky-wash)] border border-[rgba(var(--sky-wash),0.2)]">{cat}</span>
                       ))}
                     </div>
                     <div className="mt-4 space-y-2">
-                      <a href={result.civilRecords?.searchUrls?.pacer} target="_blank" rel="noopener noreferrer" className="block p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all">
+                      <a href={result.civilRecords?.searchUrls?.pacer} target="_blank" rel="noopener noreferrer" className="block p-3 bg-[var(--warm-sand)] rounded-lg hover:bg-[var(--warm-sand)] transition-all">
                         <span className="text-xs text-gray-400">Federal Court Records (PACER)</span>
-                        <span className="text-xs text-blue-400 ml-2">→</span>
+                        <span className="text-xs text-[var(--sky-wash)] ml-2">→</span>
                       </a>
                     </div>
                   </div>
@@ -499,17 +499,17 @@ export const BackgroundCheckHub: React.FC = () => {
 
                 <SectionHeader id="criminal" icon="🔍" title="Criminal Records" color="yellow" />
                 {expandedSections.includes('criminal') && (
-                  <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5">
+                  <div className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)]">
                     <p className="text-xs text-gray-500 mb-4">State criminal records including felonies, misdemeanors, and warrants.</p>
                     <div className="flex flex-wrap gap-2">
                       {result.criminalRecords?.categories?.map((cat: string) => (
-                        <span key={cat} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-yellow-500/10 text-yellow-300 border border-yellow-500/20">{cat}</span>
+                        <span key={cat} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[rgba(var(--muted-ochre),0.1)] text-[var(--muted-ochre)] border border-[rgba(var(--muted-ochre),0.2)]">{cat}</span>
                       ))}
                     </div>
                     <div className="mt-4 space-y-2">
-                      <a href={result.criminalRecords?.searchUrls?.stateCriminal} target="_blank" rel="noopener noreferrer" className="block p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all">
+                      <a href={result.criminalRecords?.searchUrls?.stateCriminal} target="_blank" rel="noopener noreferrer" className="block p-3 bg-[var(--warm-sand)] rounded-lg hover:bg-[var(--warm-sand)] transition-all">
                         <span className="text-xs text-gray-400">State Criminal Records</span>
-                        <span className="text-xs text-blue-400 ml-2">→</span>
+                        <span className="text-xs text-[var(--sky-wash)] ml-2">→</span>
                       </a>
                     </div>
                   </div>
@@ -518,7 +518,7 @@ export const BackgroundCheckHub: React.FC = () => {
             </div>
 
             {/* Data Sources Footer */}
-            <section className="bg-[#0f0f1a] rounded-2xl p-6 border border-white/5">
+            <section className="bg-[#0f0f1a] rounded-2xl p-6 border border-[rgba(191,179,163,0.2)]">
               <h3 className="text-lg font-semibold mb-4">Data Sources Queried</h3>
               <div className="grid md:grid-cols-3 gap-3">
                 {[
@@ -529,7 +529,7 @@ export const BackgroundCheckHub: React.FC = () => {
                   { name: 'Mugshot Databases', status: 'QUERIED', desc: 'Booking photos', color: 'purple' },
                   { name: 'State & County Courts', status: 'QUERIED', desc: 'Civil & criminal', color: 'cyan' },
                 ].map((source) => (
-                  <div key={source.name} className="p-3 bg-white/5 rounded-lg border border-white/5">
+                  <div key={source.name} className="p-3 bg-[var(--warm-sand)] rounded-lg border border-[rgba(191,179,163,0.2)]">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-sm">{source.name}</span>
                       <span className={`text-xs text-${source.color}-400`}>● {source.status}</span>

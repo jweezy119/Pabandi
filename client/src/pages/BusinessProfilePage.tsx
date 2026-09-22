@@ -43,17 +43,17 @@ const TapProfileButton = ({ business }: TapProfileButtonProps) => {
     <div className="flex items-center gap-2">
       <a
         href={checkoutUrl}
-        className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+        className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-[var(--warm-ink)] font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
       >
         Pay with Tap
       </a>
       <button
         onClick={copyTap}
-        className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-white/15 transition-colors"
+        className="inline-flex items-center gap-2 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] font-headline text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[var(--warm-sand)] transition-colors"
       >
         {copiedTap ? 'Copied' : 'Copy seller link'}
       </button>
-      <span className="text-[10px] text-white/60 font-body">{tapUrl}</span>
+      <span className="text-[10px] text-[var(--warm-ink)]/60 font-body">{tapUrl}</span>
     </div>
   );
 };
@@ -195,8 +195,8 @@ export default function BusinessProfilePage() {
 
   if (isError) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-surface text-on-surface p-6">
-        <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/20 shadow-sm">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[var(--warm-sand)] text-on-surface p-6">
+        <div className="text-center max-w-sm bg-[var(--warm-sand)]-container-lowest p-8 rounded-2xl border border-outline-variant/20 shadow-sm">
           <div className="w-12 h-12 rounded-full bg-error-container/20 text-error flex items-center justify-center mx-auto mb-4">
             ⚠️
           </div>
@@ -222,8 +222,8 @@ export default function BusinessProfilePage() {
     const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
     return (
-      <div className="flex items-center justify-center p-6 font-body min-h-screen" style={{ background: tokens.color.background, color: tokens.color.text }}>
-        <div className="text-center max-w-sm bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
+      <div className="flex items-center justify-center p-6 font-body min-h-screen" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
+        <div className="text-center max-w-sm bg-[var(--warm-sand)]-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/20">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim">
             <ShieldCheckIcon className="h-10 w-10 text-primary" />
           </div>
@@ -247,7 +247,7 @@ export default function BusinessProfilePage() {
           )}
 
           {!business.isClaimed && user?.role === 'BUSINESS_OWNER' && (
-            <div className="mb-6 bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-left space-y-3 font-body">
+            <div className="mb-6 bg-[rgba(var(--muted-ochre),0.1)] border border-[rgba(var(--muted-ochre),0.2)] p-4 rounded-xl text-left space-y-3 font-body">
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 This business is currently unclaimed on Pabandi. To ensure your booking is processed immediately, please invite the owner to join:
               </p>
@@ -255,7 +255,7 @@ export default function BusinessProfilePage() {
                 href={waLink} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="w-full bg-[#25D366] text-white font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-sm"
+                className="w-full bg-[#25D366] text-[var(--warm-ink)] font-headline text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-[#20ba5a] transition-all text-center shadow-sm"
               >
                 💬 Send WhatsApp Invitation
               </a>
@@ -272,7 +272,7 @@ export default function BusinessProfilePage() {
 
           <div className="flex gap-3 justify-center">
             <button onClick={() => { setIsSuccess(false); setFormData({ reservationDate: '', reservationTime: '', numberOfGuests: 2, customerName: `${user?.firstName} ${user?.lastName}`, customerPhone: user?.phone || '', specialRequests: '', paymentMethod: 'paypal' }); }}
-              className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-surface-container hover:bg-surface-container-high text-on-surface font-headline">
+              className="px-5 py-2.5 rounded-md text-sm font-medium transition-all bg-[var(--warm-sand)]-container hover:bg-[var(--warm-sand)]-container-high text-on-surface font-headline">
               Go Back
             </button>
             <Link to="/reservations" className="bg-gradient-to-r from-primary to-primary-container text-on-primary text-sm font-medium px-5 py-2.5 rounded-md shadow-sm hover:opacity-90 font-headline">
@@ -286,7 +286,7 @@ export default function BusinessProfilePage() {
 
   if (businessLoading || !business) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-surface">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[var(--warm-sand)]">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         <p className="mt-4 font-body text-sm text-on-surface-variant font-medium">Loading venue profile...</p>
       </div>
@@ -308,8 +308,8 @@ export default function BusinessProfilePage() {
         title: 'Solana Web3 Summer Check-In',
         desc: 'Book with a Solana wallet and verify your attendance. Get 25 PAB tokens direct-deposited and a complimentary drink/service upgrade on arrival.',
         badge: 'Web3 Exclusive',
-        color: 'from-[#14F195]/10 to-[#9945FF]/10',
-        borderColor: 'border-[#14F195]/30'
+        color: 'from-[var(--sage)]/10 to-[#9945FF]/10',
+        borderColor: 'border-[var(--sage)]/30'
       },
       {
         id: 'promo-2',
@@ -330,7 +330,7 @@ export default function BusinessProfilePage() {
           desc: 'Enjoy a free chef-choice dessert with every main course reservation booked before 7 PM.',
           badge: 'Limited Promo',
           color: 'from-amber-500/5 to-orange-500/5',
-          borderColor: 'border-amber-500/20'
+          borderColor: 'border-[rgba(var(--muted-ochre),0.2)]'
         }
       ];
     }
@@ -343,7 +343,7 @@ export default function BusinessProfilePage() {
           desc: 'New client? Get 20% off your first cleaning service. Book now and experience the Pabandi difference.',
           badge: 'New Client',
           color: 'from-emerald-500/5 to-teal-500/5',
-          borderColor: 'border-emerald-500/20'
+          borderColor: 'border-[rgba(var(--sage),0.2)]'
         },
         {
           id: 'promo-clean-2',
@@ -351,7 +351,7 @@ export default function BusinessProfilePage() {
           desc: 'Refer a friend who books a cleaning service, and you both get a $25 credit toward your next service.',
           badge: 'Referral Bonus',
           color: 'from-blue-500/5 to-indigo-500/5',
-          borderColor: 'border-blue-500/20'
+          borderColor: 'border-[rgba(var(--sky-wash),0.2)]'
         }
       ];
     }
@@ -394,7 +394,7 @@ export default function BusinessProfilePage() {
   };
 
   return (
-    <div className="font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="font-body min-h-screen selection:bg-primary-container selection:text-on-primary-container" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
       <LocalBusinessJsonLd business={business || {}} />
 
       {/* Cover Hero Banner */}
@@ -408,22 +408,22 @@ export default function BusinessProfilePage() {
         
         {/* Navigation & Action Overlays */}
         <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
-          <button onClick={() => navigate('/')} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-colors">
+          <button onClick={() => navigate('/')} className="w-10 h-10 rounded-full bg-[var(--warm-sand)]/40 backdrop-blur-md text-[var(--warm-ink)] flex items-center justify-center hover:bg-[var(--warm-sand)]/60 transition-colors">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           
           <div className="flex gap-2">
-            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-colors">
-              {copiedLink ? <span className="text-xs font-bold text-emerald-400">Copied</span> : <ShareIcon className="h-5 w-5" />}
+            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-[var(--warm-sand)]/40 backdrop-blur-md text-[var(--warm-ink)] flex items-center justify-center hover:bg-[var(--warm-sand)]/60 transition-colors">
+              {copiedLink ? <span className="text-xs font-bold text-[var(--sage)]">Copied</span> : <ShareIcon className="h-5 w-5" />}
             </button>
-            <button onClick={() => setIsLiked(!isLiked)} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/60 transition-colors">
-              <HeartIcon className={`h-5 w-5 ${isLiked ? 'text-red-500 fill-red-500' : ''}`} />
+            <button onClick={() => setIsLiked(!isLiked)} className="w-10 h-10 rounded-full bg-[var(--warm-sand)]/40 backdrop-blur-md text-[var(--warm-ink)] flex items-center justify-center hover:bg-[var(--warm-sand)]/60 transition-colors">
+              <HeartIcon className={`h-5 w-5 ${isLiked ? 'text-[var(--terracotta)] fill-red-500' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Brand Information overlay */}
-        <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 text-white z-10">
+        <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 text-[var(--warm-ink)] z-10">
           <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -431,18 +431,18 @@ export default function BusinessProfilePage() {
                   {getCategoryLabel(business.category)}
                 </span>
                 
-                <span className="flex items-center bg-black/30 backdrop-blur-md px-2.5 py-1 rounded text-xs font-bold font-headline">
-                  <StarIconSolid className="h-3.5 w-3.5 text-yellow-400 mr-1" />
+                <span className="flex items-center bg-[var(--warm-sand)]/30 backdrop-blur-md px-2.5 py-1 rounded text-xs font-bold font-headline">
+                  <StarIconSolid className="h-3.5 w-3.5 text-[var(--muted-ochre)] mr-1" />
                   {business.rating ? business.rating.toFixed(1) : '4.8'} ({business.reviewCount} Reviews)
                 </span>
 
                 {business.isClaimed ? (
-                  <span className="bg-[#14F195]/20 backdrop-blur-md text-[#14F195] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[#14F195]/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#14F195] animate-pulse"></span>
+                  <span className="bg-[var(--sage)]/20 backdrop-blur-md text-[var(--sage)] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-[var(--sage)]/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--sage)] animate-pulse"></span>
                     Verified Partner
                   </span>
                 ) : (
-                  <span className="bg-amber-500/20 backdrop-blur-md text-[#fbbf24] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border border-[#fbbf24]/30">
+                  <span className="bg-[rgba(var(--muted-ochre),0.15)] backdrop-blur-md text-[var(--muted-ochre)] px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border border-[var(--muted-ochre)]/30">
                     Unclaimed Lead
                   </span>
                 )}
@@ -453,33 +453,33 @@ export default function BusinessProfilePage() {
                 const computed = Math.max(0, Math.min(100, Math.round(raw / 10)));
                 const deposit = computed >= 80 ? 0 : computed >= 50 ? 5 : 15;
                 const isVerified = business?.isVerified || computed >= 80;
-                const badgeColor = isVerified ? 'text-[#14F195]' : computed >= 50 ? 'text-[#fbbf24]' : 'text-[#f87171]';
+                const badgeColor = isVerified ? 'text-[var(--sage)]' : computed >= 50 ? 'text-[var(--muted-ochre)]' : 'text-[var(--terracotta)]';
                 return (
                   <div className="flex items-center gap-3">
                     <ShieldCheckIcon className={`h-6 w-6 ${badgeColor}`} />
                     <span className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
-                      isVerified ? 'bg-[#14F195]/10 text-[#14F195] border border-[#14F195]/30'
-                        : computed >= 50 ? 'bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/30'
-                        : 'bg-[#f87171]/10 text-[#f87171] border border-[#f87171]/30'
+                      isVerified ? 'bg-[var(--sage)]/10 text-[var(--sage)] border border-[var(--sage)]/30'
+                        : computed >= 50 ? 'bg-[var(--muted-ochre)]/10 text-[var(--muted-ochre)] border border-[var(--muted-ochre)]/30'
+                        : 'bg-[var(--terracotta)]/10 text-[var(--terracotta)] border border-[var(--terracotta)]/30'
                     }`}>
                       Pabandi Trust Score: {computed}/100
                     </span>
-                    {!isVerified && (<span className="text-xs text-slate-400 font-mono">→ ${deposit} deposit required</span>)}
+                    {!isVerified && (<span className="text-xs text-[var(--soft-stone)] font-mono">→ ${deposit} deposit required</span>)}
                   </div>
                 );
               })()}
               
               <h1 className="font-headline text-3xl md:text-5xl font-black tracking-tight mb-2 leading-none">{business.name}</h1>
               
-              <p className="font-body text-sm text-slate-300 flex items-center">
-                <MapPinIcon className="h-4 w-4 mr-1.5 text-slate-400" /> 
+              <p className="font-body text-sm text-[var(--soft-stone)] flex items-center">
+                <MapPinIcon className="h-4 w-4 mr-1.5 text-[var(--soft-stone)]" /> 
                 {business.address}, {business.city}
               </p>
             </div>
             
             {/* Direct Booking Shortcut Button */}
             {!business.isClaimed && (
-              <button onClick={openClaim} className="bg-amber-500 text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
+              <button onClick={openClaim} className="bg-[var(--muted-ochre)] text-primary font-headline text-sm font-extrabold px-6 py-3.5 rounded-xl hover:bg-[var(--muted-ochre)] transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4" /> Claim Listing
               </button>
             )}
@@ -492,7 +492,7 @@ export default function BusinessProfilePage() {
             {/* Merchant Trust/Passport shortcut */}
             <Link
               to="/passport/dashboard"
-              className="bg-white/10 border border-white/20 text-white font-headline text-xs font-bold px-4 py-3 rounded-xl hover:bg-white/15 transition-colors flex items-center gap-2"
+              className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] font-headline text-xs font-bold px-4 py-3 rounded-xl hover:bg-[var(--warm-sand)] transition-colors flex items-center gap-2"
             >
               <ShieldCheckIcon className="h-4 w-4" />
               Seller Trust Console
@@ -506,9 +506,9 @@ export default function BusinessProfilePage() {
         
         {/* Unclaimed Notice Banner */}
         {!business.isClaimed && (
-          <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-2xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm glowing-border">
+          <div className="bg-[rgba(var(--muted-ochre),0.1)] border border-[rgba(var(--muted-ochre),0.2)] p-5 rounded-2xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm glowing-border">
             <div className="flex items-start gap-4">
-              <span className="material-symbols-outlined text-amber-500 text-3xl mt-0.5">verified</span>
+              <span className="material-symbols-outlined text-[var(--muted-ochre)] text-3xl mt-0.5">verified</span>
               <div>
                 <h3 className="font-headline font-bold text-on-surface text-lg">Are you the owner of {business.name}?</h3>
                 <p className="font-body text-on-surface-variant text-sm mt-0.5 leading-relaxed">
@@ -516,7 +516,7 @@ export default function BusinessProfilePage() {
                 </p>
               </div>
             </div>
-            <button onClick={() => navigate(`/business/join-claim?fromClaim=1&id=${business.id}`)} className="bg-amber-500 text-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm hover:bg-amber-400 transition-colors shrink-0">
+            <button onClick={() => navigate(`/business/join-claim?fromClaim=1&id=${business.id}`)} className="bg-[var(--muted-ochre)] text-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm hover:bg-[var(--muted-ochre)] transition-colors shrink-0">
               Claim Profile
             </button>
           </div>
@@ -598,7 +598,7 @@ export default function BusinessProfilePage() {
                 {/* Map integration */}
                 <div className="border-t border-outline-variant/20 pt-6 space-y-4">
                   <h4 className="font-headline text-lg font-bold text-on-surface">Location Map</h4>
-                  <div className="w-full h-64 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/10 shadow-sm">
+                  <div className="w-full h-64 rounded-2xl overflow-hidden bg-[var(--warm-sand)]-container border border-outline-variant/10 shadow-sm">
                     <BusinessMap 
                       latitude={business.latitude || 24.8607} 
                       longitude={business.longitude || 67.0011} 
@@ -651,12 +651,12 @@ export default function BusinessProfilePage() {
                   </div>
                   
                   {/* Rating Big Badge */}
-                  <div className="bg-surface-container p-4 rounded-2xl flex items-center gap-3 border border-outline-variant/10 shadow-sm shrink-0">
+                  <div className="bg-[var(--warm-sand)]-container p-4 rounded-2xl flex items-center gap-3 border border-outline-variant/10 shadow-sm shrink-0">
                     <div className="text-4xl font-headline font-black text-primary">
                       {business.rating ? business.rating.toFixed(1) : '4.8'}
                     </div>
                     <div>
-                      <div className="flex text-yellow-400">
+                      <div className="flex text-[var(--muted-ochre)]">
                         {[1, 2, 3, 4, 5].map((i) => (
                           <StarIconSolid key={i} className="h-4 w-4" />
                         ))}
@@ -669,18 +669,18 @@ export default function BusinessProfilePage() {
                 </div>
 
                 {/* Trust Summary */}
-                <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm">
+                <div className="bg-[var(--warm-sand)]-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm">
                   <h4 className="font-headline font-bold text-on-surface text-sm mb-3">Trust Snapshot</h4>
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                    <span className="inline-flex items-center gap-1.5 bg-[var(--warm-sand)]-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
                       <span className="material-symbols-outlined text-[16px] text-primary">verified</span>
                       {business.isClaimed ? 'Claimed Profile' : 'Unclaimed Lead'}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
-                      <StarIconSolid className="h-3.5 w-3.5 text-yellow-400" />
+                    <span className="inline-flex items-center gap-1.5 bg-[var(--warm-sand)]-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                      <StarIconSolid className="h-3.5 w-3.5 text-[var(--muted-ochre)]" />
                       {business.rating ? business.rating.toFixed(1) : '4.8'} ({business.reviewCount} ratings)
                     </span>
-                    <span className="inline-flex items-center gap-1.5 bg-surface-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
+                    <span className="inline-flex items-center gap-1.5 bg-[var(--warm-sand)]-container px-2.5 py-1.5 rounded-lg border border-outline-variant/10 text-[11px] font-bold text-on-surface">
                       <ChatBubbleLeftRightIcon className="h-3.5 w-3.5 text-primary" />
                       {business.reviewCount || 0} reviews
                     </span>
@@ -691,7 +691,7 @@ export default function BusinessProfilePage() {
                 </div>
 
                 {/* Write a Review & WhatsApp Communication Channel */}
-                <div className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm">
+                <div className="bg-[var(--warm-sand)]-container-lowest p-6 rounded-2xl border border-outline-variant/10 shadow-sm">
                   {!showReviewForm ? (
                     <div className="flex justify-between items-center flex-wrap gap-4">
                       <div>
@@ -725,7 +725,7 @@ export default function BusinessProfilePage() {
                             key={star}
                             type="button"
                             onClick={() => setNewRating(star)}
-                            className="text-yellow-400 focus:outline-none"
+                            className="text-[var(--muted-ochre)] focus:outline-none"
                           >
                             {star <= newRating ? (
                               <StarIconSolid className="h-6 w-6" />
@@ -743,7 +743,7 @@ export default function BusinessProfilePage() {
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           placeholder={`How was your experience at ${business.name}? What did you order/do?`}
-                          className="w-full bg-surface-container border border-outline-variant/20 rounded-xl p-3 outline-none text-xs text-on-surface placeholder-on-surface-variant focus:ring-1 focus:ring-primary font-body"
+                          className="w-full bg-[var(--warm-sand)]-container border border-outline-variant/20 rounded-xl p-3 outline-none text-xs text-on-surface placeholder-on-surface-variant focus:ring-1 focus:ring-primary font-body"
                         />
                       </div>
 
@@ -763,7 +763,7 @@ export default function BusinessProfilePage() {
                             setShowReviewForm(false);
                             setNewComment('');
                           }}
-                          className="bg-[#25D366] text-white hover:bg-[#20ba5a] text-xs font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 transition-all shadow-sm font-headline"
+                          className="bg-[#25D366] text-[var(--warm-ink)] hover:bg-[#20ba5a] text-xs font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 transition-all shadow-sm font-headline"
                         >
                           💬 Submit & Send to Owner via WhatsApp
                         </a>
@@ -776,17 +776,17 @@ export default function BusinessProfilePage() {
                 {reviewsLoading ? (
                   <div className="text-center py-8 text-on-surface-variant">Loading reviews...</div>
                 ) : reviews.length === 0 ? (
-                  <div className="text-center py-10 bg-surface-container-low rounded-2xl border border-dashed border-outline-variant/30">
+                  <div className="text-center py-10 bg-[var(--warm-sand)]-container-low rounded-2xl border border-dashed border-outline-variant/30">
                     <ChatBubbleLeftRightIcon className="h-10 w-10 text-on-surface-variant opacity-40 mx-auto mb-2" />
                     <p className="text-sm font-body text-on-surface-variant">No reviews found for this venue.</p>
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
                     {reviews.map((review: any) => (
-                      <div key={review.id} className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm space-y-3">
+                      <div key={review.id} className="bg-[var(--warm-sand)]-container-lowest p-5 rounded-2xl border border-outline-variant/10 shadow-sm space-y-3">
                         <div className="flex justify-between items-start gap-4 flex-wrap">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary text-sm font-headline uppercase shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-[var(--warm-sand)]-container-high flex items-center justify-center font-bold text-primary text-sm font-headline uppercase shrink-0">
                               {review.authorName.charAt(0)}
                             </div>
                             <div>
@@ -797,7 +797,7 @@ export default function BusinessProfilePage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="flex text-yellow-400">
+                            <span className="flex text-[var(--muted-ochre)]">
                               {Array.from({ length: 5 }).map((_, i) => (
                                 i < review.rating ? <StarIconSolid key={i} className="h-3.5 w-3.5" /> : <StarIcon key={i} className="h-3.5 w-3.5" />
                               ))}
@@ -805,8 +805,8 @@ export default function BusinessProfilePage() {
                             {review.sentimentLabel && (
                               <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${
                                 review.sentimentLabel === 'positive' 
-                                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                  ? 'bg-[rgba(var(--sage),0.1)] text-[var(--sage)] border-[rgba(var(--sage),0.2)]' 
+                                  : 'bg-[rgba(var(--muted-ochre),0.1)] text-[var(--muted-ochre)] border-[rgba(var(--muted-ochre),0.2)]'
                               }`}>
                                 AI: {review.sentimentLabel}
                               </span>
@@ -836,7 +836,7 @@ export default function BusinessProfilePage() {
                 {/* Photo Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {getGalleryImages().map((imgUrl, i) => (
-                    <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/15 shadow-sm group relative cursor-zoom-in">
+                    <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-[var(--warm-sand)]-container border border-outline-variant/15 shadow-sm group relative cursor-zoom-in">
                       <img 
                         src={imgUrl} 
                         alt={`${business.name} detail ${i}`} 
@@ -868,7 +868,7 @@ export default function BusinessProfilePage() {
                         time: '1d ago'
                       }
                     ].map((post, idx) => (
-                      <div key={idx} className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-lowest shadow-sm flex items-start gap-3">
+                      <div key={idx} className="p-4 rounded-xl border border-outline-variant/20 bg-[var(--warm-sand)]-container-lowest shadow-sm flex items-start gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xl shrink-0">
                           {post.avatar}
                         </div>
@@ -901,10 +901,10 @@ export default function BusinessProfilePage() {
                 
                 {/* Reliability SBT check indicators */}
                 <div className="text-right flex flex-col items-end">
-                  <span className={`font-headline text-lg font-black ${businessDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-amber-500'}`}>
+                  <span className={`font-headline text-lg font-black ${businessDeposit === 0 ? 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-[#38bdf8]' : 'text-[var(--muted-ochre)]'}`}>
                     {businessDeposit === 0 ? 'Zero Deposit' : `$${businessDeposit} Deposit`}
                   </span>
-                  <p className="font-body text-[9px] text-[#10b981] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
+                  <p className="font-body text-[9px] text-[var(--sage)] font-bold uppercase tracking-wide">Pabandi AI Risk Score</p>
                 </div>
               </div>
 
@@ -1006,7 +1006,7 @@ export default function BusinessProfilePage() {
                     <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
                       formData.paymentMethod === 'paypal' 
                         ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary' 
-                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                        : 'border-outline-variant/30 bg-[var(--warm-sand)]-container-low text-on-surface-variant hover:bg-[var(--warm-sand)]-container'
                     }`}>
                       <input type="radio" name="paymentMethod" value="paypal" checked={formData.paymentMethod === 'paypal'} onChange={handleBookingChange} className="sr-only" />
                       <span className="font-bold text-xs">Safepay</span>
@@ -1016,8 +1016,8 @@ export default function BusinessProfilePage() {
                     {/* Solana */}
                     <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
                       formData.paymentMethod === 'solana' 
-                        ? 'border-[#14F195] bg-[#14F195]/5 text-[#14F195] ring-1 ring-[#14F195]' 
-                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                        ? 'border-[var(--sage)] bg-[var(--sage)]/5 text-[var(--sage)] ring-1 ring-[var(--sage)]' 
+                        : 'border-outline-variant/30 bg-[var(--warm-sand)]-container-low text-on-surface-variant hover:bg-[var(--warm-sand)]-container'
                     }`}>
                       <input type="radio" name="paymentMethod" value="solana" checked={formData.paymentMethod === 'solana'} onChange={handleBookingChange} className="sr-only" />
                       <span className="font-bold text-xs">Solana</span>
@@ -1027,8 +1027,8 @@ export default function BusinessProfilePage() {
                     {/* BSC */}
                     <label className={`flex flex-col items-center justify-center p-2.5 rounded-xl cursor-pointer border text-center transition-all ${
                       formData.paymentMethod === 'bsc' 
-                        ? 'border-[#f59e0b] bg-[#f59e0b]/5 text-[#d97706] ring-1 ring-[#f59e0b]' 
-                        : 'border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                        ? 'border-[var(--muted-ochre)] bg-[var(--muted-ochre)]/5 text-[#d97706] ring-1 ring-[var(--muted-ochre)]' 
+                        : 'border-outline-variant/30 bg-[var(--warm-sand)]-container-low text-on-surface-variant hover:bg-[var(--warm-sand)]-container'
                     }`}>
                       <input type="radio" name="paymentMethod" value="bsc" checked={formData.paymentMethod === 'bsc'} onChange={handleBookingChange} className="sr-only" />
                       <span className="font-bold text-xs">BSC</span>
@@ -1050,10 +1050,10 @@ export default function BusinessProfilePage() {
 
                 {/* Concierge Agent Explainer (for unclaimed listings) */}
                 {!business.isClaimed && (
-                  <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl flex items-start gap-2.5 glowing-border">
-                    <span className="material-symbols-outlined text-amber-500 shrink-0 mt-0.5 text-[20px]">smart_toy</span>
+                  <div className="bg-[rgba(var(--muted-ochre),0.1)] border border-[rgba(var(--muted-ochre),0.2)] p-3 rounded-xl flex items-start gap-2.5 glowing-border">
+                    <span className="material-symbols-outlined text-[var(--muted-ochre)] shrink-0 mt-0.5 text-[20px]">smart_toy</span>
                     <div className="space-y-0.5 text-left">
-                      <h4 className="text-xs font-headline font-bold text-amber-600">Pabandi Agent Concierge Active</h4>
+                      <h4 className="text-xs font-headline font-bold text-[var(--muted-ochre)]">Pabandi Agent Concierge Active</h4>
                       <p className="text-[10px] text-on-surface-variant font-body leading-relaxed">
                         Our autonomous booking agent will secure your spot on external systems and sync your receipt code within seconds!
                       </p>

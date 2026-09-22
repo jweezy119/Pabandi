@@ -94,7 +94,7 @@ export const VenueDetailPage: React.FC = () => {
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <span key={i} className={`material-symbols-outlined text-sm ${i < Math.floor(rating) ? 'text-amber-400' : 'text-slate-600'}`}>star</span>
+      <span key={i} className={`material-symbols-outlined text-sm ${i < Math.floor(rating) ? 'text-[var(--muted-ochre)]' : 'text-[var(--soft-stone)]'}`}>star</span>
     ));
   };
 
@@ -108,7 +108,7 @@ export const VenueDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
-      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 60%)' }} />
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(201,123,90,0.06) 0%, transparent 60%)' }} />
 
       <div className="relative z-10">
         {/* Image Gallery */}
@@ -123,14 +123,14 @@ export const VenueDetailPage: React.FC = () => {
                 <button
                   key={i}
                   onClick={() => setCurrentImage(i)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all ${i === currentImage ? 'bg-white w-8' : 'bg-white/40'}`}
+                  className={`w-2.5 h-2.5 rounded-full transition-all ${i === currentImage ? 'bg-white w-8' : 'bg-[var(--warm-sand)]'}`}
                 />
               ))}
             </div>
           )}
 
           {/* Back Button */}
-          <button onClick={() => navigate('/booking/venues/search')} className="absolute top-4 left-4 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
+          <button onClick={() => navigate('/booking/venues/search')} className="absolute top-4 left-4 p-2 rounded-full bg-[var(--warm-ink)]/40 text-[var(--warm-ink)] hover:bg-[var(--warm-ink)]/60 transition-colors">
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
         </div>
@@ -142,7 +142,7 @@ export const VenueDetailPage: React.FC = () => {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-100">{venue.name}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">{venue.name}</h1>
                     <Badge tone="info">{venue.type}</Badge>
                   </div>
                   <div className="flex items-center gap-3 mb-3">
@@ -161,20 +161,20 @@ export const VenueDetailPage: React.FC = () => {
               </div>
 
               {/* Quick Info */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-[rgba(191,179,163,0.15)]">
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Hours</p>
-                  <p className="text-sm text-slate-100">{venue.hours}</p>
+                  <p className="text-sm text-[var(--warm-ink)]">{venue.hours}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Dress Code</p>
-                  <p className="text-sm text-slate-100">{venue.dressCode}</p>
+                  <p className="text-sm text-[var(--warm-ink)]">{venue.dressCode}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wider mb-1" style={{ color: tokens.color.textDim }}>Music</p>
                   <div className="flex gap-1 flex-wrap">
                     {venue.musicGenres.map(g => (
-                      <span key={g} className="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 text-xs">{g}</span>
+                      <span key={g} className="px-2 py-0.5 rounded-full bg-[var(--clay)]/15 text-[var(--clay)] text-xs">{g}</span>
                     ))}
                   </div>
                 </div>
@@ -186,8 +186,8 @@ export const VenueDetailPage: React.FC = () => {
               <p className="text-sm leading-relaxed" style={{ color: tokens.color.text }}>{venue.description}</p>
               <div className="flex flex-wrap gap-2 mt-4">
                 {venue.amenities.map(a => (
-                  <span key={a} className="px-2.5 py-1 rounded-lg bg-white/5 text-slate-300 text-xs border border-white/5 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs text-emerald-400">check_circle</span>
+                  <span key={a} className="px-2.5 py-1 rounded-lg bg-[var(--warm-sand)] text-[var(--warm-ink)] text-xs border border-[rgba(191,179,163,0.15)] flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-[var(--sage)]">check_circle</span>
                     {a}
                   </span>
                 ))}
@@ -200,7 +200,7 @@ export const VenueDetailPage: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.key ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/5 hover:bg-white/10'}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.key ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.15)] hover:bg-[var(--warm-sand)]'}`}
                 >
                   <span className="material-symbols-outlined text-base">{tab.icon}</span>
                   {tab.label}
@@ -217,20 +217,20 @@ export const VenueDetailPage: React.FC = () => {
                     <GlassCard key={table.id} className="p-5" hover lift>
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="text-slate-100 font-bold">{table.name}</h3>
+                          <h3 className="text-[var(--warm-ink)] font-bold">{table.name}</h3>
                           <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>
                             <span className="material-symbols-outlined text-xs align-middle">group</span> Up to {table.capacity} guests
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-emerald-300">${table.price}</p>
+                          <p className="text-lg font-bold text-[var(--sage)]">${table.price}</p>
                           <p className="text-xs" style={{ color: tokens.color.textDim }}>${table.deposit} deposit</p>
                         </div>
                       </div>
                       <div className="space-y-1.5">
                         {table.amenities.map(a => (
-                          <div key={a} className="flex items-center gap-2 text-xs text-slate-300">
-                            <span className="material-symbols-outlined text-xs text-indigo-400">check</span>
+                          <div key={a} className="flex items-center gap-2 text-xs text-[var(--warm-ink)]">
+                            <span className="material-symbols-outlined text-xs text-[var(--clay)]">check</span>
                             {a}
                           </div>
                         ))}
@@ -250,15 +250,15 @@ export const VenueDetailPage: React.FC = () => {
                     <GlassCard key={pkg.id} className="p-5" hover lift>
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h3 className="text-slate-100 font-bold">{pkg.name}</h3>
+                          <h3 className="text-[var(--warm-ink)] font-bold">{pkg.name}</h3>
                           <p className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{pkg.bottles} bottle{pkg.bottles > 1 ? 's' : ''}</p>
                         </div>
-                        <p className="text-lg font-bold text-emerald-300">${pkg.price}</p>
+                        <p className="text-lg font-bold text-[var(--sage)]">${pkg.price}</p>
                       </div>
                       <div className="space-y-1.5">
                         {pkg.includes.map(i => (
-                          <div key={i} className="flex items-center gap-2 text-xs text-slate-300">
-                            <span className="material-symbols-outlined text-xs text-amber-400">local_bar</span>
+                          <div key={i} className="flex items-center gap-2 text-xs text-[var(--warm-ink)]">
+                            <span className="material-symbols-outlined text-xs text-[var(--muted-ochre)]">local_bar</span>
                             {i}
                           </div>
                         ))}
@@ -278,18 +278,18 @@ export const VenueDetailPage: React.FC = () => {
                     <Surface key={event.id} className="p-5">
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                          <h3 className="text-slate-100 font-bold text-lg">{event.name}</h3>
+                          <h3 className="text-[var(--warm-ink)] font-bold text-lg">{event.name}</h3>
                           <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>
                             <span className="material-symbols-outlined text-sm align-middle">calendar_today</span> {event.date}
                           </p>
                           <div className="flex flex-wrap gap-2 mt-2">
                             {event.lineup.map(artist => (
-                              <span key={artist} className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 text-xs">{artist}</span>
+                              <span key={artist} className="px-2 py-0.5 rounded-full bg-[var(--dusty-rose)]/15 text-[var(--dusty-rose)] text-xs">{artist}</span>
                             ))}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-emerald-300">${event.ticketPrice}</p>
+                          <p className="text-xl font-bold text-[var(--sage)]">${event.ticketPrice}</p>
                           <Button size="sm" variant="ghost" className="mt-2">
                             <span className="material-symbols-outlined text-sm">confirmation_number</span>
                             Get Tickets
@@ -308,11 +308,11 @@ export const VenueDetailPage: React.FC = () => {
                     <Surface key={review.id} className="p-5">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-xs font-bold">
+                          <div className="w-8 h-8 rounded-full bg-[var(--clay)]/20 flex items-center justify-center text-[var(--clay)] text-xs font-bold">
                             {review.user[0]}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-slate-100">{review.user}</p>
+                            <p className="text-sm font-medium text-[var(--warm-ink)]">{review.user}</p>
                             <p className="text-xs" style={{ color: tokens.color.textDim }}>{review.date}</p>
                           </div>
                         </div>
@@ -327,35 +327,35 @@ export const VenueDetailPage: React.FC = () => {
               {/* Guest List Tab */}
               {activeTab === 'guestlist' && (
                 <Surface className="p-6">
-                  <h3 className="text-lg font-bold text-slate-100 mb-4">Join the Guest List</h3>
+                  <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Join the Guest List</h3>
                   <p className="text-sm mb-6" style={{ color: tokens.color.textDim }}>Skip the line and get free entry before midnight</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1">Name</label>
+                      <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">Name</label>
                       <input
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         placeholder="Your name"
-                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 text-sm"
+                        className="w-full px-4 py-2.5 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] placeholder-slate-500 focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1">Party Size</label>
+                      <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">Party Size</label>
                       <select
                         value={guestPartySize}
                         onChange={(e) => setGuestPartySize(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500/50 text-sm"
+                        className="w-full px-4 py-2.5 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                       >
-                        {[1,2,3,4,5,6].map(n => <option key={n} value={n} className="bg-slate-800">{n} {n === 1 ? 'Person' : 'People'}</option>)}
+                        {[1,2,3,4,5,6].map(n => <option key={n} value={n} className="bg-[var(--cream)]">{n} {n === 1 ? 'Person' : 'People'}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-300 mb-1">Date</label>
+                      <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">Date</label>
                       <input
                         type="date"
                         value={guestDate}
                         onChange={(e) => setGuestDate(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500/50 text-sm"
+                        className="w-full px-4 py-2.5 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-xl text-[var(--warm-ink)] focus:outline-none focus:border-[var(--clay)]/50 text-sm"
                       />
                     </div>
                   </div>

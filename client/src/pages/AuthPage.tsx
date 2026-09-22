@@ -59,7 +59,7 @@ const UserIcon = () => (
 );
 
 const FieldError = ({ msg }: { msg: string }) => (
-  <p className="mt-1.5 text-xs font-medium text-red-300">{msg}</p>
+  <p className="mt-1.5 text-xs font-medium text-[var(--terracotta)]">{msg}</p>
 );
 
 const getBackendUrl = () => {
@@ -138,20 +138,20 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-white">Quick Login (No Password)</p>
+      <p className="text-sm font-semibold text-[var(--warm-ink)]">Quick Login (No Password)</p>
       <div className="flex gap-2">
         <input
           type="email"
           value={email}
           onChange={onEmailChange}
           placeholder="you@gmail.com"
-          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
+          className="flex-1 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] touch-target"
         />
         <button
           type="button"
           onClick={handleSendCode}
           disabled={loading}
-          className="px-4 py-3 rounded-lg bg-indigo-500 text-white text-sm font-bold touch-target disabled:opacity-50"
+          className="px-4 py-3 rounded-lg bg-[var(--clay)] text-[var(--warm-ink)] text-sm font-bold touch-target disabled:opacity-50"
         >
           {loading ? '...' : 'Send Code'}
         </button>
@@ -163,13 +163,13 @@ const EmailCodeLogin = ({ email, onEmailChange, onVerified, onError }: {
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value)}
             placeholder="Enter 6-digit code"
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400 touch-target"
+            className="flex-1 rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] touch-target"
           />
           <button
             type="button"
             onClick={handleVerifyCode}
             disabled={loading}
-            className="px-4 py-3 rounded-lg bg-green-500 text-white text-sm font-bold touch-target disabled:opacity-50"
+            className="px-4 py-3 rounded-lg bg-green-500 text-[var(--warm-ink)] text-sm font-bold touch-target disabled:opacity-50"
           >
             {loading ? '...' : 'Verify'}
           </button>
@@ -333,34 +333,34 @@ export default function AuthPage() {
   };
 
   const socialLogins = [
-    { id: 'github', name: 'GitHub', icon: <GitHubIcon />, color: 'bg-gray-800 hover:bg-gray-700', onClick: handleGitHubAuth },
+    { id: 'github', name: 'GitHub', icon: <GitHubIcon />, color: 'bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)]', onClick: handleGitHubAuth },
   ] as const;
 
   return (
-    <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: tokens.color.background }}>
+    <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4 py-12" style={{ background: 'var(--cream)" }}>
       {/* Background shapes */}
-      <div className="pointer-events-none absolute -top-[15%] -left-[10%] h-[500px] w-[500px] rounded-full bg-indigo-500/5 blur-3xl mix-blend-multiply" />
-      <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-indigo-500/10 blur-3xl mix-blend-multiply" />
+      <div className="pointer-events-none absolute -top-[15%] -left-[10%] h-[500px] w-[500px] rounded-full bg-[var(--clay)]/5 blur-3xl mix-blend-multiply" />
+      <div className="pointer-events-none absolute -bottom-[10%] -right-[5%] h-[400px] w-[400px] rounded-full bg-[rgba(var(--clay),0.1)] blur-3xl mix-blend-multiply" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:40px_40px]" />
 
       <div className="relative z-10 w-full max-w-md reveal">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-flex items-center gap-2 group">
-            <span className="text-2xl font-black tracking-tight font-headline text-indigo-300">Pabandi</span>
+            <span className="text-2xl font-black tracking-tight font-headline text-[var(--clay)]">Pabandi</span>
           </Link>
         </div>
 
         {/* Auth Panel */}
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
           {/* Mode tabs */}
-          <div className="mb-6 flex gap-2 bg-white/5 p-1.5 rounded-xl">
+          <div className="mb-6 flex gap-2 bg-[var(--warm-sand)] p-1.5 rounded-xl">
             <button onClick={() => { setMode('login'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-indigo-500 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'login' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
               Sign In
             </button>
             <button onClick={() => { setMode('signup'); clearErrors(); }}
-              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-indigo-500 text-white shadow-sm' : 'text-white/70 hover:text-white'}`}>
+              className={`flex-1 rounded-lg py-3 text-sm font-bold transition-all touch-target sm:py-2 ${mode === 'signup' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-sm' : 'text-[var(--warm-ink)]/70 hover:text-[var(--warm-ink)]'}`}>
               Create Account
             </button>
           </div>
@@ -372,8 +372,8 @@ export default function AuthPage() {
                 onClick={() => setRole('customer')}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all duration-200 touch-target sm:py-2.5 ${
                   role === 'customer'
-                    ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-200'
-                    : 'border-white/10 text-white/70 hover:bg-white/10'
+                    ? 'border-[var(--clay)]/60 bg-[rgba(var(--clay),0.1)] text-[var(--warm-ink)]'
+                    : 'border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:bg-[var(--warm-sand)]'
                 }`}>
                 <UserIcon />
                 Customer
@@ -382,8 +382,8 @@ export default function AuthPage() {
                 onClick={() => setRole('business')}
                 className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all duration-200 touch-target sm:py-2.5 ${
                   role === 'business'
-                    ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-200'
-                    : 'border-white/10 text-white/70 hover:bg-white/10'
+                    ? 'border-[var(--clay)]/60 bg-[rgba(var(--clay),0.1)] text-[var(--warm-ink)]'
+                    : 'border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/70 hover:bg-[var(--warm-sand)]'
                 }`}>
                 <BuildingIcon />
                 Business
@@ -393,12 +393,12 @@ export default function AuthPage() {
 
           {/* Heading */}
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold font-headline text-white">
+            <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">
               {isSignup
                 ? (isBusiness ? 'List Your Business' : 'Join Pabandi')
                 : 'Welcome Back'}
             </h1>
-            <p className="mt-1.5 text-sm text-white/70 font-body">
+            <p className="mt-1.5 text-sm text-[var(--warm-ink)]/70 font-body">
               {isSignup
                 ? (isBusiness
                     ? 'Connect your Google Business profile and start accepting bookings'
@@ -409,7 +409,7 @@ export default function AuthPage() {
 
           <div className="flex flex-col gap-3">
             <button onClick={handleWalletAuth} type="button"
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-[#E17726]/30 bg-[#E17726]/5 py-3.5 text-sm font-semibold text-white transition-colors shadow-sm touch-target sm:py-2.5"
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-[#E17726]/30 bg-[#E17726]/5 py-3.5 text-sm font-semibold text-[var(--warm-ink)] transition-colors shadow-sm touch-target sm:py-2.5"
               disabled={!!oauthLoading}>
               {oauthLoading === 'wallet' ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E17726]/30 border-t-[#E17726]" />
@@ -423,9 +423,9 @@ export default function AuthPage() {
             <div className="mt-1 grid grid-cols-3 gap-3">
               {socialLogins.map((login) => (
                 <button key={login.id} onClick={login.onClick} title={`Continue with ${login.name}`}
-                  className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 py-3.5 text-white transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
+                  className="flex items-center justify-center rounded-xl border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] py-3.5 text-[var(--warm-ink)] transition-colors shadow-sm touch-target sm:py-2.5" disabled={!!oauthLoading}>
                   {oauthLoading === login.id ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[rgba(var(--clay),0.3)] border-t-indigo-400" />
                   ) : (
                     login.icon
                   )}
@@ -435,9 +435,9 @@ export default function AuthPage() {
           </div>
 
           <div className="my-6 flex items-center gap-3">
-            <hr className="flex-1 border-white/10" />
-            <span className="text-xs font-medium text-white/70 uppercase tracking-wider">or continue with email</span>
-            <hr className="flex-1 border-white/10" />
+            <hr className="flex-1 border-[rgba(191,179,163,0.3)]" />
+            <span className="text-xs font-medium text-[var(--warm-ink)]/70 uppercase tracking-wider">or continue with email</span>
+            <hr className="flex-1 border-[rgba(191,179,163,0.3)]" />
           </div>
 
           {/* Email Code Login */}
@@ -455,14 +455,14 @@ export default function AuthPage() {
           </div>
 
           <div className="mb-6 flex items-center gap-3">
-            <hr className="flex-1 border-white/10" />
-            <span className="text-xs font-medium text-white/70 uppercase tracking-wider">or use password</span>
-            <hr className="flex-1 border-white/10" />
+            <hr className="flex-1 border-[rgba(191,179,163,0.3)]" />
+            <span className="text-xs font-medium text-[var(--warm-ink)]/70 uppercase tracking-wider">or use password</span>
+            <hr className="flex-1 border-[rgba(191,179,163,0.3)]" />
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
+            <div className="mb-5 rounded-lg border border-[rgba(var(--terracotta),0.2)] bg-[rgba(var(--terracotta),0.1)] px-4 py-3 text-sm font-medium text-[var(--warm-ink)]">
               {error}
             </div>
           )}
@@ -474,16 +474,16 @@ export default function AuthPage() {
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="firstName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">First Name</label>
+                    <label htmlFor="firstName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">First Name</label>
                     <input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleChange}
-                      className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.firstName ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                      className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.firstName ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                       placeholder="Ali" />
                     {fieldErrors.firstName && <FieldError msg={fieldErrors.firstName} />}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Last Name</label>
+                    <label htmlFor="lastName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Last Name</label>
                     <input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleChange}
-                      className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.lastName ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                      className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.lastName ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                       placeholder="Khan" />
                     {fieldErrors.lastName && <FieldError msg={fieldErrors.lastName} />}
                   </div>
@@ -491,34 +491,34 @@ export default function AuthPage() {
 
                 {isBusiness && (
                   <>
-                    <div className="mb-4 rounded-xl border border-indigo-400/30 bg-indigo-500/10 p-4">
-                      <p className="mb-2 text-sm font-bold text-indigo-200">Specialized Solutions:</p>
+                    <div className="mb-4 rounded-xl border border-[var(--clay)]/30 bg-[rgba(var(--clay),0.1)] p-4">
+                      <p className="mb-2 text-sm font-bold text-[var(--warm-ink)]">Specialized Solutions:</p>
                       <div className="flex flex-col gap-2 sm:flex-row">
-                        <Link to="/live-selling" className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:text-indigo-200">
+                        <Link to="/live-selling" className="flex items-center justify-between rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs font-semibold text-[var(--warm-ink)] transition-colors hover:text-[var(--warm-ink)]">
                           🎥 Live Sellers & Drops <span>→</span>
                         </Link>
-                        <Link to="/freelance" className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition-colors hover:text-indigo-200">
+                        <Link to="/freelance" className="flex items-center justify-between rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-3 py-2 text-xs font-semibold text-[var(--warm-ink)] transition-colors hover:text-[var(--warm-ink)]">
                           💻 Freelancers & Gig Work <span>→</span>
                         </Link>
                       </div>
                     </div>
                     <div>
-                      <label htmlFor="businessName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Business Name</label>
+                      <label htmlFor="businessName" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Business Name</label>
                       <input id="businessName" name="businessName" type="text" required value={formData.businessName} onChange={handleChange}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2"
+                        className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2"
                         placeholder="e.g. Saleem's Barbershop" />
                     </div>
                     <div>
-                      <label htmlFor="googlePlaceId" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">
+                      <label htmlFor="googlePlaceId" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">
                         Google Place ID
-                        <span className="ml-1 normal-case font-medium text-white/50">(optional)</span>
+                        <span className="ml-1 normal-case font-medium text-[var(--warm-ink)]/50">(optional)</span>
                       </label>
                       <input id="googlePlaceId" name="googlePlaceId" type="text" value={formData.googlePlaceId} onChange={handleChange}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2"
+                        className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2"
                         placeholder="ChIJ..." />
-                      <p className="mt-1.5 text-xs text-white/70">
+                      <p className="mt-1.5 text-xs text-[var(--warm-ink)]/70">
                         Find your Place ID at{' '}
-                        <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noreferrer" className="text-indigo-300 hover:underline font-medium">
+                        <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noreferrer" className="text-[var(--clay)] hover:underline font-medium">
                           Google's Place ID Finder
                         </a>
                       </p>
@@ -527,28 +527,28 @@ export default function AuthPage() {
                 )}
 
                 <div>
-                  <label htmlFor="phone" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">
+                  <label htmlFor="phone" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">
                     Phone
-                    <span className="ml-1 normal-case font-medium text-white/50">(optional)</span>
+                    <span className="ml-1 normal-case font-medium text-[var(--warm-ink)]/50">(optional)</span>
                   </label>
                   <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange}
-                    className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.phone ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                    className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.phone ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                     placeholder="+1 312 489 6967 or +92 300 1234567" />
                   {fieldErrors.phone && <FieldError msg={fieldErrors.phone} />}
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="fiverrUrl" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Fiverr URL <span className="normal-case font-medium text-white/50">(Opt)</span></label>
+                    <label htmlFor="fiverrUrl" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Fiverr URL <span className="normal-case font-medium text-[var(--warm-ink)]/50">(Opt)</span></label>
                     <input id="fiverrUrl" name="fiverrUrl" type="url" value={formData.fiverrUrl} onChange={handleChange}
-                      className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.fiverrUrl ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                      className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.fiverrUrl ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                       placeholder="https://fiverr.com/..." />
                     {fieldErrors.fiverrUrl && <FieldError msg={fieldErrors.fiverrUrl} />}
                   </div>
                   <div>
-                    <label htmlFor="upworkUrl" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Upwork URL <span className="normal-case font-medium text-white/50">(Opt)</span></label>
+                    <label htmlFor="upworkUrl" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Upwork URL <span className="normal-case font-medium text-[var(--warm-ink)]/50">(Opt)</span></label>
                     <input id="upworkUrl" name="upworkUrl" type="url" value={formData.upworkUrl} onChange={handleChange}
-                      className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.upworkUrl ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                      className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.upworkUrl ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                       placeholder="https://upwork.com/..." />
                     {fieldErrors.upworkUrl && <FieldError msg={fieldErrors.upworkUrl} />}
                   </div>
@@ -558,9 +558,9 @@ export default function AuthPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Email</label>
+              <label htmlFor="email" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Email</label>
               <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange}
-                className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.email ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.email ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                 placeholder="you@gmail.com" />
               {fieldErrors.email && <FieldError msg={fieldErrors.email} />}
             </div>
@@ -568,35 +568,35 @@ export default function AuthPage() {
             {/* Password */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-wide text-white/70">Password</label>
+                <label htmlFor="password" className="block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Password</label>
                 {!isSignup && (
-                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold text-indigo-300 hover:underline touch-target flex items-center">
+                  <Link to="/forgot-password" title="Forgot password?" className="text-xs font-semibold text-[var(--clay)] hover:underline touch-target flex items-center">
                     Forgot password?
                   </Link>
                 )}
               </div>
               <input id="password" name="password" type="password" autoComplete={isSignup ? 'new-password' : 'current-password'} required value={formData.password} onChange={handleChange}
-                className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.password ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.password ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                 placeholder="Min. 8 characters" />
               {fieldErrors.password && <FieldError msg={fieldErrors.password} />}
               {isSignup && !fieldErrors.password && (
-                <p className="mt-1 text-xs text-white/50">8+ characters, upper + lower case, a number, and a symbol (!@#$&*).</p>
+                <p className="mt-1 text-xs text-[var(--warm-ink)]/50">8+ characters, upper + lower case, a number, and a symbol (!@#$&*).</p>
               )}
             </div>
 
             {/* Confirm Password */}
             {isSignup && (
               <div>
-                <label htmlFor="confirmPassword" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-white/70">Confirm Password</label>
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70">Confirm Password</label>
                 <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange}
-                  className={`w-full rounded-lg border bg-white/5 px-4 py-3 font-body text-sm text-white outline-none focus:border-indigo-400 sm:px-3 sm:py-2 touch-target ${fieldErrors.confirmPassword ? 'border-red-500/60 ring-1 ring-red-500' : 'border-white/10'}`}
+                  className={`w-full rounded-lg border bg-[var(--warm-sand)] px-4 py-3 font-body text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] sm:px-3 sm:py-2 touch-target ${fieldErrors.confirmPassword ? 'border-[var(--terracotta)]/60 ring-1 ring-red-500' : 'border-[rgba(191,179,163,0.3)]'}`}
                   placeholder="••••••••" />
                 {fieldErrors.confirmPassword && <FieldError msg={fieldErrors.confirmPassword} />}
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full rounded-xl py-4 text-sm font-bold shadow-sm transition-opacity touch-target sm:py-3 hover:opacity-90 disabled:opacity-70 mt-2 bg-indigo-500 text-white">
+              className="w-full rounded-xl py-4 text-sm font-bold shadow-sm transition-opacity touch-target sm:py-3 hover:opacity-90 disabled:opacity-70 mt-2 bg-[var(--clay)] text-[var(--warm-ink)]">
               {loading
                 ? (isSignup ? 'Creating account…' : 'Signing in…')
                 : (isSignup
@@ -606,18 +606,18 @@ export default function AuthPage() {
           </form>
 
           {/* Footer note */}
-          <p className="mt-6 text-center text-xs text-white/70">
+          <p className="mt-6 text-center text-xs text-[var(--warm-ink)]/70">
             {isSignup ? (
               <>Already have an account?{' '}
                 <button onClick={() => { setMode('login'); setError(''); }}
-                  className="font-bold text-indigo-300 hover:underline">
+                  className="font-bold text-[var(--clay)] hover:underline">
                   Sign in
                 </button>
               </>
             ) : (
               <>Don't have an account?{' '}
                 <button onClick={() => { setMode('signup'); setError(''); }}
-                  className="font-bold text-indigo-300 hover:underline">
+                  className="font-bold text-[var(--clay)] hover:underline">
                   Sign up free
                 </button>
               </>
@@ -626,7 +626,7 @@ export default function AuthPage() {
         </div>
 
         {/* Trust badges */}
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold tracking-wide text-white/70 uppercase">
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[11px] font-bold tracking-wide text-[var(--warm-ink)]/70 uppercase">
           <span className="flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />

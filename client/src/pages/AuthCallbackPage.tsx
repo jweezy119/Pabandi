@@ -64,8 +64,8 @@ export default function AuthCallbackPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-indigo-400/30 border-t-indigo-400" />
-        <p className="text-sm text-white/70">Signing you in…</p>
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[var(--clay)]/30 border-t-indigo-400" />
+        <p className="text-sm text-[var(--warm-ink)]/70">Signing you in…</p>
       </div>
     </div>
   );

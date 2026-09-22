@@ -17,13 +17,13 @@ export const PromoPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen pb-20 md:pb-0" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen pb-20 md:pb-0" style={{ background: 'var(--cream)' }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 backdrop-blur-xl bg-surface/80 border-b border-white/5 px-4 py-3 md:px-8">
+      <div className="sticky top-0 z-40  bg-[var(--cream)]/80 border-b border-[rgba(191,179,163,0.3)] px-4 py-3 md:px-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-lg md:text-2xl font-bold tracking-tight text-slate-100 font-headline">Promo Ambassadors</h1>
-            <p className="text-xs md:text-sm" style={{ color: tokens.color.textDim }}>ZK-verified brand promoters — real reviews, zero-knowledge identity</p>
+            <h1 className="text-lg md:text-2xl font-bold tracking-tight text-[var(--warm-ink)] font-headline">Promo Ambassadors</h1>
+            <p className="text-xs md:text-sm" style={{ color: 'var(--soft-stone)' }}>ZK-verified brand promoters — real reviews, zero-knowledge identity</p>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/wallet"><Button size="sm" variant="ghost">🔗 Wallet</Button></Link>
@@ -35,11 +35,11 @@ export const PromoPage: React.FC = () => {
       {/* Stats Bar */}
       {stats && (
         <div className="max-w-5xl mx-auto px-4 py-3 grid grid-cols-2 md:grid-cols-5 gap-2">
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalAmbassadors}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Ambassadors</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalJobs}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Jobs</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalSubmissions}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Submissions</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-slate-100">{stats.totalReviews}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Reviews</div></Surface>
-          <Surface className="text-center p-3"><div className="text-lg font-bold text-yellow-300">⭐ {stats.avgRating.toFixed(1)}</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Avg Rating</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-[var(--warm-ink)]">{stats.totalAmbassadors}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Ambassadors</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-[var(--warm-ink)]">{stats.totalJobs}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Jobs</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-[var(--warm-ink)]">{stats.totalSubmissions}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Submissions</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-[var(--warm-ink)]">{stats.totalReviews}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Reviews</div></Surface>
+          <Surface className="text-center p-3"><div className="text-lg font-bold text-yellow-300">⭐ {stats.avgRating.toFixed(1)}</div><div className="text-xs" style={{ color: 'var(--soft-stone)' }}>Avg Rating</div></Surface>
         </div>
       )}
 
@@ -52,7 +52,7 @@ export const PromoPage: React.FC = () => {
           { id: 'my-work', icon: '🎯', label: 'My Work' },
         ] as const).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id as Tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === t.id ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all ${tab === t.id ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)] hover:bg-[var(--warm-sand)]'}`}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -80,28 +80,28 @@ const PromoFeed: React.FC = () => {
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading verified reviews...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: 'var(--soft-stone)' }}>Loading verified reviews...</p>;
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold text-slate-100">📡 Verified Reviews (ZK)</h2>
-      <p className="text-sm" style={{ color: tokens.color.textDim }}>Real reviews from verified ambassadors — identities hidden via zero-knowledge proofs.</p>
+      <h2 className="text-lg font-bold text-[var(--warm-ink)]">📡 Verified Reviews (ZK)</h2>
+      <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Real reviews from verified ambassadors — identities hidden via zero-knowledge proofs.</p>
       {reviews.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🔏</div>
-          <p style={{ color: tokens.color.textDim }}>No verified reviews yet. Be the first to submit work and review!</p>
+          <p style={{ color: 'var(--soft-stone)' }}>No verified reviews yet. Be the first to submit work and review!</p>
         </Surface>
       )}
       {reviews.map((r) => (
         <Surface key={r.id} className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold">
+              <div className="w-10 h-10 rounded-full bg-[var(--clay)]/15 flex items-center justify-center text-[var(--clay)] font-bold">
                 {r.ambassador?.handle?.[0] || '?'}
               </div>
               <div>
-                <div className="font-semibold text-slate-100">{r.ambassador?.handle || 'Anonymous'}</div>
-                <div className="text-xs" style={{ color: tokens.color.textDim }}>{r.workType}</div>
+                <div className="font-semibold text-[var(--warm-ink)]">{r.ambassador?.handle || 'Anonymous'}</div>
+                <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{r.workType}</div>
               </div>
             </div>
             <div className="text-right">
@@ -109,9 +109,9 @@ const PromoFeed: React.FC = () => {
               {r.verified && <Badge tone="success" className="mt-1">ZK Verified 🔏</Badge>}
             </div>
           </div>
-          {r.text && <p className="mt-3 text-sm text-slate-300">{r.text}</p>}
+          {r.text && <p className="mt-3 text-sm text-[var(--warm-ink)]">{r.text}</p>}
           {r.zkCommitment && (
-            <div className="mt-2 px-2 py-1 rounded bg-white/5 text-xs font-mono truncate" style={{ color: tokens.color.textDim }}>
+            <div className="mt-2 px-2 py-1 rounded bg-[var(--warm-sand)] text-xs font-mono truncate" style={{ color: 'var(--soft-stone)' }}>
               Commitment: {r.zkCommitment.slice(0, 24)}...
             </div>
           )}
@@ -133,46 +133,46 @@ const AmbassadorsList: React.FC = () => {
     }).finally(() => setLoading(false));
   }, [filter]);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading ambassadors...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: 'var(--soft-stone)' }}>Loading ambassadors...</p>;
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold text-slate-100">👥 Promo Ambassadors</h2>
+      <h2 className="text-lg font-bold text-[var(--warm-ink)]">👥 Promo Ambassadors</h2>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        <button onClick={() => setFilter('')} className={`px-3 py-1 rounded-lg text-xs font-semibold ${!filter ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>All</button>
+        <button onClick={() => setFilter('')} className={`px-3 py-1 rounded-lg text-xs font-semibold ${!filter ? 'bg-[var(--clay)]/15 text-[var(--clay)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>All</button>
         {WORK_TYPES.map((wt) => (
-          <button key={wt} onClick={() => setFilter(wt)} className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${filter === wt ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>{wt.replace('_', ' ')}</button>
+          <button key={wt} onClick={() => setFilter(wt)} className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${filter === wt ? 'bg-[var(--clay)]/15 text-[var(--clay)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>{wt.replace('_', ' ')}</button>
         ))}
       </div>
       {ambassadors.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">👤</div>
-          <p style={{ color: tokens.color.textDim }}>No ambassadors yet. Be the first to join!</p>
+          <p style={{ color: 'var(--soft-stone)' }}>No ambassadors yet. Be the first to join!</p>
         </Surface>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {ambassadors.map((a) => (
           <Surface key={a.id} className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--clay)] to-purple-600 flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg">
                 {a.handle[0]}
               </div>
               <div className="flex-1">
-                <div className="font-semibold text-slate-100">{a.handle}</div>
-                <div className="text-xs" style={{ color: tokens.color.textDim }}>{a.workType.replace('_', ' ')}</div>
+                <div className="font-semibold text-[var(--warm-ink)]">{a.handle}</div>
+                <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{a.workType.replace('_', ' ')}</div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-emerald-300">{a.reputationScore.toFixed(0)}</div>
-                <div className="text-xs" style={{ color: tokens.color.textDim }}>rep</div>
+                <div className="font-bold text-[var(--sage)]">{a.reputationScore.toFixed(0)}</div>
+                <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>rep</div>
               </div>
             </div>
-            {a.bio && <p className="mt-2 text-sm text-slate-300 line-clamp-2">{a.bio}</p>}
+            {a.bio && <p className="mt-2 text-sm text-[var(--warm-ink)] line-clamp-2">{a.bio}</p>}
             <div className="mt-3 flex items-center gap-2 flex-wrap">
               {a.verifiedBadges?.map((b: string) => (
                 <Badge key={b} tone="success" className="text-xs">{b}</Badge>
               ))}
-              <span className="text-xs" style={{ color: tokens.color.textDim }}>{a.completedJobs}/{a.totalJobs} jobs</span>
-              <span className="text-xs" style={{ color: tokens.color.textDim }}>${a.totalEarnings.toFixed(0)} earned</span>
+              <span className="text-xs" style={{ color: 'var(--soft-stone)' }}>{a.completedJobs}/{a.totalJobs} jobs</span>
+              <span className="text-xs" style={{ color: 'var(--soft-stone)' }}>${a.totalEarnings.toFixed(0)} earned</span>
             </div>
           </Surface>
         ))}
@@ -193,44 +193,44 @@ const JobsList: React.FC = () => {
     }).finally(() => setLoading(false));
   }, [filter]);
 
-  if (loading) return <p className="text-center py-8" style={{ color: tokens.color.textDim }}>Loading jobs...</p>;
+  if (loading) return <p className="text-center py-8" style={{ color: 'var(--soft-stone)' }}>Loading jobs...</p>;
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold text-slate-100">💼 Open Jobs</h2>
+      <h2 className="text-lg font-bold text-[var(--warm-ink)]">💼 Open Jobs</h2>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        <button onClick={() => setFilter('')} className={`px-3 py-1 rounded-lg text-xs font-semibold ${!filter ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>All</button>
+        <button onClick={() => setFilter('')} className={`px-3 py-1 rounded-lg text-xs font-semibold ${!filter ? 'bg-[var(--clay)]/15 text-[var(--clay)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>All</button>
         {WORK_TYPES.map((wt) => (
-          <button key={wt} onClick={() => setFilter(wt)} className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${filter === wt ? 'bg-indigo-500/20 text-indigo-200' : 'bg-white/5 text-slate-400'}`}>{wt.replace('_', ' ')}</button>
+          <button key={wt} onClick={() => setFilter(wt)} className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap ${filter === wt ? 'bg-[var(--clay)]/15 text-[var(--clay)]' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)]'}`}>{wt.replace('_', ' ')}</button>
         ))}
       </div>
       {jobs.length === 0 && (
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">💼</div>
-          <p style={{ color: tokens.color.textDim }}>No open jobs yet. Check back soon or post a job!</p>
+          <p style={{ color: 'var(--soft-stone)' }}>No open jobs yet. Check back soon or post a job!</p>
         </Surface>
       )}
       {jobs.map((j) => (
         <Surface key={j.id} className="p-4">
           <div className="flex items-start justify-between">
             <div>
-              <div className="font-semibold text-slate-100 text-lg">{j.title}</div>
-              <div className="text-xs" style={{ color: tokens.color.textDim }}>{j.brandName || 'Anonymous Brand'} · {j.workType.replace('_', ' ')}</div>
+              <div className="font-semibold text-[var(--warm-ink)] text-lg">{j.title}</div>
+              <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{j.brandName || 'Anonymous Brand'} · {j.workType.replace('_', ' ')}</div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-emerald-300">${j.budgetUsd}</div>
+              <div className="font-bold text-[var(--sage)]">${j.budgetUsd}</div>
               {j.zkRequired && <Badge tone="warning" className="mt-1">ZK Required 🔏</Badge>}
             </div>
           </div>
-          <p className="mt-2 text-sm text-slate-300 line-clamp-2">{j.description}</p>
+          <p className="mt-2 text-sm text-[var(--warm-ink)] line-clamp-2">{j.description}</p>
           <div className="mt-3 flex items-center gap-2 flex-wrap">
             {j.requirements?.map((r: string) => (
               <Badge key={r} tone="info" className="text-xs">{r}</Badge>
             ))}
-            <span className="text-xs ml-auto" style={{ color: tokens.color.textDim }}>{j._count?.submissions || 0}/{j.maxAmbassadors} spots</span>
+            <span className="text-xs ml-auto" style={{ color: 'var(--soft-stone)' }}>{j._count?.submissions || 0}/{j.maxAmbassadors} spots</span>
           </div>
           {j.deadline && (
-            <div className="mt-2 text-xs" style={{ color: tokens.color.textDim }}>
+            <div className="mt-2 text-xs" style={{ color: 'var(--soft-stone)' }}>
               Deadline: {new Date(j.deadline).toLocaleDateString()}
             </div>
           )}
@@ -263,11 +263,11 @@ const MyWork: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="space-y-3">
-        <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
+        <h2 className="text-lg font-bold text-[var(--warm-ink)]">🎯 My Work</h2>
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🔐</div>
-          <p className="text-slate-100 font-semibold">Sign in to get started</p>
-          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Log in or create an account to become an ambassador.</p>
+          <p className="text-[var(--warm-ink)] font-semibold">Sign in to get started</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Log in or create an account to become an ambassador.</p>
           <Link to="/login"><Button className="mt-4">Sign In</Button></Link>
         </Surface>
       </div>
@@ -277,11 +277,11 @@ const MyWork: React.FC = () => {
   if (!ambassador) {
     return (
       <div className="space-y-3">
-        <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
+        <h2 className="text-lg font-bold text-[var(--warm-ink)]">🎯 My Work</h2>
         <Surface className="p-6 text-center">
           <div className="text-4xl mb-2">🚀</div>
-          <p className="text-slate-100 font-semibold">Become an ambassador</p>
-          <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
+          <p className="text-[var(--warm-ink)] font-semibold">Become an ambassador</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Create your ambassador profile to start earning and reviewing with ZK-verified identity.</p>
           <Button className="mt-4" onClick={createAmbassador} disabled={loading}>
             {loading ? 'Creating...' : '+ Become an Ambassador'}
           </Button>
@@ -292,15 +292,15 @@ const MyWork: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-bold text-slate-100">🎯 My Work</h2>
+      <h2 className="text-lg font-bold text-[var(--warm-ink)]">🎯 My Work</h2>
       <Surface className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--clay)] to-purple-600 flex items-center justify-center text-[var(--warm-ink)] font-bold text-lg">
             {ambassador.handle[0]}
           </div>
           <div>
-            <div className="font-semibold text-slate-100">{ambassador.handle}</div>
-            <div className="text-xs" style={{ color: tokens.color.textDim }}>{ambassador.workType} · Rep: {ambassador.reputationScore}</div>
+            <div className="font-semibold text-[var(--warm-ink)]">{ambassador.handle}</div>
+            <div className="text-xs" style={{ color: 'var(--soft-stone)' }}>{ambassador.workType} · Rep: {ambassador.reputationScore}</div>
           </div>
         </div>
       </Surface>

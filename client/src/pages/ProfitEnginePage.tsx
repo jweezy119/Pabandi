@@ -101,14 +101,14 @@ export default function ProfitEnginePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex items-center justify-center">
-        <div className="animate-pulse text-emerald-400 text-xl font-bold">⚡ ProfitEngine Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-[var(--cream)] via-[var(--warm-sand)] to-[var(--cream)] flex items-center justify-center">
+        <div className="animate-pulse text-[var(--sage)] text-xl font-bold">⚡ ProfitEngine Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[var(--cream)] via-[var(--warm-sand)] to-[var(--cream)] text-[var(--warm-ink)]">
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-purple-600/20 to-orange-600/20 blur-3xl" />
@@ -116,14 +116,14 @@ export default function ProfitEnginePage() {
           <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-emerald-400 via-yellow-400 to-orange-400 bg-clip-text text-transparent mb-4 text-center">
             ⚡ Pabandi ProfitEngine
           </h1>
-          <p className="text-center text-slate-300 max-w-2xl mx-auto mb-6">
+          <p className="text-center text-[var(--warm-ink)] max-w-2xl mx-auto mb-6">
             Self-learning, capital-efficient algorithm. $100 → $2,880/day through micro-transaction velocity.
           </p>
           <div className="flex justify-center gap-4">
             <button
               onClick={runCycle}
               disabled={running}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-105 disabled:opacity-50"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 font-semibold text-[var(--warm-ink)] shadow-[var(--shadow-soft)] shadow-[rgba(138,154,123,0.2)] transition-all hover:scale-105 disabled:opacity-50"
             >
               {running ? '⚡ Running...' : '▶ Run Cycle'}
             </button>
@@ -135,24 +135,24 @@ export default function ProfitEnginePage() {
         {/* Live Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <MetricCard label="Total Cycles" value={report?.totalCycles || 0} icon="🔄" />
-          <MetricCard label="Daily Revenue" value={`$${report?.dailyRevenue.toFixed(2) || '0.00'}`} icon="💰" color="text-emerald-400" />
-          <MetricCard label="Capital Velocity" value={`${report?.capitalVelocity.toFixed(0) || '0'}/day`} icon="🚀" color="text-yellow-400" />
-          <MetricCard label="Efficiency" value={`${report?.efficiency.toFixed(1) || '0'}%`} icon="⚡" color="text-purple-400" />
+          <MetricCard label="Daily Revenue" value={`$${report?.dailyRevenue.toFixed(2) || '0.00'}`} icon="💰" color="text-[var(--sage)]" />
+          <MetricCard label="Capital Velocity" value={`${report?.capitalVelocity.toFixed(0) || '0'}/day`} icon="🚀" color="text-[var(--muted-ochre)]" />
+          <MetricCard label="Efficiency" value={`${report?.efficiency.toFixed(1) || '0'}%`} icon="⚡" color="text-[var(--dusty-rose)]" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Profit Projections + Cycle Feed */}
           <div className="lg:col-span-2 space-y-8">
             {/* Projections */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+            <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]  p-6">
               <h2 className="text-xl font-bold mb-4">📈 Profit Projections (from $100 capital)</h2>
               <div className="grid grid-cols-3 gap-4">
                 <ProjectionCard label="Daily" value={report?.dailyRevenue || 0} multiplier={1} />
                 <ProjectionCard label="Monthly" value={report?.monthlyRevenue || 0} multiplier={30} />
                 <ProjectionCard label="Annual" value={report?.annualRevenue || 0} multiplier={365} />
               </div>
-              <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <p className="text-sm text-emerald-300">
+              <div className="mt-4 p-3 rounded-lg bg-[var(--sage)]/10 border border-[var(--sage)]/20">
+                <p className="text-sm text-[var(--sage)]">
                   💡 ROI: <span className="font-bold">{report?.roiPercent.toFixed(1) || '0'}%</span> daily return on $100 capital |
                   Fee Rate: <span className="font-bold">{((report?.currentFeeRate || 0) * 100).toFixed(2)}%</span>
                 </p>
@@ -160,22 +160,22 @@ export default function ProfitEnginePage() {
             </div>
 
             {/* Cycle Feed */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+            <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]  p-6">
               <h2 className="text-xl font-bold mb-4">🔄 Recent Cycles</h2>
               {cycles.length === 0 ? (
-                <p className="text-slate-400 text-sm">Click "Run Cycle" to execute a profit cycle.</p>
+                <p className="text-[var(--soft-stone)] text-sm">Click "Run Cycle" to execute a profit cycle.</p>
               ) : (
                 <div className="space-y-2">
                   {cycles.map(c => (
-                    <div key={c.n} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-white/5">
+                    <div key={c.n} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-[rgba(191,179,163,0.3)]">
                       <div className="flex items-center gap-3">
-                        <span className="text-slate-400 text-sm w-16">#{c.n}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded ${c.s ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <span className="text-[var(--soft-stone)] text-sm w-16">#{c.n}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${c.s ? 'bg-[var(--sage)]/20 text-[var(--sage)]' : 'bg-[var(--terracotta)]/20 text-[var(--terracotta)]'}`}>
                           {c.s ? '✅' : '❌'}
                         </span>
                       </div>
-                      <span className="text-slate-400 text-xs">{c.t.toFixed(2)}s</span>
-                      <span className="text-emerald-400 font-mono text-sm">${c.r.toFixed(4)}</span>
+                      <span className="text-[var(--soft-stone)] text-xs">{c.t.toFixed(2)}s</span>
+                      <span className="text-[var(--sage)] font-mono text-sm">${c.r.toFixed(4)}</span>
                     </div>
                   ))}
                 </div>
@@ -186,7 +186,7 @@ export default function ProfitEnginePage() {
           {/* Right: Crypto Perks + Velocity + Arbitrage */}
           <div className="space-y-8">
             {/* Velocity Meter */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+            <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]  p-6">
               <h2 className="text-lg font-bold mb-4">🚀 Capital Velocity</h2>
               <VelocityMeter
                 current={report?.capitalVelocity || 0}
@@ -197,14 +197,14 @@ export default function ProfitEnginePage() {
             </div>
 
             {/* Crypto Perks */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6">
+            <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]  p-6">
               <h2 className="text-lg font-bold mb-4">🔗 Crypto Perks</h2>
               <CryptoPerksPanel settlement={settlement} arbitrage={arbitrage} />
             </div>
 
             {/* Arbitrage */}
             {arbitrage?.opportunity && (
-              <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-xl p-4">
+              <div className="rounded-[var(--radius-card)] border border-[var(--muted-ochre)]/30 bg-[var(--muted-ochre)]/10  p-4">
                 <p className="text-yellow-300 text-sm font-semibold">💰 Arbitrage Opportunity</p>
                 <p className="text-yellow-200 text-xs mt-1">
                   Spread: {(arbitrage.spread * 100).toFixed(2)}% — {arbitrage.action}
@@ -218,12 +218,12 @@ export default function ProfitEnginePage() {
   );
 }
 
-function MetricCard({ label, value, icon, color = 'text-white' }: { label: string; value: string | number; icon: string; color?: string }) {
+function MetricCard({ label, value, icon, color = 'text-[var(--warm-ink)]' }: { label: string; value: string | number; icon: string; color?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+    <div className="rounded-[var(--radius-card)] border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)]  p-4">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-lg">{icon}</span>
-        <span className="text-xs text-slate-400">{label}</span>
+        <span className="text-xs text-[var(--soft-stone)]">{label}</span>
       </div>
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
     </div>
@@ -231,11 +231,11 @@ function MetricCard({ label, value, icon, color = 'text-white' }: { label: strin
 }
 
 function ProjectionCard({ label, value, multiplier }: { label: string; value: number; multiplier: number }) {
-  const colors: Record<number, string> = { 1: 'text-emerald-400', 30: 'text-yellow-400', 365: 'text-orange-400' };
+  const colors: Record<number, string> = { 1: 'text-[var(--sage)]', 30: 'text-[var(--muted-ochre)]', 365: 'text-[var(--terracotta)]' };
   return (
-    <div className="p-4 rounded-xl bg-slate-800/50 border border-white/5 text-center">
-      <p className="text-xs text-slate-400 mb-1">{label} (×{multiplier})</p>
-      <p className={`text-xl font-bold ${colors[multiplier] || 'text-white'}`}>${value.toFixed(2)}</p>
+    <div className="p-4 rounded-xl bg-slate-800/50 border border-[rgba(191,179,163,0.3)] text-center">
+      <p className="text-xs text-[var(--soft-stone)] mb-1">{label} (×{multiplier})</p>
+      <p className={`text-xl font-bold ${colors[multiplier] || 'text-[var(--warm-ink)]'}`}>${value.toFixed(2)}</p>
     </div>
   );
 }
@@ -244,7 +244,7 @@ function VelocityMeter({ current, max, efficiency, revenuePerCycle }: { current:
   const pct = Math.min(100, (current / max) * 100);
   return (
     <div>
-      <div className="flex justify-between text-xs text-slate-400 mb-2">
+      <div className="flex justify-between text-xs text-[var(--soft-stone)] mb-2">
         <span>{current.toFixed(0)} cycles/day</span>
         <span>Max: {max}</span>
       </div>
@@ -256,12 +256,12 @@ function VelocityMeter({ current, max, efficiency, revenuePerCycle }: { current:
       </div>
       <div className="grid grid-cols-2 gap-2 mt-3">
         <div className="text-center p-2 rounded-lg bg-slate-800/50">
-          <p className="text-xs text-slate-400">Efficiency</p>
-          <p className="text-lg font-bold text-purple-400">{efficiency.toFixed(1)}%</p>
+          <p className="text-xs text-[var(--soft-stone)]">Efficiency</p>
+          <p className="text-lg font-bold text-[var(--dusty-rose)]">{efficiency.toFixed(1)}%</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-slate-800/50">
-          <p className="text-xs text-slate-400">$ / cycle</p>
-          <p className="text-lg font-bold text-emerald-400">${revenuePerCycle.toFixed(4)}</p>
+          <p className="text-xs text-[var(--soft-stone)]">$ / cycle</p>
+          <p className="text-lg font-bold text-[var(--sage)]">${revenuePerCycle.toFixed(4)}</p>
         </div>
       </div>
     </div>
@@ -280,12 +280,12 @@ function CryptoPerksPanel({ settlement, arbitrage }: { settlement: SettlementSpe
   return (
     <div className="grid grid-cols-2 gap-2">
       {perks.map(p => (
-        <div key={p.label} className="p-2 rounded-lg bg-slate-800/50 border border-white/5">
+        <div key={p.label} className="p-2 rounded-lg bg-slate-800/50 border border-[rgba(191,179,163,0.3)]">
           <div className="flex items-center gap-1 mb-1">
             <span className="text-sm">{p.icon}</span>
-            <span className="text-[10px] text-slate-400">{p.label}</span>
+            <span className="text-[10px] text-[var(--soft-stone)]">{p.label}</span>
           </div>
-          <p className="text-xs font-bold text-white">{p.value}</p>
+          <p className="text-xs font-bold text-[var(--warm-ink)]">{p.value}</p>
         </div>
       ))}
     </div>

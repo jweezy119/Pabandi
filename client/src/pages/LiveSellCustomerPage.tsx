@@ -111,7 +111,7 @@ export default function LiveSellCustomerPage() {
                   <div className="relative h-44 bg-surface-variant/30 rounded-t-2xl flex items-center justify-center">
                     <PlayCircleIcon className="h-10 w-10 text-primary" />
                     <span className="absolute top-3 left-3 bg-[#14F195]/20 border border-[#14F195]/30 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Live</span>
-                    <span className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
+                    <span className="absolute top-3 right-3 bg-[var(--cream)] backdrop-blur-sm text-[var(--warm-ink)] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{show.platform}</span>
                   </div>
                   <div className="p-5 sm:p-4">
                     <p className="font-headline font-bold text-lg sm:text-base leading-snug">{show.businessName || 'Seller'}</p>

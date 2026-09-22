@@ -32,14 +32,14 @@ const MODULES = [
     path: '/property',
   },
   {
-    id: 'pipeline',
-    name: 'PipelineOS',
-    tagline: 'Sell with insight',
-    description: 'Track leads from first call to close. Trust-aware revenue engine.',
+    id: 'contact',
+    name: 'ContactOS',
+    tagline: 'Every relationship, one trusted record.',
+    description: 'Track clients, close deals, and know who\'re reliable before you commit.',
     icon: 'funnel',
     colorClass: 'module-icon-pipeline',
     tint: '#D9A854',
-    path: '/pipeline',
+    path: '/contact',
   },
   {
     id: 'ledger',
@@ -240,7 +240,7 @@ export default function LandingPage() {
             <a href="/booking">Booking</a>
             <a href="/freight">Freight</a>
             <a href="/property">Property</a>
-            <a href="/pipeline">Pipeline</a>
+            <a href="/contact">Contact</a>
             <a href="/ledger">Ledger</a>
           </nav>
           <a href="/crm" className="cta-nav">Get Started</a>
@@ -414,7 +414,7 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · PipelineOS · LedgerOS — Powered by TrustOS</p>
+          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · ContactOS · LedgerOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <a href="/about">About</a>
             <a href="/contact">Contact</a>

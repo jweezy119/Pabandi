@@ -54,15 +54,15 @@ export const MyBookingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 60%)' }} />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-100">My Bookings</h1>
-            <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Manage your reservations and check-ins</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--warm-ink)]">My Bookings</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)' }}>Manage your reservations and check-ins</p>
           </div>
           <Button variant="ghost" onClick={() => navigate('/booking/venues/search')}>
             <span className="material-symbols-outlined text-sm">add</span>
@@ -74,13 +74,13 @@ export const MyBookingsPage: React.FC = () => {
         <Surface className="p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-300 mb-1">Status</label>
+              <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">Status</label>
               <div className="flex flex-wrap gap-2">
                 {(['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] as const).map(status => (
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${statusFilter === status ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${statusFilter === status ? 'bg-[var(--clay)]/15 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.3)] hover:bg-[var(--warm-sand)]'}`}
                   >
                     {status === 'ALL' ? 'All' : status.charAt(0) + status.slice(1).replace('_', ' ').toLowerCase()}
                   </button>
@@ -89,21 +89,21 @@ export const MyBookingsPage: React.FC = () => {
             </div>
             <div className="flex gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">From</label>
+                <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">From</label>
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500/50"
+                  className="px-3 py-2 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg text-[var(--warm-ink)] text-xs focus:outline-none focus:border-[var(--clay)]/50"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">To</label>
+                <label className="block text-xs font-medium text-[var(--warm-ink)] mb-1">To</label>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-indigo-500/50"
+                  className="px-3 py-2 bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg text-[var(--warm-ink)] text-xs focus:outline-none focus:border-[var(--clay)]/50"
                 />
               </div>
             </div>
@@ -119,10 +119,10 @@ export const MyBookingsPage: React.FC = () => {
                   {/* Venue Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-slate-100 font-bold">{booking.venueName}</h3>
+                      <h3 className="text-[var(--warm-ink)] font-bold">{booking.venueName}</h3>
                       <Badge tone={STATUS_TONES[booking.status]}>{booking.status}</Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: tokens.color.textDim }}>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: 'var(--soft-stone)' }}>
                       <span className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-xs">location_on</span>
                         {booking.venueCity}
@@ -141,9 +141,9 @@ export const MyBookingsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300 text-xs">{booking.tableType}</span>
+                      <span className="px-2 py-0.5 rounded bg-[var(--warm-sand)] text-[var(--warm-ink)] text-xs">{booking.tableType}</span>
                       {booking.bottlePackage && (
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 text-xs">{booking.bottlePackage}</span>
+                        <span className="px-2 py-0.5 rounded bg-[var(--muted-ochre)]/10 text-[var(--muted-ochre)] text-xs">{booking.bottlePackage}</span>
                       )}
                     </div>
                   </div>
@@ -151,8 +151,8 @@ export const MyBookingsPage: React.FC = () => {
                   {/* Price & Actions */}
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-lg font-bold text-emerald-300">${booking.total}</p>
-                      <p className="text-xs font-mono" style={{ color: tokens.color.textDim }}>{booking.confirmationCode}</p>
+                      <p className="text-lg font-bold text-[var(--sage)]">${booking.total}</p>
+                      <p className="text-xs font-mono" style={{ color: 'var(--soft-stone)' }}>{booking.confirmationCode}</p>
                     </div>
                     <div className="flex flex-col gap-2">
                       {booking.status === 'CONFIRMED' && (
@@ -173,14 +173,14 @@ export const MyBookingsPage: React.FC = () => {
 
                 {/* QR Code Modal */}
                 {showQR === booking.id && (
-                  <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-4">
+                  <div className="mt-4 pt-4 border-t border-[rgba(191,179,163,0.3)] flex items-center gap-4">
                     <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-slate-800">qr_code_2</span>
+                      <span className="material-symbols-outlined text-4xl text-[var(--warm-ink)]">qr_code_2</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-100">Check-in QR Code</p>
-                      <p className="text-xs" style={{ color: tokens.color.textDim }}>Show this at the venue entrance</p>
-                      <p className="text-xs font-mono text-indigo-300 mt-1">{booking.confirmationCode}</p>
+                      <p className="text-sm font-medium text-[var(--warm-ink)]">Check-in QR Code</p>
+                      <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>Show this at the venue entrance</p>
+                      <p className="text-xs font-mono text-[var(--clay)] mt-1">{booking.confirmationCode}</p>
                     </div>
                   </div>
                 )}
@@ -190,9 +190,9 @@ export const MyBookingsPage: React.FC = () => {
         ) : (
           /* Empty State */
           <Surface className="p-12 text-center">
-            <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">event_busy</span>
-            <h3 className="text-xl font-bold text-slate-100 mb-2">No bookings found</h3>
-            <p className="mb-6" style={{ color: tokens.color.textDim }}>
+            <span className="material-symbols-outlined text-6xl text-[var(--soft-stone)] mb-4 block">event_busy</span>
+            <h3 className="text-xl font-bold text-[var(--warm-ink)] mb-2">No bookings found</h3>
+            <p className="mb-6" style={{ color: 'var(--soft-stone)' }}>
               {statusFilter !== 'ALL' ? 'Try adjusting your filters' : 'Start exploring venues and make your first booking'}
             </p>
             <Button onClick={() => navigate('/booking/venues/search')}>

@@ -26,18 +26,18 @@ export const TokenFlowPage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="text-center mb-6">
           <Badge tone="info" className="mb-3">💰 $PAB Token Flow</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Your $PAB Dashboard</h1>
-          <p className="mt-2 text-slate-400">Earn, spend, stake, and govern with $PAB.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Your $PAB Dashboard</h1>
+          <p className="mt-2 text-[var(--soft-stone)]">Earn, spend, stake, and govern with $PAB.</p>
         </div>
 
         {/* Balance Card */}
-        <Surface className="p-6 mb-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))', border: '1px solid rgba(99,102,241,0.3)' }}>
+        <Surface className="p-6 mb-6 text-center" style={{ background: 'linear-gradient(135deg, rgba(201,123,90,0.1), rgba(212,165,165,0.1))', border: '1px solid rgba(99,102,241,0.3)' }}>
           <div className="text-sm" style={{ color: tokens.color.textDim }}>Total Balance</div>
           {loading ? (
-            <div className="text-3xl font-black text-slate-100 my-3">Loading...</div>
+            <div className="text-3xl font-black text-[var(--warm-ink)] my-3">Loading...</div>
           ) : (
             <>
-              <div className="text-5xl font-black text-slate-100 my-3">{balance.toLocaleString()} $PAB</div>
+              <div className="text-5xl font-black text-[var(--warm-ink)] my-3">{balance.toLocaleString()} $PAB</div>
               <div className="text-sm" style={{ color: tokens.color.textDim }}>≈ ${(balance * 0.01).toFixed(2)} USD value</div>
             </>
           )}
@@ -50,19 +50,19 @@ export const TokenFlowPage: React.FC = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <Surface className="text-center p-3">
-            <div className="text-lg font-bold text-emerald-300">{totalEarned.toLocaleString()}</div>
+            <div className="text-lg font-bold text-[var(--sage)]">{totalEarned.toLocaleString()}</div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>Total Earned</div>
           </Surface>
           <Surface className="text-center p-3">
-            <div className="text-lg font-bold text-amber-300">{staked.toLocaleString()}</div>
+            <div className="text-lg font-bold text-[var(--muted-ochre)]">{staked.toLocaleString()}</div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>Staked</div>
           </Surface>
           <Surface className="text-center p-3">
-            <div className="text-lg font-bold text-rose-300">{totalSpent.toLocaleString()}</div>
+            <div className="text-lg font-bold text-[var(--terracotta)]">{totalSpent.toLocaleString()}</div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>Spent</div>
           </Surface>
           <Surface className="text-center p-3">
-            <div className="text-lg font-bold text-indigo-300">{tier}</div>
+            <div className="text-lg font-bold text-[var(--clay)]">{tier}</div>
             <div className="text-xs" style={{ color: tokens.color.textDim }}>Current Tier</div>
           </Surface>
         </div>
@@ -71,7 +71,7 @@ export const TokenFlowPage: React.FC = () => {
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           {(['overview', 'earn', 'spend', 'stake', 'history'] as const).map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${activeTab === t ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${activeTab === t ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)]'}`}>
               {t}
             </button>
           ))}
@@ -81,41 +81,41 @@ export const TokenFlowPage: React.FC = () => {
         {activeTab === 'overview' && (
           <div className="space-y-4">
             <Surface className="p-4">
-              <h3 className="text-base font-bold text-slate-100 mb-3">🔄 Token Flow</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">🔄 Token Flow</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="text-xl">⬆️</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">On-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Buy $PAB with SOL or USD</div></div>
+                  <div className="flex-1"><div className="font-semibold text-[var(--warm-ink)] text-sm">On-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Buy $PAB with SOL or USD</div></div>
                   <Link to="/onramp"><Button size="sm">Buy</Button></Link>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="text-xl">⬇️</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Off-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Sell $PAB for SOL or USD</div></div>
+                  <div className="flex-1"><div className="font-semibold text-[var(--warm-ink)] text-sm">Off-Ramp</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Sell $PAB for SOL or USD</div></div>
                   <Link to="/offramp"><Button size="sm">Sell</Button></Link>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="text-xl">💰</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Earn</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Complete actions to earn $PAB</div></div>
+                  <div className="flex-1"><div className="font-semibold text-[var(--warm-ink)] text-sm">Earn</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Complete actions to earn $PAB</div></div>
                   <Link to="/promo"><Button size="sm" variant="ghost">Earn</Button></Link>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="text-xl">🏆</div>
-                  <div className="flex-1"><div className="font-semibold text-slate-100 text-sm">Stake</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Stake for trust badges & yield</div></div>
+                  <div className="flex-1"><div className="font-semibold text-[var(--warm-ink)] text-sm">Stake</div><div className="text-xs" style={{ color: tokens.color.textDim }}>Stake for trust badges & yield</div></div>
                   <Button size="sm" variant="ghost" onClick={() => setActiveTab('stake')}>Stake</Button>
                 </div>
               </div>
             </Surface>
             {wallet?.transactions?.length > 0 && (
               <Surface className="p-4">
-                <h3 className="text-base font-bold text-slate-100 mb-3">📜 Recent Transactions</h3>
+                <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">📜 Recent Transactions</h3>
                 <div className="space-y-2">
                   {wallet.transactions.slice(0, 10).map((tx: any) => (
-                    <div key={tx.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                    <div key={tx.id} className="flex items-center justify-between p-2 rounded-lg bg-[var(--warm-sand)]">
                       <div>
-                        <div className="text-sm text-slate-300">{tx.description || tx.action}</div>
+                        <div className="text-sm text-[var(--warm-ink)]">{tx.description || tx.action}</div>
                         <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(tx.createdAt).toLocaleDateString()}</div>
                       </div>
-                      <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-[var(--sage)]' : 'text-[var(--terracotta)]'}`}>
                         {tx.amount >= 0 ? '+' : ''}{tx.amount} $PAB
                       </span>
                     </div>
@@ -129,7 +129,7 @@ export const TokenFlowPage: React.FC = () => {
         {/* Earn Tab */}
         {activeTab === 'earn' && (
           <Surface className="p-4">
-            <h3 className="text-base font-bold text-slate-100 mb-3">Ways to Earn $PAB</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Ways to Earn $PAB</h3>
             <div className="space-y-2">
               {[
                 { action: 'Complete a verified sale', reward: '+15 $PAB', icon: '✅' },
@@ -142,12 +142,12 @@ export const TokenFlowPage: React.FC = () => {
                 { action: 'Verify identity', reward: '+20 $PAB', icon: '🪪' },
                 { action: 'Write ZK-verified review', reward: '+7 $PAB', icon: '🔏' },
               ].map((e, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{e.icon}</span>
-                    <span className="text-sm text-slate-300">{e.action}</span>
+                    <span className="text-sm text-[var(--warm-ink)]">{e.action}</span>
                   </div>
-                  <span className="text-sm font-bold text-emerald-300">{e.reward}</span>
+                  <span className="text-sm font-bold text-[var(--sage)]">{e.reward}</span>
                 </div>
               ))}
             </div>
@@ -157,7 +157,7 @@ export const TokenFlowPage: React.FC = () => {
         {/* Spend Tab */}
         {activeTab === 'spend' && (
           <Surface className="p-4">
-            <h3 className="text-base font-bold text-slate-100 mb-3">Spend $PAB</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Spend $PAB</h3>
             <div className="space-y-2">
               {[
                 { title: 'Background Check', cost: '10 $PAB', icon: '🔍' },
@@ -166,12 +166,12 @@ export const TokenFlowPage: React.FC = () => {
                 { title: 'Featured Listing', cost: '20 $PAB', icon: '⭐' },
                 { title: 'Local Agent Hire', cost: '50 $PAB', icon: '🤝' },
               ].map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{s.icon}</span>
-                    <span className="text-sm text-slate-300">{s.title}</span>
+                    <span className="text-sm text-[var(--warm-ink)]">{s.title}</span>
                   </div>
-                  <span className="text-sm font-bold text-amber-300">{s.cost}</span>
+                  <span className="text-sm font-bold text-[var(--muted-ochre)]">{s.cost}</span>
                 </div>
               ))}
             </div>
@@ -181,19 +181,19 @@ export const TokenFlowPage: React.FC = () => {
         {/* Stake Tab */}
         {activeTab === 'stake' && (
           <Surface className="p-4">
-            <h3 className="text-base font-bold text-slate-100 mb-3">Stake $PAB</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Stake $PAB</h3>
             <div className="space-y-3">
               {[
-                { tier: 'Bronze', stake: 100, color: '#cd7f32', current: tier === 'BRONZE' },
-                { tier: 'Silver', stake: 500, color: '#c0c0c0', current: tier === 'SILVER' },
-                { tier: 'Gold', stake: 2000, color: '#ffd700', current: tier === 'GOLD' },
-                { tier: 'Platinum', stake: 10000, color: '#e5e4e2', current: tier === 'PLATINUM' },
+                { tier: 'Bronze', stake: 100, color: 'var(--terracotta)', current: tier === 'BRONZE' },
+                { tier: 'Silver', stake: 500, color: 'var(--soft-stone)', current: tier === 'SILVER' },
+                { tier: 'Gold', stake: 2000, color: 'var(--muted-ochre)', current: tier === 'GOLD' },
+                { tier: 'Platinum', stake: 10000, color: 'var(--soft-stone)', current: tier === 'PLATINUM' },
               ].map((t) => (
-                <div key={t.tier} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={t.tier} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: t.color + '30', color: t.color }}>{t.tier[0]}</div>
                     <div>
-                      <div className="font-semibold text-slate-100 text-sm">{t.tier}</div>
+                      <div className="font-semibold text-[var(--warm-ink)] text-sm">{t.tier}</div>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>Stake {t.stake} $PAB</div>
                     </div>
                   </div>
@@ -207,17 +207,17 @@ export const TokenFlowPage: React.FC = () => {
         {/* History Tab */}
         {activeTab === 'history' && (
           <Surface className="p-4">
-            <h3 className="text-base font-bold text-slate-100 mb-3">📜 Transaction History</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">📜 Transaction History</h3>
             {wallet?.transactions?.length > 0 ? (
               <div className="space-y-2">
                 {wallet.transactions.map((tx: any) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                     <div>
-                      <div className="text-sm text-slate-300">{tx.description || tx.action}</div>
+                      <div className="text-sm text-[var(--warm-ink)]">{tx.description || tx.action}</div>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>{new Date(tx.createdAt).toLocaleString()}</div>
                     </div>
                     <div className="text-right">
-                      <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      <span className={`text-sm font-bold ${tx.amount >= 0 ? 'text-[var(--sage)]' : 'text-[var(--terracotta)]'}`}>
                         {tx.amount >= 0 ? '+' : ''}{tx.amount} $PAB
                       </span>
                       <div className="text-xs" style={{ color: tokens.color.textDim }}>Balance: {tx.balanceAfter}</div>

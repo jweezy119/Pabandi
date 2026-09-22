@@ -103,7 +103,7 @@ interface DashboardStats {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-xl shadow-2xl ${className}`}>
+    <div className={`rounded-2xl border border-[var(--soft-stone)]/30 bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-sm shadow-[var(--shadow-lift)] ${className}`}>
       {children}
     </div>
   );
@@ -112,11 +112,11 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 function Button({ children, variant = 'primary', size = 'md', className = '', ...props }: any) {
   const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all duration-200 cursor-pointer';
   const variants: Record<string, string> = {
-    primary: 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl',
-    secondary: 'bg-white/10 text-white hover:bg-white/20 border border-white/10',
-    danger: 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30',
-    success: 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30',
-    ghost: 'bg-transparent text-gray-300 hover:bg-white/5',
+    primary: 'bg-gradient-to-r from-blue-500 to-purple-600 text-[var(--warm-ink)] hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl',
+    secondary: 'bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-white/20 border border-[var(--soft-stone)]/30',
+    danger: 'bg-[var(--terracotta)]/20 text-[var(--terracotta)] hover:bg-[var(--terracotta)]/30 border border-red-500/30',
+    success: 'bg-[var(--sage)]/20 text-[var(--sage)] hover:bg-[var(--sage)]/30 border border-[var(--sage)]/30',
+    ghost: 'bg-transparent text-[var(--warm-ink)] hover:bg-[var(--cream)]',
   };
   const sizes: Record<string, string> = {
     sm: 'px-3 py-1.5 text-xs',
@@ -133,21 +133,21 @@ function Button({ children, variant = 'primary', size = 'md', className = '', ..
 function StatCard({ icon: Icon, label, value, sub, color = 'blue' }: { icon: any; label: string; value: string; sub?: string; color?: string }) {
   const colors: Record<string, string> = {
     blue: 'from-blue-500 to-cyan-400',
-    green: 'from-emerald-500 to-teal-400',
+    green: 'from-[var(--sage)] to-teal-400',
     purple: 'from-purple-500 to-pink-400',
     orange: 'from-orange-500 to-amber-400',
-    red: 'from-red-500 to-rose-400',
+    red: 'from-red-500 to-[var(--dusty-rose)]',
   };
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{label}</p>
-          <p className="text-2xl font-bold text-white mt-1">{value}</p>
-          {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
+          <p className="text-xs text-[var(--soft-stone)] font-medium uppercase tracking-wider">{label}</p>
+          <p className="text-2xl font-bold text-[var(--warm-ink)] mt-1">{value}</p>
+          {sub && <p className="text-xs text-[var(--soft-stone)] mt-1">{sub}</p>}
         </div>
         <div className={`p-3 rounded-xl bg-gradient-to-br ${colors[color] || colors.blue} shadow-lg`}>
-          <Icon className="w-5 h-5 text-white" />
+          <Icon className="w-5 h-5 text-[var(--warm-ink)]" />
         </div>
       </div>
     </Card>
@@ -156,13 +156,13 @@ function StatCard({ icon: Icon, label, value, sub, color = 'blue' }: { icon: any
 
 function Badge({ children, variant = 'default' }: { children: React.ReactNode; variant?: string }) {
   const v: Record<string, string> = {
-    default: 'bg-gray-700 text-gray-300',
+    default: 'bg-[var(--soft-stone)] text-[var(--warm-ink)]',
     blue: 'bg-blue-500/20 text-blue-300',
-    green: 'bg-emerald-500/20 text-emerald-300',
-    red: 'bg-red-500/20 text-red-300',
+    green: 'bg-[var(--sage)]/20 text-[var(--sage)]',
+    red: 'bg-[var(--terracotta)]/20 text-[var(--terracotta)]',
     yellow: 'bg-yellow-500/20 text-yellow-300',
-    purple: 'bg-purple-500/20 text-purple-300',
-    gray: 'bg-gray-500/20 text-gray-400',
+    purple: 'bg-[var(--dusty-rose)]/20 text-purple-300',
+    gray: 'bg-gray-500/20 text-[var(--soft-stone)]',
   };
   return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${v[variant] || v.default}`}>{children}</span>;
 }
@@ -170,10 +170,10 @@ function Badge({ children, variant = 'default' }: { children: React.ReactNode; v
 function Modal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-gray-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+      <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[var(--soft-stone)]/30 bg-gray-900 shadow-[var(--shadow-lift)]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-[var(--soft-stone)]/30">
+          <h3 className="text-lg font-bold text-[var(--warm-ink)]">{title}</h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--warm-sand)] text-[var(--soft-stone)] hover:text-[var(--warm-ink)]">
             <FiX className="w-5 h-5" />
           </button>
         </div>
@@ -186,10 +186,10 @@ function Modal({ children, onClose, title }: { children: React.ReactNode; onClos
 function Input({ label, ...props }: any) {
   return (
     <div>
-      <label className="block text-xs text-gray-400 font-medium mb-1.5">{label}</label>
+      <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1.5">{label}</label>
       <input
         {...props}
-        className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+        className="w-full px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
       />
     </div>
   );
@@ -198,17 +198,17 @@ function Input({ label, ...props }: any) {
 function Select({ label, options, ...props }: any) {
   return (
     <div>
-      <label className="block text-xs text-gray-400 font-medium mb-1.5">{label}</label>
+      <label className="block text-xs text-[var(--soft-stone)] font-medium mb-1.5">{label}</label>
       <div className="relative">
         <select
           {...props}
-          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          className="w-full px-3 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50"
         >
           {options.map((o: any) => (
-            <option key={o.value} value={o.value} className="bg-gray-800 text-white">{o.label}</option>
+            <option key={o.value} value={o.value} className="bg-gray-800 text-[var(--warm-ink)]">{o.label}</option>
           ))}
         </select>
-        <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-stone)] pointer-events-none" />
       </div>
     </div>
   );
@@ -274,24 +274,24 @@ export default function ServiceBusinessDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm">Loading your business...</p>
+          <p className="text-[var(--soft-stone)] text-sm">Loading your business...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-800 text-[var(--warm-ink)]">
       {/* Header */}
-      <header className="border-b border-white/10 bg-gray-900/50 backdrop-blur-xl sticky top-0 z-40">
+      <header className="border-b border-[var(--soft-stone)]/30 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <FiBriefcase className="w-5 h-5 text-white" />
+              <FiBriefcase className="w-5 h-5 text-[var(--warm-ink)]" />
             </div>
             <div>
               <h1 className="text-lg font-bold">Pabandi Business</h1>
-              <p className="text-xs text-gray-400">Service CRM Dashboard</p>
+              <p className="text-xs text-[var(--soft-stone)]">Service CRM Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -307,7 +307,7 @@ export default function ServiceBusinessDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+          <div className="mb-6 p-4 rounded-xl bg-[var(--terracotta)]/10 border border-red-500/30 text-[var(--terracotta)] text-sm">
             {error}
           </div>
         )}
@@ -321,13 +321,13 @@ export default function ServiceBusinessDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-gray-800/50 rounded-xl p-1 border border-white/10">
+        <div className="flex gap-1 mb-6 bg-gray-800/50 rounded-xl p-1 border border-[var(--soft-stone)]/30">
           {(['today', 'calendar', 'clients', 'employees', 'money', 'services'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize cursor-pointer ${
-                tab === t ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                tab === t ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-[var(--warm-ink)] shadow-lg' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--cream)]'
               }`}
             >
               {t}
@@ -377,28 +377,28 @@ function TodayTab({ jobs, employees, clients, onRefresh, onUpdateStatus }: { job
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">Today's Schedule</h2>
-        <p className="text-sm text-gray-400">{jobs.length} jobs</p>
+        <p className="text-sm text-[var(--soft-stone)]">{jobs.length} jobs</p>
       </div>
       {jobs.length === 0 ? (
         <div className="text-center py-12">
           <FiCalendar className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-400">No jobs scheduled for today</p>
-          <p className="text-sm text-gray-500 mt-1">Create a new job to get started</p>
+          <p className="text-[var(--soft-stone)]">No jobs scheduled for today</p>
+          <p className="text-sm text-[var(--soft-stone)] mt-1">Create a new job to get started</p>
         </div>
       ) : (
         <div className="space-y-3">
           {jobs.map((job) => (
-            <div key={job.id} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all">
+            <div key={job.id} className="flex items-center gap-4 p-4 rounded-xl bg-[var(--cream)] border border-[var(--soft-stone)]/30 hover:border-white/20 transition-all">
               <div className="flex-shrink-0 w-16 text-center">
-                <p className="text-lg font-bold text-white">{job.scheduledTime}</p>
-                <p className="text-xs text-gray-400">{job.durationMinutes}min</p>
+                <p className="text-lg font-bold text-[var(--warm-ink)]">{job.scheduledTime}</p>
+                <p className="text-xs text-[var(--soft-stone)]">{job.durationMinutes}min</p>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-semibold text-white truncate">{job.serviceType}</p>
+                  <p className="font-semibold text-[var(--warm-ink)] truncate">{job.serviceType}</p>
                   <Badge variant={statusColors[job.status] as any}>{job.status}</Badge>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-400">
+                <div className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
                   <span className="flex items-center gap-1"><FiMapPin className="w-3 h-3" />{job.address}</span>
                   <span className="flex items-center gap-1"><FiDollarSign className="w-3 h-3" />${job.price}</span>
                 </div>
@@ -447,16 +447,16 @@ function CalendarTab({ jobs }: { jobs: CrmJob[] }) {
           const dayJobs = jobs.filter((j) => new Date(j.scheduledDate).toDateString() === day.toDateString());
           const isToday = day.toDateString() === today.toDateString();
           return (
-            <div key={i} className={`p-3 rounded-xl border ${isToday ? 'border-blue-500/50 bg-blue-500/10' : 'border-white/10 bg-white/5'} min-h-[120px]`}>
-              <p className={`text-xs font-medium mb-2 ${isToday ? 'text-blue-400' : 'text-gray-500'}`}>{dayNames[i]}</p>
-              <p className={`text-lg font-bold mb-2 ${isToday ? 'text-blue-400' : 'text-white'}`}>{day.getDate()}</p>
+            <div key={i} className={`p-3 rounded-xl border ${isToday ? 'border-blue-500/50 bg-blue-500/10' : 'border-[var(--soft-stone)]/30 bg-[var(--cream)]'} min-h-[120px]`}>
+              <p className={`text-xs font-medium mb-2 ${isToday ? 'text-blue-400' : 'text-[var(--soft-stone)]'}`}>{dayNames[i]}</p>
+              <p className={`text-lg font-bold mb-2 ${isToday ? 'text-blue-400' : 'text-[var(--warm-ink)]'}`}>{day.getDate()}</p>
               <div className="space-y-1">
                 {dayJobs.slice(0, 3).map((j) => (
                   <div key={j.id} className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300 truncate">
                     {j.scheduledTime} {j.serviceType}
                   </div>
                 ))}
-                {dayJobs.length > 3 && <p className="text-xs text-gray-500">+{dayJobs.length - 3} more</p>}
+                {dayJobs.length > 3 && <p className="text-xs text-[var(--soft-stone)]">+{dayJobs.length - 3} more</p>}
               </div>
             </div>
           );
@@ -479,40 +479,40 @@ function ClientsTab({ clients, jobs, onAdd }: { clients: CrmClient[]; jobs: CrmJ
         <Button variant="primary" size="sm" onClick={onAdd}><FiPlus className="w-4 h-4" /> Add Client</Button>
       </div>
       <div className="relative mb-4">
-        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--soft-stone)]" />
         <input
           type="text"
           placeholder="Search clients..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          className="w-full pl-10 pr-4 py-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg text-[var(--warm-ink)] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
         />
       </div>
       {filtered.length === 0 ? (
         <div className="text-center py-12">
           <FiUsers className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-400">No clients found</p>
+          <p className="text-[var(--soft-stone)]">No clients found</p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((client) => {
             const clientJobs = jobs.filter((j) => j.clientId === client.id);
             return (
-              <div key={client.id} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+              <div key={client.id} className="flex items-center gap-4 p-4 rounded-xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm">
                   {client.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-white">{client.name}</p>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
+                  <p className="font-semibold text-[var(--warm-ink)]">{client.name}</p>
+                  <div className="flex items-center gap-3 text-sm text-[var(--soft-stone)]">
                     {client.phone && <span className="flex items-center gap-1"><FiPhone className="w-3 h-3" />{client.phone}</span>}
                     {client.email && <span className="flex items-center gap-1"><FiMail className="w-3 h-3" />{client.email}</span>}
                     {client.address && <span className="flex items-center gap-1"><FiMapPin className="w-3 h-3" />{client.address}</span>}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{clientJobs.length} jobs</p>
-                  <p className="text-xs text-gray-400">${client.totalSpent?.toFixed(0) || 0} spent</p>
+                  <p className="text-sm font-semibold text-[var(--warm-ink)]">{clientJobs.length} jobs</p>
+                  <p className="text-xs text-[var(--soft-stone)]">${client.totalSpent?.toFixed(0) || 0} spent</p>
                 </div>
               </div>
             );
@@ -535,8 +535,8 @@ function EmployeesTab({ employees, onAdd, payroll }: { employees: CrmEmployee[];
       {employees.length === 0 ? (
         <div className="text-center py-12">
           <FiUsers className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-400">No employees yet</p>
-          <p className="text-sm text-gray-500 mt-1">Add your team members</p>
+          <p className="text-[var(--soft-stone)]">No employees yet</p>
+          <p className="text-sm text-[var(--soft-stone)] mt-1">Add your team members</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -544,31 +544,31 @@ function EmployeesTab({ employees, onAdd, payroll }: { employees: CrmEmployee[];
             const empPayroll = payroll.filter((p) => p.employeeId === emp.id);
             const totalPaid = empPayroll.reduce((sum, p) => sum + p.netPay, 0);
             return (
-              <div key={emp.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div key={emp.id} className="p-4 rounded-xl bg-[var(--cream)] border border-[var(--soft-stone)]/30">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm">
                     {emp.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{emp.name}</p>
-                    <p className="text-xs text-gray-400">{emp.role}</p>
+                    <p className="font-semibold text-[var(--warm-ink)]">{emp.name}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">{emp.role}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="p-2 rounded-lg bg-white/5">
-                    <p className="text-lg font-bold text-white">{emp.jobsCompleted}</p>
-                    <p className="text-xs text-gray-400">Jobs</p>
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
+                    <p className="text-lg font-bold text-[var(--warm-ink)]">{emp.jobsCompleted}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">Jobs</p>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/5">
-                    <p className="text-lg font-bold text-white">{emp.rating?.toFixed(1) || '5.0'}</p>
-                    <p className="text-xs text-gray-400">Rating</p>
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
+                    <p className="text-lg font-bold text-[var(--warm-ink)]">{emp.rating?.toFixed(1) || '5.0'}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">Rating</p>
                   </div>
-                  <div className="p-2 rounded-lg bg-white/5">
+                  <div className="p-2 rounded-lg bg-[var(--cream)]">
                     <p className="text-lg font-bold text-green-400">${totalPaid.toFixed(0)}</p>
-                    <p className="text-xs text-gray-400">Paid</p>
+                    <p className="text-xs text-[var(--soft-stone)]">Paid</p>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-gray-400">
+                <div className="mt-3 text-xs text-[var(--soft-stone)]">
                   {emp.payType === 'HOURLY' ? `$${emp.payRate}/hr` : emp.payType === 'SALARY' ? `$${emp.payRate}/mo` : `$${emp.payRate}/job`}
                 </div>
               </div>
@@ -601,20 +601,20 @@ function MoneyTab({ stats, payroll, expenses, employees, onAddExpense, onAddPayr
         {/* Payroll */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white">Payroll</h3>
+            <h3 className="font-bold text-[var(--warm-ink)]">Payroll</h3>
             <Button variant="primary" size="sm" onClick={onAddPayroll}><FiPlus className="w-4 h-4" /> Record</Button>
           </div>
           {payroll.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">No payroll recorded</p>
+            <p className="text-[var(--soft-stone)] text-sm text-center py-8">No payroll recorded</p>
           ) : (
             <div className="space-y-2">
               {payroll.slice(0, 10).map((p) => {
                 const emp = employees.find((e) => e.id === p.employeeId);
                 return (
-                  <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--cream)]">
                     <div>
-                      <p className="text-sm font-medium text-white">{emp?.name || 'Unknown'}</p>
-                      <p className="text-xs text-gray-400">{p.hoursWorked}h • {p.jobsCompleted} jobs</p>
+                      <p className="text-sm font-medium text-[var(--warm-ink)]">{emp?.name || 'Unknown'}</p>
+                      <p className="text-xs text-[var(--soft-stone)]">{p.hoursWorked}h • {p.jobsCompleted} jobs</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-green-400">${p.netPay.toFixed(0)}</p>
@@ -630,20 +630,20 @@ function MoneyTab({ stats, payroll, expenses, employees, onAddExpense, onAddPayr
         {/* Expenses */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-white">Expenses</h3>
+            <h3 className="font-bold text-[var(--warm-ink)]">Expenses</h3>
             <Button variant="primary" size="sm" onClick={onAddExpense}><FiPlus className="w-4 h-4" /> Add</Button>
           </div>
           {expenses.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-8">No expenses recorded</p>
+            <p className="text-[var(--soft-stone)] text-sm text-center py-8">No expenses recorded</p>
           ) : (
             <div className="space-y-2">
               {expenses.slice(0, 10).map((e) => (
-                <div key={e.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                <div key={e.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--cream)]">
                   <div>
-                    <p className="text-sm font-medium text-white">{e.description}</p>
-                    <p className="text-xs text-gray-400">{e.category}{e.vendor ? ` • ${e.vendor}` : ''}</p>
+                    <p className="text-sm font-medium text-[var(--warm-ink)]">{e.description}</p>
+                    <p className="text-xs text-[var(--soft-stone)]">{e.category}{e.vendor ? ` • ${e.vendor}` : ''}</p>
                   </div>
-                  <p className="text-sm font-semibold text-red-400">-${e.amount.toFixed(0)}</p>
+                  <p className="text-sm font-semibold text-[var(--terracotta)]">-${e.amount.toFixed(0)}</p>
                 </div>
               ))}
             </div>
@@ -662,8 +662,8 @@ function ServicesTab() {
       <h2 className="text-lg font-bold mb-4">Services & Pricing</h2>
       <div className="text-center py-12">
         <FiBriefcase className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400">Service management</p>
-        <p className="text-sm text-gray-500 mt-1">Manage your service offerings and pricing</p>
+        <p className="text-[var(--soft-stone)]">Service management</p>
+        <p className="text-sm text-[var(--soft-stone)] mt-1">Manage your service offerings and pricing</p>
         <Button variant="primary" size="sm" className="mt-4">Edit Services</Button>
       </div>
     </Card>

@@ -3,13 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/pipeline', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/pipeline/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/pipeline/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/pipeline/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 
-export default function PipelineLeadDetailPage() {
+export default function ContactLeadDetailPage() {
   const { id } = useParams();
   const [lead, setLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export default function PipelineLeadDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+      <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
         <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
       </DashboardLayout>
     );
@@ -43,16 +43,16 @@ export default function PipelineLeadDetailPage() {
 
   if (!lead) {
     return (
-      <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+      <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
         <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Lead not found</div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
       <div className="space-y-6">
-        <Link to="/pipeline/leads" className="text-sm" style={{ color: 'var(--terracotta)' }}>← Back to Leads</Link>
+        <Link to="/contact/leads" className="text-sm" style={{ color: 'var(--terracotta)' }}>← Back to Leads</Link>
         <div className="rounded-xl p-6" style={{ background: 'white', border: '1px solid var(--soft-stone)' }}>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>{lead.name}</h1>
           <div className="mt-4 grid grid-cols-2 gap-4">

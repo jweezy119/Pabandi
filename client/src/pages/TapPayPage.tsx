@@ -48,7 +48,7 @@ export default function TapPayPage() {
   useEffect(() => {
     const currentUrl = window.location.href;
     let active = true;
-    QRCodeLib.toDataURL(currentUrl, { width: 512, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } })
+    QRCodeLib.toDataURL(currentUrl, { width: 512, margin: 2, color: { dark: 'var(--warm-ink)', light: 'white' } })
       .then((url: string) => { if (active) setQrDataUrl(url); })
       .catch(() => { if (active) setQrDataUrl(''); });
 
@@ -107,76 +107,76 @@ export default function TapPayPage() {
   return (
     <div style={{ background: tokens.color.background, minHeight: '100vh', color: tokens.color.text }}>
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-3xl font-black text-[#e8e8e8] mb-2">Tap Checkout</h1>
-        <p className="text-sm text-[#757575] mb-1">
+        <h1 className="text-3xl font-black text-[var(--warm-ink)] mb-2">Tap Checkout</h1>
+        <p className="text-sm text-[var(--soft-stone)] mb-1">
           Merchant:{' '}
-          <span className="font-mono text-[#0ea5e9] break-all">
+          <span className="font-mono text-[var(--sky-wash)] break-all">
             {merchant?.name || sellerId || ':sellerId'}
           </span>
         </p>
-        <p className="text-sm text-[#757575] mb-6">
+        <p className="text-sm text-[var(--soft-stone)] mb-6">
           Seller link:{' '}
-          <span className="font-mono text-[#0ea5e9] break-all">
+          <span className="font-mono text-[var(--sky-wash)] break-all">
             https://tap.pabandi.com/s/{sellerId || ':sellerId'}
           </span>
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-[#181818] rounded-2xl p-5 shadow-sm border border-[#ffffff15]">
-            <h3 className="text-xs font-bold text-[#9e9e9e] uppercase tracking-wide mb-3">Tap QR</h3>
+          <div className="bg-[var(--warm-ink)] rounded-2xl p-5 shadow-sm border border-[white15]">
+            <h3 className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wide mb-3">Tap QR</h3>
             {qrDataUrl ? (
               <img src={qrDataUrl} alt="Tap payment QR" className="w-full rounded-xl bg-white" />
             ) : (
-              <div className="w-full aspect-square rounded-xl bg-[#252525] border border-[#ffffff15] flex items-center justify-center text-xs text-[#757575]">
+              <div className="w-full aspect-square rounded-xl bg-[var(--cream)] border border-[white15] flex items-center justify-center text-xs text-[var(--soft-stone)]">
                 Generating QR…
               </div>
             )}
-            <p className="text-[10px] text-[#757575] mt-2">Scan to open this checkout link in any wallet.</p>
+            <p className="text-[10px] text-[var(--soft-stone)] mt-2">Scan to open this checkout link in any wallet.</p>
           </div>
 
-          <div className="bg-[#181818] rounded-2xl p-5 shadow-sm border border-[#ffffff15]">
-            <h3 className="text-xs font-bold text-[#9e9e9e] uppercase tracking-wide mb-3">Solana Action</h3>
+          <div className="bg-[var(--warm-ink)] rounded-2xl p-5 shadow-sm border border-[white15]">
+            <h3 className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wide mb-3">Solana Action</h3>
             {blinkJson ? (
-              <pre className="text-[11px] text-[#9e9e9e] font-mono whitespace-pre-wrap break-all">{JSON.stringify(blinkJson, null, 2)}</pre>
+              <pre className="text-[11px] text-[var(--soft-stone)] font-mono whitespace-pre-wrap break-all">{JSON.stringify(blinkJson, null, 2)}</pre>
             ) : (
-              <p className="text-xs text-[#757575]">No Action metadata found for this seller.</p>
+              <p className="text-xs text-[var(--soft-stone)]">No Action metadata found for this seller.</p>
             )}
             <a
               href={`/actions/tap-pay/${sellerId || ':sellerId'}?amount=${amount}&currency=${currency}`}
-              className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#0ea5e9] hover:text-sky-300"
+              className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[var(--sky-wash)] hover:text-sky-300"
             >
               Open Action JSON ↗
             </a>
           </div>
         </div>
 
-        <div className="bg-[#181818] rounded-2xl p-6 shadow-sm border border-[#ffffff15] space-y-5">
+        <div className="bg-[var(--warm-ink)] rounded-2xl p-6 shadow-sm border border-[white15] space-y-5">
           <div>
-            <h3 className="text-sm font-bold text-[#9e9e9e] uppercase tracking-wide mb-2">Payment preview</h3>
+            <h3 className="text-sm font-bold text-[var(--soft-stone)] uppercase tracking-wide mb-2">Payment preview</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-[#252525] border border-[#ffffff15]">
-                <p className="text-xs text-[#757575]">Seller</p>
-                <p className="text-sm font-bold text-[#e8e8e8] break-all">{sellerId || '—'}</p>
+              <div className="p-4 rounded-xl bg-[var(--cream)] border border-[white15]">
+                <p className="text-xs text-[var(--soft-stone)]">Seller</p>
+                <p className="text-sm font-bold text-[var(--warm-ink)] break-all">{sellerId || '—'}</p>
               </div>
-              <div className="p-4 rounded-xl bg-[#252525] border border-[#ffffff15]">
-                <p className="text-xs text-[#757575]">Amount</p>
-                <p className="text-sm font-bold text-[#e8e8e8]">
+              <div className="p-4 rounded-xl bg-[var(--cream)] border border-[white15]">
+                <p className="text-xs text-[var(--soft-stone)]">Amount</p>
+                <p className="text-sm font-bold text-[var(--warm-ink)]">
                   {amount} {currency}
                 </p>
               </div>
-              <div className="p-4 rounded-xl bg-[#252525] border border-[#ffffff15]">
-                <p className="text-xs text-[#757575]">Intent</p>
-                <p className="text-sm font-bold text-[#e8e8e8] break-all">{intent?.id || '—'}</p>
+              <div className="p-4 rounded-xl bg-[var(--cream)] border border-[white15]">
+                <p className="text-xs text-[var(--soft-stone)]">Intent</p>
+                <p className="text-sm font-bold text-[var(--warm-ink)] break-all">{intent?.id || '—'}</p>
               </div>
-              <div className="p-4 rounded-xl bg-[#252525] border border-[#ffffff15]">
-                <p className="text-xs text-[#757575]">Status</p>
-                <p className="text-sm font-bold text-[#e8e8e8] capitalize">{status || 'idle'}</p>
+              <div className="p-4 rounded-xl bg-[var(--cream)] border border-[white15]">
+                <p className="text-xs text-[var(--soft-stone)]">Status</p>
+                <p className="text-sm font-bold text-[var(--warm-ink)] capitalize">{status || 'idle'}</p>
               </div>
             </div>
           </div>
 
           {error ? (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/25 text-red-200 text-sm">
+            <div className="p-4 rounded-xl bg-[var(--terracotta)]/10 border border-red-500/25 text-[var(--terracotta)] text-sm">
               {error}
             </div>
           ) : null}
@@ -185,29 +185,29 @@ export default function TapPayPage() {
             <button
               onClick={openWalletDeepLink}
               disabled={!isReady}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/15 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors border border-white/20"
+              className="px-5 py-2.5 bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] disabled:opacity-50 text-[var(--warm-ink)] rounded-xl text-sm font-semibold transition-colors border border-[rgba(191,179,163,0.3)]"
             >
               Open Wallet
             </button>
             <button
               onClick={handleCreateIntent}
               disabled={!isReady || status === 'processing'}
-              className="px-5 py-2.5 bg-[#0ea5e9] hover:bg-sky-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 bg-[var(--sky-wash)] hover:bg-sky-400 disabled:opacity-50 text-[var(--warm-ink)] rounded-xl text-sm font-semibold transition-colors"
             >
               {status === 'processing' ? 'Working...' : 'Create Intent'}
             </button>
             <button
               onClick={handleVerifyIntent}
               disabled={!isReady || status === 'processing'}
-              className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-500 hover:from-violet-500 hover:to-indigo-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 bg-gradient-to-r from-[var(--clay)] to-[var(--dusty-rose)] hover:from-[var(--clay)] hover:to-[var(--dusty-rose)] disabled:opacity-50 text-[var(--warm-ink)] rounded-xl text-sm font-semibold transition-colors"
             >
               {status === 'processing' ? 'Working...' : 'Verify Payment'}
             </button>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-[#9e9e9e]">Status blocks</h4>
-            <div className="p-4 rounded-xl border border-[#ffffff15] bg-[#1a1a1a] text-xs font-mono text-[#9e9e9e]">
+            <h4 className="text-sm font-bold text-[var(--soft-stone)]">Status blocks</h4>
+            <div className="p-4 rounded-xl border border-[white15] bg-[var(--warm-ink)] text-xs font-mono text-[var(--soft-stone)]">
               <p>query: {new URL(window.location.href).search}</p>
               <p>amount: {amount}</p>
               <p>currency: {currency}</p>
@@ -215,32 +215,32 @@ export default function TapPayPage() {
               <p>status: {status}</p>
             </div>
             {intent ? (
-              <div className="p-4 rounded-xl border border-[#ffffff15] bg-[#1a1a1a]">
-                <p className="text-xs font-bold text-[#e8e8e8] mb-1">Intent response</p>
-                <pre className="text-xs text-[#9e9e9e] whitespace-pre-wrap break-all">
+              <div className="p-4 rounded-xl border border-[white15] bg-[var(--warm-ink)]">
+                <p className="text-xs font-bold text-[var(--warm-ink)] mb-1">Intent response</p>
+                <pre className="text-xs text-[var(--soft-stone)] whitespace-pre-wrap break-all">
                   {JSON.stringify(intent, null, 2)}
                 </pre>
               </div>
             ) : null}
             {verifyResult ? (
-              <div className="p-4 rounded-xl border border-[#ffffff15] bg-[#1a1a1a]">
-                <p className="text-xs font-bold text-[#e8e8e8] mb-1">Verify response</p>
-                <pre className="text-xs text-[#9e9e9e] whitespace-pre-wrap break-all">
+              <div className="p-4 rounded-xl border border-[white15] bg-[var(--warm-ink)]">
+                <p className="text-xs font-bold text-[var(--warm-ink)] mb-1">Verify response</p>
+                <pre className="text-xs text-[var(--soft-stone)] whitespace-pre-wrap break-all">
                   {JSON.stringify(verifyResult, null, 2)}
                 </pre>
               </div>
             ) : null}
             {signature ? (
-              <div className="p-4 rounded-xl border border-[#ffffff15] bg-[#1a1a1a]">
-                <p className="text-xs font-bold text-[#e8e8e8] mb-1">Signature</p>
-                <p className="text-xs text-[#9e9e9e] break-all">{signature}</p>
+              <div className="p-4 rounded-xl border border-[white15] bg-[var(--warm-ink)]">
+                <p className="text-xs font-bold text-[var(--warm-ink)] mb-1">Signature</p>
+                <p className="text-xs text-[var(--soft-stone)] break-all">{signature}</p>
               </div>
             ) : null}
           </div>
         </div>
 
-        <div className="mt-6 p-4 rounded-xl border border-[#ffffff15] bg-[#141414] text-xs text-[#757575]">
-          <p className="font-bold text-[#9e9e9e] mb-1">Verification notes</p>
+        <div className="mt-6 p-4 rounded-xl border border-[white15] bg-[var(--warm-ink)] text-xs text-[var(--soft-stone)]">
+          <p className="font-bold text-[var(--soft-stone)] mb-1">Verification notes</p>
           <p>Complete the payment in your wallet. Pabandi verifies the on-chain intent and confirms checkout for this seller.</p>
         </div>
       </div>

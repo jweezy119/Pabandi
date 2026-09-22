@@ -88,32 +88,32 @@ export const AIAssistantPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'radial-gradient(circle at top left, #0f172a, #020617)' }}>
+    <div className="min-h-screen pb-24 md:pb-0" style={{ background: 'radial-gradient(circle at top left, 'var(--cream)", #020617)" }}>
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-slate-100">AI Assistant</h1>
-          <p className="text-sm mt-1 text-slate-400">Property insights, tenant recommendations, and maintenance guidance.</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-[var(--warm-ink)]">AI Assistant</h1>
+          <p className="text-sm mt-1 text-[var(--soft-stone)]">Property insights, tenant recommendations, and maintenance guidance.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Surface className="p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-100">📊 Portfolio Insights</h3>
+              <h3 className="font-bold text-[var(--warm-ink)]">📊 Portfolio Insights</h3>
               <Button onClick={generateInsights} disabled={loading} size="sm">{loading ? 'Analyzing…' : 'Refresh'}</Button>
             </div>
             {insights.length === 0 && !loading && (
               <div className="text-center py-8">
-                <p className="text-sm text-slate-400 mb-3">Generate insights based on your current portfolio.</p>
+                <p className="text-sm text-[var(--soft-stone)] mb-3">Generate insights based on your current portfolio.</p>
                 <Button onClick={generateInsights}>Generate Insights</Button>
               </div>
             )}
             <div className="space-y-2">
               {insights.map(i => (
-                <div key={i.id} className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <div key={i.id} className="p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-sm font-semibold text-slate-100">{i.title}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">{i.description}</div>
+                      <div className="text-sm font-semibold text-[var(--warm-ink)]">{i.title}</div>
+                      <div className="text-xs text-[var(--soft-stone)] mt-0.5">{i.description}</div>
                     </div>
                     <Badge tone={i.priority === 'high' ? 'danger' : i.priority === 'medium' ? 'warning' : 'info'}>{i.priority}</Badge>
                   </div>
@@ -123,36 +123,36 @@ export const AIAssistantPage: React.FC = () => {
           </Surface>
 
           <Surface className="p-4 md:p-6 space-y-4">
-            <h3 className="font-bold text-slate-100">💬 Ask AI</h3>
+            <h3 className="font-bold text-[var(--warm-ink)]">💬 Ask AI</h3>
             <div className="space-y-2 max-h-[360px] overflow-y-auto">
-              {chat.length === 0 && <p className="text-xs text-slate-400">Ask anything about leases, screening, rent, or maintenance.</p>}
+              {chat.length === 0 && <p className="text-xs text-[var(--soft-stone)]">Ask anything about leases, screening, rent, or maintenance.</p>}
               {chat.map((m, i) => (
                 <div key={i} className="space-y-1">
-                  <div className="text-xs font-semibold text-indigo-300">You: {m.q}</div>
-                  <div className="text-xs text-slate-300 bg-white/5 rounded-lg px-3 py-2">{m.a}</div>
+                  <div className="text-xs font-semibold text-[var(--clay)]">You: {m.q}</div>
+                  <div className="text-xs text-[var(--soft-stone)] bg-[var(--warm-sand)] rounded-lg px-3 py-2">{m.a}</div>
                 </div>
               ))}
-              {chatLoading && <div className="text-xs text-slate-400">Thinking…</div>}
+              {chatLoading && <div className="text-xs text-[var(--soft-stone)]">Thinking…</div>}
             </div>
             <div className="flex gap-2">
-              <input value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={e => e.key === 'Enter' && askAI()} placeholder="Ask about a property, tenant, or lease…" className="flex-1 rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" />
+              <input value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={e => e.key === 'Enter' && askAI()} placeholder="Ask about a property, tenant, or lease…" className="flex-1 rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" />
               <Button onClick={askAI} disabled={chatLoading}>Send</Button>
             </div>
           </Surface>
 
           <Surface className="p-4 md:p-6 space-y-4">
-            <h3 className="font-bold text-slate-100">🛠️ Maintenance Advisor</h3>
-            <input value={issue} onChange={e => setIssue(e.target.value)} placeholder="Describe the issue, e.g. water leak in bathroom" className="w-full rounded-lg bg-white/5 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400" />
+            <h3 className="font-bold text-[var(--warm-ink)]">🛠️ Maintenance Advisor</h3>
+            <input value={issue} onChange={e => setIssue(e.target.value)} placeholder="Describe the issue, e.g. water leak in bathroom" className="w-full rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)]" />
             <Button onClick={getMaintenanceAdvice} disabled={analyzing} className="w-full">{analyzing ? 'Analyzing…' : 'Get Maintenance Advice'}</Button>
-            {maintenanceAdvice && <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 whitespace-pre-wrap">{maintenanceAdvice}</div>}
+            {maintenanceAdvice && <div className="p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-xs text-[var(--soft-stone)] whitespace-pre-wrap">{maintenanceAdvice}</div>}
           </Surface>
 
           <Surface className="p-4 md:p-6 space-y-4">
-            <h3 className="font-bold text-slate-100">🧪 Tenant Intelligence</h3>
-            <p className="text-xs text-slate-400">Analyze tenant behavior, payment patterns, and renewal risk.</p>
+            <h3 className="font-bold text-[var(--warm-ink)]">🧪 Tenant Intelligence</h3>
+            <p className="text-xs text-[var(--soft-stone)]">Analyze tenant behavior, payment patterns, and renewal risk.</p>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="p-3 rounded-xl bg-white/5"><div className="text-xl font-bold text-slate-100">AI</div><div className="text-[10px] text-slate-400">Payment Risk</div></div>
-              <div className="p-3 rounded-xl bg-white/5"><div className="text-xl font-bold text-slate-100">AI</div><div className="text-[10px] text-slate-400">Renewal Likelihood</div></div>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]"><div className="text-xl font-bold text-[var(--warm-ink)]">AI</div><div className="text-[10px] text-[var(--soft-stone)]">Payment Risk</div></div>
+              <div className="p-3 rounded-xl bg-[var(--warm-sand)]"><div className="text-xl font-bold text-[var(--warm-ink)]">AI</div><div className="text-[10px] text-[var(--soft-stone)]">Renewal Likelihood</div></div>
             </div>
           </Surface>
         </div>

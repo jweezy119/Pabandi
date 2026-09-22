@@ -148,23 +148,23 @@ export default function PaymentTestPage() {
     return (
       <div className="mt-6 space-y-6">
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <h3 className="font-semibold text-slate-900 mb-2">Payment Details</h3>
+          <h3 className="font-semibold text-[var(--warm-ink)] mb-2">Payment Details</h3>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="text-slate-600">Reference:</div>
+            <div className="text-[var(--soft-stone)]">Reference:</div>
             <div className="font-mono text-xs">{payment.payment.reference}</div>
-            <div className="text-slate-600">Type:</div>
+            <div className="text-[var(--soft-stone)]">Type:</div>
             <div className="capitalize">{payment.payment.type}</div>
-            <div className="text-slate-600">Amount:</div>
+            <div className="text-[var(--soft-stone)]">Amount:</div>
             <div>{payment.payment.amount} {payment.payment.currency}</div>
-            <div className="text-slate-600">Status:</div>
+            <div className="text-[var(--soft-stone)]">Status:</div>
             <div className={`font-semibold ${
               payment.payment.status === 'COMPLETED' ? 'text-green-600' :
-              payment.payment.status === 'REFUNDED' ? 'text-red-600' :
+              payment.payment.status === 'REFUNDED' ? 'text-[var(--terracotta)]' :
               'text-amber-600'
             }`}>{payment.payment.status}</div>
             {payment.payment.txSignature && (
               <>
-                <div className="text-slate-600">Tx Signature:</div>
+                <div className="text-[var(--soft-stone)]">Tx Signature:</div>
                 <div className="font-mono text-xs truncate">{payment.payment.txSignature}</div>
               </>
             )}
@@ -174,11 +174,11 @@ export default function PaymentTestPage() {
         {/* USDC QR Code */}
         {(payment.request?.type === 'solana' || payment.request?.type === 'usdc') && payment.request?.qrData && (
           <div className="bg-white border border-slate-200 rounded-lg p-4">
-            <h3 className="font-semibold text-slate-900 mb-2">USDC Payment QR</h3>
+            <h3 className="font-semibold text-[var(--warm-ink)] mb-2">USDC Payment QR</h3>
             <div className="bg-white p-4 border border-slate-300 rounded-lg inline-block">
               <QRCodeDisplay value={payment.request.qrData} size={200} />
             </div>
-            <p className="text-xs text-slate-500 mt-2 break-all font-mono">
+            <p className="text-xs text-[var(--soft-stone)] mt-2 break-all font-mono">
               {payment.request.qrData}
             </p>
             {payment.request.deepLink && (
@@ -197,7 +197,7 @@ export default function PaymentTestPage() {
         {/* BTCPay Invoice */}
         {payment.request?.type === 'btcpay' && payment.request?.url && (
           <div className="bg-white border border-slate-200 rounded-lg p-4">
-            <h3 className="font-semibold text-slate-900 mb-2">BTCPay Invoice</h3>
+            <h3 className="font-semibold text-[var(--warm-ink)] mb-2">BTCPay Invoice</h3>
             <div className="bg-white p-4 border border-slate-300 rounded-lg inline-block">
               <QRCodeDisplay value={payment.request.qrData || payment.request.url} size={200} />
             </div>
@@ -205,7 +205,7 @@ export default function PaymentTestPage() {
               href={payment.request.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-block mt-4 px-4 py-2 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600"
+              className="inline-block mt-4 px-4 py-2 bg-orange-500 text-[var(--warm-ink)] font-medium rounded-lg hover:bg-orange-600"
             >
               Pay with Bitcoin/Lightning →
             </a>
@@ -215,8 +215,8 @@ export default function PaymentTestPage() {
         {/* Manual Payment */}
         {method === 'manual' && payment.request?.instructions && (
           <div className="bg-white border border-slate-200 rounded-lg p-4">
-            <h3 className="font-semibold text-slate-900 mb-2">Manual Payment Instructions</h3>
-            <pre className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-3 rounded border">
+            <h3 className="font-semibold text-[var(--warm-ink)] mb-2">Manual Payment Instructions</h3>
+            <pre className="text-sm text-[var(--soft-stone)] whitespace-pre-wrap bg-slate-50 p-3 rounded border">
               {payment.request.instructions}
             </pre>
           </div>
@@ -233,7 +233,7 @@ export default function PaymentTestPage() {
 
         {/* Verification Input */}
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <h3 className="font-semibold text-slate-900 mb-2">Verify Payment</h3>
+          <h3 className="font-semibold text-[var(--warm-ink)] mb-2">Verify Payment</h3>
           <div className="flex gap-2">
             <input
               type="text"
@@ -245,7 +245,7 @@ export default function PaymentTestPage() {
             <button
               onClick={verifyPayment}
               disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="px-4 py-2 bg-green-600 text-[var(--warm-ink)] text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               Verify
             </button>
@@ -254,7 +254,7 @@ export default function PaymentTestPage() {
             <button
               onClick={() => setPolling(!polling)}
               className={`px-3 py-1 text-xs rounded ${
-                polling ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'
+                polling ? 'bg-[var(--dusty-rose)]/20 text-red-700' : 'bg-slate-200 text-[var(--soft-stone)]'
               }`}
             >
               {polling ? '⏸ Stop Polling' : '▶ Start Polling'}
@@ -267,8 +267,8 @@ export default function PaymentTestPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-2">Payment Rail Test</h1>
-      <p className="text-slate-600 mb-6">
+      <h1 className="text-3xl font-bold text-[var(--warm-ink)] mb-2">Payment Rail Test</h1>
+      <p className="text-[var(--soft-stone)] mb-6">
         Test crypto payment rails: USDC on Solana, BTCPay (Bitcoin/Lightning), and Manual confirmation.
       </p>
 
@@ -290,7 +290,7 @@ export default function PaymentTestPage() {
             <div className="text-sm font-medium">
               {m === 'usdc' ? 'USDC (Solana)' : m === 'btcpay' ? 'BTCPay' : 'Manual'}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-[var(--soft-stone)] mt-1">
               {m === 'usdc' ? 'Fast, cheap, programmable' : m === 'btcpay' ? 'Bitcoin + Lightning' : 'Cash, bank, etc.'}
             </div>
           </button>
@@ -300,7 +300,7 @@ export default function PaymentTestPage() {
       {/* Amount Input */}
       <div className="flex gap-3 mb-6">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+          <label className="block text-sm font-medium text-[var(--soft-stone)] mb-1">Amount</label>
           <input
             type="number"
             min="0.01"
@@ -311,7 +311,7 @@ export default function PaymentTestPage() {
           />
         </div>
         <div className="w-32">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
+          <label className="block text-sm font-medium text-[var(--soft-stone)] mb-1">Currency</label>
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
@@ -329,7 +329,7 @@ export default function PaymentTestPage() {
       <button
         onClick={createPayment}
         disabled={loading || !amount}
-        className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        className="w-full py-3 bg-blue-600 text-[var(--warm-ink)] font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
         {loading ? 'Creating...' : `Create ${method.toUpperCase()} Payment Request`}
       </button>

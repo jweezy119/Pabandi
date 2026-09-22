@@ -65,7 +65,7 @@ export default function DeveloperPortalPage() {
             </span>
           </h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-white/80">
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-ink)]/80">
             One score. Every platform. Real behavior, not self-reported claims.
           </p>
 
@@ -80,7 +80,7 @@ export default function DeveloperPortalPage() {
 
       <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
         <Stack>
-          <p className="text-lg leading-relaxed text-white/90">
+          <p className="text-lg leading-relaxed text-[var(--warm-ink)]/90">
             Pabandi is the WhatsApp-native commerce escrow layer with a portable reliability API.
             Integrate escrow-backed bookings, trust verification, and checkout into live selling,
             marketplaces, rentals, clinic bookings, and hospitality—without rebuilding trust from
@@ -88,16 +88,16 @@ export default function DeveloperPortalPage() {
           </p>
 
           <Callout accent="#334155">
-            <p className="text-base leading-relaxed text-white/80">
-              <strong className="text-white">The problem today:</strong> Manual deposits, late
+            <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
+              <strong className="text-[var(--warm-ink)]">The problem today:</strong> Manual deposits, late
               cash, and informal trust still dominate local commerce. WhatsApp is where the
               conversation happens—commitment, protection, and verification should happen there too.
             </p>
           </Callout>
 
           <Callout accent="#818cf8">
-            <p className="text-base leading-relaxed text-white/80">
-              <strong className="text-white">The Pabandi answer:</strong> The Passport is the
+            <p className="text-base leading-relaxed text-[var(--warm-ink)]/80">
+              <strong className="text-[var(--warm-ink)]">The Pabandi answer:</strong> The Passport is the
               portable trust ID; the escrow layer is the guarantee. Buyers and sellers transact on
               WhatsApp with verified commitment, deposit protection, and $PAB rewards.
             </p>
@@ -138,29 +138,29 @@ export default function DeveloperPortalPage() {
         ].map((item) => (
           <Surface key={item.title}>
             <div className="text-3xl">{item.icon}</div>
-            <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-            <p className="text-sm leading-relaxed text-white/80">{item.desc}</p>
+            <h3 className="text-lg font-semibold text-[var(--warm-ink)]">{item.title}</h3>
+            <p className="text-sm leading-relaxed text-[var(--warm-ink)]/80">{item.desc}</p>
           </Surface>
         ))}
       </Section>
 
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-white">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
             Live-Sale Integration Example
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-white/80">
+          <p className="mx-auto mt-3 max-w-2xl text-center text-[var(--warm-ink)]/80">
             Integrate checkout into live selling by calling the embed endpoint from your seller backend.
-            For multi-region or mirror deployments, set <code className="rounded-md bg-white/10 px-1.5 py-0.5 text-indigo-200">window.PABANDI_API_BASE</code> before loading the embed,
-            or use <code className="rounded-md bg-white/10 px-1.5 py-0.5 text-indigo-200">PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
+            For multi-region or mirror deployments, set <code className="rounded-md bg-[var(--warm-sand)] px-1.5 py-0.5 text-[var(--terracotta)]">window.PABANDI_API_BASE</code> before loading the embed,
+            or use <code className="rounded-md bg-[var(--warm-sand)] px-1.5 py-0.5 text-[var(--terracotta)]">PabandiEmbedConfig.setApiBase(...)</code> to redirect requests
             without changing the copied snippet.
           </p>
         </div>
 
         <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-            <span className="text-xs font-semibold text-white/70">checkout.js</span>
-            <button onClick={handleCopy} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white/80 hover:bg-white/10 transition-colors">
+            <span className="text-xs font-semibold text-[var(--warm-ink)]/70">checkout.js</span>
+            <button onClick={handleCopy} className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-1 text-xs font-bold text-[var(--warm-ink)]/80 hover:bg-[var(--warm-sand)] transition-colors">
               {copied ? '✓ Copied' : 'Copy'}
             </button>
           </div>

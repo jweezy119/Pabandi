@@ -41,16 +41,16 @@ export const BrowseHotelsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-purple-900/20" />
         <div className="relative max-w-4xl mx-auto px-4 py-16 text-center">
           <Badge tone="info" className="mb-4">🏨 Hotel Search</Badge>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-100 font-headline">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-[var(--warm-ink)] font-headline">
             Find your stay
           </h1>
-          <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-[var(--soft-stone)] max-w-2xl mx-auto">
             Search hotels on Booking.com with real prices, reviews, and instant booking.
           </p>
         </div>
@@ -61,48 +61,48 @@ export const BrowseHotelsPage: React.FC = () => {
         <Surface className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-sm font-semibold text-slate-300 mb-2 block">Destination</label>
+              <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Destination</label>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="City, region, or hotel name"
-                className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
+                className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-300 mb-2 block">Check-in</label>
+              <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Check-in</label>
               <input
                 value={checkin}
                 onChange={(e) => setCheckin(e.target.value)}
                 type="date"
-                className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
+                className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-slate-300 mb-2 block">Check-out</label>
+              <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Check-out</label>
               <input
                 value={checkout}
                 onChange={(e) => setCheckout(e.target.value)}
                 type="date"
-                className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
+                className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
               />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-sm font-semibold text-slate-300 mb-2 block">Adults</label>
-                <select value={adults} onChange={(e) => setAdults(Number(e.target.value))} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
+                <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Adults</label>
+                <select value={adults} onChange={(e) => setAdults(Number(e.target.value))} className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
                   {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-300 mb-2 block">Children</label>
-                <select value={children} onChange={(e) => setChildren(Number(e.target.value))} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
+                <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Children</label>
+                <select value={children} onChange={(e) => setChildren(Number(e.target.value))} className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
                   {[0,1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-sm font-semibold text-slate-300 mb-2 block">Rooms</label>
-                <select value={rooms} onChange={(e) => setRooms(Number(e.target.value))} className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
+                <label className="text-sm font-semibold text-[var(--soft-stone)] mb-2 block">Rooms</label>
+                <select value={rooms} onChange={(e) => setRooms(Number(e.target.value))} className="w-full bg-[var(--warm-sand)]-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base">
                   {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
@@ -115,7 +115,7 @@ export const BrowseHotelsPage: React.FC = () => {
 
         {/* Popular Cities */}
         <div>
-          <h3 className="text-lg font-bold text-slate-100 mb-4">Popular destinations</h3>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Popular destinations</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {popularCities.map((c) => (
               <button
@@ -124,11 +124,11 @@ export const BrowseHotelsPage: React.FC = () => {
                   setCity(c.name);
                   window.open(`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(c.name)}&checkin=${checkin}&checkout=${checkout}&group_adults=${adults}&group_children=${children}&no_rooms=${rooms}&selected_currency=USD`, '_blank');
                 }}
-                className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-indigo-400/30 transition-all text-left"
+                className="p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] hover:bg-[var(--warm-sand)] hover:border-[var(--clay)]/30 transition-all text-left"
               >
                 <div className="text-2xl mb-1">{c.emoji}</div>
-                <div className="font-semibold text-slate-100">{c.name}</div>
-                <div className="text-xs mt-1" style={{ color: tokens.color.textDim }}>{c.desc}</div>
+                <div className="font-semibold text-[var(--warm-ink)]">{c.name}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--soft-stone)" }}>{c.desc}</div>
               </button>
             ))}
           </div>
@@ -136,29 +136,29 @@ export const BrowseHotelsPage: React.FC = () => {
 
         {/* How it works */}
         <div className="mt-12">
-          <h3 className="text-lg font-bold text-slate-100 mb-4">How it works</h3>
+          <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">How it works</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Surface className="text-center">
               <div className="text-3xl mb-2">🔍</div>
-              <h4 className="font-bold text-slate-100">Search</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Enter your destination and dates</p>
+              <h4 className="font-bold text-[var(--warm-ink)]">Search</h4>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Enter your destination and dates</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">🏨</div>
-              <h4 className="font-bold text-slate-100">Compare</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Browse hotels with real prices & reviews</p>
+              <h4 className="font-bold text-[var(--warm-ink)]">Compare</h4>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Browse hotels with real prices & reviews</p>
             </Surface>
             <Surface className="text-center">
               <div className="text-3xl mb-2">✅</div>
-              <h4 className="font-bold text-slate-100">Book</h4>
-              <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Secure your stay on Booking.com</p>
+              <h4 className="font-bold text-[var(--warm-ink)]">Book</h4>
+              <p className="text-sm mt-1" style={{ color: 'var(--soft-stone)" }}>Secure your stay on Booking.com</p>
             </Surface>
           </div>
         </div>
 
         {/* Trust note */}
-        <div className="mt-8 p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-          <p className="text-sm" style={{ color: tokens.color.textDim }}>
+        <div className="mt-8 p-4 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] text-center">
+          <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>
             🔒 You'll be redirected to Booking.com to complete your booking securely.
             Pabandi verifies every booking made through our platform.
           </p>

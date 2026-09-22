@@ -58,13 +58,13 @@ export const ListingDetailPage: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading...</div>;
-  if (!listing) return <div className="min-h-screen flex items-center justify-center text-slate-400">Listing not found</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-[var(--soft-stone)]">Loading...</div>;
+  if (!listing) return <div className="min-h-screen flex items-center justify-center text-[var(--soft-stone)]">Listing not found</div>;
 
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
       <div className="max-w-3xl mx-auto px-4 py-6">
-        <button onClick={() => navigate(-1)} className="text-sm text-slate-400 hover:text-white mb-4">← Back</button>
+        <button onClick={() => navigate(-1)} className="text-sm text-[var(--soft-stone)] hover:text-[var(--warm-ink)] mb-4">← Back</button>
 
         <Surface className="p-4 md:p-6">
           {listing.imageUrls?.[0] && (
@@ -72,13 +72,13 @@ export const ListingDetailPage: React.FC = () => {
           )}
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-100">{listing.title}</h1>
-              <p className="text-sm text-slate-400 mt-1">{listing.city}{listing.state ? `, ${listing.state}` : ''}</p>
+              <h1 className="text-xl md:text-2xl font-bold text-[var(--warm-ink)]">{listing.title}</h1>
+              <p className="text-sm text-[var(--soft-stone)] mt-1">{listing.city}{listing.state ? `, ${listing.state}` : ''}</p>
             </div>
             <Badge tone="success">{listing.status}</Badge>
           </div>
 
-          <div className="text-3xl font-black text-emerald-300 mb-4">${listing.price} <span className="text-sm font-normal text-slate-400">{listing.currency}</span></div>
+          <div className="text-3xl font-black text-[var(--sage)] mb-4">${listing.price} <span className="text-sm font-normal text-[var(--soft-stone)]">{listing.currency}</span></div>
 
           <div className="flex gap-2 mb-4">
             <Badge tone="info">{listing.condition}</Badge>
@@ -86,15 +86,15 @@ export const ListingDetailPage: React.FC = () => {
             <Badge tone="info">{listing.type}</Badge>
           </div>
 
-          {listing.description && <p className="text-sm text-slate-300 mb-4">{listing.description}</p>}
+          {listing.description && <p className="text-sm text-[var(--warm-ink)] mb-4">{listing.description}</p>}
 
-          <div className="border-t border-white/10 pt-4 mb-4">
-            <h3 className="text-sm font-bold text-slate-100 mb-2">Seller</h3>
+          <div className="border-t border-[var(--soft-stone)]/30 pt-4 mb-4">
+            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-2">Seller</h3>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-lg">👤</div>
+              <div className="w-10 h-10 rounded-full bg-[var(--clay)]/20 flex items-center justify-center text-lg">👤</div>
               <div>
-                <div className="font-semibold text-slate-100 text-sm">{listing.sellerName || listing.sellerEmail}</div>
-                <div className="text-xs text-slate-400">Trust Score: {listing.seller?.trustScore || 'N/A'}</div>
+                <div className="font-semibold text-[var(--warm-ink)] text-sm">{listing.sellerName || listing.sellerEmail}</div>
+                <div className="text-xs text-[var(--soft-stone)]">Trust Score: {listing.seller?.trustScore || 'N/A'}</div>
               </div>
             </div>
           </div>
@@ -105,11 +105,11 @@ export const ListingDetailPage: React.FC = () => {
           </div>
 
           {showBookForm && (
-            <div className="mt-4 p-3 rounded-xl bg-white/5 space-y-3">
-              <input value={bookForm.buyerEmail} onChange={e => setBookForm({ ...bookForm, buyerEmail: e.target.value })} placeholder="Your email *" type="email" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-              <input value={bookForm.buyerName} onChange={e => setBookForm({ ...bookForm, buyerName: e.target.value })} placeholder="Your name" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-              <input value={bookForm.scheduledAt} onChange={e => setBookForm({ ...bookForm, scheduledAt: e.target.value })} type="datetime-local" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-              <textarea value={bookForm.notes} onChange={e => setBookForm({ ...bookForm, notes: e.target.value })} placeholder="Notes" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" rows={2} />
+            <div className="mt-4 p-3 rounded-xl bg-[var(--cream)] space-y-3">
+              <input value={bookForm.buyerEmail} onChange={e => setBookForm({ ...bookForm, buyerEmail: e.target.value })} placeholder="Your email *" type="email" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+              <input value={bookForm.buyerName} onChange={e => setBookForm({ ...bookForm, buyerName: e.target.value })} placeholder="Your name" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+              <input value={bookForm.scheduledAt} onChange={e => setBookForm({ ...bookForm, scheduledAt: e.target.value })} type="datetime-local" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+              <textarea value={bookForm.notes} onChange={e => setBookForm({ ...bookForm, notes: e.target.value })} placeholder="Notes" className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" rows={2} />
               <Button onClick={handleBook} disabled={booking} className="w-full">{booking ? 'Booking...' : 'Confirm Booking'}</Button>
             </div>
           )}

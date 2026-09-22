@@ -84,9 +84,9 @@ export const AgentControlPanel: React.FC = () => {
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
-      CRITICAL: 'text-red-400 bg-red-400/10',
-      HIGH: 'text-orange-400 bg-orange-400/10',
-      MEDIUM: 'text-yellow-400 bg-yellow-400/10',
+      CRITICAL: 'text-[var(--terracotta)] bg-[var(--terracotta)]/10',
+      HIGH: 'text-[var(--muted-ochre)] bg-[var(--muted-ochre)]/10',
+      MEDIUM: 'text-[var(--muted-ochre)] bg-[var(--muted-ochre)]/10',
       LOW: 'text-green-400 bg-green-400/10',
     };
     return colors[priority] || 'text-gray-400 bg-gray-400/10';
@@ -103,18 +103,18 @@ export const AgentControlPanel: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-[var(--warm-sand)] text-[var(--warm-ink)]">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+      <header className="bg-[var(--warm-sand)] border-b border-[var(--soft-stone)] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">A</div>
+              <div className="w-8 h-8 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[var(--warm-ink)] font-bold text-sm">A</div>
               <span className="text-lg font-bold">Agent Control Panel</span>
               <span className="text-xs text-gray-500">by Pabandi</span>
             </div>
           </div>
-          <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-white">
+          <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-[var(--warm-ink)]">
             ← Back to Pabandi
           </button>
         </div>
@@ -130,7 +130,7 @@ export const AgentControlPanel: React.FC = () => {
               className={`p-4 rounded-lg border transition-all ${
                 activeAgent === agent.id
                   ? `border-${agent.color}-500 bg-${agent.color}-500/10`
-                  : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                  : 'border-[var(--soft-stone)] bg-[var(--warm-sand)] hover:border-[var(--soft-stone)]'
               }`}
             >
               <div className="text-3xl mb-2">{agent.icon}</div>
@@ -141,14 +141,14 @@ export const AgentControlPanel: React.FC = () => {
         </div>
 
         {/* Controls */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
+        <div className="bg-[var(--warm-sand)] rounded-lg p-6 border border-[var(--soft-stone)] mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="text-sm text-gray-400 mb-1 block">Target Venue</label>
               <select
                 value={selectedVenue}
                 onChange={(e) => setSelectedVenue(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-sm"
+                className="w-full px-3 py-2 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded text-sm"
               >
                 <option value="">All Venues</option>
                 {venues.map((v) => (
@@ -174,11 +174,11 @@ export const AgentControlPanel: React.FC = () => {
         </div>
 
         {/* Agent Capabilities */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
+        <div className="bg-[var(--warm-sand)] rounded-lg p-6 border border-[var(--soft-stone)] mb-8">
           <h3 className="font-bold mb-4">{AGENTS.find(a => a.id === activeAgent)?.name} Capabilities</h3>
           <div className="flex flex-wrap gap-2">
             {AGENT_ACTIONS[activeAgent]?.map((action) => (
-              <span key={action} className="px-3 py-1 bg-gray-900 border border-gray-700 rounded-full text-sm text-gray-300">
+              <span key={action} className="px-3 py-1 bg-[var(--warm-sand)] border border-[var(--soft-stone)] rounded-full text-sm text-gray-300">
                 {action.replace(/_/g, ' ')}
               </span>
             ))}
@@ -189,12 +189,12 @@ export const AgentControlPanel: React.FC = () => {
         <div className="space-y-4">
           <h3 className="font-bold">Recent Executions</h3>
           {executions.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center text-gray-400">
+            <div className="bg-[var(--warm-sand)] rounded-lg p-8 border border-[var(--soft-stone)] text-center text-gray-400">
               No executions yet. Run an agent to see results.
             </div>
           ) : (
             executions.map((exec) => (
-              <div key={exec.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div key={exec.id} className="bg-[var(--warm-sand)] rounded-lg p-4 border border-[var(--soft-stone)]">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(exec.priority)}`}>
@@ -208,7 +208,7 @@ export const AgentControlPanel: React.FC = () => {
                 </div>
                 <p className="text-sm text-gray-400">{exec.reason}</p>
                 {exec.result && (
-                  <div className="mt-2 p-2 bg-gray-900 rounded text-xs text-gray-500 font-mono">
+                  <div className="mt-2 p-2 bg-[var(--warm-sand)] rounded text-xs text-gray-500 font-mono">
                     {JSON.stringify(exec.result, null, 2)}
                   </div>
                 )}

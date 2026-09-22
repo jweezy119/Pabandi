@@ -9,9 +9,9 @@ import { useAuthStore } from '../store/authStore';
 type BadgeType = 'genesis-partner' | 'early-adopter' | 'trust-flux';
 
 const BADGE_META: Record<BadgeType, { label: string; price: number; color: string; icon: string; desc: string }> = {
-  'genesis-partner': { label: 'Genesis Partner', price: 50, color: 'from-amber-500 to-orange-600', icon: '👑', desc: 'Founding member badge — highest trust weight' },
+  'genesis-partner': { label: 'Genesis Partner', price: 50, color: 'from-[var(--muted-ochre)] to-[var(--muted-ochre)]', icon: '👑', desc: 'Founding member badge — highest trust weight' },
   'early-adopter': { label: 'Early Adopter', price: 20, color: 'from-blue-500 to-indigo-600', icon: '⚡', desc: 'Early ecosystem participant — priority access' },
-  'trust-flux': { label: 'Trust Flux', price: 10, color: 'from-emerald-500 to-teal-600', icon: '🔄', desc: 'Trust signal badge — boosted visibility' },
+  'trust-flux': { label: 'Trust Flux', price: 10, color: 'from-[var(--sage)] to-[var(--sage)]', icon: '🔄', desc: 'Trust signal badge — boosted visibility' },
 };
 
 const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
@@ -25,13 +25,13 @@ function ProfileSkeletonCard() {
   return (
     <GlassCard hover={false} lift={false}>
       <div className="flex items-start gap-3 p-4">
-        <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-white/10" />
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-[var(--warm-sand)]" />
         <div className="min-w-0 flex-1 space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-white/10" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-white/10" />
+          <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--warm-sand)]" />
+          <div className="h-3 w-1/2 animate-pulse rounded bg-[var(--warm-sand)]" />
           <div className="mt-2 flex gap-1">
-            <div className="h-6 w-20 animate-pulse rounded-full bg-white/10" />
-            <div className="h-6 w-24 animate-pulse rounded-full bg-white/10" />
+            <div className="h-6 w-20 animate-pulse rounded-full bg-[var(--warm-sand)]" />
+            <div className="h-6 w-24 animate-pulse rounded-full bg-[var(--warm-sand)]" />
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function FreelancePage() {
             <button
               type="button"
               onClick={() => setProfileCategory('all')}
-              className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === 'all' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'}`}
+              className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === 'all' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
             >
               All
             </button>
@@ -217,7 +217,7 @@ export default function FreelancePage() {
                 key={key}
                 type="button"
                 onClick={() => setProfileCategory(key)}
-                className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === key ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-white hover:bg-white/10'}`}
+                className={`whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${profileCategory === key ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
               >
                 {emoji} {label}
               </button>
@@ -263,17 +263,17 @@ export default function FreelancePage() {
             {!isReady && Array.from({ length: 6 }).map((_, idx) => <ProfileSkeletonCard key={`skeleton-${idx}`} />)}
             {isReady && filteredProfiles.map((p, idx) => {
               const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
-              const bandColor = p.trustBand === 'A' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10' : 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10';
+              const bandColor = p.trustBand === 'A' ? 'border-emerald-500/40 text-[var(--sage)] bg-[var(--sage)]/10' : 'border-indigo-500/40 text-[var(--clay)] bg-[var(--clay)]/10';
               return (
                 <GlassCard key={p.id} className={`p-5 anim-fade-up card-lift ${idx < 6 ? 'anim-delay-' + Math.min(idx, 3) : ''}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-black shadow-lg bg-gradient-to-br from-[var(--clay)] to-purple-600 text-[var(--warm-ink)]">
                         {initials}
                       </div>
                       <div>
-                        <h3 className="font-headline font-bold text-base text-white truncate max-w-[180px]">{`${p.firstName} ${p.lastName}`}</h3>
-                        <p className="text-xs text-slate-400 flex items-center gap-1">
+                        <h3 className="font-headline font-bold text-base text-[var(--warm-ink)] truncate max-w-[180px]">{`${p.firstName} ${p.lastName}`}</h3>
+                        <p className="text-xs text-[var(--soft-stone)] flex items-center gap-1">
                           📍 {p.location}
                         </p>
                       </div>
@@ -283,28 +283,28 @@ export default function FreelancePage() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-300 font-medium line-clamp-2 mb-3 leading-relaxed">
+                  <p className="text-xs text-[var(--warm-ink)] font-medium line-clamp-2 mb-3 leading-relaxed">
                     {p.headline}
                   </p>
 
                   {/* Skills tags */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {p.skills.slice(0, 4).map((skill: string) => (
-                      <span key={skill} className="bg-white/5 border border-white/5 text-slate-300 px-2 py-0.5 rounded-md text-[11px] font-medium">
+                      <span key={skill} className="bg-[var(--cream)] border border-[var(--soft-stone)]/30 text-[var(--warm-ink)] px-2 py-0.5 rounded-md text-[11px] font-medium">
                         {skill}
                       </span>
                     ))}
                   </div>
 
                   {/* Footer with rate & action */}
-                  <div className="flex items-center justify-between pt-3 border-t border-white/5 mt-auto">
+                  <div className="flex items-center justify-between pt-3 border-t border-[var(--soft-stone)]/30 mt-auto">
                     <div>
-                      <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">Rate</span>
-                      <p className="text-lg font-black text-white">${p.rate}<span className="text-xs font-normal text-slate-400">/hr</span></p>
+                      <span className="text-xs text-[var(--soft-stone)] uppercase font-bold tracking-wider">Rate</span>
+                      <p className="text-lg font-black text-[var(--warm-ink)]">${p.rate}<span className="text-xs font-normal text-[var(--soft-stone)]">/hr</span></p>
                     </div>
                     <Link
                       to={`/business/${p.id}`}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-headline text-xs font-bold shadow-md hover:opacity-90 transition-opacity"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] text-[var(--warm-ink)] font-headline text-xs font-bold shadow-md hover:opacity-90 transition-opacity"
                     >
                       Book Now
                     </Link>

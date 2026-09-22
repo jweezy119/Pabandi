@@ -26,18 +26,18 @@ export const SafeMeetPage: React.FC = () => {
         <div className="max-w-2xl mx-auto px-4 py-8">
           <Surface className="text-center">
             <div className="text-5xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-slate-100 mb-2">SafeMeet Scheduled!</h2>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] mb-2">SafeMeet Scheduled!</h2>
             <p className="text-sm" style={{ color: tokens.color.textDim }}>Your exchange is secured at a verified safe location.</p>
-            <div className="mt-6 p-4 rounded-xl bg-white/5 text-left">
-              <div className="font-bold text-slate-100 mb-2">{spot.name}</div>
+            <div className="mt-6 p-4 rounded-xl bg-[var(--warm-sand)] text-left">
+              <div className="font-bold text-[var(--warm-ink)] mb-2">{spot.name}</div>
               <div className="text-sm space-y-1" style={{ color: tokens.color.textDim }}>
                 <div>📍 {spot.address}</div>
                 <div>🏷️ {spot.type}</div>
                 <div>📅 {new Date(date).toLocaleString()}</div>
               </div>
             </div>
-            <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-400/20">
-              <p className="text-xs text-emerald-300">🔒 Both parties will receive a reminder 1 hour before the meetup.</p>
+            <div className="mt-4 p-3 rounded-xl bg-[var(--sage)]/10 border border-[var(--sage)]/30">
+              <p className="text-xs text-[var(--sage)]">🔒 Both parties will receive a reminder 1 hour before the meetup.</p>
             </div>
           </Surface>
         </div>
@@ -50,25 +50,25 @@ export const SafeMeetPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-4">📍 SafeMeet</Badge>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-100 font-headline">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[var(--warm-ink)] font-headline">
             Schedule a SafeMeet
           </h1>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
+          <p className="mt-3 text-[var(--soft-stone)] max-w-2xl mx-auto">
             Meet at verified safe locations — police stations, bank lobbies, and mall security desks.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-slate-100">Select a Location</h3>
+            <h3 className="text-lg font-bold text-[var(--warm-ink)]">Select a Location</h3>
             {SAFE_MEET_SPOTS.map((spot, i) => (
               <button
                 key={i}
                 onClick={() => setSelectedSpot(i)}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${selectedSpot === i ? 'bg-indigo-500/10 border-indigo-400/30' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                className={`w-full text-left p-4 rounded-xl border transition-all ${selectedSpot === i ? 'bg-[var(--clay)]/10 border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)]'}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-100">{spot.name}</div>
+                  <div className="font-semibold text-[var(--warm-ink)]">{spot.name}</div>
                   <span className="text-xs" style={{ color: tokens.color.textDim }}>{spot.distance}</span>
                 </div>
                 <div className="text-sm mt-1" style={{ color: tokens.color.textDim }}>{spot.address}</div>
@@ -78,13 +78,13 @@ export const SafeMeetPage: React.FC = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-100 mb-4">Pick a Date & Time</h3>
+            <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Pick a Date & Time</h3>
             <Surface>
               <input
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 type="datetime-local"
-                className="w-full bg-surface-container-highest/50 border border-outline-variant/40 text-on-surface rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
+                className="w-full bg-[var(--warm-sand)]est/50 border border-[rgba(191,179,163,0.4)] text-[var(--warm-ink)] rounded-xl focus:ring-2 focus:ring-primary px-4 py-3 outline-none font-body text-base"
               />
               <Button onClick={handleSchedule} disabled={selectedSpot === null || !date} className="w-full mt-4">
                 📅 Schedule SafeMeet
@@ -92,7 +92,7 @@ export const SafeMeetPage: React.FC = () => {
             </Surface>
 
             <Surface className="mt-4">
-              <h4 className="font-bold text-slate-100 mb-2">Why SafeMeet?</h4>
+              <h4 className="font-bold text-[var(--warm-ink)] mb-2">Why SafeMeet?</h4>
               <div className="space-y-2 text-sm" style={{ color: tokens.color.textDim }}>
                 <div>✅ Verified safe locations with security</div>
                 <div>✅ Both parties notified of the meetup</div>

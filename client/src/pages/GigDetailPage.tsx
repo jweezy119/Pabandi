@@ -52,11 +52,11 @@ export default function GigDetailPage() {
   if (!gig) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0f172a' }}>
-        <div className="bg-slate-800/80 border border-white/10 rounded-3xl p-10 text-center max-w-md">
+        <div className="bg-[var(--warm-sand)]/80 border border-[var(--soft-stone)]/30 rounded-3xl p-10 text-center max-w-md">
           <p className="text-3xl mb-3">📋</p>
-          <h2 className="text-xl font-bold text-white mb-2">Gig Not Found</h2>
-          <p className="text-slate-400 mb-6">This project may have been completed or removed.</p>
-          <Link to="/gigs" className="text-indigo-400 font-bold hover:text-indigo-300">← Back to Gig Board</Link>
+          <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Gig Not Found</h2>
+          <p className="text-[var(--soft-stone)] mb-6">This project may have been completed or removed.</p>
+          <Link to="/gigs" className="text-[var(--clay)] font-bold hover:text-[var(--terracotta)]">← Back to Gig Board</Link>
         </div>
       </div>
     );
@@ -68,75 +68,75 @@ export default function GigDetailPage() {
     <div className="min-h-screen pb-24" style={{ background: '#0f172a', color: tokens.color.text }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-28">
         {/* Breadcrumb */}
-        <Link to="/gigs" className="text-sm text-indigo-400 font-bold hover:text-indigo-300 mb-6 inline-block">← Gig Board</Link>
+        <Link to="/gigs" className="text-sm text-[var(--clay)] font-bold hover:text-[var(--terracotta)] mb-6 inline-block">← Gig Board</Link>
 
         {/* Header */}
-        <div className="bg-slate-800/60 backdrop-blur border border-white/10 rounded-3xl p-8 mb-8">
+        <div className="bg-[var(--warm-sand)]/60 backdrop-blur border border-[var(--soft-stone)]/30 rounded-3xl p-8 mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-[var(--clay)]/20 text-[var(--clay)] border border-indigo-500/30">
               {gig.category}
             </span>
-            <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${gig.status === 'OPEN' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : gig.status === 'IN_PROGRESS' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'}`}>
+            <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${gig.status === 'OPEN' ? 'bg-[var(--sage)]/20 text-[var(--sage)] border border-[var(--sage)]/30' : gig.status === 'IN_PROGRESS' ? 'bg-[var(--muted-ochre)]/20 text-[var(--muted-ochre)] border border-amber-500/30' : 'bg-slate-500/20 text-[var(--soft-stone)] border border-slate-500/30'}`}>
               {gig.status}
             </span>
           </div>
-          <h1 className="text-3xl font-black text-white mb-3">{gig.title}</h1>
-          <p className="text-slate-300 leading-relaxed mb-6">{gig.description}</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] mb-3">{gig.title}</h1>
+          <p className="text-[var(--warm-ink)] leading-relaxed mb-6">{gig.description}</p>
 
           {/* Stats row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Budget</p>
-              <p className="text-2xl font-black text-white">${(gig.budgetUsd || 0).toLocaleString()}</p>
+            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
+              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Budget</p>
+              <p className="text-2xl font-black text-[var(--warm-ink)]">${(gig.budgetUsd || 0).toLocaleString()}</p>
             </div>
-            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Est. Hours</p>
-              <p className="text-2xl font-black text-white">{gig.estimatedHours || '—'}</p>
+            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
+              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Est. Hours</p>
+              <p className="text-2xl font-black text-[var(--warm-ink)]">{gig.estimatedHours || '—'}</p>
             </div>
-            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Demand Growth</p>
-              <p className="text-2xl font-black text-emerald-400">+{gig.demandGrowthPct || 0}%</p>
+            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
+              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Demand Growth</p>
+              <p className="text-2xl font-black text-[var(--sage)]">+{gig.demandGrowthPct || 0}%</p>
             </div>
-            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Escrow</p>
-              <p className="text-2xl font-black text-indigo-400">🛡️</p>
+            <div className="bg-[var(--cream)] rounded-xl p-4 border border-[var(--soft-stone)]/30">
+              <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-wider mb-1">Escrow</p>
+              <p className="text-2xl font-black text-[var(--clay)]">🛡️</p>
             </div>
           </div>
 
           {/* Skills */}
           <div className="mt-6">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Required Skills</p>
+            <p className="text-xs font-bold text-[var(--soft-stone)] uppercase tracking-wider mb-2">Required Skills</p>
             <div className="flex flex-wrap gap-2">
               {(gig.requiredSkills || []).map((s: string) => (
-                <span key={s} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 px-3 py-1 rounded-lg text-sm font-medium">{s}</span>
+                <span key={s} className="bg-[var(--clay)]/10 border border-indigo-500/20 text-[var(--terracotta)] px-3 py-1 rounded-lg text-sm font-medium">{s}</span>
               ))}
             </div>
           </div>
 
           {/* Bid CTA */}
           {gig.status === 'OPEN' && (
-            <div className="mt-8 pt-6 border-t border-white/5">
+            <div className="mt-8 pt-6 border-t border-[var(--soft-stone)]/30">
               {isAuthenticated ? (
                 bidOpen ? (
                   <form onSubmit={handleBid} className="flex items-end gap-3">
                     <div className="flex-1">
-                      <label className="block text-xs font-bold text-slate-400 mb-1">Your Quote (USD)</label>
+                      <label className="block text-xs font-bold text-[var(--soft-stone)] mb-1">Your Quote (USD)</label>
                       <input type="number" value={bidQuote} onChange={e => setBidQuote(e.target.value)}
-                        placeholder={String(gig.budgetUsd)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500" />
+                        placeholder={String(gig.budgetUsd)} className="w-full bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-indigo-500" />
                     </div>
-                    <button type="submit" disabled={bidSubmitting} className="bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-indigo-400 transition-colors disabled:opacity-50">
+                    <button type="submit" disabled={bidSubmitting} className="bg-[var(--clay)] text-[var(--warm-ink)] font-bold px-6 py-3 rounded-xl hover:bg-indigo-400 transition-colors disabled:opacity-50">
                       {bidSubmitting ? 'Submitting...' : 'Submit Bid'}
                     </button>
-                    <button type="button" onClick={() => setBidOpen(false)} className="text-slate-400 font-bold px-4 py-3">Cancel</button>
+                    <button type="button" onClick={() => setBidOpen(false)} className="text-[var(--soft-stone)] font-bold px-4 py-3">Cancel</button>
                   </form>
                 ) : (
-                  <button onClick={() => setBidOpen(true)} className="w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-indigo-500/20">
+                  <button onClick={() => setBidOpen(true)} className="w-full sm:w-auto bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] text-[var(--warm-ink)] font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-[var(--shadow-soft)]">
                     Place Your Bid →
                   </button>
                 )
               ) : (
-                <p className="text-slate-400 text-sm">
-                  <a href="/api/v1/auth/google?role=freelancer" className="text-indigo-400 font-bold hover:text-indigo-300">Sign in</a> to bid on this project
+                <p className="text-[var(--soft-stone)] text-sm">
+                  <a href="/api/v1/auth/google?role=freelancer" className="text-[var(--clay)] font-bold hover:text-[var(--terracotta)]">Sign in</a> to bid on this project
                 </p>
               )}
             </div>
@@ -145,19 +145,19 @@ export default function GigDetailPage() {
 
         {/* Milestones */}
         {milestones.length > 0 && (
-          <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-6 mb-8">
-            <h2 className="text-lg font-bold text-white mb-4">📊 Milestones</h2>
+          <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6 mb-8">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">📊 Milestones</h2>
             <div className="space-y-3">
               {milestones.map((m: any, i: number) => (
                 <div key={i} className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-sm">{i + 1}</div>
+                  <div className="w-8 h-8 rounded-full bg-[var(--clay)]/20 border border-indigo-500/30 flex items-center justify-center text-[var(--clay)] font-bold text-sm">{i + 1}</div>
                   <div className="flex-1">
-                    <p className="text-white font-medium">{m.name}</p>
-                    <div className="mt-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full" style={{ width: `${m.pct}%` }} />
+                    <p className="text-[var(--warm-ink)] font-medium">{m.name}</p>
+                    <div className="mt-1 h-1.5 bg-[var(--cream)] rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[var(--clay)] to-[var(--sky-wash)] rounded-full" style={{ width: `${m.pct}%` }} />
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-slate-400">{m.pct}%</span>
+                  <span className="text-sm font-bold text-[var(--soft-stone)]">{m.pct}%</span>
                 </div>
               ))}
             </div>
@@ -166,18 +166,18 @@ export default function GigDetailPage() {
 
         {/* Bid Ranking */}
         {ranking.length > 0 && (
-          <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-white mb-4">🏆 Bid Ranking (Capability-Weighted)</h2>
+          <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">🏆 Bid Ranking (Capability-Weighted)</h2>
             <div className="space-y-2">
               {ranking.map((r: any, i: number) => (
-                <div key={r.agentId} className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-white/5 border border-white/5'}`}>
-                  <span className="text-lg font-black text-slate-400 w-6">{i + 1}</span>
+                <div key={r.agentId} className={`flex items-center gap-4 p-3 rounded-xl ${i === 0 ? 'bg-[var(--sage)]/10 border border-[var(--sage)]/20' : 'bg-[var(--cream)] border border-[var(--soft-stone)]/30'}`}>
+                  <span className="text-lg font-black text-[var(--soft-stone)] w-6">{i + 1}</span>
                   <div className="flex-1">
-                    <p className="text-white font-medium text-sm">Agent {r.agentId.slice(0, 8)}...</p>
-                    <p className="text-[10px] text-slate-400">Trust: {r.trust} · Value: {r.value}</p>
+                    <p className="text-[var(--warm-ink)] font-medium text-sm">Agent {r.agentId.slice(0, 8)}...</p>
+                    <p className="text-[10px] text-[var(--soft-stone)]">Trust: {r.trust} · Value: {r.value}</p>
                   </div>
-                  <span className="text-white font-bold">${r.quote?.toLocaleString()}</span>
-                  {i === 0 && <span className="text-emerald-400 text-xs font-bold">BEST FIT</span>}
+                  <span className="text-[var(--warm-ink)] font-bold">${r.quote?.toLocaleString()}</span>
+                  {i === 0 && <span className="text-[var(--sage)] text-xs font-bold">BEST FIT</span>}
                 </div>
               ))}
             </div>

@@ -71,31 +71,31 @@ export const CheckInPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: 'var(--cream)" }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/20 mb-4">
-            <span className="material-symbols-outlined text-[32px] text-indigo-400">qr_code_scanner</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[rgba(var(--clay),0.15)] mb-4">
+            <span className="material-symbols-outlined text-[32px] text-[var(--clay)]">qr_code_scanner</span>
           </div>
-          <h1 className="text-2xl font-black text-white">Check In</h1>
-          <p className="text-sm text-white/60 mt-1">Enter the 6-digit code from your reservation</p>
+          <h1 className="text-2xl font-black text-[var(--warm-ink)]">Check In</h1>
+          <p className="text-sm text-[var(--warm-ink)]/60 mt-1">Enter the 6-digit code from your reservation</p>
         </div>
         <Surface className="p-6">
-          <div className="mb-6 p-8 rounded-xl border-2 border-dashed border-white/10 text-center">
-            <span className="material-symbols-outlined text-[48px] text-white/30">qr_code_2</span>
-            <p className="text-sm text-white/40 mt-2">Scan QR code or enter code below</p>
+          <div className="mb-6 p-8 rounded-xl border-2 border-dashed border-[rgba(191,179,163,0.3)] text-center">
+            <span className="material-symbols-outlined text-[48px] text-[var(--warm-ink)]/30">qr_code_2</span>
+            <p className="text-sm text-[var(--warm-ink)]/40 mt-2">Scan QR code or enter code below</p>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-white/70 mb-2">Check-in Code</label>
-              <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. ABC123" maxLength={6} className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-center text-xl font-mono font-bold text-white outline-none focus:border-indigo-400 touch-target tracking-widest" />
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-[var(--warm-ink)]/70 mb-2">Check-in Code</label>
+              <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. ABC123" maxLength={6} className="w-full rounded-lg border border-[rgba(191,179,163,0.3)] bg-[var(--warm-sand)] px-4 py-3 text-center text-xl font-mono font-bold text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] touch-target tracking-widest" />
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px] text-white/50">location_on</span>
+                <span className="material-symbols-outlined text-[20px] text-[var(--warm-ink)]/50">location_on</span>
                 <div>
-                  <p className="text-xs font-semibold text-white">Location Services</p>
-                  <p className="text-[10px] text-white/50">{position ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}` : 'Not enabled'}</p>
+                  <p className="text-xs font-semibold text-[var(--warm-ink)]">Location Services</p>
+                  <p className="text-[10px] text-[var(--warm-ink)]/50">{position ? `${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}` : 'Not enabled'}</p>
                 </div>
               </div>
               {locationPermission !== 'granted' ? (
@@ -104,7 +104,7 @@ export const CheckInPage: React.FC = () => {
                 <Badge tone="success">Active</Badge>
               )}
             </div>
-            {error && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200">{error}</div>}
+            {error && <div className="p-3 rounded-lg bg-[rgba(var(--terracotta),0.1)] border border-[rgba(var(--terracotta),0.2)] text-sm text-[var(--warm-ink)]">{error}</div>}
             {success && <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm text-green-200">{success}</div>}
             <Button onClick={handleVerify} disabled={loading || !code.trim()} className="w-full">
               {loading ? 'Verifying...' : 'Check In'}
@@ -112,8 +112,8 @@ export const CheckInPage: React.FC = () => {
           </div>
         </Surface>
         <div className="mt-6 text-center">
-          <p className="text-xs text-white/40">Don't have a code? Ask your host or check your email confirmation.</p>
-          <button onClick={() => navigate('/')} className="mt-2 text-xs text-indigo-300 hover:underline">Back to home</button>
+          <p className="text-xs text-[var(--warm-ink)]/40">Don't have a code? Ask your host or check your email confirmation.</p>
+          <button onClick={() => navigate('/')} className="mt-2 text-xs text-[var(--clay)] hover:underline">Back to home</button>
         </div>
       </div>
     </div>

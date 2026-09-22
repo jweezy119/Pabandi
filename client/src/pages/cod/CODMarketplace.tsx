@@ -43,30 +43,30 @@ export default function CODMarketplace() {
     <DashboardLayout osName="Pabandi Pay" osIcon="🛡️" osColor="violet" navItems={navItems}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">COD Marketplace</h1>
-          <p className="text-gray-400 text-sm mt-1">Buy with Pabandi Protection — Pay when you receive</p>
+          <h1 className="text-2xl font-bold text-[var(--warm-ink)]">COD Marketplace</h1>
+          <p className="text-[var(--soft-stone)] text-sm mt-1">Buy with Pabandi Protection — Pay when you receive</p>
         </div>
 
-        <div className="bg-gradient-to-r from-violet-500/20 to-indigo-500/20 border border-violet-500/30 rounded-xl p-4">
+        <div className="bg-gradient-to-r from-[var(--clay)]/20 to-[var(--clay)]/20 border border-[var(--clay)]/30 rounded-xl p-4">
           <div className="flex items-center gap-3">
             <span className="text-3xl">🛡️</span>
             <div>
-              <p className="text-white font-medium">Pabandi Protection</p>
-              <p className="text-gray-400 text-sm">Your money is safe. Pay only when you receive the item.</p>
+              <p className="text-[var(--warm-ink)] font-medium">Pabandi Protection</p>
+              <p className="text-[var(--soft-stone)] text-sm">Your money is safe. Pay only when you receive the item.</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mockListings.map((item) => (
-            <div key={item.id} className="bg-[#0a0f1a] border border-white/5 rounded-xl p-4 hover:border-violet-500/30 transition">
+            <div key={item.id} className="bg-[#0a0f1a] border border-[var(--soft-stone)]/30 rounded-xl p-4 hover:border-[var(--clay)]/30 transition">
               <div className="text-4xl text-center py-4">{item.image}</div>
-              <h3 className="text-white font-medium">{item.title}</h3>
-              <p className="text-gray-500 text-sm">{item.seller} • {item.location}</p>
-              <p className="text-emerald-400 font-bold mt-2">Rs {item.price?.toLocaleString()}</p>
+              <h3 className="text-[var(--warm-ink)] font-medium">{item.title}</h3>
+              <p className="text-[var(--soft-stone)] text-sm">{item.seller} • {item.location}</p>
+              <p className="text-[var(--sage)] font-bold mt-2">Rs {item.price?.toLocaleString()}</p>
               <button
                 onClick={() => handleBuy(item)}
-                className="w-full mt-3 px-4 py-2 bg-violet-500 text-white rounded-lg text-sm hover:bg-violet-600"
+                className="w-full mt-3 px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg text-sm hover:bg-[var(--terracotta)]"
               >
                 Buy with Pabandi Protection
               </button>
@@ -76,20 +76,20 @@ export default function CODMarketplace() {
       </div>
 
       {showBuyModal && selectedItem && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0f1a] border border-white/10 rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-white font-bold mb-4">Confirm Purchase</h3>
-            <div className="bg-white/5 rounded-lg p-4 mb-4">
-              <p className="text-white font-medium">{selectedItem.title}</p>
-              <p className="text-gray-400 text-sm">Seller: {selectedItem.seller}</p>
-              <p className="text-emerald-400 font-bold mt-2">Rs {selectedItem.price?.toLocaleString()}</p>
+        <div className="fixed inset-0 bg-[var(--warm-ink)]/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0f1a] border border-[var(--soft-stone)]/30 rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-[var(--warm-ink)] font-bold mb-4">Confirm Purchase</h3>
+            <div className="bg-[var(--cream)] rounded-lg p-4 mb-4">
+              <p className="text-[var(--warm-ink)] font-medium">{selectedItem.title}</p>
+              <p className="text-[var(--soft-stone)] text-sm">Seller: {selectedItem.seller}</p>
+              <p className="text-[var(--sage)] font-bold mt-2">Rs {selectedItem.price?.toLocaleString()}</p>
             </div>
-            <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-3 mb-4">
-              <p className="text-violet-300 text-sm">🛡️ Your payment will be held safely. Release only after you receive the item.</p>
+            <div className="bg-[var(--clay)]/10 border border-[var(--clay)]/30 rounded-lg p-3 mb-4">
+              <p className="text-[var(--terracotta)] text-sm">🛡️ Your payment will be held safely. Release only after you receive the item.</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={confirmBuy} className="flex-1 px-4 py-2 bg-violet-500 text-white rounded-lg">Create Escrow</button>
-              <button onClick={() => setShowBuyModal(false)} className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg">Cancel</button>
+              <button onClick={confirmBuy} className="flex-1 px-4 py-2 bg-[var(--clay)] text-[var(--warm-ink)] rounded-lg">Create Escrow</button>
+              <button onClick={() => setShowBuyModal(false)} className="flex-1 px-4 py-2 bg-[var(--warm-sand)] text-[var(--warm-ink)] rounded-lg">Cancel</button>
             </div>
           </div>
         </div>

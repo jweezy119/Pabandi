@@ -181,12 +181,12 @@ import FreightRateCalculatorPage from './pages/freight/FreightRateCalculatorPage
 // BookingOS
 import BookingOSPage from './pages/booking/BookingOSPage';
 import BookingFlowPage from './pages/booking/BookingFlowPage';
-// PipelineOS
-import PipelineOSPage from './pages/pipeline/PipelineOSPage';
-import PipelineLeadsPage from './pages/pipeline/PipelineLeadsPage';
-import PipelineLeadDetailPage from './pages/pipeline/PipelineLeadDetailPage';
-import PipelineDealsPage from './pages/pipeline/PipelineDealsPage';
-import PipelineActivitiesPage from './pages/pipeline/PipelineActivitiesPage';
+// ContactOS
+import ContactOSPage from './pages/contact/ContactOSPage';
+import ContactLeadsPage from './pages/contact/ContactLeadsPage';
+import ContactLeadDetailPage from './pages/contact/ContactLeadDetailPage';
+import ContactDealsPage from './pages/contact/ContactDealsPage';
+import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
@@ -254,12 +254,12 @@ function App() {
           <Route path="booking" element={<BookingOSPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
 
-          {/* PipelineOS - CRM & Sales */}
-          <Route path="pipeline" element={<PipelineOSPage />} />
-          <Route path="pipeline/leads" element={<PipelineLeadsPage />} />
-          <Route path="pipeline/leads/:id" element={<PipelineLeadDetailPage />} />
-          <Route path="pipeline/deals" element={<PipelineDealsPage />} />
-          <Route path="pipeline/activities" element={<PipelineActivitiesPage />} />
+          {/* ContactOS - CRM & Sales */}
+          <Route path="contact" element={<ContactOSPage />} />
+          <Route path="contact/leads" element={<ContactLeadsPage />} />
+          <Route path="contact/leads/:id" element={<ContactLeadDetailPage />} />
+          <Route path="contact/deals" element={<ContactDealsPage />} />
+          <Route path="contact/activities" element={<ContactActivitiesPage />} />
 
           {/* LedgerOS - Finance & Accounting */}
           <Route path="ledger" element={<LedgerOSPage />} />
@@ -273,6 +273,7 @@ function App() {
           <Route path="haq/*" element={<Navigate to="/property" replace />} />
           <Route path="saf/*" element={<Navigate to="/freight" replace />} />
           <Route path="sitara/*" element={<Navigate to="/booking" replace />} />
+          <Route path="pipeline/*" element={<Navigate to="/contact" replace />} />
           <Route path="discovery" element={<Navigate to="/booking" replace />} />
 
           {/* Other standalone pages (Builder, Buyer, COD, Protocol) */}

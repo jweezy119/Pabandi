@@ -14,8 +14,8 @@ const CITY_DATA: Record<string, {
     tagline: 'Global Midwestern Hub',
     businesses: ['Hotels', 'Restaurants', 'Salons', 'Clinics', 'Short-Term Rentals'],
     stat1: '2.7M+', stat2: '6%', stat3: '$0',
-    heroColor: '#0ea5e9',
-    accentColor: '#0284c7',
+    heroColor: 'var(--sky-wash)',
+    accentColor: 'var(--sky-wash)',
     landmark: 'The Windy City',
   },
   'new-york': {
@@ -24,7 +24,7 @@ const CITY_DATA: Record<string, {
     tagline: 'World-Class Hospitality',
     businesses: ['Hotels', 'Restaurants', 'Fitness Studios', 'Event Venues', 'Boutique Stays'],
     stat1: '8.4M+', stat2: '7%', stat3: '$0',
-    heroColor: '#f59e0b',
+    heroColor: 'var(--muted-ochre)',
     accentColor: '#d97706',
     landmark: 'The Big Apple',
   },
@@ -48,10 +48,10 @@ export const CityLandingPage: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background, color: tokens.color.text }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
         <div className="text-center">
           <h1 className="text-4xl font-black mb-4">City Not Found</h1>
-          <Link to="/" className="text-emerald-400 hover:underline">← Back to Home</Link>
+          <Link to="/" className="text-[var(--sage)] hover:underline">← Back to Home</Link>
         </div>
       </div>
     );
@@ -72,22 +72,22 @@ export const CityLandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: tokens.color.background, color: tokens.color.text }}>
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--cream)", color: 'var(--warm-ink)" }}>
       {/* Orbs */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full blur-[180px] opacity-[0.08] pointer-events-none" style={{ background: data.heroColor }} />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-[140px] opacity-[0.06] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[var(--sage)] rounded-full blur-[140px] opacity-[0.06] pointer-events-none" />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-5 max-w-5xl mx-auto border-b border-white/5">
-        <Link to="/" className="flex items-center gap-2 text-white font-black text-xl tracking-tight">
+      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-6 py-5 max-w-5xl mx-auto border-b border-[rgba(191,179,163,0.2)]">
+        <Link to="/" className="flex items-center gap-2 text-[var(--warm-ink)] font-black text-xl tracking-tight">
           <img src="/logo-company.jpg" alt="Pabandi" className="w-8 h-8 rounded-full object-cover" />
           Pabandi
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/search" className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white hover:bg-white/20">Search</Link>
-          <Link to="/booking" className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white hover:bg-white/20">Book</Link>
-          <Link to="/chicago" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'chicago' ? 'bg-sky-500/20 text-sky-400' : 'text-white/40 hover:text-white'}`}>Chicago</Link>
-          <Link to="/new-york" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'new-york' ? 'bg-amber-500/20 text-amber-400' : 'text-white/40 hover:text-white'}`}>New York</Link>
+          <Link to="/search" className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Search</Link>
+          <Link to="/booking" className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Book</Link>
+          <Link to="/chicago" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'chicago' ? 'bg-[rgba(var(--sky-wash),0.15)] text-[var(--sky-wash)]' : 'text-[var(--warm-ink)]/40 hover:text-[var(--warm-ink)]'}`}>Chicago</Link>
+          <Link to="/new-york" className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${city === 'new-york' ? 'bg-[rgba(var(--muted-ochre),0.15)] text-[var(--muted-ochre)]' : 'text-[var(--warm-ink)]/40 hover:text-[var(--warm-ink)]'}`}>New York</Link>
         </div>
       </nav>
 
@@ -102,47 +102,47 @@ export const CityLandingPage: React.FC = () => {
             </div>
             <h1 className="text-4xl sm:text-5xl sm:text-5xl sm:text-6xl font-black tracking-tight mb-3 leading-[1.08]">
               Stop Losing Money<br />to COD Rejections &<br />No-Shows in<br />
-              <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, #10b981)` }}>
+              <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)")` }}>
                 {data.name}
               </span>
             </h1>
-            <p className="text-base text-white/50 leading-relaxed mb-2">{data.nameUrud} · {data.landmark}</p>
-            <p className="text-base sm:text-lg text-white/60 leading-relaxed mb-8">
-              Pabandi is launching exclusively in <strong className="text-white">{data.name}</strong> first. Join the Genesis wave of {data.businesses.slice(0, 3).join(', ')}, and other local businesses who are eliminating no-shows using Halal Web3 technology.
+            <p className="text-base text-[var(--warm-ink)]/50 leading-relaxed mb-2">{data.nameUrud} · {data.landmark}</p>
+            <p className="text-base sm:text-lg text-[var(--warm-ink)]/60 leading-relaxed mb-8">
+              Pabandi is launching exclusively in <strong className="text-[var(--warm-ink)]">{data.name}</strong> first. Join the Genesis wave of {data.businesses.slice(0, 3).join(', ')}, and other local businesses who are eliminating no-shows using Halal Web3 technology.
             </p>
 
             {/* Stats */}
             <div className="flex gap-4 sm:gap-6 mb-8">
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-white">{data.stat1}</div>
-                <div className="text-xs text-white/40">{data.name} residents</div>
+                <div className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)]">{data.stat1}</div>
+                <div className="text-xs text-[var(--warm-ink)]/40">{data.name} residents</div>
               </div>
-              <div className="w-px bg-white/10" />
+              <div className="w-px bg-[var(--warm-sand)]" />
               <div>
                 <div className="text-2xl sm:text-3xl font-black" style={{ color: data.heroColor }}>{data.stat2}</div>
-                <div className="text-xs text-white/40">no-show rate in F&B</div>
+                <div className="text-xs text-[var(--warm-ink)]/40">no-show rate in F&B</div>
               </div>
-              <div className="w-px bg-white/10" />
+              <div className="w-px bg-[var(--warm-sand)]" />
               <div>
-                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{data.stat3}</div>
-                <div className="text-xs text-white/40">monthly fee forever</div>
+                <div className="text-2xl sm:text-3xl font-black text-[var(--sage)]">{data.stat3}</div>
+                <div className="text-xs text-[var(--warm-ink)]/40">monthly fee forever</div>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {data.businesses.map(b => (
-                <span key={b} className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/50">{b}</span>
+                <span key={b} className="text-xs px-3 py-1 rounded-full border border-[rgba(191,179,163,0.3)] text-[var(--warm-ink)]/50">{b}</span>
               ))}
             </div>
           </div>
 
           {/* Form */}
-          <div className="bg-white/[0.04] border border-white/10 rounded-3xl p-7 backdrop-blur-sm">
+          <div className="bg-white/[0.04] border border-[rgba(191,179,163,0.3)] rounded-3xl p-7 backdrop-blur-sm">
             {submitted ? (
               <div className="text-center py-8">
-                <CheckCircleIcon className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-black text-white mb-2">You're on the List! 🎉</h2>
-                <p className="text-white/50 text-sm mb-6">We'll reach out within 48 hours to complete your onboarding as a <strong style={{ color: data.heroColor }}>Genesis Partner in {data.name}</strong>.</p>
+                <CheckCircleIcon className="w-16 h-16 text-[var(--sage)] mx-auto mb-4" />
+                <h2 className="text-2xl font-black text-[var(--warm-ink)] mb-2">You're on the List! 🎉</h2>
+                <p className="text-[var(--warm-ink)]/50 text-sm mb-6">We'll reach out within 48 hours to complete your onboarding as a <strong style={{ color: data.heroColor }}>Genesis Partner in {data.name}</strong>.</p>
                 <Link to="/join" className="inline-flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl text-sm font-bold text-black transition-colors"
                   style={{ background: data.heroColor }}>
                   Complete Full Registration <ArrowRightIcon className="w-4 h-4" />
@@ -150,30 +150,30 @@ export const CityLandingPage: React.FC = () => {
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-black text-white mb-1">Register Your Business</h2>
-                <p className="text-white/40 text-sm mb-6">
+                <h2 className="text-xl font-black text-[var(--warm-ink)] mb-1">Register Your Business</h2>
+                <p className="text-[var(--warm-ink)]/40 text-sm mb-6">
                   Get the <strong style={{ color: data.heroColor }}>Genesis Partner</strong> badge and priority placement in {data.name}.
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <input required value={formData.name} onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
-                    placeholder="Your Full Name" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
+                    placeholder="Your Full Name" className="w-full bg-[var(--warm-sand)]/30 border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-[rgba(191,179,163,0.5)] text-sm" />
                   <input required value={formData.businessName} onChange={e => setFormData(f => ({ ...f, businessName: e.target.value }))}
-                    placeholder="Business Name (Marketplace, E-Commerce...)" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
+                    placeholder="Business Name (Marketplace, E-Commerce...)" className="w-full bg-[var(--warm-sand)]/30 border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-[rgba(191,179,163,0.5)] text-sm" />
                   <input required value={formData.phone} onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="WhatsApp Number (+92...)" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-white/30 text-sm" />
+                    placeholder="WhatsApp Number (+92...)" className="w-full bg-[var(--warm-sand)]/30 border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] placeholder-white/25 focus:outline-none focus:border-[rgba(191,179,163,0.5)] text-sm" />
                   <select required value={formData.type} onChange={e => setFormData(f => ({ ...f, type: e.target.value }))}
-                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 text-sm">
+                    className="w-full bg-[var(--warm-sand)]/30 border border-[rgba(191,179,163,0.3)] rounded-xl px-4 py-3 text-[var(--warm-ink)] focus:outline-none focus:border-[rgba(191,179,163,0.5)] text-sm">
                     <option value="" disabled>Business Type</option>
                     {data.businesses.map(b => <option key={b} value={b}>{b}</option>)}
                     <option value="Other">Other</option>
                   </select>
                   <button type="submit" disabled={submitting}
                     className="w-full py-4 rounded-xl font-black text-sm text-black transition-all hover:opacity-90 shadow-lg disabled:opacity-60"
-                    style={{ background: `linear-gradient(135deg, ${data.heroColor}, #10b981)`, boxShadow: `0 0 30px ${data.heroColor}30` }}>
+                    style={{ background: `linear-gradient(135deg, ${data.heroColor}, 'var(--sage)")`, boxShadow: `0 0 30px ${data.heroColor}30` }}>
                     {submitting ? 'Registering...' : `Join as Genesis Partner in ${data.name} →`}
                   </button>
                 </form>
-                <p className="text-center text-white/25 text-xs mt-4">Free forever. No credit card required. Setup in 5 minutes.</p>
+                <p className="text-center text-[var(--warm-ink)]/25 text-xs mt-4">Free forever. No credit card required. Setup in 5 minutes.</p>
               </>
             )}
           </div>
@@ -181,25 +181,25 @@ export const CityLandingPage: React.FC = () => {
 
         {/* Why Pabandi */}
         <div className="mb-16">
-          <h2 className="text-2xl sm:text-3xl font-black text-white text-center mb-10">Why {data.name}'s Best Businesses Choose Pabandi</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-[var(--warm-ink)] text-center mb-10">Why {data.name}'s Best Businesses Choose Pabandi</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {WHY_PABANDI.map(w => (
-              <div key={w.title} className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 hover:bg-white/[0.05] transition-colors">
-                <div className="w-10 h-10 rounded-xl mb-4 flex items-center justify-center text-emerald-400" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <div key={w.title} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-2xl p-6 hover:bg-white/[0.05] transition-colors">
+                <div className="w-10 h-10 rounded-xl mb-4 flex items-center justify-center text-[var(--sage)]" style={{ background: "rgba(16,185,129,0.1)", border: '1px solid "rgba(16,185,129,0.2)"' }}>
                   {w.icon}
                 </div>
-                <h3 className="font-bold text-white mb-2">{w.title}</h3>
-                <p className="text-white/45 text-sm leading-relaxed">{w.body}</p>
+                <h3 className="font-bold text-[var(--warm-ink)] mb-2">{w.title}</h3>
+                <p className="text-[var(--warm-ink)]/45 text-sm leading-relaxed">{w.body}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Alibaba / Credibility Banner */}
-        <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-3xl p-5 sm:p-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-2">Backed by Global Innovation Programs</p>
-          <h3 className="text-2xl font-black text-white mb-3">Pabandi × Alibaba Co-Create 2026 Finalist</h3>
-          <p className="text-white/50 text-sm max-w-lg mx-auto">
+        <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-[rgba(var(--muted-ochre),0.2)] rounded-3xl p-5 sm:p-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted-ochre)] mb-2">Backed by Global Innovation Programs</p>
+          <h3 className="text-2xl font-black text-[var(--warm-ink)] mb-3">Pabandi × Alibaba Co-Create 2026 Finalist</h3>
+          <p className="text-[var(--warm-ink)]/50 text-sm max-w-lg mx-auto">
             Pabandi is a selected participant in the Alibaba Co-Create 2026 program — connecting top startups with Alibaba Cloud's global infrastructure and ecosystem partners.
           </p>
         </div>

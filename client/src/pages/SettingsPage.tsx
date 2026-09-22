@@ -56,7 +56,7 @@ export const SettingsPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-black text-slate-100 font-headline">Settings</h1>
+            <h1 className="text-2xl font-black text-[var(--warm-ink)] font-headline">Settings</h1>
             <p className="text-sm mt-1" style={{ color: tokens.color.textDim }}>Manage your account, notifications, and preferences</p>
           </div>
           {saved && <Badge tone="success">✓ Saved</Badge>}
@@ -66,7 +66,7 @@ export const SettingsPage: React.FC = () => {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {(['profile', 'notifications', 'security', 'billing', 'ai'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-semibold capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)]/20 text-[var(--clay)] border border-[var(--clay)]/30' : 'bg-[var(--warm-sand)] text-[var(--soft-stone)] border border-[rgba(191,179,163,0.2)]'}`}>
               {t === 'ai' ? '🤖 AI' : t}
             </button>
           ))}
@@ -75,25 +75,25 @@ export const SettingsPage: React.FC = () => {
         {/* Profile Tab */}
         {tab === 'profile' && (
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">👤 Profile Information</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">👤 Profile Information</h3>
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">First Name</label>
-                  <input value={profile.firstName} onChange={e => setProfile({ ...profile, firstName: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                  <label className="text-xs text-[var(--soft-stone)] mb-1 block">First Name</label>
+                  <input value={profile.firstName} onChange={e => setProfile({ ...profile, firstName: e.target.value })} className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Last Name</label>
-                  <input value={profile.lastName} onChange={e => setProfile({ ...profile, lastName: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                  <label className="text-xs text-[var(--soft-stone)] mb-1 block">Last Name</label>
+                  <input value={profile.lastName} onChange={e => setProfile({ ...profile, lastName: e.target.value })} className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Email</label>
-                <input value={profile.email} readOnly className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-400 outline-none cursor-not-allowed" />
+                <label className="text-xs text-[var(--soft-stone)] mb-1 block">Email</label>
+                <input value={profile.email} readOnly className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--soft-stone)] outline-none cursor-not-allowed" />
               </div>
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Phone</label>
-                <input value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} placeholder="+1 (555) 000-0000" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                <label className="text-xs text-[var(--soft-stone)] mb-1 block">Phone</label>
+                <input value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} placeholder="+1 (555) 000-0000" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
               </div>
               <Button onClick={saveProfile} className="w-full">Save Changes</Button>
             </div>
@@ -103,17 +103,17 @@ export const SettingsPage: React.FC = () => {
         {/* Notifications Tab */}
         {tab === 'notifications' && (
           <Surface className="p-4 md:p-6">
-            <h3 className="text-base font-bold text-slate-100 mb-4">🔔 Notification Preferences</h3>
+            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🔔 Notification Preferences</h3>
             <div className="space-y-3">
               {notifications.map(notif => (
-                <div key={notif.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div key={notif.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div>
-                    <div className="font-semibold text-slate-100 text-sm">{notif.label}</div>
-                    <div className="text-xs text-slate-400">{notif.description}</div>
+                    <div className="font-semibold text-[var(--warm-ink)] text-sm">{notif.label}</div>
+                    <div className="text-xs text-[var(--soft-stone)]">{notif.description}</div>
                   </div>
                   <button
                     onClick={() => toggleNotification(notif.id)}
-                    className={`w-12 h-6 rounded-full transition-all ${notif.enabled ? 'bg-emerald-500' : 'bg-white/20'}`}
+                    className={`w-12 h-6 rounded-full transition-all ${notif.enabled ? 'bg-[var(--sage)]' : 'bg-[var(--warm-sand)]'}`}
                   >
                     <div className={`w-5 h-5 rounded-full bg-white shadow transition-all ${notif.enabled ? 'translate-x-6' : 'translate-x-0.5'}`} />
                   </button>
@@ -127,13 +127,13 @@ export const SettingsPage: React.FC = () => {
         {tab === 'security' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">🔒 Security Settings</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🔒 Security Settings</h3>
               <div className="space-y-3">
                 {security.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                     <div>
-                      <div className="font-semibold text-slate-100 text-sm">{item.label}</div>
-                      <div className="text-xs text-slate-400">{item.description}</div>
+                      <div className="font-semibold text-[var(--warm-ink)] text-sm">{item.label}</div>
+                      <div className="text-xs text-[var(--soft-stone)]">{item.description}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge tone={item.status === 'active' ? 'success' : item.status === 'pending' ? 'warning' : 'info'}>{item.status}</Badge>
@@ -145,11 +145,11 @@ export const SettingsPage: React.FC = () => {
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">🔑 Change Password</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🔑 Change Password</h3>
               <div className="space-y-3">
-                <input type="password" placeholder="Current password" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-                <input type="password" placeholder="New password" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-                <input type="password" placeholder="Confirm new password" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+                <input type="password" placeholder="Current password" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+                <input type="password" placeholder="New password" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+                <input type="password" placeholder="Confirm new password" className="w-full bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
                 <Button className="w-full">Update Password</Button>
               </div>
             </Surface>
@@ -160,14 +160,14 @@ export const SettingsPage: React.FC = () => {
         {tab === 'billing' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">💳 Payment Methods</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">💳 Payment Methods</h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                   <div className="flex items-center gap-3">
                     <div className="text-xl">💳</div>
                     <div>
-                      <div className="font-semibold text-slate-100 text-sm">•••• •••• •••• 4242</div>
-                      <div className="text-xs text-slate-400">Expires 12/27</div>
+                      <div className="font-semibold text-[var(--warm-ink)] text-sm">•••• •••• •••• 4242</div>
+                      <div className="text-xs text-[var(--soft-stone)]">Expires 12/27</div>
                     </div>
                   </div>
                   <Badge tone="success">Default</Badge>
@@ -177,20 +177,20 @@ export const SettingsPage: React.FC = () => {
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">📜 Billing History</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">📜 Billing History</h3>
               <div className="space-y-2">
                 {[
                   { date: 'Sep 1, 2026', description: 'Rent - 123 Main St', amount: '$1,800', status: 'Paid' },
                   { date: 'Aug 1, 2026', description: 'Rent - 123 Main St', amount: '$1,800', status: 'Paid' },
                   { date: 'Jul 1, 2026', description: 'Rent - 123 Main St', amount: '$1,800', status: 'Paid' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                     <div>
-                      <div className="text-sm text-slate-100">{item.description}</div>
-                      <div className="text-xs text-slate-400">{item.date}</div>
+                      <div className="text-sm text-[var(--warm-ink)]">{item.description}</div>
+                      <div className="text-xs text-[var(--soft-stone)]">{item.date}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-slate-100">{item.amount}</div>
+                      <div className="text-sm font-bold text-[var(--warm-ink)]">{item.amount}</div>
                       <Badge tone="success">{item.status}</Badge>
                     </div>
                   </div>
@@ -204,58 +204,58 @@ export const SettingsPage: React.FC = () => {
         {tab === 'ai' && (
           <div className="space-y-4">
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">🤖 AI Preferences</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">🤖 AI Preferences</h3>
               <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-white/5">
-                  <div className="font-semibold text-slate-100 text-sm mb-1">AI Property Matching</div>
-                  <div className="text-xs text-slate-400 mb-2">Let AI recommend properties based on your preferences and behavior</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">AI Property Matching</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Let AI recommend properties based on your preferences and behavior</div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-full bg-emerald-500 cursor-pointer">
+                    <div className="w-12 h-6 rounded-full bg-[var(--sage)] cursor-pointer">
                       <div className="w-5 h-5 rounded-full bg-white shadow translate-x-6" />
                     </div>
-                    <span className="text-xs text-emerald-300">Enabled</span>
+                    <span className="text-xs text-[var(--sage)]">Enabled</span>
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5">
-                  <div className="font-semibold text-slate-100 text-sm mb-1">Market Intelligence</div>
-                  <div className="text-xs text-slate-400 mb-2">Receive AI-powered market insights and predictions</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Market Intelligence</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Receive AI-powered market insights and predictions</div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-full bg-emerald-500 cursor-pointer">
+                    <div className="w-12 h-6 rounded-full bg-[var(--sage)] cursor-pointer">
                       <div className="w-5 h-5 rounded-full bg-white shadow translate-x-6" />
                     </div>
-                    <span className="text-xs text-emerald-300">Enabled</span>
+                    <span className="text-xs text-[var(--sage)]">Enabled</span>
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5">
-                  <div className="font-semibold text-slate-100 text-sm mb-1">Predictive Maintenance</div>
-                  <div className="text-xs text-slate-400 mb-2">Get maintenance predictions before issues occur</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)]">
+                  <div className="font-semibold text-[var(--warm-ink)] text-sm mb-1">Predictive Maintenance</div>
+                  <div className="text-xs text-[var(--soft-stone)] mb-2">Get maintenance predictions before issues occur</div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-full bg-white/20 cursor-pointer">
+                    <div className="w-12 h-6 rounded-full bg-[var(--warm-sand)] cursor-pointer">
                       <div className="w-5 h-5 rounded-full bg-white shadow translate-x-0.5" />
                     </div>
-                    <span className="text-xs text-slate-400">Disabled</span>
+                    <span className="text-xs text-[var(--soft-stone)]">Disabled</span>
                   </div>
                 </div>
               </div>
             </Surface>
 
             <Surface className="p-4 md:p-6">
-              <h3 className="text-base font-bold text-slate-100 mb-4">📊 AI Usage</h3>
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-4">📊 AI Usage</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-xl bg-white/5 text-center">
-                  <div className="text-lg font-bold text-indigo-300">12</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                  <div className="text-lg font-bold text-[var(--clay)]">12</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Valuations</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 text-center">
-                  <div className="text-lg font-bold text-emerald-300">5</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                  <div className="text-lg font-bold text-[var(--sage)]">5</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Searches</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 text-center">
-                  <div className="text-lg font-bold text-amber-300">3</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                  <div className="text-lg font-bold text-[var(--muted-ochre)]">3</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>Reports</div>
                 </div>
-                <div className="p-3 rounded-xl bg-white/5 text-center">
-                  <div className="text-lg font-bold text-purple-300">8</div>
+                <div className="p-3 rounded-xl bg-[var(--warm-sand)] text-center">
+                  <div className="text-lg font-bold text-[var(--dusty-rose)]">8</div>
                   <div className="text-xs" style={{ color: tokens.color.textDim }}>AI Chats</div>
                 </div>
               </div>

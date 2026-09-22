@@ -23,7 +23,7 @@ export default function Web3Page() {
 
   return (
     <div
-      className="min-h-screen text-slate-100 antialiased"
+      className="min-h-screen text-[var(--warm-ink)] antialiased"
       style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
     >
       {/* Hero */}
@@ -33,14 +33,14 @@ export default function Web3Page() {
           <h1
             className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
             style={{
-              background: 'linear-gradient(135deg, #14F195 0%, #9945FF 100%)',
+              background: 'linear-gradient(135deg, var(--sage) 0%, var(--dusty-rose) 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
             {t('Web3 without the jargon.', 'Web3 asaan alfaz mein.')}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-300">
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-ink)]">
             {t(
               'You don’t need to understand crypto to use Pabandi. Web3 is the trust layer behind WhatsApp checkout: deposit protection, verified commitment, and portable reputation.',
               'Aapko crypto seekhne ki zaroorat nahi. Pabandi mein Web3 trust layer hai: deposit protection, verified commitment, aur portable reputation.'
@@ -58,7 +58,7 @@ export default function Web3Page() {
         )}
       >
         <Surface className="flex flex-col gap-3">
-          <p className="text-sm leading-relaxed text-slate-300">
+          <p className="text-sm leading-relaxed text-[var(--warm-ink)]">
             {t(
               'Staked liquidity backs real-world bookings. In return, participants earn a share of platform booking fees.',
               'Staked liquidity real-world bookings ko back karta hai. Iske badle mein participants ko platform fees ka hissa milta hai.'
@@ -67,13 +67,13 @@ export default function Web3Page() {
           <Stack>
             <div className="flex items-start gap-3">
               <Badge tone="success">{t('Backed by bookings', 'Bookings se backed')}</Badge>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-[var(--warm-ink)]">
                 {t('Escrow liquidity is tied to real transactions, not synthetic yield.', 'Escrow liquidity real transactions se tied hai, synthetic yield nahi.')}
               </p>
             </div>
             <div className="flex items-start gap-3">
               <Badge tone="info">{t('Halal-aligned incentives', 'Halal-aligned incentives')}</Badge>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-[var(--warm-ink)]">
                 {t('Rewards come from verified activity: check-ins, honored bookings, and trust contributions.', 'Rewards verified activity se aate hain: check-ins, honored bookings, aur trust contributions.')}
               </p>
             </div>
@@ -85,10 +85,10 @@ export default function Web3Page() {
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <Chip tone="info">{t('Best-of-both networks', 'Best-of-both networks')}</Chip>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-100">
+          <h2 className="mt-4 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
             {t('Powered by Solana, connected to Bitcoin', 'Solana par mabni, Bitcoin se munsalik')}
           </h2>
-          <p className="mt-3 text-slate-300">
+          <p className="mt-3 text-[var(--warm-ink)]">
             {t(
               'Speed for checkout, and a trusted reserve asset for long-term value. No evangelism, just reliable mechanics.',
               'Checkout ke liye tezi, aur long-term value ke liye trusted reserve asset. Na sirf dehshat, na sirf shan, asli mechanics.'
@@ -98,30 +98,30 @@ export default function Web3Page() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Surface className="flex flex-col gap-3">
-            <div className="text-2xl font-bold text-slate-100">Solana</div>
-            <p className="text-sm text-slate-300">
+            <div className="text-2xl font-bold text-[var(--warm-ink)]">Solana</div>
+            <p className="text-sm text-[var(--warm-ink)]">
               {t('The execution layer for escrow contracts. Fast, cheap, and programmable.', 'Escrow contracts ka execution layer. Taiz, sasta, aur programmable.')}
             </p>
             <Stack>
               {solanaCards.map((item) => (
                 <div key={item.title} className="flex items-start gap-3">
                   <Badge tone="success">{item.title}</Badge>
-                  <p className="text-sm text-slate-300">{item.body}</p>
+                  <p className="text-sm text-[var(--warm-ink)]">{item.body}</p>
                 </div>
               ))}
             </Stack>
           </Surface>
 
           <Surface className="flex flex-col gap-3">
-            <div className="text-2xl font-bold text-slate-100">Bitcoin</div>
-            <p className="text-sm text-slate-300">
+            <div className="text-2xl font-bold text-[var(--warm-ink)]">Bitcoin</div>
+            <p className="text-sm text-[var(--warm-ink)]">
               {t('The reserve-grade value layer for cross-chain liquidity and treasury risk management.', 'Cross-chain liquidity aur treasury risk management ke liye reserve-grade value layer.')}
             </p>
             <Stack>
               {bitcoinCards.map((item) => (
                 <div key={item.title} className="flex items-start gap-3">
                   <Badge tone="warning">{item.title}</Badge>
-                  <p className="text-sm text-slate-300">{item.body}</p>
+                  <p className="text-sm text-[var(--warm-ink)]">{item.body}</p>
                 </div>
               ))}
             </Stack>
@@ -131,14 +131,14 @@ export default function Web3Page() {
 
       {/* Pools */}
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-8 text-center backdrop-blur-xl sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[#f59e0b] to-[#fcd34d] shadow-lg shadow-amber-500/20">
+        <div className="rounded-2xl border border-[rgba(191,179,163,0.15)] bg-[var(--warm-sand)] p-8 text-center backdrop-blur-xl sm:p-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-[var(--muted-ochre)] to-[var(--muted-ochre)] shadow-lg shadow-[var(--muted-ochre)]/20">
             <span className="text-3xl">🏊</span>
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-slate-100">
+          <h2 className="mt-6 text-3xl font-bold tracking-tight text-[var(--warm-ink)]">
             {t('The Two Pools', 'Do Kism Ke Pools')}
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-300">
+          <p className="mx-auto mt-3 max-w-2xl text-[var(--warm-ink)]">
             {t(
               'Choose how your tokens participate. Each pool matches a different goal: booking guarantees or protocol governance.',
               'Choose karen ke aapke tokens kaise share karein. Har pool ka aik maqsad hai: booking guarantees ya protocol governance.'
@@ -148,8 +148,8 @@ export default function Web3Page() {
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {poolCards.map((item) => (
               <Surface key={item.title} className="flex flex-col gap-2">
-                <h3 className="text-sm font-semibold text-slate-100">{item.title}</h3>
-                <p className="text-xs leading-relaxed text-slate-300">{item.body}</p>
+                <h3 className="text-sm font-semibold text-[var(--warm-ink)]">{item.title}</h3>
+                <p className="text-xs leading-relaxed text-[var(--warm-ink)]">{item.body}</p>
                 <Badge tone={item.tone as any}>
                   {item.title === 'Escrow Liquidity Pool' ? t('Yield from activity', 'Activity se yield') : t('Voting + influence', 'Voting + influence')}
                 </Badge>

@@ -39,7 +39,7 @@ function ClayStat({ icon, value, label, color = 'sage' }: { icon: string; value:
           <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>{value}</p>
         </div>
         <div className={`w-11 h-11 rounded-xl ${colorMap[color]} flex items-center justify-center`}>
-          <span className="material-symbols-outlined text-white text-[20px]">{icon}</span>
+          <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">{icon}</span>
         </div>
       </div>
     </ClayCard>
@@ -70,7 +70,7 @@ export default function FreightOSPage() {
           </div>
           <Link
             to="/saf/post-load"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--sage)] text-white border-[var(--sage)] hover:bg-[var(--sage)]/90 hover:border-[var(--sage)]/90 hover:-translate-y-0.5 active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--sage)] text-[var(--warm-ink)] border-[var(--sage)] hover:bg-[var(--sage)]/90 hover:border-[var(--sage)]/90 hover:-translate-y-0.5 active:scale-95"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Post Load
@@ -100,7 +100,7 @@ export default function FreightOSPage() {
               <p style={{ color: 'var(--warm-ink)' }}>No loads yet. Post your first load to get started!</p>
               <Link
                 to="/saf/post-load"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--sage)] text-white border-[var(--sage)] hover:bg-[var(--sage)]/90 hover:border-[var(--sage)]/90 hover:-translate-y-0.5 active:scale-95 mt-4"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--sage)] text-[var(--warm-ink)] border-[var(--sage)] hover:bg-[var(--sage)]/90 hover:border-[var(--sage)]/90 hover:-translate-y-0.5 active:scale-95 mt-4"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Post a Load

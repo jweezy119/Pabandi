@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/pipeline', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/pipeline/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/pipeline/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/pipeline/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 
-export default function PipelineLeadsPage() {
+export default function ContactLeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -56,7 +56,7 @@ export default function PipelineLeadsPage() {
   const inputStyle = { border: '1px solid rgba(191,179,163,0.3)', background: 'var(--warm-sand)', color: 'var(--warm-ink)' };
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Leads</h1>

@@ -10,10 +10,10 @@ interface DashboardData {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  BRONZE: 'from-amber-600 to-amber-800',
+  BRONZE: 'from-[var(--muted-ochre)] to-[var(--muted-ochre)]',
   SILVER: 'from-slate-300 to-slate-500',
-  GOLD: 'from-yellow-400 to-amber-500',
-  PLATINUM: 'from-purple-400 to-fuchsia-600',
+  GOLD: 'from-[var(--muted-ochre)] to-[var(--muted-ochre)]',
+  PLATINUM: 'from-[var(--dusty-rose)] to-fuchsia-600',
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -92,7 +92,7 @@ export default function TenantPortal() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[var(--sage)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -100,14 +100,14 @@ export default function TenantPortal() {
   if (error || !data) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-700">
-          <h2 className="text-xl font-semibold text-slate-200 mb-2">No Data Available</h2>
-          <p className="text-slate-400 mb-4">
+        <div className="bg-[var(--cream)]/50 rounded-xl p-8 border border-slate-700">
+          <h2 className="text-xl font-semibold text-[var(--warm-ink)] mb-2">No Data Available</h2>
+          <p className="text-[var(--soft-stone)] mb-4">
             {error || 'Unable to load your dashboard data. Make sure you\'re logged in.'}
           </p>
           <Link
             to="/login"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm"
+            className="px-4 py-2 bg-[var(--sage)] hover:bg-[var(--sage)] text-[var(--warm-ink)] rounded-lg text-sm"
           >
             Log In
           </Link>
@@ -120,9 +120,9 @@ export default function TenantPortal() {
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Balance Card */}
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-slate-700">
-        <h3 className="text-sm font-medium text-slate-400 mb-1">Total Balance</h3>
-        <p className="text-3xl font-bold text-white">${data.balance.totalUsd.toFixed(2)}</p>
-        <p className="text-sm text-slate-500 mt-1">
+        <h3 className="text-sm font-medium text-[var(--soft-stone)] mb-1">Total Balance</h3>
+        <p className="text-3xl font-bold text-[var(--warm-ink)]">${data.balance.totalUsd.toFixed(2)}</p>
+        <p className="text-sm text-[var(--soft-stone)] mt-1">
           {data.balance.pabTokens.toFixed(0)} PAB • ${data.balance.usdc.toFixed(2)} USDC
         </p>
       </div>
@@ -130,7 +130,7 @@ export default function TenantPortal() {
       {/* Staking Card */}
       <div className={`bg-gradient-to-br ${TIER_COLORS[data.staking.tier] || 'from-slate-700 to-slate-800'} rounded-xl p-6`}>
         <h3 className="text-sm font-medium text-white/80 mb-1">Trust Tier</h3>
-        <p className="text-2xl font-bold text-white">{TIER_LABELS[data.staking.tier] || 'Bronze'}</p>
+        <p className="text-2xl font-bold text-[var(--warm-ink)]">{TIER_LABELS[data.staking.tier] || 'Bronze'}</p>
         <div className="flex gap-4 mt-2 text-xs text-white/70">
           <span>Trust Boost: +{data.staking.trustBoost}</span>
           <span>APY: {data.staking.apy}%</span>
@@ -139,19 +139,19 @@ export default function TenantPortal() {
       </div>
 
       {/* Payments */}
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-200 mb-4">Payment History</h3>
+      <div className="bg-[var(--cream)]/50 rounded-xl p-6 border border-slate-700">
+        <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Payment History</h3>
         {data.payments.length === 0 ? (
-          <p className="text-slate-500 text-sm">No payments yet</p>
+          <p className="text-[var(--soft-stone)] text-sm">No payments yet</p>
         ) : (
           <div className="space-y-2">
             {data.payments.map((p) => (
               <div key={p.id} className="flex justify-between items-center py-2 border-b border-slate-700 last:border-0">
                 <div>
-                  <p className="text-sm text-slate-200">{p.description}</p>
-                  <p className="text-xs text-slate-500">{p.date} • {p.token}</p>
+                  <p className="text-sm text-[var(--warm-ink)]">{p.description}</p>
+                  <p className="text-xs text-[var(--soft-stone)]">{p.date} • {p.token}</p>
                 </div>
-                <span className={`text-sm font-medium ${p.status === 'completed' ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                <span className={`text-sm font-medium ${p.status === 'completed' ? 'text-[var(--sage)]' : 'text-yellow-400'}`}>
                   ${p.amount.toFixed(2)}
                 </span>
               </div>

@@ -43,25 +43,25 @@ export const AIRentOptimizerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: tokens.color.background }}>
+    <div className="min-h-screen" style={{ background: 'var(--cream)" }}>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <Badge tone="info" className="mb-3">📈 AI Rent Optimizer</Badge>
-          <h1 className="text-3xl font-black text-slate-100 font-headline">Rent Optimizer</h1>
-          <p className="mt-3 text-slate-400">Market-based rent recommendations with confidence scoring.</p>
+          <h1 className="text-3xl font-black text-[var(--warm-ink)] font-headline">Rent Optimizer</h1>
+          <p className="mt-3 text-[var(--soft-stone)]">Market-based rent recommendations with confidence scoring.</p>
         </div>
 
         <Surface className="p-4 md:p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="City *" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-            <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} placeholder="State *" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
-            <select value={form.propertyType} onChange={e => setForm({ ...form, propertyType: e.target.value })} className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none">
+            <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="City *" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+            <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} placeholder="State *" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
+            <select value={form.propertyType} onChange={e => setForm({ ...form, propertyType: e.target.value })} className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none">
               <option value="single_family">Single Family</option>
               <option value="condo">Condo</option>
               <option value="townhouse">Townhouse</option>
               <option value="multi_family">Multi-Family</option>
             </select>
-            <input value={form.currentRent} onChange={e => setForm({ ...form, currentRent: e.target.value })} placeholder="Current rent" type="number" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 outline-none" />
+            <input value={form.currentRent} onChange={e => setForm({ ...form, currentRent: e.target.value })} placeholder="Current rent" type="number" className="bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.3)] rounded-lg px-3 py-2 text-sm text-[var(--warm-ink)] outline-none" />
           </div>
           <Button onClick={optimize} disabled={!form.city || !form.state} className="w-full mt-4">{loading ? 'Optimizing...' : 'Optimize Rent'}</Button>
         </Surface>
@@ -71,25 +71,25 @@ export const AIRentOptimizerPage: React.FC = () => {
             <Surface className="p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-100">Recommended rent</h3>
-                  <p className="text-sm" style={{ color: tokens.color.textDim }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
+                  <h3 className="text-xl font-bold text-[var(--warm-ink)]">Recommended rent</h3>
+                  <p className="text-sm" style={{ color: 'var(--soft-stone)" }}>Confidence: {Math.round((result.confidence || 0) * 100)}%</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-slate-100">${result.recommendedRent.toLocaleString()}</div>
-                  <div className="text-sm" style={{ color: result.changePct >= 0 ? '#16a34a' : '#dc2626' }}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
+                  <div className="text-2xl font-black text-[var(--warm-ink)]">${result.recommendedRent.toLocaleString()}</div>
+                  <div className="text-sm" style={{ color: result.changePct >= 0 ? 'var(--sage)" : 'var(--terracotta)" }}}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
                 </div>
               </div>
-              <p className="text-sm mt-3 text-slate-300">{result.explanation}</p>
+              <p className="text-sm mt-3 text-[var(--soft-stone)]">{result.explanation}</p>
             </Surface>
 
             {result.comps.length > 0 && (
               <Surface className="p-4 md:p-6">
-                <h3 className="text-lg font-bold text-slate-100 mb-3">Comparable listings</h3>
+                <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-3">Comparable listings</h3>
                 <div className="space-y-2">
                   {result.comps.map((c, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 text-sm text-slate-300">
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)] text-sm text-[var(--soft-stone)]">
                       <div>{c.city}, {c.state}</div>
-                      <div className="font-bold text-slate-100">${c.rent?.toLocaleString()}</div>
+                      <div className="font-bold text-[var(--warm-ink)]">${c.rent?.toLocaleString()}</div>
                     </div>
                   ))}
                 </div>

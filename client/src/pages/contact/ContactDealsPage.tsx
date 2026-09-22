@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/pipeline/leads', label: 'Leads', icon: 'person_add' },
-  { path: '/pipeline/deals', label: 'Deals', icon: 'handshake' },
-  { path: '/pipeline/activities', label: 'Activities', icon: 'notifications' },
+  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
+  { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
 
-export default function PipelineDealsPage() {
+export default function ContactDealsPage() {
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +31,7 @@ export default function PipelineDealsPage() {
   }, []);
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Deals</h1>
         {loading ? (

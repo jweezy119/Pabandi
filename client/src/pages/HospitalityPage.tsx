@@ -176,7 +176,7 @@ export default function HospitalityPage() {
 
   return (
     <div
-      className="min-h-screen text-slate-100 antialiased"
+      className="min-h-screen text-[var(--warm-ink)] antialiased"
       style={{ background: tokens.color.background, fontFamily: tokens.font.body }}
     >
       {/* Hero */}
@@ -193,17 +193,17 @@ export default function HospitalityPage() {
           >
             Trustless Deposits for<br />Hotels &amp; Experiences
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-300">
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-[var(--warm-ink)]">
             Connect your PMS, let guests book on WhatsApp, and protect every deposit with escrow-backed checkout.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Button onClick={() => handleOpenWizard()}>Connect Your Property</Button>
             <Link to="/pricing"><Button variant="outline">View Pricing</Button></Link>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-slate-400">
+          <div className="mt-8 flex flex-wrap justify-center gap-4 text-xs text-[var(--soft-stone)]">
             {['No chargebacks', 'Instant settlement', 'Sharia-compliant', '50 $PAB per night'].map((item) => (
               <span key={item} className="flex items-center gap-1.5">
-                <span className="text-emerald-400">✓</span>
+                <span className="text-[var(--sage)]">✓</span>
                 {item}
               </span>
             ))}
@@ -217,8 +217,8 @@ export default function HospitalityPage() {
           <section className="mt-12 mb-8">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-xl font-bold text-white md:text-2xl">Your Connected Properties</h2>
-                <p className="text-xs text-slate-400 mt-1">Properties receiving Pabandi escrow protection.</p>
+                <h2 className="text-xl font-bold text-[var(--warm-ink)] md:text-2xl">Your Connected Properties</h2>
+                <p className="text-xs text-[var(--soft-stone)] mt-1">Properties receiving Pabandi escrow protection.</p>
               </div>
               <Button variant="ghost" onClick={() => handleOpenWizard()} className="px-3 py-2 text-xs">
                 + Add Property
@@ -232,31 +232,31 @@ export default function HospitalityPage() {
                   <Surface key={prop.id} className="flex flex-col gap-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-sm font-bold text-white">{prop.propertyName}</h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{prop.country || 'Global'}</p>
+                        <h3 className="text-sm font-bold text-[var(--warm-ink)]">{prop.propertyName}</h3>
+                        <p className="text-[10px] text-[var(--soft-stone)] mt-0.5">{prop.country || 'Global'}</p>
                       </div>
-                      <Badge tone="info" className={!providerColor ? '' : ''} style={providerColor ? { background: `${providerColor}20`, color: providerColor, borderColor: `${providerColor}40` } : undefined}>
+                      <Badge tone="info" className={!providerColor ? '' : ''} style={{ background: providerColor ? `${providerColor}20` : 'var(--cream)' }}, color: providerColor, borderColor: `${providerColor}40` } : undefined}>
                         {prop.provider}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--sage)]/15 text-[var(--sage)] border border-[var(--sage)]/30">
                         ✓ {prop.isActive ? 'Active' : 'Inactive'}
                       </span>
-                      <span className="text-[10px] text-slate-400">{prop.propertyType?.replace('_', ' ')}</span>
+                      <span className="text-[10px] text-[var(--soft-stone)]">{prop.propertyType?.replace('_', ' ')}</span>
                     </div>
-                    <Surface className="border-indigo-500/30 bg-indigo-500/5">
+                    <Surface className="border-indigo-500/30 bg-[var(--clay)]/5">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-[11px] font-bold text-white">AI Receptionist</span>
+                        <span className="text-[11px] font-bold text-[var(--warm-ink)]">AI Receptionist</span>
                         <button
-                          className={`w-8 h-4 rounded-full relative transition-colors ${prop.aiEnabled !== false ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                          className={`w-8 h-4 rounded-full relative transition-colors ${prop.aiEnabled !== false ? 'bg-[var(--clay)]' : 'bg-slate-600'}`}
                         >
                           <div className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform" style={{ transform: prop.aiEnabled !== false ? 'translateX(14px)' : 'translateX(0)' }} />
                         </button>
                       </div>
-                      <div className="flex justify-between text-[9px] text-slate-400">
-                        <span>Conv: <strong className="text-emerald-400">{prop.aiConversionRate || '32%'}</strong></span>
-                        <span>Deposits: <strong className="text-white">${prop.aiRevenue || '1,240'}</strong></span>
+                      <div className="flex justify-between text-[9px] text-[var(--soft-stone)]">
+                        <span>Conv: <strong className="text-[var(--sage)]">{prop.aiConversionRate || '32%'}</strong></span>
+                        <span>Deposits: <strong className="text-[var(--warm-ink)]">${prop.aiRevenue || '1,240'}</strong></span>
                       </div>
                     </Surface>
                     <Button
@@ -283,9 +283,9 @@ export default function HospitalityPage() {
             { value: '80/20', label: 'No-show split', sub: 'Property / Treasury' },
           ].map((item) => (
             <Surface key={item.label} className="flex flex-col items-center gap-1 text-center">
-              <p className="text-2xl font-black text-white">{item.value}</p>
-              <p className="text-[10px] font-bold text-white">{item.label}</p>
-              <p className="text-[10px] text-slate-400">{item.sub}</p>
+              <p className="text-2xl font-black text-[var(--warm-ink)]">{item.value}</p>
+              <p className="text-[10px] font-bold text-[var(--warm-ink)]">{item.label}</p>
+              <p className="text-[10px] text-[var(--soft-stone)]">{item.sub}</p>
             </Surface>
           ))}
         </div>
@@ -293,8 +293,8 @@ export default function HospitalityPage() {
         {/* How It Works */}
         <section className="mb-20">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold text-white md:text-3xl">How It Works</h2>
-            <p className="text-xs text-slate-400 mt-2">Three steps between your PMS and trustless escrow protection.</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">How It Works</h2>
+            <p className="text-xs text-[var(--soft-stone)] mt-2">Three steps between your PMS and trustless escrow protection.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {HOW_IT_WORKS.map(({ step, title, desc, color }) => (
@@ -305,8 +305,8 @@ export default function HospitalityPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">{title}</h3>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
+                  <h3 className="text-sm font-bold text-[var(--warm-ink)]">{title}</h3>
+                  <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">{desc}</p>
                 </div>
               </Surface>
             ))}
@@ -316,19 +316,19 @@ export default function HospitalityPage() {
         {/* Property Types */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white md:text-3xl">Built for Every Hospitality Type</h2>
-            <p className="text-xs text-slate-400 mt-2">Reserve your slot in the check-in queue for this venue.</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">Built for Every Hospitality Type</h2>
+            <p className="text-xs text-[var(--soft-stone)] mt-2">Reserve your slot in the check-in queue for this venue.</p>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             {PROPERTY_TYPES.map(({ icon, label, desc, wizardType }) => (
               <button
                 key={label}
                 onClick={() => handleOpenWizard(wizardType)}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-all hover:border-white/20 group"
+                className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-5 text-left transition-all hover:border-white/20 group"
               >
                 <span className="mb-3 block text-3xl">{icon}</span>
-                <h3 className="text-sm font-bold text-white group-hover:text-primary transition-colors">{label}</h3>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
+                <h3 className="text-sm font-bold text-[var(--warm-ink)] group-hover:text-primary transition-colors">{label}</h3>
+                <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">{desc}</p>
                 <span className="mt-2 block text-[9px] font-bold text-primary/70 opacity-0 transition-opacity group-hover:opacity-100">Click to connect →</span>
               </button>
             ))}
@@ -338,28 +338,28 @@ export default function HospitalityPage() {
         {/* PMS Integrations */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white md:text-3xl">Integrates With Your Existing Software</h2>
-            <p className="text-xs text-slate-400 mt-2">Connect Pabandi to your PMS in minutes, not months.</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">Integrates With Your Existing Software</h2>
+            <p className="text-xs text-[var(--soft-stone)] mt-2">Connect Pabandi to your PMS in minutes, not months.</p>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             {PMS_PARTNERS.map(({ name, badge, badgeColor }) => (
-              <div key={name} className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
+              <div key={name} className="flex flex-col items-center gap-2 rounded-xl border border-[var(--soft-stone)]/30 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--warm-sand)]">
                   <span className="text-lg">🔗</span>
                 </div>
-                <p className="text-xs font-bold text-white text-center leading-tight">{name}</p>
+                <p className="text-xs font-bold text-[var(--warm-ink)] text-center leading-tight">{name}</p>
                 <span className="text-[8px] font-black uppercase tracking-widest rounded px-1.5 py-0.5" style={{ background: `${badgeColor}20`, color: badgeColor, border: `1px solid ${badgeColor}40` }}>
                   {badge}
                 </span>
               </div>
             ))}
           </div>
-          <Surface className="mt-6 border-indigo-500/25 bg-indigo-500/5">
+          <Surface className="mt-6 border-indigo-500/25 bg-[var(--clay)]/5">
             <div className="flex items-start gap-3">
-              <span className="text-indigo-400">🛡️</span>
+              <span className="text-[var(--clay)]">🛡️</span>
               <div>
-                <p className="text-xs font-bold text-white">Webhook-based, zero polling</p>
-                <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">Pabandi registers a signed webhook endpoint directly in your PMS. When a booking is created, modified, or cancelled, the PMS pushes the event to us instantly — no scheduled polling, no delays. HMAC-SHA256 signatures verify every incoming event.</p>
+                <p className="text-xs font-bold text-[var(--warm-ink)]">Webhook-based, zero polling</p>
+                <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed mt-0.5">Pabandi registers a signed webhook endpoint directly in your PMS. When a booking is created, modified, or cancelled, the PMS pushes the event to us instantly — no scheduled polling, no delays. HMAC-SHA256 signatures verify every incoming event.</p>
               </div>
             </div>
           </Surface>
@@ -371,18 +371,18 @@ export default function HospitalityPage() {
             <div className="flex flex-col gap-4 md:flex-row md:gap-8">
               <div className="flex-1">
                 <Chip tone="warning">Smart Contract Layer</Chip>
-                <h2 className="mt-3 text-xl font-bold text-white md:text-2xl">PabandiEscrow.sol — On-chain Hospitality Protection</h2>
-                <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">Every hospitality deposit is held in a trustless Solana smart contract. Neither Pabandi nor the property can move funds arbitrarily — only verified booking events from the PMS trigger release, refund, or forfeit.</p>
+                <h2 className="mt-3 text-xl font-bold text-[var(--warm-ink)] md:text-2xl">PabandiEscrow.sol — On-chain Hospitality Protection</h2>
+                <p className="mt-3 text-[11px] text-[var(--soft-stone)] leading-relaxed">Every hospitality deposit is held in a trustless Solana smart contract. Neither Pabandi nor the property can move funds arbitrarily — only verified booking events from the PMS trigger release, refund, or forfeit.</p>
                 <div className="mt-4 space-y-2">
                   {[
                     { event: 'Guest Checks Out ✅', action: 'releaseToProperty()', result: '100% → Property', color: '#10b981' },
                     { event: 'Cancelled >24h Before ⏱️', action: 'refundCustomer()', result: '100% → Guest', color: '#6366f1' },
                     { event: 'No-Show / Late Cancel ❌', action: 'forfeitNoShow()', result: '80% → Property · 20% → Treasury', color: '#f59e0b' },
                   ].map(({ event, action, result, color }) => (
-                    <div key={event} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                    <div key={event} className="flex items-center gap-3 rounded-xl border border-[var(--soft-stone)]/30 bg-[var(--cream)] p-3">
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-white">{event}</p>
-                        <p className="text-[10px] font-mono text-slate-400">{action}</p>
+                        <p className="text-xs font-bold text-[var(--warm-ink)]">{event}</p>
+                        <p className="text-[10px] font-mono text-[var(--soft-stone)]">{action}</p>
                       </div>
                       <span className="text-[10px] font-bold" style={{ color }}>{result}</span>
                     </div>
@@ -393,15 +393,15 @@ export default function HospitalityPage() {
                 <div className="text-center">
                   <span className="text-4xl">🪙</span>
                   <p className="text-[9px] font-black uppercase tracking-widest text-[#f0b429] mt-2">Guest Loyalty</p>
-                  <p className="font-headline text-3xl font-black text-white mt-1">50 PAB</p>
-                  <p className="text-[10px] text-slate-400">per night stayed</p>
+                  <p className="font-headline text-3xl font-black text-[var(--warm-ink)] mt-1">50 PAB</p>
+                  <p className="text-[10px] text-[var(--soft-stone)]">per night stayed</p>
                 </div>
-                <hr className="border-white/10 my-3" />
+                <hr className="border-[var(--soft-stone)]/30 my-3" />
                 <div className="space-y-2">
                   {['1 night = 50 PAB', '3 nights = 150 PAB', '7 nights = 350 PAB', 'Redeem for discounts'].map((item) => (
                     <div key={item} className="flex items-center gap-2">
                       <span className="text-[#f0b429]">⭐</span>
-                      <span className="text-[11px] text-slate-400">{item}</span>
+                      <span className="text-[11px] text-[var(--soft-stone)]">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -413,23 +413,23 @@ export default function HospitalityPage() {
 
         {/* USDY x Real Estate — Coming Soon (Ondo tokenized T-bills) */}
         <section className="mb-20" id="usdy">
-          <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.07] to-indigo-500/[0.04] p-6 md:p-10 overflow-hidden relative">
-            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="rounded-3xl border border-[var(--sage)]/30 bg-gradient-to-br from-[var(--sage)]/[0.07] to-[var(--clay)]/[0.04] p-6 md:p-10 overflow-hidden relative">
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-[var(--sage)]/10 blur-3xl" />
             <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Chip tone="info" className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30">Real Estate Yield</Chip>
+                  <Chip tone="info" className="bg-[var(--sage)]/15 text-[var(--sage)] border-[var(--sage)]/30">Real Estate Yield</Chip>
                   {usdyConfig?.data?.live ? (
-                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">LIVE</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-[var(--sage)]/20 text-[var(--sage)] border border-emerald-500/40">LIVE</span>
                   ) : (
-                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-amber-400/15 text-amber-300 border border-amber-400/40">Coming Soon</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest rounded-full px-2.5 py-1 bg-amber-400/15 text-[var(--muted-ochre)] border border-amber-400/40">Coming Soon</span>
                   )}
                 </div>
-                <h2 className="mt-4 text-2xl font-bold text-white md:text-3xl">
+                <h2 className="mt-4 text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">
                   Earn USDY Yield on Every Rent Payment
                 </h2>
-                <p className="mt-3 max-w-xl text-sm text-slate-300 leading-relaxed">
-                  Pabandi is integrating <strong className="text-emerald-300">Ondo Finance USDY</strong> — tokenized US Treasuries — as the yield rail for real-estate rent streams. Rent held for the float window earns native T-bill yield, split <strong>50/50</strong> between tenant equity and landlord bonus. Non-custodial, Sharia-aligned, and anchored on Solana.
+                <p className="mt-3 max-w-xl text-sm text-[var(--warm-ink)] leading-relaxed">
+                  Pabandi is integrating <strong className="text-[var(--sage)]">Ondo Finance USDY</strong> — tokenized US Treasuries — as the yield rail for real-estate rent streams. Rent held for the float window earns native T-bill yield, split <strong>50/50</strong> between tenant equity and landlord bonus. Non-custodial, Sharia-aligned, and anchored on Solana.
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -441,12 +441,12 @@ export default function HospitalityPage() {
                   ].map((s) => (
                     <Surface key={s.l} className="flex flex-col gap-1">
                       <p className="text-xl font-black" style={{ color: s.c }}>{s.v}</p>
-                      <p className="text-[10px] font-bold text-white">{s.l}</p>
+                      <p className="text-[10px] font-bold text-[var(--warm-ink)]">{s.l}</p>
                     </Surface>
                   ))}
                 </div>
 
-                <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+                <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--soft-stone)]">
                   <span>✓ Rent held in USDY (paid 1st → settles 5th)</span>
                   <span>✓ Yield from US Treasuries, not lending</span>
                   <span>✓ Treasury-protected settlement wallet</span>
@@ -454,15 +454,15 @@ export default function HospitalityPage() {
                 </div>
 
                 {usdyConfig?.data?.live ? (
-                  <p className="mt-4 text-[11px] font-bold text-emerald-300">● Rail is LIVE — real on-chain USDY holding + yield distribution active.</p>
+                  <p className="mt-4 text-[11px] font-bold text-[var(--sage)]">● Rail is LIVE — real on-chain USDY holding + yield distribution active.</p>
                 ) : (
-                  <p className="mt-4 text-[11px] text-slate-400">
-                    Status: <span className="text-amber-300 font-bold">Simulated</span> — real Solana USDY rail wired &amp; gated on Ondo mainnet mint + settlement wallet.{' '}
-                    <span className="text-slate-500">({usdyConfig?.data?.apy ?? 4.5}% APY reference.)</span>
+                  <p className="mt-4 text-[11px] text-[var(--soft-stone)]">
+                    Status: <span className="text-[var(--muted-ochre)] font-bold">Simulated</span> — real Solana USDY rail wired &amp; gated on Ondo mainnet mint + settlement wallet.{' '}
+                    <span className="text-[var(--soft-stone)]">({usdyConfig?.data?.apy ?? 4.5}% APY reference.)</span>
                   </p>
                 )}
 
-                <p className="mt-3 text-[11px] text-slate-500 max-w-xl">
+                <p className="mt-3 text-[11px] text-[var(--soft-stone)] max-w-xl">
                   Built in public as part of Pabandi × Ondo — tokenized T-bill yield for the global rental economy. Pre-register your portfolio to get early access and help us show the demand.
                 </p>
               </div>
@@ -472,30 +472,30 @@ export default function HospitalityPage() {
                 {usdyDone ? (
                   <div className="text-center py-6">
                     <div className="text-3xl">✅</div>
-                    <p className="mt-2 text-sm font-bold text-white">You're pre-registered!</p>
-                    <p className="mt-1 text-[11px] text-slate-400">We'll reach out when the USDY rail goes live.</p>
-                    <p className="mt-3 text-[11px] text-emerald-300 font-bold">
+                    <p className="mt-2 text-sm font-bold text-[var(--warm-ink)]">You're pre-registered!</p>
+                    <p className="mt-1 text-[11px] text-[var(--soft-stone)]">We'll reach out when the USDY rail goes live.</p>
+                    <p className="mt-3 text-[11px] text-[var(--sage)] font-bold">
                       {(usdyCount?.data?.totalPreRegistered ?? 0)} {((usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties')} pre-registered so far.
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleUsdyLead} className="flex flex-col gap-3">
-                    <p className="text-sm font-bold text-white">Pre-register your portfolio</p>
-                    <p className="text-[10px] text-slate-400 -mt-1">Get early access to USDY rent yield.</p>
+                    <p className="text-sm font-bold text-[var(--warm-ink)]">Pre-register your portfolio</p>
+                    <p className="text-[10px] text-[var(--soft-stone)] -mt-1">Get early access to USDY rent yield.</p>
                     <input
                       type="email" required placeholder="Work email" value={usdyForm.email}
                       onChange={(e) => setUsdyForm({ ...usdyForm, email: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
                     />
                     <input
                       type="text" placeholder="Name (optional)" value={usdyForm.name}
                       onChange={(e) => setUsdyForm({ ...usdyForm, name: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
                     />
                     <select
                       value={usdyForm.propertyType}
                       onChange={(e) => setUsdyForm({ ...usdyForm, propertyType: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-emerald-400/50"
+                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] outline-none focus:border-emerald-400/50"
                     >
                       <option value="">Property type</option>
                       <option value="hotel">Hotel / Resort</option>
@@ -507,18 +507,18 @@ export default function HospitalityPage() {
                     <input
                       type="number" min="1" placeholder="Portfolio size (units)" value={usdyForm.portfolioSize}
                       onChange={(e) => setUsdyForm({ ...usdyForm, portfolioSize: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
                     />
                     <input
                       type="text" placeholder="Country (optional)" value={usdyForm.country}
                       onChange={(e) => setUsdyForm({ ...usdyForm, country: e.target.value })}
-                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400/50"
+                      className="rounded-lg border border-[var(--soft-stone)]/30 bg-[var(--cream)] px-3 py-2 text-xs text-[var(--warm-ink)] placeholder:text-[var(--soft-stone)] outline-none focus:border-emerald-400/50"
                     />
                     {usdyError && <p className="text-[10px] text-rose-400">{usdyError}</p>}
-                    <Button type="submit" disabled={usdySubmitting} className="mt-1 w-full py-2.5 text-xs font-bold bg-emerald-500 hover:bg-emerald-400">
+                    <Button type="submit" disabled={usdySubmitting} className="mt-1 w-full py-2.5 text-xs font-bold bg-[var(--sage)] hover:bg-emerald-400">
                       {usdySubmitting ? 'Submitting...' : 'Get Early Access'}
                     </Button>
-                    <p className="text-[9px] text-slate-500 text-center">
+                    <p className="text-[9px] text-[var(--soft-stone)] text-center">
                       {(usdyCount?.data?.totalPreRegistered ?? 0)} {(usdyCount?.data?.totalPreRegistered ?? 0) === 1 ? 'property' : 'properties'} already pre-registered.
                     </p>
                   </form>
@@ -531,8 +531,8 @@ export default function HospitalityPage() {
         {/* Pricing */}
         <section className="mb-20">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-white md:text-3xl">Hospitality Add-On Pricing</h2>
-            <p className="text-xs text-slate-400 mt-2">Layer on top of any Pabandi plan.</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">Hospitality Add-On Pricing</h2>
+            <p className="text-xs text-[var(--soft-stone)] mt-2">Layer on top of any Pabandi plan.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3 max-w-4xl mx-auto">
             {[
@@ -540,19 +540,19 @@ export default function HospitalityPage() {
               { name: 'Growth Hospitality', price: '$19', sub: '/ month add-on', features: ['Up to 5 properties', 'Beds24 + Cloudbeds', 'Auto-webhook escrow', '2.5% escrow commission', '$PAB guest rewards'], cta: 'Pay with Safepay', highlight: true },
               { name: 'Enterprise Hospitality', price: 'Custom', sub: 'Per property volume', features: ['Unlimited properties', 'All PMS providers', 'White-label SDK', '1% escrow commission', 'Dedicated support', 'Halal-certified escrow'], cta: 'Contact Sales', highlight: false },
             ].map(({ name, price, sub, features, cta, highlight }) => (
-              <div key={name} className={`flex flex-col justify-between rounded-2xl border p-6 ${highlight ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+              <div key={name} className={`flex flex-col justify-between rounded-2xl border p-6 ${highlight ? 'border-indigo-500/40 bg-[var(--clay)]/10' : 'border-white/[0.08] bg-white/[0.03]'}`}>
                 {highlight && <Chip tone="info" className="self-start mb-3">Most Popular</Chip>}
                 <div>
-                  <h3 className="text-sm font-bold text-white">{name}</h3>
+                  <h3 className="text-sm font-bold text-[var(--warm-ink)]">{name}</h3>
                   <div className="my-4">
-                    <span className="font-headline text-3xl font-black text-white">{price}</span>
-                    <span className="text-xs text-slate-400 ml-1">{sub}</span>
+                    <span className="font-headline text-3xl font-black text-[var(--warm-ink)]">{price}</span>
+                    <span className="text-xs text-[var(--soft-stone)] ml-1">{sub}</span>
                   </div>
-                  <hr className="border-white/10 my-3" />
+                  <hr className="border-[var(--soft-stone)]/30 my-3" />
                   <ul className="space-y-2.5">
                     {features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-[11px] text-slate-400">
-                        <span className="text-indigo-400">✓</span>
+                      <li key={f} className="flex items-start gap-2 text-[11px] text-[var(--soft-stone)]">
+                        <span className="text-[var(--clay)]">✓</span>
                         {f}
                       </li>
                     ))}
@@ -573,12 +573,12 @@ export default function HospitalityPage() {
 
         {/* FAQ */}
         <section className="mb-20 max-w-3xl mx-auto">
-          <div className="rounded-3xl border border-violet-500/25 bg-gradient-to-br from-indigo-500/10 to-violet-500/[0.06] p-8 md:p-10">
+          <div className="rounded-3xl border border-violet-500/25 bg-gradient-to-br from-[var(--clay)]/10 to-[var(--clay)]/[0.06] p-8 md:p-10">
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">🏛️</span>
-              <h2 className="text-xl font-bold text-white md:text-2xl">Court &amp; Eviction Screening — Built In</h2>
+              <h2 className="text-xl font-bold text-[var(--warm-ink)] md:text-2xl">Court &amp; Eviction Screening — Built In</h2>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-[var(--warm-ink)] leading-relaxed">
               Every booking can be screened against U.S. court records (CourtListener) for eviction and
               housing-litigation history. The result — LOW / MEDIUM / HIGH — automatically sizes the
               security deposit and feeds the Pabandi trust rail. No more blind trust on a stranger's deposit.
@@ -593,18 +593,18 @@ export default function HospitalityPage() {
 
         <section className="mb-20 max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-xl font-bold text-white md:text-2xl">Frequently Asked Questions</h2>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] md:text-2xl">Frequently Asked Questions</h2>
           </div>
           <div className="space-y-2">
             {FAQS.map(({ q, a }, i) => (
               <div key={i} className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
                 <button className="flex w-full items-center justify-between p-4 text-left" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                  <span className="text-xs font-bold text-white pr-4">{q}</span>
-                  <span className="text-slate-400">{openFaq === i ? '−' : '+'}</span>
+                  <span className="text-xs font-bold text-[var(--warm-ink)] pr-4">{q}</span>
+                  <span className="text-[var(--soft-stone)]">{openFaq === i ? '−' : '+'}</span>
                 </button>
                 {openFaq === i && (
                   <div className="px-4 pb-4">
-                    <p className="text-[11px] text-slate-400 leading-relaxed">{a}</p>
+                    <p className="text-[11px] text-[var(--soft-stone)] leading-relaxed">{a}</p>
                   </div>
                 )}
               </div>
@@ -616,8 +616,8 @@ export default function HospitalityPage() {
         <section className="mb-16">
           <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-8 text-center md:p-12">
             <div className="text-3xl mb-4">✨</div>
-            <h2 className="text-2xl font-bold text-white md:text-3xl">Ready to Protect Your Property?</h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-400 leading-relaxed">Join hotels and guesthouses across South Asia and the Middle East who use Pabandi to eliminate no-shows and reward loyal guests.</p>
+            <h2 className="text-2xl font-bold text-[var(--warm-ink)] md:text-3xl">Ready to Protect Your Property?</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-[var(--soft-stone)] leading-relaxed">Join hotels and guesthouses across South Asia and the Middle East who use Pabandi to eliminate no-shows and reward loyal guests.</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={() => handleOpenWizard()} className="px-8 py-3.5 text-sm font-bold">Connect Your Property — Free</Button>
               <Link to="/contact"><Button variant="outline" className="px-8 py-3.5 text-sm font-bold">Talk to Sales</Button></Link>

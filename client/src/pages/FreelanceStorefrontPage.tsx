@@ -68,7 +68,7 @@ export default function FreelanceStorefrontPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900 pb-24 font-body" style={{ color: tokens.color.text }}>
+    <div className="min-h-screen bg-[var(--warm-sand)] pb-24 font-body" style={{ color: tokens.color.text }}>
       
       {/* STOREFRONT HEADER - The "Whop" equivalent profile banner */}
       <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-indigo-900 via-slate-800 to-indigo-950 overflow-hidden group">
@@ -77,7 +77,7 @@ export default function FreelanceStorefrontPage() {
         {/* Owner Edit Ability */}
         {user && (
           <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="bg-black/50 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/70">
+            <button className="bg-black/50 backdrop-blur-sm border border-white/20 text-[var(--warm-ink)] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-black/70">
               <span>✏️</span> Edit Storefront Banner
             </button>
           </div>
@@ -87,56 +87,56 @@ export default function FreelanceStorefrontPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative -mt-24">
         
         {/* Profile Card */}
-        <div className="bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center shadow-2xl">
+        <div className="bg-[var(--warm-sand)]/90 backdrop-blur-sm border border-[var(--soft-stone)]/30 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start md:items-center shadow-[var(--shadow-lift)]">
           <img src={freelancer.avatar} alt={freelancer.name} className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-slate-900 shadow-xl object-cover" />
           
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-3xl font-black font-headline text-white">{freelancer.name}</h1>
-              <span className="flex items-center gap-1 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
+              <h1 className="text-3xl font-black font-headline text-[var(--warm-ink)]">{freelancer.name}</h1>
+              <span className="flex items-center gap-1 bg-[var(--sage)]/20 border border-[var(--sage)]/30 text-[var(--sage)] text-xs font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
                 Available for Work
               </span>
             </div>
-            <p className="text-lg text-indigo-300 font-medium mb-3">{freelancer.title}</p>
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">{freelancer.description}</p>
+            <p className="text-lg text-[var(--terracotta)] font-medium mb-3">{freelancer.title}</p>
+            <p className="text-[var(--warm-ink)] text-sm max-w-2xl leading-relaxed">{freelancer.description}</p>
           </div>
 
-          <div className="bg-black/40 border border-white/5 rounded-2xl p-4 flex gap-6 md:min-w-[250px] shrink-0">
+          <div className="bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-2xl p-4 flex gap-6 md:min-w-[250px] shrink-0">
              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Trust Passport</p>
+                <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-1">Trust Passport</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black text-emerald-400">{freelancer.trustScore}</span>
-                  <span className="text-sm text-emerald-400/70 font-bold mb-1">{freelancer.trustBand}</span>
+                  <span className="text-3xl font-black text-[var(--sage)]">{freelancer.trustScore}</span>
+                  <span className="text-sm text-[var(--sage)]/70 font-bold mb-1">{freelancer.trustBand}</span>
                 </div>
              </div>
-             <div className="w-px bg-white/10"></div>
+             <div className="w-px bg-[var(--warm-sand)]"></div>
              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">Escrow Deals</p>
+                <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-1">Escrow Deals</p>
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-black text-white">{freelancer.totalEscrows}</span>
+                  <span className="text-3xl font-black text-[var(--warm-ink)]">{freelancer.totalEscrows}</span>
                 </div>
              </div>
           </div>
         </div>
 
         {/* Modular "Apps" Navigation */}
-        <div className="flex items-center gap-2 mt-8 mb-6 overflow-x-auto no-scrollbar border-b border-white/5 pb-2">
+        <div className="flex items-center gap-2 mt-8 mb-6 overflow-x-auto no-scrollbar border-b border-[var(--soft-stone)]/30 pb-2">
            <button 
              onClick={() => setActiveApp('checkout')}
-             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'checkout' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'checkout' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
            >
              🛍️ Escrow Services
            </button>
            <button 
              onClick={() => setActiveApp('portfolio')}
-             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'portfolio' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'portfolio' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
            >
              📁 Verified Portfolio
            </button>
            <button 
              onClick={() => setActiveApp('chat')}
-             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'chat' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-slate-300 hover:bg-white/10'}`}
+             className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeApp === 'chat' ? 'bg-[var(--clay)] text-[var(--warm-ink)] shadow-[var(--shadow-soft)]' : 'bg-[var(--cream)] text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}
            >
              🤖 AI Concierge
            </button>
@@ -151,19 +151,19 @@ export default function FreelanceStorefrontPage() {
             {activeApp === 'checkout' && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold font-headline mb-4 flex items-center gap-2">
-                  <span className="text-indigo-400">⚡</span> Available Services
+                  <span className="text-[var(--clay)]">⚡</span> Available Services
                 </h2>
                 {services.map(service => (
-                  <div key={service.id} className="bg-slate-800/40 border border-white/10 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors group flex flex-col sm:flex-row justify-between gap-4">
+                  <div key={service.id} className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-6 hover:border-indigo-500/50 transition-colors group flex flex-col sm:flex-row justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">{service.name}</h3>
-                      <p className="text-sm text-slate-400 mb-4">{service.description}</p>
-                      <span className="inline-flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md text-xs font-medium text-slate-300">
+                      <h3 className="text-lg font-bold text-[var(--warm-ink)] mb-2 group-hover:text-[var(--terracotta)] transition-colors">{service.name}</h3>
+                      <p className="text-sm text-[var(--soft-stone)] mb-4">{service.description}</p>
+                      <span className="inline-flex items-center gap-1.5 bg-[var(--cream)] px-2.5 py-1 rounded-md text-xs font-medium text-[var(--warm-ink)]">
                         ⏱️ Delivery: {service.delivery}
                       </span>
                     </div>
                     <div className="flex flex-col items-start sm:items-end justify-between shrink-0">
-                      <p className="text-2xl font-black text-white">${service.price}</p>
+                      <p className="text-2xl font-black text-[var(--warm-ink)]">${service.price}</p>
                       <button
                         onClick={async () => {
                           try {
@@ -173,7 +173,7 @@ export default function FreelanceStorefrontPage() {
                             else window.location.href = '/demo-checkout';
                           } catch { window.location.href = '/demo-checkout'; }
                         }}
-                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-white transition-colors w-full sm:w-auto text-center"
+                        className="mt-4 sm:mt-0 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-[var(--warm-ink)] transition-colors w-full sm:w-auto text-center"
                       >
                         Fund Escrow
                       </button>
@@ -184,38 +184,38 @@ export default function FreelanceStorefrontPage() {
             )}
 
             {activeApp === 'portfolio' && (
-              <div className="bg-slate-800/40 border border-white/10 rounded-2xl p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
+              <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
                  <span className="text-4xl mb-4 grayscale">🖼️</span>
                  <h3 className="text-xl font-bold mb-2">Verified Deliverables</h3>
-                 <p className="text-slate-400 max-w-sm">Past work completed through Pabandi Escrow is automatically verified and showcased here.</p>
+                 <p className="text-[var(--soft-stone)] max-w-sm">Past work completed through Pabandi Escrow is automatically verified and showcased here.</p>
               </div>
             )}
 
             {activeApp === 'chat' && (
-              <div className="bg-slate-800/40 border border-white/10 rounded-2xl h-[500px] flex flex-col overflow-hidden">
-                <div className="bg-black/30 p-4 border-b border-white/5 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-400 text-xl">🤖</div>
+              <div className="bg-[var(--warm-sand)]/40 border border-[var(--soft-stone)]/30 rounded-2xl h-[500px] flex flex-col overflow-hidden">
+                <div className="bg-[var(--cream)] p-4 border-b border-[var(--soft-stone)]/30 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[var(--clay)]/20 rounded-full flex items-center justify-center text-[var(--clay)] text-xl">🤖</div>
                   <div>
-                    <h3 className="font-bold text-white text-sm">Syed's AI Concierge</h3>
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Online</p>
+                    <h3 className="font-bold text-[var(--warm-ink)] text-sm">Syed's AI Concierge</h3>
+                    <p className="text-[10px] text-[var(--sage)] font-bold uppercase tracking-widest">Online</p>
                   </div>
                 </div>
                 
                 <div className="flex-1 p-6 overflow-y-auto space-y-4 custom-scrollbar">
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'user' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-indigo-500/20 text-indigo-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.role === 'user' ? 'bg-[var(--sage)]/20 text-[var(--sage)]' : 'bg-[var(--clay)]/20 text-[var(--clay)]'}`}>
                         {msg.role === 'user' ? '👤' : '🤖'}
                       </div>
-                      <div className={`text-sm p-3 rounded-2xl ${msg.role === 'user' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-tr-none' : 'bg-indigo-500/10 border border-indigo-500/20 text-slate-300 rounded-tl-none'}`}>
+                      <div className={`text-sm p-3 rounded-2xl ${msg.role === 'user' ? 'bg-[var(--sage)]/10 border border-[var(--sage)]/20 text-[var(--sage)] rounded-tr-none' : 'bg-[var(--clay)]/10 border border-indigo-500/20 text-[var(--warm-ink)] rounded-tl-none'}`}>
                         {msg.content}
                       </div>
                     </div>
                   ))}
                   {isTyping && (
                     <div className="flex gap-3 max-w-[80%]">
-                      <div className="w-8 h-8 bg-indigo-500/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
-                      <div className="bg-indigo-500/10 border border-indigo-500/20 text-slate-300 text-sm p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
+                      <div className="w-8 h-8 bg-[var(--clay)]/20 rounded-full flex-shrink-0 flex items-center justify-center text-xs">🤖</div>
+                      <div className="bg-[var(--clay)]/10 border border-indigo-500/20 text-[var(--warm-ink)] text-sm p-3 rounded-2xl rounded-tl-none flex items-center gap-1">
                         <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                         <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
                         <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
@@ -225,20 +225,20 @@ export default function FreelanceStorefrontPage() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <form onSubmit={handleChatSubmit} className="p-4 bg-black/20 border-t border-white/5">
-                  <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-2 focus-within:border-indigo-500/50 transition-colors">
+                <form onSubmit={handleChatSubmit} className="p-4 bg-black/20 border-t border-[var(--soft-stone)]/30">
+                  <div className="flex items-center gap-2 bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-xl p-2 focus-within:border-indigo-500/50 transition-colors">
                     <input 
                       type="text" 
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder="I need a custom crypto wallet built..." 
-                      className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-white placeholder-slate-500" 
+                      className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-[var(--warm-ink)] placeholder-slate-500" 
                       disabled={isTyping}
                     />
                     <button 
                       type="submit"
                       disabled={isTyping || !chatInput.trim()}
-                      className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-[var(--clay)] text-[var(--warm-ink)] p-2 rounded-lg hover:bg-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     </button>
@@ -253,39 +253,39 @@ export default function FreelanceStorefrontPage() {
           <div className="space-y-6">
             
             {/* Guarantee Box */}
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[var(--soft-stone)]/30 rounded-2xl p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <span className="text-6xl">🛡️</span>
               </div>
               <h3 className="font-bold text-lg mb-2 relative z-10">Zero Risk Guarantee</h3>
-              <p className="text-sm text-slate-400 mb-4 relative z-10">
+              <p className="text-sm text-[var(--soft-stone)] mb-4 relative z-10">
                 All services are powered by Pabandi Smart Escrow. Your funds are locked securely on-chain and only released when you approve the final deliverables.
               </p>
-              <ul className="text-xs space-y-2 text-slate-300 font-medium relative z-10">
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> No Ghosting</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Instant AI Arbitration</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Zero-Fee Off-Ramps</li>
+              <ul className="text-xs space-y-2 text-[var(--warm-ink)] font-medium relative z-10">
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> No Ghosting</li>
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> Instant AI Arbitration</li>
+                <li className="flex items-center gap-2"><span className="text-[var(--sage)]">✓</span> Zero-Fee Off-Ramps</li>
               </ul>
             </div>
 
             {/* Verification Widget */}
-            <div className="bg-black/30 border border-white/5 rounded-2xl p-6">
-               <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-4">Trust Oracle Verification</p>
+            <div className="bg-[var(--cream)] border border-[var(--soft-stone)]/30 rounded-2xl p-6">
+               <p className="text-[10px] uppercase font-bold text-[var(--soft-stone)] tracking-widest mb-4">Trust Oracle Verification</p>
                <div className="space-y-3">
                  <div className="flex items-center justify-between">
-                   <span className="text-sm text-slate-300">Identity / Liveness</span>
-                   <span className="text-sm font-bold text-emerald-400">99%</span>
+                   <span className="text-sm text-[var(--warm-ink)]">Identity / Liveness</span>
+                   <span className="text-sm font-bold text-[var(--sage)]">99%</span>
                  </div>
                  <div className="flex items-center justify-between">
-                   <span className="text-sm text-slate-300">Competence (Gig Hist.)</span>
-                   <span className="text-sm font-bold text-emerald-400">95%</span>
+                   <span className="text-sm text-[var(--warm-ink)]">Competence (Gig Hist.)</span>
+                   <span className="text-sm font-bold text-[var(--sage)]">95%</span>
                  </div>
                  <div className="flex items-center justify-between">
-                   <span className="text-sm text-slate-300">Wallet Temporal Age</span>
-                   <span className="text-sm font-bold text-emerald-400">4 Years</span>
+                   <span className="text-sm text-[var(--warm-ink)]">Wallet Temporal Age</span>
+                   <span className="text-sm font-bold text-[var(--sage)]">4 Years</span>
                  </div>
                </div>
-               <button className="w-full mt-6 bg-white/5 border border-white/10 hover:bg-white/10 text-white text-xs font-bold py-2 rounded-lg transition-colors">
+               <button className="w-full mt-6 bg-[var(--cream)] border border-[var(--soft-stone)]/30 hover:bg-[var(--warm-sand)] text-[var(--warm-ink)] text-xs font-bold py-2 rounded-lg transition-colors">
                  View Full AI Audit Report
                </button>
             </div>

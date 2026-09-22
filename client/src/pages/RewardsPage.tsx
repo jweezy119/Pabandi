@@ -76,7 +76,7 @@ export default function RewardsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="animate-pulse text-amber-400 text-xl">Loading your rewards...</div>
+        <div className="animate-pulse text-[var(--muted-ochre)] text-xl">Loading your rewards...</div>
       </div>
     );
   }
@@ -86,26 +86,26 @@ export default function RewardsPage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-white mb-2">$PAB Rewards</h1>
-          <p className="text-slate-400">Earn tokens on every payment. Stake to unlock fee discounts.</p>
+          <h1 className="text-4xl font-bold text-[var(--warm-ink)] mb-2">$PAB Rewards</h1>
+          <p className="text-[var(--soft-stone)]">Earn tokens on every payment. Stake to unlock fee discounts.</p>
         </div>
 
         {/* Hero Balance Card */}
-        <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-lg rounded-2xl p-8 border border-amber-500/30 mb-8">
+        <div className="bg-gradient-to-r from-[var(--muted-ochre)]/20 to-[var(--terracotta)]/20 backdrop-blur-lg rounded-2xl p-8 border border-amber-500/30 mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div>
-              <p className="text-amber-300 text-sm font-medium mb-1">Your $PAB Balance</p>
-              <p className="text-5xl font-bold text-white">
+              <p className="text-[var(--muted-ochre)] text-sm font-medium mb-1">Your $PAB Balance</p>
+              <p className="text-5xl font-bold text-[var(--warm-ink)]">
                 {balance?.totalEarned?.toFixed(2) || '0.00'}
-                <span className="text-2xl text-amber-400 ml-2">$PAB</span>
+                <span className="text-2xl text-[var(--muted-ochre)] ml-2">$PAB</span>
               </p>
-              <p className="text-slate-400 mt-2">
-                Current Tier: <span className="text-amber-400 font-semibold">{balance?.currentTier || 'Bronze'}</span>
+              <p className="text-[var(--soft-stone)] mt-2">
+                Current Tier: <span className="text-[var(--muted-ochre)] font-semibold">{balance?.currentTier || 'Bronze'}</span>
                 {balance?.stakedAmount ? ` • ${balance.stakedAmount.toFixed(0)} staked` : ''}
               </p>
             </div>
             <div className="mt-6 md:mt-0">
-              <button className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-amber-500/25">
+              <button className="px-6 py-3 bg-[var(--muted-ochre)] hover:bg-[var(--muted-ochre)] text-[var(--warm-ink)] font-semibold rounded-xl transition-all shadow-lg shadow-[var(--muted-ochre)]/25">
                 Stake $PAB →
               </button>
             </div>
@@ -119,40 +119,40 @@ export default function RewardsPage() {
         <FeeOffsetCalculator />
 
         {/* How It Works */}
-        <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">How It Works</h2>
+        <div className="bg-[var(--cream)]/50 backdrop-blur rounded-2xl p-6 border border-slate-700 mb-8">
+          <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-[var(--muted-ochre)]/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">💳</span>
               </div>
-              <h3 className="text-white font-semibold mb-1">Pay with Card</h3>
-              <p className="text-slate-400 text-sm">Use your regular credit/debit card via Square checkout</p>
+              <h3 className="text-[var(--warm-ink)] font-semibold mb-1">Pay with Card</h3>
+              <p className="text-[var(--soft-stone)] text-sm">Use your regular credit/debit card via Square checkout</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">🪙</span>
               </div>
-              <h3 className="text-white font-semibold mb-1">Earn $PAB</h3>
-              <p className="text-slate-400 text-sm">Get 10% back in $PAB tokens automatically after payment</p>
+              <h3 className="text-[var(--warm-ink)] font-semibold mb-1">Earn $PAB</h3>
+              <p className="text-[var(--soft-stone)] text-sm">Get 10% back in $PAB tokens automatically after payment</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 bg-[var(--dusty-rose)]/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">⚡</span>
               </div>
-              <h3 className="text-white font-semibold mb-1">Save on Fees</h3>
-              <p className="text-slate-400 text-sm">Stake $PAB to unlock up to 50% fee discounts</p>
+              <h3 className="text-[var(--warm-ink)] font-semibold mb-1">Save on Fees</h3>
+              <p className="text-[var(--soft-stone)] text-sm">Stake $PAB to unlock up to 50% fee discounts</p>
             </div>
           </div>
         </div>
 
         {/* Reward History */}
-        <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700">
-          <h2 className="text-xl font-bold text-white mb-4">Reward History</h2>
+        <div className="bg-[var(--cream)]/50 backdrop-blur rounded-2xl p-6 border border-slate-700">
+          <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-4">Reward History</h2>
           {history.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-slate-500 text-lg">No rewards yet</p>
-              <p className="text-slate-600 text-sm mt-1">Make your first booking to start earning $PAB!</p>
+              <p className="text-[var(--soft-stone)] text-lg">No rewards yet</p>
+              <p className="text-[var(--soft-stone)] text-sm mt-1">Make your first booking to start earning $PAB!</p>
             </div>
           ) : (
             <div className="space-y-3">

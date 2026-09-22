@@ -71,7 +71,7 @@ export const WalletPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: tokens.color.background }}>
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-8 h-8 border-2 border-[var(--clay)] border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-white/60">Loading wallet...</p>
         </div>
       </div>
@@ -83,15 +83,15 @@ export const WalletPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center px-4" style={{ background: tokens.color.background }}>
         <div className="w-full max-w-md">
           <Surface className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-[32px] text-indigo-400">account_balance_wallet</span>
+            <div className="w-16 h-16 rounded-full bg-[var(--clay)]/20 flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[32px] text-[var(--clay)]">account_balance_wallet</span>
             </div>
-            <h1 className="text-2xl font-black text-white mb-2">Create Your Wallet</h1>
+            <h1 className="text-2xl font-black text-[var(--warm-ink)] mb-2">Create Your Wallet</h1>
             <p className="text-sm text-white/60 mb-6">
               Get a Solana wallet to interact with the Pabandi ecosystem — earn $PAB rewards, make bookings, and more.
             </p>
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-200">
+              <div className="mb-4 p-3 rounded-lg bg-[var(--terracotta)]/10 border border-red-500/20 text-sm text-[var(--terracotta)]">
                 {error}
               </div>
             )}
@@ -100,7 +100,7 @@ export const WalletPage: React.FC = () => {
             </Button>
             <button
               onClick={() => navigate('/')}
-              className="mt-4 text-sm text-white/50 hover:text-white"
+              className="mt-4 text-sm text-white/50 hover:text-[var(--warm-ink)]"
             >
               Skip for now
             </button>
@@ -115,7 +115,7 @@ export const WalletPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-black text-white">My Wallet</h1>
+            <h1 className="text-2xl font-black text-[var(--warm-ink)]">My Wallet</h1>
             <p className="text-sm text-white/60">Manage your $PAB and Solana assets</p>
           </div>
           <Button variant="ghost" onClick={() => navigate('/profile')}>
@@ -127,10 +127,10 @@ export const WalletPage: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm text-white/60">Total Balance</p>
-              <p className="text-3xl font-black text-white">{wallet.balance || 0} <span className="text-lg text-indigo-400">$PAB</span></p>
+              <p className="text-3xl font-black text-[var(--warm-ink)]">{wallet.balance || 0} <span className="text-lg text-[var(--clay)]">$PAB</span></p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[24px] text-indigo-400">account_balance_wallet</span>
+            <div className="w-12 h-12 rounded-full bg-[var(--clay)]/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] text-[var(--clay)]">account_balance_wallet</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -160,15 +160,15 @@ export const WalletPage: React.FC = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-white">{wallet.totalStaked || 0}</p>
+            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.totalStaked || 0}</p>
             <p className="text-xs text-white/60">Staked</p>
           </Surface>
           <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-white">{wallet.lockedPab || 0}</p>
+            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.lockedPab || 0}</p>
             <p className="text-xs text-white/60">Locked</p>
           </Surface>
           <Surface className="p-4 text-center">
-            <p className="text-xl font-bold text-white">{wallet.usdcBalance || 0}</p>
+            <p className="text-xl font-bold text-[var(--warm-ink)]">{wallet.usdcBalance || 0}</p>
             <p className="text-xs text-white/60">USDC</p>
           </Surface>
           <Surface className="p-4 text-center">
@@ -179,29 +179,29 @@ export const WalletPage: React.FC = () => {
         </div>
 
         <Surface className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-[var(--warm-ink)] mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-indigo-400 mb-2">send</span>
-              <p className="text-xs font-semibold text-white">Send</p>
+            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-[var(--clay)] mb-2">send</span>
+              <p className="text-xs font-semibold text-[var(--warm-ink)]">Send</p>
             </button>
-            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
               <span className="material-symbols-outlined text-[24px] text-green-400 mb-2">call_received</span>
-              <p className="text-xs font-semibold text-white">Receive</p>
+              <p className="text-xs font-semibold text-[var(--warm-ink)]">Receive</p>
             </button>
-            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
+            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
               <span className="material-symbols-outlined text-[24px] text-yellow-400 mb-2">swap_horiz</span>
-              <p className="text-xs font-semibold text-white">Swap</p>
+              <p className="text-xs font-semibold text-[var(--warm-ink)]">Swap</p>
             </button>
-            <button className="p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-center">
-              <span className="material-symbols-outlined text-[24px] text-blue-400 mb-2">history</span>
-              <p className="text-xs font-semibold text-white">History</p>
+            <button className="p-4 rounded-xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] hover:bg-[var(--warm-sand)] transition-colors text-center">
+              <span className="material-symbols-outlined text-[24px] text-[var(--sky-wash)] mb-2">history</span>
+              <p className="text-xs font-semibold text-[var(--warm-ink)]">History</p>
             </button>
           </div>
         </Surface>
 
         {error && (
-          <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-200">
+          <div className="mt-6 p-4 rounded-xl bg-[var(--terracotta)]/10 border border-red-500/20 text-sm text-[var(--terracotta)]">
             {error}
           </div>
         )}
