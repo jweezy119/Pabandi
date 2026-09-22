@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
+import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { path: '/pipeline', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -10,20 +10,47 @@ const navItems = [
 ];
 
 const FUNNEL_STAGES = [
-  { name: 'Lead', color: '#C97B5A' },
-  { name: 'Verified', color: '#D9A854' },
-  { name: 'Booked', color: '#8A9A7B' },
-  { name: 'Repeat', color: '#B8C9D4' },
-  { name: 'VIP', color: '#D4A5A5' },
-  { name: 'At Risk', color: '#A85A3C' },
+  { name: 'Lead', color: 'var(--clay)' },
+  { name: 'Verified', color: 'var(--muted-ochre)' },
+  { name: 'Booked', color: 'var(--sage)' },
+  { name: 'Repeat', color: 'var(--sky-wash)' },
+  { name: 'VIP', color: 'var(--dusty-rose)' },
+  { name: 'At Risk', color: 'var(--terracotta)' },
 ];
+
+function ClayCard({ children, className = '', hover = true, ...props }: any) {
+  return (
+    <div
+      className={`rounded-[28px] bg-white transition-all duration-300 ${hover ? 'hover:-translate-y-0.5' : ''} ${className}`}
+      style={{ boxShadow: 'var(--shadow-soft)' }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+
+function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: string; value: string; label: string; valueColor?: string }) {
+  return (
+    <ClayCard className="p-5" hover={false}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm mb-1" style={{ color: 'var(--soft-stone)' }}>{label}</p>
+          <p className="text-2xl font-bold" style={{ color: `var(--${valueColor})` }}>{value}</p>
+        </div>
+        <div className="w-11 h-11 rounded-xl bg-[var(--clay)] flex items-center justify-center">
+          <span className="material-symbols-outlined text-white text-[20px]">{icon}</span>
+        </div>
+      </div>
+    </ClayCard>
+  );
+}
 
 export default function PipelineOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch real leads from API
     const fetchLeads = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm/clients`, {
@@ -44,80 +71,101 @@ export default function PipelineOSPage() {
 
   const totalValue = leads.reduce((sum, l) => sum + (l.totalSpent || 0), 0);
   const avgScore = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + (l.reliabilityScore || 50), 0) / leads.length) : 0;
+  const atRiskCount = leads.filter(l => (l.reliabilityScore || 50) < 30).length;
 
   return (
-    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="#C97B5A" navItems={navItems}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <DashboardLayout osName="PipelineOS" osIcon="P" osColor="ochre" navItems={navItems}>
+      <div className="space-y-6 max-w-6xl mx-auto">
+
+        {/* Page header */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Pipeline Dashboard</h1>
-            <p style={{ color: 'var(--soft-stone)' }}>Trust-aware CRM & revenue engine</p>
+            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--warm-ink)' }}>Pipeline Dashboard</h1>
+            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Trust-aware CRM & revenue engine</p>
           </div>
-          <Link to="/pipeline/leads" className="px-4 py-2 rounded-xl font-medium transition" style={{ background: 'var(--clay)', color: 'white' }}>
-            + Add Lead
+          <Link
+            to="/pipeline/leads"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Add Lead
           </Link>
         </div>
 
+        {/* Stats row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl" style={{ background: 'white', border: '1px solid var(--soft-stone)', boxShadow: '0 2px 8px rgba(180,130,90,0.1)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Total Leads</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>{leads.length}</p>
-          </div>
-          <div className="p-4 rounded-xl" style={{ background: 'white', border: '1px solid var(--soft-stone)', boxShadow: '0 2px 8px rgba(180,130,90,0.1)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Pipeline Value</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>${totalValue.toLocaleString()}</p>
-          </div>
-          <div className="p-4 rounded-xl" style={{ background: 'white', border: '1px solid var(--soft-stone)', boxShadow: '0 2px 8px rgba(180,130,90,0.1)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Avg Trust Score</p>
-            <p className="text-2xl font-bold" style={{ color: avgScore >= 70 ? 'var(--sage)' : avgScore >= 50 ? 'var(--muted-ochre)' : 'var(--terracotta)' }}>{avgScore}/100</p>
-          </div>
-          <div className="p-4 rounded-xl" style={{ background: 'white', border: '1px solid var(--soft-stone)', boxShadow: '0 2px 8px rgba(180,130,90,0.1)' }}>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>At Risk</p>
-            <p className="text-2xl font-bold" style={{ color: 'var(--terracotta)' }}>{leads.filter(l => (l.reliabilityScore || 50) < 30).length}</p>
-          </div>
+          <StatCard icon="groups" value={`${leads.length}`} label="Total Leads" />
+          <StatCard icon="attach_money" value={`$${totalValue.toLocaleString()}`} label="Pipeline Value" />
+          <StatCard
+            icon="verified"
+            value={`${avgScore}/100`}
+            label="Avg Trust Score"
+            valueColor={avgScore >= 70 ? 'sage' : avgScore >= 50 ? 'muted-ochre' : 'terracotta'}
+          />
+          <StatCard icon="warning" value={`${atRiskCount}`} label="At Risk" valueColor="terracotta" />
         </div>
 
-        <div className="rounded-xl p-6" style={{ background: 'var(--warm-sand)', border: '1px solid var(--soft-stone)' }}>
+        {/* Funnel */}
+        <ClayCard className="p-6" hover={false}>
           <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Trust-Based Funnel</h2>
           <div className="flex items-end gap-2 h-48">
             {FUNNEL_STAGES.map((stage) => {
               const count = leads.filter(l => l.stage === stage.name.toLowerCase()).length;
               return (
                 <div key={stage.name} className="flex-1 flex flex-col items-center">
-                  <div className="w-full rounded-t-lg transition-all" style={{ background: stage.color, height: `${Math.max(10, (count / Math.max(1, leads.length)) * 100)}%` }} />
+                  <div
+                    className="w-full rounded-t-lg transition-all"
+                    style={{ background: stage.color, height: `${Math.max(10, (count / Math.max(1, leads.length)) * 100)}%` }}
+                  />
                   <p className="text-xs mt-2 text-center" style={{ color: 'var(--soft-stone)' }}>{stage.name}</p>
                   <p className="text-sm font-bold" style={{ color: 'var(--warm-ink)' }}>{count}</p>
                 </div>
               );
             })}
           </div>
-        </div>
+        </ClayCard>
 
-        <div className="rounded-xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--soft-stone)', boxShadow: '0 2px 8px rgba(180,130,90,0.1)' }}>
+        {/* Recent leads */}
+        <ClayCard className="overflow-hidden" hover={false}>
           <div className="p-4 border-b" style={{ borderColor: 'var(--soft-stone)' }}>
             <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Recent Leads</h2>
           </div>
           {loading ? (
-            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
+            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>
+              <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
+              <p className="mt-2 text-sm">Loading leads...</p>
+            </div>
           ) : leads.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>
+              <span className="material-symbols-outlined text-[32px] mb-2 block">inbox</span>
               <p>No leads yet. Add your first lead to get started.</p>
-              <Link to="/pipeline/leads" className="inline-block mt-2 px-4 py-2 rounded-xl text-white font-medium" style={{ background: 'var(--clay)' }}>Add Lead</Link>
+              <Link
+                to="/pipeline/leads"
+                className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-sm font-semibold border-2 bg-[var(--clay)] text-white border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Add Lead
+              </Link>
             </div>
           ) : (
             <div className="divide-y" style={{ borderColor: 'var(--soft-stone)' }}>
               {leads.map((lead) => (
                 <div key={lead.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{lead.name}</p>
-                    <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{lead.stage || 'lead'} • {lead.totalJobs || 0} jobs</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--warm-sand)' }}>
+                      <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--soft-stone)' }}>person</span>
+                    </div>
+                    <div>
+                      <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{lead.name}</p>
+                      <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{lead.stage || 'lead'} • {lead.totalJobs || 0} jobs</p>
+                    </div>
                   </div>
                   <span className="font-medium" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </ClayCard>
       </div>
     </DashboardLayout>
   );
