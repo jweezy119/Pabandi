@@ -3,7 +3,7 @@ import { FiPlus, FiUsers, FiDollarSign, FiCalendar, FiBriefcase, FiTrendingUp, F
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 
-const API = '/api/v1/crm';
+const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const token = localStorage.getItem('token') || '';
 
 async function api(path: string, options: RequestInit = {}) {

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 
 const navItems = [
-  { path: '/ledger', label: 'Dashboard', icon: 'dashboard', end: true },
+  { path: '/ledger', label: 'Overview', icon: 'dashboard', end: true },
   { path: '/ledger/invoices', label: 'Invoices', icon: 'receipt' },
   { path: '/ledger/expenses', label: 'Expenses', icon: 'money_off' },
   { path: '/ledger/accounts', label: 'Accounts', icon: 'account_balance' },
@@ -16,13 +15,22 @@ export default function LedgerInvoicesPage() {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    setInvoices([
-      { id: '1', number: 'INV-001', client: 'Acme Corp', amount: 15000, status: 'Paid', dueDate: '2026-09-15' },
-      { id: '2', number: 'INV-002', client: 'TechStart Inc', amount: 8500, status: 'Pending', dueDate: '2026-09-25' },
-      { id: '3', number: 'INV-003', client: 'Global Ventures', amount: 12000, status: 'Overdue', dueDate: '2026-09-01' },
-      { id: '4', number: 'INV-004', client: 'NextGen Solutions', amount: 5500, status: 'Draft', dueDate: '2026-10-01' },
-    ]);
-    setLoading(false);
+    async function fetchInvoices() {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/ledger/invoices`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setInvoices(data.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch invoices:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInvoices();
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -35,50 +43,56 @@ export default function LedgerInvoicesPage() {
     return <span className={`px-2 py-0.5 text-xs rounded ${colors[status] || 'bg-white/10 text-gray-400'}`}>{status}</span>;
   };
 
-  const filtered = invoices.filter((inv) => filter === 'all' || inv.status.toLowerCase() === filter);
+  const filtered = invoices.filter((inv) => filter === 'all' || inv.status?.toLowerCase() === filter);
 
   return (
-    <DashboardLayout osName="LedgerOS" osIcon="L" osColor="rose" navItems={navItems}>
-      <div className="space-y-4">
+    <DashboardLayout osName="LedgerOS" osIcon="L" osColor="#B8C9D4" navItems={navItems}>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">Invoices</h1>
-          <Link to="/ledger/invoices/new" className="px-3 py-1.5 bg-rose-500 text-white rounded text-sm">New Invoice</Link>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Invoices</h1>
         </div>
+
         <div className="flex gap-2">
-          {['all', 'paid', 'pending', 'overdue', 'draft'].map((s) => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={`px-3 py-1 rounded text-sm ${filter === s ? 'bg-rose-500 text-white' : 'bg-white/5 text-gray-400'}`}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+          {['all', 'paid', 'pending', 'overdue', 'draft'].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium capitalize"
+              style={{ background: filter === f ? 'var(--clay)' : 'var(--warm-sand)', color: filter === f ? 'white' : 'var(--warm-ink)' }}
+            >
+              {f}
             </button>
           ))}
         </div>
+
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center rounded-xl" style={{ background: 'var(--warm-sand)' }}>
+            <p style={{ color: 'var(--soft-stone)' }}>No invoices found.</p>
+          </div>
         ) : (
-          <div className="bg-[#0a0f1a] border border-white/5 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--soft-stone)' }}>
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-white/5">
-                  <th className="text-left p-3 text-gray-400">Invoice</th>
-                  <th className="text-left p-3 text-gray-400">Client</th>
-                  <th className="text-left p-3 text-gray-400">Amount</th>
-                  <th className="text-left p-3 text-gray-400">Status</th>
-                  <th className="text-left p-3 text-gray-400">Due Date</th>
+                <tr style={{ background: 'var(--warm-sand)' }}>
+                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Invoice</th>
+                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Client</th>
+                  <th className="text-right p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Amount</th>
+                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Status</th>
+                  <th className="text-left p-3 text-sm font-semibold" style={{ color: 'var(--warm-ink)' }}>Due Date</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((inv) => (
-                  <tr key={inv.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-3 text-white font-medium">{inv.number}</td>
-                    <td className="p-3 text-gray-400">{inv.client}</td>
-                    <td className="p-3 text-white">${inv.amount.toLocaleString()}</td>
+                  <tr key={inv.id} className="border-t" style={{ borderColor: 'var(--soft-stone)' }}>
+                    <td className="p-3" style={{ color: 'var(--warm-ink)' }}>{inv.number}</td>
+                    <td className="p-3" style={{ color: 'var(--soft-stone)' }}>{inv.clientName || inv.client || '—'}</td>
+                    <td className="p-3 text-right" style={{ color: 'var(--terracotta)' }}>${(inv.amount || 0).toLocaleString()}</td>
                     <td className="p-3">{getStatusBadge(inv.status)}</td>
-                    <td className="p-3 text-gray-400">{inv.dueDate}</td>
+                    <td className="p-3" style={{ color: 'var(--soft-stone)' }}>{inv.dueDate || '—'}</td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="p-4 text-center text-gray-500">No invoices found</td></tr>
-                )}
               </tbody>
             </table>
           </div>

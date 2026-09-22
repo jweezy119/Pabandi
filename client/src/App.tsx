@@ -286,9 +286,11 @@ function App() {
           <Route path="protocol/escrow" element={<EscrowInterface />} />
           <Route path="protocol/agents" element={<AgentInterface />} />
 
+          {/* Landing page - standalone, no chrome */}
+          <Route path="/" element={<LandingPage />} />
+
           {/* ALL other routes inside Layout */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<LandingPage />} />
+          <Route element={<Layout />}>
             <Route path="home-old" element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="about" element={<AboutPage />} />
