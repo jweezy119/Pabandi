@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const MODULES = [
   {
@@ -8,6 +8,8 @@ const MODULES = [
     description: 'Customers book with confidence. Businesses get escrow-backed deposits.',
     icon: 'calendar',
     colorClass: 'module-icon-booking',
+    tint: '#A85A3C',
+    path: '/booking',
   },
   {
     id: 'freight',
@@ -16,14 +18,18 @@ const MODULES = [
     description: 'Shippers pay into escrow. Carriers get paid on delivery.',
     icon: 'package',
     colorClass: 'module-icon-freight',
+    tint: '#8A9A7B',
+    path: '/freight',
   },
   {
-    id: 'abode',
-    name: 'AbodeOS',
-    tagline: 'Manage with scores',
-    description: 'Landlords screen tenants. Tenants build portable history.',
+    id: 'property',
+    name: 'PropertyOS',
+    tagline: 'Buy, rent, manage with trust.',
+    description: 'Landlords screen tenants. Buyers verify documents. Every deal escrow-backed.',
     icon: 'house',
-    colorClass: 'module-icon-abode',
+    colorClass: 'module-icon-property',
+    tint: '#D4A5A5',
+    path: '/property',
   },
   {
     id: 'pipeline',
@@ -32,6 +38,8 @@ const MODULES = [
     description: 'Track leads from first call to close. Trust-aware revenue engine.',
     icon: 'funnel',
     colorClass: 'module-icon-pipeline',
+    tint: '#D9A854',
+    path: '/pipeline',
   },
   {
     id: 'ledger',
@@ -40,6 +48,8 @@ const MODULES = [
     description: 'Send invoices, record expenses, see profit in real time.',
     icon: 'coin',
     colorClass: 'module-icon-ledger',
+    tint: '#B8C9D4',
+    path: '/ledger',
   },
 ];
 
@@ -179,14 +189,37 @@ function ModuleIcon({ type, className = '' }: { type: string; className?: string
 }
 
 export default function LandingPage() {
+  const [scrollY, setScrollY] = useState(0);
+  const [pageTint, setPageTint] = useState<string | null>(null);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const landingRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const handleScroll = () => { /* scroll tracking */ };
+    const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleCardHover = useCallback((tint: string) => {
+    setPageTint(tint);
+  }, []);
+
+  const handleCardLeave = useCallback(() => {
+    setPageTint(null);
+  }, []);
+
+  const handleCardClick = (e: React.MouseEvent, path: string, moduleId: string) => {
+    e.preventDefault();
+    setExpandedCard(moduleId);
+    
+    // Navigate after animation
+    setTimeout(() => {
+      window.location.href = path;
+    }, 600);
+  };
+
   return (
-    <div className="landing">
+    <div className="landing" ref={landingRef} style={pageTint ? { '--page-tint': `color-mix(in srgb, ${pageTint} 10%, #F5EFE6)` } as React.CSSProperties : undefined}>
       <CursorTrail />
 
       {/* Floating Orbs */}
@@ -206,7 +239,7 @@ export default function LandingPage() {
           <nav className="nav-list" aria-label="Main">
             <a href="/booking">Booking</a>
             <a href="/freight">Freight</a>
-            <a href="/abode">Abode</a>
+            <a href="/property">Property</a>
             <a href="/pipeline">Pipeline</a>
             <a href="/ledger">Ledger</a>
           </nav>
@@ -226,7 +259,7 @@ export default function LandingPage() {
                   <span className="word hero-accent">Secured.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Five modules. One shared trust engine. Built for businesses that need to be reliable — and customers who need to know they can count on them.
+                  Five modules. One shared trust engine. Built for businesses that need to be reliable.
                 </p>
                 <div className="hero-actions">
                   <MagneticButton className="btn btn-primary">
@@ -261,14 +294,23 @@ export default function LandingPage() {
             <div className="modules-grid">
               {MODULES.map((mod, i) => (
                 <ScrollReveal key={mod.id} delay={i * 80}>
-                  <article className={`module-card`}>
+                  <article
+                    className={`module-card ${expandedCard === mod.id ? 'expanded' : ''}`}
+                    onMouseEnter={() => handleCardHover(mod.tint)}
+                    onMouseLeave={handleCardLeave}
+                    onClick={(e) => handleCardClick(e, mod.path, mod.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(e as any, mod.path, mod.id); }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`${mod.name} module card, opens ${mod.name} dashboard`}
+                  >
                     <div className={`module-icon ${mod.colorClass}`}>
                       <ModuleIcon type={mod.icon} />
                     </div>
                     <h3 className="module-name">{mod.name}</h3>
                     <p className="module-tagline">{mod.tagline}</p>
                     <p className="module-desc">{mod.description}</p>
-                    <a href={`/${mod.id}`} className="module-link">Explore {mod.name} →</a>
+                    <a href={mod.path} className="module-link">Explore {mod.name} →</a>
                   </article>
                 </ScrollReveal>
               ))}
@@ -372,7 +414,7 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · FreightOS · AbodeOS · PipelineOS · LedgerOS — Powered by TrustOS</p>
+          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · PipelineOS · LedgerOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <a href="/about">About</a>
             <a href="/contact">Contact</a>

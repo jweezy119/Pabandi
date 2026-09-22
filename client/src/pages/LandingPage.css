@@ -90,9 +90,13 @@ img {
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 
+
+
 .landing {
   position: relative;
   overflow: hidden;
+  transition: background-color 500ms ease-out;
+  background-color: var(--page-tint, var(--cream));
 }
 
 /* ── Floating Orbs ──────────────────────────────────────────────────────── */
@@ -104,24 +108,24 @@ img {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
+  filter: blur(60px);
+  opacity: 0.5;
   will-change: transform;
 }
 
 .orb-1 {
-  width: 400px;
-  height: 400px;
+  width: 350px;
+  height: 350px;
   background: var(--clay);
-  top: 10%;
-  left: -5%;
+  top: 5%;
+  left: 5%;
   animation: orb-drift-1 20s var(--ease-clay) infinite;
 }
 
@@ -129,8 +133,8 @@ img {
   width: 300px;
   height: 300px;
   background: var(--sage);
-  top: 40%;
-  right: -8%;
+  top: 30%;
+  right: 0%;
   animation: orb-drift-2 25s var(--ease-clay) infinite;
 }
 
@@ -138,8 +142,8 @@ img {
   width: 250px;
   height: 250px;
   background: var(--dusty-rose);
-  bottom: 15%;
-  left: 30%;
+  bottom: 20%;
+  left: 20%;
   animation: orb-drift-3 22s var(--ease-clay) infinite;
 }
 
@@ -360,7 +364,7 @@ img {
     inset -8px -8px 20px rgba(0,0,0,0.15),
     inset 8px 8px 20px rgba(255,255,255,0.1),
     0 8px 32px rgba(180, 130, 90, 0.2);
-  animation: breathe 4s ease-in-out infinite;
+  animation: clay-breathe 4s ease-in-out infinite, clay-spin 30s linear infinite;
 }
 
 .clay-sphere::after {
@@ -376,9 +380,19 @@ img {
   transform: rotate(-20deg);
 }
 
-@keyframes breathe {
+@keyframes clay-breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.03); }
+}
+
+@keyframes clay-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slow-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
@@ -471,11 +485,16 @@ img {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  opacity: 1;
+  transform: none;
+}
+
+.module-card.animate-in {
   opacity: 0;
   transform: translateY(30px);
 }
 
-.module-card.is-visible {
+.module-card.animate-in.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -521,7 +540,13 @@ img {
 
 .module-icon-booking { background: var(--clay); }
 .module-icon-freight { background: var(--sage); }
-.module-icon-abode { background: var(--dusty-rose); }
+.module-card.expanded {
+  transform: scale(1.05);
+  opacity: 0.8;
+  transition: all 0.4s var(--ease-clay);
+}
+
+.module-icon-property { background: var(--dusty-rose); }
 .module-icon-pipeline { background: var(--muted-ochre); }
 .module-icon-ledger { background: var(--sky-wash); }
 
@@ -850,8 +875,6 @@ img {
 /* ── Scroll Reveal ───────────────────────────────────────────────────────── */
 
 .scroll-reveal {
-  opacity: 0;
-  transform: translateY(30px);
   transition: opacity 0.8s var(--ease-clay), transform 0.8s var(--ease-clay);
 }
 
@@ -928,7 +951,13 @@ img {
   }
 }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+.mobile-gate .module-card:hover {
+  transform: none;
+}
+
+.mobile-gate .orbs-container {
+  display: none;
+}
 
 @media (max-width: 768px) {
   .nav-list {
