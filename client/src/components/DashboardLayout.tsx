@@ -16,61 +16,70 @@ export interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const colorMap: Record<string, { gradientFrom: string; gradientTo: string; iconBg: string; activeBg: string; activeText: string; activeBorder: string }> = {
-  emerald: {
-    gradientFrom: 'from-emerald-400',
-    gradientTo: 'to-cyan-500',
-    iconBg: 'bg-gradient-to-br from-emerald-400 to-cyan-500',
-    activeBg: 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/10',
-    activeText: 'text-emerald-300',
-    activeBorder: 'border-emerald-500/20',
+const colorMap: Record<string, { icon: string; active: string; text: string; border: string; indicator: string }> = {
+  terracotta: {
+    icon: 'bg-[var(--clay)]',
+    active: 'bg-[var(--clay)] text-white',
+    text: 'text-[var(--soft-stone)]',
+    border: 'border-[var(--soft-stone)]',
+    indicator: 'bg-[var(--clay)]',
   },
-  amber: {
-    gradientFrom: 'from-amber-500',
-    gradientTo: 'to-orange-600',
-    iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
-    activeBg: 'bg-gradient-to-r from-amber-500/20 to-orange-500/10',
-    activeText: 'text-amber-300',
-    activeBorder: 'border-amber-500/20',
+  sage: {
+    icon: 'bg-[var(--sage)]',
+    active: 'bg-[var(--sage)] text-white',
+    text: 'text-[var(--soft-stone)]',
+    border: 'border-[var(--soft-stone)]',
+    indicator: 'bg-[var(--sage)]',
   },
-  violet: {
-    gradientFrom: 'from-violet-500',
-    gradientTo: 'to-indigo-600',
-    iconBg: 'bg-gradient-to-br from-violet-500 to-indigo-600',
-    activeBg: 'bg-gradient-to-r from-violet-500/20 to-indigo-500/10',
-    activeText: 'text-violet-300',
-    activeBorder: 'border-violet-500/20',
+  'dusty-rose': {
+    icon: 'bg-[var(--dusty-rose)]',
+    active: 'bg-[var(--dusty-rose)] text-white',
+    text: 'text-[var(--soft-stone)]',
+    border: 'border-[var(--soft-stone)]',
+    indicator: 'bg-[var(--dusty-rose)]',
   },
-  indigo: {
-    gradientFrom: 'from-indigo-500',
-    gradientTo: 'to-blue-600',
-    iconBg: 'bg-gradient-to-br from-indigo-500 to-blue-600',
-    activeBg: 'bg-gradient-to-r from-indigo-500/20 to-blue-500/10',
-    activeText: 'text-indigo-300',
-    activeBorder: 'border-indigo-500/20',
+  ochre: {
+    icon: 'bg-[var(--muted-ochre)]',
+    active: 'bg-[var(--muted-ochre)] text-white',
+    text: 'text-[var(--soft-stone)]',
+    border: 'border-[var(--soft-stone)]',
+    indicator: 'bg-[var(--muted-ochre)]',
   },
-  rose: {
-    gradientFrom: 'from-rose-500',
-    gradientTo: 'to-pink-600',
-    iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600',
-    activeBg: 'bg-gradient-to-r from-rose-500/20 to-pink-500/10',
-    activeText: 'text-rose-300',
-    activeBorder: 'border-rose-500/20',
+  'sky-wash': {
+    icon: 'bg-[var(--sky-wash)]',
+    active: 'bg-[var(--sky-wash)] text-white',
+    text: 'text-[var(--soft-stone)]',
+    border: 'border-[var(--soft-stone)]',
+    indicator: 'bg-[var(--sky-wash)]',
   },
 };
 
 const OS_DESCRIPTIONS: Record<string, string> = {
-  'FreightOS': 'Freight & logistics platform. Post loads, find carriers, track shipments.',
-  'PropertyOS': 'Property management platform. Manage tenants, leases, and revenue.',
-  'BookingOS': 'Booking & discovery platform. Find restaurants, hotels, and services.',
-  'PipelineOS': 'CRM & sales pipeline. Track leads, deals, and activities.',
-  'LedgerOS': 'Finance & accounting. Invoices, expenses, cash flow, and reports.',
+  'FreightOS': 'Freight & logistics platform',
+  'PropertyOS': 'Property management platform',
+  'BookingOS': 'Booking & discovery platform',
+  'PipelineOS': 'CRM & sales pipeline',
+  'LedgerOS': 'Finance & accounting',
+};
+
+const colorKeys: Record<string, string> = {
+  emerald: 'terracotta',
+  amber: 'ochre',
+  violet: 'dusty-rose',
+  indigo: 'sky-wash',
+  rose: 'dusty-rose',
+  terracotta: 'terracotta',
+  sage: 'sage',
+  'dusty-rose': 'dusty-rose',
+  ochre: 'ochre',
+  'sky-wash': 'sky-wash',
 };
 
 export default function DashboardLayout({ osName, osIcon, osColor, navItems, children }: DashboardLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const colors = colorMap[osColor] || colorMap.emerald;
+  const colorKey = colorKeys[osColor] || 'terracotta';
+  const colors = colorMap[colorKey] || colorMap.terracotta;
 
   const isActive = (item: NavItem) =>
     item.end
@@ -80,25 +89,26 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
   const description = OS_DESCRIPTIONS[osName] || '';
 
   return (
-    <div className="min-h-screen flex bg-[#020617]">
+    <div className="min-h-screen flex" style={{ background: 'var(--cream)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+        <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:static z-50 w-64 h-screen bg-[#0a0f1a] border-r border-white/5 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
+      <aside className={`fixed lg:static z-50 w-64 h-screen flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{ background: 'var(--warm-sand)', borderRight: '1px solid rgba(191,179,163,0.3)' }}>
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(191,179,163,0.3)' }}>
           <Link to="/" className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl ${colors.iconBg} flex items-center justify-center text-white font-bold text-lg`}>
+            <div className={`w-10 h-10 rounded-xl ${colors.icon} flex items-center justify-center text-white font-bold text-lg`}>
               {osIcon}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">{osName}</h1>
-              <p className="text-xs text-slate-400">by Pabandi</p>
+              <h1 className="text-xl font-bold" style={{ color: 'var(--warm-ink)' }}>{osName}</h1>
+              <p className="text-xs" style={{ color: 'var(--soft-stone)' }}>by Pabandi</p>
             </div>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-slate-400" aria-label="Close sidebar">✕</button>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-lg hover:bg-[var(--soft-stone)]/20" style={{ color: 'var(--soft-stone)' }} aria-label="Close sidebar">✕</button>
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label={`${osName} navigation`}>
@@ -106,7 +116,7 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
             const active = isActive(item);
             return (
               <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? `${colors.activeBg} ${colors.activeText} border ${colors.activeBorder}` : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? colors.active : `${colors.text} hover:bg-[var(--soft-stone)]/20`}`}
                 aria-current={active ? 'page' : undefined}>
                 <span className="material-symbols-outlined text-[18px] flex-shrink-0" aria-hidden="true">{item.icon}</span>
                 {item.label}
@@ -115,51 +125,51 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-          <div className="rounded-xl bg-white/5 border border-white/5 p-4">
-            <div className="text-xs text-slate-400 mb-1">Need help?</div>
-            <div className="text-sm text-white font-medium">Contact Support</div>
-            <div className="text-xs text-emerald-400 mt-1">support@pabandi.com</div>
+        <div className="p-4" style={{ borderTop: '1px solid rgba(191,179,163,0.3)' }}>
+          <div className="rounded-xl p-4" style={{ background: 'rgba(191,179,163,0.15)' }}>
+            <div className="text-xs mb-1" style={{ color: 'var(--soft-stone)' }}>Need help?</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>Contact Support</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--clay)' }}>support@pabandi.com</div>
           </div>
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* Top bar - mobile */}
-        <header className="sticky top-0 z-30 bg-[#0a0f1a]/80 backdrop-blur-sm border-b border-white/5 lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-white/5 text-slate-300" aria-label="Open menu">
-              <span className="material-symbols-outlined">menu</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-lg ${colors.iconBg} flex items-center justify-center text-white font-bold text-sm`}>{osIcon}</div>
-              <span className="font-bold text-white">{osName}</span>
-            </div>
-            <button className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-sm font-bold" aria-label="User menu">U</button>
+        {/* Mobile header */}
+        <header className="sticky top-0 z-30 lg:hidden px-4 py-3 flex items-center justify-between"
+          style={{ background: 'rgba(245,239,230,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(191,179,163,0.3)' }}>
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg" style={{ color: 'var(--soft-stone)' }} aria-label="Open menu">
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-lg ${colors.icon} flex items-center justify-center text-white font-bold text-sm`}>{osIcon}</div>
+            <span className="font-bold" style={{ color: 'var(--warm-ink)' }}>{osName}</span>
           </div>
+          <button className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'var(--warm-sand)', color: 'var(--warm-ink)' }} aria-label="User menu">U</button>
         </header>
 
-        {/* Top bar - desktop (balance, tier, notifications) */}
-        <header className="hidden lg:flex sticky top-0 z-30 bg-[#0a0f1a]/80 backdrop-blur-sm border-b border-white/5 px-6 py-3 items-center justify-between">
-          <div className="text-slate-400 text-sm">
-            <Link to="/" className="hover:text-white transition">Pabandi</Link>
+        {/* Desktop header */}
+        <header className="hidden lg:flex sticky top-0 z-30 px-6 py-3 items-center justify-between"
+          style={{ background: 'rgba(245,239,230,0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(191,179,163,0.3)' }}>
+          <div className="text-sm" style={{ color: 'var(--soft-stone)' }}>
+            <Link to="/" className="hover:text-[var(--clay)] transition">Pabandi</Link>
             <span className="mx-2">›</span>
-            <span className="text-white">{osName}</span>
-            {description && <span className="ml-2 text-slate-500">— {description}</span>}
+            <span style={{ color: 'var(--warm-ink)' }}>{osName}</span>
+            {description && <span className="ml-2" style={{ color: 'var(--soft-stone)' }}>— {description}</span>}
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
-              <span className="material-symbols-outlined text-slate-400 text-[18px]">account_balance_wallet</span>
-              <span className="text-sm text-white font-medium">$0.00</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--warm-sand)' }}>
+              <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--soft-stone)' }}>account_balance_wallet</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>$0.00</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5">
-              <span className="material-symbols-outlined text-amber-400 text-[18px]">stars</span>
-              <span className="text-sm text-white font-medium">Bronze Tier</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--warm-sand)' }}>
+              <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--muted-ochre)' }}>stars</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--warm-ink)' }}>Bronze Tier</span>
             </div>
-            <button className="p-2 rounded-lg hover:bg-white/5 text-slate-400 relative" aria-label="Notifications">
+            <button className="p-2 rounded-lg hover:bg-[var(--warm-sand)] relative" style={{ color: 'var(--soft-stone)' }} aria-label="Notifications">
               <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: 'var(--terracotta)' }}></span>
             </button>
           </div>
         </header>
@@ -170,16 +180,17 @@ export default function DashboardLayout({ osName, osIcon, osColor, navItems, chi
         </div>
 
         {/* Mobile bottom tab bar */}
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0a0f1a] border-t border-white/5 safe-area-bottom">
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 safe-area-bottom"
+          style={{ background: 'var(--warm-sand)', borderTop: '1px solid rgba(191,179,163,0.3)' }}>
           <div className="flex overflow-x-auto no-scrollbar">
             {navItems.slice(0, 5).map((item) => {
               const active = isActive(item);
               return (
                 <Link key={item.path} to={item.path}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-medium min-w-[64px] ${active ? colors.activeText : 'text-slate-400 active:text-white'}`}>
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-[11px] font-medium min-w-[64px] ${active ? 'text-[var(--clay)]' : 'text-[var(--soft-stone)]'}`}>
                   <span className="material-symbols-outlined text-[20px]" aria-hidden="true">{item.icon}</span>
                   <span className="truncate max-w-full">{item.label}</span>
-                  {active && <span className={`w-8 h-0.5 ${colors.iconBg} rounded-full mt-0.5`} />}
+                  {active && <span className={`w-8 h-0.5 rounded-full mt-0.5`} style={{ background: 'var(--clay)' }} />}
                 </Link>
               );
             })}

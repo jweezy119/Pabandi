@@ -1,0 +1,20 @@
+/* Warm Clay Dashboard — Shared Design Tokens */
+
+:root {
+  --clay: #C97B5A;
+  --terracotta: #A85A3C;
+  --warm-sand: #E8D9C5;
+  --cream: #F5EFE6;
+  --warm-ink: #2A2520;
+  --sage: #8A9A7B;
+  --dusty-rose: #D4A5A5;
+  --muted-ochre: #D9A854;
+  --soft-stone: #BFB3A3;
+  --sky-wash: #B8C9D4;
+
+  --shadow-soft: 0 4px 20px rgba(180, 130, 90, 0.12);
+  --shadow-lift: 0 8px 32px rgba(180, 130, 90, 0.18);
+  --radius-card: 28px;
+  --radius-pill: 999px;
+  --ease-clay: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
