@@ -296,44 +296,54 @@ export default function LandingPage() {
                   <div className="clay-earth">
                     <svg width="100%" height="100%" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                       <defs>
+                        {/* Ocean base — warm clay blue */}
                         <radialGradient id="earth-base" cx="40%" cy="35%" r="60%">
-                          <stop offset="0%" stop-color="#F0E4D4" />
-                          <stop offset="60%" stop-color="#E8D9C5" />
-                          <stop offset="100%" stop-color="#D9C8B0" />
+                          <stop offset="0%" stop-color="#7BA4B8" />
+                          <stop offset="50%" stop-color="#5C8A9E" />
+                          <stop offset="100%" stop-color="#3D6B7E" />
                         </radialGradient>
+                        {/* Continent green — clay sage */}
                         <radialGradient id="continent-raise" cx="35%" cy="30%" r="65%">
-                          <stop offset="0%" stop-color="#D4946E" />
-                          <stop offset="100%" stop-color="#A85A3C" />
+                          <stop offset="0%" stop-color="#A8C4A0" />
+                          <stop offset="100%" stop-color="#6B8F5E" />
                         </radialGradient>
+                        {/* Continent brown — clay terracotta land */}
                         <radialGradient id="continent-low" cx="40%" cy="35%" r="60%">
-                          <stop offset="0%" stop-color="#C97B5A" />
-                          <stop offset="100%" stop-color="#9A4E32" />
+                          <stop offset="0%" stop-color="#C9A87C" />
+                          <stop offset="100%" stop-color="#9A7B4F" />
+                        </radialGradient>
+                        {/* Desert/tan regions */}
+                        <radialGradient id="continent-desert" cx="40%" cy="35%" r="60%">
+                          <stop offset="0%" stop-color="#D4B896" />
+                          <stop offset="100%" stop-color="#B8956A" />
                         </radialGradient>
                         <radialGradient id="earth-shadow" cx="60%" cy="65%" r="55%">
                           <stop offset="0%" stop-color="transparent" />
-                          <stop offset="100%" stop-color="rgba(90,50,30,0.25)" />
+                          <stop offset="100%" stop-color="rgba(30,50,60,0.3)" />
                         </radialGradient>
                         <filter id="earth-shadow-cast" x="-20%" y="-20%" width="140%" height="140%">
-                          <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="rgba(80,40,20,0.18)" />
+                          <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="rgba(40,60,70,0.2)" />
                         </filter>
                       </defs>
                       {/* Ocean base */}
                       <circle cx="100" cy="100" r="82" fill="url(#earth-base)" />
                       {/* Continents — rough, raised relief shapes */}
                       <g filter="url(#earth-shadow-cast)">
-                        {/* Africa-ish: large mass upper-left */}
-                        <path d="M 82 62 Q 95 50 108 58 Q 115 72 112 90 Q 105 108 92 112 Q 78 108 75 92 Q 76 75 82 62 Z" fill="url(#continent-raise)" />
-                        {/* Eurasia-ish: wide arc upper-right */}
-                        <path d="M 118 52 Q 138 48 148 62 Q 150 78 142 88 Q 130 85 122 78 Q 118 68 118 52 Z" fill="url(#continent-low)" />
-                        {/* Americas-ish: curved sweep lower-right */}
-                        <path d="M 68 95 Q 80 110 78 132 Q 72 148 62 142 Q 55 125 58 108 Q 62 98 68 95 Z" fill="url(#continent-raise)" />
-                        {/* Australia-ish: small blob lower-center */}
-                        <path d="M 125 120 Q 135 116 138 124 Q 136 132 128 134 Q 122 130 125 120 Z" fill="url(#continent-low)" />
+                        {/* Africa — green */}
+                        <path d="M 82 58 Q 95 45 108 55 Q 116 70 113 88 Q 106 108 93 113 Q 78 109 74 93 Q 75 73 82 58 Z" fill="url(#continent-raise)" />
+                        {/* Eurasia — green/brown */}
+                        <path d="M 118 48 Q 140 44 152 60 Q 154 78 145 90 Q 132 87 124 80 Q 118 70 118 48 Z" fill="url(#continent-raise)" />
+                        {/* Americas — green */}
+                        <path d="M 68 92 Q 82 108 80 132 Q 74 150 63 144 Q 55 126 58 108 Q 62 96 68 92 Z" fill="url(#continent-raise)" />
+                        {/* Australia — tan/brown */}
+                        <path d="M 128 118 Q 138 114 142 122 Q 140 132 132 135 Q 125 131 128 118 Z" fill="url(#continent-desert)" />
+                        {/* Antarctica hint — pale */}
+                        <path d="M 70 155 Q 90 150 110 155 Q 130 150 150 155 Q 150 168 130 170 Q 110 165 90 170 Q 70 168 70 155 Z" fill="rgba(220,210,195,0.5)" />
                       </g>
                       {/* Soft cast shadow lower-right */}
                       <circle cx="100" cy="100" r="82" fill="url(#earth-shadow)" />
                       {/* Upper-left highlight */}
-                      <ellipse cx="82" cy="78" rx="28" ry="18" fill="rgba(255,250,240,0.18)" transform="rotate(-25 82 78)" />
+                      <ellipse cx="80" cy="75" rx="26" ry="16" fill="rgba(255,255,255,0.15)" transform="rotate(-25 80 75)" />
                     </svg>
                 </div>
               </div>
