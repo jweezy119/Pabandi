@@ -103,6 +103,112 @@ router.post('/expenses', recordExpenseHandler);
 // GET /api/v1/crm/expenses — List expenses
 router.get('/expenses', getExpensesHandler);
 
+// ── Invoices ──────────────────────────────────────────────────────────────────
+
+router.get('/invoices', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { status } = req.query;
+    const invoices = await prisma.invoice.findMany({
+      where: { businessId, ...(status && { status: status as string }) },
+      include: { client: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: invoices });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/invoices/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: req.params.id, businessId },
+      include: { client: true },
+    });
+    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
+    res.json({ success: true, data: invoice });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/invoices', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { clientId, dateDue, lineItems, subtotal, notes } = req.body;
+    if (!clientId || !dateDue) return res.status(400).json({ success: false, error: 'clientId and dateDue are required' });
+    
+    // Auto-generate invoice number
+    const count = await prisma.invoice.count({ where: { businessId } });
+    const number = `INV-${String(count + 1).padStart(4, '0')}`;
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        number,
+        businessId,
+        clientId,
+        dateDue: new Date(dateDue),
+        status: 'draft',
+        lineItems: JSON.stringify(lineItems || []),
+        subtotal: subtotal || 0,
+        notes: notes || null,
+      },
+      include: { client: true },
+    });
+    res.status(201).json({ success: true, data: invoice });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { status } = req.body;
+    const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
+    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
+    
+    const updateData: any = { status };
+    if (status === 'sent' && !invoice.sentAt) updateData.sentAt = new Date();
+    if (status === 'paid' && !invoice.paidAt) updateData.paidAt = new Date();
+
+    const updated = await prisma.invoice.update({ where: { id: req.params.id }, data: updateData });
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
+    if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
+    if (invoice.status !== 'draft') return res.status(400).json({ success: false, error: 'Can only delete draft invoices' });
+    
+    await prisma.invoice.delete({ where: { id: req.params.id } });
+    res.json({ success: true, message: 'Invoice deleted' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/v1/crm/clients/:id/invoices — Get invoices for a client
+router.get('/clients/:id/invoices', async (req: AuthRequest, res: Response) => {
+  try {
+    const businessId = getBusinessId(req);
+    const invoices = await prisma.invoice.findMany({
+      where: { clientId: req.params.id, businessId },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: invoices });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Dashboard ───────────────────────────────────────────────────────────────
 
 // GET /api/v1/crm/dashboard — Get dashboard statistics
