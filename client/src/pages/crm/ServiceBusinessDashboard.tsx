@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome, FiBriefcase } from 'react-icons/fi';
 import ContactsPipelineTab from './ContactsPipelineTab';
+import EmployeesTab from './EmployeesTab';
 
 const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
@@ -113,7 +114,7 @@ export default function ServiceBusinessDashboard() {
         {tab === 'jobs' && <JobsTab jobs={jobs} clients={clients} employees={employees} onRefresh={loadAll} />}
         {tab === 'maintenance' && <MaintenanceTab maintenance={maintenance} onRefresh={loadAll} />}
         {tab === 'money' && <MoneyTab stats={stats} payroll={payroll} expenses={expenses} employees={employees} />}
-        {tab === 'team' && <TeamTab employees={employees} payroll={payroll} />}
+        {tab === 'team' && <EmployeesTab employees={employees} onRefresh={loadAll} />}
         {tab === 'activity' && <ActivityTab />}
         {tab === 'pipeline' && <ContactsPipelineTab />}
       </div>
@@ -323,32 +324,6 @@ function MoneyTab({ stats, payroll, expenses, employees }: any) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function TeamTab({ employees, payroll }: { employees: any[]; payroll: any[] }) {
-  return (
-    <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-      <h2 className="text-lg font-bold mb-4">Team</h2>
-      {employees.length === 0 ? <p className="text-[var(--soft-stone)]">No team members</p> : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{employees.map((emp: any) => {
-          const empPayroll = payroll.filter((p: any) => p.employeeId === emp.id);
-          return (
-            <div key={emp.id} className="p-4 rounded-xl border border-[var(--soft-stone)]/30">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--sage)] flex items-center justify-center text-white font-bold">{emp.name[0]}</div>
-                <div><p className="font-medium">{emp.name}</p><p className="text-xs text-[var(--soft-stone)]">{emp.role}</p></div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2 rounded-lg bg-[var(--warm-sand)]"><p className="text-sm font-bold">{emp.jobsCompleted}</p><p className="text-xs">Jobs</p></div>
-                <div className="p-2 rounded-lg bg-[var(--warm-sand)]"><p className="text-sm font-bold">{emp.rating?.toFixed(1) || '5.0'}</p><p className="text-xs">Rating</p></div>
-                <div className="p-2 rounded-lg bg-[var(--warm-sand)]"><p className="text-sm font-bold">${empPayroll.reduce((s: number, p: any) => s + (p.netPay || 0), 0).toFixed(0)}</p><p className="text-xs">Paid</p></div>
-              </div>
-            </div>
-          );
-        })}</div>
-      )}
     </div>
   );
 }

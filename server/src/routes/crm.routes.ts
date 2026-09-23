@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import {
   enrollBusinessHandler,
@@ -36,6 +37,30 @@ router.post('/enroll', enrollBusinessHandler);
 
 // POST /api/v1/crm/employees — Add employee/worker
 router.post('/employees', addEmployeeHandler);
+
+// PUT /api/v1/crm/employees/:id — Update employee
+router.put('/employees/:id', async (req, res) => {
+  try {
+    const { name, email, phone, role, payRate, payType, isActive } = req.body;
+    const employee = await prisma.crmEmployee.update({
+      where: { id: req.params.id },
+      data: { name, email, phone, role, payRate: payRate ? Number(payRate) : undefined, payType, isActive },
+    });
+    res.json({ success: true, data: employee });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/v1/crm/employees/:id — Delete employee
+router.delete('/employees/:id', async (req, res) => {
+  try {
+    await prisma.crmEmployee.delete({ where: { id: req.params.id } });
+    res.json({ success: true, message: 'Employee deleted' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // GET /api/v1/crm/employees — List employees
 router.get('/employees', getEmployeesHandler);
