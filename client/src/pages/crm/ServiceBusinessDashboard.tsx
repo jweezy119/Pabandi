@@ -27,7 +27,7 @@ async function pmApi(path: string, options: RequestInit = {}) {
 type Tab = 'today' | 'calendar' | 'properties' | 'clients' | 'jobs' | 'team' | 'money' | 'pipeline';
 
 export default function ServiceBusinessDashboard() {
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>('today');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -103,7 +103,7 @@ export default function ServiceBusinessDashboard() {
         </div>
 
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-[var(--soft-stone)]/30 overflow-x-auto">
-          {(['overview', 'properties', 'tenants', 'jobs', 'maintenance', 'money', 'team', 'pipeline', 'activity'] as Tab[]).map(t => (
+          {(['today', 'calendar', 'properties', 'clients', 'jobs', 'team', 'money', 'pipeline'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)] text-white' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}>{t}</button>
           ))}
         </div>
@@ -338,75 +338,6 @@ function JobsTab({ jobs, clients, employees, onRefresh }: { jobs: any[]; clients
             <div className="w-12 text-center"><p className="font-bold">{j.scheduledTime}</p><p className="text-xs text-[var(--soft-stone)]">{j.durationMinutes}min</p></div>
             <div className="flex-1"><p className="font-medium">{j.serviceType}</p><p className="text-sm text-[var(--soft-stone)]">{j.address}</p></div>
             <Badge variant={j.status === 'COMPLETED' ? 'green' : j.status === 'IN_PROGRESS' ? 'yellow' : 'blue'}>{j.status}</Badge>
-          </div>
-        ))}</div>
-      )}
-    </div>
-  );
-}
-
-function _MaintenanceTab({ maintenance, onRefresh }: { maintenance: any[]; onRefresh: () => void }) {
-  const [showForm, setShowForm] = useState(false);
-  return (
-    <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[var(--warm-ink)]">Maintenance</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Report Issue</button>
-      </div>
-      {showForm && <MaintenanceForm onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); onRefresh(); }} />}
-      {maintenance.length === 0 ? <p className="text-[var(--soft-stone)]">No maintenance requests</p> : (
-        <div className="space-y-3">{maintenance.map((m: any) => (
-          <div key={m.id} className="flex items-center justify-between p-4 rounded-xl border border-[var(--soft-stone)]/30">
-            <div><p className="font-medium">{m.title}</p><p className="text-sm text-[var(--soft-stone)]">{m.description}</p></div>
-            <Badge variant={m.priority === 'URGENT' ? 'red' : m.status === 'COMPLETED' ? 'green' : 'yellow'}>{m.status}</Badge>
-          </div>
-        ))}</div>
-      )}
-    </div>
-  );
-}
-
-function MoneyTab({ stats, payroll, expenses, employees }: any) {
-  const totalRevenue = stats?.monthlyRevenue || 0;
-  const totalExpenses = (stats?.monthlyExpenses || 0) + (stats?.payrollCosts || 0);
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={FiTrendingUp} label="Revenue" value={`$${totalRevenue.toLocaleString()}`} color="green" />
-        <StatCard icon={FiTrendingDown} label="Expenses" value={`$${totalExpenses.toLocaleString()}`} color="red" />
-        <StatCard icon={FiCreditCard} label="Payroll" value={`$${(stats?.payrollCosts || 0).toLocaleString()}`} color="orange" />
-        <StatCard icon={FiDollarSign} label="Net" value={`$${(totalRevenue - totalExpenses).toLocaleString()}`} color="blue" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-          <h3 className="font-bold mb-4">Recent Payroll</h3>
-          {payroll.slice(0, 10).map((p: any) => {
-            const emp = employees.find((e: any) => e.id === p.employeeId);
-            return <div key={p.id} className="flex justify-between p-3 rounded-lg bg-[var(--warm-sand)] mb-2"><span>{emp?.name || p.employeeId}</span><span className="font-medium">${p.netPay?.toFixed(2)}</span></div>;
-          })}
-        </div>
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-          <h3 className="font-bold mb-4">Recent Expenses</h3>
-          {expenses.slice(0, 10).map((e: any) => (
-            <div key={e.id} className="flex justify-between p-3 rounded-lg bg-[var(--warm-sand)] mb-2"><span>{e.description}</span><span className="text-[var(--terracotta)]">-${e.amount?.toFixed(2)}</span></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function _ActivityTab() {
-  const [activities, setActivities] = useState<any[]>([]);
-  useEffect(() => { pmApi('/activity').then(r => setActivities(r.data || [])).catch(() => {}); }, []);
-  return (
-    <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-      <h2 className="text-lg font-bold mb-4">Activity Log</h2>
-      {activities.length === 0 ? <p className="text-[var(--soft-stone)]">No activity yet</p> : (
-        <div className="space-y-3">{activities.map((a: any) => (
-          <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--warm-sand)]">
-            <FiActivity className="w-4 h-4 text-[var(--soft-stone)]" />
-            <div className="flex-1"><p className="text-sm font-medium text-[var(--warm-ink)]">{a.description}</p><p className="text-xs text-[var(--soft-stone)]">{new Date(a.createdAt).toLocaleString()}</p></div>
           </div>
         ))}</div>
       )}
