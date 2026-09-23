@@ -24,7 +24,7 @@ async function pmApi(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-type Tab = 'overview' | 'properties' | 'tenants' | 'jobs' | 'maintenance' | 'money' | 'team' | 'activity' | 'pipeline';
+type Tab = 'today' | 'calendar' | 'properties' | 'clients' | 'jobs' | 'team' | 'money' | 'pipeline';
 
 export default function ServiceBusinessDashboard() {
   const [tab, setTab] = useState<Tab>('overview');
@@ -108,14 +108,13 @@ export default function ServiceBusinessDashboard() {
           ))}
         </div>
 
-        {tab === 'overview' && <OverviewTab jobs={jobs} properties={properties} tenants={tenants} maintenance={maintenance} />}
+        {tab === 'today' && <OverviewTab jobs={jobs} properties={properties} tenants={tenants} maintenance={maintenance} stats={stats} />}
+        {tab === 'calendar' && <CalendarTab jobs={jobs} />}
         {tab === 'properties' && <PropertiesTab properties={properties} onRefresh={loadAll} />}
-        {tab === 'tenants' && <TenantsTab tenants={tenants} properties={properties} leases={leases} onRefresh={loadAll} />}
+        {tab === 'clients' && <TenantsTab tenants={tenants} properties={properties} leases={leases} onRefresh={loadAll} />}
         {tab === 'jobs' && <JobsTab jobs={jobs} clients={clients} employees={employees} onRefresh={loadAll} />}
-        {tab === 'maintenance' && <MaintenanceTab maintenance={maintenance} onRefresh={loadAll} />}
-        {tab === 'money' && <MoneyTab stats={stats} payroll={payroll} expenses={expenses} employees={employees} />}
         {tab === 'team' && <EmployeesTab employees={employees} onRefresh={loadAll} />}
-        {tab === 'activity' && <ActivityTab />}
+        {tab === 'money' && <MoneyTab stats={stats} payroll={payroll} expenses={expenses} employees={employees} />}
         {tab === 'pipeline' && <ContactsPipelineTab />}
       </div>
     </div>
@@ -139,24 +138,74 @@ function Badge({ children, variant = 'default' }: { children: React.ReactNode; v
   return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${v[variant] || v.default}`}>{children}</span>;
 }
 
-function OverviewTab({ jobs, properties, tenants, maintenance }: any) {
+function OverviewTab({ jobs, properties, maintenance, clients }: any) {
   const todayJobs = jobs.filter((j: any) => new Date(j.scheduledDate).toDateString() === new Date().toDateString());
+  const weekJobs = jobs.filter((j: any) => {
+    const d = new Date(j.scheduledDate);
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return d >= weekStart && d <= weekEnd;
+  });
+  const todayRevenue = todayJobs.reduce((s: number, j: any) => s + (j.price || 0), 0);
+  const weekRevenue = weekJobs.reduce((s: number, j: any) => s + (j.price || 0), 0);
+  const topClients = clients.slice(0, 3);
+
   return (
     <div className="space-y-6">
+      {/* Today Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={FiCalendar} label="Today's Jobs" value={String(todayJobs.length)} color="blue" />
+        <StatCard icon={FiDollarSign} label="Today's Revenue" value={`$${todayRevenue.toLocaleString()}`} color="green" />
+        <StatCard icon={FiUsers} label="Active Clients" value={String(clients.length)} color="purple" />
+        <StatCard icon={FiTrendingUp} label="Week's Revenue" value={`$${weekRevenue.toLocaleString()}`} color="orange" />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
+        {/* Today's Schedule */}
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
           <h3 className="font-bold text-[var(--warm-ink)] mb-4">Today's Schedule ({todayJobs.length})</h3>
           {todayJobs.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No jobs scheduled</p> : (
-            <div className="space-y-3">{todayJobs.slice(0, 5).map((j: any) => (
-              <div key={j.id} className="flex items-center gap-4 p-3 rounded-xl bg-[var(--warm-sand)]">
-                <div className="w-12 text-center"><p className="font-bold text-[var(--warm-ink)]">{j.scheduledTime}</p><p className="text-xs text-[var(--soft-stone)]">{j.durationMinutes}min</p></div>
-                <div className="flex-1"><p className="font-medium text-[var(--warm-ink)]">{j.serviceType}</p><p className="text-xs text-[var(--soft-stone)]">{j.address}</p></div>
+            <div className="space-y-3">{todayJobs.map((j: any) => (
+              <div key={j.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="w-12 text-center"><p className="font-bold text-[var(--warm-ink)] text-sm">{j.scheduledTime}</p><p className="text-xs text-[var(--soft-stone)]">{j.durationMinutes}m</p></div>
+                <div className="flex-1 min-w-0"><p className="font-medium text-[var(--warm-ink)] text-sm truncate">{j.serviceType}</p><p className="text-xs text-[var(--soft-stone)] truncate">{j.address}</p></div>
                 <Badge variant="blue">{j.status}</Badge>
               </div>
             ))}</div>
           )}
         </div>
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
+
+        {/* Top Clients */}
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
+          <h3 className="font-bold text-[var(--warm-ink)] mb-4">Top Clients</h3>
+          {topClients.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No clients yet</p> : (
+            <div className="space-y-3">{topClients.map((c: any) => (
+              <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(c.name || '?')[0]}</div>
+                <div className="flex-1 min-w-0"><p className="font-medium text-[var(--warm-ink)] truncate">{c.name}</p><p className="text-xs text-[var(--soft-stone)]">{c.totalJobs || 0} jobs · ${(c.totalSpent || 0).toLocaleString()} spent</p></div>
+              </div>
+            ))}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Outstanding Invoices / Open Maintenance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
+          <h3 className="font-bold text-[var(--warm-ink)] mb-4">Open Maintenance</h3>
+          {maintenance.filter((m: any) => m.status !== 'COMPLETED').length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No open requests</p> : (
+            <div className="space-y-3">{maintenance.filter((m: any) => m.status !== 'COMPLETED').slice(0, 5).map((m: any) => (
+              <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
+                <div><p className="font-medium text-[var(--warm-ink)] text-sm">{m.title}</p><p className="text-xs text-[var(--soft-stone)]">{m.priority}</p></div>
+                <Badge variant={m.priority === 'URGENT' ? 'red' : m.priority === 'HIGH' ? 'yellow' : 'blue'}>{m.status}</Badge>
+              </div>
+            ))}</div>
+          )}
+        </div>
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
           <h3 className="font-bold text-[var(--warm-ink)] mb-4">Properties</h3>
           {properties.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No properties yet</p> : (
             <div className="space-y-3">{properties.slice(0, 5).map((p: any) => (
@@ -168,32 +217,51 @@ function OverviewTab({ jobs, properties, tenants, maintenance }: any) {
           )}
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-          <h3 className="font-bold text-[var(--warm-ink)] mb-4">Open Maintenance</h3>
-          {maintenance.filter((m: any) => m.status !== 'COMPLETED').length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No open requests</p> : (
-            <div className="space-y-3">{maintenance.filter((m: any) => m.status !== 'COMPLETED').slice(0, 5).map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
-                <div><p className="font-medium text-[var(--warm-ink)]">{m.title}</p><p className="text-xs text-[var(--soft-stone)]">{m.priority}</p></div>
-                <Badge variant={m.priority === 'URGENT' ? 'red' : m.priority === 'HIGH' ? 'yellow' : 'blue'}>{m.status}</Badge>
-              </div>
-            ))}</div>
-          )}
+    </div>
+  );
+}
+
+function CalendarTab({ jobs }: { jobs: any[] }) {
+  const [weekOffset, setWeekOffset] = useState(0);
+  const today = new Date();
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay() + weekOffset * 7);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return d;
+  });
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  return (
+    <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-[var(--warm-ink)]">Weekly Calendar</h2>
+        <div className="flex gap-2">
+          <button onClick={() => setWeekOffset(0)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--soft-stone)]/30">Today</button>
+          <button onClick={() => setWeekOffset(weekOffset - 1)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--soft-stone)]/30">←</button>
+          <button onClick={() => setWeekOffset(weekOffset + 1)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--warm-sand)] text-[var(--warm-ink)] hover:bg-[var(--soft-stone)]/30">→</button>
         </div>
-        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
-          <h3 className="font-bold text-[var(--warm-ink)] mb-4">Recent Tenants</h3>
-          {tenants.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No tenants yet</p> : (
-            <div className="space-y-3">{tenants.slice(0, 5).map((t: any) => (
-              <div key={t.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white text-sm font-bold">{(t.firstName || t.email || '?')[0]}</div>
-                  <div><p className="font-medium text-[var(--warm-ink)]">{t.firstName} {t.lastName}</p><p className="text-xs text-[var(--soft-stone)]">{t.email}</p></div>
-                </div>
-                <Badge variant={t.status === 'ACTIVE' ? 'green' : 'yellow'}>{t.status}</Badge>
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {days.map((day, i) => {
+          const dayJobs = jobs.filter((j: any) => new Date(j.scheduledDate).toDateString() === day.toDateString());
+          const isToday = day.toDateString() === today.toDateString();
+          return (
+            <div key={i} className={`p-2 sm:p-3 rounded-xl border min-h-[100px] sm:min-h-[120px] ${isToday ? 'border-[var(--clay)] bg-[var(--clay)]/5' : 'border-[var(--soft-stone)]/30 bg-[var(--cream)]'}`}>
+              <p className={`text-[10px] sm:text-xs font-medium mb-1 ${isToday ? 'text-[var(--clay)]' : 'text-[var(--soft-stone)]'}`}>{dayNames[i]}</p>
+              <p className={`text-sm sm:text-lg font-bold mb-2 ${isToday ? 'text-[var(--clay)]' : 'text-[var(--warm-ink)]'}`}>{day.getDate()}</p>
+              <div className="space-y-1">
+                {dayJobs.slice(0, 2).map((j: any) => (
+                  <div key={j.id} className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 truncate">
+                    {j.scheduledTime} {j.serviceType}
+                  </div>
+                ))}
+                {dayJobs.length > 2 && <p className="text-[10px] text-[var(--soft-stone)]">+{dayJobs.length - 2} more</p>}
               </div>
-            ))}</div>
-          )}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -277,7 +345,7 @@ function JobsTab({ jobs, clients, employees, onRefresh }: { jobs: any[]; clients
   );
 }
 
-function MaintenanceTab({ maintenance, onRefresh }: { maintenance: any[]; onRefresh: () => void }) {
+function _MaintenanceTab({ maintenance, onRefresh }: { maintenance: any[]; onRefresh: () => void }) {
   const [showForm, setShowForm] = useState(false);
   return (
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
@@ -328,7 +396,7 @@ function MoneyTab({ stats, payroll, expenses, employees }: any) {
   );
 }
 
-function ActivityTab() {
+function _ActivityTab() {
   const [activities, setActivities] = useState<any[]>([]);
   useEffect(() => { pmApi('/activity').then(r => setActivities(r.data || [])).catch(() => {}); }, []);
   return (
