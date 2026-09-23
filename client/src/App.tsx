@@ -29,6 +29,7 @@ import { DemoCheckoutPage } from './pages/DemoCheckoutPage';
 import BusinessProfilePage from './pages/BusinessProfilePage';
 import BusinessCrmPage from './pages/BusinessCrmPage';
 import BusinessJoinPage from './pages/BusinessJoinPage';
+import PostBusinessPage from './pages/PostBusinessPage';
 import BusinessActivationPage from './pages/BusinessActivationPage';
 import BusinessModelPage from './pages/BusinessModelPage';
 import TechnologyPage from './pages/TechnologyPage';
@@ -392,6 +393,7 @@ function App() {
             <Route path="business/activate/:id" element={<BusinessActivationPage />} />
             <Route path="business/crm" element={isAuthenticated ? <BusinessCrmPage /> : <Navigate to="/login" />} />
             <Route path="crm" element={isAuthenticated ? <ServiceBusinessDashboard /> : <Navigate to="/login" />} />
+            <Route path="post-business" element={<PostBusinessPage />} />
             <Route path="business/settings" element={isAuthenticated ? <BusinessSettingsPage /> : <Navigate to="/login" />} />
             <Route path="business/analytics" element={isAuthenticated ? <BusinessAnalyticsPage /> : <Navigate to="/login" />} />
             <Route path="business/plugins" element={isAuthenticated ? <PluginManagerPage /> : <Navigate to="/login" />} />
