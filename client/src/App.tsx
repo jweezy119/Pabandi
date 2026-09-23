@@ -191,6 +191,8 @@ import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
+import InvoicesPage from './pages/crm/InvoicesPage';
+import InvoiceDetailPage from './pages/crm/InvoiceDetailPage';
 import LedgerExpensesPage from './pages/ledger/LedgerExpensesPage';
 import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
@@ -261,6 +263,8 @@ function App() {
           <Route path="contact/leads/:id" element={<ContactLeadDetailPage />} />
           <Route path="contact/deals" element={<ContactDealsPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
+          <Route path="contact/invoices" element={<InvoicesPage />} />
+          <Route path="contact/invoices/:id" element={<InvoiceDetailPage />} />
 
           {/* LedgerOS - Finance & Accounting */}
           <Route path="ledger" element={<LedgerOSPage />} />

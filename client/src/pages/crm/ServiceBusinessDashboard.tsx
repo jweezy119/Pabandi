@@ -24,7 +24,7 @@ async function pmApi(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-type Tab = 'today' | 'calendar' | 'properties' | 'clients' | 'jobs' | 'team' | 'money' | 'pipeline';
+type Tab = 'today' | 'calendar' | 'properties' | 'clients' | 'jobs' | 'team' | 'invoices' | 'money' | 'pipeline';
 
 export default function ServiceBusinessDashboard() {
   const [tab, setTab] = useState<Tab>('today');
@@ -98,12 +98,12 @@ export default function ServiceBusinessDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard icon={FiCalendar} label="Active Jobs" value={String(stats?.totalJobs || 0)} sub={`${jobs.filter(j => j.status === 'SCHEDULED').length} scheduled`} color="blue" />
           <StatCard icon={FiTool} label="Maintenance" value={String(openMaintenance)} sub={`${maintenance.length} total`} color="orange" />
-          <StatCard icon={FiFileText} label="Active Leases" value={String(leases.filter(l => l.status === 'ACTIVE').length)} sub={`${leases.length} total`} color="green" />
+          <StatCard icon={FiFileText} label="Outstanding Invoices" value={String(0)} sub="$0" color="red" />
           <StatCard icon={FiTrendingUp} label="Net Income" value={`$${netIncome.toLocaleString()}`} sub={netIncome >= 0 ? 'Profit' : 'Loss'} color={netIncome >= 0 ? 'green' : 'red'} />
         </div>
 
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-[var(--soft-stone)]/30 overflow-x-auto">
-          {(['today', 'calendar', 'properties', 'clients', 'jobs', 'team', 'money', 'pipeline'] as Tab[]).map(t => (
+          {(['today', 'calendar', 'properties', 'clients', 'jobs', 'team', 'invoices', 'money', 'pipeline'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)] text-white' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}>{t}</button>
           ))}
         </div>
