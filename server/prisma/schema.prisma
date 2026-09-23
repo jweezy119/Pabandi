@@ -6468,6 +6468,26 @@ model ContactActivity {
   @@map("pipeline_activities")
 }
 
+model Invoice {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  businessId    String
+  clientId      String
+  client        CrmClient @relation(fields: [clientId], references: [id])
+  dateIssued    DateTime @default(now())
+  dateDue       DateTime
+  status        String   @default("draft")
+  lineItems     Json     @default("[]")
+  subtotal      Float    @default(0)
+  notes         String?
+  sentAt        DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([businessId, status])
+  @@index([clientId])
+}
+
 model LedgerAccount {
   id            String   @id @default(cuid())
   businessId    String
@@ -6581,6 +6601,7 @@ model CrmClient {
   updatedAt         DateTime           @updatedAt
 
   jobs CrmJob[]
+  invoices Invoice[]
 
   @@index([serviceBusinessId])
   @@map("crm_clients")
