@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -84,9 +84,9 @@ export default function ContactOSPage() {
 
   return (
     <>
-      <Head>
+      <Helmet>
         <title>ContactOS — Every relationship, one trusted record</title>
-      </Head>
+      </Helmet>
       <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
         <div className="space-y-6">
           {/* Stats */}

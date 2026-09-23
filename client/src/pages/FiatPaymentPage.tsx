@@ -96,7 +96,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: Bearer ${token}` } : {}),
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
         },
         body: JSON.stringify({
           method: selectedMethod,
@@ -146,7 +146,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: Bearer ${token}` } : {}),
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
         },
       });
       loadPaymentStatus();
@@ -162,7 +162,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: Bearer ${token}` } : {}),
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
         },
       });
       const json = await res.json();
@@ -184,7 +184,7 @@ export default function FiatPaymentPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: Bearer ${token}` } : {}),
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
         },
         body: JSON.stringify({ reason: rejectReason }),
       });
@@ -204,7 +204,7 @@ export default function FiatPaymentPage() {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/v1/fiat/pending', {
-        headers: token ? { Authorization: Bearer ${token}` } : {},
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
       });
       const json = await res.json();
       if (json.success) {
