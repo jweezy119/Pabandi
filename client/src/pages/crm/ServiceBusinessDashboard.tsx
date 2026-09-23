@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome } from 'react-icons/fi';
+import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome, FiBriefcase } from 'react-icons/fi';
+import ContactsPipelineTab from './ContactsPipelineTab';
 
 const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
@@ -22,7 +23,7 @@ async function pmApi(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-type Tab = 'overview' | 'properties' | 'tenants' | 'jobs' | 'maintenance' | 'money' | 'team' | 'activity';
+type Tab = 'overview' | 'properties' | 'tenants' | 'jobs' | 'maintenance' | 'money' | 'team' | 'activity' | 'pipeline';
 
 export default function ServiceBusinessDashboard() {
   const [tab, setTab] = useState<Tab>('overview');
@@ -101,7 +102,7 @@ export default function ServiceBusinessDashboard() {
         </div>
 
         <div className="flex gap-1 mb-6 bg-white rounded-xl p-1 border border-[var(--soft-stone)]/30 overflow-x-auto">
-          {(['overview', 'properties', 'tenants', 'jobs', 'maintenance', 'money', 'team', 'activity'] as Tab[]).map(t => (
+          {(['overview', 'properties', 'tenants', 'jobs', 'maintenance', 'money', 'team', 'pipeline', 'activity'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all capitalize whitespace-nowrap ${tab === t ? 'bg-[var(--clay)] text-white' : 'text-[var(--soft-stone)] hover:text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]'}`}>{t}</button>
           ))}
         </div>
@@ -114,6 +115,7 @@ export default function ServiceBusinessDashboard() {
         {tab === 'money' && <MoneyTab stats={stats} payroll={payroll} expenses={expenses} employees={employees} />}
         {tab === 'team' && <TeamTab employees={employees} payroll={payroll} />}
         {tab === 'activity' && <ActivityTab />}
+        {tab === 'pipeline' && <ContactsPipelineTab />}
       </div>
     </div>
   );
