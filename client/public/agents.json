@@ -25,9 +25,9 @@
       "payment": ["x402"]
     },
     {
-      "id": "pipeline.create_lead",
+      "id": "contact.create_lead",
       "description": "Create a CRM lead with trust-enriched data",
-      "endpoint": "POST /api/v1/pipeline/leads",
+      "endpoint": "POST /api/v1/contact/leads",
       "price": "0.03 USDC per call",
       "payment": ["x402", "AP2"]
     },
@@ -58,6 +58,6 @@
     "escrow": true,
     "networks": ["solana", "polygon"]
   },
-  "modules": ["booking", "freight", "abode", "pipeline", "ledger"],
+  "modules": ["booking", "freight", "abode", "contact", "ledger"],
   "trustEngine": "TrustOS"
 }

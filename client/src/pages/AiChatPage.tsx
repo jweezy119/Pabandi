@@ -77,7 +77,7 @@ export const AiChatPage: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
-      <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col" style={{ height: 'calc(100vh - 80px)" }}>
+      <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
         {/* Header */}
         <div className="text-center mb-4">
           <Badge tone="info" className="mb-2">🤖 AI Assistant</Badge>

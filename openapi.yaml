@@ -213,7 +213,7 @@ paths:
         '402':
           description: Payment required (x402)
 
-  /api/v1/pipeline:
+  /api/v1/contact:
     get:
       tags: [CRM]
       summary: Get pipeline stats

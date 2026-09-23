@@ -355,28 +355,30 @@ img {
   overflow: hidden;
 }
 
-.clay-sphere {
+.clay-earth {
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--clay), var(--terracotta) 70%, #8B4A2F);
+  background: radial-gradient(circle at 35% 35%, #F0E4D4, #E8D9C5 60%, #D9C8B0);
   box-shadow:
-    inset -8px -8px 20px rgba(0,0,0,0.15),
-    inset 8px 8px 20px rgba(255,255,255,0.1),
-    0 8px 32px rgba(180, 130, 90, 0.2);
+    inset -8px -8px 20px rgba(90,50,30,0.12),
+    inset 8px 8px 20px rgba(255,250,240,0.15),
+    0 8px 32px rgba(180, 130, 90, 0.18);
   animation: clay-breathe 4s ease-in-out infinite, clay-spin 30s linear infinite;
+  position: relative;
+  overflow: hidden;
 }
 
-.clay-sphere::after {
+.clay-earth::after {
   content: '';
   position: absolute;
-  top: 15%;
-  left: 20%;
-  width: 30px;
-  height: 20px;
+  top: 12%;
+  left: 18%;
+  width: 32px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  filter: blur(4px);
+  background: rgba(255,250,240,0.2);
+  filter: blur(6px);
   transform: rotate(-20deg);
 }
 
@@ -548,7 +550,6 @@ img {
 
 .module-icon-property { background: var(--dusty-rose); }
 .module-icon-contact { background: var(--muted-ochre); }
-.module-icon-pipeline { background: var(--muted-ochre); }
 .module-icon-ledger { background: var(--sky-wash); }
 
 .module-name {
@@ -931,7 +932,7 @@ img {
 
 @media (prefers-reduced-motion: reduce) {
   .orb,
-  .clay-sphere,
+  .clay-earth,
   .trust-seal,
   .dust-mote,
   .wave-anim,
@@ -978,7 +979,7 @@ img {
     max-width: 250px;
   }
 
-  .clay-sphere {
+  .clay-earth {
     width: 140px;
     height: 140px;
   }
@@ -1024,4 +1025,14 @@ img {
   .clay-object-container {
     display: none;
   }
+}
+
+@media (prefers-reduced-motion: reduce), (max-width: 767px) {
+  .clay-earth {
+    animation: none !important;
+  }
+}
+
+.hero-visual .clay-earth::after {
+  display: none;
 }

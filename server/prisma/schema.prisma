@@ -3912,19 +3912,6 @@ model TrustPassport {
   @@index([providerRef])
   @@index([userId])
 }
-  
-  level                 String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  gigHistory   PassportGigHistory[]
-  endorsements SkillEndorsement[]
-  vector       PassportVector?
-
-  @@index([handle])
-  @@index([agentId])
-  @@index([providerRef])
-}
 
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
 

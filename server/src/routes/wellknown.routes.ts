@@ -55,7 +55,7 @@ router.get('/agents.json', (req: Request, res: Response) => {
       'property.list',
       'property.verify',
       'crm.lead',
-      'crm.pipeline',
+      'crm.contact',
       'ledger.invoice',
       'ledger.cashflow',
       'escrow.initiate',

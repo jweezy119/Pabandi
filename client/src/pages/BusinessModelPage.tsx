@@ -40,9 +40,7 @@ export default function BusinessModelPage() {
       {/* Hero Banner */}
       <section 
         className="relative overflow-hidden py-20 px-4 text-center border-b border-[rgba(191,179,163,0.3)]"
-        style={{
-          background: 'radial-gradient(circle at top, "rgba(153, 69, 255, 0.1)" 0%, transparent 60%)"
-        }}
+        style={{ background: 'radial-gradient(circle at top, rgba(153, 69, 255, 0.1) 0%, transparent 60%)' }}
       >
         <div className="max-w-4xl mx-auto">
           <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -121,8 +119,8 @@ export default function BusinessModelPage() {
             <div 
               className="rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 relative shadow-md"
               style={{
-                background: 'linear-gradient(135deg, "rgba(153, 69, 255, 0.06)" 0%, "rgba(255, 255, 255, 0.05)" 45%, "rgba(240, 180, 41, 0.04)" 100%)",
-                border: '2px solid "rgba(153, 69, 255, 0.35)"',
+                background: 'linear-gradient(135deg, rgba(153, 69, 255, 0.06) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(240, 180, 41, 0.04) 100%)',
+                border: '2px solid rgba(153, 69, 255, 0.35)',
               }}
             >
               <div className="absolute -top-3 right-6 bg-[#f0b429] text-[#1a1a1a] font-label text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
@@ -243,8 +241,8 @@ export default function BusinessModelPage() {
             <div 
               className="rounded-2xl p-6 flex flex-col justify-between"
               style={{
-                background: 'linear-gradient(135deg, "rgba(240, 180, 41, 0.06)" 0%, "rgba(255, 255, 255, 0.05)" 50%, "rgba(153, 69, 255, 0.04)" 100%)",
-                border: '1px solid "rgba(240, 180, 41, 0.25)"',
+                background: 'linear-gradient(135deg, rgba(240, 180, 41, 0.06) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(153, 69, 255, 0.04) 100%)',
+                border: '1px solid rgba(240, 180, 41, 0.25)',
               }}
             >
               <div>
@@ -339,8 +337,8 @@ export default function BusinessModelPage() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4"
               style={{
-                background: "rgba(34, 197, 94, 0.08)",
-                borderColor: "rgba(34, 197, 94, 0.3)",
+                background: 'rgba(34, 197, 94, 0.08)',
+                borderColor: 'rgba(34, 197, 94, 0.3)',
               }}
             >
               <StarIcon className="h-3.5 w-3.5 text-[var(--sage)]" />
@@ -362,8 +360,8 @@ export default function BusinessModelPage() {
             <div
               className="rounded-2xl p-5 flex flex-col gap-3 border"
               style={{
-                background: 'linear-gradient(135deg, "rgba(34, 197, 94, 0.05)" 0%, "rgba(255, 255, 255, 0.05)" 100%)",
-                borderColor: "rgba(34, 197, 94, 0.2)",
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                borderColor: 'rgba(34, 197, 94, 0.2)',
               }}
             >
               <div className="w-9 h-9 rounded-xl bg-[rgba(var(--sage),0.1)] border border-[rgba(var(--sage),0.2)] flex items-center justify-center shrink-0">
@@ -382,8 +380,8 @@ export default function BusinessModelPage() {
             <div
               className="rounded-2xl p-5 flex flex-col gap-3 border"
               style={{
-                background: 'linear-gradient(135deg, "rgba(34, 197, 94, 0.05)" 0%, "rgba(255, 255, 255, 0.05)" 100%)",
-                borderColor: "rgba(34, 197, 94, 0.2)",
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                borderColor: 'rgba(34, 197, 94, 0.2)',
               }}
             >
               <div className="w-9 h-9 rounded-xl bg-[rgba(var(--sage),0.1)] border border-[rgba(var(--sage),0.2)] flex items-center justify-center shrink-0">
@@ -402,8 +400,8 @@ export default function BusinessModelPage() {
             <div
               className="rounded-2xl p-5 flex flex-col gap-3 border"
               style={{
-                background: 'linear-gradient(135deg, "rgba(34, 197, 94, 0.05)" 0%, "rgba(255, 255, 255, 0.05)" 100%)",
-                borderColor: "rgba(34, 197, 94, 0.2)",
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                borderColor: 'rgba(34, 197, 94, 0.2)',
               }}
             >
               <div className="w-9 h-9 rounded-xl bg-[rgba(var(--sage),0.1)] border border-[rgba(var(--sage),0.2)] flex items-center justify-center shrink-0">
@@ -423,8 +421,8 @@ export default function BusinessModelPage() {
           <div
             className="rounded-2xl p-6 border mb-8"
             style={{
-              background: 'linear-gradient(135deg, "rgba(34, 197, 94, 0.04)" 0%, "rgba(153, 69, 255, 0.04)" 100%)",
-              borderColor: "rgba(34, 197, 94, 0.25)",
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.04) 0%, rgba(153, 69, 255, 0.04) 100%)',
+              borderColor: 'rgba(34, 197, 94, 0.25)',
             }}
           >
             <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
@@ -455,7 +453,7 @@ export default function BusinessModelPage() {
                 <div className="bg-[var(--warm-sand)] rounded-xl border border-[rgba(191,179,163,0.3)] p-4 text-center">
                   <div
                     className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl"
-                    style={{ background: "rgba(34, 197, 94, 0.12)", border: '2px solid "rgba(34, 197, 94, 0.3)"' }}
+                    style={{ background: 'rgba(34, 197, 94, 0.12)', border: '2px solid rgba(34, 197, 94, 0.3)' }}
                   >
                     ☽
                   </div>
@@ -508,8 +506,8 @@ export default function BusinessModelPage() {
           <div
             className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 border"
             style={{
-              background: 'linear-gradient(90deg, "rgba(34, 197, 94, 0.06)" 0%, "rgba(153, 69, 255, 0.06)" 100%)",
-              borderColor: "rgba(34, 197, 94, 0.25)",
+              background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.06) 0%, rgba(153, 69, 255, 0.06) 100%)',
+              borderColor: 'rgba(34, 197, 94, 0.25)',
             }}
           >
             <div className="text-center w-full">

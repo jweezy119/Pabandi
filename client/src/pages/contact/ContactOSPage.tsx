@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -25,7 +26,7 @@ function ClayCard({ children, className = '', hover = true, ...props }: any) {
       style={{ boxShadow: 'var(--shadow-soft)' }}
       {...props}
     >
-      {children}
+      <div className="p-4">{children}</div>
     </div>
   );
 }
@@ -39,7 +40,7 @@ function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: strin
           <p className="text-2xl font-bold" style={{ color: `var(--${valueColor})` }}>{value}</p>
         </div>
         <div className="w-11 h-11 rounded-xl bg-[var(--clay)] flex items-center justify-center">
-          <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">{icon}</span>
+          <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--warm-ink)' }}>{icon}</span>
         </div>
       </div>
     </ClayCard>
@@ -62,111 +63,92 @@ export default function ContactOSPage() {
         }
       } catch (err) {
         console.error('Failed to fetch leads:', err);
+        setLeads([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchLeads();
   }, []);
 
-  const totalValue = leads.reduce((sum, l) => sum + (l.totalSpent || 0), 0);
-  const avgScore = leads.length > 0 ? Math.round(leads.reduce((s, l) => s + (l.reliabilityScore || 50), 0) / leads.length) : 0;
-  const atRiskCount = leads.filter(l => (l.reliabilityScore || 50) < 30).length;
+  if (loading) {
+    return (
+      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="ochre" navItems={navItems}>
-      <div className="space-y-6 max-w-6xl mx-auto">
-
-        {/* Page header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--warm-ink)' }}>Contact Dashboard</h1>
-            <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>Trust-aware CRM & revenue engine</p>
+    <>
+      <Head>
+        <title>ContactOS — Every relationship, one trusted record</title>
+      </Head>
+      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+        <div className="space-y-6">
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              icon="groups"
+              value={leads.length.toString()}
+              label="Total Leads"
+              valueColor="warm-ink"
+            />
+            <StatCard
+              icon="trending_up"
+              value={leads.filter(l => l.stage === 'booked').length.toString()}
+              label="Booked"
+              valueColor="sage"
+            />
+            <StatCard
+              icon="calendar_today"
+              value={leads.filter(l => l.stage === 'repeat').length.toString()}
+              label="Repeat"
+              valueColor="sky-wash"
+            />
+            <StatCard
+              icon="star"
+              value={leads.filter(l => l.stage === 'vip').length.toString()}
+              label="VIP"
+              valueColor="dusty-rose"
+            />
           </div>
-          <Link
-            to="/contact/leads"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border-2 bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] hover:-translate-y-0.5 active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Lead
-          </Link>
-        </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard icon="groups" value={`${leads.length}`} label="Total Leads" />
-          <StatCard icon="attach_money" value={`$${totalValue.toLocaleString()}`} label="Contact Value" />
-          <StatCard
-            icon="verified"
-            value={`${avgScore}/100`}
-            label="Avg Trust Score"
-            valueColor={avgScore >= 70 ? 'sage' : avgScore >= 50 ? 'muted-ochre' : 'terracotta'}
-          />
-          <StatCard icon="warning" value={`${atRiskCount}`} label="At Risk" valueColor="terracotta" />
-        </div>
-
-        {/* Funnel */}
-        <ClayCard className="p-6" hover={false}>
-          <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--warm-ink)' }}>Trust-Based Funnel</h2>
-          <div className="flex items-end gap-2 h-48">
-            {FUNNEL_STAGES.map((stage) => {
-              const count = leads.filter(l => l.stage === stage.name.toLowerCase()).length;
-              return (
-                <div key={stage.name} className="flex-1 flex flex-col items-center">
-                  <div
-                    className="w-full rounded-t-lg transition-all"
-                    style={{ background: stage.color, height: `${Math.max(10, (count / Math.max(1, leads.length)) * 100)}%` }}
-                  />
-                  <p className="text-xs mt-2 text-center" style={{ color: 'var(--soft-stone)' }}>{stage.name}</p>
-                  <p className="text-sm font-bold" style={{ color: 'var(--warm-ink)' }}>{count}</p>
-                </div>
-              );
-            })}
-          </div>
-        </ClayCard>
-
-        {/* Recent leads */}
-        <ClayCard className="overflow-hidden" hover={false}>
-          <div className="p-4 border-b" style={{ borderColor: 'var(--soft-stone)' }}>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--warm-ink)' }}>Recent Leads</h2>
-          </div>
-          {loading ? (
-            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>
-              <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
-              <p className="mt-2 text-sm">Loading leads...</p>
-            </div>
-          ) : leads.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>
-              <span className="material-symbols-outlined text-[32px] mb-2 block">inbox</span>
-              <p>No leads yet. Add your first lead to get started.</p>
-              <Link
-                to="/contact/leads"
-                className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full text-sm font-semibold border-2 bg-[var(--clay)] text-[var(--warm-ink)] border-[var(--clay)] hover:bg-[var(--terracotta)] hover:border-[var(--terracotta)] transition-all"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Add Lead
+          {/* Leads List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Leads</h2>
+              <Link to="/contact/leads" className="px-4 py-2 bg-primary/10 rounded-lg hover:bg-primary/20 text-sm font-medium">
+                View All
               </Link>
             </div>
-          ) : (
-            <div className="divide-y" style={{ borderColor: 'var(--soft-stone)' }}>
-              {leads.map((lead) => (
-                <div key={lead.id} className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--warm-sand)' }}>
-                      <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--soft-stone)' }}>person</span>
+
+            {leads.length === 0 ? (
+              <p className="text-center py-8 text-muted">No leads yet. Add your first lead to get started.</p>
+            ) : (
+              <div className="space-y-4">
+                {leads.map((lead) => (
+                  <div key={lead.id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--warm-sand)' }}>
+                        <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--soft-stone)' }}>person</span>
+                      </div>
+                      <div>
+                        <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{lead.name}</p>
+                        <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{lead.stage || 'lead'} • {lead.totalJobs || 0} jobs</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium" style={{ color: 'var(--warm-ink)' }}>{lead.name}</p>
-                      <p className="text-sm" style={{ color: 'var(--soft-stone)' }}>{lead.stage || 'lead'} • {lead.totalJobs || 0} jobs</p>
-                    </div>
+                    <span className="font-medium" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</span>
                   </div>
-                  <span className="font-medium" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </ClayCard>
-      </div>
-    </DashboardLayout>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DashboardLayout>
+    </>
   );
 }

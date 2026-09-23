@@ -76,7 +76,7 @@ export const AIRentOptimizerPage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-[var(--warm-ink)]">${result.recommendedRent.toLocaleString()}</div>
-                  <div className="text-sm" style={{ color: result.changePct >= 0 ? 'var(--sage)' : 'var(--terracotta)' }}}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
+                  <div className="text-sm" style={{ color: result.changePct >= 0 ? 'var(--sage)' : 'var(--terracotta)' }}>{result.changePct >= 0 ? '+' : ''}{result.changePct}% vs current</div>
                 </div>
               </div>
               <p className="text-sm mt-3 text-[var(--soft-stone)]">{result.explanation}</p>

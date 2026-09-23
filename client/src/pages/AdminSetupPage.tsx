@@ -57,7 +57,7 @@ export const AdminSetupPage = () => {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-[var(--warm-ink)]" style={{ background: 'linear-gradient(135deg,'var(--sky-wash)', 'var(--sage)')" }}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-[var(--warm-ink)]" style={{ background: 'linear-gradient(135deg, var(--sky-wash), var(--sage))' }}>
               P
             </div>
             <span className="font-headline text-xl font-black tracking-tight" style={{ color: 'var(--clay)' }}>Pabandi</span>
