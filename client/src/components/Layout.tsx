@@ -295,28 +295,25 @@ export default function Layout() {
           <button onClick={() => setShowInstall(false)} className="text-white/70 hover:text-white">Dismiss</button>
         </div>
       )}
-      {/* Deep Space & Neon Background Layer */}
-      <div className="fixed inset-0 z-[-1] pointer-events-none bg-background overflow-hidden">
-         <img src="/assets/bg_abstract.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen" />
-         <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-radial-glow blur-3xl opacity-60" />
-         <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-purple-glow blur-3xl opacity-50" />
+      {/* Background */}
+      <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden" style={{ background: 'var(--cream)' }}>
       </div>
 
       {!isAuthPage && !isStandalone && (
-        <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b shadow-2xl transition-all duration-300 ${scrolled ? 'bg-surface/60 backdrop-blur-2xl border-white/10 scale-[1.01]' : 'bg-surface/30 backdrop-blur-2xl border-white/5 scale-100'}`}>
+        <header className={`flex justify-between items-center w-full px-3 sm:px-6 h-14 sm:h-16 fixed top-0 z-40 border-b transition-all duration-300 ${scrolled ? 'bg-[var(--cream)]/80 backdrop-blur-xl border-[var(--soft-stone)]/30 shadow-sm' : 'bg-[var(--cream)]/60 backdrop-blur-xl border-[var(--soft-stone)]/20'}`}>
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
-              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
+              <Link to={isOwnerOrAdmin ? '/dashboard' : '/profile'} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--clay)] text-white flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 touch-target">
                 {initials}
               </Link>
             ) : (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0 touch-target">
-                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">person</span>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--warm-sand)] flex items-center justify-center shrink-0 touch-target">
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-[var(--warm-ink)]">person</span>
               </div>
             )}
             <Link to="/" className="flex items-center gap-1.5 sm:gap-2">
               <img src="/logo-company.jpg" alt="Pabandi" className="h-5 sm:h-7 w-auto" />
-              <span className="font-headline font-bold text-sm sm:text-base text-on-surface hidden sm:inline">Pabandi</span>
+              <span className="font-headline font-bold text-sm sm:text-base text-[var(--warm-ink)] hidden sm:inline">Pabandi</span>
             </Link>
           </div>
 
