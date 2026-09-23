@@ -6422,14 +6422,15 @@ model WalletPassport {
 
 model ContactLead {
   id            String   @id @default(cuid())
-  passportId    String
-  passport      WalletPassport @relation(fields: [passportId], references: [id])
+  passportId    String?
+  passport      WalletPassport? @relation(fields: [passportId], references: [id])
   name          String
   email         String?
   phone         String?
   source        String?
   stage         String   @default("new")
   value         Float?
+  notes         String?
   ownerId       String
   businessId    String
   createdAt     DateTime @default(now())

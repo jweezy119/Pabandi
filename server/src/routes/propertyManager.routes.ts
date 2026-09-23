@@ -442,24 +442,97 @@ router.get('/activity', authenticate, async (req: any, res: Response) => {
   }
 });
 
+// Documents
+router.get('/documents', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const documents = await prisma.tenantDocument.findMany({ where: { managerId: profile.id }, orderBy: { createdAt: 'desc' } });
+    res.json({ success: true, data: documents });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not load documents' });
+  }
+});
+
+router.post('/documents', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    const { title, fileName, fileUrl, fileSize, mimeType, category, tenantEmail, leaseId } = req.body;
+    if (!title || !fileUrl) return res.status(400).json({ error: 'title and fileUrl are required' });
+    const doc = await prisma.tenantDocument.create({
+      data: {
+        managerId: profile.id, tenantEmail: tenantEmail || null, leaseId: leaseId || null,
+        title, fileName: fileName || fileUrl.split('/').pop() || 'document', fileUrl,
+        fileSize: fileSize || 0, mimeType: mimeType || null, category: category || 'OTHER',
+        uploadedBy: req.user?.email || 'MANAGER',
+      },
+    });
+    res.status(201).json({ success: true, data: doc });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not create document' });
+  }
+});
+
+router.delete('/documents/:id', authenticate, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { userId } });
+    if (!profile) return res.status(404).json({ error: 'Not enrolled' });
+    await prisma.tenantDocument.delete({ where: { id: req.params.id, managerId: profile.id } });
+    res.json({ success: true, message: 'Document deleted' });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not delete document' });
+  }
+});
+
 // White-label: GET /api/v1/property-manager/portal/:slug
 router.get('/portal/:slug', async (req: Request, res: Response) => {
   try {
     const profile = await prisma.propertyManagerProperty.findUnique({
       where: { slug: req.params.slug },
-      include: { _count: { select: { tenants: true } } },
     });
-    if (!profile || !profile.active) return res.status(404).json({ error: 'Portal not found' });
+    if (!profile) return res.status(404).json({ error: 'Portal not found' });
+    const vacantProperties = await prisma.propertyManagerProperty.findMany({
+      where: { managerId: profile.id, status: 'VACANT' },
+      select: { id: true, title: true, address: true, city: true, state: true, zip: true, bedrooms: true, bathrooms: true, rentAmount: true, rentPeriod: true },
+    });
     res.json({
       success: true,
       data: {
         companyName: profile.companyName, slug: profile.slug, brandColor: profile.brandColor, logoUrl: profile.logoUrl, tagline: profile.tagline,
-        activeListings: 0, totalProperties: 0,
-        vacantListings: [],
+        vacantListings: vacantProperties,
       },
     });
   } catch (e: any) {
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// White-label: POST /api/v1/property-manager/portal/:slug/apply
+router.post('/portal/:slug/apply', async (req: Request, res: Response) => {
+  try {
+    const profile = await prisma.propertyManagerProperty.findUnique({ where: { slug: req.params.slug } });
+    if (!profile) return res.status(404).json({ error: 'Portal not found' });
+    const { email, firstName, lastName, phone, message, desiredMoveIn, monthlyIncome, propertyId } = req.body;
+    if (!email) return res.status(400).json({ error: 'email is required' });
+    const application = await prisma.tenantApplication.create({
+      data: {
+        managerId: profile.id, propertyId: propertyId || null,
+        email: String(email).toLowerCase().trim(), firstName: firstName || null, lastName: lastName || null,
+        phone: phone || null, message: message || null,
+        desiredMoveIn: desiredMoveIn ? new Date(desiredMoveIn) : null,
+        monthlyIncome: monthlyIncome != null ? Number(monthlyIncome) : null,
+      },
+    });
+    res.status(201).json({ success: true, data: application, message: 'Application submitted successfully' });
+  } catch (e: any) {
+    res.status(500).json({ error: 'Could not submit application' });
   }
 });
 

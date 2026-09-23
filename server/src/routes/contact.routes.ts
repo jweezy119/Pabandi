@@ -3,7 +3,82 @@ import { prisma } from '../utils/database';
 
 const router = Router();
 
-// ── LEADS ────────────────────────────────────────────
+// ── CONTACTS (unified view of all contacts/leads/deals) ──
+
+router.get('/contacts', async (req, res) => {
+  try {
+    const leads = await prisma.contactLead.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { deals: true, activities: true },
+    });
+    res.json({ success: true, data: leads });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/contacts', async (req, res) => {
+  try {
+    const { name, email, phone, source, value, notes } = req.body;
+    const lead = await prisma.contactLead.create({
+      data: {
+        name, email, phone, source, value: value ? Number(value) : null,
+        notes: notes || null,
+        businessId: 'default', ownerId: 'system', passportId: '',
+        stage: 'new',
+      },
+    });
+    res.status(201).json({ success: true, data: lead });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.put('/contacts/:id', async (req, res) => {
+  try {
+    const { name, email, phone, stage, value, company, notes } = req.body;
+    const lead = await prisma.contactLead.update({
+      where: { id: req.params.id },
+      data: { name, email, phone, stage, value, company, notes },
+    });
+    res.json({ success: true, data: lead });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/contacts/:id', async (req, res) => {
+  try {
+    await prisma.contactLead.delete({ where: { id: req.params.id } });
+    res.json({ success: true, message: 'Contact deleted' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/contacts/:id/activities', async (req, res) => {
+  try {
+    const activities = await prisma.contactActivity.findMany({
+      where: { leadId: req.params.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: activities });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/contacts/:id/deals', async (req, res) => {
+  try {
+    const deals = await prisma.contactDeal.findMany({
+      where: { leadId: req.params.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, data: deals });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 router.get('/leads', async (req, res) => {
   try {
