@@ -235,7 +235,7 @@ export default function HospitalityPage() {
                         <h3 className="text-sm font-bold text-[var(--warm-ink)]">{prop.propertyName}</h3>
                         <p className="text-[10px] text-[var(--soft-stone)] mt-0.5">{prop.country || 'Global'}</p>
                       </div>
-                      <Badge tone="info" className={!providerColor ? '' : ''} style={{ background: providerColor ? `${providerColor}20` : 'var(--cream)' }}, color: providerColor, borderColor: `${providerColor}40` } : undefined}>
+                      <Badge tone="info" className={!providerColor ? '' : ''} style={{ background: providerColor ? `${providerColor}20` : 'var(--cream)', color: providerColor, borderColor: `${providerColor}40` }}>
                         {prop.provider}
                       </Badge>
                     </div>
