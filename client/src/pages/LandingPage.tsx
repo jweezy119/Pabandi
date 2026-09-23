@@ -218,10 +218,10 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </a>
           <nav className="nav-list" aria-label="Main">
+            <a href="/contact">Contact</a>
+            <a href="/property">Property</a>
             <a href="/booking">Booking</a>
             <a href="/freight">Freight</a>
-            <a href="/property">Property</a>
-            <a href="/contact">Contact</a>
             <a href="/ledger">Ledger</a>
           </nav>
           <div className="header-right">
