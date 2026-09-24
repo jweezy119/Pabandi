@@ -297,18 +297,99 @@ function PropertiesTab({ properties, onRefresh }: { properties: any[]; onRefresh
 
 function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]; properties: any[]; leases: any[]; onRefresh: () => void }) {
   const [showForm, setShowForm] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
+
+  const loadInvoices = useCallback(async (clientId: string) => {
+    try {
+      const data = await api(`/clients/${clientId}/invoices`);
+      setInvoices(data.data || []);
+    } catch { setInvoices([]); }
+  }, []);
+
+  const handleSelectTenant = (t: any) => {
+    setSelectedTenant(t);
+    loadInvoices(t.id);
+  };
+
+  if (selectedTenant) {
+    const tenantLeases = leases.filter((l: any) => l.tenantEmail === selectedTenant.email);
+    const totalBilled = invoices.reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const totalPaid = invoices.filter((i: any) => i.status === 'paid').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const outstanding = invoices.filter((i: any) => i.status === 'sent' || i.status === 'overdue').reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
+    const hasStats = totalBilled > 0 || totalPaid > 0 || outstanding > 0;
+
+    return (
+      <div className="space-y-4">
+        <button onClick={() => setSelectedTenant(null)} className="text-sm text-[var(--soft-stone)] hover:text-[var(--warm-ink)] flex items-center gap-1">
+          ← Back to clients
+        </button>
+
+        <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(selectedTenant.firstName || selectedTenant.email || '?')[0]}</div>
+            <div>
+              <h3 className="font-bold text-[var(--warm-ink)]">{selectedTenant.firstName} {selectedTenant.lastName}</h3>
+              <p className="text-sm text-[var(--soft-stone)]">{selectedTenant.email} · {selectedTenant.phone}</p>
+            </div>
+          </div>
+
+          {hasStats && (
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="text-center p-2 rounded-lg bg-[var(--warm-sand)]">
+                <p className="text-xs text-[var(--soft-stone)]">Total Billed</p>
+                <p className="font-bold text-[var(--warm-ink)]">${totalBilled.toLocaleString()}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--warm-sand)]">
+                <p className="text-xs text-[var(--soft-stone)]">Total Paid</p>
+                <p className="font-bold text-[var(--sage)]">${totalPaid.toLocaleString()}</p>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-[var(--warm-sand)]">
+                <p className="text-xs text-[var(--soft-stone)]">Outstanding</p>
+                <p className="font-bold text-[var(--terracotta)]">${outstanding.toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h4 className="font-medium text-[var(--warm-ink)] mb-2">Invoices ({invoices.length})</h4>
+            {invoices.length === 0 ? (
+              <p className="text-sm text-[var(--soft-stone)]">No invoices yet. <a href="/contact/invoices" className="text-[var(--clay)] hover:underline">Create one →</a></p>
+            ) : (
+              <div className="space-y-2">
+                {invoices.map(inv => (
+                  <Link key={inv.id} to={`/contact/invoices/${inv.id}`} className="flex items-center justify-between p-3 rounded-lg bg-[var(--warm-sand)] hover:bg-[var(--soft-stone)]/20 transition">
+                    <div>
+                      <p className="font-medium text-[var(--warm-ink)] text-sm">{inv.number}</p>
+                      <p className="text-xs text-[var(--soft-stone)]">{new Date(inv.dateIssued).toLocaleDateString()} · ${inv.subtotal?.toLocaleString()}</p>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[inv.status] || ''}`}>{inv.status}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-[var(--warm-ink)]">Tenants</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Tenant</button>
+        <h2 className="text-lg font-bold text-[var(--warm-ink)]">Clients</h2>
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium flex items-center gap-2">
+          <FiPlus className="w-4 h-4" /> Add Client
+        </button>
       </div>
       {showForm && <TenantForm properties={properties} onClose={() => setShowForm(false)} onSave={() => { setShowForm(false); onRefresh(); }} />}
-      {tenants.length === 0 ? <p className="text-[var(--soft-stone)]">No tenants yet</p> : (
+      {tenants.length === 0 ? (
+        <p className="text-[var(--soft-stone)]">No clients yet</p>
+      ) : (
         <div className="space-y-3">{tenants.map((t: any) => {
           const tenantLeases = leases.filter((l: any) => l.tenantEmail === t.email);
           return (
-            <div key={t.id} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--soft-stone)]/30">
+            <div key={t.id} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--soft-stone)]/30 hover:border-[var(--clay)]/30 transition cursor-pointer" onClick={() => handleSelectTenant(t)}>
               <div className="w-10 h-10 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(t.firstName || t.email || '?')[0]}</div>
               <div className="flex-1"><p className="font-medium text-[var(--warm-ink)]">{t.firstName} {t.lastName}</p><p className="text-sm text-[var(--soft-stone)]">{t.email} · {t.phone}</p></div>
               <div className="text-right">

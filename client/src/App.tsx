@@ -188,6 +188,8 @@ import ContactLeadsPage from './pages/contact/ContactLeadsPage';
 import ContactLeadDetailPage from './pages/contact/ContactLeadDetailPage';
 import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
+import ContactJobsPage from "./pages/contact/ContactJobsPage";
+import ContactJobDetailPage from "./pages/contact/ContactJobDetailPage";
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
@@ -261,6 +263,8 @@ function App() {
           <Route path="contact" element={<ContactOSPage />} />
           <Route path="contact/leads" element={<ContactLeadsPage />} />
           <Route path="contact/leads/:id" element={<ContactLeadDetailPage />} />
+<Route path="contact/jobs" element={<ContactJobsPage />} />
+          <Route path="contact/jobs/:id" element={<ContactJobDetailPage />} />
           <Route path="contact/deals" element={<ContactDealsPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />

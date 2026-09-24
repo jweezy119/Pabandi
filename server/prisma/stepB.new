@@ -3879,35 +3879,11 @@ model TrustPassport {
   verified      Boolean?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-   crmClient      CrmClient?   @relation("CrmClientTrustPassport")
+   crmClient      CrmClient?   @relation(fields: [passportId], references: [id])
 
-  // Scoped scores — each 0-1000, each earned within its own context
-  showUpScore           Int?    @default(500)
-  paymentScore          Int?    @default(500)
-  deliveryScore         Int?    @default(500)
-  tenancyScore          Int?    @default(500)
-  freightScore          Int?    @default(500)
-
-  // Confidence indicators
-  showUpSampleSize      Int     @default(0)
-  paymentSampleSize     Int     @default(0)
-  deliverySampleSize    Int     @default(0)
-  tenancySampleSize     Int     @default(0)
-  freightSampleSize     Int     @default(0)
-
-  // Character-level flags — the only things that transfer globally
-  verifiedIdentity      Boolean @default(false)
-  verifiedAt            DateTime?
-  fraudFlag             Boolean @default(false)
-  fraudFlaggedAt        DateTime?
-  escrowTheftFlag       Boolean @default(false)
-  chargebackFraudCount  Int     @default(0)
-
-  // Relations
-  gigHistory          PassportGigHistory[]
-  endorsements        SkillEndorsement[]
-  vector              PassportVector?
-  invoiceTrustEvents  InvoiceTrustEvent[]
+  gigHistory   PassportGigHistory[]
+  endorsements SkillEndorsement[]
+  vector       PassportVector?
 
   @@index([handle])
   @@index([agentId])
@@ -6477,47 +6453,6 @@ model LedgerAccount {
   @@index([businessId])
 }
 
-model Invoice {
-  id            String   @id @default(cuid())
-  number        String   @unique
-  businessId    String
-  clientId      String
-  client        CrmClient   @relation(fields: [clientId], references: [id])
-  dateIssued    DateTime @default(now())
-  dateDue       DateTime
-  status        String   @default("draft")
-  lineItems     Json
-  subtotal      Float    @default(0)
-  notes         String?
-  sentAt        DateTime?
-  paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  trustEvents   InvoiceTrustEvent[]
-
-  @@index([businessId, status])
-  @@index([clientId])
-}
-
-model InvoiceTrustEvent {
-  id          String        @id @default(cuid())
-  invoiceId   String
-  passportId  String
-  eventType   String        // "invoice.sent" | "invoice.paid_on_time" | "invoice.paid_late" | "invoice.overdue" | "invoice.defaulted"
-  scoreBefore Int?
-  scoreAfter  Int?
-  createdAt   DateTime      @default(now())
-
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
-  passport    TrustPassport @relation(fields: [passportId], references: [id])
-
-  @@index([invoiceId])
-  @@index([passportId])
-  @@index([createdAt])
-  @@unique([invoiceId, eventType])
-}
-
 model LedgerInvoice {
   id            String   @id @default(cuid())
   businessId    String
@@ -6611,13 +6546,12 @@ model CrmClient {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-   passportId     String?   @unique
-   passport       TrustPassport?   @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
+   passportId     String?
+   passport       TrustPassport   @relation(fields: [passportId], references: [id])
    @@index([passportId])
 
   business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs        CrmJob[]
-  invoices    Invoice[]
 
   @@index([businessId])
   @@index([name])

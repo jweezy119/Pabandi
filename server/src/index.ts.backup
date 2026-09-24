@@ -371,11 +371,6 @@ import { initializeTrustCore } from './services/trust-core.service';
 initializeTrustCore();
 logger.info('✅ TrustCore event pipeline initialized');
 
-// Auto-start job cron service (checks for overdue jobs and no-shows every minute)
-import { jobCronService } from './services/jobCronService';
-jobCronService.start();
-logger.info('✅ Job cron service auto-started (checks every minute)');
-
 // Auto-start settlement service (runs every hour to settle agent credits on-chain)
 import { settlementService } from './services/settlement.service';
 settlementService.startPeriodicSettlement();
@@ -383,9 +378,7 @@ logger.info('✅ Settlement service auto-started (hourly on-chain USDC transfers
 
 // Auto-start compounding service (runs every hour to compound fees back to reserve)
 import { compoundingService } from './services/compounding.service';
-import { startInvoiceTrustCron } from './utils/invoiceTrustCron';
 compoundingService.startPeriodicCompounding();
-startInvoiceTrustCron();
 logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
 // Auto-start DEX auto-trader (continuous trading for LP fees)

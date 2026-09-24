@@ -3876,6 +3876,7 @@ model TrustPassport {
   lastCheckedAt DateTime?
   userId        String?  @unique
   score         Float?
+  paymentScore    Float?   @default(500)
   level         String?
   verified      Boolean?
   createdAt     DateTime  @default(now())
@@ -6533,11 +6534,14 @@ model CrmEmployee {
   jobsCompleted     Int                @default(0)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  passportId     String?
+  passport       TrustPassport   @relation(fields: [passportId], references: [id])
 
   assignments CrmJobAssignment[]
   payrolls    CrmPayroll[]
 
   @@index([serviceBusinessId])
+  @@index([passportId])
   @@map("crm_employees")
 }
 
@@ -6555,10 +6559,13 @@ model CrmClient {
   lastJobAt         DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  passportId     String?
+  passport       TrustPassport   @relation(fields: [passportId], references: [id])
 
   jobs CrmJob[]
 
   @@index([serviceBusinessId])
+  @@index([passportId])
   @@map("crm_clients")
 }
 
@@ -6582,10 +6589,13 @@ model CrmJob {
   feedback          String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  passportId     String?
+  passport       TrustPassport   @relation(fields: [passportId], references: [id])
 
   assignments CrmJobAssignment[]
 
   @@index([serviceBusinessId])
+  @@index([passportId])
   @@index([clientId])
   @@index([status])
   @@index([scheduledDate])
@@ -6626,8 +6636,11 @@ model CrmPayroll {
   paidAt            DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  passportId     String?
+  passport       TrustPassport   @relation(fields: [passportId], references: [id])
 
   @@index([serviceBusinessId])
+  @@index([passportId])
   @@index([employeeId])
   @@index([status])
   @@map("crm_payrolls")
@@ -6644,8 +6657,11 @@ model CrmExpense {
   date              DateTime
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  passportId     String?
+  passport       TrustPassport   @relation(fields: [passportId], references: [id])
 
   @@index([serviceBusinessId])
+  @@index([passportId])
   @@index([category])
   @@index([date])
   @@map("crm_expenses")

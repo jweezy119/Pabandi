@@ -9,13 +9,14 @@ datasource db {
 }
 
 
-enum PipelineStage {
+enum ContactStage {
   new
   contacted
   qualified
   proposal
   won
   lost
+  @@map("pipeline_stages")
 }
 
 enum DealStage {
@@ -3860,58 +3861,56 @@ model CommunityGrant {
 
 // ── Trust Passport (public, portable provider trust identity) ───────────────
 model TrustPassport {
-  id            String    @id @default(cuid())
-  handle        String    @unique // shareable slug, e.g. "apex-builders"
-  agentId       String? // Web3Agent.id if linked
-  providerRef   String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
-  category      String    @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
-  displayName   String
-  bio           String?
-  walletAddress String?
-  visibility    String    @default("PUBLIC") // PUBLIC | PRIVATE
-  claimsCount   Int       @default(0) // times requested/verified
-  riskScore     Int?
-  riskBand      String?
-  lastCheckedAt DateTime?
-  userId        String?  @unique
-  score         Float?
-  level         String?
-  verified      Boolean?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-   crmClient      CrmClient?   @relation("CrmClientTrustPassport")
-
+  id                    String    @id @default(cuid())
+  handle                String    @unique // shareable slug, e.g. "apex-builders"
+  agentId               String? // Web3Agent.id if linked
+  providerRef           String? // string key used across deposits/bonds/BC (landlordId/beneficiaryId/subjectId)
+  category              String    @default("FREELANCER") // FREELANCER | BUILDER | FLEET | HOA | PROPERTY_MANAGER
+  displayName           String
+  bio                   String?
+  walletAddress         String?
+  visibility            String    @default("PUBLIC") // PUBLIC | PRIVATE
+  claimsCount           Int       @default(0) // times requested/verified
+  riskScore             Int?
+  riskBand              String?
+  lastCheckedAt         DateTime?
+  userId                String?  @unique
+  
   // Scoped scores — each 0-1000, each earned within its own context
-  showUpScore           Int?    @default(500)
-  paymentScore          Int?    @default(500)
-  deliveryScore         Int?    @default(500)
-  tenancyScore          Int?    @default(500)
-  freightScore          Int?    @default(500)
-
-  // Confidence indicators
-  showUpSampleSize      Int     @default(0)
-  paymentSampleSize     Int     @default(0)
-  deliverySampleSize    Int     @default(0)
-  tenancySampleSize     Int     @default(0)
-  freightSampleSize     Int     @default(0)
-
+  showUpScore           Int       @default(500)
+  paymentScore          Int       @default(500)
+  deliveryScore         Int       @default(500)
+  tenancyScore          Int       @default(500)
+  freightScore          Int       @default(500)
+  
   // Character-level flags — the only things that transfer globally
-  verifiedIdentity      Boolean @default(false)
+  verifiedIdentity      Boolean   @default(false)
   verifiedAt            DateTime?
-  fraudFlag             Boolean @default(false)
+  fraudFlag             Boolean   @default(false)  // court judgment only
   fraudFlaggedAt        DateTime?
-  escrowTheftFlag       Boolean @default(false)
-  chargebackFraudCount  Int     @default(0)
-
-  // Relations
-  gigHistory          PassportGigHistory[]
-  endorsements        SkillEndorsement[]
-  vector              PassportVector?
-  invoiceTrustEvents  InvoiceTrustEvent[]
-
+  escrowTheftFlag       Boolean   @default(false)
+  chargebackFraudCount  Int       @default(0)
+  
+  // Contextual metadata
+  showUpSampleSize      Int       @default(0)  // confidence indicator
+  paymentSampleSize     Int       @default(0)
+  deliverySampleSize    Int       @default(0)
+  tenancySampleSize     Int       @default(0)
+  freightSampleSize     Int       @default(0)
+  
+  level                 String?
+  verified              Boolean?  // Deprecated: use verifiedIdentity instead
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  gigHistory            PassportGigHistory[]
+  endorsements          SkillEndorsement[]
+  vector                PassportVector?
+  
   @@index([handle])
   @@index([agentId])
   @@index([providerRef])
+  @@index([userId])
 }
 
 // ── Best Fit Engine (Behavioral Biometrics & Pattern Matching) ─────────────
@@ -6416,34 +6415,36 @@ model WalletPassport {
   verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  pipelineLeads PipelineLead[]
+  contactLeads ContactLead[]
 
   @@map("wallet_passports")
 }
 
-model PipelineLead {
+model ContactLead {
   id            String   @id @default(cuid())
-  passportId    String
-  passport      WalletPassport @relation(fields: [passportId], references: [id])
+  passportId    String?
+  passport      WalletPassport? @relation(fields: [passportId], references: [id])
   name          String
   email         String?
   phone         String?
   source        String?
   stage         String   @default("new")
   value         Float?
+  notes         String?
   ownerId       String
   businessId    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  deals         PipelineDeal[]
-  activities    PipelineActivity[]
+  deals         ContactDeal[]
+  activities    ContactActivity[]
   @@index([businessId, stage])
+  @@map("pipeline_leads")
 }
 
-model PipelineDeal {
+model ContactDeal {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   title         String
   amount        Float
   stage         String   @default("open")
@@ -6452,17 +6453,39 @@ model PipelineDeal {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@index([leadId, stage])
+  @@map("pipeline_deals")
 }
 
-model PipelineActivity {
+model ContactActivity {
   id            String   @id @default(cuid())
   leadId        String
-  lead          PipelineLead @relation(fields: [leadId], references: [id])
+  lead          ContactLead @relation(fields: [leadId], references: [id])
   type          String
   content       String?
   dueAt         DateTime?
   completedAt   DateTime?
   createdAt     DateTime @default(now())
+  @@map("pipeline_activities")
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  number        String   @unique
+  businessId    String
+  clientId      String
+  client        CrmClient @relation(fields: [clientId], references: [id])
+  dateIssued    DateTime @default(now())
+  dateDue       DateTime
+  status        String   @default("draft")
+  lineItems     Json     @default("[]")
+  subtotal      Float    @default(0)
+  notes         String?
+  sentAt        DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([businessId, status])
+  @@index([clientId])
 }
 
 model LedgerAccount {
@@ -6475,47 +6498,6 @@ model LedgerAccount {
   currency      String   @default("USD")
   createdAt     DateTime @default(now())
   @@index([businessId])
-}
-
-model Invoice {
-  id            String   @id @default(cuid())
-  number        String   @unique
-  businessId    String
-  clientId      String
-  client        CrmClient   @relation(fields: [clientId], references: [id])
-  dateIssued    DateTime @default(now())
-  dateDue       DateTime
-  status        String   @default("draft")
-  lineItems     Json
-  subtotal      Float    @default(0)
-  notes         String?
-  sentAt        DateTime?
-  paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  trustEvents   InvoiceTrustEvent[]
-
-  @@index([businessId, status])
-  @@index([clientId])
-}
-
-model InvoiceTrustEvent {
-  id          String        @id @default(cuid())
-  invoiceId   String
-  passportId  String
-  eventType   String        // "invoice.sent" | "invoice.paid_on_time" | "invoice.paid_late" | "invoice.overdue" | "invoice.defaulted"
-  scoreBefore Int?
-  scoreAfter  Int?
-  createdAt   DateTime      @default(now())
-
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
-  passport    TrustPassport @relation(fields: [passportId], references: [id])
-
-  @@index([invoiceId])
-  @@index([passportId])
-  @@index([createdAt])
-  @@unique([invoiceId, eventType])
 }
 
 model LedgerInvoice {
@@ -6552,142 +6534,164 @@ model LedgerExpense {
   @@index([businessId, category])
 }
 
-// ── Service-Business CRM Models ───────────────────────────────────────────────
-// Employees, clients, jobs, payroll, and expenses for service businesses
-// (cleaning companies, contractors, maintenance services, etc.)
 
-model CrmBusiness {
-  id            String   @id @default(cuid())
-  businessName  String
-  ownerEmail    String
-  ownerName     String
-  serviceType   String
-  phone         String?
-  address       String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+// ── Service Business CRM Models ───────────────────────────────────────────────
+// Service businesses (cleaning, plumbing, etc.) with employees, clients, jobs,
+// assignments, payroll, and expenses.
 
-  employees     CrmEmployee[]
-  clients       CrmClient[]
-  jobs          CrmJob[]
-  payrolls      CrmPayroll[]
-  expenses      CrmExpense[]
+model CrmServiceBusiness {
+  id                String             @id @default(cuid())
+  businessId                String?            @unique
+  business                  Business?          @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  ownerId                   String
+  owner                     User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  serviceType               String   // CLEANING | PLUMBING | ELECTRICIAN | HVAC | etc.
+  teamSize                  Int                @default(1)
+  subscriptionTier          String             @default("FREE")
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
-  @@index([ownerEmail])
-  @@index([serviceType])
+  employees  CrmEmployee[]
+  clients    CrmClient[]
+  jobs       CrmJob[]
+  payrolls   CrmPayroll[]
+  expenses   CrmExpense[]
+
+  @@index([businessId])
+  @@index([ownerId])
+  @@map("crm_service_businesses")
 }
 
 model CrmEmployee {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String
-  email       String?
-  phone       String?
-  role        String
-  payRate     Float    @default(0)
-  payType     String   @default("HOURLY") // HOURLY | SALARY | PER_JOB
-  isActive    Boolean  @default(true)
-  hireDate    DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  name              String
+  email             String
+  phone             String
+  role              String
+  payRate           Float
+  payType           String             // HOURLY | SALARY | PER_JOB
+  isActive          Boolean            @default(true)
+  rating            Float              @default(5.0)
+  jobsCompleted     Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  jobs        CrmJob[]    @relation("JobAssignments")
+  assignments CrmJobAssignment[]
   payrolls    CrmPayroll[]
 
-  @@index([businessId])
-  @@index([isActive])
+  @@index([serviceBusinessId])
+  @@map("crm_employees")
 }
 
 model CrmClient {
-  id          String   @id @default(cuid())
-  businessId  String
-  name        String
-  email       String?
-  phone       String?
-  address     String?
-  notes       String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-   passportId     String?   @unique
-   passport       TrustPassport?   @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
-   @@index([passportId])
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  name              String
+  email             String
+  phone             String
+  address           String
+  notes             String?
+  totalJobs         Int                @default(0)
+  totalSpent        Float              @default(0)
+  lastJobAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  jobs        CrmJob[]
-  invoices    Invoice[]
+  jobs CrmJob[]
+  invoices Invoice[]
 
-  @@index([businessId])
-  @@index([name])
+  @@index([serviceBusinessId])
+  @@map("crm_clients")
 }
 
 model CrmJob {
-  id            String   @id @default(cuid())
-  businessId    String
-  clientId      String
-  serviceType   String
-  scheduledDate DateTime
-  scheduledTime String?
-  duration      Int?     // Duration in minutes
-  address       String?
-  notes         String?
-  price         Float    @default(0)
-  status        String   @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
-  completedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  clientId          String
+  client            CrmClient          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientName        String             // denormalized snapshot of client name at booking time
+  serviceType       String
+  scheduledDate     DateTime
+  scheduledTime     String
+  durationMinutes   Int
+  address           String
+  notes             String?
+  price             Float
+  status            String             @default("SCHEDULED")
+  completedAt       DateTime?
+  rating            Int?
+  feedback          String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  business      CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  client        CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  employeeId    String?
-  employee      CrmEmployee? @relation("JobAssignments", fields: [employeeId], references: [id], onDelete: SetNull)
+  assignments CrmJobAssignment[]
 
-  @@index([businessId])
+  @@index([serviceBusinessId])
+  @@index([clientId])
   @@index([status])
   @@index([scheduledDate])
-  @@index([clientId])
+  @@map("crm_jobs")
+}
+
+model CrmJobAssignment {
+  id                String        @id @default(cuid())
+  jobId             String
+  job               CrmJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  employeeId        String
+  employee          CrmEmployee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedAt        DateTime      @default(now())
+  completedAt       DateTime?
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([jobId])
   @@index([employeeId])
+  @@map("crm_job_assignments")
 }
 
 model CrmPayroll {
-  id            String   @id @default(cuid())
-  businessId    String
-  employeeId    String
-  periodStart   DateTime
-  periodEnd     DateTime
-  hoursWorked   Float    @default(0)
-  jobsCompleted Int      @default(0)
-  grossPay      Float    @default(0)
-  deductions    Float    @default(0)
-  netPay        Float    @default(0)
-  paidAt        DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  employeeId        String
+  employee          CrmEmployee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  periodStart       DateTime
+  periodEnd         DateTime
+  hoursWorked       Float
+  jobsCompleted     Int
+  grossPay          Float
+  deductions        Float              @default(0)
+  netPay            Float
+  status            String             @default("PENDING")
+  paidAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  business      CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  employee      CrmEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
+  @@index([serviceBusinessId])
   @@index([employeeId])
-  @@index([periodStart])
+  @@index([status])
+  @@map("crm_payrolls")
 }
 
 model CrmExpense {
-  id          String   @id @default(cuid())
-  businessId  String
-  category    String
-  amount      Float
-  description String?
-  date        DateTime @default(now())
-  vendor      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String             @id @default(cuid())
+  serviceBusinessId String
+  serviceBusiness   CrmServiceBusiness @relation(fields: [serviceBusinessId], references: [id], onDelete: Cascade)
+  category          String
+  amount            Float
+  description       String
+  vendor            String?
+  date              DateTime
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
+  @@index([serviceBusinessId])
   @@index([category])
   @@index([date])
+  @@map("crm_expenses")
 }

@@ -207,41 +207,7 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
       isDefaulted
     );
 
-// ── Job Lifecycle Management ──────────────────────────────────────────────
-
-// POST /api/v1/crm/jobs/:id/checkin — Check in for a job
-router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    const { latitude, longitude } = req.body;
-    const job = await crmService.checkInJob(jobId, req.user.id, latitude, longitude);
-    res.json({ success: true, data: job });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// POST /api/v1/crm/jobs/:id/checkout — Check out from a job
-router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    const result = await crmService.checkOutJob(jobId, req.user.id);
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// POST /api/v1/crm/jobs/:id/noshow — Handle no-show (called by cron)
-router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    await crmService.handleNoShow(jobId);
-    res.json({ success: true, message: 'No-show processed' });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});    res.json({ success: true, data: updated });
+    res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

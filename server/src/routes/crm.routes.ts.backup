@@ -22,22 +22,11 @@ import {
   dismissAlertHandler,
   getClientStageHandler,
 } from '../controllers/revenue.controller';
-import { invoiceTrustService } from '../services/invoice-trust.service';
-import { AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
-
-// Helper to extract businessId from request (query or body)
-function getBusinessId(req: AuthRequest): string {
-  const businessId = req.body?.businessId || req.query?.businessId;
-  if (!businessId) {
-    throw new Error('businessId is required');
-  }
-  return businessId as string;
-}
 
 // ── Business Enrollment ──────────────────────────────────────────────────────
 
@@ -181,67 +170,12 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
     const invoice = await prisma.invoice.findFirst({ where: { id: req.params.id, businessId } });
     if (!invoice) return res.status(404).json({ success: false, error: 'Invoice not found' });
     
-    const oldStatus = invoice.status;
     const updateData: any = { status };
     if (status === 'sent' && !invoice.sentAt) updateData.sentAt = new Date();
     if (status === 'paid' && !invoice.paidAt) updateData.paidAt = new Date();
 
-    // Determine flags for paymentScore update
-    const now = new Date();
-    const isPaidOnTime = invoice.dateDue ? now <= new Date(invoice.dateDue) : true;
-    const isOverdue = status === 'overdue';
-    const isDefaulted = status === 'defaulted';
-
-    // Update invoice
     const updated = await prisma.invoice.update({ where: { id: req.params.id }, data: updateData });
-
-    // Process via invoice trust service (emit events, update paymentScore)
-    await invoiceTrustService.processInvoiceStatusChange(
-      updated.id,
-      updated.clientId,
-      oldStatus,
-      updated.status,
-      now,
-      isPaidOnTime,
-      isOverdue,
-      isDefaulted
-    );
-
-// ── Job Lifecycle Management ──────────────────────────────────────────────
-
-// POST /api/v1/crm/jobs/:id/checkin — Check in for a job
-router.post('/jobs/:id/checkin', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    const { latitude, longitude } = req.body;
-    const job = await crmService.checkInJob(jobId, req.user.id, latitude, longitude);
-    res.json({ success: true, data: job });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// POST /api/v1/crm/jobs/:id/checkout — Check out from a job
-router.post('/jobs/:id/checkout', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    const result = await crmService.checkOutJob(jobId, req.user.id);
-    res.json({ success: true, data: result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// POST /api/v1/crm/jobs/:id/noshow — Handle no-show (called by cron)
-router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
-  try {
-    const { id: jobId } = req.params;
-    await crmService.handleNoShow(jobId);
-    res.json({ success: true, message: 'No-show processed' });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});    res.json({ success: true, data: updated });
+    res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

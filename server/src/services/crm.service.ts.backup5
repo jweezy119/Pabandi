@@ -1,5 +1,4 @@
 import { prisma } from '../utils/database';
-import { invoiceGenerationService } from '../invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './reliability.service';
