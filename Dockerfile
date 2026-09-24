@@ -1,6 +1,6 @@
 FROM node:22-slim
 
-ARG CACHE_BUST=10
+ARG CACHE_BUST=11
 RUN echo "Build: $(date +%s)" > /build-date.txt && cat /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -18,8 +18,8 @@ RUN npm install --include=dev
 COPY server/ .
 
 # Build TypeScript
-# Build step not needed — tsx runs TypeScript directly in CMD
-# RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=4096 npm run build
+# tsx runs TypeScript directly at runtime — no tsc needed
+# RUN rm -rf dist .tsbuildinfo && npm run build
 
 # Build client (static files)
 WORKDIR /app/client
@@ -35,5 +35,5 @@ EXPOSE 10000
 
 WORKDIR /app/server
 
-# Clean orphaned data and push schema on startup
-CMD ["sh", "-c", "rm -rf dist && echo 'Applying scoped trust score migration...' && (cat prisma/migrations/20260924_add_scoped_trust_scores_and_invoice_events/migration.sql | npx prisma db execute --stdin || echo 'Migration already applied, continuing...') && echo 'Cleaning orphaned AgentFeedback records...' && (echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server with tsx...' && npx tsx src/index.ts"]
+# Clean orphaned data, apply migrations, push schema, then start with tsx
+CMD ["sh", "-c", "rm -rf dist && echo 'Applying scoped trust score migration...' && (cat prisma/migrations/20260924_add_scoped_trust_scores_and_invoice_events/migration.sql | npx prisma db execute --stdin || echo 'Migration already applied, continuing...') && echo 'Cleaning orphaned AgentFeedback records...' && (echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && npx tsx src/index.ts"]
