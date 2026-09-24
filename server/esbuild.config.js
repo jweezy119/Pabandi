@@ -1,35 +1,32 @@
 const esbuild = require('esbuild');
-const { readdirSync, statSync, existsSync, mkdirSync, copySync } = require('fs-extra');
+const fs = require('fs');
 const path = require('path');
 
-// Transpile all .ts files to .js (no bundling, keeps tsc-like output)
-async function transpileDir(dir) {
-  const outDir = dir.replace('src', 'dist/src');
-  if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
-
-  for (const entry of readdirSync(dir)) {
-    const fullPath = path.join(dir, entry);
+async function transpileDir(srcDir, outDir) {
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+  
+  for (const entry of fs.readdirSync(srcDir)) {
+    const srcPath = path.join(srcDir, entry);
     const outPath = path.join(outDir, entry);
-
-    if (statSync(fullPath).isDirectory()) {
-      await transpileDir(fullPath);
+    
+    if (fs.statSync(srcPath).isDirectory()) {
+      await transpileDir(srcPath, outPath);
     } else if (entry.endsWith('.ts')) {
-      const outFile = outPath.replace('.ts', '.js');
-      await esbuild.build({
-        entryPoints: [fullPath],
+      const result = await esbuild.build({
+        entryPoints: [srcPath],
         bundle: false,
         platform: 'node',
         target: 'node22',
-        outfile: outFile,
+        outfile: outPath.replace('.ts', '.js'),
         format: 'cjs',
-        sourcemap: true,
       });
+      process.stdout.write('.');
     }
   }
 }
 
-transpileDir('src').then(() => {
-  console.log('esbuild transpile complete');
+transpileDir('src', 'dist/src').then(() => {
+  console.log('\nesbuild transpile complete');
   process.exit(0);
 }).catch((err) => {
   console.error('esbuild failed:', err);
