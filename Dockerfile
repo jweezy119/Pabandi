@@ -1,7 +1,7 @@
 FROM node:22-slim
 
-ARG CACHE_BUST=7
-RUN echo "Cache bust: $CACHE_BUST" && date > /build-date.txt
+ARG CACHE_BUST=10
+RUN echo "Build: $(date +%s)" > /build-date.txt && cat /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
@@ -18,7 +18,7 @@ RUN npm install --include=dev
 COPY server/ .
 
 # Build TypeScript
-RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=6144 npm run build
+RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 # Build client (static files)
 WORKDIR /app/client

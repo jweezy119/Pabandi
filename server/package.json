@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "gcp-build": "prisma generate && tsc",
-    "build": "NODE_OPTIONS=--max-old-space-size=6144 prisma generate && tsc --noEmitOnError false && node -e \"require('fs').cpSync('src/public','dist/src/public',{recursive:true})\"",
+    "build": "prisma generate && esbuild --bundle src/index.ts --platform=node --target=node22 --outfile=dist/src/index.js --external:@prisma/client --external:.prisma/client --external:pg --external:redis --external:sharp --external:canvas --external:@tensorflow/* --external:mupdf --external:officegen --external:exceljs --external:node-cron && node -e \"require('fs').cpSync('src/public','dist/src/public',{recursive:true})\"",
     "zk:build": "ts-node src/zk/buildZk.ts",
     "start": "node dist/src/index.js",
     "prestart": "prisma generate",
@@ -87,10 +87,12 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "chokidar": "^5.0.0",
+    "esbuild": "^0.28.2",
     "nodemon": "^3.1.14",
     "picomatch": "^4.0.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.3.3"
   },
   "overrides": {
