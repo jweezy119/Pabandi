@@ -21,7 +21,8 @@ COPY server/ .
 RUN npx prisma generate
 
 # Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
-RUN NODE_OPTIONS=--max-old-space-size=1700 npm run build
+# Remove stale dist/ from previous deploys to force full recompile
+RUN rm -rf dist && NODE_OPTIONS=--max-old-space-size=1700 npm run build
 
 # Build client (static files)
 WORKDIR /app/client
