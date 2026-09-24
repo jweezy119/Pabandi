@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { ReliabilityChip } from '../../components/reliability/ReliabilityChip';
+import ReliabilityChip from '../../components/reliability/ReliabilityChip';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },

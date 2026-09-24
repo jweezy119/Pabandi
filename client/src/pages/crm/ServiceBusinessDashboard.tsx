@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome, FiBriefcase } from 'react-icons/fi';
 import ContactsPipelineTab from './ContactsPipelineTab';
 import EmployeesTab from './EmployeesTab';
-import ReliabilityChip from '../reliability/ReliabilityChip';
+import ReliabilityChip from '../../components/reliability/ReliabilityChip';
 
 const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;

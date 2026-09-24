@@ -127,7 +127,7 @@ export default function ContactJobsPage() {
 
   // Calendar helper functions
   const prevMonth = () => {
-    const m = parseInt(month) - 1;
+    let m = parseInt(month) - 1;
     let y = parseInt(year);
     if (m < 1) {
       m = 12;
@@ -138,7 +138,7 @@ export default function ContactJobsPage() {
   };
 
   const nextMonth = () => {
-    const m = parseInt(month) + 1;
+    let m = parseInt(month) + 1;
     let y = parseInt(year);
     if (m > 12) {
       m = 1;
@@ -728,7 +728,7 @@ setCurrentYear(now.getFullYear());
                     disabled={!createJobForm.clientId || !createJobForm.serviceType || !createJobForm.scheduledDate || !createJobForm.scheduledTime}
                   >
                     Create Job
-                  </div>
+                  </button>
                 </div>
               </form>
             </div>
