@@ -17,8 +17,8 @@ RUN npm install --include=dev
 # Copy server source (includes schema.prisma)
 COPY server/ .
 
-# Generate Prisma client at BUILD time
-RUN npx prisma generate
+# Generate Prisma client at BUILD time (force no cache)
+RUN npx prisma generate --no-engine
 
 # Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
 # Use tsc directly (not npm run build) to avoid any caching issues
