@@ -8,6 +8,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
+    buildCommand: echo "Build handled by Dockerfile"
     preDeployCommand: npx prisma migrate deploy
     envVars:
       - key: NODE_ENV
