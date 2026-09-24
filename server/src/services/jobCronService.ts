@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import { logger } from './logger';
-import { prisma } from './database';
+import { logger } from '../utils/logger';
+import { prisma } from '../utils/database';
 import { jobLifecycleService } from './jobLifecycle.service';
 
 export class JobCronService {
