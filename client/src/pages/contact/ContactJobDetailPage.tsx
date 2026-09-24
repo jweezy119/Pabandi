@@ -518,8 +518,8 @@ export default function ContactJobDetailPage() {
                         {Math.floor((checkedOutAt.getTime() - checkedInAt.getTime()) / (1000 * 60))} min
                       </p>
                     </div>
-                  )}
-                }
+                  </div>
+                )}
               </div>
             </ClayCard>
           )}

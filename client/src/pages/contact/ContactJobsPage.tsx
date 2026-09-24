@@ -403,7 +403,7 @@ setCurrentYear(now.getFullYear());
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                   className="w-full px-4 py-2 rounded pl-10 border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
-                >
+                />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]/50">
                   <span className="material-symbols-outlined">search</span>
                 </div>
@@ -421,7 +421,7 @@ setCurrentYear(now.getFullYear());
                 description="Create your first job to get started."
                 buttonText="+ Create Job"
                 onButtonClick={() => setShowCreateModal(true)}
-              )
+              />
             ) : (
               <div className="space-y-4">
                 {jobs.map(job => (
@@ -498,7 +498,7 @@ setCurrentYear(now.getFullYear());
                         }
                       }}
                       className="w-full px-4 py-2 rounded pl-10 border border-[var(--soft-stone)]/30 bg-[var(--warm-sand)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--clay)]"
-                    >
+                    />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--soft-stone)]/50">
                       <span className="material-symbols-outlined">person</span>
                     </div>
