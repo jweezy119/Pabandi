@@ -1,7 +1,6 @@
 FROM node:22-slim
 
-ARG CACHE_BUST=12
-RUN echo "Build: $(date +%s)" > /build-date.txt && cat /build-date.txt
+RUN date > /build-date.txt && cat /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
@@ -17,10 +16,11 @@ RUN npm install --include=dev
 # Copy server source (includes schema.prisma)
 COPY server/ .
 
-# Generate Prisma client at BUILD time with dummy DATABASE_URL
-# (the schema must be present for this to work)
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+# Generate Prisma client at BUILD time
 RUN npx prisma generate
+
+# Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
+RUN NODE_OPTIONS=--max-old-space-size=1700 npm run build
 
 # Build client (static files)
 WORKDIR /app/client
@@ -36,5 +36,4 @@ EXPOSE 10000
 
 WORKDIR /app/server
 
-# Clean orphaned data, apply migrations, push schema, then start with tsx
-CMD ["sh", "-c", "rm -rf dist && echo 'Applying scoped trust score migration...' && cat prisma/migrations/20260924_add_scoped_trust_scores_and_invoice_events/migration.sql | npx prisma db execute --stdin && echo 'Migration applied' && echo 'Cleaning orphaned AgentFeedback records...' && echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && npx tsx src/index.ts"]
+CMD ["node", "dist/src/index.js"]

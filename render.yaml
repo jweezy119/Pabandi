@@ -8,6 +8,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
+    preDeployCommand: npx prisma migrate deploy
     envVars:
       - key: NODE_ENV
         value: production
