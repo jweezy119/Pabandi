@@ -9,19 +9,18 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy server package files
+# Copy server package files (force fresh install)
 COPY server/package*.json ./server/
 WORKDIR /app/server
-RUN npm install --include=dev
+RUN npm install --include=dev --force
 
 # Copy server source (includes schema.prisma)
 COPY server/ .
 
-# Generate Prisma client (force clean to avoid stale cache)
+# Generate Prisma client (force clean)
 RUN rm -rf node_modules/.prisma && npx prisma generate
 
 # Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
-# Use tsc directly (not npm run build) to avoid any caching issues
 RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=1700 npx tsc --noEmitOnError false && node -e \"require('fs').cpSync('src/public','dist/src/public',{recursive:true})\"
 
 # Build client (static files)
