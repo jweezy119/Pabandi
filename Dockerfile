@@ -18,7 +18,7 @@ RUN npm install --include=dev
 COPY server/ .
 
 # Build TypeScript
-RUN rm -rf dist .tsbuildinfo && npm run build
+RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 # Build client (static files)
 WORKDIR /app/client
@@ -35,4 +35,4 @@ EXPOSE 10000
 WORKDIR /app/server
 
 # Clean orphaned data and push schema on startup
-CMD ["sh", "-c", "echo 'Applying scoped trust score migration...' && (cat prisma/migrations/20260924_add_scoped_trust_scores_and_invoice_events/migration.sql | npx prisma db execute --stdin || echo 'Migration already applied, continuing...') && echo 'Cleaning orphaned AgentFeedback records...' && (echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && node dist/src/index.js"]
+CMD ["sh", "-c", "echo 'Applying scoped trust score migration...' && (cat prisma/migrations/20260924_add_scoped_trust_scores_and_invoice_events/migration.sql | npx prisma db execute --stdin || echo 'Migration already applied, continuing...') && echo 'Cleaning orphaned AgentFeedback records...' && (echo 'DELETE FROM \"AgentFeedback\" WHERE \"bookingId\" NOT IN (SELECT \"id\" FROM \"AgentBooking\");' | npx prisma db execute --stdin || true) && echo 'Pushing Prisma schema to database...' && npx prisma db push --accept-data-loss && echo 'Schema push complete, starting server...' && NODE_OPTIONS=--max-old-space-size=4096 node dist/src/index.js"]
