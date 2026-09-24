@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { FiUsers, FiDollarSign, FiCalendar, FiTrendingUp, FiTool, FiFileText, FiCreditCard, FiTrendingDown, FiActivity, FiHome, FiBriefcase } from 'react-icons/fi';
 import ContactsPipelineTab from './ContactsPipelineTab';
 import EmployeesTab from './EmployeesTab';
+import ReliabilityChip from '../reliability/ReliabilityChip';
 
 const API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const PM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/property-manager`;
@@ -312,6 +313,8 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
     loadInvoices(t.id);
   };
 
+  const paymentScore = selectedTenant?.passport?.paymentScore ?? null;
+
   if (selectedTenant) {
     const tenantLeases = leases.filter((l: any) => l.tenantEmail === selectedTenant.email);
     const totalBilled = invoices.reduce((s: number, inv: any) => s + (inv.subtotal || 0), 0);
@@ -326,12 +329,15 @@ function TenantsTab({ tenants, properties, leases, onRefresh }: { tenants: any[]
         </button>
 
         <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(selectedTenant.firstName || selectedTenant.email || '?')[0]}</div>
-            <div>
-              <h3 className="font-bold text-[var(--warm-ink)]">{selectedTenant.firstName} {selectedTenant.lastName}</h3>
-              <p className="text-sm text-[var(--soft-stone)]">{selectedTenant.email} · {selectedTenant.phone}</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[var(--dusty-rose)] flex items-center justify-center text-white font-bold">{(selectedTenant.firstName || selectedTenant.email || '?')[0]}</div>
+              <div>
+                <h3 className="font-bold text-[var(--warm-ink)]">{selectedTenant.firstName} {selectedTenant.lastName}</h3>
+                <p className="text-sm text-[var(--soft-stone)]">{selectedTenant.email} · {selectedTenant.phone}</p>
+              </div>
             </div>
+            <ReliabilityChip score={paymentScore} size="md" />
           </div>
 
           {hasStats && (

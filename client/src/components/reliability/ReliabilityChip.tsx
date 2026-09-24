@@ -30,7 +30,7 @@ const ReliabilityChip: React.FC<ReliabilityChipProps> = ({
       };
     }
     
-    if (score >= 70) {
+    if (score >= 600) {
       return {
         bgColor: 'bg-[var(--sage)]/20',
         textColor: 'text-[var(--sage)]',
@@ -38,7 +38,7 @@ const ReliabilityChip: React.FC<ReliabilityChipProps> = ({
       };
     }
     
-    if (score >= 40) {
+    if (score >= 400) {
       return {
         bgColor: 'bg-[var(--muted-ochre)]/20',
         textColor: 'text-[var(--muted-ochre)]',

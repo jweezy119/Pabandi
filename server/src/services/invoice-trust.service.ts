@@ -19,7 +19,7 @@ const PAYMENT_SCORE_DELTAS: Record<string, number> = {
 };
 
 // Determine the paymentScore delta for an invoice status change
-define function getPaymentScoreDelta(
+async function getPaymentScoreDelta(
   oldStatus: string,
   newStatus: string,
   timestamp: Date,
@@ -93,7 +93,7 @@ async function getPassportIdForClient(clientId: string): Promise<string | null> 
 }
 
 // Check if an invoice event has already been recorded
-define async function invoiceEventExists(invoiceId: string, eventType: string): Promise<boolean> {
+async function invoiceEventExists(invoiceId: string, eventType: string): Promise<boolean> {
   const event = await prisma.invoiceTrustEvent.findFirst({
     where: { invoiceId, eventType },
   });
@@ -101,12 +101,14 @@ define async function invoiceEventExists(invoiceId: string, eventType: string): 
 }
 
 // Record a new invoice event
-define async function recordInvoiceEvent(invoiceId: string, passportId: string, eventType: string): Promise<void> {
+async function recordInvoiceEvent(invoiceId: string, passportId: string, eventType: string): Promise<void> {
   await prisma.invoiceTrustEvent.create({
     data: {
       invoiceId,
       passportId,
       eventType,
+      scoreBefore: previousScore,
+      scoreAfter: newScore,
     },
   });
 }
@@ -161,7 +163,7 @@ async function updatePaymentScore(
 }
 
 // Process an invoice status change
-define async function processInvoiceStatusChange(
+async function processInvoiceStatusChange(
   invoiceId: string,
   clientId: string,
   oldStatus: string,

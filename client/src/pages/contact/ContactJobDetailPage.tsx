@@ -339,7 +339,7 @@ export default function ContactJobDetailPage() {
               className="bg-[var(--soft-stone)]/20 text-[var(--warm-ink)] hover:bg-[var(--soft-stone)]/30 px-3 py-2 rounded-full flex items-center gap-1 text-xs"
             >
               Delete
-            </div>
+            </button>
           </div>
 
           {/* Check-In Modal */}

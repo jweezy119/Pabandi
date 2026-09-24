@@ -200,8 +200,7 @@ export default function ContactLeadDetailPage() {
                     <>
                       <span className="text-[var(--warm-ink)] font-bold">
                         {Math.round(lead.showUpScore * 0.6 + lead.paymentScore * 0.4)}
-                      </>
-                    </>
+                    </span>
                   )}
                   {(lead.showUpScore === undefined || lead.paymentScore === undefined) && (
                     <span className="text-[var(--warm-ink)]">—</span>
@@ -225,9 +224,9 @@ export default function ContactLeadDetailPage() {
                 <p className="text-xs text-[var(--soft-stone)]">Combined Score</p>
                 <p className="text-[var(--warm-ink)] font-medium">
                   {(lead.showUpScore !== undefined && lead.paymentScore !== undefined) && (
-                    <>
+                    <span className="text-[var(--warm-ink)] font-medium">
                       {Math.round(lead.showUpScore * 0.6 + lead.paymentScore * 0.4)}/1000
-                    </>
+                    </span>
                   )}
                   {(lead.showUpScore === undefined || lead.paymentScore === undefined) && (
                     <span>—/1000</span>
@@ -328,14 +327,13 @@ export default function ContactLeadDetailPage() {
             <div className="flex items-center justify-center space-x-3">
               <div className="w-12 h-12 rounded-full bg-[var(--sage)]/20 flex items-center justify-center">
                 {(lead.invoicesPaidOnTime !== undefined && lead.invoicesTotal !== undefined) && (
-                  <>
-                    <span className="text-[var(--warm-ink)] font-bold text-lg">
-                      {Math.round((lead.invoicesPaidOnTime / lead.invoicesTotal) * 100)}%
-                    </>
-                  )}
-                  {(lead.invoicesPaidOnTime === undefined || lead.invoicesTotal === undefined) && (
-                    <span className="text-[var(--warm-ink)]">—%</span>
-                  )}
+                  <span className="text-[var(--warm-ink)] font-bold text-lg">
+                    {Math.round((lead.invoicesPaidOnTime / lead.invoicesTotal) * 100)}%
+                  </span>
+                )}
+                {(lead.invoicesPaidOnTime === undefined || lead.invoicesTotal === undefined) && (
+                  <span className="text-[var(--warm-ink)]">—%</span>
+                )}
                 </div>
               </div>
               <p className="text-[var(--warm-ink)] font-medium">

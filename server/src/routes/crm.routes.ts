@@ -207,6 +207,12 @@ router.patch('/invoices/:id/status', async (req: AuthRequest, res: Response) => 
       isDefaulted
     );
 
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Job Lifecycle Management ──────────────────────────────────────────────
 
 // POST /api/v1/crm/jobs/:id/checkin — Check in for a job
