@@ -247,10 +247,6 @@ router.post('/jobs/:id/noshow', async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
-});    res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
 });
 
 router.delete('/invoices/:id', async (req: AuthRequest, res: Response) => {

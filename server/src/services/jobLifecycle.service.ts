@@ -137,7 +137,7 @@ export class JobLifecycleService {
   async handleNoShow(jobId: string) {
     const job = await prisma.crmJob.findUnique({
       where: { id: jobId },
-      include { client: true }
+      include: { client: true }
     });
 
     if (!job) {
