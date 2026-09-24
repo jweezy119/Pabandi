@@ -14,10 +14,10 @@ COPY server/package*.json ./server/
 WORKDIR /app/server
 RUN npm install --include=dev --force
 
-# Copy server source (includes schema.prisma)
+# Build timestamp: 2026-09-24T21:00:00Z - force clean rebuild
 COPY server/ .
 
-# Generate Prisma client (force clean)
+# Regenerate Prisma client from current schema (force clean)
 RUN rm -rf node_modules/.prisma && npx prisma generate
 
 # Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
