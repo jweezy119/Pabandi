@@ -1,6 +1,7 @@
 FROM node:22-slim
 
-RUN date > /build-date.txt && cat /build-date.txt
+ARG CACHE_BUST=2026092401
+RUN echo "Cache bust: $CACHE_BUST" && date > /build-date.txt
 
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
