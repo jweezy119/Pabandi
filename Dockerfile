@@ -6,23 +6,24 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy server package files and install production deps only
+# ---- Server ----
 COPY server/package*.json ./server/
 WORKDIR /app/server
-RUN npm install --omit=dev
+RUN npm install --include=dev
 
-# Copy server source (includes prebuilt dist/)
 COPY server/ .
 
-# Build client (static files)
+RUN npx prisma generate
+RUN NODE_OPTIONS=--max-old-space-size=1700 npm run compile
+
+# ---- Client ----
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install --omit=dev
+RUN npm install --include=dev
 COPY client/ .
 RUN npm run build
 
-# Copy client build to server public
-RUN cp -r dist/* /app/server/src/public/app/ 2>/dev/null || true
+RUN mkdir -p /app/server/src/public/app && cp -r /app/client/dist/* /app/server/src/public/app/
 
 EXPOSE 10000
 
