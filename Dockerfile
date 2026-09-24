@@ -21,7 +21,8 @@ COPY server/ .
 RUN npx prisma generate
 
 # Build TypeScript (1.7GB heap to avoid OOM on Render's 2GB starter)
-RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=1700 npm run build
+# Use tsc directly (not npm run build) to avoid any caching issues
+RUN rm -rf dist .tsbuildinfo && NODE_OPTIONS=--max-old-space-size=1700 npx tsc --noEmitOnError false && node -e \"require('fs').cpSync('src/public','dist/src/public',{recursive:true})\"
 
 # Build client (static files)
 WORKDIR /app/client
