@@ -1,0 +1,1 @@
+{"version":3,"file":"channel-dispatcher.service.d.ts","sourceRoot":"","sources":["../../../src/services/channel-dispatcher.service.ts"],"names":[],"mappings":"AAGA,OAAO,EAAE,aAAa,EAAE,MAAM,gBAAgB,CAAC;AAO/C,qBAAa,iBAAiB;IAC5B,mGAAmG;IACnG,OAAO,CAAC,gBAAgB,CAAqC;IAE7D,uEAAuE;IACvE,QAAQ;IAQF,iBAAiB,CAAC,MAAM,EAAE,aAAa;IAmG7C,IAAI;CAyCL;AAED,eAAO,MAAM,iBAAiB,mBAA0B,CAAC"}

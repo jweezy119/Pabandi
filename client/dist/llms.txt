@@ -1,0 +1,31 @@
+# PabandiOS
+> The trust operating system for bookings, freight, property, CRM, and finance.
+
+## What we do
+PabandiOS provides AI-powered reliability scoring, Solana escrow, and PAB reward 
+distribution for service businesses. Five modules, one trust engine:
+- BookingOS: Book services with trust protection
+- FreightOS: Move goods with escrow-protected logistics
+- AbodeOS: Manage property with tenant trust scoring
+- ContactOS: CRM and sales pipeline management
+- LedgerOS: Finance, invoicing, and expense tracking
+
+## API
+- Base URL: https://api.pabandi.com
+- OpenAPI spec: https://api.pabandi.com/openapi.yaml
+- MCP server: https://api.pabandi.com/mcp
+
+## Payments
+We accept USDC on Solana via x402 and AP2-compatible authorization.
+Agent escrow is available for all service bookings.
+
+## Trust Score
+Every agent can query the Reliability Score of any Pabandi Passport holder.
+Endpoint: GET /api/v1/passport/{id}/trust-score
+
+## Agent Discovery
+- agents.json: https://pabandi.com/agents.json
+- Capabilities: booking.create, freight.quote, property.list, contact.ledger, escrow.initiate
+
+## Contact
+agents@pabandi.com

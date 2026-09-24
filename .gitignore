@@ -12,10 +12,7 @@ server/.env
 client/.env
 
 # Build outputs
-dist/
 build/
-*/dist/
-*/build/
 .serverless/
 
 # Logs
@@ -88,11 +85,6 @@ temp/
 marketing-bot/.venv/
 firebase-service-account.json
 server/.env
-client/.env.production
+client.env.production
 .agentWallets.json
-server/src/.agentWallets.json
-dist/src/.agentWallets.json
-
-# client build artifact (SPA served from server/src/public/app)
-client/dist/
-dist/
+src/.agentWallets.json

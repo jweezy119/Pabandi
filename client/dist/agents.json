@@ -1,0 +1,63 @@
+{
+  "name": "PabandiOS",
+  "description": "Trust operating system for service businesses",
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "id": "booking.create",
+      "description": "Create a booking with AI trust scoring and escrow protection",
+      "endpoint": "POST /api/v1/booking",
+      "price": "0.05 USDC per call",
+      "payment": ["x402", "AP2"]
+    },
+    {
+      "id": "freight.quote",
+      "description": "Get freight rate estimate with carrier matching",
+      "endpoint": "POST /api/v1/freight/quote",
+      "price": "0.02 USDC per call",
+      "payment": ["x402"]
+    },
+    {
+      "id": "property.list",
+      "description": "List available properties with tenant trust scores",
+      "endpoint": "GET /api/v1/abode/listings",
+      "price": "0.01 USDC per call",
+      "payment": ["x402"]
+    },
+    {
+      "id": "contact.create_lead",
+      "description": "Create a CRM lead with trust-enriched data",
+      "endpoint": "POST /api/v1/contact/leads",
+      "price": "0.03 USDC per call",
+      "payment": ["x402", "AP2"]
+    },
+    {
+      "id": "ledger.create_invoice",
+      "description": "Create an invoice with escrow backing",
+      "endpoint": "POST /api/v1/ledger/invoices",
+      "price": "0.04 USDC per call",
+      "payment": ["x402", "AP2"]
+    },
+    {
+      "id": "escrow.initiate",
+      "description": "Initiate a Solana escrow for any conditional payment",
+      "endpoint": "POST /api/v1/escrow",
+      "price": "0.5% of transaction value",
+      "payment": ["x402", "AP2"]
+    },
+    {
+      "id": "passport.verify",
+      "description": "Verify a user's or business's reliability score",
+      "endpoint": "GET /api/v1/passport/{id}/trust-score",
+      "price": "0.01 USDC per call",
+      "payment": ["x402"]
+    }
+  ],
+  "payment": {
+    "acceptedRails": ["solana-usdc", "x402", "AP2"],
+    "escrow": true,
+    "networks": ["solana", "polygon"]
+  },
+  "modules": ["booking", "freight", "abode", "contact", "ledger"],
+  "trustEngine": "TrustOS"
+}

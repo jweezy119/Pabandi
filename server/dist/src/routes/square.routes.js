@@ -1,0 +1,486 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const database_1 = require("../utils/database");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const logger_1 = require("../utils/logger");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// Square OAuth → location import (geo) + future payment rails.
+// Setup: Square Developer Dashboard → create app → set redirect URL to
+//   {API_URL}/api/v1/square/callback
+//   then set SQUARE_APP_ID + SQUARE_APP_SECRET (+ optional SQUARE_ENV=sandbox).
+// Without those env vars every endpoint reports unconfigured instead of failing.
+const router = (0, express_1.Router)();
+const SQUARE_APP_ID = process.env.SQUARE_APP_ID || '';
+const SQUARE_APP_SECRET = process.env.SQUARE_APP_SECRET || '';
+const SQUARE_ENV = (process.env.SQUARE_ENV || 'sandbox').toLowerCase();
+const API_URL = process.env.API_URL || 'https://pabandi.onrender.com';
+const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://pabandi.com';
+const REDIRECT_URI = `${API_URL}/api/v1/square/callback`;
+const squareBase = () => SQUARE_ENV === 'production' ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
+const isConfigured = () => !!(SQUARE_APP_ID && SQUARE_APP_SECRET);
+function protectToken(token) {
+    try {
+        // Reuse the app's field encryption when available.
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { encrypt } = require('../utils/encryption');
+        if (process.env.ENCRYPTION_KEY && typeof encrypt === 'function')
+            return encrypt(token);
+    }
+    catch {
+        /* fall through to raw storage with a warning */
+    }
+    logger_1.logger.warn('[square] ENCRYPTION_KEY not set — storing OAuth token unencrypted');
+    return token;
+}
+function unprotectToken(stored) {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const { decrypt } = require('../utils/encryption');
+        if (process.env.ENCRYPTION_KEY && typeof decrypt === 'function') {
+            try {
+                return decrypt(stored);
+            }
+            catch {
+                return stored; // stored raw — use as-is
+            }
+        }
+    }
+    catch {
+        /* fall through */
+    }
+    return stored;
+}
+async function ensureOwner(businessId, userId) {
+    const business = await database_1.prisma.business.findFirst({
+        where: { id: businessId, ownerId: userId },
+    });
+    return business;
+}
+async function exchangeCode(code) {
+    const res = await fetch(`${squareBase()}/oauth2/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+            client_id: SQUARE_APP_ID,
+            client_secret: SQUARE_APP_SECRET,
+            code,
+            grant_type: 'authorization_code',
+            redirect_uri: REDIRECT_URI,
+        }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+        throw new Error(data?.message || data?.error_description || 'Square token exchange failed');
+    }
+    return data;
+}
+async function refreshAccessToken(refreshToken) {
+    const res = await fetch(`${squareBase()}/oauth2/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+            client_id: SQUARE_APP_ID,
+            client_secret: SQUARE_APP_SECRET,
+            refresh_token: refreshToken,
+            grant_type: 'refresh_token',
+        }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+        throw new Error(data?.message || 'Square token refresh failed');
+    }
+    return data;
+}
+async function fetchLocations(accessToken) {
+    const res = await fetch(`${squareBase()}/v2/locations`, {
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error(data?.errors?.[0]?.detail || 'Square locations fetch failed');
+    }
+    return (data?.locations || []);
+}
+async function importLocations(businessId, locations) {
+    const primary = locations.find((l) => l.status === 'ACTIVE') || locations[0];
+    if (!primary)
+        return null;
+    const coords = primary.coordinates || {};
+    await database_1.prisma.business.update({
+        where: { id: businessId },
+        data: {
+            ...(coords.latitude != null ? { latitude: Number(coords.latitude) } : {}),
+            ...(coords.longitude != null ? { longitude: Number(coords.longitude) } : {}),
+            ...(primary.address ? {
+                address: [
+                    primary.address.address_line_1,
+                    primary.address.locality,
+                    primary.address.administrative_district_level_1,
+                ].filter(Boolean).join(', '),
+                city: primary.address.locality || undefined,
+                postalCode: primary.address.postal_code || undefined,
+            } : {}),
+        },
+    });
+    return { id: primary.id, name: primary.name };
+}
+// GET /api/v1/square/status?businessId=xxx
+router.get('/status', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        const { businessId } = req.query;
+        if (!businessId)
+            return res.status(400).json({ error: 'businessId is required' });
+        const conn = await database_1.prisma.squareConnection.findUnique({
+            where: { businessId: String(businessId) },
+            select: { merchantId: true, lastSyncedAt: true, squareLocationId: true, createdAt: true },
+        });
+        const business = conn
+            ? await database_1.prisma.business.findUnique({
+                where: { id: String(businessId), ownerId: req.user.id },
+                select: { id: true },
+            })
+            : null;
+        res.json({
+            success: true,
+            data: {
+                configured: isConfigured(),
+                connected: !!conn && !!business,
+                lastSyncedAt: conn?.lastSyncedAt || null,
+            },
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// GET /api/v1/square/connect?businessId=xxx → redirect to Square OAuth
+router.get('/connect', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        if (!isConfigured()) {
+            return res.status(503).json({
+                success: false,
+                message: 'Square is not configured. Set SQUARE_APP_ID and SQUARE_APP_SECRET.',
+            });
+        }
+        const { businessId } = req.query;
+        if (!businessId)
+            return res.status(400).json({ error: 'businessId is required' });
+        const business = await ensureOwner(String(businessId), req.user.id);
+        if (!business)
+            return res.status(403).json({ error: 'Not your business' });
+        const state = jsonwebtoken_1.default.sign({ businessId, userId: req.user.id }, process.env.JWT_SECRET || 'fallback', { expiresIn: '10m' });
+        const url = `${squareBase()}/oauth2/authorize?` +
+            new URLSearchParams({
+                client_id: SQUARE_APP_ID,
+                scope: 'MERCHANT_PROFILE_READ PAYMENTS_READ PAYMENTS_WRITE ITEMS_READ ORDERS_READ',
+                redirect_uri: REDIRECT_URI,
+                state,
+            }).toString();
+        res.json({ success: true, data: { url } });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// GET /api/v1/square/callback?code=...&state=... (Square redirects here)
+router.get('/callback', async (req, res) => {
+    try {
+        const { code, state } = req.query;
+        if (!code || !state) {
+            return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Missing code')}`);
+        }
+        let businessId;
+        let userId;
+        try {
+            const decoded = jsonwebtoken_1.default.verify(state, process.env.JWT_SECRET || 'fallback');
+            businessId = decoded.businessId;
+            userId = decoded.userId;
+        }
+        catch (e) {
+            return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Invalid state')}`);
+        }
+        const business = await ensureOwner(String(businessId), String(userId));
+        if (!business) {
+            return res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent('Business not found')}`);
+        }
+        const tokens = await exchangeCode(code);
+        const locations = await fetchLocations(tokens.access_token);
+        const imported = await importLocations(business.id, locations);
+        await database_1.prisma.squareConnection.upsert({
+            where: { businessId: business.id },
+            update: {
+                merchantId: tokens.merchant_id,
+                accessToken: protectToken(tokens.access_token),
+                refreshToken: tokens.refresh_token || undefined,
+                tokenExpiresAt: tokens.expires_at ? new Date(tokens.expires_at) : undefined,
+                squareLocationId: imported?.id,
+                lastSyncedAt: new Date(),
+            },
+            create: {
+                businessId: business.id,
+                merchantId: tokens.merchant_id,
+                accessToken: protectToken(tokens.access_token),
+                refreshToken: tokens.refresh_token,
+                tokenExpiresAt: tokens.expires_at ? new Date(tokens.expires_at) : undefined,
+                squareLocationId: imported?.id,
+                lastSyncedAt: new Date(),
+            },
+        });
+        logger_1.logger.info(`[square] Connected business ${business.id}, imported ${locations.length} location(s)`);
+        res.redirect(`${CLIENT_URL}/sitara/operator?square=connected&locations=${locations.length}&business=${business.id}`);
+    }
+    catch (e) {
+        logger_1.logger.error(`[square] OAuth callback failed: ${e.message}`);
+        res.redirect(`${CLIENT_URL}/sitara/operator?square=error&message=${encodeURIComponent(e.message?.substring(0, 150) || 'Square connection failed')}`);
+    }
+});
+// POST /api/v1/square/sync { businessId } — re-pull locations
+router.post('/sync', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        const { businessId } = req.body;
+        if (!businessId)
+            return res.status(400).json({ error: 'businessId is required' });
+        const business = await ensureOwner(String(businessId), req.user.id);
+        if (!business)
+            return res.status(403).json({ error: 'Not your business' });
+        const conn = await database_1.prisma.squareConnection.findUnique({ where: { businessId: business.id } });
+        if (!conn)
+            return res.status(404).json({ error: 'Square not connected' });
+        let accessToken = unprotectToken(conn.accessToken);
+        if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
+            const refreshed = await refreshAccessToken(conn.refreshToken);
+            accessToken = refreshed.access_token;
+            await database_1.prisma.squareConnection.update({
+                where: { businessId: business.id },
+                data: {
+                    accessToken: protectToken(accessToken),
+                    tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
+                },
+            });
+        }
+        const locations = await fetchLocations(accessToken);
+        const imported = await importLocations(business.id, locations);
+        await database_1.prisma.squareConnection.update({
+            where: { businessId: business.id },
+            data: { lastSyncedAt: new Date(), squareLocationId: imported?.id },
+        });
+        res.json({ success: true, data: { count: locations.length, imported } });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// POST /api/v1/square/payment-link { businessId, amount, reservationId?, label? }
+// Creates a Square-hosted checkout on the MERCHANT's own Square account —
+// the business takes the payment on rails they already trust, Sitara tracks it.
+router.post('/payment-link', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        const { businessId, amount, reservationId, label } = req.body || {};
+        if (!businessId || !amount)
+            return res.status(400).json({ error: 'businessId and amount are required' });
+        const business = await ensureOwner(String(businessId), req.user.id);
+        if (!business)
+            return res.status(403).json({ error: 'Not your business' });
+        const conn = await database_1.prisma.squareConnection.findUnique({ where: { businessId: business.id } });
+        if (!conn)
+            return res.status(404).json({ error: 'Square not connected' });
+        let accessToken = unprotectToken(conn.accessToken);
+        if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
+            const refreshed = await refreshAccessToken(conn.refreshToken);
+            accessToken = refreshed.access_token;
+            await database_1.prisma.squareConnection.update({
+                where: { businessId: business.id },
+                data: {
+                    accessToken: protectToken(accessToken),
+                    tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
+                },
+            });
+        }
+        const cents = Math.round(Number(amount) * 100);
+        if (!Number.isFinite(cents) || cents <= 0)
+            return res.status(400).json({ error: 'Invalid amount' });
+        // Location is required by Square — sync it if we never stored one.
+        let locationId = conn.squareLocationId;
+        if (!locationId) {
+            const locations = await fetchLocations(accessToken);
+            const primary = locations.find((l) => l.status === 'ACTIVE') || locations[0];
+            locationId = primary?.id;
+            if (locationId) {
+                await database_1.prisma.squareConnection.update({
+                    where: { businessId: business.id },
+                    data: { squareLocationId: locationId, lastSyncedAt: new Date() },
+                });
+            }
+        }
+        if (!locationId)
+            return res.status(400).json({ error: 'No Square location found for this business' });
+        const resp = await fetch(`${squareBase()}/v2/online-checkout/payment-links`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({
+                idempotency_key: `sitara-${reservationId || Date.now()}-${cents}`,
+                order: {
+                    location_id: locationId,
+                    line_items: [
+                        {
+                            name: label || 'Sitara booking deposit',
+                            quantity: '1',
+                            base_price_money: { amount: cents, currency: 'USD' },
+                        },
+                    ],
+                    metadata: reservationId ? { sitaraReservationId: String(reservationId) } : undefined,
+                },
+                checkout_options: {
+                    redirect_url: `${CLIENT_URL}/sitara/my-bookings?pay=success&ref=${reservationId || ''}`,
+                    ask_for_shipping_address: false,
+                },
+            }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data?.payment_link?.url) {
+            throw new Error(data?.errors?.[0]?.detail || 'Square payment link failed');
+        }
+        res.json({
+            success: true,
+            data: { url: data.payment_link.url, id: data.payment_link.id, orderId: data.payment_link.order_id },
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+// GET /api/v1/square/catalog?businessId=xxx
+// Import the merchant's live menu: items + variations + modifier lists
+// (the bread/fillings/extras the whole walk-in story depends on).
+// Result is cached on Business.menuJson so storefronts render instantly.
+router.get('/catalog', auth_middleware_1.authenticate, async (req, res, next) => {
+    try {
+        const { businessId, refresh } = req.query;
+        if (!businessId)
+            return res.status(400).json({ error: 'businessId is required' });
+        const business = await ensureOwner(String(businessId), req.user.id);
+        if (!business)
+            return res.status(403).json({ error: 'Not your business' });
+        // Serve cache unless a refresh is asked for.
+        if (!refresh && business.menuJson && business.menuSyncedAt) {
+            return res.json({ success: true, data: business.menuJson, cached: true });
+        }
+        const conn = await database_1.prisma.squareConnection.findUnique({ where: { businessId: business.id } });
+        if (!conn)
+            return res.status(404).json({ error: 'Square not connected' });
+        let accessToken = unprotectToken(conn.accessToken);
+        if (conn.tokenExpiresAt && conn.tokenExpiresAt < new Date() && conn.refreshToken) {
+            const refreshed = await refreshAccessToken(conn.refreshToken);
+            accessToken = refreshed.access_token;
+            await database_1.prisma.squareConnection.update({
+                where: { businessId: business.id },
+                data: {
+                    accessToken: protectToken(accessToken),
+                    tokenExpiresAt: refreshed.expires_at ? new Date(refreshed.expires_at) : undefined,
+                },
+            });
+        }
+        // Page through the catalog: items, variations, modifier lists, modifiers.
+        const objects = [];
+        let cursor;
+        do {
+            const url = new URL(`${squareBase()}/v2/catalog/list`);
+            url.searchParams.set('types', 'ITEM,MODIFIER_LIST,MODIFIER,CATEGORY');
+            if (cursor)
+                url.searchParams.set('cursor', cursor);
+            const resp = await fetch(url.toString(), {
+                headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+            });
+            const data = await resp.json();
+            if (!resp.ok) {
+                const detail = data?.errors?.[0]?.detail || '';
+                if (resp.status === 403 || /permission|scope|authorized/i.test(detail)) {
+                    return res.status(403).json({
+                        error: 'NO_CATALOG_SCOPE',
+                        message: 'Reconnect Square to enable menu import (grant Items access).',
+                    });
+                }
+                throw new Error(detail || 'Square catalog fetch failed');
+            }
+            if (Array.isArray(data?.objects))
+                objects.push(...data.objects);
+            cursor = data?.cursor || undefined;
+        } while (cursor);
+        const byId = {};
+        for (const o of objects)
+            byId[o.id] = o;
+        const money = (m) => (m?.amount != null ? Number(m.amount) / 100 : null);
+        const items = objects
+            .filter((o) => o.type === 'ITEM' && o.item_data)
+            .map((o) => {
+            const d = o.item_data;
+            const variations = (d.variations || [])
+                .map((v) => byId[v.id]?.item_variation_data)
+                .filter(Boolean)
+                .map((vd, i) => ({
+                id: d.variations[i].id,
+                name: vd.name,
+                price: money(vd.price_money),
+            }));
+            const modifierLists = (d.modifier_list_info || [])
+                .map((info) => {
+                const ml = byId[info.modifier_list_id]?.modifier_list_data;
+                if (!ml)
+                    return null;
+                return {
+                    id: info.modifier_list_id,
+                    name: ml.name,
+                    selectionType: ml.selection_type,
+                    minSelected: info.min_selected_modifiers ?? (ml.selection_type === 'SINGLE' ? 1 : 0),
+                    maxSelected: info.max_selected_modifiers ?? ml.max_selected_modifiers ?? null,
+                    modifiers: (ml.modifiers || [])
+                        .map((m) => byId[m.id]?.modifier_data)
+                        .filter(Boolean)
+                        .map((md, i) => ({
+                        id: ml.modifiers[i].id,
+                        name: md.name,
+                        price: money(md.price_money),
+                    })),
+                };
+            })
+                .filter(Boolean);
+            return {
+                id: o.id,
+                name: d.name,
+                description: d.description || null,
+                category: d.category_id && byId[d.category_id] ? byId[d.category_id].category_data?.name : null,
+                variations,
+                modifierLists,
+            };
+        });
+        const menu = {
+            itemCount: items.length,
+            modifierListCount: objects.filter((o) => o.type === 'MODIFIER_LIST').length,
+            items,
+            syncedAt: new Date().toISOString(),
+        };
+        await database_1.prisma.business.update({
+            where: { id: business.id },
+            data: { menuJson: menu, menuSyncedAt: new Date() },
+        });
+        await database_1.prisma.squareConnection.update({
+            where: { businessId: business.id },
+            data: { lastSyncedAt: new Date() },
+        });
+        logger_1.logger.info(`[square] Catalog import for ${business.id}: ${items.length} items`);
+        res.json({ success: true, data: menu, cached: false });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+exports.default = router;
+//# sourceMappingURL=square.routes.js.map

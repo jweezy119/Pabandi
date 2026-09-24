@@ -1,0 +1,19 @@
+import { Request, Response, NextFunction } from 'express';
+export declare const createToken: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const getTokenInfo: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const createPool: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const getPoolInfoEndpoint: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const executeSwap: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const fundAgent: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const collectFees: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const getStats: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const createAgent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const startAgent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const pauseAgent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const stopAgent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const getAgents: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const getAgent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const executeTrade: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const addLiquidity: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const startAllAgents: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+//# sourceMappingURL=pabDex.controller.d.ts.map

@@ -1,0 +1,21 @@
+import { Request, Response } from 'express';
+export declare function generateMonthlyRent(req: Request, res: Response): Promise<void>;
+export declare function getOverdueRent(req: Request, res: Response): Promise<void>;
+export declare function applyLateFees(req: Request, res: Response): Promise<void>;
+export declare function getExpiringLeases(req: Request, res: Response): Promise<void>;
+export declare function renewLease(req: Request, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function createInspection(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function getInspection(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function signInspection(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function autoAssignVendor(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function listVendors(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function addVendor(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function getPropertyFinancials(req: any, res: Response): Promise<void>;
+export declare function getCashFlowForecast(req: any, res: Response): Promise<void>;
+export declare function getTenantRisk(req: any, res: Response): Promise<void>;
+export declare function getTenantLedger(req: any, res: Response): Promise<void>;
+export declare function createAutomation(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function listAutomations(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function triggerAutomation(req: any, res: Response): Promise<Response<any, Record<string, any>> | undefined>;
+export declare function runAutomations(req: any, res: Response): Promise<void>;
+//# sourceMappingURL=crmAdvanced.controller.d.ts.map

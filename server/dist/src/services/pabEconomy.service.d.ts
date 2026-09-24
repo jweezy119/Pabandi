@@ -1,0 +1,161 @@
+export declare function initializePabEconomy(): Promise<void>;
+export declare function getOrCreateWallet(userId: string): Promise<{
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    stakedAt: Date | null;
+    totalBurned: number;
+    stakedAmt: number;
+    stakedTier: string | null;
+    stakeExpires: Date | null;
+    lifetimeEarned: number;
+    lifetimeSpent: number;
+}>;
+export declare function getWallet(userId: string): Promise<({
+    transactions: {
+        id: string;
+        createdAt: Date;
+        type: string;
+        description: string;
+        action: string;
+        amount: number;
+        balanceAfter: number;
+        refType: string | null;
+        refId: string | null;
+        walletId: string;
+    }[];
+} & {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    stakedAt: Date | null;
+    totalBurned: number;
+    stakedAmt: number;
+    stakedTier: string | null;
+    stakeExpires: Date | null;
+    lifetimeEarned: number;
+    lifetimeSpent: number;
+}) | null>;
+export declare function earnPab(userId: string, action: string, refType?: string, refId?: string): Promise<{
+    id: string;
+    createdAt: Date;
+    type: string;
+    description: string;
+    action: string;
+    amount: number;
+    balanceAfter: number;
+    refType: string | null;
+    refId: string | null;
+    walletId: string;
+} | null>;
+export declare function spendPab(userId: string, action: string, refType?: string, refId?: string): Promise<{
+    id: string;
+    createdAt: Date;
+    type: string;
+    description: string;
+    action: string;
+    amount: number;
+    balanceAfter: number;
+    refType: string | null;
+    refId: string | null;
+    walletId: string;
+} | null>;
+export declare function stakePab(userId: string, tier: string): Promise<{
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    stakedAt: Date | null;
+    totalBurned: number;
+    stakedAmt: number;
+    stakedTier: string | null;
+    stakeExpires: Date | null;
+    lifetimeEarned: number;
+    lifetimeSpent: number;
+} | null>;
+export declare function unstakePab(userId: string): Promise<{
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    userId: string;
+    balance: number;
+    totalEarned: number;
+    totalSpent: number;
+    stakedAt: Date | null;
+    totalBurned: number;
+    stakedAmt: number;
+    stakedTier: string | null;
+    stakeExpires: Date | null;
+    lifetimeEarned: number;
+    lifetimeSpent: number;
+} | null>;
+export declare function recordPlatformFee(solAmount: number): Promise<void>;
+export declare function getTreasury(): Promise<{
+    id: string;
+    updatedAt: Date;
+    totalPabStaked: number;
+    totalSolEarned: number;
+    totalSolToPool: number;
+    totalPabBurned: number;
+    poolSolBalance: number;
+    poolUsdcBalance: number;
+} | null>;
+export declare function getPabStats(): Promise<{
+    totalWallets: number;
+    totalTransactions: number;
+    totalBurned: number;
+    treasury: {
+        id: string;
+        updatedAt: Date;
+        totalPabStaked: number;
+        totalSolEarned: number;
+        totalSolToPool: number;
+        totalPabBurned: number;
+        poolSolBalance: number;
+        poolUsdcBalance: number;
+    } | null;
+    earnRules: {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        description: string;
+        action: string;
+        amount: number;
+        cooldownHours: number;
+        dailyCap: number | null;
+    }[];
+    spendRules: {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        isActive: boolean;
+        description: string;
+        action: string;
+        cost: number;
+    }[];
+    stakeTiers: {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        tier: string;
+        badge: boolean;
+        minStake: number;
+        feeDiscount: number;
+        durationDays: number;
+        benefit: string;
+        searchBoost: boolean;
+    }[];
+}>;
+//# sourceMappingURL=pabEconomy.service.d.ts.map
