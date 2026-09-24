@@ -33,7 +33,7 @@ async function enrollBusiness(data) {
             data: { email: ownerEmail, firstName: ownerName, lastName: 'Owner', passwordHash: 'changeme' },
         });
     }
-    // Check if user already has a business
+    // Check if user already has a business (idempotent enroll)
     const existingBusiness = await database_1.prisma.business.findFirst({ where: { ownerId: user.id } });
     if (existingBusiness) {
         const existingCrm = await database_1.prisma.crmServiceBusiness.findFirst({ where: { businessId: existingBusiness.id } });

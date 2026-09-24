@@ -7,14 +7,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # ---- Server ----
-COPY server/package*.json ./server/
 WORKDIR /app/server
-RUN npm install --include=dev
-
+COPY server/package*.json ./
+RUN npm install --omit=dev
 COPY server/ .
-
-RUN npx prisma generate
-RUN NODE_OPTIONS=--max-old-space-size=1700 npm run compile
+# dist/ is prebuilt and committed in git — no compile step needed
 
 # ---- Client ----
 WORKDIR /app/client
