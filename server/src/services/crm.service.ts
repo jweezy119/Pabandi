@@ -27,6 +27,15 @@ export async function enrollBusiness(data: {
     });
   }
 
+  // Check if user already has a business
+  const existingBusiness = await prisma.business.findFirst({ where: { ownerId: user.id } });
+  if (existingBusiness) {
+    const existingCrm = await prisma.crmServiceBusiness.findFirst({ where: { businessId: existingBusiness.id } });
+    if (existingCrm) {
+      return { business: existingBusiness, crmBusiness: existingCrm };
+    }
+  }
+
   const business = await prisma.business.create({
     data: {
       name: businessName,
