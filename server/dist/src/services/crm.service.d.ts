@@ -25,6 +25,7 @@ export declare function enrollBusiness(data: {
         source: string | null;
         ownerId: string | null;
         stripeAccountId: string | null;
+        privyWalletId: string | null;
         description: string | null;
         category: import(".prisma/client").$Enums.BusinessCategory;
         address: string;
