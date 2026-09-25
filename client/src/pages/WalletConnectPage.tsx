@@ -1,88 +1,120 @@
-import { useState } from 'react'
-import { Surface, Button, Badge, tokens } from '../design-system'
-import { usePrivy } from '@privy-io/react-auth'
-import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet'
+import React, { useState, useEffect } from 'react';
+import { Surface, Button, Badge, tokens } from '../design-system';
+import { authService } from '../services/api';
+
+declare global {
+  interface Window {
+    solana?: any;
+    solflare?: any;
+    phantom?: any;
+ }
+}
+
+type WalletType = 'phantom' | 'solflare' | 'sollet' | 'torus' | 'walletconnect' | null;
 
 export const WalletConnectPage: React.FC = () => {
-  const [connecting, setConnecting] = useState(false)
-  const [error, setError] = useState('')
-  const { login, logout, user, authenticated, ready } = usePrivy()
-  const { wallet } = useEmbeddedSolanaWallet()
+  const [connected, setConnected] = useState(false);
+  const [walletType, setWalletType] = useState<WalletType>(null);
+  const [address, setAddress] = useState('');
+  const [balance, setBalance] = useState<number | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleConnect = async () => {
-    setConnecting(true)
-    setError('')
-    try {
-      await login()
-    } catch (e: any) {
-      setError(e.message || 'Connection failed')
-    } finally {
-      setConnecting(false)
+  useEffect(() => {
+    // Check if already connected
+    if (window.solana?.isConnected) {
+      setConnected(true);
+      setAddress(window.solana.publicKey?.toString() || '');
+      setWalletType('phantom');
+    } else if (window.solflare?.isConnected) {
+      setConnected(true);
+      setAddress(window.solflare.publicKey?.toString() || '');
+      setWalletType('solflare');
     }
-  }
+  }, []);
 
-  const handleDisconnect = async () => {
-    setConnecting(true)
-    setError('')
+  const connectPhantom = async () => {
+    setConnecting(true);
+    setError('');
     try {
-      await logout()
+      if (window.solana?.isPhantom) {
+        const resp = await window.solana.connect();
+        setAddress(resp.publicKey.toString());
+        setWalletType('phantom');
+        setConnected(true);
+        saveWallet(resp.publicKey.toString(), 'solana');
+      } else {
+        // Mobile: open Phantom app via deep link
+        const deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`;
+        window.open(deepLink, '_blank');
+        setError('Phantom not detected. Opening app store...');
+      }
     } catch (e: any) {
-      setError(e.message || 'Disconnect failed')
+      setError(e.message || 'Connection failed');
     } finally {
-      setConnecting(false)
+      setConnecting(false);
     }
-  }
+  };
 
-  const truncate = (addr: string) =>
-    addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : ''
+  const connectSolflare = async () => {
+    setConnecting(true);
+    setError('');
+    try {
+      if (window.solflare) {
+        await window.solflare.connect();
+        setAddress(window.solflare.publicKey?.toString() || '');
+        setWalletType('solflare');
+        setConnected(true);
+        saveWallet(window.solflare.publicKey?.toString() || '', 'solana');
+      } else {
+        window.open('https://solflare.com', '_blank');
+        setError('Solflare not detected. Opening website...');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Connection failed');
+    } finally {
+      setConnecting(false);
+    }
+  };
 
-  const walletAddress = wallet?.address ?? ''
+  const connectWalletConnect = async () => {
+    setConnecting(true);
+    setError('');
+    try {
+      // WalletConnect v2 for mobile wallets
+      setError('WalletConnect coming soon. Use Phantom or Solflare for now.');
+    } catch (e: any) {
+      setError(e.message || 'Connection failed');
+    } finally {
+      setConnecting(false);
+    }
+  };
 
-  if (!ready) {
-    return (
-      <div className="min-h-screen" style={{ background: tokens.color.background }}>
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-[var(--sage)] border-t-transparent rounded-full mx-auto" />
-          <p className="mt-4 text-[var(--soft-stone)]">Loading wallet provider...</p>
-        </div>
-      </div>
-    )
-  }
+  const saveWallet = async (addr: string, chain: string) => {
+    try {
+      await authService.connectWallet(addr, chain);
+    } catch (e: any) {
+      console.error('Failed to save wallet:', e);
+    }
+  };
 
-  if (authenticated && walletAddress) {
-    return (
-      <div className="min-h-screen" style={{ background: tokens.color.background }}>
-        <div className="max-w-2xl mx-auto px-4 py-6">
-          <Surface className="p-6 text-center">
-            <div className="text-4xl mb-3">✅</div>
-            <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">
-              Wallet Ready
-            </h2>
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Badge tone="success">Privy Embedded Wallet</Badge>
-              <span className="text-sm text-[var(--soft-stone)] font-mono">
-                {truncate(walletAddress)}
-              </span>
-            </div>
-            <p className="text-sm text-[var(--soft-stone)] mb-4">
-              Your Solana wallet was created automatically. No seed phrase to save.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <Button
-                onClick={() => navigator.clipboard.writeText(walletAddress)}
-                variant="ghost"
-              >
-                Copy Address
-              </Button>
-              <Button onClick={handleDisconnect} variant="ghost">
-                Disconnect
-              </Button>
-            </div>
-          </Surface>
-        </div>
-      </div>
-    )
-  }
+  const disconnect = async () => {
+    try {
+      if (walletType === 'phantom' && window.solana) {
+        await window.solana.disconnect();
+      } else if (walletType === 'solflare' && window.solflare) {
+        await window.solflare.disconnect();
+      }
+      setConnected(false);
+      setAddress('');
+      setWalletType(null);
+      setBalance(null);
+    } catch (e: any) {
+      setError(e.message || 'Disconnect failed');
+    }
+  };
+
+  const truncate = (addr: string) => addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : '';
 
   return (
     <div className="min-h-screen" style={{ background: tokens.color.background }}>
@@ -93,84 +125,79 @@ export const WalletConnectPage: React.FC = () => {
             Connect Your Wallet
           </h1>
           <p className="mt-3 text-[var(--soft-stone)] max-w-2xl mx-auto">
-            Sign in with email to get a Solana wallet automatically.
-            No downloads, no seed phrases, no SOL needed.
+            Connect your Solana wallet to earn $PAB, stake for trust, and access all Pabandi features.
           </p>
         </div>
 
         {error && (
-          <div
-            className="mb-4 px-4 py-3 rounded-xl text-sm"
-            style={{
-              background: tokens.color.danger + '15',
-              color: tokens.color.danger,
-              border: `1px solid ${tokens.color.danger}30`,
-            }}
-          >
+          <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: tokens.color.danger + '15', color: tokens.color.danger, border: `1px solid ${tokens.color.danger}30` }}>
             {error}
           </div>
         )}
 
-        <div className="space-y-3">
-          <Surface className="p-4">
-            <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">
-              Sign In
-            </h3>
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-[var(--clay)]/20 flex items-center justify-center text-xl">
-                🔑
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-[var(--warm-ink)]">
-                  Email Sign In
-                </div>
-                <div className="text-xs" style={{ color: tokens.color.textDim }}>
-                  Get a Solana wallet instantly. No downloads needed.
-                </div>
-              </div>
-              <Badge tone="success">New</Badge>
-            </button>
-            {user?.email && (
-              <p className="text-xs mt-3 text-[var(--soft-stone)]">
-                Signed in as <span className="font-mono">{user.email as string}</span>
-              </p>
+        {connected ? (
+          <Surface className="p-6 text-center">
+            <div className="text-4xl mb-3">✅</div>
+            <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Wallet Connected</h2>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Badge tone="success">{walletType === 'phantom' ? 'Phantom' : walletType === 'solflare' ? 'Solflare' : 'Wallet'}</Badge>
+              <span className="text-sm text-[var(--soft-stone)] font-mono">{truncate(address)}</span>
+            </div>
+            {balance !== null && (
+              <div className="text-2xl font-bold text-[var(--sage)] mb-4">{balance.toFixed(4)} SOL</div>
             )}
-          </Surface>
-
-          <Surface className="p-4">
-            <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-2">
-              Already have a wallet?
-            </h3>
-            <p className="text-xs mb-3" style={{ color: tokens.color.textDim }}>
-              Connect Phantom, Solflare, or any Solana wallet instead.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => window.open('https://phantom.app', '_blank')}
-                size="sm"
-                className="flex-1"
-              >
-                Get Phantom
-              </Button>
-              <Button
-                onClick={() => window.open('https://solflare.com', '_blank')}
-                size="sm"
-                className="flex-1"
-              >
-                Get Solflare
-              </Button>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => navigator.clipboard.writeText(address)} variant="ghost">Copy Address</Button>
+              <Button onClick={disconnect} variant="ghost">Disconnect</Button>
             </div>
           </Surface>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            <Surface className="p-4">
+              <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">Choose Wallet</h3>
+              <div className="space-y-2">
+                <button onClick={connectPhantom} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--dusty-rose)]/20 flex items-center justify-center text-xl">👻</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-[var(--warm-ink)]">Phantom</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Most popular Solana wallet</div>
+                  </div>
+                  <Badge tone="success">Recommended</Badge>
+                </button>
 
+                <button onClick={connectSolflare} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
+                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-xl">🔥</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-[var(--warm-ink)]">Solflare</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Feature-rich Solana wallet</div>
+                  </div>
+                </button>
+
+                <button onClick={connectWalletConnect} disabled={connecting} className="w-full flex items-center gap-3 p-3 rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] hover:bg-[var(--warm-sand)] transition-all text-left">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--sky-wash)]/20 flex items-center justify-center text-xl">🔗</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-[var(--warm-ink)]">WalletConnect</div>
+                    <div className="text-xs" style={{ color: tokens.color.textDim }}>Mobile wallets (Trust, SafePal, etc.)</div>
+                  </div>
+                  <Badge tone="info">Coming Soon</Badge>
+                </button>
+              </div>
+            </Surface>
+
+            <Surface className="p-4">
+              <h3 className="text-sm font-bold text-[var(--warm-ink)] mb-2">Don't have a wallet?</h3>
+              <p className="text-xs mb-3" style={{ color: tokens.color.textDim }}>Download Phantom or Solflare to get started. Both work on mobile and desktop.</p>
+              <div className="flex gap-2">
+                <Button onClick={() => window.open('https://phantom.app', '_blank')} size="sm" className="flex-1">Get Phantom</Button>
+                <Button onClick={() => window.open('https://solflare.com', '_blank')} size="sm" className="flex-1">Get Solflare</Button>
+              </div>
+            </Surface>
+          </div>
+        )}
+
+        {/* What you can do */}
         <Surface className="p-4 mt-6">
-          <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">
-            What you can do with a connected wallet
-          </h3>
+          <h3 className="text-base font-bold text-[var(--warm-ink)] mb-3">What you can do with a connected wallet</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
               { icon: '💰', text: 'Earn $PAB rewards' },
@@ -180,10 +207,7 @@ export const WalletConnectPage: React.FC = () => {
               { icon: '📈', text: 'Earn yield' },
               { icon: '🤝', text: 'Refer and earn' },
             ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 p-2 rounded-lg bg-[var(--warm-sand)]"
-              >
+              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--warm-sand)]">
                 <span className="text-lg">{item.icon}</span>
                 <span className="text-xs text-[var(--warm-ink)]">{item.text}</span>
               </div>
@@ -192,7 +216,7 @@ export const WalletConnectPage: React.FC = () => {
         </Surface>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default WalletConnectPage
+export default WalletConnectPage;

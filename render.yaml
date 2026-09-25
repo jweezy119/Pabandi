@@ -9,7 +9,7 @@ services:
     dockerContext: .
     autoDeploy: true
     buildCommand: echo "Build handled by Dockerfile"
-    preDeployCommand: echo "No pre-deploy migrations needed"
+    preDeployCommand: npx prisma migrate deploy
     envVars:
       - key: NODE_ENV
         value: production

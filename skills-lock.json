@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "colosseum-resources": {
+      "source": "ColosseumOrg/colosseum-resources",
+      "sourceType": "github",
+      "skillPath": "skills/colosseum-resources/SKILL.md",
+      "computedHash": "ab84c86c14e8bb8824e6dcf57e21ee54b56fcda9f48575518fa1df00464f827f"
+    },
+    "solana-dev": {
+      "source": "solana-foundation/solana-dev-skill",
+      "sourceType": "github",
+      "skillPath": "skills/solana-dev/SKILL.md",
+      "computedHash": "eb859fe9380cd31f044e9e5f5470703cea14740c1e99d59057bf532e4c82bdb8"
+    }
+  }
+}

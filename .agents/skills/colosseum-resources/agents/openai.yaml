@@ -1,0 +1,4 @@
+interface:
+  display_name: "Colosseum Resources"
+  short_description: "Multi-ecosystem hackathon resource advisor"
+  default_prompt: "Use $colosseum-resources to recommend current resources for my hackathon project and target ecosystem."

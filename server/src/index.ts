@@ -248,7 +248,6 @@ const routeMap: [string, string][] = [
   [`/api/${v}/public/property`, './routes/public.property.routes'],
   [`/api/${v}/crm`, './routes/crm.routes'],
   [`/api/${v}/crm-advanced`, './routes/crmAdvanced.routes'],
-  [`/api/${v}/privy`, './routes/privy.routes'],
   [`/api/${v}/team`, './routes/team.routes'],
   [`/api/${v}/documents`, './routes/document.routes'],
   [`/api/${v}/tenant`, './routes/tenant.routes'],
