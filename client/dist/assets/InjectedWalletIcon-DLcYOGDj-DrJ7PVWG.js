@@ -1,0 +1,1 @@
+import{dc as e,eh as o}from"./index-DMgB8B-w.js";const i=({icon:t,name:s})=>typeof t=="string"?e.jsx("img",{alt:`${s||"wallet"} logo`,src:t,style:{height:24,width:24,borderRadius:4}}):t===void 0?e.jsx(o,{style:{height:24,width:24}}):t?e.jsx(t,{style:{height:24,width:24}}):null;export{i};

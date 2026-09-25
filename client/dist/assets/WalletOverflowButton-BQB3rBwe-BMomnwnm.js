@@ -1,0 +1,1 @@
+import{dc as s,et as o,el as r,eu as i}from"./index-DMgB8B-w.js";import{W as l}from"./wallet-BOTy_bdc.js";const n=({onClick:e,text:t})=>s.jsxs(o,{onClick:e,children:[s.jsx(r,{children:s.jsx(l,{})}),s.jsx(i,{children:t})]});export{n as m};

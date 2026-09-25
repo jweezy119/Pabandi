@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import QRCode from '../components/QRCode';
-import { PhantomWalletAdapter } from '../components/PhantomWalletAdapter';
+import { usePrivy } from '@privy-io/react-auth';
+import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
 
 interface PlatformBalance {
   usdc: number;
@@ -108,10 +109,27 @@ export default function WalletFundingPage() {
           </div>
 
           <div className="flex justify-center mb-8">
-            <PhantomWalletAdapter
-              onConnect={() => setConnected(true)}
-              onDisconnect={() => setConnected(false)}
-            />
+            {connected ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-mono text-[var(--warm-ink)] bg-[var(--warm-sand)] px-3 py-1 rounded-lg">
+                  {platformWallet.slice(0, 8)}...
+                </span>
+                <button
+                  onClick={() => setConnected(false)}
+                  className="px-3 py-1 text-xs rounded-lg bg-[var(--terracotta)]/20 text-[var(--terracotta)] hover:bg-[var(--terracotta)]/30 transition-colors"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setConnected(true); alert('Connect your Privy wallet to fund the platform.'); }}
+                className="px-6 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
+                style={{ background: 'var(--clay)', color: 'var(--warm-ink)' }}
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
       </div>

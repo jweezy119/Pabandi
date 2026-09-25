@@ -2,10 +2,13 @@
  * SolanaEscrowPayment.tsx
  * ─────────────────────────────────────────────
  * React component for Solana on-chain USDC escrow.
- * Connects to Phantom/Solflare/Backpack wallets.
+ * Uses Privy embedded wallet (auto-created for email users) and external
+ * wallet connectors for users who prefer Phantom/Solflare/Backpack.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { useEmbeddedSolanaWallet } from '../hooks/useEmbeddedSolanaWallet';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,14 +66,16 @@ const SolanaEscrowPayment: React.FC<{
 
   // Check for Phantom/Solflare wallet
   const getProvider = useCallback(() => {
+    // Try external wallet injection first (Phantom, Solflare, Backpack)
     if ('solana' in window) {
-      const provider = (window as any).solana;
+      const provider = (window as any).solana
       if (provider.isPhantom || provider.isSolflare || provider.isBackpack) {
-        return provider;
+        return { ...provider, type: 'external' as const }
       }
     }
-    return null;
-  }, []);
+    // Fall back to Privy embedded wallet
+    return { type: 'privy' as const }
+  }, [])
 
   // Connect wallet
   const connectWallet = async () => {

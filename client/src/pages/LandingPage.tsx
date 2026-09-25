@@ -1,6 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import ClayEarthScene from '../components/clay/ClayEarthScene';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import StaticClayEarth from '../components/clay/StaticClayEarth';
 import { FiBell, FiUser, FiChevronDown, FiLogIn, FiLogOut, FiSettings, FiBriefcase, FiMenu, FiX } from 'react-icons/fi';
+
+const ClayEarthScene = lazy(() => import('../components/clay/ClayEarthScene'));
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode, fallback: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 const MODULES = [
   { id: 'booking', name: 'BookingOS', tagline: 'Book with trust', description: 'Customers book with confidence. Businesses get escrow-backed deposits.', icon: 'calendar', colorClass: 'module-icon-booking', tint: '#A85A3C', path: '/booking' },
@@ -275,8 +291,12 @@ export default function LandingPage() {
               </div>
 
               <div className="hero-visual" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
-                <div className="clay-earth" style={{ width: '55vh', height: '55vh', maxWidth: '480px', maxHeight: '480px' }}>
-                  <ClayEarthScene />
+                <div className="clay-earth" style={{ width: '100%', aspectRatio: '1 / 1', maxWidth: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <ErrorBoundary fallback={<StaticClayEarth />}>
+                    <Suspense fallback={<StaticClayEarth />}>
+                      <ClayEarthScene />
+                    </Suspense>
+                  </ErrorBoundary>
                 </div>
               </div>
             </div>

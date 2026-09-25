@@ -24,7 +24,7 @@ interface User {
 
 interface WalletState {
   address: string | null;
-  type: 'phantom' | 'metamask' | null;
+  type: 'privy' | 'metamask' | null;
   pabBalance: number;
   totalEarned: number;
 }
@@ -109,9 +109,9 @@ export const useAuthStore = create<AuthState>()(
       setToken: (token: string) => set({ token, isAuthenticated: true }),
       setAuth: (user: User, token: string) =>
         set({ user, token, isAuthenticated: true }),
-      connectWallet: (address: string, type: 'phantom' | 'metamask') =>
+      connectWallet: (address: string, type: 'privy' | 'metamask') =>
         set((state) => ({
-          wallet: { ...state.wallet, address, type },
+          wallet: { ...state.wallet, address, type: type as 'privy' | 'metamask' | null },
         })),
       disconnectWallet: () =>
         set((state) => ({
@@ -137,7 +137,7 @@ export const useAuthStore = create<AuthState>()(
                 pabBalance: data.balance || 0,
                 totalEarned: data.totalEarned?._sum?.amount || data.totalEarned || 0,
                 address: data.solanaAddress || state.wallet.address,
-                type: data.solanaAddress ? 'phantom' : state.wallet.type,
+                type: data.solanaAddress ? 'privy' : state.wallet.type,
               },
             }));
           }

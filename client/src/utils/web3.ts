@@ -126,18 +126,18 @@ const checkBnbBalance = async (requiredBnb: string): Promise<{ sufficient: boole
 /**
  * Pre-checks if the user has enough SOL balance for the deposit + fees.
  */
-const checkSolBalance = async (requiredSol: number): Promise<{ sufficient: boolean; balance: number }> => {
-  const provider = (window as any).solana;
-  if (!provider || !provider.isPhantom) throw new Error('Phantom wallet not found.');
+const checkSolBalance = async (requiredSol: number, walletAddress?: string): Promise<{ sufficient: boolean; balance: number }> => {
+  // Use provided wallet address (from Privy) or fall back to injected wallet
+  const address = walletAddress || ((window as any).solana?.publicKey?.toString() || null);
+  if (!address) throw new Error('No Solana wallet available. Sign in with email to create one.');
 
-  const resp = await provider.connect();
-  const publicKey = new PublicKey(resp.publicKey.toString());
-  const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+  const publicKey = new PublicKey(address);
+  const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
 
   const balance = await connection.getBalance(publicKey);
   const balanceSol = balance / LAMPORTS_PER_SOL;
-  const feeBuffer = 0.01; // ~0.01 SOL for tx fee
-  const platformFee = requiredSol * SOL_PLATFORM_FEE_RATE; // 1.5% platform fee collected with deposit
+  const feeBuffer = 0.01;
+  const platformFee = requiredSol * SOL_PLATFORM_FEE_RATE;
 
   return {
     sufficient: balanceSol >= requiredSol + platformFee + feeBuffer,
@@ -233,11 +233,21 @@ export const executeBscDeposit = async (amountInBnb: string, businessWalletAddre
  * Note: Solana deposits go to a Pabandi treasury wallet (not direct to business)
  * since there's no on-chain Solana escrow program. Refunds are handled off-chain.
  */
-export const executeSolanaDeposit = async (amountInSol: number, _businessWalletAddress: string): Promise<Web3DepositResult> => {
+export const executeSolanaDeposit = async (amountInSol: number, _businessWalletAddress: string, walletAddress?: string): Promise<Web3DepositResult> => {
   try {
     // Always route to Pabandi treasury for escrow-like behavior
     // The business wallet is tracked server-side for eventual payout
     const targetAddress = PABANDI_TREASURY_SOLANA;
+
+    // Determine the signing address: Privy wallet or injected Phantom
+    const signingAddress = walletAddress || ((window as any).solana?.publicKey?.toString() || null);
+    if (!signingAddress) {
+      return {
+        success: false,
+        error: 'No Solana wallet available. Sign in with email or connect Phantom.',
+        chain: 'solana',
+      };
+    }
     
     if (SOLANA_PLACEHOLDER_ADDRESSES.includes(targetAddress)) {
       console.log(`[Solana] Skipping on-chain deposit — treasury wallet is a placeholder. Deposit will be recorded as pending.`);
@@ -264,17 +274,15 @@ export const executeSolanaDeposit = async (amountInSol: number, _businessWalletA
     }
 
     // Step 1: Connect and pre-check balance
-    const { sufficient, balance } = await checkSolBalance(amountInSol);
+    const { sufficient, balance } = await checkSolBalance(amountInSol, signingAddress);
     if (!sufficient) {
       throw new Error(`Insufficient SOL balance. You have ${balance.toFixed(4)} SOL but need ${amountInSol} SOL + fees.`);
     }
 
-    const resp = await provider.connect();
-    const userPublicKey = new PublicKey(resp.publicKey.toString());
-    const treasuryPublicKey = new PublicKey(targetAddress);
-    const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-
     // Step 2: Build and sign transaction (deposit + platform fee in ONE signed tx)
+    const userPublicKey = new PublicKey(signingAddress);
+    const treasuryPublicKey = new PublicKey(targetAddress);
+    const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
     const feeSol = +(amountInSol * SOL_PLATFORM_FEE_RATE).toFixed(6);
     const feeTreasury = new PublicKey(PABANDI_FEE_TREASURY_SOLANA);
     const transaction = new Transaction().add(
@@ -477,16 +485,22 @@ export const executeStellarLiquidityDeposit = async (amountPab: string, amountBe
 /**
  * Executes a Deep Integration liquidity provision for PAB/SOL on Solana DEX
  */
-export const executeSolanaLiquidityDeposit = async (amountPab: number, amountSol: number): Promise<Web3DepositResult> => {
+export const executeSolanaLiquidityDeposit = async (amountPab: number, amountSol: number, walletAddress?: string): Promise<Web3DepositResult> => {
   try {
-    const provider = (window as any).solana;
-    if (!provider || !provider.isPhantom) throw new Error('Phantom wallet not found.');
-
-    const resp = await provider.connect();
-    const userPublicKey = new PublicKey(resp.publicKey.toString());
-    const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+    const signingAddress = walletAddress || ((window as any).solana?.publicKey?.toString() || null);
+    if (!signingAddress) {
+      return {
+        success: false,
+        error: 'No Solana wallet available.',
+        chain: 'solana',
+      };
+    }
 
     console.log(`Executing Solana Raydium LP Deposit: ${amountPab} PAB + ${amountSol} SOL`);
+
+    const userPublicKey = new PublicKey(signingAddress);
+    const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com', 'confirmed');
+    const provider = (window as any).solana;
 
     // In a full production implementation, we use Raydium SDK's Liquidity.makeAddLiquidityInstruction(...)
     // For this implementation, we construct the transaction to interact with the AMM
@@ -627,28 +641,24 @@ export const signMessageWithWallet = async (message: string): Promise<{ address:
  * Prompts the user to sign a message using Phantom wallet (Solana).
  * Returns signature in base58 format (bs58 encoded) for backend verification.
  */
-export const signMessageWithPhantom = async (message: string): Promise<{ address: string, signature: string }> => {
-  const provider = (window as any).solana;
-  if (!provider || !provider.isPhantom) {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      const url = encodeURIComponent(window.location.href);
-      const ref = encodeURIComponent(window.location.origin);
-      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
-      throw new Error('Redirecting to Phantom App...');
-    }
-    throw new Error('Phantom wallet not found. Please install the Phantom browser extension.');
+export const signMessageWithPhantom = async (message: string, walletAddress?: string): Promise<{ address: string, signature: string }> => {
+  // Use Privy wallet address if provided, otherwise fall back to injected Phantom
+  const address = walletAddress || ((window as any).solana?.publicKey?.toString() || null);
+  if (!address) {
+    throw new Error('No Solana wallet available. Sign in with email or connect Phantom.');
   }
 
-  const resp = await provider.connect();
-  const address = resp.publicKey.toString();
-  
-  const messageBytes = new TextEncoder().encode(message);
-  const signedMessage = await provider.signMessage(messageBytes, 'utf8');
-  
-  // Phantom returns signature as Uint8Array, convert to base58
-  const bs58 = await import('bs58');
-  const signature = bs58.default.encode(signedMessage.signature);
-  
-  return { address, signature };
+  const provider = (window as any).solana;
+  if (provider?.isPhantom) {
+    const resp = await provider.connect();
+    const userAddress = resp.publicKey.toString();
+    const messageBytes = new TextEncoder().encode(message);
+    const signedMessage = await provider.signMessage(messageBytes, 'utf8');
+    const bs58 = await import('bs58');
+    const signature = bs58.default.encode(signedMessage.signature);
+    return { address: userAddress, signature };
+  }
+
+  // Privy/embedded: return address only — component handles signing via Privy API
+  return { address, signature: '' };
 };
