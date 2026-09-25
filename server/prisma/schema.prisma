@@ -179,6 +179,7 @@ model Business {
   ownerId                String?                 @unique
   name                   String
   stripeAccountId        String?                 @unique
+  privyWalletId          String?
   description            String?
   category               BusinessCategory
   address                String
