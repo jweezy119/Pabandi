@@ -185,8 +185,8 @@ import BookingOSPage from './pages/booking/BookingOSPage';
 import BookingFlowPage from './pages/booking/BookingFlowPage';
 // ContactOS
 import ContactOSPage from './pages/contact/ContactOSPage';
-import ContactLeadsPage from './pages/contact/ContactLeadsPage';
-import ContactLeadDetailPage from './pages/contact/ContactLeadDetailPage';
+import ContactClientsPage from './pages/contact/ContactClientsPage';
+import ContactClientDetailPage from './pages/contact/ContactClientDetailPage';
 import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
 import ContactJobsPage from "./pages/contact/ContactJobsPage";
@@ -264,8 +264,8 @@ function App() {
 
           {/* ContactOS - CRM & Sales */}
           <Route path="contact" element={<ContactOSPage />} />
-          <Route path="contact/leads" element={<ContactLeadsPage />} />
-          <Route path="contact/leads/:id" element={<ContactLeadDetailPage />} />
+          <Route path="contact/clients" element={<ContactClientsPage />} />
+          <Route path="contact/clients/:id" element={<ContactClientDetailPage />} />
 <Route path="contact/jobs" element={<ContactJobsPage />} />
           <Route path="contact/jobs/:id" element={<ContactJobDetailPage />} />
           <Route path="contact/deals" element={<ContactDealsPage />} />

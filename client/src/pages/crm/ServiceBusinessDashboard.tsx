@@ -152,7 +152,7 @@ function OverviewTab({ jobs, properties, maintenance, clients }: any) {
   });
   const todayRevenue = todayJobs.reduce((s: number, j: any) => s + (j.price || 0), 0);
   const weekRevenue = weekJobs.reduce((s: number, j: any) => s + (j.price || 0), 0);
-  const topClients = clients.slice(0, 3);
+  const topClients = (clients || []).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -198,7 +198,7 @@ function OverviewTab({ jobs, properties, maintenance, clients }: any) {
         <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
           <h3 className="font-bold text-[var(--warm-ink)] mb-4">Open Maintenance</h3>
           {maintenance.filter((m: any) => m.status !== 'COMPLETED').length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No open requests</p> : (
-            <div className="space-y-3">{maintenance.filter((m: any) => m.status !== 'COMPLETED').slice(0, 5).map((m: any) => (
+            <div className="space-y-3">{(maintenance || []).filter((m: any) => m.status !== 'COMPLETED').slice(0, 5).map((m: any) => (
               <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                 <div><p className="font-medium text-[var(--warm-ink)] text-sm">{m.title}</p><p className="text-xs text-[var(--soft-stone)]">{m.priority}</p></div>
                 <Badge variant={m.priority === 'URGENT' ? 'red' : m.priority === 'HIGH' ? 'yellow' : 'blue'}>{m.status}</Badge>
@@ -209,7 +209,7 @@ function OverviewTab({ jobs, properties, maintenance, clients }: any) {
         <div className="rounded-2xl border border-[var(--soft-stone)]/30 bg-white p-4 sm:p-6">
           <h3 className="font-bold text-[var(--warm-ink)] mb-4">Properties</h3>
           {properties.length === 0 ? <p className="text-sm text-[var(--soft-stone)]">No properties yet</p> : (
-            <div className="space-y-3">{properties.slice(0, 5).map((p: any) => (
+            <div className="space-y-3">{(properties || []).slice(0, 5).map((p: any) => (
               <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--warm-sand)]">
                 <div><p className="font-medium text-[var(--warm-ink)]">{p.title}</p><p className="text-xs text-[var(--soft-stone)]">{p.address}</p></div>
                 <Badge variant={p.status === 'OCCUPIED' ? 'green' : p.status === 'VACANT' ? 'yellow' : 'red'}>{p.status}</Badge>
@@ -253,7 +253,7 @@ function CalendarTab({ jobs }: { jobs: any[] }) {
               <p className={`text-[10px] sm:text-xs font-medium mb-1 ${isToday ? 'text-[var(--clay)]' : 'text-[var(--soft-stone)]'}`}>{dayNames[i]}</p>
               <p className={`text-sm sm:text-lg font-bold mb-2 ${isToday ? 'text-[var(--clay)]' : 'text-[var(--warm-ink)]'}`}>{day.getDate()}</p>
               <div className="space-y-1">
-                {dayJobs.slice(0, 2).map((j: any) => (
+                {(dayJobs || []).slice(0, 2).map((j: any) => (
                   <div key={j.id} className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 truncate">
                     {j.scheduledTime} {j.serviceType}
                   </div>

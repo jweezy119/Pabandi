@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
-  { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
+  { path: '/contact/clients', label: 'Clients', icon: 'groups' },
   { path: '/contact/deals', label: 'Deals', icon: 'handshake' },
   { path: '/contact/activities', label: 'Activities', icon: 'notifications' },
 ];
@@ -169,11 +169,11 @@ export default function ContactOSPage() {
             />
           </div>
 
-          {/* Leads List */}
+          {/* Clients List */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Leads</h2>
-              <Link to="/contact/leads" className="px-4 py-2 bg-primary/10 rounded-lg hover:bg-primary/20 text-sm font-medium">
+              <h2 className="text-xl font-bold">Clients</h2>
+              <Link to="/contact/clients" className="px-4 py-2 bg-primary/10 rounded-lg hover:bg-primary/20 text-sm font-medium">
                 View All
               </Link>
             </div>
