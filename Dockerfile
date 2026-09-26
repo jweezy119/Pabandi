@@ -16,7 +16,7 @@ COPY server/ .
 # ---- Client ----
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install --include=dev
+RUN npm install --include=dev --legacy-peer-deps
 COPY client/ .
 RUN npm run build
 
