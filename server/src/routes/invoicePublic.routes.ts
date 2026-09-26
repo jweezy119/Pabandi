@@ -9,7 +9,7 @@ const router = Router();
  * Fetch invoice details for a payment link.
  * No authentication required — this is a public endpoint.
  */
-router.get('/invoices/:invoiceId', async (req, res) => {
+router.get('/:invoiceId', async (req, res) => {
   try {
     const { invoiceId } = req.params;
     const invoice = await prisma.invoice.findUnique({

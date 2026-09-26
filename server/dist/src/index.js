@@ -230,6 +230,7 @@ const routeMap = [
     [`/api/${v}/reviews`, './routes/pabandiReview.routes'],
     [`/api/${v}/best-fit`, './routes/bestFit.routes'],
     [`/api/${v}/web3`, './routes/web3.routes'],
+    [`/api/${v}/public/invoices`, './routes/invoicePublic.routes'],
     [`/api/${v}/public`, './routes/api-public.routes'],
     [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
     [`/api/${v}/social`, './routes/social.routes'],

@@ -11,9 +11,7 @@ WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm install --omit=dev
 COPY server/ .
-# dist/ is prebuilt from a6b0aba64 — add invoicePublic route at runtime
-COPY server/docker-patch.js ./
-RUN node docker-patch.js && echo "Invoice public route injected"
+# dist/ is prebuilt and committed in git — no compile step needed
 
 # ---- Client ----
 WORKDIR /app/client
