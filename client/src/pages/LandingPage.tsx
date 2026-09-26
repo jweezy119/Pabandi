@@ -1,12 +1,56 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FiBell, FiUser, FiChevronDown, FiLogIn, FiLogOut, FiSettings, FiBriefcase, FiMenu, FiX } from 'react-icons/fi';
 
 const MODULES = [
-  { id: 'booking', name: 'BookingOS', tagline: 'Book with trust', description: 'Customers book with confidence. Businesses get escrow-backed deposits.', icon: 'calendar', colorClass: 'module-icon-booking', tint: '#A85A3C', path: '/booking' },
-  { id: 'freight', name: 'FreightOS', tagline: 'Move with escrow', description: 'Shippers pay into escrow. Carriers get paid on delivery.', icon: 'package', colorClass: 'module-icon-freight', tint: '#8A9A7B', path: '/freight' },
-  { id: 'property', name: 'PropertyOS', tagline: 'Buy, rent, manage with trust.', description: 'Landlords screen tenants. Buyers verify documents. Every deal escrow-backed.', icon: 'house', colorClass: 'module-icon-property', tint: '#D4A5A5', path: '/property' },
-  { id: 'contact', name: 'ContactOS', tagline: 'Every relationship, one trusted record.', description: 'Track clients, close deals, and know who\'s reliable before you commit.', icon: 'funnel', colorClass: 'module-icon-contact', tint: '#D9A854', path: '/contact' },
-  { id: 'ledger', name: 'LedgerOS', tagline: 'Track with clarity', description: 'Send invoices, record expenses, see profit in real time.', icon: 'coin', colorClass: 'module-icon-ledger', tint: '#B8C9D4', path: '/ledger' },
+  {
+    id: 'booking',
+    name: 'BookingOS',
+    tagline: 'Book with trust',
+    description: 'Customers book with confidence. Businesses get escrow-backed deposits.',
+    icon: 'calendar',
+    colorClass: 'module-icon-booking',
+    tint: '#A85A3C',
+    path: '/booking',
+  },
+  {
+    id: 'freight',
+    name: 'FreightOS',
+    tagline: 'Move with escrow',
+    description: 'Shippers pay into escrow. Carriers get paid on delivery.',
+    icon: 'package',
+    colorClass: 'module-icon-freight',
+    tint: '#8A9A7B',
+    path: '/freight',
+  },
+  {
+    id: 'property',
+    name: 'PropertyOS',
+    tagline: 'Buy, rent, manage with trust.',
+    description: 'Landlords screen tenants. Buyers verify documents. Every deal escrow-backed.',
+    icon: 'house',
+    colorClass: 'module-icon-property',
+    tint: '#D4A5A5',
+    path: '/property',
+  },
+  {
+    id: 'contact',
+    name: 'ContactOS',
+    tagline: 'Every relationship, one trusted record.',
+    description: 'Track clients, close deals, and know who\'re reliable before you commit.',
+    icon: 'funnel',
+    colorClass: 'module-icon-contact',
+    tint: '#D9A854',
+    path: '/contact',
+  },
+  {
+    id: 'ledger',
+    name: 'LedgerOS',
+    tagline: 'Track with clarity',
+    description: 'Send invoices, record expenses, see profit in real time.',
+    icon: 'coin',
+    colorClass: 'module-icon-ledger',
+    tint: '#B8C9D4',
+    path: '/ledger',
+  },
 ];
 
 const TRUST_SIGNALS = [
@@ -16,32 +60,86 @@ const TRUST_SIGNALS = [
 ];
 
 const HOW_IT_WORKS = [
-  { step: '1', title: 'Post your business', desc: 'Tell us what you do — cleaning, plumbing, real estate, freelance.' },
-  { step: '2', title: 'Get your CRM', desc: 'Instant pipeline, client tracking, scheduling, and trust scoring.' },
-  { step: '3', title: 'Earn & grow', desc: 'Close deals with escrow protection. Earn $PAB on every transaction.' },
+  { step: '1', title: 'Query', desc: 'Tell us what you need — service, freight, property, or help.' },
+  { step: '2', title: 'Verify', desc: 'TrustOS scores the counterparty. Escrow protects your funds.' },
+  { step: '3', title: 'Escrow', desc: 'Service delivered? Funds released. Disputed? Arbitration kicks in.' },
 ];
 
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setIsVisible(true); }, { threshold: 0.1 });
-    if (ref.current) observer.observe(ref.current);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
     return () => observer.disconnect();
   }, []);
+
   return { ref, isVisible };
 }
 
 function ScrollReveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const { ref, isVisible } = useScrollReveal();
-  return <div ref={ref} className={`scroll-reveal ${isVisible ? 'is-visible' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>{children}</div>;
+  return (
+    <div
+      ref={ref}
+      className={`scroll-reveal ${isVisible ? 'is-visible' : ''} ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CursorTrail() {
+  const [pos, setPos] = useState({ x: -100, y: -100 });
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      setPos({ x: e.clientX, y: e.clientY });
+      setVisible(true);
+    };
+    const handleLeave = () => setVisible(false);
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseleave', handleLeave);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseleave', handleLeave);
+    };
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className="cursor-trail"
+      style={{ left: pos.x, top: pos.y }}
+    />
+  );
 }
 
 function WaveDivider() {
   return (
     <div className="wave-divider">
       <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-        <path className="wave-anim" d="M0,30 C200,50 400,10 600,30 C800,50 1000,10 1200,30 L1200,60 L0,60 Z" fill="var(--warm-sand)" />
+        <path
+          className="wave-anim"
+          d="M0,30 C200,50 400,10 600,30 C800,50 1000,10 1200,30 L1200,60 L0,60 Z"
+          fill="var(--warm-sand)"
+        />
       </svg>
     </div>
   );
@@ -50,142 +148,50 @@ function WaveDivider() {
 function MagneticButton({ children, className = '', ...props }: any) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    setOffset({ x: (e.clientX - rect.left - rect.width / 2) * 0.15, y: (e.clientY - rect.top - rect.height / 2) * 0.15 });
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const deltaX = (e.clientX - centerX) * 0.15;
+    const deltaY = (e.clientY - centerY) * 0.15;
+    setOffset({ x: deltaX, y: deltaY });
   };
+
+  const handleMouseLeave = () => {
+    setOffset({ x: 0, y: 0 });
+  };
+
   return (
-    <button ref={btnRef} className={`magnetic-btn ${className}`} style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }} onMouseMove={handleMouseMove} onMouseLeave={() => setOffset({ x: 0, y: 0 })} {...props}>
+    <button
+      ref={btnRef}
+      className={`magnetic-btn ${className}`}
+      style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      {...props}
+    >
       {children}
     </button>
   );
 }
 
 function ModuleIcon({ type, className = '' }: { type: string; className?: string }) {
-  const icons: Record<string, string> = { calendar: '📅', package: '📦', house: '🏠', funnel: '📊', coin: '🪙' };
-  return <span className={className}>{icons[type] || '◈'}</span>;
-}
-
-function UserMenu() {
-  const [open, setOpen] = useState(false);
-  const token = localStorage.getItem('token');
-  const user = token ? JSON.parse(localStorage.getItem('user') || '{}') : null;
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
+  const icons: Record<string, string> = {
+    calendar: '📅',
+    package: '📦',
+    house: '🏠',
+    funnel: '📊',
+    coin: '🪙',
   };
-
-  if (!token) {
-    return (
-      <div className="flex items-center gap-2">
-        <a href="/login" className="px-4 py-2 text-sm font-medium text-[var(--warm-ink)] hover:text-[var(--clay)] transition">Sign In</a>
-        <a href="/register" className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium hover:bg-[var(--terracotta)] transition">Get Started</a>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--warm-sand)] transition">
-        <div className="w-8 h-8 rounded-full bg-[var(--clay)] flex items-center justify-center text-white text-sm font-bold">
-          {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-        </div>
-        <span className="text-sm font-medium text-[var(--warm-ink)] hidden sm:block">{user?.fullName || user?.email}</span>
-        <FiChevronDown className="w-4 h-4 text-[var(--soft-stone)]" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white shadow-lg border border-[var(--soft-stone)]/30 z-50 py-2">
-            <a href="/crm" className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">
-              <FiBriefcase className="w-4 h-4" /> Dashboard
-            </a>
-            <a href="/settings" className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">
-              <FiSettings className="w-4 h-4" /> Settings
-            </a>
-            <hr className="my-1 border-[var(--soft-stone)]/30" />
-            <button onClick={logout} className="flex items-center gap-3 px-4 py-2 text-sm text-[var(--terracotta)] hover:bg-red-50 w-full text-left">
-              <FiLogOut className="w-4 h-4" /> Sign Out
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function NotificationBell() {
-  const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const token = localStorage.getItem('token');
-
-  useEffect(() => {
-    if (!token) return;
-    fetch(`${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/notifications`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => setNotifications(data.data || []))
-      .catch(() => {});
-  }, [token]);
-
-  if (!token) return null;
-
-  const unread = notifications.filter(n => !n.read).length;
-
-  return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} className="p-2 rounded-xl hover:bg-[var(--warm-sand)] transition relative">
-        <FiBell className="w-5 h-5 text-[var(--warm-ink)]" />
-        {unread > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[var(--terracotta)] text-white text-[10px] font-bold flex items-center justify-center">{unread}</span>
-        )}
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 rounded-xl bg-white shadow-lg border border-[var(--soft-stone)]/30 z-50">
-            <div className="p-4 border-b border-[var(--soft-stone)]/30">
-              <h3 className="font-bold text-[var(--warm-ink)]">Notifications</h3>
-            </div>
-            <div className="max-h-80 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center text-[var(--soft-stone)] text-sm">No notifications yet</div>
-              ) : (
-                notifications.slice(0, 10).map(n => (
-                  <div key={n.id} className={`px-4 py-3 border-b border-[var(--soft-stone)]/20 hover:bg-[var(--warm-sand)] transition ${!n.read ? 'bg-blue-50/50' : ''}`}>
-                    <p className="text-sm font-medium text-[var(--warm-ink)]">{n.subject}</p>
-                    <p className="text-xs text-[var(--soft-stone)] mt-1">{n.message}</p>
-                    <p className="text-xs text-[var(--soft-stone)] mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  return <span className={className}>{icons[type] || '◈'}</span>;
 }
 
 export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
-  const [pageTint, setPageTint] = useState<string>("#F5EFE6");
+  const [pageTint, setPageTint] = useState<string | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const blendColors = (color1: string, color2: string, ratio: number): string => {
-    const r1 = parseInt(color1.slice(1, 3), 16), g1 = parseInt(color1.slice(3, 5), 16), b1 = parseInt(color1.slice(5, 7), 16);
-    const r2 = parseInt(color2.slice(1, 3), 16), g2 = parseInt(color2.slice(3, 5), 16), b2 = parseInt(color2.slice(5, 7), 16);
-    const r = Math.round(r1 * ratio + r2 * (1 - ratio));
-    const g = Math.round(g1 * ratio + g2 * (1 - ratio));
-    const b = Math.round(b1 * ratio + b2 * (1 - ratio));
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  };
-
   const landingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,21 +201,34 @@ export default function LandingPage() {
   }, []);
 
   const handleCardHover = useCallback((tint: string) => {
-    setPageTint(blendColors(tint, "#F5EFE6", 0.1));
+    setPageTint(tint);
   }, []);
 
   const handleCardLeave = useCallback(() => {
-    setPageTint("#F5EFE6");
+    setPageTint(null);
   }, []);
 
   const handleCardClick = (e: React.MouseEvent, path: string, moduleId: string) => {
     e.preventDefault();
     setExpandedCard(moduleId);
-    setTimeout(() => { window.location.href = path; }, 600);
+    
+    // Navigate after animation
+    setTimeout(() => {
+      window.location.href = path;
+    }, 600);
   };
 
   return (
-    <div className="landing" ref={landingRef} style={{ '--page-tint': pageTint } as any}>
+    <div className="landing" ref={landingRef} style={pageTint ? { '--page-tint': `color-mix(in srgb, ${pageTint} 10%, #F5EFE6)` } as React.CSSProperties : undefined}>
+      <CursorTrail />
+
+      {/* Floating Orbs */}
+      <div className="orbs-container" aria-hidden="true">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
+
       {/* Header */}
       <header className="header">
         <div className="container">
@@ -218,40 +237,20 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </a>
           <nav className="nav-list" aria-label="Main">
-            <a href="/contact">Contact</a>
-            <a href="/property">Property</a>
             <a href="/booking">Booking</a>
             <a href="/freight">Freight</a>
+            <a href="/property">Property</a>
+            <a href="/contact">Contact</a>
             <a href="/ledger">Ledger</a>
           </nav>
-          <div className="header-right">
-            <a href="/post-business" className="cta-nav-outline hidden sm:flex">Post Business</a>
-            <NotificationBell />
-            <UserMenu />
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-xl hover:bg-[var(--warm-sand)]">
-              {mobileMenuOpen ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
-            </button>
-          </div>
+          <a href="/crm" className="cta-nav">Get Started</a>
         </div>
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-[var(--soft-stone)]/30 bg-white px-4 py-4 space-y-2">
-            <a href="/booking" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Booking</a>
-            <a href="/freight" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Freight</a>
-            <a href="/property" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Property</a>
-            <a href="/contact" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Contact</a>
-            <a href="/ledger" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Ledger</a>
-            <hr className="border-[var(--soft-stone)]/30" />
-            <a href="/post-business" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--clay)] font-bold hover:bg-[var(--warm-sand)]">Post Business</a>
-            <a href="/crm" className="block px-3 py-2 rounded-lg text-sm font-medium text-[var(--warm-ink)] hover:bg-[var(--warm-sand)]">Dashboard</a>
-          </div>
-        )}
       </header>
 
       <main>
         {/* Hero */}
-        <section className="hero" aria-labelledby="hero-title" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center' }}>
-          <div className="container" style={{ width: '100%' }}>
+        <section className="hero" aria-labelledby="hero-title">
+          <div className="container">
             <div className="hero-inner">
               <div className="hero-content">
                 <p className="hero-kicker">The trust operating system</p>
@@ -260,12 +259,11 @@ export default function LandingPage() {
                   <span className="word hero-accent">Secured.</span>
                 </h1>
                 <p className="hero-subtitle">
-                  Post your business. Get your CRM. Start earning with escrow-backed trust.
-                  <br />Built for service providers, property managers, and freelancers.
+                  Five modules. One shared trust engine. Built for businesses that need to be reliable.
                 </p>
                 <div className="hero-actions">
-                  <MagneticButton className="btn btn-primary" onClick={() => window.location.href = '/post-business'}>
-                    Post Your Business
+                  <MagneticButton className="btn btn-primary">
+                    Start Your Business
                   </MagneticButton>
                   <a href="/crm" className="btn btn-secondary">
                     View Dashboard
@@ -273,48 +271,41 @@ export default function LandingPage() {
                 </div>
               </div>
 
-<div className="hero-visual">
-          <div className="clay-earth">
-            <svg width="100%" height="100%" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="earth-sphere" cx="38%" cy="32%" r="65%">
-                  <stop offset="0%" stop-color="#3A6EA5" />
-                  <stop offset="40%" stop-color="#3A6EA5" />
-                  <stop offset="70%" stop-color="#3A6EA5" />
-                  <stop offset="100%" stop-color="#3A6EA5" />
-                </radialGradient>
-                <linearGradient id="cont-green" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#6B8E4E" />
-                  <stop offset="100%" stop-color="#6B8E4E" />
-                </linearGradient>
-                <linearGradient id="cont-brown" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#C9A66B" />
-                  <stop offset="100%" stop-color="#C9A66B" />
-                </linearGradient>
-                <linearGradient id="cont-tan" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#C9A66B" />
-                  <stop offset="100%" stop-color="#C9A66B" />
-                </linearGradient>
-                <filter id="relief" x="-10%" y="-10%" width="120%" height="120%">
-                  <feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="rgba(20,40,50,0.1)" />
-                </filter>
-              </defs>
-              <circle cx="150" cy="150" r="135" fill="url(#earth-sphere)" />
-              <g filter="url(#relief)">
-                <path d="M 75 95 Q 95 75 115 80 Q 130 90 125 110 Q 118 125 105 130 Q 90 128 80 115 Q 72 105 75 95 Z" fill="url(#cont-green)" />
-                <path d="M 95 145 Q 108 138 115 150 Q 118 170 112 190 Q 105 200 95 195 Q 85 180 88 165 Q 90 150 95 145 Z" fill="url(#cont-green)" />
-                <path d="M 140 110 Q 160 100 175 115 Q 182 135 178 155 Q 172 175 160 180 Q 145 178 138 165 Q 132 148 135 130 Q 136 118 140 110 Z" fill="url(#cont-green)" />
-                <path d="M 145 85 Q 165 78 180 88 Q 188 100 182 112 Q 172 118 158 115 Q 145 110 140 98 Q 140 90 145 85 Z" fill="url(#cont-tan)" />
-                <path d="M 215 165 Q 230 158 240 168 Q 245 180 238 192 Q 228 198 218 193 Q 208 185 210 175 Q 212 168 215 165 Z" fill="url(#cont-brown)" />
-                <path d="M 100 220 Q 130 215 160 218 Q 190 215 220 220 Q 225 228 210 232 Q 180 235 150 232 Q 120 235 90 232 Q 80 228 100 220 Z" fill="rgba(210,200,185,0.45)" />
-                <path d="M 115 62 Q 128 55 138 62 Q 142 72 135 80 Q 125 82 118 75 Q 112 68 115 62 Z" fill="url(#cont-tan)" />
-              </g>
-            </svg>
+            </div>
+              <div className="hero-visual">
+                <div className="clay-earth">
+                  <svg width="100%" height="100%" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <filter id="clay-texture">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5"/>
+                        <feColorMatrix type="saturate" values="0"/>
+                        <feComponentTransfer>
+                          <feFuncA type="linear" slope="0.1"/>
+                        </feComponentTransfer>
+                        <feBlend in="SourceGraphic" mode="multiply"/>
+                      </filter>
+                      <filter id="continent-edge">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="7"/>
+                        <feDisplacementMap in="SourceGraphic" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+                      </filter>
+                    </defs>
+                    <circle cx="150" cy="150" r="135" fill="#3A6EA5"/>
+                    <g filter="url(#continent-edge)">
+                      <circle cx="82.5" cy="90" r="30" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="138.75" cy="240" r="25" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="150" cy="75" r="15" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="165" cy="150" r="35" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="210" cy="90" r="40" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                      <circle cx="251.25" cy="195" r="12" fill="#6B8E4E" stroke="#C9A66B" stroke-weight="1.5"/>
+                    </g>
+                    <circle cx="150" cy="30" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-weight="1.5"/>
+                    <circle cx="150" cy="270" r="15" fill="#F5EFE6" stroke="#C9A66B" stroke-weight="1.5"/>
+                    <rect width="300" height="300" fill="url(#clay-texture)"/>
+                  </svg>
+                </div>
+              </div>
           </div>
-        </div>
-      </div>
-      </div>
-      </section>
+        </section>
 
         <WaveDivider />
 
@@ -356,23 +347,26 @@ export default function LandingPage() {
 
         <WaveDivider />
 
-        {/* How It Works */}
-        <section className="how-it-works" aria-labelledby="how-title">
+        {/* TrustOS Seal */}
+        <section className="trust-section" aria-labelledby="trust-title">
           <div className="container">
             <ScrollReveal>
-              <h2 id="how-title" className="section-title">How It Works</h2>
+              <h2 id="trust-title" className="section-title">Powered by TrustOS</h2>
             </ScrollReveal>
-            <div className="steps-container">
-              {HOW_IT_WORKS.map((step, i) => (
-                <ScrollReveal key={step.step} delay={i * 120}>
-                  <div className="step-card">
-                    <div className="step-number">{step.step}</div>
-                    <h3 className="step-title">{step.title}</h3>
-                    <p className="step-desc">{step.desc}</p>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+            <ScrollReveal delay={150}>
+              <div className="trust-seal-container">
+                <div className="trust-seal">
+                  <div className="dust-mote" />
+                  <div className="dust-mote" />
+                  <div className="dust-mote" />
+                  <div className="dust-mote" />
+                  <div className="dust-mote" />
+                  <div className="dust-mote" />
+                  <span className="trust-seal-mark">◈</span>
+                </div>
+                <p className="section-subtitle">The shared trust engine protecting every transaction across all five modules.</p>
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
@@ -400,6 +394,28 @@ export default function LandingPage() {
 
         <WaveDivider />
 
+        {/* How It Works */}
+        <section className="how-it-works" aria-labelledby="how-title">
+          <div className="container">
+            <ScrollReveal>
+              <h2 id="how-title" className="section-title">How It Works</h2>
+            </ScrollReveal>
+            <div className="steps-container">
+              {HOW_IT_WORKS.map((step, i) => (
+                <ScrollReveal key={step.step} delay={i * 120}>
+                  <div className="step-card">
+                    <div className="step-number">{step.step}</div>
+                    <h3 className="step-title">{step.title}</h3>
+                    <p className="step-desc">{step.desc}</p>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <WaveDivider />
+
         {/* CTA */}
         <section className="cta-section" aria-labelledby="cta-title">
           <div className="container">
@@ -407,11 +423,11 @@ export default function LandingPage() {
               <h2 id="cta-title" className="section-title">Ready to Build Trust?</h2>
             </ScrollReveal>
             <ScrollReveal delay={150}>
-              <p className="section-subtitle">Post your business in 2 minutes. Get your CRM instantly. No crypto knowledge required.</p>
+              <p className="section-subtitle">Set up your business in five minutes. No crypto knowledge required.</p>
             </ScrollReveal>
             <ScrollReveal delay={300}>
-              <MagneticButton className="btn btn-large btn-primary" onClick={() => window.location.href = '/post-business'}>
-                Post Your Business
+              <MagneticButton className="btn btn-large btn-primary">
+                Start Free
               </MagneticButton>
             </ScrollReveal>
           </div>
