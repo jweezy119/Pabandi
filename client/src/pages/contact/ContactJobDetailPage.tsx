@@ -95,11 +95,11 @@ export default function ContactJobDetailPage() {
     navigate('/contact/jobs');
   };
 
-  if (loading) return <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Loading job details...</div></DashboardLayout>;
-  if (!job) return <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Job not found</div></DashboardLayout>;
+  if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Loading job details...</div></DashboardLayout>;
+  if (!job) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Job not found</div></DashboardLayout>;
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={[]}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}>
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Job Details</h1>

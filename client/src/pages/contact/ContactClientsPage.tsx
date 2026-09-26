@@ -112,7 +112,7 @@ export default function ContactClientsPage() {
   }
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Clients</h1>

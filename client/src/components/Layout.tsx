@@ -320,7 +320,7 @@ export default function Layout() {
           <nav className="hidden md:flex items-center gap-2 font-headline text-sm">
             <DesktopNavLink to="/" current={location.pathname === '/'}>Home</DesktopNavLink>
             <Dropdown label="PabandiOS Suite" current={['/booking', '/freight', '/property', '/contact', '/ledger'].some((p) => location.pathname.startsWith(p))}>
-              <DropdownItem to="/contact">ContactOS</DropdownItem>
+              <DropdownItem to="/contact">Contact OS</DropdownItem>
               <DropdownItem to="/booking">BookingOS</DropdownItem>
               <DropdownItem to="/property">PropertyOS</DropdownItem>
               <DropdownItem to="/freight">FreightOS</DropdownItem>
@@ -428,7 +428,7 @@ export default function Layout() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
               <div>
                 <p className="font-headline font-bold text-base text-on-surface mb-3">PabandiOS Suite</p>
-                <Link to="/contact" className="block text-on-surface-variant hover:text-primary py-1">ContactOS</Link>
+                <Link to="/contact" className="block text-on-surface-variant hover:text-primary py-1">Contact OS</Link>
                 <Link to="/booking" className="block text-on-surface-variant hover:text-primary py-1">BookingOS</Link>
                 <Link to="/property" className="block text-on-surface-variant hover:text-primary py-1">PropertyOS</Link>
                 <Link to="/freight" className="block text-on-surface-variant hover:text-primary py-1">FreightOS</Link>

@@ -333,14 +333,14 @@ setCurrentYear(now.getFullYear());
 
   if (loading) {
     return (
-      <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
         <div className="p-8 text-center" style={{ color: 'var(--soft-stone)' }}>Loading...</div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={navItems}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-[var(--warm-ink)]">Jobs</h1>

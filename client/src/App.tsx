@@ -183,7 +183,7 @@ import FreightRateCalculatorPage from './pages/freight/FreightRateCalculatorPage
 // BookingOS
 import BookingOSPage from './pages/booking/BookingOSPage';
 import BookingFlowPage from './pages/booking/BookingFlowPage';
-// ContactOS
+// Contact OS
 import ContactOSPage from './pages/contact/ContactOSPage';
 import ContactClientsPage from './pages/contact/ContactClientsPage';
 import ContactClientDetailPage from './pages/contact/ContactClientDetailPage';
@@ -262,7 +262,7 @@ function App() {
           <Route path="booking/flow" element={<BookingFlowPage />} />
           <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
 
-          {/* ContactOS - CRM & Sales */}
+          {/* Contact OS - CRM & Sales */}
           <Route path="contact" element={<ContactOSPage />} />
           <Route path="contact/clients" element={<ContactClientsPage />} />
           <Route path="contact/clients/:id" element={<ContactClientDetailPage />} />

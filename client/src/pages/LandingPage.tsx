@@ -34,7 +34,7 @@ const MODULES = [
   },
   {
     id: 'contact',
-    name: 'ContactOS',
+    name: 'Contact OS',
     tagline: 'Every relationship, one trusted record.',
     description: 'Track clients, close deals, and know who\'re reliable before you commit.',
     icon: 'funnel',
@@ -415,7 +415,7 @@ export default function LandingPage() {
             <span className="logo-mark">◈</span>
             <span>PabandiOS</span>
           </div>
-          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · ContactOS · LedgerOS — Powered by TrustOS</p>
+          <p className="footer-tagline">BookingOS · FreightOS · PropertyOS · Contact OS · LedgerOS — Powered by TrustOS</p>
           <nav className="footer-nav" aria-label="Footer">
             <a href="/about">About</a>
             <a href="/contact">Contact</a>

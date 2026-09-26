@@ -52,7 +52,7 @@ function FirstRunWizard() {
   return (
     <div className="max-w-xl mx-auto py-12">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-headline font-bold" style={{ color: 'var(--warm-ink)' }}>Welcome to ContactOS</h1>
+        <h1 className="text-3xl font-headline font-bold" style={{ color: 'var(--warm-ink)' }}>Welcome to Contact OS</h1>
         <p className="mt-2" style={{ color: 'var(--soft-stone)' }}>Let's set up your CRM.</p>
       </div>
       
@@ -115,9 +115,9 @@ export default function ContactOSPage() {
     return (
       <>
         <Helmet>
-          <title>Welcome to ContactOS</title>
+          <title>Welcome to Contact OS</title>
         </Helmet>
-        <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+        <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
           <FirstRunWizard />
         </DashboardLayout>
       </>
@@ -126,7 +126,7 @@ export default function ContactOSPage() {
 
   if (loading) {
     return (
-      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -137,9 +137,9 @@ export default function ContactOSPage() {
   return (
     <>
       <Helmet>
-        <title>ContactOS — Every relationship, one trusted record</title>
+        <title>Contact OS — Every relationship, one trusted record</title>
       </Helmet>
-      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

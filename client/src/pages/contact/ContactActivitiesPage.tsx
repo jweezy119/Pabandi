@@ -37,7 +37,7 @@ export default function ContactActivitiesPage() {
   }, []);
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--warm-ink)' }}>Activities</h1>
         {loading ? (

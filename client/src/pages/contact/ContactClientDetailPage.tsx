@@ -76,7 +76,7 @@ export default function ContactClientDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
         <div className="p-8 text-center text-[var(--soft-stone)]">Loading...</div>
       </DashboardLayout>
     );
@@ -84,7 +84,7 @@ export default function ContactClientDetailPage() {
 
   if (!client) {
     return (
-      <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
         <ClayCard hover={false} className="text-center p-12">
           <span className="material-symbols-outlined text-[48px] text-[var(--clay)] mb-4 block">person_off</span>
           <h2 className="text-xl font-bold text-[var(--warm-ink)] mb-2">Client Not Found</h2>
@@ -102,7 +102,7 @@ export default function ContactClientDetailPage() {
   const paymentScore = client.passport?.paymentScore ?? null;
 
   return (
-    <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+    <DashboardLayout osName="Contact OS" osIcon="C" osColor="clay" navItems={navItems}>
       <div className="space-y-6">
         <Link to="/contact/clients" className="inline-flex items-center gap-2 text-sm text-[var(--terracotta)] font-medium hover:underline">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>

@@ -80,7 +80,7 @@ export default function ServiceBusinessDashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--clay)] flex items-center justify-center text-white font-bold">C</div>
-            <div><h1 className="text-lg font-bold text-[var(--warm-ink)]">ContactOS</h1><p className="text-xs text-[var(--soft-stone)]">Service & Property CRM</p></div>
+            <div><h1 className="text-lg font-bold text-[var(--warm-ink)]">Contact OS</h1><p className="text-xs text-[var(--soft-stone)]">Service & Property CRM</p></div>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setTab('properties')} className="px-4 py-2 bg-[var(--clay)] text-white rounded-xl text-sm font-medium">Add Property</button>
