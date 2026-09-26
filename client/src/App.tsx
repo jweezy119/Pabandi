@@ -192,6 +192,7 @@ import ContactJobsPage from "./pages/contact/ContactJobsPage";
 import ContactJobDetailPage from "./pages/contact/ContactJobDetailPage";
 // LedgerOS
 import LedgerOSPage from './pages/ledger/LedgerOSPage';
+import { PayInvoicePage } from './pages/PayInvoicePage';
 import LedgerInvoicesPage from './pages/ledger/LedgerInvoicesPage';
 import InvoicesPage from './pages/crm/InvoicesPage';
 import InvoiceDetailPage from './pages/crm/InvoiceDetailPage';
