@@ -258,6 +258,7 @@ function App() {
           {/* BookingOS (formerly Sitara) - Booking & Discovery */}
           <Route path="booking" element={<BookingOSPage />} />
           <Route path="booking/flow" element={<BookingFlowPage />} />
+          <Route path="pay/:invoiceId" element={<PayInvoicePage />} />
 
           {/* ContactOS - CRM & Sales */}
           <Route path="contact" element={<ContactOSPage />} />
