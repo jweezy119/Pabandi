@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/api';
 
 type Step = 'details' | 'verify' | 'done';
 
 export const RegisterPage: React.FC = () => {
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const isCrm = query.get('module') === 'contact';
+
   const [step, setStep] = useState<Step>('details');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +45,7 @@ export const RegisterPage: React.FC = () => {
       if (!data?.accessToken) throw new Error(data?.message || 'Registration failed');
       localStorage.setItem('pabandi_token', data.accessToken);
       localStorage.setItem('pabandi_user', JSON.stringify(data.user));
-      window.location.href = '/onboarding';
+      window.location.href = isCrm ? '/contact?wizard=true' : '/onboarding';
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Registration failed');
     } finally {
@@ -53,7 +57,7 @@ export const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'radial-gradient(circle at top left, var(--warm-ink), #020617)' }}>
       <div className="w-full max-w-md rounded-2xl border border-[rgba(191,179,163,0.2)] bg-[var(--warm-sand)] p-6 md:p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Create your account</h1>
+          <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">{isCrm ? 'Set up your free CRM in 2 minutes' : 'Create your account'}</h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--soft-stone)' }}>{step === 'details' ? 'Start with your email, then verify with a code.' : 'Enter the 6-digit code we just emailed you.'}</p>
         </div>
 

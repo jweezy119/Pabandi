@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import DashboardLayout from '../../components/DashboardLayout';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -47,6 +47,42 @@ function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: strin
   );
 }
 
+function FirstRunWizard() {
+  const [step, setStep] = useState(1);
+  return (
+    <div className="max-w-xl mx-auto py-12">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-headline font-bold" style={{ color: 'var(--warm-ink)' }}>Welcome to ContactOS</h1>
+        <p className="mt-2" style={{ color: 'var(--soft-stone)' }}>Let's set up your CRM.</p>
+      </div>
+      
+      <ClayCard className="p-8">
+        {step === 1 && (
+          <div>
+            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>1. Name your business</h2>
+            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="e.g. Acme Studio" />
+            <button onClick={() => setStep(2)} className="w-full rounded-xl bg-[var(--clay)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--terracotta)]">Continue</button>
+          </div>
+        )}
+        {step === 2 && (
+          <div>
+            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>2. Add your first client</h2>
+            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="Client Name" />
+            <button onClick={() => setStep(3)} className="w-full rounded-xl bg-[var(--clay)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-[var(--terracotta)]">Continue</button>
+          </div>
+        )}
+        {step === 3 && (
+          <div>
+            <h2 className="text-xl font-bold mb-4 font-headline" style={{ color: 'var(--warm-ink)' }}>3. Draft your first invoice</h2>
+            <input className="w-full rounded-xl bg-[var(--warm-sand)] border border-[rgba(191,179,163,0.2)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] mb-6" placeholder="Amount ($)" type="number" />
+            <button onClick={() => window.location.href='/contact'} className="w-full rounded-xl bg-[var(--sage)] px-4 py-3 font-semibold text-[var(--warm-ink)] transition hover:bg-opacity-80">Finish Setup</button>
+          </div>
+        )}
+      </ClayCard>
+    </div>
+  );
+}
+
 export default function ContactOSPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +107,22 @@ export default function ContactOSPage() {
 
     fetchLeads();
   }, []);
+
+  const location = useLocation();
+  const showWizard = new URLSearchParams(location.search).get('wizard') === 'true';
+
+  if (showWizard) {
+    return (
+      <>
+        <Helmet>
+          <title>Welcome to ContactOS</title>
+        </Helmet>
+        <DashboardLayout osName="ContactOS" osIcon="C" osColor="clay" navItems={navItems}>
+          <FirstRunWizard />
+        </DashboardLayout>
+      </>
+    );
+  }
 
   if (loading) {
     return (

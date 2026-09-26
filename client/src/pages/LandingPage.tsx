@@ -238,13 +238,13 @@ export default function LandingPage() {
             <span>PabandiOS</span>
           </a>
           <nav className="nav-list" aria-label="Main">
+            <a href="/contact">CRM</a>
             <a href="/booking">Booking</a>
-            <a href="/freight">Freight</a>
             <a href="/property">Property</a>
-            <a href="/contact">Contact</a>
+            <a href="/freight">Freight</a>
             <a href="/ledger">Ledger</a>
           </nav>
-          <a href="/crm" className="cta-nav">Get Started</a>
+          <a href="/signup?module=contact" className="cta-nav">Get Started</a>
         </div>
       </header>
 
@@ -263,11 +263,11 @@ export default function LandingPage() {
                   Five modules. One shared trust engine. Built for businesses that need to be reliable.
                 </p>
                 <div className="hero-actions">
-                  <MagneticButton className="btn btn-primary">
-                    Start Your Business
+                  <MagneticButton className="btn btn-primary" onClick={() => window.location.href = '/signup?module=contact'}>
+                    Get Your Free CRM
                   </MagneticButton>
-                  <a href="/crm" className="btn btn-secondary">
-                    View Dashboard
+                  <a href="/signup" className="btn btn-secondary">
+                    Post Your Business
                   </a>
                 </div>
               </div>

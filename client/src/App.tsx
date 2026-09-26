@@ -10,6 +10,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import OAuthConsentPage from './pages/OAuthConsentPage';
+import PlaceholderPage from './pages/PlaceholderPage';
 import ReservationsPage from './pages/ReservationsPage';
 import NewReservationPage from './pages/NewReservationPage';
 import { CheckoutSessionPage } from './pages/CheckoutSessionPage';
@@ -310,10 +311,22 @@ function App() {
             <Route path="sharia-transparency" element={<ShariaTransparencyPage />} />
             <Route path="mudarabah" element={<MudarabahPoolsPage />} />
             <Route path="profit" element={<ProfitDashboardPage />} />
+            <Route path="marketplace/live-selling" element={<PlaceholderPage />} />
+            <Route path="marketplace/freelancers" element={<PlaceholderPage />} />
+            <Route path="marketplace/gigs" element={<PlaceholderPage />} />
+            <Route path="marketplace/hospitality" element={<PlaceholderPage />} />
+            <Route path="trust/passports" element={<PlaceholderPage />} />
+            <Route path="trust/deposits" element={<PlaceholderPage />} />
+            <Route path="trust/escrow" element={<PlaceholderPage />} />
+            <Route path="wallet/cashout" element={<PlaceholderPage />} />
+            <Route path="blog" element={<PlaceholderPage />} />
+            <Route path="privacy" element={<PlaceholderPage />} />
+            <Route path="terms" element={<PlaceholderPage />} />
 
             <Route path="auth/callback" element={<AuthCallbackPage />} />
             <Route path="login" element={<AuthPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="signup" element={<RegisterPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
             <Route path="property-manager" element={<CRMPage />} />
             <Route path="sales-crm" element={<SalesCRMPage />} />
@@ -436,7 +449,7 @@ function App() {
             <Route path="profiles/category/:category" element={<AuthRequiredProfilesPage />} />
             <Route path="profiles/:id" element={<AuthRequiredProfileDetailPage />} />
             <Route path="technology" element={<TechnologyPage />} />
-            <Route path="contact" element={<ContactPage />} />
+            <Route path="contact-us" element={<ContactPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="developer" element={<DeveloperPortalPage />} />
