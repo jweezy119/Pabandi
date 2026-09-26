@@ -61,10 +61,10 @@ export default function ContactDealsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold font-headline text-[var(--warm-ink)]">Deals Pipeline</h1>
-          <button className="btn btn-primary">
+          <Link to="/contact/jobs/new" className="btn btn-primary">
             <span className="material-symbols-outlined text-[18px] mr-1.5 align-[-3px]" aria-hidden="true">add</span>
             New Deal
-          </button>
+          </Link>
         </div>
 
         {loading ? (
@@ -76,9 +76,9 @@ export default function ContactDealsPage() {
             <p className="text-[var(--soft-stone)] mb-6 max-w-md mx-auto">
               Track your sales pipeline from lead to closed won. Deals represent active jobs or proposals.
             </p>
-            <button className="btn btn-primary">
+            <Link to="/contact/jobs/new" className="btn btn-primary">
               Create Your First Deal
-            </button>
+            </Link>
           </ClayCard>
         ) : (
           <div className="flex gap-6 overflow-x-auto pb-6 mobile-scroll">
@@ -103,24 +103,26 @@ export default function ContactDealsPage() {
                   
                   <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar">
                     {columnDeals.map(deal => (
-                      <ClayCard key={deal.id} hover={true} className="cursor-pointer border border-transparent hover:border-[var(--clay)]/30 !p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-[var(--warm-ink)] text-sm line-clamp-1">{deal.serviceType || 'Custom Deal'}</h4>
-                          <span className="text-xs font-bold text-[var(--clay)]">${(deal.price || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-[var(--soft-stone)] mb-3">
-                          <span className="material-symbols-outlined text-[14px]">person</span>
-                          <span className="line-clamp-1">{deal.clientName || 'Unknown Client'}</span>
-                        </div>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--warm-sand)]">
-                          <div className="text-[10px] text-[var(--soft-stone)]">
-                            {new Date(deal.createdAt).toLocaleDateString()}
+                      <Link key={deal.id} to={`/contact/jobs/${deal.id}`} className="block">
+                        <ClayCard hover={true} className="cursor-pointer border border-transparent hover:border-[var(--clay)]/30 !p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-[var(--warm-ink)] text-sm line-clamp-1">{deal.serviceType || 'Custom Deal'}</h4>
+                            <span className="text-xs font-bold text-[var(--clay)]">${(deal.price || 0).toLocaleString()}</span>
                           </div>
-                          <div className="w-6 h-6 rounded-full bg-[var(--cream)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-[10px]">
-                            {deal.clientName?.charAt(0) || '?'}
+                          <div className="flex items-center gap-1.5 text-xs text-[var(--soft-stone)] mb-3">
+                            <span className="material-symbols-outlined text-[14px]">person</span>
+                            <span className="line-clamp-1">{deal.clientName || 'Unknown Client'}</span>
                           </div>
-                        </div>
-                      </ClayCard>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--warm-sand)]">
+                            <div className="text-[10px] text-[var(--soft-stone)]">
+                              {new Date(deal.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-[var(--cream)] flex items-center justify-center text-[var(--warm-ink)] font-bold text-[10px]">
+                              {deal.clientName?.charAt(0) || '?'}
+                            </div>
+                          </div>
+                        </ClayCard>
+                      </Link>
                     ))}
                   </div>
                 </div>

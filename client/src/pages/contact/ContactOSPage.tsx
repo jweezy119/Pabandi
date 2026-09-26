@@ -40,7 +40,7 @@ function StatCard({ icon, value, label, valueColor = 'warm-ink' }: { icon: strin
           <p className="text-2xl font-bold" style={{ color: `var(--${valueColor})` }}>{value}</p>
         </div>
         <div className="w-11 h-11 rounded-xl bg-[var(--clay)] flex items-center justify-center">
-          <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--warm-ink)' }}>{icon}</span>
+          <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--cream)' }}>{icon}</span>
         </div>
       </div>
     </ClayCard>
@@ -143,30 +143,18 @@ export default function ContactOSPage() {
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              icon="groups"
-              value={leads.length.toString()}
-              label="Total Leads"
-              valueColor="warm-ink"
-            />
-            <StatCard
-              icon="trending_up"
-              value={leads.filter(l => l.stage === 'booked').length.toString()}
-              label="Booked"
-              valueColor="sage"
-            />
-            <StatCard
-              icon="calendar_today"
-              value={leads.filter(l => l.stage === 'repeat').length.toString()}
-              label="Repeat"
-              valueColor="sky-wash"
-            />
-            <StatCard
-              icon="star"
-              value={leads.filter(l => l.stage === 'vip').length.toString()}
-              label="VIP"
-              valueColor="dusty-rose"
-            />
+            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
+              <StatCard icon="groups" value={leads.length.toString()} label="Total Leads" valueColor="warm-ink" />
+            </Link>
+            <Link to="/contact/deals" className="block transition hover:-translate-y-0.5">
+              <StatCard icon="trending_up" value={leads.filter(l => l.stage === 'booked').length.toString()} label="Booked" valueColor="sage" />
+            </Link>
+            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
+              <StatCard icon="calendar_today" value={leads.filter(l => l.stage === 'repeat').length.toString()} label="Repeat" valueColor="sky-wash" />
+            </Link>
+            <Link to="/contact/clients" className="block transition hover:-translate-y-0.5">
+              <StatCard icon="star" value={leads.filter(l => l.stage === 'vip').length.toString()} label="VIP" valueColor="dusty-rose" />
+            </Link>
           </div>
 
           {/* Clients List */}
@@ -183,7 +171,7 @@ export default function ContactOSPage() {
             ) : (
               <div className="space-y-4">
                 {leads.map((lead) => (
-                  <div key={lead.id} className="p-4 flex items-center justify-between">
+                  <Link key={lead.id} to={`/contact/clients/${lead.id}`} className="p-4 flex items-center justify-between rounded-xl hover:bg-[var(--warm-sand)]/50 transition cursor-pointer">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--warm-sand)' }}>
                         <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--soft-stone)' }}>person</span>
@@ -194,7 +182,7 @@ export default function ContactOSPage() {
                       </div>
                     </div>
                     <span className="font-medium" style={{ color: 'var(--terracotta)' }}>${(lead.totalSpent || 0).toLocaleString()}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

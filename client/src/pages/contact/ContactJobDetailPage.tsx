@@ -38,7 +38,10 @@ export default function ContactJobDetailPage() {
   const [showCheckOut, setShowCheckOut] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || id === 'new') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const h = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
@@ -96,6 +99,49 @@ export default function ContactJobDetailPage() {
   };
 
   if (loading) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Loading job details...</div></DashboardLayout>;
+  
+  if (id === 'new') {
+    return (
+      <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}>
+        <div className="space-y-6 max-w-2xl mx-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold text-[var(--warm-ink)]">New Deal</h1>
+            <Link to="/contact/deals" className="text-sm text-[var(--terracotta)]">← Back to Deals</Link>
+          </div>
+          <ClayCard className="p-6">
+            <h2 className="text-lg font-bold text-[var(--warm-ink)] mb-4">Deal Details</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[var(--soft-stone)] mb-1">Deal Title / Service</label>
+                <input id="new-deal-svc" type="text" placeholder="e.g. Website Redesign" className="w-full rounded-xl bg-[var(--warm-sand)]/20 border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] transition" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--soft-stone)] mb-1">Deal Value ($)</label>
+                <input id="new-deal-price" type="number" placeholder="0.00" className="w-full rounded-xl bg-[var(--warm-sand)]/20 border border-[rgba(191,179,163,0.3)] px-4 py-3 text-sm text-[var(--warm-ink)] outline-none focus:border-[var(--clay)] transition" />
+              </div>
+              <button 
+                onClick={async () => {
+                  const svc = (document.getElementById('new-deal-svc') as HTMLInputElement).value;
+                  const price = parseFloat((document.getElementById('new-deal-price') as HTMLInputElement).value || '0');
+                  const API = import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com';
+                  await fetch(`${API}/api/v1/crm/jobs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                    body: JSON.stringify({ serviceType: svc || 'New Deal', price, status: 'PENDING' }),
+                  });
+                  navigate('/contact/deals');
+                }}
+                className="w-full bg-[var(--clay)] text-white px-4 py-3 rounded-xl font-bold hover:opacity-90 transition mt-4"
+              >
+                Create Deal
+              </button>
+            </div>
+          </ClayCard>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!job) return <DashboardLayout osName="Contact OS" osIcon="C" osColor="#C97B5A" navItems={[]}><div className="p-8 text-center text-[var(--soft-stone)]">Job not found</div></DashboardLayout>;
 
   return (

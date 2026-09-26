@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { Link } from 'react-router-dom';
 
 const navItems = [
   { path: '/contact/leads', label: 'Leads', icon: 'person_add' },
@@ -49,16 +50,17 @@ export default function ContactActivitiesPage() {
         ) : (
           <div className="rounded-[var(--radius-card)] overflow-hidden" style={{ background: 'white', boxShadow: 'var(--shadow-soft)' }}>
             {activities.map((act) => (
-              <div
+              <Link
                 key={act.id}
-                className="p-5 flex items-center gap-4"
+                to={`/contact/jobs/${act.id.split('-')[0]}`}
+                className="p-5 flex items-center gap-4 hover:bg-[var(--warm-sand)]/50 transition cursor-pointer"
                 style={{ borderBottom: '1px solid rgba(191,179,163,0.2)' }}
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{ background: 'var(--clay)' }}
                 >
-                  <span className="material-symbols-outlined text-[var(--warm-ink)] text-[20px]">
+                  <span className="material-symbols-outlined text-[var(--cream)] text-[20px]">
                     {act.type === 'job_completed' ? 'check_circle' : 'assignment'}
                   </span>
                 </div>
@@ -68,7 +70,7 @@ export default function ContactActivitiesPage() {
                     {act.time ? new Date(act.time).toLocaleDateString() : ''}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
