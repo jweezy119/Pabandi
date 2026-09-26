@@ -364,7 +364,15 @@ app.post(`/api/${v}/mcp`, async (req, res) => {
   }
 });
 
-logger.info(`✅ ${routeMap.length} lazy API routes registered`);
+logger.info(`✅ ${routeMap.length} lazy API routes registered`)
+// Conditionally register invoice public routes (may not exist in prebuilt dist)
+try {
+  const invoicePublicRouter = require('./routes/invoicePublic.routes');
+  app.use(`/api/${v}/public/invoices`, invoicePublicRouter.default || invoicePublicRouter);
+  logger.info('✅ Invoice public lookup route registered');
+} catch {
+  logger.info('ℹ️ Invoice public lookup route not available');
+};
 
 // Initialize TrustCore event handlers
 import { initializeTrustCore } from './services/trust-core.service';
