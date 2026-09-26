@@ -259,7 +259,7 @@ img {
 
 .hero {
   position: relative;
-  min-height: 85vh;
+  min-height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,9 +269,9 @@ img {
 
 .hero-inner {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 4rem;
   align-items: center;
+  width: 100%;
   position: relative;
   z-index: 2;
 }
@@ -359,23 +359,13 @@ img {
   border-radius: 50%;
   background: transparent;
   box-shadow: 0 12px 60px rgba(40, 80, 100, 0.2);
-  animation: clay-breathe 4s ease-in-out infinite, clay-spin 30s linear infinite;
+  animation: clay-spin 60s linear infinite;
   position: relative;
   overflow: hidden;
 }
 
 .clay-earth::after {
-  content: '';
-  position: absolute;
-  top: 8%;
-  left: 15%;
-  width: 40%;
-  height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(255,255,255,0.18), transparent 70%);
-  filter: blur(10px);
-  transform: rotate(-20deg);
-  pointer-events: none;
+  display: none;
 }
 
 @keyframes clay-breathe {
@@ -1023,12 +1013,59 @@ img {
   }
 }
 
-@media (prefers-reduced-motion: reduce), (max-width: 767px) {
+
+
+
+
+/* Desktop: 1440px and up */
+@media (min-width: 1440px) {
+  .hero-inner {
+    grid-template-columns: 60% 400px;
+    gap: 80px;
+  }
+  .hero-content {
+    text-align: left;
+    max-width: none;
+  }
   .clay-earth {
-    animation: none !important;
+    width: 400px;
+    height: 400px;
   }
 }
 
-.hero-visual .clay-earth::after {
-  display: none;
+/* Tablet: 768px to 1024px */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .hero-content {
+    text-align: center;
+  }
+  .hero-visual {
+    order: 2;
+  }
+  .clay-earth {
+    width: 320px;
+    height: 320px;
+  }
+}
+
+/* Mobile: up to 767px */
+@media (max-width: 767px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .hero-content {
+    text-align: center;
+  }
+  .hero-visual {
+    order: 2;
+  }
+  .clay-earth {
+    width: 220px;
+    height: 220px;
+    animation: none;
+  }
 }

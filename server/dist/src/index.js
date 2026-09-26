@@ -230,7 +230,6 @@ const routeMap = [
     [`/api/${v}/reviews`, './routes/pabandiReview.routes'],
     [`/api/${v}/best-fit`, './routes/bestFit.routes'],
     [`/api/${v}/web3`, './routes/web3.routes'],
-    [`/api/${v}/public/invoices`, './routes/invoicePublic.routes'],
     [`/api/${v}/public`, './routes/api-public.routes'],
     [`/api/${v}/api-subscription`, './routes/api-subscription.routes'],
     [`/api/${v}/social`, './routes/social.routes'],
@@ -356,6 +355,14 @@ const routeMap = [
     [`/api/${v}/sms`, './routes/sms.routes'],
     [`/api/${v}/channels`, './routes/channel.routes'],
 ];
+try {
+    const invoicePublicRouter = require('./routes/invoicePublic.routes');
+    app.use(`/api/${v}/public/invoices`, invoicePublicRouter.default || invoicePublicRouter);
+    logger_1.logger.info('✅ Invoice public lookup route registered');
+}
+catch {
+    logger_1.logger.info('ℹ️ Invoice public lookup route not available');
+}
 for (const [routePath, importPath] of routeMap) {
     lazyRoute(routePath, importPath);
 }
@@ -404,12 +411,13 @@ logger_1.logger.info('✅ Compounding service auto-started (hourly fee reinvestm
 // logger.info('✅ DEX Auto-trader auto-started (continuous LP fee generation)');
 // Expose public SDK for trust seals
 const path_1 = __importDefault(require("path"));
-app.use('/sdk', express_1.default.static(path_1.default.join(__dirname, 'public')));
+app.use('/sdk', express_1.default.static(path_1.default.join(__dirname, '..', '..', 'src', 'public')));
+app.use('/assets', express_1.default.static(path_1.default.join(__dirname, '..', '..', 'src', 'public', 'app', 'assets')));
 app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // ── LLMs.txt (agent discovery) ───────────────────────────────────────────────
 app.get('/llms.txt', (_req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.sendFile(path_1.default.join(__dirname, 'public', 'app', 'llms.txt'), (err) => {
+    res.sendFile(path_1.default.join(__dirname, '..', '..', 'src', 'public', 'app', 'llms.txt'), (err) => {
         if (err) {
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.send('# PabandiOS\n> The trust operating system for bookings, freight, property, CRM, and finance.\n');
@@ -449,7 +457,7 @@ app.get('/', (req, res) => {
     // Serve the React SPA to browsers; keep the JSON welcome for API clients (curl/health).
     if (req.headers.accept && String(req.headers.accept).includes('text/html')) {
         res.setHeader('Cache-Control', 'no-cache');
-        return res.sendFile(path_1.default.join(__dirname, 'public', 'app', 'index.html'), (err) => {
+        return res.sendFile(path_1.default.join(__dirname, '..', '..', 'src', 'public', 'app', 'index.html'), (err) => {
             if (err)
                 res.status(200).json({ success: true, message: 'Welcome to the Pabandi Backend API', version: API_VERSION, docs: `/api/${API_VERSION}/docs`, health: '/health' });
         });
@@ -466,7 +474,7 @@ app.get('/', (req, res) => {
 // Serve the built React app from the same Render service so the whole product is live
 // without a separate Firebase host. Registered BEFORE the 404 handler so client-side
 // routes (/search, /login, /dashboard, ...) resolve to index.html.
-const SPA_DIR = path_1.default.join(__dirname, 'public', 'app');
+const SPA_DIR = path_1.default.join(__dirname, '..', '..', 'src', 'public', 'app');
 const SPA_INDEX = path_1.default.join(SPA_DIR, 'index.html');
 // Serve built assets with long cache (hashed filenames), but force no-cache on the
 // SPA shell (index.html) so Cloudflare/edge never serves a stale bundle after a deploy.

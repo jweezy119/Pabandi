@@ -341,6 +341,13 @@ const routeMap: [string, string][] = [
   [`/api/${v}/channels`, './routes/channel.routes'],
 ];
 
+try {
+  const invoicePublicRouter = require('./routes/invoicePublic.routes');
+  app.use(`/api/${v}/public/invoices`, invoicePublicRouter.default || invoicePublicRouter);
+  logger.info('✅ Invoice public lookup route registered');
+} catch {
+  logger.info('ℹ️ Invoice public lookup route not available');
+}
 for (const [routePath, importPath] of routeMap) {
   lazyRoute(routePath, importPath);
 }
@@ -365,14 +372,6 @@ app.post(`/api/${v}/mcp`, async (req, res) => {
 });
 
 logger.info(`✅ ${routeMap.length} lazy API routes registered`)
-// Conditionally register invoice public routes (may not exist in prebuilt dist)
-try {
-  const invoicePublicRouter = require('./routes/invoicePublic.routes');
-  app.use(`/api/${v}/public/invoices`, invoicePublicRouter.default || invoicePublicRouter);
-  logger.info('✅ Invoice public lookup route registered');
-} catch {
-  logger.info('ℹ️ Invoice public lookup route not available');
-};
 
 // Initialize TrustCore event handlers
 import { initializeTrustCore } from './services/trust-core.service';
@@ -404,13 +403,14 @@ logger.info('✅ Compounding service auto-started (hourly fee reinvestment)');
 
 // Expose public SDK for trust seals
 import path from 'path';
-app.use('/sdk', express.static(path.join(__dirname, 'public')));
+app.use('/sdk', express.static(path.join(__dirname, '..', '..', 'src', 'public')));
+app.use('/assets', express.static(path.join(__dirname, '..', '..', 'src', 'public', 'app', 'assets')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── LLMs.txt (agent discovery) ───────────────────────────────────────────────
 app.get('/llms.txt', (_req, res) => {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.sendFile(path.join(__dirname, 'public', 'app', 'llms.txt'), (err) => {
+  res.sendFile(path.join(__dirname, '..', '..', 'src', 'public', 'app', 'llms.txt'), (err) => {
     if (err) {
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.send('# PabandiOS\n> The trust operating system for bookings, freight, property, CRM, and finance.\n');
@@ -453,7 +453,7 @@ app.get('/', (req, res) => {
   // Serve the React SPA to browsers; keep the JSON welcome for API clients (curl/health).
   if (req.headers.accept && String(req.headers.accept).includes('text/html')) {
     res.setHeader('Cache-Control', 'no-cache');
-    return res.sendFile(path.join(__dirname, 'public', 'app', 'index.html'), (err: any) => {
+    return res.sendFile(path.join(__dirname, '..', '..', 'src', 'public', 'app', 'index.html'), (err: any) => {
       if (err) res.status(200).json({ success: true, message: 'Welcome to the Pabandi Backend API', version: API_VERSION, docs: `/api/${API_VERSION}/docs`, health: '/health' });
     });
   }
@@ -470,7 +470,7 @@ app.get('/', (req, res) => {
 // Serve the built React app from the same Render service so the whole product is live
 // without a separate Firebase host. Registered BEFORE the 404 handler so client-side
 // routes (/search, /login, /dashboard, ...) resolve to index.html.
-const SPA_DIR = path.join(__dirname, 'public', 'app');
+const SPA_DIR = path.join(__dirname, '..', '..', 'src', 'public', 'app');
 const SPA_INDEX = path.join(SPA_DIR, 'index.html');
 // Serve built assets with long cache (hashed filenames), but force no-cache on the
 // SPA shell (index.html) so Cloudflare/edge never serves a stale bundle after a deploy.
