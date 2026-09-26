@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { prisma } from '../utils/database';
 import { authenticate } from '../middleware/auth.middleware';
 import {
@@ -7,6 +7,9 @@ import {
   getEmployeesHandler,
   addClientHandler,
   getClientsHandler,
+  getClientHandler,
+  updateClientHandler,
+  deleteClientHandler,
   createJobHandler,
   assignEmployeeHandler,
   updateJobStatusHandler,
@@ -16,7 +19,23 @@ import {
   recordExpenseHandler,
   getExpensesHandler,
   getDashboardStatsHandler,
+  createDealHandler,
+  getDealsHandler,
+  getDealHandler,
+  updateDealHandler,
+  deleteDealHandler,
+  createActivityHandler,
+  getActivitiesHandler,
+  updateActivityHandler,
+  deleteActivityHandler,
+  addFileHandler,
+  getFilesHandler,
+  deleteFileHandler,
+  createInvoiceHandler,
+  getInvoicesHandler,
+  markInvoicePaidHandler,
 } from '../controllers/crm.controller';
+import * as crmService from '../services/crm.service';
 import {
   getAlertsHandler,
   dismissAlertHandler,
@@ -83,6 +102,36 @@ router.post('/clients', addClientHandler);
 
 // GET /api/v1/crm/clients — List clients
 router.get('/clients', getClientsHandler);
+
+// GET /api/v1/crm/clients/:id — Get client details
+router.get('/clients/:id', getClientHandler);
+
+// PATCH /api/v1/crm/clients/:id — Update client details
+router.patch('/clients/:id', updateClientHandler);
+
+// DELETE /api/v1/crm/clients/:id — Delete a client
+router.delete('/clients/:id', deleteClientHandler);
+
+// ── Deal Management ─────────────────────────────────────────────────────────
+
+router.post('/deals', createDealHandler);
+router.get('/deals', getDealsHandler);
+router.get('/deals/:id', getDealHandler);
+router.patch('/deals/:id', updateDealHandler);
+router.delete('/deals/:id', deleteDealHandler);
+
+// ── Activity Management ──────────────────────────────────────────────────────
+
+router.post('/activities', createActivityHandler);
+router.get('/activities', getActivitiesHandler);
+router.patch('/activities/:id', updateActivityHandler);
+router.delete('/activities/:id', deleteActivityHandler);
+
+// ── File Management ──────────────────────────────────────────────────────────
+
+router.post('/files', addFileHandler);
+router.get('/files', getFilesHandler);
+router.delete('/files/:id', deleteFileHandler);
 
 // ── Job Management ──────────────────────────────────────────────────────────
 

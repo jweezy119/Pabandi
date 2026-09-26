@@ -139,6 +139,52 @@ export async function getClients(serviceBusinessId: string) {
   return clientsWithStage;
 }
 
+export async function getClient(serviceBusinessId: string, clientId: string) {
+  const client = await prisma.crmClient.findFirst({
+    where: { id: clientId, serviceBusinessId },
+    include: {
+      jobs: true,
+      invoices: true,
+    }
+  });
+  if (!client) throw new CustomError('Client not found', 404);
+  
+  return {
+    ...client,
+    stage: getClientStage(client as any, client.jobs as any),
+  };
+}
+
+export async function updateClient(
+  serviceBusinessId: string,
+  clientId: string,
+  data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    notes?: string;
+  }
+) {
+  const client = await prisma.crmClient.findFirst({ where: { id: clientId, serviceBusinessId } });
+  if (!client) throw new CustomError('Client not found', 404);
+
+  return prisma.crmClient.update({
+    where: { id: clientId },
+    data,
+  });
+}
+
+export async function deleteClient(serviceBusinessId: string, clientId: string) {
+  const client = await prisma.crmClient.findFirst({ where: { id: clientId, serviceBusinessId } });
+  if (!client) throw new CustomError('Client not found', 404);
+
+  return prisma.crmClient.update({
+    where: { id: clientId },
+    data: { isActive: false },
+  });
+}
+
 // ─── Job Management ──────────────────────────────────────────────────────────
 
 export async function createJob(
@@ -542,5 +588,275 @@ export async function handleNoShow(jobId: string) {
 
     logger.info(`[JobLifecycle] Job ${jobId} marked as MISSED (${minutesLate.toFixed(1)} minutes late)`);
   }
+}
+
+// ─── Deal Management ─────────────────────────────────────────────────────────
+
+export async function createDeal(
+  serviceBusinessId: string,
+  data: {
+    title: string;
+    value?: number;
+    currency?: string;
+    stage?: string;
+    probability?: number;
+    clientId?: string;
+    expectedCloseDate?: string;
+    notes?: string;
+    ownerName?: string;
+  }
+) {
+  if (!data.title) throw new CustomError('Deal title is required', 400);
+
+  return prisma.crmDeal.create({
+    data: {
+      serviceBusinessId,
+      title: data.title,
+      value: data.value || 0,
+      currency: data.currency || 'USD',
+      stage: data.stage || 'LEAD',
+      probability: data.probability ?? 10,
+      clientId: data.clientId || null,
+      expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
+      notes: data.notes || null,
+      ownerName: data.ownerName || null,
+    },
+    include: { client: true },
+  });
+}
+
+export async function getDeals(
+  serviceBusinessId: string,
+  filters?: { stage?: string; clientId?: string }
+) {
+  const where: any = { serviceBusinessId };
+  if (filters?.stage) where.stage = filters.stage;
+  if (filters?.clientId) where.clientId = filters.clientId;
+
+  return prisma.crmDeal.findMany({
+    where,
+    include: { client: true, activities: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getDeal(serviceBusinessId: string, dealId: string) {
+  const deal = await prisma.crmDeal.findFirst({
+    where: { id: dealId, serviceBusinessId },
+    include: { client: true, activities: true },
+  });
+  if (!deal) throw new CustomError('Deal not found', 404);
+  return deal;
+}
+
+export async function updateDeal(
+  serviceBusinessId: string,
+  dealId: string,
+  data: {
+    title?: string;
+    value?: number;
+    stage?: string;
+    probability?: number;
+    expectedCloseDate?: string;
+    lostReason?: string;
+    notes?: string;
+  }
+) {
+  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, serviceBusinessId } });
+  if (!deal) throw new CustomError('Deal not found', 404);
+
+  const updateData: any = { ...data };
+  if (data.expectedCloseDate) updateData.expectedCloseDate = new Date(data.expectedCloseDate);
+  if (data.stage === 'WON' || data.stage === 'LOST') {
+    updateData.closedAt = new Date();
+  }
+
+  return prisma.crmDeal.update({
+    where: { id: dealId },
+    data: updateData,
+    include: { client: true, activities: true },
+  });
+}
+
+export async function deleteDeal(serviceBusinessId: string, dealId: string) {
+  const deal = await prisma.crmDeal.findFirst({ where: { id: dealId, serviceBusinessId } });
+  if (!deal) throw new CustomError('Deal not found', 404);
+  return prisma.crmDeal.delete({ where: { id: dealId } });
+}
+
+// ─── Activity Management ──────────────────────────────────────────────────────
+
+export async function createActivity(
+  serviceBusinessId: string,
+  data: {
+    type: 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE' | 'TASK';
+    title: string;
+    description?: string;
+    clientId?: string;
+    dealId?: string;
+    dueDate?: string;
+    authorName?: string;
+  }
+) {
+  if (!data.title) throw new CustomError('Activity title is required', 400);
+
+  return prisma.crmActivity.create({
+    data: {
+      serviceBusinessId,
+      type: data.type || 'NOTE',
+      title: data.title,
+      description: data.description || null,
+      clientId: data.clientId || null,
+      dealId: data.dealId || null,
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      authorName: data.authorName || 'System',
+    },
+    include: { client: true, deal: true },
+  });
+}
+
+export async function getActivities(
+  serviceBusinessId: string,
+  filters?: { clientId?: string; dealId?: string; type?: string }
+) {
+  const where: any = { serviceBusinessId };
+  if (filters?.clientId) where.clientId = filters.clientId;
+  if (filters?.dealId) where.dealId = filters.dealId;
+  if (filters?.type) where.type = filters.type;
+
+  return prisma.crmActivity.findMany({
+    where,
+    include: { client: true, deal: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function updateActivity(
+  serviceBusinessId: string,
+  activityId: string,
+  data: { completed?: boolean; title?: string; description?: string }
+) {
+  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, serviceBusinessId } });
+  if (!act) throw new CustomError('Activity not found', 404);
+
+  return prisma.crmActivity.update({
+    where: { id: activityId },
+    data,
+  });
+}
+
+export async function deleteActivity(serviceBusinessId: string, activityId: string) {
+  const act = await prisma.crmActivity.findFirst({ where: { id: activityId, serviceBusinessId } });
+  if (!act) throw new CustomError('Activity not found', 404);
+  return prisma.crmActivity.delete({ where: { id: activityId } });
+}
+
+// ─── File Management ──────────────────────────────────────────────────────────
+
+export async function addFile(
+  serviceBusinessId: string,
+  clientId: string,
+  data: { fileName: string; fileUrl: string; fileSize?: string; fileType?: string }
+) {
+  return prisma.crmFile.create({
+    data: {
+      serviceBusinessId,
+      clientId,
+      fileName: data.fileName,
+      fileUrl: data.fileUrl,
+      fileSize: data.fileSize || 'N/A',
+      fileType: data.fileType || 'PDF',
+    },
+  });
+}
+
+export async function getFiles(serviceBusinessId: string, clientId: string) {
+  return prisma.crmFile.findMany({
+    where: { serviceBusinessId, clientId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function deleteFile(serviceBusinessId: string, fileId: string) {
+  return prisma.crmFile.deleteMany({
+    where: { id: fileId, serviceBusinessId },
+  });
+}
+
+// ─── Invoice & Payment Management ────────────────────────────────────────────
+
+export async function createInvoice(
+  serviceBusinessId: string,
+  data: {
+    clientId: string;
+    lineItems: Array<{ description: string; amount: number; quantity?: number }>;
+    dateDue: string;
+    notes?: string;
+  }
+) {
+  if (!data.clientId) throw new CustomError('clientId is required', 400);
+
+  const subtotal = (data.lineItems || []).reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0);
+  const number = `INV-${Date.now().toString().slice(-6)}`;
+
+  const invoice = await prisma.invoice.create({
+    data: {
+      businessId: serviceBusinessId,
+      clientId: data.clientId,
+      number,
+      dateDue: new Date(data.dateDue),
+      lineItems: data.lineItems || [],
+      subtotal,
+      notes: data.notes || null,
+      status: 'sent',
+      sentAt: new Date(),
+    },
+    include: { client: true },
+  });
+
+  return invoice;
+}
+
+export async function getInvoices(
+  serviceBusinessId: string,
+  filters?: { clientId?: string; status?: string }
+) {
+  const where: any = { businessId: serviceBusinessId };
+  if (filters?.clientId) where.clientId = filters.clientId;
+  if (filters?.status) where.status = filters.status;
+
+  return prisma.invoice.findMany({
+    where,
+    include: { client: true, trustEvents: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function markInvoicePaid(serviceBusinessId: string, invoiceId: string) {
+  const invoice = await prisma.invoice.findFirst({
+    where: { id: invoiceId, businessId: serviceBusinessId },
+    include: { client: true },
+  });
+  if (!invoice) throw new CustomError('Invoice not found', 404);
+
+  const updatedInvoice = await prisma.invoice.update({
+    where: { id: invoiceId },
+    data: { status: 'paid', paidAt: new Date() },
+    include: { client: true },
+  });
+
+  // Calculate reliability boost: paying on time increases client reliability score
+  if (invoice.client && invoice.client.passportId) {
+    try {
+      await prisma.trustPassport.update({
+        where: { id: invoice.client.passportId },
+        data: { paymentScore: { increment: 15 }, overallScore: { increment: 10 } },
+      });
+    } catch (e) {
+      // Passport non-critical error swallow
+    }
+  }
+
+  return updatedInvoice;
 }
 

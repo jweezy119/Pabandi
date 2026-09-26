@@ -1096,7 +1096,7 @@ export const verifyWallet = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const requestProfileChange = async (req: Request, res: Response, next: NextFunction) => {
+export const requestProfileChange = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { firstName, lastName, profilePictureUrl } = req.body;
     
@@ -1119,7 +1119,7 @@ export const requestProfileChange = async (req: Request, res: Response, next: Ne
   }
 };
 
-export const getProfileChangeStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const getProfileChangeStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const requests = await prisma.profileChangeRequest.findMany({
       where: { userId: req.user!.id, status: 'PENDING' },

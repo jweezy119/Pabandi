@@ -6573,6 +6573,9 @@ model CrmBusiness {
   jobs          CrmJob[]
   payrolls      CrmPayroll[]
   expenses      CrmExpense[]
+  deals         CrmDeal[]
+  activities    CrmActivity[]
+  files         CrmFile[]
 
   @@index([ownerEmail])
   @@index([serviceType])
@@ -6608,19 +6611,90 @@ model CrmClient {
   phone       String?
   address     String?
   notes       String?
+  status      String   @default("ACTIVE") // ACTIVE | AT_RISK | VIP | INACTIVE
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-   passportId     String?   @unique
-   passport       TrustPassport?   @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
-   @@index([passportId])
+  passportId  String?  @unique
+  passport    TrustPassport?   @relation("CrmClientTrustPassport", fields: [passportId], references: [id])
+  @@index([passportId])
 
   business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
   jobs        CrmJob[]
   invoices    Invoice[]
+  deals       CrmDeal[]
+  activities  CrmActivity[]
+  files       CrmFile[]
 
   @@index([businessId])
   @@index([name])
+}
+
+model CrmDeal {
+  id                String   @id @default(cuid())
+  businessId        String
+  clientId          String?
+  title             String
+  value             Float    @default(0)
+  currency          String   @default("USD")
+  stage             String   @default("LEAD") // LEAD | QUALIFIED | PROPOSAL | NEGOTIATION | WON | LOST
+  probability       Int      @default(10)
+  expectedCloseDate DateTime?
+  closedAt          DateTime?
+  lostReason        String?
+  notes             String?
+  ownerName         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  client            CrmClient?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  business          CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  activities        CrmActivity[]
+
+  @@index([businessId])
+  @@index([clientId])
+  @@index([stage])
+}
+
+model CrmActivity {
+  id          String   @id @default(cuid())
+  businessId  String
+  clientId    String?
+  dealId      String?
+  type        String   @default("NOTE") // CALL | EMAIL | MEETING | NOTE | TASK
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+  authorName  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      CrmClient?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deal        CrmDeal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([clientId])
+  @@index([dealId])
+  @@index([type])
+}
+
+model CrmFile {
+  id          String   @id @default(cuid())
+  businessId  String
+  clientId    String
+  fileName    String
+  fileUrl     String
+  fileSize    String?
+  fileType    String?
+  createdAt   DateTime @default(now())
+
+  client      CrmClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  business    CrmBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([clientId])
 }
 
 model CrmJob {

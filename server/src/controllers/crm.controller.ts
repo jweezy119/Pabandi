@@ -8,6 +8,9 @@ import {
   getEmployees,
   addClient,
   getClients,
+  getClient,
+  updateClient,
+  deleteClient,
   createJob,
   assignEmployee,
   updateJobStatus,
@@ -17,6 +20,21 @@ import {
   recordExpense,
   getExpenses,
   getDashboardStats,
+  createDeal,
+  getDeals,
+  getDeal,
+  updateDeal,
+  deleteDeal,
+  createActivity,
+  getActivities,
+  updateActivity,
+  deleteActivity,
+  addFile,
+  getFiles,
+  deleteFile,
+  createInvoice,
+  getInvoices,
+  markInvoicePaid,
 } from '../services/crm.service';
 
 // Helper to extract businessId from request (query or body)
@@ -109,6 +127,52 @@ export async function getClientsHandler(
     const businessId = getBusinessId(req);
     const clients = await getClients(businessId);
     res.json({ success: true, data: clients });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const businessId = getBusinessId(req);
+    const { id } = req.params;
+    const client = await getClient(businessId, id);
+    res.json({ success: true, data: client });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const businessId = getBusinessId(req);
+    const { id } = req.params;
+    const { name, email, phone, address, notes } = req.body;
+    const client = await updateClient(businessId, id, { name, email, phone, address, notes });
+    res.json({ success: true, data: client });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteClientHandler(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const businessId = getBusinessId(req);
+    const { id } = req.params;
+    await deleteClient(businessId, id);
+    res.json({ success: true, message: 'Client deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -289,3 +353,177 @@ export async function getDashboardStatsHandler(
     next(error);
   }
 }
+
+// ─── Deal Handlers ───────────────────────────────────────────────────────────
+
+export async function createDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const deal = await createDeal(businessId, req.body);
+    res.status(201).json({ success: true, data: deal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDealsHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const { stage, clientId } = req.query;
+    const deals = await getDeals(businessId, {
+      stage: stage as string | undefined,
+      clientId: clientId as string | undefined,
+    });
+    res.json({ success: true, data: deals });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const deal = await getDeal(businessId, req.params.id);
+    res.json({ success: true, data: deal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const deal = await updateDeal(businessId, req.params.id, req.body);
+    res.json({ success: true, data: deal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteDealHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    await deleteDeal(businessId, req.params.id);
+    res.json({ success: true, message: 'Deal deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── Activity Handlers ─────────────────────────────────────────────────────────
+
+export async function createActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const activity = await createActivity(businessId, req.body);
+    res.status(201).json({ success: true, data: activity });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getActivitiesHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const { clientId, dealId, type } = req.query;
+    const activities = await getActivities(businessId, {
+      clientId: clientId as string | undefined,
+      dealId: dealId as string | undefined,
+      type: type as string | undefined,
+    });
+    res.json({ success: true, data: activities });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const activity = await updateActivity(businessId, req.params.id, req.body);
+    res.json({ success: true, data: activity });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteActivityHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    await deleteActivity(businessId, req.params.id);
+    res.json({ success: true, message: 'Activity deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── File Handlers ─────────────────────────────────────────────────────────────
+
+export async function addFileHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const { clientId, fileName, fileUrl, fileSize, fileType } = req.body;
+    const file = await addFile(businessId, clientId, { fileName, fileUrl, fileSize, fileType });
+    res.status(201).json({ success: true, data: file });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFilesHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const { clientId } = req.query;
+    const files = await getFiles(businessId, clientId as string);
+    res.json({ success: true, data: files });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteFileHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    await deleteFile(businessId, req.params.id);
+    res.json({ success: true, message: 'File deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ─── Invoice Handlers ──────────────────────────────────────────────────────────
+
+export async function createInvoiceHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const invoice = await createInvoice(businessId, req.body);
+    res.status(201).json({ success: true, data: invoice });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getInvoicesHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const { clientId, status } = req.query;
+    const invoices = await getInvoices(businessId, {
+      clientId: clientId as string | undefined,
+      status: status as string | undefined,
+    });
+    res.json({ success: true, data: invoices });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function markInvoicePaidHandler(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const businessId = getBusinessId(req);
+    const invoice = await markInvoicePaid(businessId, req.params.id);
+    res.json({ success: true, data: invoice });
+  } catch (error) {
+    next(error);
+  }
+}
+
