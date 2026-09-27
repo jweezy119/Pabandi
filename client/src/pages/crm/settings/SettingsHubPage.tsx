@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardLayout from '../../components/DashboardLayout';
+import DashboardLayout from '../../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/primitives/Card';
 
