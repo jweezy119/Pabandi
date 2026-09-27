@@ -3,6 +3,7 @@ import { invoiceGenerationService } from '../invoiceGeneration.service';
 import { CustomError } from '../middleware/errorHandler';
 import { eventBus } from './event-bus.service';
 import { getClientStage } from './reliability.service';
+import { trustCore } from '../trust/trust-core';
 
 // ─── Enroll Business ─────────────────────────────────────────────────────────
 
@@ -671,11 +672,29 @@ export async function updateDeal(
     updateData.closedAt = new Date();
   }
 
-  return prisma.crmDeal.update({
+  const updatedDeal = await prisma.crmDeal.update({
     where: { id: dealId },
     data: updateData,
     include: { client: true, activities: true },
   });
+
+  if (updatedDeal.client && updatedDeal.client.passportId) {
+    if (data.stage === 'WON') {
+      await trustCore.emit('deal.won', {
+        dealId: updatedDeal.id,
+        clientPassportId: updatedDeal.client.passportId,
+        amount: updatedDeal.value,
+      });
+    } else if (data.stage === 'LOST') {
+      await trustCore.emit('deal.lost', {
+        dealId: updatedDeal.id,
+        clientPassportId: updatedDeal.client.passportId,
+        reason: data.lostReason,
+      });
+    }
+  }
+
+  return updatedDeal;
 }
 
 export async function deleteDeal(businessId: string, dealId: string) {
