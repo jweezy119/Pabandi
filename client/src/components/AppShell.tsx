@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ModuleSwitcher } from './ModuleSwitcher';
 import { UserMenu } from './UserMenu';
+import { SupportWidget } from './SupportWidget';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -29,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative">
         {children}
+        <SupportWidget />
       </div>
     </div>
   );
