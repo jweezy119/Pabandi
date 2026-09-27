@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { FiPlus, FiTrash2, FiSend, FiCheckCircle, FiClock, FiAlertCircle, FiEye, FiX } from 'react-icons/fi';
-import { Button } from '../../components/primitives';
+import { Link } from 'react-router-dom';
+import { FiX } from 'react-icons/fi';
+import { Button, ClaySkeletonCard } from '../../components/primitives';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 
@@ -38,7 +38,14 @@ export default function InvoicesPage() {
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
-  if (loading) return <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--clay)]" /></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center p-8">
+        <ClaySkeletonCard />
+        <ClaySkeletonCard />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 clay-fade">
