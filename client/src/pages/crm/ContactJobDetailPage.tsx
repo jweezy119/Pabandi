@@ -19,6 +19,7 @@ type JobData = {
   status: string;
   price: number;
   client?: { name: string; passportId?: string };
+  assignments?: { employee: { id: string; name: string; deliveryScore: number } }[];
 };
 
 export function ContactJobDetailPage() {
@@ -147,9 +148,26 @@ export function ContactJobDetailPage() {
               ) : (
                 <div className="text-gray-500">Invoice will be generated on check-out</div>
               )}
+              )}
             </div>
           </div>
         </Card>
+
+        {job.assignments && job.assignments.length > 0 && (
+          <Card className="p-6 md:col-span-2">
+            <h3 className="text-lg font-semibold text-white mb-4">Assigned Team</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {job.assignments.map((assignment: any) => (
+                <div key={assignment.employee.id} className="bg-[var(--warm-sand)]/10 p-4 rounded-xl border border-[var(--warm-sand)]/20">
+                  <div className="font-semibold text-white">{assignment.employee.name}</div>
+                  <div className="text-sm text-[var(--soft-stone)] mt-1 flex items-center gap-2">
+                    Delivery Score: <span className="font-medium text-[var(--sage)]">{assignment.employee.deliveryScore}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

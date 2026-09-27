@@ -6610,8 +6610,12 @@ model CrmEmployee {
   payRate    Float    @default(0)
   payType    String   @default("HOURLY") // HOURLY | SALARY | PER_JOB
   isActive   Boolean  @default(true)
-  hireDate   DateTime @default(now())
-  createdAt  DateTime @default(now())
+  hireDate         DateTime @default(now())
+  inviteToken      String?  @unique
+  inviteStatus     String   @default("PENDING") // PENDING | ACCEPTED
+  reliabilityScore Float    @default(100)
+  deliveryScore    Float    @default(100)
+  createdAt        DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   business CrmBusiness  @relation(fields: [businessId], references: [id], onDelete: Cascade)

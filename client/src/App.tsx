@@ -191,6 +191,9 @@ import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactDealDetailPage from './pages/contact/ContactDealDetailPage';
 import { ContactActivitiesPage } from './pages/crm/ContactActivitiesPage';
 import { ContactTasksPage } from './pages/crm/ContactTasksPage';
+import { ContactTeamPage } from './pages/crm/ContactTeamPage';
+import { ContactTeamMemberPage } from './pages/crm/ContactTeamMemberPage';
+import { InviteAcceptPage } from './pages/auth/InviteAcceptPage';
 import { ContactJobsPage } from "./pages/crm/ContactJobsPage";
 import { ContactJobDetailPage } from "./pages/crm/ContactJobDetailPage";
 import ModulesSettingsPage from './pages/contact/settings/ModulesSettingsPage';
@@ -276,6 +279,9 @@ function App() {
           <Route path="contact/deals/:id" element={<ContactDealDetailPage />} />
           <Route path="contact/activities" element={<ContactActivitiesPage />} />
           <Route path="contact/tasks" element={<ContactTasksPage />} />
+          <Route path="contact/team" element={<ContactTeamPage />} />
+          <Route path="contact/team/:id" element={<ContactTeamMemberPage />} />
+          <Route path="invite/accept" element={<InviteAcceptPage />} />
           <Route path="contact/invoices" element={<InvoicesPage />} />
           <Route path="contact/invoices/:id" element={<ContactInvoiceDetailPage />} />
           <Route path="contact/settings/modules" element={<ModulesSettingsPage />} />
