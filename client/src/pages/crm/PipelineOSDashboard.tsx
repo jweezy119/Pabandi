@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FiBriefcase, FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
-import { Card, EmptyState } from '../../components/primitives';
+import { FiUsers, FiTrendingUp, FiAlertTriangle, FiStar, FiZap, FiEye, FiCheckCircle, FiX, FiClock, FiPhone, FiMail, FiMapPin } from 'react-icons/fi';
+import { Card, EmptyState, ClayBadge } from '../../components/primitives';
 import DashboardLayout from '../../components/DashboardLayout';
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
@@ -59,27 +59,6 @@ function ClayCard({ children, className = '', hover = false, ...props }: any) {
   );
 }
 
-function ClayBadge({ children, variant = 'neutral' }: { children: React.ReactNode; variant?: 'default' | 'clay' | 'sage' | 'terracotta' | 'ochre' | 'dusty-rose' | 'sky-wash' | 'neutral' }) {
-  const variantStyles: Record<string, React.CSSProperties> = {
-    default: { backgroundColor: 'rgba(90, 83, 72, 0.15)', color: 'var(--warm-ink)', border: '1px solid rgba(90, 83, 72, 0.2)' },
-    clay: { backgroundColor: 'rgba(201, 123, 90, 0.12)', color: 'var(--clay)', border: '1px solid rgba(201, 123, 90, 0.2)' },
-    sage: { backgroundColor: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)', border: '1px solid rgba(138, 154, 123, 0.2)' },
-    terracotta: { backgroundColor: 'rgba(168, 90, 60, 0.12)', color: 'var(--terracotta)', border: '1px solid rgba(168, 90, 60, 0.2)' },
-    ochre: { backgroundColor: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)', border: '1px solid rgba(217, 168, 84, 0.2)' },
-    'dusty-rose': { backgroundColor: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)', border: '1px solid rgba(212, 165, 165, 0.2)' },
-    'sky-wash': { backgroundColor: 'rgba(184, 201, 212, 0.15)', color: '#6B8FA0', border: '1px solid rgba(184, 201, 212, 0.2)' },
-    neutral: { backgroundColor: 'rgba(232, 217, 197, 0.5)', color: 'var(--warm-ink)', border: '1px solid rgba(191, 179, 163, 0.3)' },
-  };
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label"
-      style={variantStyles[variant] || variantStyles.neutral}
-    >
-      {children}
-    </span>
-  );
-}
-
 // ─── Pipeline Kanban ─────────────────────────────────────────────────────────
 
 function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onStageChange: () => void }) {
@@ -112,6 +91,12 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
     setDraggedClient(null);
   }
 
+  function getScoreBadgeStyle(score: number) {
+    if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)' };
+    if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)' };
+    return { bg: 'rgba(212, 165, 165, 0.15)', color: 'var(--dusty-rose)' };
+  }
+
   function getScoreStyle(score: number) {
     if (score >= 80) return { bg: 'rgba(138, 154, 123, 0.15)', color: 'var(--sage)' };
     if (score >= 50) return { bg: 'rgba(217, 168, 84, 0.15)', color: 'var(--muted-ochre)' };
@@ -131,7 +116,7 @@ function PipelineKanban({ clients, onStageChange }: { clients: CrmClient[]; onSt
           >
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-bold text-[var(--warm-ink)] font-label">{stage.label}</h4>
-              <ClayBadge variant="neutral">{stageClients.length}</ClayBadge>
+              <ClayBadge label={stageClients.length.toString()} variant="neutral" />
             </div>
             <div className="space-y-2">
               {stageClients.map(client => {
@@ -207,7 +192,7 @@ function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: (id: st
     <Card hover={false} className="clay-rise">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold text-[var(--warm-ink)] clay-heading mb-0">Revenue Alerts</h3>
-        <ClayBadge variant="ochre">{alerts.filter(a => !a.dismissed).length} active</ClayBadge>
+        <ClayBadge label={`${alerts.filter(a => !a.dismissed).length} active`} variant="warning" />
       </div>
       {alerts.length === 0 ? (
         <div className="text-center py-8">
@@ -218,13 +203,14 @@ function AlertsFeed({ alerts, onDismiss }: { alerts: Alert[]; onDismiss: (id: st
         </div>
       ) : (
         <div className="space-y-2.5">
-          {alerts.filter(a => !a.dismissed).slice(0, 10).map(alert => {
+          {alerts.filter(a => !a.dismissed).slice(0, 10).map((alert, i) => {
             const config = typeConfig[alert.type] || typeConfig.info;
             const Icon = config.icon;
             return (
               <div
                 key={alert.id}
-                className={`clay-alert clay-alert--${config.alertVariant} flex items-start gap-3`}
+                className={`clay-alert clay-alert--${config.alertVariant} flex items-start gap-3 clay-rise`}
+                style={{ animationDelay: `${i * 60}ms` }}
               >
                 <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: 'var(--clay)' }} />
                 <div className="flex-1 min-w-0">
@@ -349,7 +335,7 @@ export default function PipelineOSDashboard() {
               Trust-Aware Revenue Engine
             </p>
           </div>
-          <ClayBadge variant="sage">Live</ClayBadge>
+          <ClayBadge label="Live" variant="success" />
         </div>
 
         {error && (
@@ -360,7 +346,7 @@ export default function PipelineOSDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-          {statCards.map((stat, i) => (
+          {statCards.map((stat) => (
             <Card key={stat.label} hover={false} className="clay-rise" style={{ animationDelay: `${stat.delay}ms` }}>
               <div className="flex items-start justify-between">
                 <div>
@@ -424,16 +410,12 @@ export default function PipelineOSDashboard() {
               />
             ) : (
               <div className="space-y-2.5">
-                {clients.map((client) => {
-                  const scoreStyle = getScoreBadgeStyle(client.reliabilityScore);
+                {clients.map((client, i) => {
                   return (
                     <div
                       key={client.id}
                       className="flex items-center gap-4 p-4 rounded-xl bg-white border border-[rgba(191,179,163,0.2)] clay-card--interactive clay-table-row clay-rise"
-                      style={{
-                        boxShadow: 'var(--shadow-soft)',
-                        cursor: 'pointer',
-                      }}
+                      style={{ animationDelay: `${i * 60}ms`, boxShadow: 'var(--shadow-soft)', cursor: 'pointer' }}
                       onMouseEnter={e => {
                         (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)';
                         (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-lift)';
@@ -482,8 +464,8 @@ export default function PipelineOSDashboard() {
                       </div>
                       <div className="text-right shrink-0">
                         <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label"
-                          style={scoreStyle}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium font-label clay-badge-clay"
+                          style={{ backgroundColor: 'rgba(138,154,123,0.15)', color: 'var(--sage)', border: '1px solid rgba(138,154,123,0.2)' }}
                         >
                           {client.reliabilityScore}/100
                         </span>
