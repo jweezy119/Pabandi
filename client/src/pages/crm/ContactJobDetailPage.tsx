@@ -9,7 +9,8 @@ const api = {
   get: async (url: string) => { const r = await fetch(API_BASE + url, { headers: getHeaders() }); return { data: await r.json() }; },
   post: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; },
   patch: async (url: string, data: any) => { const r = await fetch(API_BASE + url, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify(data) }); return { data: await r.json() }; }
-};import { Input } from '../../components/primitives/Input';
+};
+import { Input } from '../../components/primitives/Input';
 
 type JobData = {
   id: string;
