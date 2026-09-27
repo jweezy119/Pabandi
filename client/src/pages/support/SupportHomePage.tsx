@@ -5,6 +5,7 @@ import { ClayButton } from '../../components/clay/ClayButton';
 import { Search, Book, Ticket, Server, MessageCircle, AlertCircle } from 'lucide-react';
 
 export default function SupportHomePage() {
+  console.log('SupportHomePage');
   const navigate = useNavigate();
 
   return (

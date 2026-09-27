@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ClayModal } from '../../../components/clay/ClayModal';
 import { ClayButton } from '../../../components/clay/ClayButton';
-import usePabandiApi from '../../../hooks/usePabandiApi';
+import api from '../../../services/api';
 
 export function SupportTicketForm({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
-  const api = usePabandiApi();
+
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('General');
   const [description, setDescription] = useState('');

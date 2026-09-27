@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Search, FileText } from 'lucide-react';
 import { ClayButton } from './clay/ClayButton';
 import { ClayCard } from './clay/ClayCard';
-import usePabandiApi from '../hooks/usePabandiApi';
+import api from '../services/api';
 
 export function SupportWidget() {
+  console.log('SupportWidget');
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [articles, setArticles] = useState<any[]>([]);
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
 
   useEffect(() => {
     if (query.length > 2) {

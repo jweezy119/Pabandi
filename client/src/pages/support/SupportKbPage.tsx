@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { Search, BookOpen, ArrowRight } from 'lucide-react';
-import usePabandiApi from '../../hooks/usePabandiApi';
+import api from '../../services/api';
 
 export default function SupportKbPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const api = usePabandiApi();
+
   
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [articles, setArticles] = useState<any[]>([]);

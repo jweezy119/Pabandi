@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayButton } from '../../components/clay/ClayButton';
 import { Plus, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import usePabandiApi from '../../hooks/usePabandiApi';
+import api from '../../services/api';
 import { SupportTicketForm } from './components/SupportTicketForm';
 
 export default function SupportTicketsPage() {
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
   const [tickets, setTickets] = useState<any[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);

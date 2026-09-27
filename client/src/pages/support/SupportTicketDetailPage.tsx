@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayButton } from '../../components/clay/ClayButton';
 import { ArrowLeft, Send } from 'lucide-react';
-import usePabandiApi from '../../hooks/usePabandiApi';
+import api from '../../services/api';
 
 export default function SupportTicketDetailPage() {
+  console.log('SupportTicketDetailPage');
   const { id } = useParams();
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
   const [ticket, setTicket] = useState<any>(null);
   const [replyBody, setReplyBody] = useState('');
   const [loading, setLoading] = useState(true);

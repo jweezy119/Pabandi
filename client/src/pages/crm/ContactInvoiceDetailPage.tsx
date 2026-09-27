@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, ClaySkeletonCard } from '../../components/primitives';
 import { InvoiceLineItems } from './components/InvoiceLineItems';
+import { TrustPanel } from '../../components/TrustPanel';
 
 const CRM_API = `${import.meta.env.VITE_API_URL || 'https://pabandi.onrender.com'}/api/v1/crm`;
 const APP_URL = window.location.origin;
@@ -107,6 +108,9 @@ export default function ContactInvoiceDetailPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto pb-12 clay-fade">
+      {invoice.client && (
+        <TrustPanel score={(invoice.client as any).reliabilityScore || 85} entityType="Client" entityName={(invoice.client as any).name} />
+      )}
       <div className="flex items-center justify-between mb-4 clay-heading">
         <h2 className="text-xl font-bold text-[var(--warm-ink)]">Invoice {invoice.number}</h2>
         <div className="flex gap-2">

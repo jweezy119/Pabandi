@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { Button, Chip, EmptyState } from '../../components/primitives';
 import ClientTimeline from '../crm/components/ClientTimeline';
+import { TrustPanel } from '../../components/TrustPanel';
 
 const navItems = [
   { path: '/contact', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -95,6 +96,9 @@ export default function ContactDealDetailPage() {
           </div>
           <div className="space-y-6">
             {/* Sidebar content */}
+            {deal.client && (
+              <TrustPanel score={deal.client.reliabilityScore || 85} entityType="Client" entityName={deal.client.name} />
+            )}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-[rgba(191,179,163,0.3)]">
               <h3 className="font-bold text-[var(--warm-ink)] mb-4">Trust OS Terms Recommendation</h3>
               {deal.client ? (

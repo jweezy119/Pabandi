@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import usePabandiApi from '../../hooks/usePabandiApi';
+import api from '../../services/api';
 
 export default function SupportKbArticlePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
   const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

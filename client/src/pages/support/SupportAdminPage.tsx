@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClayCard } from '../../components/clay/ClayCard';
 import { ClayButton } from '../../components/clay/ClayButton';
-import usePabandiApi from '../../hooks/usePabandiApi';
+import api from '../../services/api';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 
 export default function SupportAdminPage() {
+  console.log('SupportAdminPage');
   const navigate = useNavigate();
-  const api = usePabandiApi();
+
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

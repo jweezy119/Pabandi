@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
+import { TrustPanel } from '../../components/TrustPanel';
 
 function ClayCard({ children, className = '', hover = true, ...props }: any) {
   return (
@@ -158,6 +159,9 @@ export default function ContactJobDetailPage() {
           </div>
         </div>
 
+        {client && (
+          <TrustPanel score={client.reliabilityScore || 85} entityType="Client" entityName={client.name} />
+        )}
         <ClayCard className="p-6">
           <div className="flex justify-between items-start">
             <div>
