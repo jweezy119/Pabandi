@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { logger } from '../utils/logger';
 import { prisma } from '../utils/database';
-import { jobLifecycleService } from './jobLifecycle.service';
+import * as jobService from './job.service';
 
 export class JobCronService {
   private cronJob: any = null;
@@ -53,7 +53,7 @@ export class JobCronService {
         const minutesLate = (now.getTime() - scheduledTime.getTime()) / (1000 * 60);
         
         if (minutesLate > 30) {
-          await jobLifecycleService.handleNoShow(job.id);
+          await jobService.handleNoShow(job.id);
         }
       } catch (error) {
         logger.error(`[JobCron] Error processing job ${job.id} for no-show:`, error);

@@ -302,7 +302,7 @@ const routeMap: [string, string][] = [
   [`/api/${v}/osint`, './routes/osint.routes'],
   [`/api/${v}/seal`, './routes/seal.routes'],
   [`/api/${v}/billing`, './routes/billing.routes'],
-  [`/api/${v}/jobs`, './routes/jobs.routes'],
+  [`/api/${v}/jobs`, './routes/job.routes'],
   [`/api/${v}/seed`, './routes/seed.routes'],
   [`/.well-known`, './routes/wellknown.routes'],
   [`/api/${v}/treasury/autonomous`, './routes/treasury.autonomous.routes'],

@@ -190,8 +190,8 @@ import ContactClientDetailPage from './pages/contact/ContactClientDetailPage';
 import ContactDealsPage from './pages/contact/ContactDealsPage';
 import ContactDealDetailPage from './pages/contact/ContactDealDetailPage';
 import ContactActivitiesPage from './pages/contact/ContactActivitiesPage';
-import ContactJobsPage from "./pages/contact/ContactJobsPage";
-import ContactJobDetailPage from "./pages/contact/ContactJobDetailPage";
+import ContactJobsPage from "./pages/crm/ContactJobsPage";
+import ContactJobDetailPage from "./pages/crm/ContactJobDetailPage";
 import ModulesSettingsPage from './pages/contact/settings/ModulesSettingsPage';
 import SetupWizardPage from './pages/contact/SetupWizardPage';
 // LedgerOS
