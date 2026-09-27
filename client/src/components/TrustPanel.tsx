@@ -8,6 +8,7 @@ interface TrustPanelProps {
 }
 
 export function TrustPanel({ score, entityType, entityName }: TrustPanelProps) {
+  console.log("TrustPanel");
   const getStatus = () => {
     if (score >= 90) return { color: 'text-[var(--sage)]', bg: 'bg-[rgba(163,177,138,0.1)]', icon: ShieldCheck, label: 'High Trust' };
     if (score >= 70) return { color: 'text-[var(--clay)]', bg: 'bg-[rgba(180,130,90,0.1)]', icon: Shield, label: 'Good Standing' };

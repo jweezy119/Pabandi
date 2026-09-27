@@ -5,6 +5,7 @@ import { Search, BookOpen, ArrowRight } from 'lucide-react';
 import api from '../../services/api';
 
 export default function SupportKbPage() {
+  console.log("SupportKbPage");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
