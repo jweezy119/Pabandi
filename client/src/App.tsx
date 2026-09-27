@@ -224,6 +224,14 @@ import LedgerAccountsPage from './pages/ledger/LedgerAccountsPage';
 import LedgerReportsPage from './pages/ledger/LedgerReportsPage';
 import ProtocolDashboardPage from './pages/ProtocolDashboardPage';
 
+// Support
+import SupportHomePage from './pages/support/SupportHomePage';
+import SupportTicketsPage from './pages/support/SupportTicketsPage';
+import SupportTicketDetailPage from './pages/support/SupportTicketDetailPage';
+import SupportKbPage from './pages/support/SupportKbPage';
+import SupportKbArticlePage from './pages/support/SupportKbArticlePage';
+import SupportAdminPage from './pages/support/SupportAdminPage';
+
 function AppShellLayout() {
   const { isAuthenticated } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -429,6 +437,12 @@ function AnimatedAppRoutes() {
             <Route path="disputes" element={<DisputeCenterPage />} />
             <Route path="cashout" element={<CashOutPage />} />
             <Route path="payroll" element={<PayrollPage />} />
+            <Route path="support" element={<SupportHomePage />} />
+            <Route path="support/tickets" element={<SupportTicketsPage />} />
+            <Route path="support/tickets/:id" element={<SupportTicketDetailPage />} />
+            <Route path="support/kb" element={<SupportKbPage />} />
+            <Route path="support/kb/:slug" element={<SupportKbArticlePage />} />
+            <Route path="support/admin" element={<SupportAdminPage />} />
             <Route path="economy" element={<EconomyDashboardPage />} />
             <Route path="revenue" element={<RevenuePage />} />
             <Route path="rewards" element={<RewardsPage />} />
