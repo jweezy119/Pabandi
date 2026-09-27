@@ -253,6 +253,8 @@ const routeMap: [string, string][] = [
   [`/api/${v}/team`, './routes/team.routes'],
   [`/api/${v}/reports`, './routes/reports.routes'],
   [`/api/${v}/settings`, './routes/settings.routes'],
+  [`/api/${v}/support`, './routes/support.routes'],
+  [`/api/${v}/kb`, './routes/kb.routes'],
   [`/api/${v}/api-keys`, './routes/apiKey.routes'],
   [`/api/${v}/webhooks`, './routes/webhook.routes'],
   [`/api/${v}/documents`, './routes/document.routes'],
