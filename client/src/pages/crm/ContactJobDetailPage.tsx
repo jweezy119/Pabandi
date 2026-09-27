@@ -148,7 +148,6 @@ export function ContactJobDetailPage() {
               ) : (
                 <div className="text-gray-500">Invoice will be generated on check-out</div>
               )}
-              )}
             </div>
           </div>
         </Card>
